@@ -6,7 +6,8 @@
  * Sem processamento de nomes, sem filtros manuais de grupo.
  */
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, Fragment } from "react";
+import { useOperator } from "@/contexts/OperatorContext";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,6 @@ import {
   DollarSign,
   Boxes,
   ClipboardList,
-  MoreHorizontal,
   Lock,
   Eye,
   EyeOff,
@@ -73,6 +73,8 @@ interface PedidoCliente {
   quantidadeCx: number;
   quantidadeUn: number;
   status: string;
+  estadoConfiguravel?: string;
+  crmSegmento?: string;
 }
 
 interface StockItem {
@@ -80,6 +82,7 @@ interface StockItem {
   descricaoItem: string; // descrição EXATA do Maxiprod
   unidadeMedida: string;
   grupoCodigo: string;
+  superGrupoCodigo: string;
   descricaoGrupo: string;
   empresaDona: string;
   estoqueUn: number;
@@ -98,11 +101,47 @@ interface StockItem {
   projetadoUn: number;
   projetadoCx: number | null;
   segmento: "bambu" | "industrializado";
+  grupo: "industrializacao" | "importacao_revenda" | "importacao_mp" | "outros";
+  subgrupo: "bambu" | "fibra" | "madeira" | "madeira_importada" | "varetas" | "espetos" | "palitos" | "maquina_espetinho" | "outros";
   isKgProduct: boolean;
+  estadoConfiguravel: string | null;
+  segmentosCRM: string[];
+  // Variações (produto pai/filho)
+  isParent?: boolean;
+  isChild?: boolean;
+  parentCode?: string | null;
+  variants?: {
+    codigoItem: string;
+    descricaoItem: string;
+    conversionFactor: number;
+    pedidosCx: number | null;
+    pedidosUn: number;
+    pedidosPorCliente: PedidoCliente[];
+    unidadesPorCaixa: number | null;
+  }[];
+  variantConversionFactor?: number | null;
+  // Pedidos próprios do pai (antes de somar variações)
+  pedidosCxProprio?: number | null;
+  pedidosUnProprio?: number;
+  pedidosPorClienteProprio?: PedidoCliente[];
 }
 
-type SortField = "descricaoItem" | "estoqueCx" | "pedidosCx" | "disponivelCx" | "poCx" | "projetadoCx";
+type SortField = "descricaoItem" | "comprimento" | "estoqueCx" | "pedidosCx" | "disponivelCx" | "poCx" | "projetadoCx";
 type SortDir = "asc" | "desc";
+
+/** Extrai o comprimento (número depois do X) da descrição do produto.
+ *  Ex: "ESPETO DE BAMBU 4,0 X 250 MM" -> 250
+ *  Ex: "PALITO DE MANICURE 5,0 X 140 MM" -> 140
+ *  Retorna 0 se não encontrar.
+ */
+function extractComprimento(descricao: string): number {
+  // Procura padrão: X seguido de espaço e número (com ou sem vírgula)
+  const match = descricao.match(/X\s+(\d+(?:,\d+)?)/i);
+  if (match) {
+    return parseFloat(match[1].replace(',', '.'));
+  }
+  return 0;
+}
 
 function formatNumber(n: number | null): string {
   if (n === null || n === undefined) return "\u2014";
@@ -260,12 +299,75 @@ function ConnectionStatusCard() {
 /* --- Badges --- */
 function StatusBadge({ projetado, estReg }: { projetado: number | null; estReg: number | null }) {
   if (projetado === null) return <Badge variant="outline" className="text-xs">—</Badge>;
-  if (estReg !== null && projetado <= estReg) {
-    return <Badge className="bg-red-100 text-red-700 text-xs border-0 animate-pulse">COMPRA</Badge>;
+  if (estReg !== null && estReg > 0) {
+    // Projetado <= estoque regulador = COMPRA (vermelho, pulsante)
+    if (projetado <= estReg) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge className="bg-red-100 text-red-700 text-xs border-0 animate-pulse cursor-pointer">COMPRA</Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-red-50 border-red-200 text-red-700 font-medium text-xs">
+            Abaixo do Est. Regulador
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+    // Projetado até 20% acima do estoque regulador = CUIDADO (rosa)
+    if (projetado <= estReg * 1.2) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge className="bg-pink-100 text-pink-700 text-xs border-0 cursor-pointer">CUIDADO</Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-pink-50 border-pink-200 text-pink-700 font-medium text-xs">
+            20% acima do Est. Regulador
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+    // Projetado até 40% acima do estoque regulador = ATENÇÃO (laranja)
+    if (projetado <= estReg * 1.4) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge className="bg-orange-100 text-orange-700 text-xs border-0 cursor-pointer">ATENÇÃO</Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="bg-orange-50 border-orange-200 text-orange-700 font-medium text-xs">
+            40% acima do Est. Regulador
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
   }
   return <Badge className="bg-emerald-100 text-emerald-700 text-xs border-0">OK</Badge>;
 }
 
+function GrupoBadge({ grupo, subgrupo }: { grupo: string; subgrupo: string }) {
+  const GRUPO_STYLES: Record<string, { bg: string; text: string; icon: React.ElementType; label: string }> = {
+    importacao_revenda: { bg: "bg-teal-100", text: "text-teal-700", icon: Ship, label: "Revenda" },
+    industrializacao: { bg: "bg-violet-100", text: "text-violet-700", icon: Factory, label: "Industrialização" },
+    importacao_mp: { bg: "bg-amber-100", text: "text-amber-700", icon: Truck, label: "Import. MP" },
+    outros: { bg: "bg-slate-100", text: "text-slate-600", icon: Package, label: "Outros" },
+  };
+  const SUBGRUPO_LABELS: Record<string, string> = {
+    bambu: "Bambu", fibra: "Fibra", madeira: "Madeira",
+    madeira_importada: "Madeira Importada",
+    varetas: "Varetas", espetos: "Espetos", palitos: "Palitos",
+    maquina_espetinho: "Máq. Espetinho",
+    outros: "",
+  };
+  const style = GRUPO_STYLES[grupo] || GRUPO_STYLES.outros;
+  const Icon = style.icon;
+  const subLabel = SUBGRUPO_LABELS[subgrupo];
+  return (
+    <Badge className={`${style.bg} ${style.text} text-xs border-0 max-w-full truncate whitespace-nowrap`} title={`${style.label}${subLabel ? ` / ${subLabel}` : ""}`}>
+      <Icon className="w-3 h-3 mr-1 flex-shrink-0" /><span className="truncate">{style.label}{subLabel ? ` / ${subLabel}` : ""}</span>
+    </Badge>
+  );
+}
+
+// Keep old SegmentoBadge for backward compat
 function SegmentoBadge({ segmento }: { segmento: string }) {
   if (segmento === "industrializado") {
     return <Badge className="bg-violet-100 text-violet-700 text-xs border-0"><Factory className="w-3 h-3 mr-1" />Industrializado</Badge>;
@@ -281,16 +383,19 @@ const kpiStyles: Record<string, { iconBg: string; iconColor: string; bar: string
   blue:    { iconBg: "bg-blue-50",    iconColor: "text-blue-600",    bar: "bg-gradient-to-r from-blue-400 to-blue-600" },
   indigo:  { iconBg: "bg-indigo-50",  iconColor: "text-indigo-600",  bar: "bg-gradient-to-r from-indigo-400 to-indigo-600" },
   red:     { iconBg: "bg-red-50",     iconColor: "text-red-600",     bar: "bg-gradient-to-r from-red-400 to-red-600" },
+  pink:    { iconBg: "bg-pink-50",    iconColor: "text-pink-600",    bar: "bg-gradient-to-r from-pink-400 to-pink-600" },
+  amber:   { iconBg: "bg-amber-50",   iconColor: "text-amber-600",   bar: "bg-gradient-to-r from-amber-400 to-amber-600" },
   slate:   { iconBg: "bg-slate-50",   iconColor: "text-slate-500",   bar: "bg-gradient-to-r from-slate-300 to-slate-400" },
 };
 
-function KPICard({ label, value, sub, icon: Icon, theme }: { 
+function KPICard({ label, value, sub, icon: Icon, theme, onClick }: { 
   label: string; value: string; sub?: string; icon: React.ElementType; 
   theme: keyof typeof kpiStyles;
+  onClick?: () => void;
 }) {
   const s = kpiStyles[theme];
   return (
-    <div className="group relative bg-white rounded-xl border border-slate-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+    <div className={`group relative bg-white rounded-xl border border-slate-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
       <div className={`h-1 ${s.bar}`} />
       <div className="px-4 py-3.5">
         <div className="flex items-start justify-between mb-3">
@@ -340,20 +445,20 @@ function POCell({ item }: { item: StockItem }) {
           )}
         </div>
       </TooltipTrigger>
-      <TooltipContent side="left" className="max-w-[380px] p-0">
+      <TooltipContent side="left" className="max-w-[380px] p-0 bg-white text-slate-800 border border-slate-200 shadow-xl">
         <div className="p-3 space-y-2">
           <p className="font-semibold text-sm flex items-center gap-1.5">
             <Ship className="w-4 h-4 text-blue-500" />
             Pedidos de Compra (PO)
           </p>
-          <p className="text-xs text-muted-foreground">
-            Total: <strong>{formatNumber(poDisplayQty)} {poUnit}</strong> a receber
+          <p className="text-xs text-slate-500">
+            Total: <strong className="text-slate-800">{formatNumber(poDisplayQty)} {poUnit}</strong> a receber
             {isKg && <span className="ml-1">({formatNumber(poCx)} sacos)</span>}
           </p>
           {lotes.length > 0 && (
-            <div className="border rounded overflow-hidden">
+            <div className="border border-slate-200 rounded overflow-hidden">
               <table className="w-full text-xs">
-                <thead className="bg-muted/50">
+                <thead className="bg-slate-50">
                   <tr>
                     <th className="px-2 py-1 text-left font-medium">PO</th>
                     <th className="px-2 py-1 text-left font-medium">Entrega</th>
@@ -363,7 +468,7 @@ function POCell({ item }: { item: StockItem }) {
                 </thead>
                 <tbody className="divide-y">
                   {lotes.map((lote, idx) => (
-                    <tr key={idx} className="hover:bg-muted/30">
+                    <tr key={idx} className="hover:bg-slate-50">
                       <td className="px-2 py-1 font-semibold text-blue-700">
                         {lote.referenciaPO || lote.numeroPedido || "?"}
                       </td>
@@ -377,7 +482,7 @@ function POCell({ item }: { item: StockItem }) {
                         {isKg ? formatNumber(lote.quantidadeUn) : formatNumber(lote.quantidade)}
                       </td>
                       {isKg && (
-                        <td className="px-2 py-1 text-right text-muted-foreground">
+                        <td className="px-2 py-1 text-right text-slate-500">
                           {formatNumber(lote.quantidade)}
                         </td>
                       )}
@@ -388,7 +493,7 @@ function POCell({ item }: { item: StockItem }) {
             </div>
           )}
           {fornecedores.length > 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500">
               Fornecedor: {fornecedores.join(", ")}
             </p>
           )}
@@ -399,10 +504,13 @@ function POCell({ item }: { item: StockItem }) {
 }
 
 /* --- Stock Table --- */
-function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, priceMap, showFinancial, pricingOverrides, enableCompraRule }: {
+function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter, crmSegmentoFilter, sort, sortDir, onSort, priceMap, showFinancial, pricingOverrides, enableCompraRule }: {
   items: StockItem[];
   search: string;
   segmentoFilter: string;
+  grupoFilter?: string;
+  subgrupoFilter?: string;
+  crmSegmentoFilter?: string;
   sort: SortField;
   sortDir: SortDir;
   onSort: (field: SortField) => void;
@@ -411,8 +519,43 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
   pricingOverrides?: Array<{ codigoItem: string; vendaMensal: number | null; fatorMultiplicacao: string | null; prazoCompraDias: number | null }>;
   enableCompraRule?: boolean;
 }) {
+  const [prodColWidth, setProdColWidth] = useState(380);
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
+  const resizingRef = useRef(false);
+  const startXRef = useRef(0);
+  const startWidthRef = useRef(0);
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizingRef.current = true;
+    startXRef.current = e.clientX;
+    startWidthRef.current = prodColWidth;
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!resizingRef.current) return;
+      const diff = ev.clientX - startXRef.current;
+      const newWidth = Math.max(200, Math.min(800, startWidthRef.current + diff));
+      setProdColWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      resizingRef.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
   const filtered = useMemo(() => {
-    let result = [...items];
+    // Filtrar itens filhos (variações) - eles só aparecem quando o pai está expandido
+    let result = items.filter(i => !i.isChild);
 
     if (search) {
       const s = search.toLowerCase();
@@ -428,11 +571,31 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
       result = result.filter((i) => i.segmento === segmentoFilter);
     }
 
+    if (grupoFilter && grupoFilter !== "all") {
+      result = result.filter((i) => i.grupo === grupoFilter);
+    }
+
+    if (subgrupoFilter && subgrupoFilter !== "all") {
+      result = result.filter((i) => i.subgrupo === subgrupoFilter);
+    }
+
+    if (crmSegmentoFilter && crmSegmentoFilter !== "all") {
+      result = result.filter((i) => i.segmentosCRM?.includes(crmSegmentoFilter));
+    }
+
     result.sort((a, b) => {
       let aVal: number | string = 0;
       let bVal: number | string = 0;
 
       switch (sort) {
+        case "comprimento": {
+          const aComp = extractComprimento(a.descricaoItem || "");
+          const bComp = extractComprimento(b.descricaoItem || "");
+          const diff = sortDir === "asc" ? aComp - bComp : bComp - aComp;
+          // Se mesmo comprimento, ordena por descrição
+          if (diff !== 0) return diff;
+          return (a.descricaoItem || "").localeCompare(b.descricaoItem || "");
+        }
         case "descricaoItem":
           aVal = a.descricaoItem || "";
           bVal = b.descricaoItem || "";
@@ -462,7 +625,7 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
     });
 
     return result;
-  }, [items, search, segmentoFilter, sort, sortDir]);
+  }, [items, search, segmentoFilter, grupoFilter, subgrupoFilter, crmSegmentoFilter, sort, sortDir]);
 
   const SortHeader = ({ field, children, className: extraClass }: { field: SortField; children: React.ReactNode; className?: string }) => (
     <th
@@ -477,31 +640,73 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
   );
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
       <div className="overflow-x-auto">
-        <table className={`w-full ${showFinancial ? 'min-w-[1200px]' : ''}`}>
+        <table className={`w-full ${showFinancial ? 'min-w-[1100px]' : ''}`} style={!showFinancial ? { tableLayout: 'fixed' } : undefined}>
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <SortHeader field="descricaoItem" className={showFinancial ? 'max-w-[280px]' : ''}>Produto (Maxiprod)</SortHeader>
-              {!showFinancial && <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Un/Cx</th>}
-              {!showFinancial && <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Segmento</th>}
-              <SortHeader field="estoqueCx">Estoque</SortHeader>
-              <SortHeader field="pedidosCx">Pedidos</SortHeader>
-              <SortHeader field="disponivelCx">Disponivel</SortHeader>
-              <SortHeader field="poCx">
-                <Ship className="w-3 h-3" /> PO
-              </SortHeader>
-              <SortHeader field="projetadoCx">
-                <TrendingUp className="w-3 h-3" /> Projetado
-              </SortHeader>
-              <th className="px-2 py-3 text-right text-xs font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador (definido em Config > Produtos)">Est. Reg.</th>
-              {!showFinancial && <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>}
-              {showFinancial && (
+              {showFinancial ? (
                 <>
-                  <th className="px-2 py-3 text-right text-xs font-semibold text-emerald-600 uppercase tracking-wider bg-emerald-50/50 border-l border-emerald-100 whitespace-nowrap">R$/Cx</th>
-                  <th className="px-2 py-3 text-right text-xs font-semibold text-emerald-600 uppercase tracking-wider bg-emerald-50/50 whitespace-nowrap">Vlr Estoque</th>
-                  <th className="px-2 py-3 text-right text-xs font-semibold text-blue-600 uppercase tracking-wider bg-blue-50/50 whitespace-nowrap">Vlr PO</th>
-                  <th className="px-2 py-3 text-right text-xs font-semibold text-indigo-600 uppercase tracking-wider bg-indigo-50/50 whitespace-nowrap">Vlr Total</th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer" style={{ minWidth: 280 }} onClick={() => onSort('descricaoItem')}>
+                    <div className="flex items-center gap-1">Produto <ArrowUpDown className={`w-2.5 h-2.5 ${sort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                  </th>
+
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold uppercase tracking-wider cursor-pointer bg-emerald-50/60 border-x border-emerald-100 whitespace-nowrap" onClick={() => onSort('disponivelCx')}>
+                    <div className="flex items-center justify-end gap-0.5 text-emerald-700">Disp. <ArrowUpDown className={`w-2.5 h-2.5 ${sort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} /></div>
+                    <span className="text-[7px] font-bold text-emerald-500 tracking-widest block text-right">P/ VENDA</span>
+                  </th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer whitespace-nowrap" onClick={() => onSort('poCx')}>
+                    <div className="flex items-center justify-end gap-0.5"><Ship className="w-2.5 h-2.5" /> PO <ArrowUpDown className={`w-2.5 h-2.5 ${sort === 'poCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                  </th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer whitespace-nowrap" onClick={() => onSort('projetadoCx')}>
+                    <div className="flex items-center justify-end gap-0.5"><TrendingUp className="w-2.5 h-2.5" /> Proj. <ArrowUpDown className={`w-2.5 h-2.5 ${sort === 'projetadoCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                  </th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold text-emerald-600 uppercase tracking-wider bg-emerald-50/50 border-l border-emerald-100 whitespace-nowrap">R$/Cx</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold text-emerald-600 uppercase tracking-wider bg-emerald-50/50 whitespace-nowrap">Vlr Est.</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold text-blue-600 uppercase tracking-wider bg-blue-50/50 whitespace-nowrap">Vlr PO</th>
+                  <th className="px-1 py-2 text-right text-[10px] font-semibold text-indigo-600 uppercase tracking-wider bg-indigo-50/50 whitespace-nowrap">Vlr Proj.</th>
+                </>
+              ) : (
+                <>
+                  <th
+                    className="py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none relative"
+                    style={{ width: prodColWidth, minWidth: 200, maxWidth: 800, paddingLeft: 8, paddingRight: 12 }}
+                    onClick={() => onSort('descricaoItem')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Produto (Maxiprod)
+                      <ArrowUpDown className={`w-3 h-3 ${sort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} />
+                    </div>
+                    {/* Resize handle */}
+                    <div
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-teal-200/50 active:bg-teal-300/50 z-10"
+                      onMouseDown={handleResizeStart}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </th>
+                  <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ width: 70 }}>Un/Cx</th>
+                  <th className="px-2 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 160, width: 170 }}>Grupo</th>
+                  <SortHeader field="estoqueCx">Estoque</SortHeader>
+                  <SortHeader field="pedidosCx">Pedidos</SortHeader>
+                  <th
+                    className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-emerald-700 select-none bg-emerald-50/60 border-x border-emerald-100 relative"
+                    onClick={() => onSort("disponivelCx")}
+                  >
+                    <div className="flex items-center gap-1 text-emerald-700">
+                      <ShoppingCart className="w-3 h-3" />
+                      Disponivel
+                      <ArrowUpDown className={`w-3 h-3 ${sort === "disponivelCx" ? "text-emerald-700" : "text-emerald-300"}`} />
+                    </div>
+                    <span className="text-[8px] font-bold text-emerald-500 tracking-widest block">P/ VENDA</span>
+                  </th>
+                  <SortHeader field="poCx">
+                    <Ship className="w-3 h-3" /> PO
+                  </SortHeader>
+                  <SortHeader field="projetadoCx">
+                    <TrendingUp className="w-3 h-3" /> Projetado
+                  </SortHeader>
+                  <th className="px-2 py-3 text-right text-xs font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador (definido em Config > Produtos)">Est. Reg.</th>
+                  <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                 </>
               )}
             </tr>
@@ -511,131 +716,182 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
               const isNegative = (item.disponivelCx ?? item.disponivelUn) < 0;
               const isZero = (item.disponivelCx ?? item.disponivelUn) === 0;
               const projetado = item.projetadoCx ?? item.projetadoUn ?? 0;
+              const isExpanded = expandedParents.has(item.codigoItem);
+              const hasVariants = item.isParent && item.variants && item.variants.length > 0;
+              
+              const toggleExpand = () => {
+                setExpandedParents(prev => {
+                  const next = new Set(prev);
+                  if (next.has(item.codigoItem)) next.delete(item.codigoItem);
+                  else next.add(item.codigoItem);
+                  return next;
+                });
+              };
+              
+              // Número de colunas para as sub-linhas
+              const colCount = showFinancial ? 8 : 10;
+              
               return (
-                <tr key={item.codigoItem} className={`hover:bg-slate-50 transition-colors ${isNegative ? "bg-red-50/50" : isZero ? "bg-amber-50/30" : ""}`}>
+                <React.Fragment key={item.codigoItem}>
+                <tr className={`hover:bg-slate-50 transition-colors ${isNegative ? "bg-red-50/50" : isZero ? "bg-amber-50/30" : ""}`}>
                   {/* Produto - descrição EXATA do Maxiprod */}
-                  <td className="px-2 py-2.5">
-                    <div>
-                      <span className="font-medium text-slate-800 text-sm">{item.descricaoItem}</span>
+                  <td
+                    className={showFinancial ? 'px-2 py-1.5' : 'px-2 py-2.5'}
+                    style={showFinancial ? { minWidth: 280 } : { width: prodColWidth, minWidth: 200, maxWidth: 800 }}
+                  >
+                    <div className={`flex items-start gap-1 ${showFinancial ? 'whitespace-normal break-words leading-tight' : ''}`}>
+                      {hasVariants && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleExpand(); }}
+                          className="mt-0.5 flex-shrink-0 w-4 h-4 rounded flex items-center justify-center text-teal-600 hover:bg-teal-100 transition-colors"
+                          title={isExpanded ? 'Ocultar variações' : 'Expandir variações'}
+                        >
+                          {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
+                      )}
+                      <span className={`font-medium text-slate-800 ${showFinancial ? 'text-[10px]' : 'text-sm'}`}>{item.descricaoItem}</span>
                     </div>
-                    <div className="text-xs text-slate-400 mt-0.5">
-                      Cod: {item.codigoItem}
-                      {item.descricaoGrupo && <span className="ml-2 text-slate-300">| {item.descricaoGrupo}</span>}
+                    <div className={`text-slate-400 mt-0.5 ${showFinancial ? 'text-[9px]' : 'text-xs'} ${hasVariants ? 'ml-5' : ''}`}>
+                      {showFinancial ? item.codigoItem : `Cod: ${item.codigoItem}`}
+                      {!showFinancial && item.descricaoGrupo && <span className="ml-2 text-slate-300">| {item.descricaoGrupo}</span>}
+                      {hasVariants && <span className="ml-2 text-teal-500 font-medium">· {item.variants!.length} variaç{item.variants!.length > 1 ? 'ões' : 'ão'}</span>}
                     </div>
                   </td>
                   {!showFinancial && (
                     <>
                       {/* Un/Cx */}
-                      <td className="px-2 py-2.5 text-sm text-slate-600">
+                      <td className="px-2 py-2.5 text-sm text-slate-600 whitespace-nowrap" style={{ width: 70 }}>
                         {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "\u2014")}
                       </td>
-                      {/* Segmento */}
-                      <td className="px-2 py-2.5">
-                        <SegmentoBadge segmento={item.segmento} />
+                      {/* Grupo/Subgrupo */}
+                      <td className="px-2 py-2.5 overflow-hidden" style={{ minWidth: 160, width: 170, maxWidth: 180 }}>
+                        <GrupoBadge grupo={item.grupo} subgrupo={item.subgrupo} />
                       </td>
                     </>
                   )}
-                  {/* Estoque */}
-                  <td className="px-2 py-2.5">
-                    <span className="font-semibold text-sm text-slate-800">
-                      {item.estoqueCx !== null ? `${formatNumber(item.estoqueCx)} cx` : `${formatNumber(item.estoqueUn)} ${getUnit(item, false)}`}
+                  {/* Estoque - esconder quando showFinancial */}
+                  {!showFinancial && (
+                  <td className='px-2 py-2.5 whitespace-nowrap'>
+                    <span className='font-semibold text-slate-800 text-sm'>
+                      {item.estoqueCx !== null ? `${formatNumber(item.estoqueCx)}` : `${formatNumber(item.estoqueUn)}`}
+                      {<> {getUnit(item, item.estoqueCx !== null)}</>}
                     </span>
                   </td>
-                  {/* Pedidos - com tooltip de detalhamento por cliente */}
-                  <td className="px-2 py-2.5">
+                  )}
+                  {/* Pedidos - esconder quando showFinancial */}
+                  {!showFinancial && (
+                  <td className='px-2 py-2.5'>
                     {(() => {
                       const allPedidos = item.pedidosPorCliente || [];
                       const reservados = allPedidos.filter(pc => pc.status !== 'Digitação');
-                      const digitacao = allPedidos.filter(pc => pc.status === 'Digitação');
+                      // digitacao removido - não exibir pedidos em digitação
                       const hasAny = allPedidos.length > 0;
                       const hasPedidos = (item.pedidosCx ?? item.pedidosUn) > 0;
                       const unit = getUnit(item, false);
+                      const isParentWithVariants = item.isParent && item.variants && item.variants.length > 0;
                       
-                      if ((hasPedidos || digitacao.length > 0) && hasAny) {
+                      // Para produto pai: separar pedidos próprios vs variações
+                      const pedidosProprioCx = item.pedidosCxProprio ?? 0;
+                      const pedidosProprioPorCliente = item.pedidosPorClienteProprio || [];
+                      const proprioReservados = pedidosProprioPorCliente.filter(pc => pc.status !== 'Digitação');
+                      
+                      if (hasPedidos && hasAny) {
                         return (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className={`font-semibold text-sm cursor-help border-b border-dashed ${hasPedidos ? 'text-orange-600 border-orange-300' : 'text-slate-400 border-slate-300'}`}>
-                                {item.pedidosCx !== null ? `${formatNumber(item.pedidosCx)} cx` : `${formatNumber(item.pedidosUn)} ${unit}`}
+                                {item.pedidosCx !== null ? `${formatNumber(item.pedidosCx)} ${getUnit(item, true)}` : `${formatNumber(item.pedidosUn)} ${unit}`}
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-sm p-0" sideOffset={8}>
+                            <TooltipContent side="left" className="max-w-4xl w-[750px] p-0" sideOffset={8}>
                               <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden">
-                                {reservados.length > 0 && (
-                                  <>
-                                    <div className="bg-orange-50 px-3 py-2 border-b border-orange-100">
-                                      <p className="text-xs font-bold text-orange-800">Pedidos Reservados</p>
-                                      <p className="text-[10px] text-orange-600">Reservam estoque (Aprovado / A aprovar)</p>
-                                    </div>
-                                    <div className="max-h-40 overflow-y-auto">
-                                      <table className="w-full text-xs">
-                                        <thead>
-                                          <tr className="bg-slate-50 text-slate-500">
-                                            <th className="text-left px-3 py-1.5 font-semibold">Cliente</th>
-                                            <th className="text-right px-3 py-1.5 font-semibold">Qtd</th>
-                                            <th className="text-center px-3 py-1.5 font-semibold">Status</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                          {reservados.map((pc, idx) => (
-                                            <tr key={idx} className="hover:bg-slate-50">
-                                              <td className="px-3 py-1.5 text-slate-700 max-w-[180px] truncate" title={pc.cliente}>
-                                                {pc.cliente}
-                                              </td>
-                                              <td className="px-3 py-1.5 text-right font-semibold text-orange-600 whitespace-nowrap">
-                                                {formatNumber(Math.ceil(pc.quantidadeCx))} {unit}
-                                              </td>
-                                              <td className="px-3 py-1.5 text-center">
-                                                <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                                  pc.status === 'Aprovado' ? 'bg-emerald-100 text-emerald-700' :
-                                                  'bg-amber-100 text-amber-700'
-                                                }`}>
-                                                  {pc.status}
-                                                </span>
-                                              </td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </>
-                                )}
-                                {digitacao.length > 0 && (
-                                  <>
-                                    <div className={`bg-slate-50 px-3 py-2 border-b border-slate-200 ${reservados.length > 0 ? 'border-t' : ''}`}>
-                                      <p className="text-xs font-bold text-slate-500">Em Digitação</p>
-                                      <p className="text-[10px] text-slate-400">Não reservam estoque</p>
-                                    </div>
-                                    <div className="max-h-40 overflow-y-auto">
-                                      <table className="w-full text-xs">
-                                        <thead>
-                                          <tr className="bg-slate-50 text-slate-400">
-                                            <th className="text-left px-3 py-1.5 font-semibold">Cliente</th>
-                                            <th className="text-right px-3 py-1.5 font-semibold">Qtd</th>
-                                            <th className="text-center px-3 py-1.5 font-semibold">Status</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                          {digitacao.map((pc, idx) => (
-                                            <tr key={idx} className="hover:bg-slate-50 opacity-60">
-                                              <td className="px-3 py-1.5 text-slate-500 max-w-[180px] truncate" title={pc.cliente}>
-                                                {pc.cliente}
-                                              </td>
-                                              <td className="px-3 py-1.5 text-right font-semibold text-slate-500 whitespace-nowrap">
-                                                {formatNumber(Math.ceil(pc.quantidadeCx))} {unit}
-                                              </td>
-                                              <td className="px-3 py-1.5 text-center">
-                                                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-500">
-                                                  Digitação
-                                                </span>
-                                              </td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </>
-                                )}
+
+                                {/* Detalhamento por cliente (pedidos próprios do pai se for pai, ou todos se não for) */}
+                                {(() => {
+                                  const clienteReservados = isParentWithVariants ? proprioReservados : reservados;
+                                  const sectionTitle = isParentWithVariants ? item.descricaoItem : 'Pedidos Reservados';
+                                  if (clienteReservados.length === 0 && !isParentWithVariants && reservados.length === 0) return null;
+                                  return (
+                                    <>
+                                      {clienteReservados.length > 0 && (
+                                        <>
+                                          <div className="bg-orange-50 px-5 py-4 border-b border-orange-100">
+                                            <p className="text-base font-bold text-orange-800">{sectionTitle}</p>
+                                            <p className="text-sm text-orange-600">Reservam estoque (Aprovado / A aprovar)</p>
+                                          </div>
+                                          <div className="max-h-[420px] overflow-y-auto">
+                                            <table className="w-full text-base">
+                                              <thead>
+                                                <tr className="bg-slate-50 text-slate-500">
+                                                  <th className="text-left px-4 py-2.5 font-semibold text-sm">Cliente</th>
+                                                  <th className="text-right px-4 py-2.5 font-semibold text-sm">Qtd</th>
+                                                  <th className="text-center px-4 py-2.5 font-semibold text-sm">Status</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody className="divide-y divide-slate-100">
+                                                {clienteReservados.map((pc, idx) => (
+                                                  <tr key={idx} className="hover:bg-slate-50">
+                                                    <td className="px-4 py-3 text-slate-700 max-w-[450px] truncate text-sm" title={pc.cliente}>
+                                                      {pc.cliente}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-bold text-orange-600 whitespace-nowrap text-sm">
+                                                      {formatNumber(Math.ceil(pc.quantidadeCx))} {unit}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                      <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
+                                                        pc.status === 'Aprovado' ? 'bg-emerald-100 text-emerald-700' :
+                                                        'bg-amber-100 text-amber-700'
+                                                      }`}>
+                                                        {pc.status}
+                                                      </span>
+                                                    </td>
+                                                  </tr>
+                                                ))}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        </>
+                                      )}
+                                      {/* Clientes de cada variação */}
+                                      {isParentWithVariants && item.variants!.map((v, vi) => {
+                                        const vReservados = (v.pedidosPorCliente || []).filter(pc => pc.status !== 'Digitação');
+                                        if (vReservados.length === 0) return null;
+                                        return (
+                                          <div key={`var-${vi}`}>
+                                            <div className="bg-violet-50 px-5 py-3.5 border-y border-violet-100">
+                                              <p className="text-base font-bold text-violet-800">{v.descricaoItem}</p>
+                                            </div>
+                                            <div className="max-h-72 overflow-y-auto">
+                                              <table className="w-full text-base">
+                                                <tbody className="divide-y divide-slate-100">
+                                                  {vReservados.map((pc, idx) => (
+                                                    <tr key={idx} className="hover:bg-slate-50">
+                                                      <td className="px-4 py-3 text-slate-700 max-w-[450px] truncate text-sm" title={pc.cliente}>
+                                                        {pc.cliente}
+                                                      </td>
+                                                      <td className="px-4 py-3 text-right font-bold text-violet-600 whitespace-nowrap text-sm">
+                                                        {formatNumber(Math.ceil(pc.quantidadeCx))} cx
+                                                      </td>
+                                                      <td className="px-4 py-3 text-center">
+                                                        <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
+                                                          pc.status === 'Aprovado' ? 'bg-emerald-100 text-emerald-700' :
+                                                          'bg-amber-100 text-amber-700'
+                                                        }`}>
+                                                          {pc.status}
+                                                        </span>
+                                                      </td>
+                                                    </tr>
+                                                  ))}
+                                                </tbody>
+                                              </table>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </>
+                                  );
+                                })()}
+
                               </div>
                             </TooltipContent>
                           </Tooltip>
@@ -643,30 +899,32 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
                       }
                       return (
                         <span className={`font-semibold text-sm ${hasPedidos ? "text-orange-600" : "text-slate-400"}`}>
-                          {item.pedidosCx !== null ? `${formatNumber(item.pedidosCx)} cx` : `${formatNumber(item.pedidosUn)} ${unit}`}
+                          {item.pedidosCx !== null ? `${formatNumber(item.pedidosCx)} ${getUnit(item, true)}` : `${formatNumber(item.pedidosUn)} ${unit}`}
                         </span>
                       );
                     })()}
                   </td>
-                  {/* Disponivel */}
-                  <td className="px-2 py-2.5">
-                    <span className={`font-bold text-sm ${isNegative ? "text-red-600" : isZero ? "text-amber-600" : "text-emerald-600"}`}>
-                      {item.disponivelCx !== null ? `${formatNumber(item.disponivelCx)} cx` : `${formatNumber(item.disponivelUn)} ${getUnit(item, false)}`}
+                  )}
+                  {/* Disponivel - destaque para time comercial */}
+                  <td className={`bg-emerald-50/40 border-x border-emerald-100 ${showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}`}>
+                    <span className={`font-bold ${showFinancial ? 'text-[10px]' : 'text-sm'} ${isNegative ? "text-red-600" : isZero ? "text-amber-600" : "text-emerald-700"}`}>
+                      {item.disponivelCx !== null ? `${formatNumber(item.disponivelCx)}` : `${formatNumber(item.disponivelUn)}`}
+                      {!showFinancial && <> {getUnit(item, item.disponivelCx !== null)}</>}
                     </span>
                   </td>
                   {/* PO */}
-                  <td className="px-2 py-2.5">
+                  <td className={showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}>
                     <POCell item={item} />
                   </td>
                   {/* Projetado */}
-                  <td className="px-2 py-2.5">
+                  <td className={showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}>
                     {(item.poCx ?? 0) > 0 || (item.disponivelCx ?? item.disponivelUn) !== 0 ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className={`font-bold text-sm cursor-help ${
+                          <span className={`font-bold cursor-help ${showFinancial ? 'text-[10px]' : 'text-sm'} ${
                             projetado < 0 ? "text-red-500" : projetado === 0 ? "text-amber-500" : "text-indigo-600"
                           }`}>
-                            {item.projetadoCx !== null ? `${formatNumber(item.projetadoCx)} cx` : `${formatNumber(item.projetadoUn)} ${getUnit(item, false)}`}
+                            {item.projetadoCx !== null ? `${formatNumber(item.projetadoCx)} ${getUnit(item, true)}` : `${formatNumber(item.projetadoUn)} ${getUnit(item, false)}`}
                           </span>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -679,26 +937,38 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
                       <span className="text-slate-300 text-sm">{"\u2014"}</span>
                     )}
                   </td>
-                  {/* Estoque Regulador */}
-                  <td className="px-2 py-2.5 text-right">
-                    {(() => {
-                      const pricingItem = pricingOverrides?.find(p => p.codigoItem === item.codigoItem);
-                      const vendaMensal = pricingItem?.vendaMensal;
-                      if (vendaMensal == null) return <span className="text-xs text-slate-300">—</span>;
-                      const fator = pricingItem?.fatorMultiplicacao ? parseFloat(pricingItem.fatorMultiplicacao) : 2.3;
-                      const estReg = Math.round(vendaMensal * fator);
-                      const unit = item.isKgProduct ? "kg" : "cx";
-                      const projetado = item.isKgProduct ? (item.projetadoUn ?? item.disponivelUn ?? 0) : (item.projetadoCx ?? item.projetadoUn ?? 0);
-                      const needsBuy = enableCompraRule && projetado <= estReg;
-                      return (
-                        <span className={`text-xs font-semibold ${needsBuy ? 'text-red-600 bg-red-50 px-1.5 py-0.5 rounded' : 'text-emerald-600'}`}
-                          title={`Vd.Mensal: ${vendaMensal} × Fator: ${fator.toLocaleString("pt-BR")} = ${estReg} ${unit} | Projetado: ${formatNumber(projetado)} ${unit}`}
-                        >
-                          {formatNumber(estReg)} {unit}
-                        </span>
-                      );
-                    })()}
-                  </td>
+                  {/* Estoque Regulador - oculto quando showFinancial */}
+                  {!showFinancial && (
+                    <td className="px-2 py-2.5 text-right">
+                      {(() => {
+                        const pricingItem = pricingOverrides?.find(p => p.codigoItem === item.codigoItem);
+                        const vendaMensal = pricingItem?.vendaMensal;
+                        if (vendaMensal == null) return <span className="text-xs text-slate-300">—</span>;
+                        const fator = pricingItem?.fatorMultiplicacao ? parseFloat(pricingItem.fatorMultiplicacao) : 2.3;
+                        const estReg = Math.round(vendaMensal * fator);
+                        const unit = item.isKgProduct ? "kg" : "cx";
+                        const projetado = item.projetadoCx ?? item.projetadoUn ?? 0;
+                        // Determine color based on proximity to estoque regulador
+                        let estRegColor = 'text-emerald-600';
+                        if (enableCompraRule && estReg > 0) {
+                          if (projetado <= estReg) {
+                            estRegColor = 'text-red-600 bg-red-50 px-1.5 py-0.5 rounded';
+                          } else if (projetado <= estReg * 1.2) {
+                            estRegColor = 'text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded';
+                          } else if (projetado <= estReg * 1.4) {
+                            estRegColor = 'text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded';
+                          }
+                        }
+                        return (
+                          <span className={`text-xs font-semibold ${estRegColor}`}
+                            title={`Vd.Mensal: ${vendaMensal} × Fator: ${fator.toLocaleString("pt-BR")} = ${estReg} ${unit} | Projetado: ${formatNumber(projetado)} ${unit}`}
+                          >
+                            {formatNumber(estReg)} {unit}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                  )}
                   {/* Status */}
                   {!showFinancial && (
                     <td className="px-2 py-2.5">
@@ -710,7 +980,7 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
                           const f = pItem?.fatorMultiplicacao ? parseFloat(pItem.fatorMultiplicacao) : 2.3;
                           calcEstReg = Math.round(vm * f);
                         }
-                        const projetado = item.isKgProduct ? (item.projetadoUn ?? item.disponivelUn ?? 0) : (item.projetadoCx ?? item.projetadoUn ?? 0);
+                        const projetado = item.projetadoCx ?? item.projetadoUn ?? 0;
                         return <StatusBadge projetado={projetado} estReg={enableCompraRule ? calcEstReg : null} />;
                       })()}
                     </td>
@@ -723,12 +993,12 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
                     if (!price) {
                       return (
                         <>
-                          <td className="px-2 py-2.5 text-right border-l border-emerald-100 bg-emerald-50/20">
-                            <span className="text-xs text-slate-300 italic">s/ preço</span>
+                          <td className="px-1 py-1.5 text-right border-l border-emerald-100 bg-emerald-50/20">
+                            <span className="text-[9px] text-slate-300 italic">s/ preço</span>
                           </td>
-                          <td className="px-2 py-2.5 text-right bg-emerald-50/20"><span className="text-slate-300">—</span></td>
-                          <td className="px-2 py-2.5 text-right bg-blue-50/20"><span className="text-slate-300">—</span></td>
-                          <td className="px-2 py-2.5 text-right bg-indigo-50/20"><span className="text-slate-300">—</span></td>
+                          <td className="px-1 py-1.5 text-right bg-emerald-50/20"><span className="text-slate-300 text-[9px]">—</span></td>
+                          <td className="px-1 py-1.5 text-right bg-blue-50/20"><span className="text-slate-300 text-[9px]">—</span></td>
+                          <td className="px-1 py-1.5 text-right bg-indigo-50/20"><span className="text-slate-300 text-[9px]">—</span></td>
                         </>
                       );
                     }
@@ -737,30 +1007,30 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
                     const vlrTotal = totalCx * price.avgPrice;
                     return (
                       <>
-                        <td className="px-2 py-2.5 text-right border-l border-emerald-100 bg-emerald-50/20">
+                        <td className="px-1 py-1.5 text-right border-l border-emerald-100 bg-emerald-50/20">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="text-xs font-semibold text-emerald-700 cursor-help border-b border-dashed border-emerald-300">
+                              <span className="text-[10px] font-semibold text-emerald-700 cursor-help border-b border-dashed border-emerald-300 whitespace-nowrap">
                                 {formatCurrency(price.avgPrice)}
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent>
+                            <TooltipContent className="bg-white border border-slate-200 shadow-lg text-slate-700">
                               <p className="text-xs">Média das últimas {price.salesCount} venda(s)</p>
                             </TooltipContent>
                           </Tooltip>
                         </td>
-                        <td className="px-2 py-2.5 text-right bg-emerald-50/20">
-                          <span className={`text-xs font-bold ${vlrEstoque > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>
+                        <td className="px-1 py-1.5 text-right bg-emerald-50/20">
+                          <span className={`text-[10px] font-bold whitespace-nowrap ${vlrEstoque > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>
                             {vlrEstoque > 0 ? formatCurrency(vlrEstoque) : '—'}
                           </span>
                         </td>
-                        <td className="px-2 py-2.5 text-right bg-blue-50/20">
-                          <span className={`text-xs font-bold ${vlrPO > 0 ? 'text-blue-700' : 'text-slate-400'}`}>
+                        <td className="px-1 py-1.5 text-right bg-blue-50/20">
+                          <span className={`text-[10px] font-bold whitespace-nowrap ${vlrPO > 0 ? 'text-blue-700' : 'text-slate-400'}`}>
                             {vlrPO > 0 ? formatCurrency(vlrPO) : '—'}
                           </span>
                         </td>
-                        <td className="px-2 py-2.5 text-right bg-indigo-50/20">
-                          <span className={`text-xs font-bold ${vlrTotal > 0 ? 'text-indigo-700' : vlrTotal < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                        <td className="px-1 py-1.5 text-right bg-indigo-50/20">
+                          <span className={`text-[10px] font-bold whitespace-nowrap ${vlrTotal > 0 ? 'text-indigo-700' : vlrTotal < 0 ? 'text-red-600' : 'text-slate-400'}`}>
                             {vlrTotal !== 0 ? formatCurrency(vlrTotal) : '—'}
                           </span>
                         </td>
@@ -768,13 +1038,87 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
                     );
                   })()}
                 </tr>
+                {/* Sub-linhas de variações (expandidas) */}
+                {hasVariants && isExpanded && item.variants!.map((variant) => (
+                  <tr key={`${item.codigoItem}-${variant.codigoItem}`} className="bg-teal-50/30 border-l-4 border-teal-300">
+                    <td
+                      className={showFinancial ? 'px-2 py-1 pl-8' : 'px-2 py-1.5 pl-8'}
+                      style={showFinancial ? { minWidth: 280 } : { width: prodColWidth, minWidth: 200, maxWidth: 800 }}
+                      colSpan={showFinancial ? 1 : undefined}
+                    >
+                      <div className={showFinancial ? 'whitespace-normal break-words leading-tight' : ''}>
+                        <span className={`text-slate-600 ${showFinancial ? 'text-[9px]' : 'text-xs'}`}>
+                          └ {variant.descricaoItem}
+                        </span>
+                      </div>
+                      <div className={`text-slate-400 ml-3 ${showFinancial ? 'text-[8px]' : 'text-[10px]'}`}>
+                        {variant.codigoItem} · Fator: {variant.conversionFactor}x
+                      </div>
+                    </td>
+                    {!showFinancial && (
+                      <>
+                        <td className="px-2 py-1.5 text-xs text-slate-500 whitespace-nowrap" style={{ width: 70 }}>
+                          {variant.unidadesPorCaixa ? formatNumber(variant.unidadesPorCaixa) : '—'}
+                        </td>
+                        <td className="px-2 py-1.5" style={{ minWidth: 130, width: 140 }}>
+                          <span className="text-[9px] text-teal-500 font-medium">Variação</span>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <span className="text-xs text-slate-400">—</span>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <span className={`text-xs font-semibold ${(variant.pedidosCx ?? variant.pedidosUn) > 0 ? 'text-orange-500' : 'text-slate-400'}`}>
+                            {variant.pedidosCx !== null ? `${formatNumber(variant.pedidosCx)} ${getUnit(variant as any, true)}` : `${formatNumber(variant.pedidosUn)} un`}
+                          </span>
+                        </td>
+                        <td className="px-2 py-1.5 bg-emerald-50/40 border-x border-emerald-100">
+                          <span className="text-xs text-slate-400">—</span>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <span className="text-xs text-slate-400">—</span>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <span className="text-xs text-slate-400">—</span>
+                        </td>
+                        <td className="px-2 py-1.5"></td>
+                        <td className="px-2 py-1.5"></td>
+                      </>
+                    )}
+                    {showFinancial && (
+                      <>
+                        <td className="px-1 py-1 text-right bg-emerald-50/20 border-x border-emerald-100">
+                          <span className="text-[9px] text-slate-400">—</span>
+                        </td>
+                        <td className="px-1 py-1 text-right">
+                          <span className="text-[9px] text-slate-400">—</span>
+                        </td>
+                        <td className="px-1 py-1 text-right">
+                          <span className="text-[9px] text-slate-400">—</span>
+                        </td>
+                        <td className="px-1 py-1 text-right border-l border-emerald-100 bg-emerald-50/20">
+                          <span className="text-[9px] text-slate-400">—</span>
+                        </td>
+                        <td className="px-1 py-1 text-right bg-emerald-50/20">
+                          <span className="text-[9px] text-slate-400">—</span>
+                        </td>
+                        <td className="px-1 py-1 text-right bg-blue-50/20">
+                          <span className="text-[9px] text-slate-400">—</span>
+                        </td>
+                        <td className="px-1 py-1 text-right bg-indigo-50/20">
+                          <span className="text-[9px] text-slate-400">—</span>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+                </React.Fragment>
               );
             })}
           </tbody>
           {showFinancial && priceMap && filtered.length > 0 && (
             <tfoot className="border-t-2 border-slate-200 bg-slate-50">
               <tr>
-                <td colSpan={6} className="px-2 py-2.5 text-right text-xs font-bold text-slate-600 uppercase">Totais</td>
+                <td colSpan={4} className="px-1 py-1.5 text-right text-[10px] font-bold text-slate-600 uppercase">Totais</td>
                 {(() => {
                   let totalVlrEstoque = 0;
                   let totalVlrPO = 0;
@@ -789,15 +1133,15 @@ function StockTable({ items, search, segmentoFilter, sort, sortDir, onSort, pric
                   }
                   return (
                     <>
-                      <td className="px-2 py-2.5 text-right border-l border-emerald-100 bg-emerald-50/30"></td>
-                      <td className="px-2 py-2.5 text-right bg-emerald-50/30">
-                        <span className="text-sm font-extrabold text-emerald-700">{formatCurrency(totalVlrEstoque)}</span>
+                      <td className="px-1 py-1.5 text-right border-l border-emerald-100 bg-emerald-50/30"></td>
+                      <td className="px-1 py-1.5 text-right bg-emerald-50/30">
+                        <span className="text-[10px] font-extrabold text-emerald-700">{formatCurrency(totalVlrEstoque)}</span>
                       </td>
-                      <td className="px-2 py-2.5 text-right bg-blue-50/30">
-                        <span className="text-sm font-extrabold text-blue-700">{formatCurrency(totalVlrPO)}</span>
+                      <td className="px-1 py-1.5 text-right bg-blue-50/30">
+                        <span className="text-[10px] font-extrabold text-blue-700">{formatCurrency(totalVlrPO)}</span>
                       </td>
-                      <td className="px-2 py-2.5 text-right bg-indigo-50/30">
-                        <span className="text-sm font-extrabold text-indigo-700">{formatCurrency(totalVlrTotal)}</span>
+                      <td className="px-1 py-1.5 text-right bg-indigo-50/30">
+                        <span className="text-[10px] font-extrabold text-indigo-700">{formatCurrency(totalVlrTotal)}</span>
                       </td>
                     </>
                   );
@@ -1049,6 +1393,7 @@ function ClassificationCard({
   showFinancial,
   pricingOverrides,
   enableCompraRule,
+  hideAlerts,
 }: { 
   title: string; 
   subtitle: string;
@@ -1063,11 +1408,83 @@ function ClassificationCard({
   showFinancial: boolean;
   pricingOverrides?: Array<{ codigoItem: string; vendaMensal: number | null; fatorMultiplicacao: string | null; prazoCompraDias: number | null }>;
   enableCompraRule?: boolean;
+  hideAlerts?: boolean;
 }) {
   const [search, setSearch] = useState("");
-  const [segmentoFilter, setSegmentoFilter] = useState("all");
-  const [sort, setSort] = useState<SortField>("descricaoItem");
+  const [grupoFilter, setGrupoFilter] = useState("all");
+  const [subgrupoFilter, setSubgrupoFilter] = useState("all");
+  const [crmSegmentoFilter, setCrmSegmentoFilter] = useState("all");
+  const [sort, setSort] = useState<SortField>("comprimento");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  // Labels para os grupos e subgrupos de negócio
+  const GRUPO_NEGOCIO_LABELS: Record<string, string> = {
+    importacao_revenda: "Import. Produtos Prontos (Revenda)",
+    industrializacao: "Industrialização",
+    importacao_mp: "Import. Matéria-Prima",
+    outros: "Outros",
+  };
+  const SUBGRUPO_NEGOCIO_LABELS: Record<string, string> = {
+    bambu: "Bambu", fibra: "Fibra", madeira: "Madeira",
+    madeira_importada: "Madeira Importada",
+    varetas: "Varetas", espetos: "Espetos", palitos: "Palitos",
+    maquina_espetinho: "Máq. Espetinho",
+    outros: "Outros",
+  };
+
+  // Extrair grupos e subgrupos disponíveis nos itens deste card
+  // Sempre incluir os 3 grupos principais + grupos que existem nos dados
+  const availableGrupos = useMemo(() => {
+    const set = new Set<string>(["importacao_revenda", "industrializacao", "importacao_mp"]);
+    items.forEach(i => { if (i.grupo) set.add(i.grupo); });
+    return Array.from(set).sort();
+  }, [items]);
+
+  // Subgrupos fixos por grupo (sempre visíveis mesmo sem itens)
+  const FIXED_SUBGRUPOS: Record<string, string[]> = {
+    industrializacao: ["madeira"],
+    importacao_revenda: ["bambu", "fibra", "maquina_espetinho"],
+    importacao_mp: ["madeira_importada"],
+  };
+
+  const availableSubgrupos = useMemo(() => {
+    const set = new Set<string>();
+    // Adicionar subgrupos fixos do grupo selecionado
+    if (grupoFilter !== "all" && FIXED_SUBGRUPOS[grupoFilter]) {
+      FIXED_SUBGRUPOS[grupoFilter].forEach(s => set.add(s));
+    }
+    // Adicionar subgrupos que existem nos dados
+    const base = grupoFilter !== "all" ? items.filter(i => i.grupo === grupoFilter) : items;
+    base.forEach(i => { if (i.subgrupo && i.subgrupo !== "outros") set.add(i.subgrupo); });
+    return Array.from(set).sort();
+  }, [items, grupoFilter]);
+
+  // Extrair segmentos CRM disponíveis nos itens filtrados
+  const availableCrmSegmentos = useMemo(() => {
+    const set = new Set<string>();
+    let base = items;
+    if (grupoFilter !== "all") base = base.filter(i => i.grupo === grupoFilter);
+    if (subgrupoFilter !== "all") base = base.filter(i => i.subgrupo === subgrupoFilter);
+    base.forEach(i => {
+      if (i.segmentosCRM) {
+        i.segmentosCRM.forEach(s => { if (s) set.add(s); });
+      }
+    });
+    return Array.from(set).sort();
+  }, [items, grupoFilter, subgrupoFilter]);
+
+  // Reset subgrupo when grupo changes
+  const handleGrupoChange = (val: string) => {
+    setGrupoFilter(val);
+    setSubgrupoFilter("all");
+    setCrmSegmentoFilter("all");
+  };
+
+  // Reset segmento CRM when subgrupo changes
+  const handleSubgrupoChange = (val: string) => {
+    setSubgrupoFilter(val);
+    setCrmSegmentoFilter("all");
+  };
 
   const handleSort = (field: SortField) => {
     if (sort === field) {
@@ -1083,6 +1500,23 @@ function ClassificationCard({
   const totalPO = items.reduce((sum, i) => sum + (i.poCx ?? 0), 0);
   const totalProjetado = items.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
   const negativos = items.filter(i => (i.disponivelCx ?? i.disponivelUn) < 0).length;
+  const parentCount = useMemo(() => items.filter(i => !i.isChild).length, [items]);
+
+  // Alertas baseados no estoque regulador (projetado <= estReg)
+  const alertCount = useMemo(() => {
+    if (!enableCompraRule) return negativos;
+    if (!pricingOverrides) return 0; // Aguardando dados carregar
+    return items.filter(item => {
+      if (item.isChild) return false;
+      const pItem = pricingOverrides.find(p => p.codigoItem === item.codigoItem);
+      const vm = pItem?.vendaMensal;
+      if (vm == null) return false;
+      const f = pItem?.fatorMultiplicacao ? parseFloat(pItem.fatorMultiplicacao) : 2.3;
+      const estReg = Math.round(vm * f);
+      const projetado = item.projetadoCx ?? item.projetadoUn ?? 0;
+      return projetado <= estReg;
+    }).length;
+  }, [items, enableCompraRule, pricingOverrides, negativos]);
 
   // Financial valuation
   const valuation = useMemo(() => {
@@ -1109,8 +1543,9 @@ function ClassificationCard({
     return { valorEstoque, valorPO, valorProjetado, comPreco, semPreco };
   }, [items, priceMap]);
 
+
   return (
-    <div className={`bg-white rounded-xl border-l-4 ${borderColor} border border-slate-100 shadow-sm overflow-hidden transition-all duration-300`}>
+    <div className={`bg-white rounded-xl border-l-4 ${borderColor} border border-slate-100 shadow-sm transition-all duration-300`}>
       {/* Header - Clickable */}
       <button
         onClick={onToggle}
@@ -1125,10 +1560,10 @@ function ClassificationCard({
             <div>
               <div className="flex items-center gap-3">
                 <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-                <span className="text-sm font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{items.length} itens</span>
-                {negativos > 0 && (
+                <span className="text-sm font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{parentCount} itens</span>
+                {!hideAlerts && alertCount > 0 && (
                   <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" />{negativos} alerta{negativos > 1 ? 's' : ''}
+                    <AlertTriangle className="w-3 h-3" />{alertCount} alerta{alertCount > 1 ? 's' : ''}
                   </span>
                 )}
               </div>
@@ -1166,32 +1601,35 @@ function ClassificationCard({
           </div>
           <div className="bg-slate-50/80 rounded-lg px-3 py-2">
             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
-            <p className="text-base font-extrabold text-slate-700">{items.length}</p>
+            <p className="text-base font-extrabold text-slate-700">{parentCount}</p>
           </div>
         </div>
 
         {/* Financial valuation row - appears when showFinancial is active AND card is closed */}
         {showFinancial && !isOpen && (
-          <div className="hidden sm:grid grid-cols-3 gap-3 mt-3 ml-16">
-            <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-              <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider flex items-center gap-1">
-                <DollarSign className="w-3 h-3" />Vlr Estoque
-              </p>
-              <p className="text-base font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
-              <p className="text-[9px] text-green-600">{valuation.comPreco}/{items.length} com preço</p>
+          <div className="mt-3 ml-16 space-y-3">
+            <div className="hidden sm:grid grid-cols-3 gap-3">
+              <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />Vlr Estoque
+                </p>
+                <p className="text-base font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
+                <p className="text-[9px] text-green-600">{valuation.comPreco}/{parentCount} com preço</p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                <p className="text-[10px] text-blue-700 font-semibold uppercase tracking-wider flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />Vlr PO
+                </p>
+                <p className="text-base font-extrabold text-blue-800">{formatCurrency(valuation.valorPO)}</p>
+              </div>
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
+                <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />Vlr Projetado
+                </p>
+                <p className="text-base font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
+              </div>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-              <p className="text-[10px] text-blue-700 font-semibold uppercase tracking-wider flex items-center gap-1">
-                <DollarSign className="w-3 h-3" />Vlr PO
-              </p>
-              <p className="text-base font-extrabold text-blue-800">{formatCurrency(valuation.valorPO)}</p>
-            </div>
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
-              <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider flex items-center gap-1">
-                <DollarSign className="w-3 h-3" />Vlr Projetado
-              </p>
-              <p className="text-base font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
-            </div>
+
           </div>
         )}
 
@@ -1245,22 +1683,54 @@ function ClassificationCard({
                   className="pl-9 bg-white h-9 text-sm"
                 />
               </div>
-              <Select value={segmentoFilter} onValueChange={setSegmentoFilter}>
-                <SelectTrigger className="w-full sm:w-44 bg-white h-9 text-sm">
-                  <SelectValue placeholder="Segmento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="bambu">Bambu</SelectItem>
-                  <SelectItem value="industrializado">Industrializado</SelectItem>
-                </SelectContent>
-              </Select>
+              {availableGrupos.length > 1 && (
+                <Select value={grupoFilter} onValueChange={handleGrupoChange}>
+                  <SelectTrigger className="w-full sm:w-64 bg-white h-9 text-sm">
+                    <SelectValue placeholder="Grupo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Grupos</SelectItem>
+                    {availableGrupos.map(g => (
+                      <SelectItem key={g} value={g}>{GRUPO_NEGOCIO_LABELS[g] || g}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {grupoFilter !== "all" && availableSubgrupos.length > 0 && (
+                <Select value={subgrupoFilter} onValueChange={handleSubgrupoChange}>
+                  <SelectTrigger className="w-full sm:w-44 bg-white h-9 text-sm">
+                    <SelectValue placeholder="Subgrupo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Subgrupos</SelectItem>
+                    {availableSubgrupos.map(sg => (
+                      <SelectItem key={sg} value={sg}>{SUBGRUPO_NEGOCIO_LABELS[sg] || sg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {availableCrmSegmentos.length > 0 && (
+                <Select value={crmSegmentoFilter} onValueChange={setCrmSegmentoFilter}>
+                  <SelectTrigger className="w-full sm:w-48 bg-white h-9 text-sm">
+                    <SelectValue placeholder="Segmento CRM" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Segmentos</SelectItem>
+                    {availableCrmSegmentos.map(seg => (
+                      <SelectItem key={seg} value={seg}>{seg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
           <StockTable
             items={items}
             search={search}
-            segmentoFilter={segmentoFilter}
+            segmentoFilter={"all"}
+            grupoFilter={grupoFilter}
+            subgrupoFilter={subgrupoFilter}
+            crmSegmentoFilter={crmSegmentoFilter}
             sort={sort}
             sortDir={sortDir}
             onSort={handleSort}
@@ -1277,11 +1747,12 @@ function ClassificationCard({
 
 /* --- Main Dashboard Content --- */
 function DashboardContent({ items }: { items: StockItem[] }) {
+  const operatorCtx = useOperator();
   const [search, setSearch] = useState("");
   const [segmentoFilter, setSegmentoFilter] = useState("all");
-  const [sort, setSort] = useState<SortField>("descricaoItem");
+  const [sort, setSort] = useState<SortField>("comprimento");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false, outros: false });
+  const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false });
   const [showFinancial, setShowFinancial] = useState(false);
 
   // Fetch classifications
@@ -1325,15 +1796,23 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   }, [classifications]);
 
   // Split items into 3 groups
-  const estoqueItems = useMemo(() => items.filter(i => classificationMap.get(i.codigoItem) === "estoque"), [items, classificationMap]);
-  const encomendaItems = useMemo(() => items.filter(i => classificationMap.get(i.codigoItem) === "encomenda"), [items, classificationMap]);
-  const outrosItems = useMemo(() => items.filter(i => {
+  const estoqueItems = useMemo(() => items.filter(i => {
     const c = classificationMap.get(i.codigoItem);
-    return !c || c === "outros";
+    return c === "estoque" || !c || c === "outros";
   }), [items, classificationMap]);
+  const encomendaItems = useMemo(() => items.filter(i => classificationMap.get(i.codigoItem) === "encomenda"), [items, classificationMap]);
 
-  const bambuItems = useMemo(() => items.filter((i) => i.segmento === "bambu"), [items]);
-  const industItems = useMemo(() => items.filter((i) => i.segmento === "industrializado"), [items]);
+  const revendaItems = useMemo(() => items.filter((i) => i.grupo === "importacao_revenda"), [items]);
+  const industItems = useMemo(() => items.filter((i) => i.grupo === "industrializacao"), [items]);
+  const mpItems = useMemo(() => items.filter((i) => i.grupo === "importacao_mp"), [items]);
+
+  // Contagem apenas de pais (excluindo variações filhas)
+  const parentOnlyItems = useMemo(() => items.filter(i => !i.isChild), [items]);
+  const parentOnlyEstoque = useMemo(() => estoqueItems.filter(i => !i.isChild), [estoqueItems]);
+  const parentOnlyEncomenda = useMemo(() => encomendaItems.filter(i => !i.isChild), [encomendaItems]);
+  const parentOnlyRevenda = useMemo(() => revendaItems.filter(i => !i.isChild), [revendaItems]);
+  const parentOnlyIndust = useMemo(() => industItems.filter(i => !i.isChild), [industItems]);
+  const parentOnlyMP = useMemo(() => mpItems.filter(i => !i.isChild), [mpItems]);
 
   const totalEstoqueCx = items.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
   const totalPedidosCx = items.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
@@ -1342,19 +1821,54 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const totalProjetadoCx = items.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
   const negativos = items.filter((i) => (i.disponivelCx ?? i.disponivelUn) < 0).length;
 
-  // Calcular itens que precisam comprar (apenas do card Estoque)
-  const itensCompra = useMemo(() => {
-    if (!pricingOverrides) return 0;
-    return estoqueItems.filter(item => {
+  // Custo do Estoque Regulador global (apenas itens do card Estoque)
+  const custoEstRegGlobal = useMemo(() => {
+    if (!pricingOverrides) return null;
+    let total = 0;
+    let itensComCalculo = 0;
+    for (const item of estoqueItems) {
       const pItem = pricingOverrides.find(p => p.codigoItem === item.codigoItem);
       const vm = pItem?.vendaMensal;
-      if (vm == null) return false;
+      if (vm == null) continue;
       const f = pItem?.fatorMultiplicacao ? parseFloat(pItem.fatorMultiplicacao) : 2.3;
       const estReg = Math.round(vm * f);
-      const projetado = item.isKgProduct ? (item.projetadoUn ?? item.disponivelUn ?? 0) : (item.projetadoCx ?? item.projetadoUn ?? 0);
-      return projetado <= estReg;
-    }).length;
+      const price = priceMap[item.descricaoItem];
+      if (price) {
+        total += estReg * price.avgPrice;
+        itensComCalculo++;
+      }
+    }
+    return { total, itensComCalculo };
+  }, [estoqueItems, priceMap, pricingOverrides]);
+
+  // Calcular alertas por categoria (apenas do card Estoque)
+  const alertDetails = useMemo(() => {
+    const compra: { item: StockItem; estReg: number; projetado: number }[] = [];
+    const cuidado: { item: StockItem; estReg: number; projetado: number }[] = [];
+    const atencao: { item: StockItem; estReg: number; projetado: number }[] = [];
+    if (!pricingOverrides) return { compra, cuidado, atencao, total: 0 };
+    for (const item of estoqueItems) {
+      if (item.isChild) continue;
+      const pItem = pricingOverrides.find(p => p.codigoItem === item.codigoItem);
+      const vm = pItem?.vendaMensal;
+      if (vm == null) continue;
+      const f = pItem?.fatorMultiplicacao ? parseFloat(pItem.fatorMultiplicacao) : 2.3;
+      const estReg = Math.round(vm * f);
+      const projetado = item.projetadoCx ?? item.projetadoUn ?? 0;
+      if (projetado <= estReg) {
+        compra.push({ item, estReg, projetado });
+      } else if (projetado <= estReg * 1.2) {
+        cuidado.push({ item, estReg, projetado });
+      } else if (projetado <= estReg * 1.4) {
+        atencao.push({ item, estReg, projetado });
+      }
+    }
+    return { compra, cuidado, atencao, total: compra.length + cuidado.length + atencao.length };
   }, [estoqueItems, pricingOverrides]);
+
+  const itensCompra = alertDetails.compra.length;
+  const [alertsDialogOpen, setAlertsDialogOpen] = useState(false);
+  const [alertTab, setAlertTab] = useState<"compra" | "cuidado" | "atencao">("compra");
 
   const handleSort = (field: SortField) => {
     if (sort === field) {
@@ -1386,7 +1900,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         <KPICard
           label="Estoque Total"
           value={`${formatNumber(totalEstoqueCx)} cx`}
-          sub={`${items.length} produtos`}
+          sub={`${parentOnlyItems.length} produtos`}
           icon={Package}
           theme="teal"
         />
@@ -1420,34 +1934,122 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         />
         <KPICard
           label="Alertas"
-          value={itensCompra > 0 ? `${itensCompra} itens` : "Nenhum"}
-          sub={itensCompra > 0 ? "Acionar compra" : "Tudo em ordem"}
-          icon={itensCompra > 0 ? TrendingDown : CheckCircle2}
-          theme={itensCompra > 0 ? "red" : "slate"}
+          value={alertDetails.compra.length > 0 ? `${alertDetails.compra.length} itens` : alertDetails.total > 0 ? `${alertDetails.total} itens` : "Nenhum"}
+          sub={alertDetails.total > 0 ? `${alertDetails.compra.length} compra (abaixo do est. regulador) · ${alertDetails.cuidado.length} cuidado · ${alertDetails.atencao.length} atenção` : "Tudo em ordem"}
+          icon={alertDetails.total > 0 ? AlertTriangle : CheckCircle2}
+          theme={alertDetails.compra.length > 0 ? "red" : alertDetails.cuidado.length > 0 ? "pink" : alertDetails.atencao.length > 0 ? "amber" : "slate"}
+          onClick={alertDetails.total > 0 ? () => setAlertsDialogOpen(true) : undefined}
         />
       </div>
+
+      {/* Alerts Detail Dialog */}
+      {alertsDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setAlertsDialogOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Detalhes dos Alertas</h3>
+                <p className="text-sm text-slate-400 mt-0.5">{alertDetails.total} produtos com alerta</p>
+              </div>
+              <button onClick={() => setAlertsDialogOpen(false)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Tab selector */}
+            <div className="px-6 pt-4 flex gap-2">
+              <button
+                onClick={() => setAlertTab("compra")}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  alertTab === "compra"
+                    ? "bg-red-100 text-red-700 ring-1 ring-red-200"
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  Compra ({alertDetails.compra.length}) <span className="text-[10px] font-normal text-red-500 ml-0.5">(Abaixo do Est. Regulador)</span>
+                </span>
+              </button>
+              <button
+                onClick={() => setAlertTab("cuidado")}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  alertTab === "cuidado"
+                    ? "bg-pink-100 text-pink-700 ring-1 ring-pink-200"
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-pink-500" />
+                  Cuidado ({alertDetails.cuidado.length}) <span className="text-[10px] font-normal text-pink-500 ml-0.5">(20% acima do Est. Regulador)</span>
+                </span>
+              </button>
+              <button
+                onClick={() => setAlertTab("atencao")}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  alertTab === "atencao"
+                    ? "bg-orange-100 text-orange-700 ring-1 ring-orange-200"
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-orange-500" />
+                  Atenção ({alertDetails.atencao.length}) <span className="text-[10px] font-normal text-orange-500 ml-0.5">(40% acima do Est. Regulador)</span>
+                </span>
+              </button>
+            </div>
+
+            {/* Product list */}
+            <div className="px-6 py-4 overflow-y-auto max-h-[55vh]">
+              {(() => {
+                const list = alertTab === "compra" ? alertDetails.compra : alertTab === "cuidado" ? alertDetails.cuidado : alertDetails.atencao;
+                const colorMap = {
+                  compra: { bg: "bg-red-50", text: "text-red-700", badge: "bg-red-100 text-red-700", border: "border-red-100" },
+                  cuidado: { bg: "bg-pink-50", text: "text-pink-700", badge: "bg-pink-100 text-pink-700", border: "border-pink-100" },
+                  atencao: { bg: "bg-orange-50", text: "text-orange-700", badge: "bg-orange-100 text-orange-700", border: "border-orange-100" },
+                };
+                const colors = colorMap[alertTab];
+                if (list.length === 0) {
+                  return (
+                    <div className="text-center py-12 text-slate-400">
+                      <CheckCircle2 className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                      <p className="text-sm">Nenhum produto nesta categoria</p>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="space-y-2">
+                    {list.map(({ item, estReg, projetado }) => (
+                      <div key={item.codigoItem} className={`${colors.bg} rounded-lg border ${colors.border} p-3 flex items-center justify-between gap-4`}>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{item.descricaoItem}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Cód: {item.codigoItem}</p>
+                        </div>
+                        <div className="flex items-center gap-4 flex-shrink-0">
+                          <div className="text-center">
+                            <p className="text-[10px] text-slate-400 uppercase font-medium">Projetado</p>
+                            <p className={`text-sm font-bold ${colors.text}`}>{formatNumber(projetado)} cx</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-[10px] text-slate-400 uppercase font-medium">Est. Reg.</p>
+                            <p className="text-sm font-bold text-slate-600">{formatNumber(estReg)} cx</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PO Overview Card */}
       <POOverviewCard items={items} />
 
-      {/* Summary badges */}
-      <div className="flex flex-wrap gap-2">
-        <Badge variant="outline" className="text-xs">
-          <Leaf className="w-3 h-3 mr-1 text-teal-600" />
-          {bambuItems.length} Bambu
-        </Badge>
-        <Badge variant="outline" className="text-xs">
-          <Factory className="w-3 h-3 mr-1 text-violet-600" />
-          {industItems.length} Industrializados
-        </Badge>
-        <Badge variant="outline" className="text-xs">
-          <Ship className="w-3 h-3 mr-1 text-blue-600" />
-          {items.filter(i => (i.poCx ?? 0) > 0).length} com PO
-        </Badge>
-        <Badge variant="outline" className="text-xs">
-          Total: {items.length} produtos (espelho Maxiprod)
-        </Badge>
-      </div>
+
 
       {/* Valuation summary card + Financial toggle */}
       {(() => {
@@ -1480,7 +2082,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="w-4 h-4 text-emerald-600" />
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
-                  <span className="text-[10px] text-slate-400 ml-auto">{globalValuation.comPreco}/{items.length} com preço</span>
+                  <span className="text-[10px] text-slate-400 ml-auto">{globalValuation.comPreco}/{parentOnlyItems.length} com preço</span>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
@@ -1496,24 +2098,39 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                     <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(globalValuation.valorProjetado)}</p>
                   </div>
                 </div>
+                {custoEstRegGlobal && custoEstRegGlobal.total > 0 && (
+                  <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] text-purple-700 font-semibold uppercase tracking-wider flex items-center gap-1">
+                          <Package className="w-3 h-3" />Custo do Estoque Regulador
+                        </p>
+                        <p className="text-[9px] text-purple-500 mt-0.5">Valor para manter estoque regulador ({custoEstRegGlobal.itensComCalculo} itens)</p>
+                      </div>
+                      <p className="text-lg font-extrabold text-purple-800">{formatCurrency(custoEstRegGlobal.total)}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Financial toggle button */}
-            <div className={`flex items-center ${!showFinancial ? 'ml-auto' : ''}`}>
-              <button
-                onClick={() => setShowFinancial(!showFinancial)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                  showFinancial
-                    ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
-                }`}
-              >
-                <DollarSign className="w-4 h-4" />
-                {showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
-                {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            {/* Financial toggle button - restricted by est.valorizacao granular permission */}
+            {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+              <div className={`flex items-center ${!showFinancial ? 'ml-auto' : ''}`}>
+                <button
+                  onClick={() => setShowFinancial(!showFinancial)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                    showFinancial
+                      ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4" />
+                  {showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
+                  {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            )}
           </div>
         );
       })()}
@@ -1521,7 +2138,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       {/* 3 Classification Cards */}
       <ClassificationCard
         title="Estoque"
-        subtitle={`${estoqueItems.length} produtos classificados para manter em estoque`}
+        subtitle={`${parentOnlyEstoque.length} produtos classificados para manter em estoque`}
         icon={Boxes}
         iconBg="bg-teal-100"
         iconColor="text-teal-600"
@@ -1537,7 +2154,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
 
       <ClassificationCard
         title="Sob Encomenda"
-        subtitle={`${encomendaItems.length} produtos vendidos sob encomenda`}
+        subtitle={`${parentOnlyEncomenda.length} produtos vendidos sob encomenda`}
         icon={ClipboardList}
         iconBg="bg-amber-100"
         iconColor="text-amber-600"
@@ -1548,44 +2165,18 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         priceMap={priceMap}
         showFinancial={showFinancial}
         pricingOverrides={pricingOverrides ?? undefined}
+        hideAlerts={true}
       />
 
-      <ClassificationCard
-        title="Outros"
-        subtitle={`${outrosItems.length} produtos sem classificação ou classificados como outros`}
-        icon={MoreHorizontal}
-        iconBg="bg-slate-100"
-        iconColor="text-slate-500"
-        borderColor="border-l-slate-400"
-        items={outrosItems}
-        isOpen={openCards.outros}
-        onToggle={() => toggleCard("outros")}
-        priceMap={priceMap}
-        showFinancial={showFinancial}
-        pricingOverrides={pricingOverrides ?? undefined}
-      />
 
-      {/* Legend */}
-      <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Legenda</p>
-        <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Disponivel</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> Baixo / Zerado</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Negativo</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /> Pedidos de venda em aberto</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /> PO - Pedido de compra (a receber)</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500" /> Projetado (Disponivel + PO)</span>
-        </div>
-        <p className="text-xs text-slate-400 mt-2">
-          Dados espelhados do Maxiprod. Pedidos: apenas <strong>Aprovados</strong> e <strong>A aprovar</strong>. PO: pedidos de compra <strong>A receber</strong> ou <strong>Rec parcial</strong>.
-        </p>
-      </div>
+
     </div>
   );
 }
 
 /* --- Main Page --- */
 export default function Home() {
+  const operatorCtx = useOperator();
   const { data, isLoading } = trpc.dashboard.getData.useQuery(undefined, {
     refetchInterval: 30000,
   });
@@ -1615,6 +2206,14 @@ export default function Home() {
 
       {/* Main */}
       <main className="container py-6 space-y-5">
+        <div className="text-center py-2">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+            <span className="text-slate-700">Dashboard de Estoque</span>
+            <span className="text-teal-600 ml-2">Grupo Fox</span>
+          </h2>
+          <p className="text-sm text-slate-400 mt-1.5 tracking-widest uppercase">Controle de Produtos e Pedidos de Compra</p>
+        </div>
+
         <ConnectionStatusCard />
 
         {isLoading ? (

@@ -1,0 +1,1 @@
+ALTER TABLE `sales_orders` ADD `quantidadeFaturada` decimal(18,5);

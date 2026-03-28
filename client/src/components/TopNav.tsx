@@ -1,21 +1,29 @@
 /**
  * TopNav - Navegação global unificada do Grupo Fox
  * Componente reutilizável para todas as páginas
+ * Inclui controle de acesso por operador
  */
 
 import { Link, useLocation } from "wouter";
 import {
   Package,
   BarChart3,
+  FileCheck,
   DollarSign,
   Settings,
+  LogOut,
+  ShieldAlert,
 } from "lucide-react";
+import { useOperator } from "@/contexts/OperatorContext";
+import { toast } from "sonner";
+import NotificationBell from "@/components/NotificationBell";
 
 const navItems = [
-  { href: "/", label: "Estoque", icon: Package },
-  { href: "/vendas", label: "Vendas", icon: BarChart3 },
-  { href: "/financeiro", label: "Financeiro", icon: DollarSign },
-  { href: "/configuracoes", label: "Configurações", icon: Settings },
+  { href: "/", label: "Estoque", icon: Package, section: "estoque" },
+  { href: "/vendas", label: "Vendas", icon: BarChart3, section: "vendas" },
+  { href: "/faturamento", label: "Faturamento", icon: FileCheck, section: "faturamento" },
+  { href: "/financeiro", label: "Financeiro", icon: DollarSign, section: "financeiro" },
+  { href: "/configuracoes", label: "Configurações", icon: Settings, section: "configuracoes" },
 ];
 
 interface TopNavProps {
@@ -24,26 +32,42 @@ interface TopNavProps {
 }
 
 export default function TopNav({ rightContent }: TopNavProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { operator, hasAccess, logout } = useOperator();
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
     return location.startsWith(href);
   };
 
+  const handleNavClick = (e: React.MouseEvent, href: string, section: string, label: string) => {
+    if (!hasAccess(section)) {
+      e.preventDefault();
+      e.stopPropagation();
+      toast.error(
+        `Acesso negado. ${operator?.name || "Você"} não tem permissão para acessar ${label}.`,
+        {
+          icon: <ShieldAlert className="w-5 h-5 text-red-500" />,
+          duration: 3000,
+        }
+      );
+      return;
+    }
+    setLocation(href);
+  };
+
   return (
     <header className="bg-white border-b border-slate-200/80 sticky top-0 z-50">
       <div className="container py-0">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between h-16">
           {/* Logo / Brand */}
           <Link href="/">
-            <div className="flex items-center gap-2.5 cursor-pointer group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                <span className="text-white font-bold text-sm" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>F</span>
-              </div>
-              <span className="text-lg font-bold text-slate-800 tracking-tight hidden sm:block" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                Grupo Fox
-              </span>
+            <div className="flex items-center cursor-pointer group">
+              <img
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"
+                alt="Grupo Fox"
+                className="h-12 w-auto object-contain group-hover:opacity-80 transition-opacity"
+              />
             </div>
           </Link>
 
@@ -52,32 +76,55 @@ export default function TopNav({ rightContent }: TopNavProps) {
             {navItems.map((item) => {
               const active = isActive(item.href);
               const Icon = item.icon;
+              const allowed = hasAccess(item.section);
+
               return (
-                <Link key={item.href} href={item.href}>
-                  <button
-                    className={`
-                      relative flex items-center gap-2 px-4 h-14 text-sm font-medium transition-colors
-                      ${active
-                        ? "text-teal-700"
-                        : "text-slate-500 hover:text-slate-800"
-                      }
-                    `}
-                  >
-                    <Icon className={`w-4 h-4 ${active ? "text-teal-600" : ""}`} />
-                    <span className="hidden sm:inline">{item.label}</span>
-                    {/* Active indicator bar */}
-                    {active && (
-                      <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-teal-600 rounded-full" />
-                    )}
-                  </button>
-                </Link>
+                <button
+                  key={item.href}
+                  onClick={(e) => handleNavClick(e, item.href, item.section, item.label)}
+                  className={`
+                    relative flex items-center gap-2 px-4 h-16 text-sm font-medium transition-colors
+                    ${active
+                      ? "text-teal-700"
+                      : allowed
+                        ? "text-slate-500 hover:text-slate-800"
+                        : "text-slate-300 hover:text-slate-400"
+                    }
+                  `}
+                >
+                  <Icon className={`w-4 h-4 ${active ? "text-teal-600" : !allowed ? "text-slate-300" : ""}`} />
+                  <span className="hidden sm:inline">{item.label}</span>
+                  {/* Lock indicator for no-access tabs */}
+                  {!allowed && (
+                    <ShieldAlert className="w-3 h-3 text-slate-300 absolute top-3 right-1" />
+                  )}
+                  {/* Active indicator bar */}
+                  {active && (
+                    <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-teal-600 rounded-full" />
+                  )}
+                </button>
               );
             })}
           </nav>
 
-          {/* Right content slot */}
-          <div className="flex items-center">
+          {/* Right content: notification bell + operator info + logout */}
+          <div className="flex items-center gap-3">
             {rightContent}
+            <NotificationBell />
+            {operator && (
+              <div className="flex items-center gap-2 ml-2">
+                <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+                  {operator.name}
+                </span>
+                <button
+                  onClick={logout}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Sair"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

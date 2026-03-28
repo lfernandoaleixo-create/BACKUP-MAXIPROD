@@ -1,0 +1,256 @@
+/**
+ * NotificationBell - Sininho de notificações no canto superior direito
+ * Mostra badge com contador de não-lidas, dropdown com histórico completo
+ * Pisca quando há notificações não lidas para o operador logado.
+ * Leitura independente por operador.
+ */
+
+import { useState, useRef, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
+import { useOperator } from "@/contexts/OperatorContext";
+import {
+  Bell,
+  CheckCheck,
+  AlertTriangle,
+  Info,
+  AlertCircle,
+  CheckCircle2,
+  X,
+  Loader2,
+  Package,
+  FileWarning,
+  KeyRound,
+  RefreshCw,
+  ShoppingCart,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const SEVERITY_CONFIG = {
+  info: {
+    icon: Info,
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    iconColor: "text-blue-500",
+    dot: "bg-blue-500",
+  },
+  warning: {
+    icon: AlertTriangle,
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    iconColor: "text-amber-500",
+    dot: "bg-amber-500",
+  },
+  error: {
+    icon: AlertCircle,
+    bg: "bg-red-50",
+    border: "border-red-200",
+    iconColor: "text-red-500",
+    dot: "bg-red-500",
+  },
+  success: {
+    icon: CheckCircle2,
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    iconColor: "text-emerald-500",
+    dot: "bg-emerald-500",
+  },
+};
+
+const TYPE_ICONS: Record<string, typeof Bell> = {
+  novo_pedido: ShoppingCart,
+  pedido_modificado: Package,
+  campo_obrigatorio: FileWarning,
+  senha_invalida: KeyRound,
+  sync_erro: RefreshCw,
+  alerta_estoque: Package,
+};
+
+function formatTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - new Date(date).getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHour = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) return "agora";
+  if (diffMin < 60) return `${diffMin}min`;
+  if (diffHour < 24) return `${diffHour}h`;
+  if (diffDay < 7) return `${diffDay}d`;
+  return new Date(date).toLocaleDateString("pt-BR");
+}
+
+export default function NotificationBell() {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { operator } = useOperator();
+  const operatorId = operator?.id;
+
+  // Poll unread count every 15 seconds - per operator
+  const { data: countData } = trpc.notifications.unreadCount.useQuery(
+    operatorId ? { operatorId } : undefined,
+    { refetchInterval: 15000 }
+  );
+
+  // Fetch full list when dropdown opens - per operator
+  const { data: listData, isLoading, refetch } = trpc.notifications.list.useQuery(
+    { limit: 100, operatorId },
+    { enabled: open }
+  );
+
+  const utils = trpc.useUtils();
+
+  const markRead = trpc.notifications.markRead.useMutation({
+    onSuccess: () => {
+      refetch();
+      utils.notifications.unreadCount.invalidate();
+    },
+  });
+
+  const markAllRead = trpc.notifications.markAllRead.useMutation({
+    onSuccess: () => {
+      refetch();
+      utils.notifications.unreadCount.invalidate();
+    },
+  });
+
+  const unreadCount = countData?.count ?? 0;
+  const notifications = listData?.notifications ?? [];
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [open]);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Bell button - pisca quando tem notificações não lidas */}
+      <button
+        onClick={() => setOpen(!open)}
+        className={`relative w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+          open
+            ? "bg-teal-100 text-teal-700"
+            : unreadCount > 0
+              ? "text-amber-600 hover:bg-amber-50"
+              : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        }`}
+        title={unreadCount > 0 ? `${unreadCount} notificações não lidas` : "Notificações"}
+      >
+        <Bell className={`w-5 h-5 ${unreadCount > 0 ? "animate-bell-ring" : ""}`} />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-sm animate-pulse">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-96 max-h-[70vh] bg-white rounded-xl border border-slate-200 shadow-2xl shadow-slate-200/60 z-[100] overflow-hidden flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-slate-500" />
+              <span className="text-sm font-semibold text-slate-700">Notificações</span>
+              {unreadCount > 0 && (
+                <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">
+                  {unreadCount} nova{unreadCount !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => markAllRead.mutate(operatorId ? { operatorId } : undefined)}
+                  disabled={markAllRead.isPending}
+                  className="h-7 px-2 text-[11px] text-teal-600 hover:text-teal-800 hover:bg-teal-50"
+                >
+                  <CheckCheck className="w-3.5 h-3.5 mr-1" />
+                  Marcar todas
+                </Button>
+              )}
+              <button
+                onClick={() => setOpen(false)}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Notification list */}
+          <div className="flex-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <Bell className="w-8 h-8 mb-2 opacity-30" />
+                <p className="text-sm">Nenhuma notificação</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-50">
+                {notifications.map((notif) => {
+                  const severity = SEVERITY_CONFIG[notif.severity as keyof typeof SEVERITY_CONFIG] || SEVERITY_CONFIG.info;
+                  const TypeIcon = TYPE_ICONS[notif.type] || severity.icon;
+                  const isUnread = !notif.readAt;
+
+                  return (
+                    <div
+                      key={notif.id}
+                      onClick={() => {
+                        if (isUnread) markRead.mutate({ id: notif.id, operatorId });
+                      }}
+                      className={`px-4 py-3 transition-colors cursor-pointer ${
+                        isUnread
+                          ? `${severity.bg} hover:brightness-95`
+                          : "bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Icon */}
+                        <div className={`flex-shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center ${
+                          isUnread ? `${severity.bg} border ${severity.border}` : "bg-slate-100"
+                        }`}>
+                          <TypeIcon className={`w-3.5 h-3.5 ${isUnread ? severity.iconColor : "text-slate-400"}`} />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-semibold truncate ${isUnread ? "text-slate-800" : "text-slate-500"}`}>
+                              {notif.title}
+                            </span>
+                            {isUnread && (
+                              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${severity.dot}`} />
+                            )}
+                          </div>
+                          <p className={`text-[11px] mt-0.5 leading-relaxed ${isUnread ? "text-slate-600" : "text-slate-400"}`}>
+                            {notif.message}
+                          </p>
+                          <span className="text-[10px] text-slate-400 mt-1 block">
+                            {formatTimeAgo(notif.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

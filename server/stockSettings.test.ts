@@ -38,7 +38,7 @@ describe("settings.setProductStockSettings", () => {
     vi.clearAllMocks();
   });
 
-  it("accepts valid input with estoqueRegulador and prazoCompraDias", async () => {
+  it("accepts valid input with vendaMensal, fatorMultiplicacao and prazoCompraDias", async () => {
     // Mock: no existing record
     mockLimit.mockResolvedValue([]);
     mockValues.mockResolvedValue(undefined);
@@ -47,14 +47,15 @@ describe("settings.setProductStockSettings", () => {
 
     const result = await caller.settings.setProductStockSettings({
       codigoItem: "TEST001",
-      estoqueRegulador: 50,
+      vendaMensal: 100,
+      fatorMultiplicacao: "2.3",
       prazoCompraDias: 30,
     });
 
     expect(result).toHaveProperty("success");
   });
 
-  it("accepts null values for both fields", async () => {
+  it("accepts null values for all optional fields", async () => {
     mockLimit.mockResolvedValue([]);
     mockValues.mockResolvedValue(undefined);
 
@@ -62,23 +63,28 @@ describe("settings.setProductStockSettings", () => {
 
     const result = await caller.settings.setProductStockSettings({
       codigoItem: "TEST002",
-      estoqueRegulador: null,
+      vendaMensal: null,
+      fatorMultiplicacao: null,
       prazoCompraDias: null,
     });
 
     expect(result).toHaveProperty("success");
   });
 
-  it("validates input schema - rejects missing codigoItem", async () => {
+  it("accepts empty string codigoItem", async () => {
+    mockLimit.mockResolvedValue([]);
+    mockValues.mockResolvedValue(undefined);
+
     const caller = appRouter.createCaller(createContext());
 
-    await expect(
-      caller.settings.setProductStockSettings({
-        codigoItem: "",
-        estoqueRegulador: 50,
-        prazoCompraDias: 30,
-      })
-    ).resolves.toHaveProperty("success"); // empty string is still a valid string
+    const result = await caller.settings.setProductStockSettings({
+      codigoItem: "",
+      vendaMensal: 50,
+      fatorMultiplicacao: "2.0",
+      prazoCompraDias: 30,
+    });
+
+    expect(result).toHaveProperty("success"); // empty string is still a valid string
   });
 });
 

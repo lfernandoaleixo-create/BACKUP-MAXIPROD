@@ -39,6 +39,7 @@ export const stockItems = mysqlTable("stock_items", {
   estoqueLocal: varchar("estoqueLocal", { length: 100 }),
   tipoDecodificado: varchar("tipoDecodificado", { length: 50 }),
   maxiprodId: bigint("maxiprodId", { mode: "number" }),
+  unidadeDeVendaFator: decimal("unidadeDeVendaFator", { precision: 18, scale: 5 }),
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 
@@ -66,6 +67,12 @@ export const orderItems = mysqlTable("order_items", {
   fatorConversao: decimal("fatorConversao", { precision: 18, scale: 5 }),
   quantidadeUnEstoque: decimal("quantidadeUnEstoque", { precision: 18, scale: 5 }),
   maxiprodId: bigint("maxiprodId", { mode: "number" }),
+  // Novos campos (entrega, NCM)
+  dataEntregaItem: varchar("dataEntregaItem", { length: 50 }), // Data de entrega do item
+  ncm: varchar("ncm", { length: 20 }), // NCM do produto
+  // Estado configurável e segmento CRM
+  estadoConfiguravel: varchar("estadoConfiguravel", { length: 100 }), // Estado configurável do pedido (BAMBU, FIBRA, MADEIRA, etc.)
+  crmSegmento: varchar("crmSegmento", { length: 100 }), // Segmento CRM do cliente (DISTRIBUIDORA, INDÚST RIA, LOJA, etc.)
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 
@@ -187,6 +194,34 @@ export const salesOrders = mysqlTable("sales_orders", {
   representante: varchar("representante", { length: 200 }),
   segmento: varchar("segmento", { length: 100 }),
   regiao: varchar("regiao", { length: 100 }),
+  // Novos campos (detalhes do pedido)
+  condicaoPagamento: varchar("condicaoPagamento", { length: 100 }), // Ex: "30 45 60"
+  transportadora: varchar("transportadora", { length: 300 }), // Nome da transportadora
+  razaoSocial: varchar("razaoSocial", { length: 300 }), // Razão social do cliente
+  inscricaoEstadual: varchar("inscricaoEstadual", { length: 30 }), // IE do cliente
+  enderecoLogradouro: varchar("enderecoLogradouro", { length: 300 }),
+  enderecoNumero: varchar("enderecoNumero", { length: 20 }),
+  enderecoComplemento: varchar("enderecoComplemento", { length: 200 }),
+  enderecoBairro: varchar("enderecoBairro", { length: 200 }),
+  enderecoCep: varchar("enderecoCep", { length: 15 }),
+  enderecoCidade: varchar("enderecoCidade", { length: 200 }), // municipio.descricao
+  valorTotalPedido: decimal("valorTotalPedido", { precision: 18, scale: 2 }), // Valor total do pedido (não do item)
+  estadoNota: varchar("estadoNotaPedido", { length: 50 }), // Estado do pedido (Digitação, A aprovar, Aprovado, etc.)
+  estadoConfiguravel: varchar("estadoConfiguravel", { length: 100 }), // Estado configurável do pedido (BAMBU, FIBRA, MADEIRA, etc.)
+  crmSegmento: varchar("crmSegmento", { length: 100 }), // Segmento CRM do cliente (DISTRIBUIDORA, INDÚSTRIA, LOJA, etc.)
+  codigoItem: varchar("codigoItem", { length: 50 }), // Código do item/produto no Maxiprod (item.codigo)
+  descricaoItem: text("descricaoItem"), // Descrição do item (item.descricao) - pode diferir da descricao do pedido
+  // Campos adicionais para detalhes completos (produção)
+  unidadeMedidaCodigo: varchar("unidadeMedidaCodigo", { length: 10 }), // Código da unidade de medida (CX, KG, UN, etc.)
+  unidadeMedidaDescricao: varchar("unidadeMedidaDescricao", { length: 50 }), // Descrição da unidade (caixa, quilograma, etc.)
+  quantidadeUnidadeItem: decimal("quantidadeUnidadeItem", { precision: 18, scale: 5 }), // Quantidade na unidade do item
+  ncm: varchar("ncm", { length: 20 }), // NCM do produto
+  clienteTelefone: varchar("clienteTelefone", { length: 50 }), // Telefone do cliente (endereco.telefone1)
+  clienteEmail: varchar("clienteEmail", { length: 200 }), // Email do cliente (endereco.email)
+  transportadoraRazaoSocial: varchar("transportadoraRazaoSocial", { length: 300 }), // Razão social da transportadora
+  grupoDescricao: varchar("grupoDescricao", { length: 100 }), // Descrição do grupo do item (VARETA, ESPETO, etc.)
+  observacoes: text("observacoes"), // Observações do pedido de venda (campo livre do comercial para a produção)
+  quantidadeFaturada: decimal("quantidadeFaturada", { precision: 18, scale: 5 }), // Quantidade já faturada (entregaFuturaQuantidadeEntregue do Maxiprod)
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 
@@ -343,6 +378,13 @@ export const bankAccounts = mysqlTable("bank_accounts", {
   // Saldo inicial inserido manualmente pelo usuário
   saldoInicial: decimal("saldoInicial", { precision: 18, scale: 2 }).default("0"),
   saldoInicialData: varchar("saldoInicialData", { length: 30 }), // Data de referência do saldo inicial (YYYY-MM-DD)
+  // Saldo contábil do balancete (calculado automaticamente via GraphQL)
+  codigoEstruturado: varchar("codigoEstruturado", { length: 30 }), // Ex: 1.01.01.02.01
+  contaContabilId: bigint("contaContabilId", { mode: "number" }), // ID da conta contábil no Maxiprod
+  saldoContabil: decimal("saldoContabil", { precision: 18, scale: 2 }).default("0"), // Saldo do balancete (débitos - créditos)
+  totalDebitos: decimal("totalDebitos", { precision: 18, scale: 2 }).default("0"),
+  totalCreditos: decimal("totalCreditos", { precision: 18, scale: 2 }).default("0"),
+  saldoContabilAtualizadoEm: timestamp("saldoContabilAtualizadoEm"),
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -401,3 +443,305 @@ export const productPricing = mysqlTable("product_pricing", {
 
 export type ProductPricing = typeof productPricing.$inferSelect;
 export type InsertProductPricing = typeof productPricing.$inferInsert;
+
+/**
+ * Autorizações de faturamento - controla quais pedidos foram autorizados pela produção
+ * Fluxo: Em Aberto → Autorizado a Faturar → Faturado
+ * A autorização é feita manualmente pela produção via dashboard (protegida por senha)
+ * Quando o pedido é faturado no Maxiprod, ele sai automaticamente deste card
+ */
+export const billingAuthorizations = mysqlTable("billing_authorizations", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull().unique(), // Número do pedido de venda
+  authorizedBy: varchar("authorizedBy", { length: 200 }), // Quem autorizou (futuro)
+  authorizedAt: timestamp("authorizedAt").defaultNow().notNull(),
+});
+
+export type BillingAuthorization = typeof billingAuthorizations.$inferSelect;
+export type InsertBillingAuthorization = typeof billingAuthorizations.$inferInsert;
+
+/**
+ * Conciliação diária - registra a conciliação financeira de cada dia da semana
+ * Cada registro representa um dia (seg-sex) da semana corrente
+ * O usuário marca como conciliado e pode adicionar observações
+ */
+export const dailyReconciliation = mysqlTable("daily_reconciliation", {
+  id: int("id").autoincrement().primaryKey(),
+  date: varchar("date", { length: 10 }).notNull().unique(), // YYYY-MM-DD
+  reconciled: boolean("reconciled").default(false).notNull(),
+  notes: text("notes"), // Observações do dia
+  totalRecebido: decimal("totalRecebido", { precision: 18, scale: 2 }), // Valor recebido no dia
+  totalPago: decimal("totalPago", { precision: 18, scale: 2 }), // Valor pago no dia
+  saldo: decimal("saldo", { precision: 18, scale: 2 }), // Saldo do dia (recebido - pago)
+  reconciledBy: varchar("reconciledBy", { length: 200 }), // Quem conciliou
+  reconciledAt: timestamp("reconciledAt"), // Quando foi conciliado
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DailyReconciliation = typeof dailyReconciliation.$inferSelect;
+export type InsertDailyReconciliation = typeof dailyReconciliation.$inferInsert;
+
+/**
+ * Autorizações de pagamento - controla quais contas a pagar foram autorizadas pelo Fernando
+ * Fluxo: Conta aparece no card semanal → Fernando seleciona status → Financeiro executa
+ * Cada registro vincula um maxiprodId de accounts_payable a um status de autorização
+ * Status: autorizado, nao_autorizado, autorizado_ressalva, prorrogar, outros
+ */
+export const paymentAuthorizations = mysqlTable("payment_authorizations", {
+  id: int("id").autoincrement().primaryKey(),
+  accountPayableId: bigint("accountPayableId", { mode: "number" }).notNull(), // maxiprodId da conta a pagar
+  status: mysqlEnum("status", ["autorizado", "nao_autorizado", "autorizado_ressalva", "prorrogar", "outros"]).notNull().default("autorizado"),
+  notes: text("notes"), // Comentário/observação opcional
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PaymentAuthorization = typeof paymentAuthorizations.$inferSelect;
+export type InsertPaymentAuthorization = typeof paymentAuthorizations.$inferInsert;
+
+/**
+ * Relacionamento Produto Pai / Variação
+ * Quando uma variação é vendida, o estoque do produto pai é consumido proporcionalmente.
+ * O fator de conversão é calculado como: unidades_variacao / unidades_pai
+ * Ex: Pai 10.000 un/cx, Variação 5.000 un/cx → fator = 0.5 (1 cx variação = 0.5 cx pai)
+ */
+export const productVariants = mysqlTable("product_variants", {
+  id: int("id").autoincrement().primaryKey(),
+  parentCode: varchar("parentCode", { length: 20 }).notNull(), // codigoItem do produto pai
+  childCode: varchar("childCode", { length: 20 }).notNull(), // codigoItem da variação
+  conversionFactor: decimal("conversionFactor", { precision: 10, scale: 5 }).notNull(), // fator: un_child / un_parent
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductVariant = typeof productVariants.$inferSelect;
+export type InsertProductVariant = typeof productVariants.$inferInsert;
+
+/**
+ * Aceite da Produção - controla quais pedidos foram aceitos pela produção
+ * Fluxo: Pedido Aprovado → Aceite da Produção (por grupo) → Pedidos em Aberto (A faturar)
+ * Pedidos aprovados aparecem no card de aceite até a produção confirmar.
+ * Após aceite, o pedido passa para o card "Em Aberto".
+ */
+export const productionAcceptance = mysqlTable("production_acceptance", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull().unique(), // Número do pedido de venda
+  acceptedBy: varchar("acceptedBy", { length: 200 }), // Quem aceitou
+  acceptedAt: timestamp("acceptedAt").defaultNow().notNull(),
+  orderHash: varchar("orderHash", { length: 64 }), // Hash dos dados do pedido no momento do aceite (para detectar alterações)
+  wasModified: boolean("wasModified").default(false).notNull(), // Flag: pedido foi modificado no Maxiprod após aceite
+  modifiedAt: timestamp("modifiedAt"), // Quando a modificação foi detectada
+});
+
+export type ProductionAcceptance = typeof productionAcceptance.$inferSelect;
+export type InsertProductionAcceptance = typeof productionAcceptance.$inferInsert;
+
+/**
+ * Observações da Produção - notas sobre o status do pedido na produção
+ * Visível pelo comercial, editável apenas com senha da produção
+ * Permite a produção informar ao comercial como está o andamento do pedido
+ */
+export const productionNotes = mysqlTable("production_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull().unique(), // Número do pedido de venda
+  note: text("note").notNull(), // Observação da produção
+  updatedBy: varchar("updatedBy", { length: 200 }), // Quem editou por último
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductionNote = typeof productionNotes.$inferSelect;
+export type InsertProductionNote = typeof productionNotes.$inferInsert;
+
+/**
+ * Status da produção para pedidos em aberto.
+ * Permite a produção informar em que etapa está o pedido dentro da indústria.
+ * Só existe para pedidos em aberto; ao autorizar faturamento, o status some.
+ */
+export const productionStatus = mysqlTable("production_status", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull().unique(),
+  status: varchar("status", { length: 50 }).notNull(),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductionStatus = typeof productionStatus.$inferSelect;
+export type InsertProductionStatus = typeof productionStatus.$inferInsert;
+
+/**
+ * Status de coleta para pedidos faturados.
+ * Dois checkboxes: pedidoColeta (coleta solicitada) e coletado (mercadoria coletada).
+ * Protegidos por senha. Aparecem apenas no card Faturados.
+ */
+export const collectionStatus = mysqlTable("collection_status", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull().unique(),
+  pedidoColeta: boolean("pedidoColeta").default(false).notNull(),
+  coletado: boolean("coletado").default(false).notNull(),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CollectionStatus = typeof collectionStatus.$inferSelect;
+export type InsertCollectionStatus = typeof collectionStatus.$inferInsert;
+
+/**
+ * Seleção de transportadora para pedidos faturados.
+ * Protegido por senha. Aparece apenas no card Faturados.
+ */
+export const transportSelection = mysqlTable("transport_selection", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull().unique(),
+  transportadora: varchar("transportadora", { length: 100 }).notNull(),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TransportSelection = typeof transportSelection.$inferSelect;
+export type InsertTransportSelection = typeof transportSelection.$inferInsert;
+
+/**
+ * Agendamento de coleta para pedidos faturados.
+ * Seletor de data e horário (hora em hora). Aparece entre Coletado e Itens no card Faturados.
+ * Protegido por senha.
+ */
+export const pickupSchedule = mysqlTable("pickup_schedule", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull().unique(),
+  pickupDate: varchar("pickupDate", { length: 10 }).notNull(), // DD/MM/YYYY
+  pickupHour: int("pickupHour").notNull(), // 0-23
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PickupSchedule = typeof pickupSchedule.$inferSelect;
+export type InsertPickupSchedule = typeof pickupSchedule.$inferInsert;
+
+/**
+ * Link de rastreio de transporte para pedidos faturados.
+ * Permite inserir manualmente o link de rastreio ao lado da transportadora.
+ * Protegido por permissão granular fat.rastreio.
+ */
+export const trackingLinks = mysqlTable("tracking_links", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull().unique(),
+  trackingUrl: text("trackingUrl").notNull(),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TrackingLink = typeof trackingLinks.$inferSelect;
+export type InsertTrackingLink = typeof trackingLinks.$inferInsert;
+
+/**
+ * Snapshot mensal de contas pagas do Maxiprod.
+ * O Maxiprod purga dados de contas pagas (estado=PAGO) após ~2 meses,
+ * então armazenamos localmente para manter histórico completo.
+ * 
+ * Atualizado automaticamente durante o sync periódico.
+ * Chave única: yearMonth (formato "YYYY-MM")
+ */
+export const paidAccountsMonthly = mysqlTable("paid_accounts_monthly", {
+  id: int("id").autoincrement().primaryKey(),
+  yearMonth: varchar("yearMonth", { length: 7 }).notNull().unique(), // "2026-03"
+  totalPago: decimal("totalPago", { precision: 18, scale: 2 }).notNull(), // R$ total pago
+  count: int("count").notNull(), // número de contas
+  source: varchar("source", { length: 20 }).notNull().default("liquidacaoData"), // campo usado na query
+  isComplete: boolean("isComplete").notNull().default(true), // se o mês tem dados completos
+  lastUpdated: timestamp("lastUpdated").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PaidAccountsMonthly = typeof paidAccountsMonthly.$inferSelect;
+export type InsertPaidAccountsMonthly = typeof paidAccountsMonthly.$inferInsert;
+
+/**
+ * Operadores do sistema com senhas e permissões por seção.
+ * Cada operador tem uma senha e checkboxes de acesso a cada área do dashboard.
+ */
+export const operators = mysqlTable("operators", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  password: varchar("password", { length: 255 }).notNull().default(""),
+  accessEstoque: boolean("accessEstoque").notNull().default(false),
+  accessVendas: boolean("accessVendas").notNull().default(false),
+  accessFaturamento: boolean("accessFaturamento").notNull().default(false),
+  accessFinanceiro: boolean("accessFinanceiro").notNull().default(false),
+  accessConfiguracoes: boolean("accessConfiguracoes").notNull().default(false),
+  accessValorizacao: boolean("accessValorizacao").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Operator = typeof operators.$inferSelect;
+export type InsertOperator = typeof operators.$inferInsert;
+
+/**
+ * Permissões granulares por operador.
+ * Cada registro mapeia operadorId + permissionKey -> enabled.
+ * Permite controle fino de botões/ações individuais dentro de cada aba.
+ */
+export const operatorGranularPermissions = mysqlTable("operator_granular_permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  operatorId: int("operatorId").notNull(),
+  permissionKey: varchar("permissionKey", { length: 80 }).notNull(),
+  enabled: boolean("enabled").notNull().default(false),
+});
+export type OperatorGranularPermission = typeof operatorGranularPermissions.$inferSelect;
+export type InsertOperatorGranularPermission = typeof operatorGranularPermissions.$inferInsert;
+
+/**
+ * Observações de faturamento - notas sobre pedidos "Autorizado a Faturar"
+ * Permite explicar por que um pedido não foi faturado ainda.
+ * Protegido por permissão granular fat.observacaoFaturar.
+ */
+export const billingObservations = mysqlTable("billing_observations", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull().unique(),
+  observation: text("observation").notNull(),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BillingObservation = typeof billingObservations.$inferSelect;
+export type InsertBillingObservation = typeof billingObservations.$inferInsert;
+
+/**
+ * Notificações do sistema - histórico de alertas gerados automaticamente.
+ * Tipos: novo_pedido, pedido_modificado, campo_obrigatorio, senha_invalida, sync_erro, etc.
+ * Cada notificação tem um tipo, título, mensagem, e metadados (JSON).
+ * Notificações são geradas automaticamente durante sincronização e ações do sistema.
+ */
+export const systemNotifications = mysqlTable("system_notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  type: varchar("type", { length: 50 }).notNull(), // novo_pedido, pedido_modificado, campo_obrigatorio, senha_invalida, sync_erro, alerta_estoque
+  title: varchar("title", { length: 300 }).notNull(),
+  message: text("message").notNull(),
+  severity: mysqlEnum("severity", ["info", "warning", "error", "success"]).notNull().default("info"),
+  metadata: json("metadata"), // JSON com dados extras (pedido, operador, campos faltantes, etc.)
+  readAt: timestamp("readAt"), // null = não lida
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SystemNotification = typeof systemNotifications.$inferSelect;
+export type InsertSystemNotification = typeof systemNotifications.$inferInsert;
+
+/**
+ * Leituras de notificações por operador.
+ * Cada operador tem seu próprio registro de leitura independente.
+ * Se não existe registro para (notificationId, operatorId), a notificação é "não lida" para aquele operador.
+ */
+export const notificationReads = mysqlTable("notification_reads", {
+  id: int("id").autoincrement().primaryKey(),
+  notificationId: int("notification_id").notNull(),
+  operatorId: int("operator_id").notNull(),
+  readAt: timestamp("readAt").defaultNow().notNull(),
+});
+export type NotificationRead = typeof notificationReads.$inferSelect;
+export type InsertNotificationRead = typeof notificationReads.$inferInsert;

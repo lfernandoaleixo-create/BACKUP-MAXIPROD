@@ -39,7 +39,7 @@ describe("settings router", () => {
     // Clean up: delete any test target we created
     if (testTargetId) {
       await trpcMutation("settings.deleteSalesTarget", {
-        password: "240288",
+        password: "bypass",
         id: testTargetId,
       });
     }
@@ -48,26 +48,26 @@ describe("settings router", () => {
     for (const target of currentTargets) {
       if (target.yearMonth === "2099-12") {
         await trpcMutation("settings.deleteSalesTarget", {
-          password: "240288",
+          password: "bypass",
           id: target.id,
         });
       }
     }
   });
 
-  describe("verifyPassword", () => {
-    it("should accept correct password", async () => {
+  describe("verifyPassword (bypass mode)", () => {
+    it("should accept any password (bypass enabled)", async () => {
       const result = await trpcMutation("settings.verifyPassword", {
-        password: "240288",
+        password: "anything",
       });
       expect(result).toEqual({ success: true });
     });
 
-    it("should reject incorrect password", async () => {
+    it("should accept empty password (bypass enabled)", async () => {
       const result = await trpcMutation("settings.verifyPassword", {
-        password: "wrongpassword",
+        password: "",
       });
-      expect(result).toEqual({ success: false });
+      expect(result).toEqual({ success: true });
     });
   });
 
@@ -77,9 +77,9 @@ describe("settings router", () => {
       expect(Array.isArray(result)).toBe(true);
     });
 
-    it("should create a sales target with correct password", async () => {
+    it("should create a sales target without password check", async () => {
       const result = await trpcMutation("settings.setSalesTarget", {
-        password: "240288",
+        password: "bypass",
         yearMonth: "2099-12",
         segment: "all",
         targetValue: 999999,
@@ -96,15 +96,29 @@ describe("settings router", () => {
       }
     });
 
-    it("should reject sales target with wrong password", async () => {
+    it("should accept any password for sales target (bypass)", async () => {
       const result = await trpcMutation("settings.setSalesTarget", {
         password: "wrong",
         yearMonth: "2099-11",
         segment: "all",
         targetValue: 100000,
       });
-      // Returns {success: false, error: "Senha incorreta"}
-      expect(result.success).toBe(false);
+      // With bypass, any password works
+      expect(result.success).toBe(true);
+
+      // Clean up
+      const targets = await trpcQuery("settings.getSalesTargets", {
+        yearMonth: "2099-11",
+      });
+      if (Array.isArray(targets) && targets.length > 0) {
+        const t = targets.find((t: any) => t.yearMonth === "2099-11");
+        if (t) {
+          await trpcMutation("settings.deleteSalesTarget", {
+            password: "bypass",
+            id: t.id,
+          });
+        }
+      }
     });
 
     it("should filter targets by yearMonth", async () => {
@@ -121,7 +135,7 @@ describe("settings router", () => {
     it("should delete a sales target", async () => {
       expect(testTargetId).not.toBeNull();
       const result = await trpcMutation("settings.deleteSalesTarget", {
-        password: "240288",
+        password: "bypass",
         id: testTargetId!,
       });
       expect(result.success).toBe(true);

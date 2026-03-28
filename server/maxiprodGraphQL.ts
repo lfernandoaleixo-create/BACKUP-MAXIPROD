@@ -21,8 +21,9 @@ import {
   accountsReceivable,
   bankAccounts,
   bankTransactions,
+  paidAccountsMonthly,
 } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql, inArray, and, ne } from "drizzle-orm";
 import { processStockData } from "./stockProcessor";
 
 const GRAPHQL_URL = "https://api.maxiprod.com.br/graphql/";
@@ -178,25 +179,38 @@ async function fetchAllPages<T>(
 // ============================================================
 
 /**
- * Fetch stock data (estoquesAgrupados) - grouped by item
- * Includes minhaEmpresaId to identify which company owns the stock
+ * Fetch stock data from Maxiprod ESTOQUE section
+ * Uses query 'estoques' with tipo=NORMAL filter to match exactly
+ * what the Maxiprod Estoque screen shows (Dentro do grupo 12).
+ * 
+ * IMPORTANT: estoquesAgrupados was inflating quantities by summing
+ * across multiple stock types (NORMAL + EM_PRODUCAO). Using 'estoques'
+ * with tipo=NORMAL gives exact match with Maxiprod UI.
+ * 
+ * Only fetches items from groups 20 and 21 within group 12
+ * (Produtos Importados Prontos para Revenda).
  */
 async function fetchStock(): Promise<any[]> {
-  updateProgress({ step: "Coletando estoque...", percent: 10, details: "Consultando API GraphQL" });
+  updateProgress({ step: "Coletando estoque...", percent: 10, details: "Consultando seção ESTOQUE do Maxiprod" });
 
-  const items = await fetchAllPages("estoquesAgrupados", (skip, take) => `{
-    estoquesAgrupados(skip: ${skip}, take: ${take}) {
+  const items = await fetchAllPages("estoques", (skip, take) => `{
+    estoques(skip: ${skip}, take: ${take}, where: {
+      tipo: { eq: NORMAL },
+      item: {
+        grupo: {
+          dentroDoGrupo: { codigo: { eq: "12" } }
+        }
+      }
+    }) {
       totalCount
       items {
         itemId
-        quantidadeTotal
-        quantidadeReservada
+        quantidade
         valorTotal
         minhaEmpresaId
         item {
           codigo
           descricao
-          quantidadeTotalEstoque
           unidadeDeVendaPossui
           unidadeDeVendaFatorDeConversao
           grupoId
@@ -209,7 +223,7 @@ async function fetchStock(): Promise<any[]> {
     }
   }`);
 
-  updateProgress({ percent: 25, details: `${items.length} itens de estoque coletados` });
+  updateProgress({ percent: 25, details: `${items.length} registros de estoque coletados (tipo NORMAL, grupo 12)` });
   return items;
 }
 
@@ -235,23 +249,43 @@ async function fetchOpenSalesOrderItems(): Promise<any[]> {
         valorTotal
         fatorDeConversao
         quantidadeNaUnidadeDoItem
+        entregaFuturaQuantidadeEntregue
         entregaData
         estado
         unidade { codigo descricao }
-        item { codigo descricao grupoId grupoDescricao }
+        item { codigo descricao grupoId grupoDescricao ncm { codigo } }
         pedidoDeVenda {
           numero
           estado
+          estadoConfiguravel { id descricao }
           emissaoData
+          valorTotal
+          condicaoDePagamento
           minhaEmpresaId
+          transportadora { nomeFantasia razaoSocial }
           cliente {
             nomeFantasia
+            razaoSocial
+            inscricaoEstadual
+            crmSegmento { id descricao }
             endereco {
+              logradouro
+              numero
+              complemento
+              bairro
+              cep
+              telefone1
+              email
               municipio {
+                descricao
                 uf { sigla }
               }
             }
           }
+          observacoes
+          observacoesInternas
+          ultimaAlteracaoData
+          ultimaAlteracaoUsuario { nome }
           representanteOuVendedor1 { nomeFantasia }
         }
       }
@@ -283,23 +317,43 @@ async function fetchAllSalesOrderItems(): Promise<any[]> {
         valorTotal
         fatorDeConversao
         quantidadeNaUnidadeDoItem
+        entregaFuturaQuantidadeEntregue
         entregaData
         estado
         unidade { codigo descricao }
-        item { codigo descricao grupoId grupoDescricao }
+        item { codigo descricao grupoId grupoDescricao ncm { codigo } }
         pedidoDeVenda {
           numero
           estado
+          estadoConfiguravel { id descricao }
           emissaoData
+          valorTotal
+          condicaoDePagamento
           minhaEmpresaId
+          transportadora { nomeFantasia razaoSocial }
           cliente {
             nomeFantasia
+            razaoSocial
+            inscricaoEstadual
+            crmSegmento { id descricao }
             endereco {
+              logradouro
+              numero
+              complemento
+              bairro
+              cep
+              telefone1
+              email
               municipio {
+                descricao
                 uf { sigla }
               }
             }
           }
+          observacoes
+          observacoesInternas
+          ultimaAlteracaoData
+          ultimaAlteracaoUsuario { nome }
           representanteOuVendedor1 { nomeFantasia }
         }
       }
@@ -356,12 +410,43 @@ async function fetchPurchaseOrderItems(): Promise<any[]> {
 // ============================================================
 
 /**
- * Transform GraphQL stock data to the format expected by the database
- * Now includes empresa identification from minhaEmpresaId
+ * Transform GraphQL stock data to the format expected by the database.
+ * 
+ * Now uses 'estoques' query (non-grouped) with tipo=NORMAL filter.
+ * The 'estoques' query returns 'quantidade' (not 'quantidadeTotal').
+ * Multiple entries per item (different lotes/ordens) are aggregated
+ * here by codigoItem before inserting into the database.
  */
 function transformStockData(graphqlItems: any[]): any[] {
-  return graphqlItems.map((item) => {
+  // First, aggregate by codigoItem since 'estoques' can return
+  // multiple rows per item (different lotes, even if tipo=NORMAL)
+  const aggregated = new Map<string, any>();
+  
+  for (const item of graphqlItems) {
     const i = item.item || {};
+    const code = i.codigo || "";
+    if (!code) continue;
+    
+    const qty = item.quantidade || 0;
+    const val = item.valorTotal || 0;
+    
+    if (aggregated.has(code)) {
+      const existing = aggregated.get(code);
+      existing.quantidade += qty;
+      existing.valorTotal += val;
+    } else {
+      aggregated.set(code, {
+        quantidade: qty,
+        valorTotal: val,
+        item: i,
+        minhaEmpresaId: item.minhaEmpresaId,
+        itemId: item.itemId,
+      });
+    }
+  }
+  
+  return Array.from(aggregated.values()).map((agg) => {
+    const i = agg.item;
     const grupo = i.grupo || {};
     
     const grupoId = i.grupoId ? String(i.grupoId) : "";
@@ -372,22 +457,23 @@ function transformStockData(graphqlItems: any[]): any[] {
     return {
       codigoItem: i.codigo || "",
       descricaoItem: i.descricao || "",
-      quantidade: String(item.quantidadeTotal || 0),
+      quantidade: String(agg.quantidade),
       unidadeMedida: i.unidade?.codigo || "",
-      custoUnitario: item.quantidadeTotal > 0 
-        ? String((item.valorTotal || 0) / item.quantidadeTotal) 
+      custoUnitario: agg.quantidade > 0 
+        ? String(agg.valorTotal / agg.quantidade) 
         : "0",
-      custoTotal: String(item.valorTotal || 0),
+      custoTotal: String(agg.valorTotal),
       codigoGrupo: grupoId,
       descricaoGrupo: i.grupoDescricao || "",
       codigoSuperGrupo: superGrupoId,
       descricaoSuperGrupo: "",
       grupoCodigo: grupoCodigo,
       superGrupoCodigo: superGrupoCodigo,
-      empresaDona: getCompanyName(item.minhaEmpresaId),
+      empresaDona: getCompanyName(agg.minhaEmpresaId),
       estoqueLocal: "Estoque",
       tipoDecodificado: "Próprio",
-      maxiprodId: safeMaxiprodId(item.itemId),
+      maxiprodId: safeMaxiprodId(agg.itemId),
+      unidadeDeVendaFator: i.unidadeDeVendaFatorDeConversao ? String(i.unidadeDeVendaFatorDeConversao) : null,
     };
   });
 }
@@ -437,7 +523,7 @@ function transformOrderItems(graphqlItems: any[]): any[] {
       estadoNota: pedidoEstadoMap[pv.estado] || pv.estado || "",
       estadoItem: estadoMap[item.estado] || item.estado || "",
       numeroPedido: pv.numero || "",
-      cliente: pv.cliente?.nomeFantasia || "",
+      cliente: pv.cliente?.razaoSocial || pv.cliente?.nomeFantasia || "",
       dataEmissao: pv.emissaoData || "",
       valorUnitario: String(item.valorUnitario || 0),
       valorTotal: String(item.valorTotal || 0),
@@ -448,6 +534,12 @@ function transformOrderItems(graphqlItems: any[]): any[] {
         ? String(item.quantidadeNaUnidadeDoItem) 
         : null,
       maxiprodId: safeMaxiprodId(item.itemId),
+      // Novos campos
+      dataEntregaItem: item.entregaData || null,
+      ncm: i.ncm?.codigo || null,
+      // Estado configurável e segmento CRM
+      estadoConfiguravel: pv.estadoConfiguravel?.descricao || null,
+      crmSegmento: pv.cliente?.crmSegmento?.descricao || null,
     };
   });
 }
@@ -515,8 +607,8 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       dataEntrega: item.entregaData || null,
       dataAprovacao: null,
       pedido: pv.numero || "",
-      cliente: cliente.nomeFantasia || "",
-      clienteApelido: cliente.nomeFantasia || "",
+      cliente: cliente.razaoSocial || cliente.nomeFantasia || "",
+      clienteApelido: cliente.nomeFantasia || cliente.razaoSocial || "",
       uf: uf,
       descricao: item.descricao || "",
       estadoItem: estadoMap[item.estado] || item.estado || "",
@@ -530,8 +622,36 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       idGrupoItem: i.grupoId || null,
       empresa: getCompanyName(pv.minhaEmpresaId),
       representante: pv.representanteOuVendedor1?.nomeFantasia || "",
-      segmento: "",
+      segmento: cliente.crmSegmento?.descricao || "",
       regiao: uf || "",
+      // Novos campos
+      condicaoPagamento: pv.condicaoDePagamento || null,
+      transportadora: pv.transportadora?.nomeFantasia || null,
+      razaoSocial: cliente.razaoSocial || null,
+      inscricaoEstadual: cliente.inscricaoEstadual || null,
+      enderecoLogradouro: cliente.endereco?.logradouro || null,
+      enderecoNumero: cliente.endereco?.numero || null,
+      enderecoComplemento: cliente.endereco?.complemento || null,
+      enderecoBairro: cliente.endereco?.bairro || null,
+      enderecoCep: cliente.endereco?.cep || null,
+      enderecoCidade: cliente.endereco?.municipio?.descricao || null,
+      valorTotalPedido: pv.valorTotal ? String(pv.valorTotal) : null,
+      estadoNota: ({DIGITACAO:"Digitação",AAPROVAR:"A aprovar",APROVADO:"Aprovado",FATURADO:"Faturado",FATURADO_ENTREGA_FUTURA:"Faturado c/ entrega futura",CANCELADO:"Cancelado"} as Record<string,string>)[pv.estado] || pv.estado || null,
+      estadoConfiguravel: pv.estadoConfiguravel?.descricao || null,
+      crmSegmento: cliente.crmSegmento?.descricao || null,
+      codigoItem: i.codigo || null,
+      descricaoItem: i.descricao || null,
+      // Campos adicionais para detalhes completos (produção)
+      unidadeMedidaCodigo: item.unidade?.codigo || null,
+      unidadeMedidaDescricao: item.unidade?.descricao || null,
+      quantidadeUnidadeItem: item.quantidadeNaUnidadeDoItem ? String(item.quantidadeNaUnidadeDoItem) : null,
+      ncm: i.ncm?.codigo || null,
+      clienteTelefone: cliente.endereco?.telefone1 || null,
+      clienteEmail: cliente.endereco?.email || null,
+      transportadoraRazaoSocial: pv.transportadora?.razaoSocial || null,
+      grupoDescricao: i.grupoDescricao || null,
+      observacoes: pv.observacoes || null,
+      quantidadeFaturada: item.entregaFuturaQuantidadeEntregue != null ? String(item.entregaFuturaQuantidadeEntregue) : null,
     };
   });
 }
@@ -550,43 +670,48 @@ async function saveAllData(
 
   updateProgress({ step: "Salvando dados...", percent: 85, details: "Atualizando estoque" });
 
-  // Save stock items
-  await db.delete(stockItems);
-  if (stockData.length > 0) {
-    for (let i = 0; i < stockData.length; i += 200) {
-      await db.insert(stockItems).values(stockData.slice(i, i + 200));
+  // Usar transação atômica para evitar dados inconsistentes durante a sincronização
+  await db.transaction(async (tx) => {
+    // Save stock items
+    await tx.delete(stockItems);
+    if (stockData.length > 0) {
+      for (let i = 0; i < stockData.length; i += 200) {
+        await tx.insert(stockItems).values(stockData.slice(i, i + 200));
+      }
     }
-  }
 
-  updateProgress({ percent: 88, details: "Atualizando pedidos de venda" });
+    updateProgress({ percent: 88, details: "Atualizando pedidos de venda" });
 
-  // Save order items (open orders for stock calculation)
-  await db.delete(orderItems);
-  if (orderData.length > 0) {
-    for (let i = 0; i < orderData.length; i += 200) {
-      await db.insert(orderItems).values(orderData.slice(i, i + 200));
+    // Save order items (open orders for stock calculation)
+    await tx.delete(orderItems);
+    if (orderData.length > 0) {
+      for (let i = 0; i < orderData.length; i += 200) {
+        await tx.insert(orderItems).values(orderData.slice(i, i + 200));
+      }
     }
-  }
 
-  updateProgress({ percent: 90, details: "Atualizando pedidos de compra" });
+    updateProgress({ percent: 90, details: "Atualizando pedidos de compra" });
 
-  // Save purchase order items
-  await db.delete(purchaseOrderItems);
-  if (poData.length > 0) {
-    for (let i = 0; i < poData.length; i += 200) {
-      await db.insert(purchaseOrderItems).values(poData.slice(i, i + 200));
+    // Save purchase order items
+    await tx.delete(purchaseOrderItems);
+    if (poData.length > 0) {
+      for (let i = 0; i < poData.length; i += 200) {
+        await tx.insert(purchaseOrderItems).values(poData.slice(i, i + 200));
+      }
     }
-  }
 
-  updateProgress({ percent: 92, details: "Atualizando vendas" });
+    updateProgress({ percent: 92, details: "Atualizando vendas" });
 
-  // Save sales orders (all statuses for analytics)
-  await db.delete(salesOrders);
-  if (salesData.length > 0) {
-    for (let i = 0; i < salesData.length; i += 200) {
-      await db.insert(salesOrders).values(salesData.slice(i, i + 200));
+    // Save sales orders (all statuses for analytics)
+    await tx.delete(salesOrders);
+    if (salesData.length > 0) {
+      for (let i = 0; i < salesData.length; i += 200) {
+        await tx.insert(salesOrders).values(salesData.slice(i, i + 200));
+      }
     }
-  }
+  });
+
+  console.log(`[GraphQL Sync] Dados de estoque/pedidos salvos atomicamente: ${stockData.length} est, ${orderData.length} ped, ${poData.length} po, ${salesData.length} vnd`);
 
   updateProgress({ percent: 95, details: "Processando dashboard" });
 
@@ -606,7 +731,7 @@ async function fetchAccountsPayable(): Promise<any[]> {
   updateProgress({ step: "Coletando contas a pagar...", percent: 96, details: "Consultando API GraphQL" });
 
   const items = await fetchAllPages("contaAPagar", (skip, take) => `{
-    contaAPagar(skip: ${skip}, take: ${take}, where: { estado: { eq: EMITIDO } }, order: { vencimentoData: DESC }) {
+    contaAPagar(skip: ${skip}, take: ${take}, where: { estado: { eq: EMITIDO } }) {
       totalCount
       items {
         id
@@ -648,7 +773,7 @@ async function fetchAccountsReceivable(): Promise<any[]> {
   updateProgress({ step: "Coletando contas a receber...", percent: 97, details: "Consultando API GraphQL" });
 
   const items = await fetchAllPages("contaAReceber", (skip, take) => `{
-    contaAReceber(skip: ${skip}, take: ${take}, where: { estado: { eq: EMITIDO } }, order: { vencimentoData: DESC }) {
+    contaAReceber(skip: ${skip}, take: ${take}, where: { estado: { eq: EMITIDO } }) {
       totalCount
       items {
         id
@@ -738,7 +863,7 @@ function transformAccountsReceivable(items: any[]): any[] {
     observacoes: item.observacoes || null,
     documentoVinculadoNumero: item.documentoVinculadoNumero || null,
     bloqueado: item.bloqueado || false,
-    cliente: item.cliente?.nomeFantasia || item.cliente?.razaoSocial || "",
+    cliente: item.cliente?.razaoSocial || item.cliente?.nomeFantasia || "",
     centroDeCustosId: item.centroDeCustos?.id || null,
     contaId: item.conta?.id || null,
     empresaId: item.minhaEmpresaId || null,
@@ -777,21 +902,93 @@ async function saveFinancialData(
   const uniquePayable = deduplicateByMaxiprodId(payableData);
   const uniqueReceivable = deduplicateByMaxiprodId(receivableData);
 
-  // Save accounts payable (delete all + re-insert)
-  await db.delete(accountsPayable);
-  if (uniquePayable.length > 0) {
-    for (let i = 0; i < uniquePayable.length; i += 200) {
-      await db.insert(accountsPayable).values(uniquePayable.slice(i, i + 200));
-    }
+  // Validação: não salvar se os dados parecem incompletos (proteção contra falha parcial da API)
+  // Se já temos dados no banco, exigir pelo menos 50% do volume anterior
+  const [existingPayableCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(accountsPayable);
+  const [existingReceivableCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(accountsReceivable);
+  const prevPayable = Number(existingPayableCount?.count || 0);
+  const prevReceivable = Number(existingReceivableCount?.count || 0);
+
+  if (prevPayable > 10 && uniquePayable.length < prevPayable * 0.5) {
+    console.warn(`[GraphQL Sync] ALERTA: Contas a pagar retornou ${uniquePayable.length} registros vs ${prevPayable} anteriores. Possível falha parcial da API. Abortando save de contas a pagar.`);
+  }
+  if (prevReceivable > 10 && uniqueReceivable.length < prevReceivable * 0.5) {
+    console.warn(`[GraphQL Sync] ALERTA: Contas a receber retornou ${uniqueReceivable.length} registros vs ${prevReceivable} anteriores. Possível falha parcial da API. Abortando save de contas a receber.`);
   }
 
-  // Save accounts receivable (delete all + re-insert)
-  await db.delete(accountsReceivable);
-  if (uniqueReceivable.length > 0) {
-    for (let i = 0; i < uniqueReceivable.length; i += 200) {
-      await db.insert(accountsReceivable).values(uniqueReceivable.slice(i, i + 200));
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+  await db.transaction(async (tx) => {
+    // === ACCOUNTS PAYABLE: preservar histórico de contas pagas ===
+    if (!(prevPayable > 10 && uniquePayable.length < prevPayable * 0.5)) {
+      const newPayableIds = new Set(uniquePayable.map(p => p.maxiprodId));
+      
+      // Buscar IDs das contas EMITIDO existentes no banco
+      const existingEmitido = await tx.select({ maxiprodId: accountsPayable.maxiprodId })
+        .from(accountsPayable)
+        .where(eq(accountsPayable.estado, 'EMITIDO'));
+      
+      // Contas que desapareceram da API = foram pagas
+      const disappearedIds = existingEmitido
+        .map(e => e.maxiprodId)
+        .filter(id => !newPayableIds.has(id));
+      
+      if (disappearedIds.length > 0) {
+        // Marcar como PAGO com liquidacaoData = hoje
+        for (let i = 0; i < disappearedIds.length; i += 200) {
+          const batch = disappearedIds.slice(i, i + 200);
+          await tx.update(accountsPayable)
+            .set({ estado: 'PAGO', liquidacaoData: today })
+            .where(inArray(accountsPayable.maxiprodId, batch));
+        }
+        console.log(`[GraphQL Sync] ${disappearedIds.length} contas a pagar marcadas como PAGO (desapareceram da API)`);
+      }
+      
+      // Deletar contas EMITIDO existentes (serão substituídas pelos dados frescos)
+      await tx.delete(accountsPayable).where(eq(accountsPayable.estado, 'EMITIDO'));
+      
+      // Inserir dados frescos da API (todas EMITIDO)
+      if (uniquePayable.length > 0) {
+        for (let i = 0; i < uniquePayable.length; i += 200) {
+          await tx.insert(accountsPayable).values(uniquePayable.slice(i, i + 200));
+        }
+      }
     }
-  }
+
+    // === ACCOUNTS RECEIVABLE: mesma lógica de preservação ===
+    if (!(prevReceivable > 10 && uniqueReceivable.length < prevReceivable * 0.5)) {
+      const newReceivableIds = new Set(uniqueReceivable.map(r => r.maxiprodId));
+      
+      const existingEmitidoRec = await tx.select({ maxiprodId: accountsReceivable.maxiprodId })
+        .from(accountsReceivable)
+        .where(eq(accountsReceivable.estado, 'EMITIDO'));
+      
+      const disappearedRecIds = existingEmitidoRec
+        .map(e => e.maxiprodId)
+        .filter(id => !newReceivableIds.has(id));
+      
+      if (disappearedRecIds.length > 0) {
+        for (let i = 0; i < disappearedRecIds.length; i += 200) {
+          const batch = disappearedRecIds.slice(i, i + 200);
+          await tx.update(accountsReceivable)
+            .set({ estado: 'RECEBIDO', liquidacaoData: today })
+            .where(inArray(accountsReceivable.maxiprodId, batch));
+        }
+        console.log(`[GraphQL Sync] ${disappearedRecIds.length} contas a receber marcadas como RECEBIDO (desapareceram da API)`);
+      }
+      
+      // Deletar contas EMITIDO existentes (serão substituídas)
+      await tx.delete(accountsReceivable).where(eq(accountsReceivable.estado, 'EMITIDO'));
+      
+      if (uniqueReceivable.length > 0) {
+        for (let i = 0; i < uniqueReceivable.length; i += 200) {
+          await tx.insert(accountsReceivable).values(uniqueReceivable.slice(i, i + 200));
+        }
+      }
+    }
+  });
+
+  console.log(`[GraphQL Sync] Dados financeiros salvos: ${uniquePayable.length} pagar (EMITIDO), ${uniqueReceivable.length} receber (EMITIDO). Histórico de PAGO/RECEBIDO preservado.`);
 }
 
 // ============================================================
@@ -859,14 +1056,6 @@ async function saveBankData(rawAccounts: any[], rawTransactions: any[]): Promise
   }
   const accountData = Array.from(accountMap.values());
 
-  // Save bank accounts (delete + re-insert preserving saldos)
-  await db.delete(bankAccounts);
-  if (accountData.length > 0) {
-    for (let i = 0; i < accountData.length; i += 50) {
-      await db.insert(bankAccounts).values(accountData.slice(i, i + 50));
-    }
-  }
-
   // Transform and deduplicate OFX transactions
   const txnMap = new Map<number, any>();
   for (const txn of rawTransactions) {
@@ -881,13 +1070,24 @@ async function saveBankData(rawAccounts: any[], rawTransactions: any[]): Promise
   }
   const txnData = Array.from(txnMap.values());
 
-  // Save transactions (delete + re-insert)
-  await db.delete(bankTransactions);
-  if (txnData.length > 0) {
-    for (let i = 0; i < txnData.length; i += 50) {
-      await db.insert(bankTransactions).values(txnData.slice(i, i + 50));
+  // Usar transação atômica para evitar dados bancários inconsistentes
+  await db.transaction(async (tx) => {
+    // Save bank accounts (delete + re-insert preserving saldos)
+    await tx.delete(bankAccounts);
+    if (accountData.length > 0) {
+      for (let i = 0; i < accountData.length; i += 50) {
+        await tx.insert(bankAccounts).values(accountData.slice(i, i + 50));
+      }
     }
-  }
+
+    // Save transactions (delete + re-insert)
+    await tx.delete(bankTransactions);
+    if (txnData.length > 0) {
+      for (let i = 0; i < txnData.length; i += 50) {
+        await tx.insert(bankTransactions).values(txnData.slice(i, i + 50));
+      }
+    }
+  });
 
   console.log(`[GraphQL Sync] Bank: ${accountData.length} contas, ${txnData.length} movimentações OFX`);
   return { accounts: accountData.length, transactions: txnData.length };
@@ -947,11 +1147,25 @@ export async function runGraphQLSync(): Promise<{
 
     console.log(`[GraphQL Sync] Fetched: ${stockData.length}est ${orderData.length}ped ${salesData.length}vnd ${poData.length}po ${payableData.length}pg ${receivableData.length}rc`);
 
-    // Save all data in parallel
-    await Promise.all([
-      saveAllData(stockData, orderData, poData, salesData),
-      saveFinancialData(payableData, receivableData).catch(e => console.error("[GraphQL Sync] Financial save error:", e.message)),
-    ]);
+    // Save data sequentially to avoid database deadlocks
+    // Retry up to 2 times on transient DB errors
+    const saveWithRetry = async (fn: () => Promise<void>, label: string, retries = 2) => {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          await fn();
+          return;
+        } catch (e: any) {
+          if (attempt < retries && e.message?.includes('Failed query')) {
+            console.warn(`[GraphQL Sync] ${label} attempt ${attempt + 1} failed, retrying in 3s...`);
+            await new Promise(r => setTimeout(r, 3000));
+          } else {
+            throw e;
+          }
+        }
+      }
+    };
+    await saveWithRetry(() => saveAllData(stockData, orderData, poData, salesData), 'saveAllData');
+    await saveWithRetry(() => saveFinancialData(payableData, receivableData), 'saveFinancialData').catch(e => console.error("[GraphQL Sync] Financial save error:", e.message));
 
     const payableCount = payableData.length;
     const receivableCount = receivableData.length;
@@ -1049,6 +1263,158 @@ export async function runGraphQLSync(): Promise<{
 }
 
 /**
+ * Fetch bank account balances from the accounting ledger (balancete contábil)
+ * Reads contasContabeis (1.01.01.02.*) and sums lancamentosContabeis
+ * SOMENTE LEITURA - no mutations
+ */
+export async function syncBankBalances(): Promise<{ accounts: number; totalSaldo: number }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Step 1: Fetch all bank accounts from contasContabeis (1.01.01.02.*)
+  const contasData = await gql(`{
+    contasContabeis(skip: 0, take: 50, where: { codigoEstruturado: { startsWith: "1.01.01.02." } }) {
+      totalCount
+      items {
+        id
+        codigo
+        codigoEstruturado
+        descricao
+        ativo
+        analiticaOuSintetica
+      }
+    }
+  }`);
+
+  if (!contasData?.contasContabeis?.items) {
+    throw new Error("Não foi possível buscar contas contábeis");
+  }
+
+  const contasAnaliticas = contasData.contasContabeis.items.filter(
+    (c: any) => c.analiticaOuSintetica === 'ANALITICA'
+  );
+
+  console.log(`[Bank Balances] Found ${contasAnaliticas.length} analytic bank accounts`);
+
+  // Step 2: For each account, fetch ALL lancamentos and calculate balance
+  let totalSaldo = 0;
+  const results: Array<{
+    contaContabilId: number;
+    codigoEstruturado: string;
+    descricao: string;
+    debitos: number;
+    creditos: number;
+    saldo: number;
+  }> = [];
+
+  for (const conta of contasAnaliticas) {
+    // Fetch all lancamentos for this account
+    const lancamentos = await fetchAllPages('lancamentosContabeis', (skip, take) => `{
+      lancamentosContabeis(
+        skip: ${skip}, take: ${take},
+        where: { contaContabilId: { eq: ${conta.id} } }
+      ) {
+        totalCount
+        items { valor debitoOuCredito }
+      }
+    }`);
+
+    let debitos = 0;
+    let creditos = 0;
+    for (const l of lancamentos as any[]) {
+      const val = parseFloat(l.valor) || 0;
+      if (l.debitoOuCredito === 'DEBITO') debitos += val;
+      else creditos += val;
+    }
+
+    // For Ativo accounts: saldo = debitos - creditos
+    const saldo = debitos - creditos;
+    totalSaldo += saldo;
+
+    results.push({
+      contaContabilId: conta.id,
+      codigoEstruturado: conta.codigoEstruturado,
+      descricao: conta.descricao,
+      debitos,
+      creditos,
+      saldo,
+    });
+
+    console.log(`[Bank Balances] ${conta.codigoEstruturado} ${conta.descricao}: D=${debitos.toFixed(2)} C=${creditos.toFixed(2)} Saldo=${saldo.toFixed(2)}`);
+  }
+
+  // Step 3: Update bank_accounts with saldo contábil
+  // Match by bank name (descricao from contasContabeis vs bancoNome+empresaNome in bank_accounts)
+  const existingAccounts = await db.select().from(bankAccounts);
+
+  for (const result of results) {
+    // Try to find matching bank account by contaContabilId first, then by name
+    let matchingAccount = existingAccounts.find(a => a.contaContabilId === result.contaContabilId);
+
+    if (!matchingAccount) {
+      // Try matching by name (e.g., "BB Mesa" matches "BB" bank + "MESA INDUSTRIA" company)
+      const descLower = result.descricao.toLowerCase();
+      matchingAccount = existingAccounts.find(a => {
+        const bankLower = (a.bancoNome || '').toLowerCase();
+        const empresaLower = (a.empresaNome || '').toLowerCase();
+        const combined = `${bankLower} ${empresaLower}`.toLowerCase();
+        // Match patterns like "BB Mesa" -> banco "BANCO DO BRASIL" + empresa "MESA INDUSTRIA"
+        // or "Sicoob Palitos" -> banco "SICOOB" + empresa "PALITOS INDUSTRIA"
+        const descParts = descLower.split(' ');
+        if (descParts.length >= 2) {
+          const bankPart = descParts[0];
+          const companyPart = descParts.slice(1).join(' ');
+          return (
+            (bankLower.includes(bankPart) || bankPart.includes(bankLower.substring(0, 3))) &&
+            empresaLower.includes(companyPart)
+          );
+        }
+        return combined.includes(descLower) || descLower.includes(combined);
+      });
+    }
+
+    if (matchingAccount) {
+      await db.update(bankAccounts)
+        .set({
+          contaContabilId: result.contaContabilId,
+          codigoEstruturado: result.codigoEstruturado,
+          saldoContabil: String(result.saldo.toFixed(2)),
+          totalDebitos: String(result.debitos.toFixed(2)),
+          totalCreditos: String(result.creditos.toFixed(2)),
+          saldoContabilAtualizadoEm: new Date(),
+        })
+        .where(eq(bankAccounts.id, matchingAccount.id));
+    } else {
+      // Create a new bank account entry for unmatched accounting accounts
+      await db.insert(bankAccounts).values({
+        maxiprodId: result.contaContabilId, // Use contaContabilId as maxiprodId
+        bancoNome: result.descricao,
+        contaContabilId: result.contaContabilId,
+        codigoEstruturado: result.codigoEstruturado,
+        saldoContabil: String(result.saldo.toFixed(2)),
+        totalDebitos: String(result.debitos.toFixed(2)),
+        totalCreditos: String(result.creditos.toFixed(2)),
+        saldoContabilAtualizadoEm: new Date(),
+        ativo: true,
+      }).onDuplicateKeyUpdate({
+        set: {
+          bancoNome: result.descricao,
+          contaContabilId: result.contaContabilId,
+          codigoEstruturado: result.codigoEstruturado,
+          saldoContabil: String(result.saldo.toFixed(2)),
+          totalDebitos: String(result.debitos.toFixed(2)),
+          totalCreditos: String(result.creditos.toFixed(2)),
+          saldoContabilAtualizadoEm: new Date(),
+        },
+      });
+    }
+  }
+
+  console.log(`[Bank Balances] Updated ${results.length} accounts, total saldo: R$ ${totalSaldo.toFixed(2)}`);
+  return { accounts: results.length, totalSaldo };
+}
+
+/**
  * Quick test to verify GraphQL API connectivity
  */
 export async function testGraphQLConnection(): Promise<{
@@ -1071,5 +1437,809 @@ export async function testGraphQLConnection(): Promise<{
       connected: false,
       error: error.message,
     };
+  }
+}
+
+/**
+ * Filter out previsões from paid accounts.
+ * A previsão is identified as: tipo=DESPESA, no fornecedor, no document.
+ * These are forecasts/provisions that will be replaced by real payments.
+ */
+function filterOutPrevisoes<T extends { tipo?: string; fornecedor?: { apelido?: string | null; razaoSocial?: string | null } | null; documentoVinculadoNumero?: string | null; notaFiscalId?: number | null; valorPagoLiquido?: number }>(items: T[]): { realItems: T[]; excludedCount: number; excludedTotal: number } {
+  const realItems: T[] = [];
+  let excludedCount = 0;
+  let excludedTotal = 0;
+
+  for (const item of items) {
+    const forn = (item.fornecedor?.apelido || item.fornecedor?.razaoSocial || '').trim();
+    const hasDoc = !!item.documentoVinculadoNumero || !!item.notaFiscalId;
+    const isPrevisao = item.tipo === 'DESPESA' && forn === '' && !hasDoc;
+
+    if (isPrevisao) {
+      excludedCount++;
+      excludedTotal += item.valorPagoLiquido || 0;
+    } else {
+      realItems.push(item);
+    }
+  }
+
+  return { realItems, excludedCount, excludedTotal };
+}
+
+/**
+ * Fetch total of paid accounts (contas a pagar PAGO) from Maxiprod GraphQL API
+ * for a given period using liquidacaoData.
+ * 
+ * Strategy:
+ * 1. First tries to fetch from Maxiprod API (real-time data)
+ * 2. If API returns data, saves/updates local snapshot for the month
+ * 3. If API returns 0 for a full month, checks local snapshot (Maxiprod purges data after ~2 months)
+ * 4. Returns isFromCache flag to indicate data source
+ * 
+ * SOMENTE LEITURA
+ */
+export async function fetchPaidAccountsTotal(startDate: string, endDate: string): Promise<{
+  total: number;
+  count: number;
+  isFromCache: boolean;
+  isComplete: boolean;
+  excludedCount?: number;
+  excludedTotal?: number;
+}> {
+  try {
+    // Format dates for GraphQL (ISO with timezone)
+    const startISO = `${startDate}T00:00:00.000-03:00`;
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+
+    let allItems: { valorPagoLiquido: number; tipo: string; fornecedor: { apelido: string | null; razaoSocial: string | null } | null; documentoVinculadoNumero: string | null; notaFiscalId: number | null }[] = [];
+    let skip = 0;
+    const take = 200;
+    let totalCount = 0;
+
+    while (true) {
+      const data = await gql<any>(`{
+        contaAPagar(
+          skip: ${skip}, take: ${take},
+          where: {
+            estado: { eq: PAGO },
+            liquidacaoData: {
+              gte: "${startISO}",
+              lte: "${endISO}"
+            }
+          }
+        ) {
+          totalCount
+          items {
+            valorPagoLiquido
+            tipo
+            fornecedor { apelido razaoSocial }
+            documentoVinculadoNumero
+            notaFiscalId
+          }
+        }
+      }`);
+
+      if (!data?.contaAPagar) break;
+      totalCount = data.contaAPagar.totalCount;
+      allItems.push(...data.contaAPagar.items);
+      skip += take;
+      if (skip >= totalCount) break;
+    }
+
+    // Filter out previsões: DESPESA without fornecedor AND without document
+    const { realItems, excludedCount, excludedTotal } = filterOutPrevisoes(allItems);
+
+    const total = realItems.reduce((sum, item) => sum + (item.valorPagoLiquido || 0), 0);
+    const apiResult = {
+      total: Math.round(total * 100) / 100,
+      count: realItems.length,
+      excludedCount,
+      excludedTotal: Math.round(excludedTotal * 100) / 100,
+    };
+    if (excludedCount > 0) {
+      console.log(`[PaidAccounts] Excluídas ${excludedCount} previsões (R$ ${excludedTotal.toFixed(2)}) de ${totalCount} contas`);
+    }
+
+    // Determine the year-month for caching
+    const startParts = startDate.split('-').map(Number);
+    const endParts = endDate.split('-').map(Number);
+    const isFullMonth = startParts[2] === 1 && (
+      endParts[2] >= 28 || // last day of month
+      (endParts[1] === startParts[1] && endParts[0] === startParts[0])
+    );
+    const yearMonth = `${startParts[0]}-${String(startParts[1]).padStart(2, '0')}`;
+
+    // Check if this is a "current" period (has substantial data from API)
+    const today = new Date();
+    const todayYM = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const isCurrentOrRecent = yearMonth >= todayYM || 
+      (startParts[0] === today.getFullYear() && startParts[1] >= today.getMonth()); // current or previous month
+
+    const db = await getDb();
+    if (!db) {
+      return { ...apiResult, isFromCache: false, isComplete: true, excludedCount: apiResult.excludedCount, excludedTotal: apiResult.excludedTotal };
+    }
+
+    // If API returned good data (count > 0), save to local cache
+    if (apiResult.count > 0 && isFullMonth && startParts[1] === endParts[1]) {
+      try {
+        // Determine if data seems complete (heuristic: >100 accounts for a full month is likely complete)
+        const isComplete = apiResult.count > 100 || isCurrentOrRecent;
+        
+        await db.insert(paidAccountsMonthly).values({
+          yearMonth,
+          totalPago: String(apiResult.total),
+          count: apiResult.count,
+          source: 'liquidacaoData',
+          isComplete,
+        }).onDuplicateKeyUpdate({
+          set: {
+            totalPago: sql`VALUES(totalPago)`,
+            count: sql`VALUES(count)`,
+            isComplete: sql`VALUES(isComplete)`,
+          },
+        });
+        console.log(`[PaidAccounts] Cached ${yearMonth}: R$ ${apiResult.total} (${apiResult.count} contas, complete=${isComplete})`);
+      } catch (cacheErr: any) {
+        console.error(`[PaidAccounts] Cache save error:`, cacheErr.message);
+      }
+    }
+
+    // If API returned 0 for a full past month, check local cache
+    if (apiResult.count === 0 && isFullMonth && !isCurrentOrRecent) {
+      try {
+        const cached = await db.select().from(paidAccountsMonthly)
+          .where(eq(paidAccountsMonthly.yearMonth, yearMonth))
+          .limit(1);
+        
+        if (cached.length > 0) {
+          console.log(`[PaidAccounts] Using cached data for ${yearMonth}: R$ ${cached[0].totalPago} (${cached[0].count} contas)`);
+          return {
+            total: Number(cached[0].totalPago),
+            count: cached[0].count,
+            isFromCache: true,
+            isComplete: cached[0].isComplete,
+            excludedCount: 0,
+            excludedTotal: 0,
+          };
+        }
+      } catch (cacheErr: any) {
+        console.error(`[PaidAccounts] Cache read error:`, cacheErr.message);
+      }
+    }
+
+    // For partial months with low data, also check cache
+    if (apiResult.count > 0 && apiResult.count < 100 && isFullMonth && !isCurrentOrRecent) {
+      try {
+        const cached = await db.select().from(paidAccountsMonthly)
+          .where(eq(paidAccountsMonthly.yearMonth, yearMonth))
+          .limit(1);
+        
+        if (cached.length > 0 && Number(cached[0].totalPago) > apiResult.total) {
+          console.log(`[PaidAccounts] Using cached data for ${yearMonth} (API partial): R$ ${cached[0].totalPago} vs API R$ ${apiResult.total}`);
+          return {
+            total: Number(cached[0].totalPago),
+            count: cached[0].count,
+            isFromCache: true,
+            isComplete: cached[0].isComplete,
+            excludedCount: 0,
+            excludedTotal: 0,
+          };
+        }
+      } catch (cacheErr: any) {
+        console.error(`[PaidAccounts] Cache read error:`, cacheErr.message);
+      }
+    }
+
+    return {
+      ...apiResult,
+      isFromCache: false,
+      isComplete: apiResult.count > 100 || isCurrentOrRecent,
+      excludedCount: apiResult.excludedCount ?? 0,
+      excludedTotal: apiResult.excludedTotal ?? 0,
+    };
+  } catch (error: any) {
+    console.error("[fetchPaidAccountsTotal] Error:", error.message);
+    return { total: 0, count: 0, isFromCache: false, isComplete: false, excludedCount: 0, excludedTotal: 0 };
+  }
+}
+
+/**
+ * Sync paid accounts snapshots for current and previous months.
+ * Called during periodic sync to ensure we capture data before Maxiprod purges it.
+ * SOMENTE LEITURA
+ */
+export async function syncPaidAccountsSnapshots(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1;
+
+  // Sync current month and previous 2 months
+  const monthsToSync = [];
+  for (let i = 0; i < 3; i++) {
+    let y = currentYear;
+    let m = currentMonth - i;
+    if (m <= 0) { m += 12; y -= 1; }
+    monthsToSync.push({ year: y, month: m });
+  }
+
+  for (const { year, month } of monthsToSync) {
+    const ym = `${year}-${String(month).padStart(2, '0')}`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const startDate = `${ym}-01`;
+    const endDate = `${ym}-${String(lastDay).padStart(2, '0')}`;
+
+    try {
+      const startISO = `${startDate}T00:00:00.000-03:00`;
+      const endISO = `${endDate}T23:59:59.999-03:00`;
+
+      let allItems: { valorPagoLiquido: number }[] = [];
+      let skip = 0;
+      const take = 200;
+      let totalCount = 0;
+
+      while (true) {
+        const data = await gql<any>(`{
+          contaAPagar(
+            skip: ${skip}, take: ${take},
+            where: {
+              estado: { eq: PAGO },
+              liquidacaoData: {
+                gte: "${startISO}",
+                lte: "${endISO}"
+              }
+            }
+          ) {
+            totalCount
+            items { valorPagoLiquido }
+          }
+        }`);
+
+        if (!data?.contaAPagar) break;
+        totalCount = data.contaAPagar.totalCount;
+        allItems.push(...data.contaAPagar.items);
+        skip += take;
+        if (skip >= totalCount) break;
+      }
+
+      if (totalCount === 0) {
+        console.log(`[PaidAccounts Sync] ${ym}: No data from API (possibly purged)`);
+        continue;
+      }
+
+      const total = allItems.reduce((sum, item) => sum + (item.valorPagoLiquido || 0), 0);
+      const roundedTotal = Math.round(total * 100) / 100;
+      const isComplete = totalCount > 100;
+
+      await db.insert(paidAccountsMonthly).values({
+        yearMonth: ym,
+        totalPago: String(roundedTotal),
+        count: totalCount,
+        source: 'liquidacaoData',
+        isComplete,
+      }).onDuplicateKeyUpdate({
+        set: {
+          totalPago: sql`VALUES(totalPago)`,
+          count: sql`VALUES(count)`,
+          isComplete: sql`VALUES(isComplete)`,
+        },
+      });
+
+      console.log(`[PaidAccounts Sync] ${ym}: R$ ${roundedTotal} (${totalCount} contas, complete=${isComplete})`);
+    } catch (err: any) {
+      console.error(`[PaidAccounts Sync] Error for ${ym}:`, err.message);
+    }
+  }
+}
+
+/**
+ * Fetch detailed paid accounts for a period.
+ * Returns individual items with fornecedor, descricao, valor, and dates.
+ * Uses the gql helper for proper auth and retry.
+ * SOMENTE LEITURA
+ */
+export async function fetchPaidAccountsDetails(startDate: string, endDate: string): Promise<{
+  descricao: string;
+  fornecedor: string;
+  valorPagoLiquido: number;
+  liquidacaoData: string;
+  vencimentoData: string;
+}[]> {
+  try {
+    const startISO = `${startDate}T00:00:00.000-03:00`;
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+
+    let allItems: { descricao: string; fornecedor: string; valorPagoLiquido: number; liquidacaoData: string; vencimentoData: string }[] = [];
+    let skip = 0;
+    const take = 200;
+    let totalCount = 0;
+
+    while (true) {
+      const data = await gql<any>(`{
+        contaAPagar(
+          skip: ${skip}, take: ${take},
+          where: {
+            estado: { eq: PAGO },
+            liquidacaoData: {
+              gte: "${startISO}",
+              lte: "${endISO}"
+            }
+          },
+          order: { valorPagoLiquido: DESC }
+        ) {
+          totalCount
+          items {
+            tipo
+            referenteA
+            observacoes
+            documentoVinculadoNumero
+            notaFiscalId
+            fornecedor { nomeFantasia razaoSocial apelido }
+            valorPagoLiquido
+            valorOriginal
+            liquidacaoData
+            vencimentoData
+            parcela
+            parcelasQuantidadeTotal
+          }
+        }
+      }`);
+
+      if (!data?.contaAPagar) break;
+      totalCount = data.contaAPagar.totalCount;
+
+      for (const item of data.contaAPagar.items) {
+        // Filter out previsões: DESPESA without fornecedor AND without document
+        const forn = (item.fornecedor?.apelido || item.fornecedor?.razaoSocial || '').trim();
+        const hasDoc = !!item.documentoVinculadoNumero || !!item.notaFiscalId;
+        const isPrevisao = item.tipo === 'DESPESA' && forn === '' && !hasDoc;
+        if (isPrevisao) continue;
+
+        // Build description from available fields
+        const parts: string[] = [];
+        if (item.referenteA) parts.push(item.referenteA);
+        if (item.documentoVinculadoNumero) parts.push(`Doc: ${item.documentoVinculadoNumero}`);
+        if (item.parcela && item.parcelasQuantidadeTotal) {
+          parts.push(`Parcela ${item.parcela}/${item.parcelasQuantidadeTotal}`);
+        }
+        if (parts.length === 0 && item.observacoes) parts.push(item.observacoes);
+        
+        allItems.push({
+          descricao: parts.join(' | ') || '-',
+          fornecedor: item.fornecedor?.nomeFantasia || item.fornecedor?.razaoSocial || '-',
+          valorPagoLiquido: item.valorPagoLiquido || 0,
+          liquidacaoData: item.liquidacaoData?.slice(0, 10) || '-',
+          vencimentoData: item.vencimentoData?.slice(0, 10) || '-',
+        });
+      }
+
+      skip += take;
+      if (skip >= totalCount) break;
+    }
+
+    return allItems
+      .sort((a, b) => b.valorPagoLiquido - a.valorPagoLiquido)
+      .map(e => ({ ...e, valorPagoLiquido: Math.round(e.valorPagoLiquido * 100) / 100 }));
+  } catch (error: any) {
+    console.error("[fetchPaidAccountsDetails] Error:", error.message);
+    return [];
+  }
+}
+
+/**
+ * Fetch total received accounts (Recebimentos) for a period.
+ * Queries contaAReceber with estado=RECEBIDO and liquidacaoData in the period.
+ * Uses valorRecebidoLiquido as the received amount (valor líquido conforme Maxiprod).
+ * SOMENTE LEITURA
+ */
+// Keywords to identify real client payments in OFX data
+const OFX_INFLOW_KEYWORDS = [
+  'COBRAN', 'BOLETO',                                      // Cobrança/Boleto
+  'PIX RECEBIDO', 'RECEBIMENTO PIX', 'PIX - RECEBIDO', 'PIX_CRED', // PIX received
+  'RECEBIMENTO TED', 'TED-STR',                            // TED received
+  'DEP DISPONIVEL',                                        // Depósito em agência
+];
+
+// Keywords to EXCLUDE (inter-company transfers, loans, etc.)
+const OFX_EXCLUDE_KEYWORDS = [
+  'PALITOS FOX', 'PALITOS IND', 'MESA INDUST', 'BAMBUSA', 'ESPETOS IND', 'VARETAS',
+  'MESMA TIT',                                              // Same-owner transfers
+];
+
+function isRealClientInflow(descricao: string, valor: number): boolean {
+  if (valor <= 0) return false;
+  const desc = (descricao || '').toUpperCase();
+  // Exclude inter-company transfers
+  if (OFX_EXCLUDE_KEYWORDS.some(kw => desc.includes(kw))) return false;
+  // Include if matches inflow keywords
+  return OFX_INFLOW_KEYWORDS.some(kw => desc.includes(kw));
+}
+
+// Keywords to identify internal transfers and inter-account movements (not real new money)
+const OFX_INTERNAL_KEYWORDS = [
+  // Group companies
+  'PALITOS FOX', 'PALITOS IND', 'PALITOS INDUSTRIA',
+  'MESA INDUST', 'MESA INDUSTRIA',
+  'ESPETOS IND', 'ESPETOS INDUSTRIA',
+  'VARETAS', 'BAMBUSA',
+  // Same-owner transfers
+  'MESMA TIT', 'OUTRA IF - MESMA',
+  // Inter-account transfers (same company, different accounts)
+  'INTERCREDIS', 'TRANSF.CONTAS',
+  // PIX between group companies (identified by CNPJ)
+  '36562762000129', // Palitos CNPJ
+  '45558059000138', // Varetas CNPJ
+  '50128808000127', // Espetos CNPJ
+  '52888511000195', // Mesa CNPJ
+];
+
+/** Check if an OFX entry is an internal transfer (between group companies or own accounts) */
+function isInternalTransfer(descricao: string): boolean {
+  const desc = (descricao || '').toUpperCase();
+  return OFX_INTERNAL_KEYWORDS.some(kw => desc.includes(kw));
+}
+
+/**
+ * Fetch total received (cash inflow) using OFX bank statement data.
+ * Filters only Cobrança/Boleto and PIX Recebido entries (real client payments).
+ * SOMENTE LEITURA
+ */
+export async function fetchReceivedAccountsTotal(startDate: string, endDate: string): Promise<{
+  total: number;
+  count: number;
+}> {
+  try {
+    const startISO = `${startDate}T00:00:00.000-03:00`;
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+
+    let allItems: { valor: number; descricao: string }[] = [];
+    let skip = 0;
+    const take = 200;
+    let totalCount = 0;
+
+    while (true) {
+      const data = await gql<any>(`{
+        itensOfx(
+          skip: ${skip}, take: ${take},
+          where: {
+            data: {
+              gte: "${startISO}",
+              lte: "${endISO}"
+            },
+            valor: { gt: 0 }
+          }
+        ) {
+          totalCount
+          items {
+            valor
+            descricao
+          }
+        }
+      }`);
+
+      if (!data?.itensOfx) break;
+      totalCount = data.itensOfx.totalCount;
+      allItems.push(...data.itensOfx.items);
+      skip += take;
+      if (skip >= totalCount) break;
+    }
+
+    // Filter only real client inflows (Cobrança + PIX Recebido)
+    const realInflows = allItems.filter(item => isRealClientInflow(item.descricao, item.valor));
+    const total = realInflows.reduce((sum, item) => sum + (item.valor || 0), 0);
+
+    console.log(`[ReceivedOFX] ${startDate} a ${endDate}: R$ ${total.toFixed(2)} (${realInflows.length} de ${allItems.length} entradas positivas)`);
+
+    return {
+      total: Math.round(total * 100) / 100,
+      count: realInflows.length,
+    };
+  } catch (error: any) {
+    console.error("[fetchReceivedAccountsTotal] Error:", error.message);
+    return { total: 0, count: 0 };
+  }
+}
+
+/**
+ * Fetch detailed received (cash inflow) items using OFX bank statement data.
+ * Returns individual OFX entries filtered to Cobrança/Boleto and PIX Recebido.
+ * SOMENTE LEITURA
+ */
+export async function fetchReceivedAccountsDetails(startDate: string, endDate: string): Promise<{
+  descricao: string;
+  valor: number;
+  data: string;
+  contaBancariaId: string;
+}[]> {
+  try {
+    const startISO = `${startDate}T00:00:00.000-03:00`;
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+
+    let allItems: { descricao: string; valor: number; data: string; contaBancariaId: number }[] = [];
+    let skip = 0;
+    const take = 200;
+    let totalCount = 0;
+
+    while (true) {
+      const data = await gql<any>(`{
+        itensOfx(
+          skip: ${skip}, take: ${take},
+          where: {
+            data: {
+              gte: "${startISO}",
+              lte: "${endISO}"
+            },
+            valor: { gt: 0 }
+          },
+          order: { valor: DESC }
+        ) {
+          totalCount
+          items {
+            descricao
+            valor
+            data
+            contaBancariaId
+          }
+        }
+      }`);
+
+      if (!data?.itensOfx) break;
+      totalCount = data.itensOfx.totalCount;
+      allItems.push(...data.itensOfx.items);
+      skip += take;
+      if (skip >= totalCount) break;
+    }
+
+    // Filter only real client inflows
+    const realInflows = allItems.filter(item => isRealClientInflow(item.descricao, item.valor));
+
+    return realInflows
+      .sort((a, b) => b.valor - a.valor)
+      .map(item => ({
+        descricao: item.descricao || '-',
+        valor: Math.round(item.valor * 100) / 100,
+        data: item.data?.slice(0, 10) || '-',
+        contaBancariaId: String(item.contaBancariaId || '-'),
+      }));
+  } catch (error: any) {
+    console.error("[fetchReceivedAccountsDetails] Error:", error.message);
+    return [];
+  }
+}
+
+
+/**
+ * Fetch "Outras Entradas" — all positive OFX entries that are NOT real client payments.
+ * These include: inter-company transfers, loans, bank liberations, rendimentos, etc.
+ * SOMENTE LEITURA
+ */
+export async function fetchOtherInflowsTotal(startDate: string, endDate: string): Promise<{
+  total: number;
+  count: number;
+}> {
+  try {
+    const startISO = `${startDate}T00:00:00.000-03:00`;
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+
+    let allItems: { valor: number; descricao: string }[] = [];
+    let skip = 0;
+    const take = 200;
+    let totalCount = 0;
+
+    while (true) {
+      const data = await gql<any>(`{
+        itensOfx(
+          skip: ${skip}, take: ${take},
+          where: {
+            data: {
+              gte: "${startISO}",
+              lte: "${endISO}"
+            },
+            valor: { gt: 0 }
+          }
+        ) {
+          totalCount
+          items {
+            valor
+            descricao
+          }
+        }
+      }`);
+
+      if (!data?.itensOfx) break;
+      totalCount = data.itensOfx.totalCount;
+      allItems.push(...data.itensOfx.items);
+      skip += take;
+      if (skip >= totalCount) break;
+    }
+
+    // Filter items that are NOT real client inflows AND NOT internal transfers
+    // Only keep real external money: empréstimos, liberações, depósitos, etc.
+    const otherInflows = allItems.filter(item => 
+      item.valor > 0 && 
+      !isRealClientInflow(item.descricao, item.valor) &&
+      !isInternalTransfer(item.descricao)
+    );
+    const total = otherInflows.reduce((sum, item) => sum + (item.valor || 0), 0);
+
+    console.log(`[OtherInflows] ${startDate} a ${endDate}: R$ ${total.toFixed(2)} (${otherInflows.length} entradas, excl. transf. internas)`);
+
+    return {
+      total: Math.round(total * 100) / 100,
+      count: otherInflows.length,
+    };
+  } catch (error: any) {
+    console.error("[fetchOtherInflowsTotal] Error:", error.message);
+    return { total: 0, count: 0 };
+  }
+}
+
+/**
+ * Fetch detailed "Outras Entradas" items — non-client OFX inflows with categorization.
+ * SOMENTE LEITURA
+ */
+export async function fetchOtherInflowsDetails(startDate: string, endDate: string): Promise<{
+  descricao: string;
+  valor: number;
+  data: string;
+  categoria: string;
+  contaBancariaId: string;
+}[]> {
+  try {
+    const startISO = `${startDate}T00:00:00.000-03:00`;
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+
+    let allItems: { descricao: string; valor: number; data: string; contaBancariaId: number }[] = [];
+    let skip = 0;
+    const take = 200;
+    let totalCount = 0;
+
+    while (true) {
+      const data = await gql<any>(`{
+        itensOfx(
+          skip: ${skip}, take: ${take},
+          where: {
+            data: {
+              gte: "${startISO}",
+              lte: "${endISO}"
+            },
+            valor: { gt: 0 }
+          },
+          order: { valor: DESC }
+        ) {
+          totalCount
+          items {
+            descricao
+            valor
+            data
+            contaBancariaId
+          }
+        }
+      }`);
+
+      if (!data?.itensOfx) break;
+      totalCount = data.itensOfx.totalCount;
+      allItems.push(...data.itensOfx.items);
+      skip += take;
+      if (skip >= totalCount) break;
+    }
+
+    // Filter items that are NOT real client inflows AND NOT internal transfers
+    const otherInflows = allItems.filter(item => 
+      item.valor > 0 && 
+      !isRealClientInflow(item.descricao, item.valor) &&
+      !isInternalTransfer(item.descricao)
+    );
+
+    return otherInflows
+      .sort((a, b) => b.valor - a.valor)
+      .map(item => ({
+        descricao: item.descricao || '-',
+        valor: Math.round(item.valor * 100) / 100,
+        data: item.data?.slice(0, 10) || '-',
+        categoria: categorizeOtherInflow(item.descricao),
+        contaBancariaId: String(item.contaBancariaId || '-'),
+      }));
+  } catch (error: any) {
+    console.error("[fetchOtherInflowsDetails] Error:", error.message);
+    return [];
+  }
+}
+
+/** Categorize non-client, non-internal inflows for display */
+function categorizeOtherInflow(descricao: string): string {
+  const d = (descricao || '').toUpperCase();
+  if (d.includes('SILVERIO') || d.includes('SILVÉRIO') || d.includes('EMPREST')) return 'Empréstimo';
+  if (d.includes('LIBERA')) return 'Liberação Bancária';
+  if (d.includes('TRANSF') && d.includes('PIX')) return 'Transf. PIX';
+  if (d.includes('RENTAB') || d.includes('RENDIM')) return 'Rendimento';
+  if (d.includes('TED') || d.includes('DOC')) return 'TED/DOC';
+  if (d.includes('DEP')) return 'Depósito';
+  if (d.includes('SICOOB')) return 'Transf. Sicoob';
+  return 'Outros';
+}
+
+
+/**
+ * Fetch monthly OFX inflows breakdown (Recebimentos vs Outras Entradas) for multiple months.
+ * Used for the stacked bar chart in Resumo Financeiro.
+ * SOMENTE LEITURA
+ */
+export async function fetchMonthlyOFXInflows(months: { startDate: string; endDate: string; label: string }[]): Promise<{
+  months: {
+    label: string;
+    recebimentos: number;
+    outrasEntradas: number;
+    total: number;
+    recebimentosCount: number;
+    outrasEntradasCount: number;
+  }[];
+}> {
+  try {
+    const results = [];
+
+    for (const month of months) {
+      const startISO = `${month.startDate}T00:00:00.000-03:00`;
+      const endISO = `${month.endDate}T23:59:59.999-03:00`;
+
+      let allItems: { valor: number; descricao: string }[] = [];
+      let skip = 0;
+      const take = 200;
+      let totalCount = 0;
+
+      while (true) {
+        const data = await gql<any>(`{
+          itensOfx(
+            skip: ${skip}, take: ${take},
+            where: {
+              data: {
+                gte: "${startISO}",
+                lte: "${endISO}"
+              },
+              valor: { gt: 0 }
+            }
+          ) {
+            totalCount
+            items {
+              valor
+              descricao
+            }
+          }
+        }`);
+
+        if (!data?.itensOfx) break;
+        totalCount = data.itensOfx.totalCount;
+        allItems.push(...data.itensOfx.items);
+        skip += take;
+        if (skip >= totalCount) break;
+      }
+
+      const recebimentosItems = allItems.filter(item => isRealClientInflow(item.descricao, item.valor));
+      const outrasItems = allItems.filter(item =>
+        item.valor > 0 &&
+        !isRealClientInflow(item.descricao, item.valor) &&
+        !isInternalTransfer(item.descricao)
+      );
+
+      const recebimentos = Math.round(recebimentosItems.reduce((sum, item) => sum + (item.valor || 0), 0) * 100) / 100;
+      const outrasEntradas = Math.round(outrasItems.reduce((sum, item) => sum + (item.valor || 0), 0) * 100) / 100;
+
+      results.push({
+        label: month.label,
+        recebimentos,
+        outrasEntradas,
+        total: Math.round((recebimentos + outrasEntradas) * 100) / 100,
+        recebimentosCount: recebimentosItems.length,
+        outrasEntradasCount: outrasItems.length,
+      });
+    }
+
+    return { months: results };
+  } catch (error: any) {
+    console.error("[fetchMonthlyOFXInflows] Error:", error.message);
+    return { months: [] };
   }
 }

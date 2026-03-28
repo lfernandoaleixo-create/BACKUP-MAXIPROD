@@ -25,8 +25,9 @@
  * 5. Calcular disponível = estoque - pedidos
  * 6. Calcular projetado = disponível + PO
  */
+import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { stockItems, orderItems, dashboardData, purchaseOrderItems } from "../drizzle/schema";
+import { stockItems, orderItems, dashboardData, purchaseOrderItems, productVariants } from "../drizzle/schema";
 
 interface POLote {
   numeroPedido: string;
@@ -42,6 +43,18 @@ interface PedidoCliente {
   quantidadeCx: number;
   quantidadeUn: number;
   status: string; // Aprovado, A aprovar, Digitação, etc.
+  estadoConfiguravel?: string; // Estado configurável do pedido (BAMBU, FIBRA, MADEIRA, etc.)
+  crmSegmento?: string; // Segmento CRM do cliente (DISTRIBUIDORA, INDÚSTRIA, LOJA, etc.)
+}
+
+interface VariantChild {
+  codigoItem: string;
+  descricaoItem: string;
+  conversionFactor: number; // un_child / un_parent
+  pedidosCx: number | null;
+  pedidosUn: number;
+  pedidosPorCliente: PedidoCliente[];
+  unidadesPorCaixa: number | null;
 }
 
 interface ProcessedItem {
@@ -50,6 +63,7 @@ interface ProcessedItem {
   descricaoItem: string; // descrição EXATA do Maxiprod
   unidadeMedida: string;
   grupoCodigo: string;
+  superGrupoCodigo: string;
   descricaoGrupo: string;
   empresaDona: string;
   // Quantidades calculadas
@@ -72,8 +86,39 @@ interface ProcessedItem {
   projetadoCx: number | null;
   // Segment classification (for sales analytics)
   segmento: "bambu" | "industrializado";
+  // Grupo de negócio
+  grupo: "industrializacao" | "importacao_revenda" | "importacao_mp" | "outros";
+  // Subgrupo de negócio
+  subgrupo: "bambu" | "fibra" | "madeira" | "madeira_importada" | "varetas" | "espetos" | "palitos" | "maquina_espetinho" | "outros";
   // Flag for kg-based products (displayed in kg, not cx)
   isKgProduct: boolean;
+  // Estado configurável predominante dos pedidos (para filtro hierárquico)
+  estadoConfiguravel: string | null;
+  // Segmentos CRM dos clientes dos pedidos (para filtro hierárquico)
+  segmentosCRM: string[];
+  // Variações (produto pai com filhos)
+  isParent: boolean;
+  isChild: boolean;
+  parentCode: string | null; // código do pai (se for filho)
+  variants: VariantChild[]; // filhos (se for pai)
+  variantConversionFactor: number | null; // fator de conversão (se for filho)
+  // Pedidos próprios do pai (antes de somar variações)
+  pedidosCxProprio: number | null;
+  pedidosUnProprio: number;
+  pedidosPorClienteProprio: PedidoCliente[];
+}
+
+/**
+ * Determine if a product is kg-based.
+ * Checks unidadeMedida field AND description for KG pattern.
+ * Products like "PCT 20KG" are sold in kg even if unidadeMedida is "un".
+ */
+function isKgBasedProduct(unidadeMedida: string, descricao: string): boolean {
+  if (unidadeMedida.toLowerCase() === "kg") return true;
+  const d = descricao.toUpperCase();
+  // Match descriptions containing KG but not UNID (e.g., "PCT 20KG")
+  if (d.includes("KG") && !d.includes("UNID")) return true;
+  return false;
 }
 
 /**
@@ -146,6 +191,67 @@ function classifySegment(desc: string): "bambu" | "industrializado" {
 }
 
 /**
+ * Classify business group based on Maxiprod superGrupoCodigo and grupoCodigo
+ * SG:12 → Importação Revenda (G:20=Bambu, G:21=Fibra)
+ * SG:05 → Industrialização (G:06=Varetas, G:07=Espetos, G:08=Palitos)
+ * SG:16 G:18/19 → Industrialização (subgrupo definido pelo estadoConfiguravel)
+ * SG:16 G:24 → Outros (embalagem)
+ * 
+ * NOTA: Para itens de Industrialização, o subgrupo final é definido pelo
+ * estadoConfiguravel do pedido de venda (MADEIRA, MADEIRA CONTABILIZADO),
+ * não pelo grupo do Maxiprod. O subgrupo retornado aqui é provisório.
+ */
+function classifyGrupo(superGrupoCodigo: string, grupoCodigo: string): { grupo: ProcessedItem["grupo"]; subgrupo: ProcessedItem["subgrupo"] } {
+  if (superGrupoCodigo === "12") {
+    const subgrupo = grupoCodigo === "21" ? "fibra" as const : "bambu" as const;
+    return { grupo: "importacao_revenda", subgrupo };
+  }
+  if (superGrupoCodigo === "05") {
+    const subMap: Record<string, ProcessedItem["subgrupo"]> = {
+      "06": "varetas", "07": "espetos", "08": "palitos",
+    };
+    return { grupo: "industrializacao", subgrupo: subMap[grupoCodigo] || "outros" };
+  }
+  if (superGrupoCodigo === "16") {
+    if (grupoCodigo === "18" || grupoCodigo === "19") {
+      // Subgrupo provisório; será sobrescrito pelo estadoConfiguravel
+      return { grupo: "industrializacao", subgrupo: "madeira" };
+    }
+    if (grupoCodigo === "24") return { grupo: "outros", subgrupo: "outros" }; // Embalagem
+    return { grupo: "outros", subgrupo: "outros" };
+  }
+  return { grupo: "outros", subgrupo: "outros" };
+}
+
+/**
+ * Classify subgrupo from description when superGrupoCodigo is not available
+ * Used for PO-only items that don't have stock data
+ */
+function classifyGrupoFromDesc(desc: string, referenciaPO?: string): { grupo: ProcessedItem["grupo"]; subgrupo: ProcessedItem["subgrupo"] } {
+  const d = desc.toUpperCase();
+  const ref = (referenciaPO || "").toUpperCase();
+  
+  // Se a referência da PO indica MADEIRA, é matéria-prima importada
+  if (ref.startsWith("MADEIRA")) return { grupo: "importacao_mp", subgrupo: "madeira_importada" };
+  
+  // MADEIRA/PINUS na descrição → matéria-prima importada (ex: "ESPETO DE MADEIRA")
+  // Priorizar MADEIRA sobre ESPETO/PALITO, pois espetos de madeira são matéria-prima
+  if ((d.includes("MADEIRA") || d.includes("PINUS")) && !d.includes("BAMBU")) {
+    return { grupo: "importacao_mp", subgrupo: "madeira_importada" };
+  }
+  
+  // MÁQUINA DE ESPETINHO → importação revenda, subgrupo próprio
+  if (d.includes("MAQUINA") || d.includes("MÁQUINA")) {
+    return { grupo: "importacao_revenda", subgrupo: "maquina_espetinho" };
+  }
+  if (d.includes("FIBRA")) return { grupo: "importacao_revenda", subgrupo: "fibra" };
+  if (d.includes("BAMBU") || d.includes("ESPETO") || d.includes("PALITO") || d.includes("VARETA") || d.includes("HASHI")) {
+    return { grupo: "importacao_revenda", subgrupo: "bambu" };
+  }
+  return { grupo: "outros", subgrupo: "outros" };
+}
+
+/**
  * Format date from YYYY-MM-DD to DD/MM/YY
  */
 function formatDate(dateStr: string | null): string {
@@ -200,6 +306,23 @@ interface POData {
 }
 
 /**
+ * REGRA DE EXCEÇÃO: Produtos de importação com fator de embalagem diferente
+ * Varetas de apito: chegam da China em sacos de 30kg, mas são revendidas em sacos de 20kg.
+ * O Maxiprod registra fatorConversao=20 (embalagem de venda), mas para POs de importação
+ * o fator correto é 30kg por saco.
+ */
+const PO_IMPORT_FACTOR_OVERRIDES: { pattern: RegExp; importFactor: number }[] = [
+  { pattern: /VARETA\s+DE\s+APITO/i, importFactor: 30 },
+];
+
+function getImportFactorOverride(descricao: string): number | null {
+  for (const override of PO_IMPORT_FACTOR_OVERRIDES) {
+    if (override.pattern.test(descricao)) return override.importFactor;
+  }
+  return null;
+}
+
+/**
  * Process a single PO item and add to the PO map
  */
 function processPOItem(
@@ -219,10 +342,16 @@ function processPOItem(
   const qtyCx = parseFloat(po.quantidade);
   existing.totalCx += qtyCx;
   
-  const qtyUnEstoque = po.quantidadeUnEstoque ? parseFloat(po.quantidadeUnEstoque) : 0;
+  // Verificar se há override de fator para importação (ex: varetas de apito = 30kg/saco)
+  const descricao = po.descricaoItem || po.descricao || "";
+  const importFactorOverride = getImportFactorOverride(descricao);
+  
   let qtyUn = 0;
-  if (qtyUnEstoque > 0) {
-    qtyUn = qtyUnEstoque;
+  if (importFactorOverride !== null) {
+    // Usar fator de importação (30kg/saco) em vez do fator de venda (20kg/saco)
+    qtyUn = qtyCx * importFactorOverride;
+  } else if (po.quantidadeUnEstoque && parseFloat(po.quantidadeUnEstoque) > 0) {
+    qtyUn = parseFloat(po.quantidadeUnEstoque);
   } else {
     const fator = po.fatorConversao ? parseFloat(po.fatorConversao) : 0;
     const unitsPerBox = fator > 0 ? fator : extractUnitsPerBox(po.descricao);
@@ -361,6 +490,9 @@ export async function processStockData(): Promise<void> {
         qtyUn = upb ? qtyCx * upb : qtyCx;
       }
       
+      const estadoConf = order.estadoConfiguravel || undefined;
+      const segCRM = order.crmSegmento || undefined;
+      
       const existing = byClientStatus.get(key);
       if (existing) {
         existing.quantidadeCx += qtyCx;
@@ -371,6 +503,8 @@ export async function processStockData(): Promise<void> {
           quantidadeCx: qtyCx,
           quantidadeUn: qtyUn,
           status,
+          estadoConfiguravel: estadoConf,
+          crmSegmento: segCRM,
         });
       }
     }
@@ -385,6 +519,20 @@ export async function processStockData(): Promise<void> {
     processPOItem(po, poByCode);
   }
   
+  // ─── Load product variants (pai/variação) ───
+  const rawVariants = await db.select().from(productVariants);
+  // Map: parentCode -> [{ childCode, conversionFactor }]
+  const variantsByParent = new Map<string, { childCode: string; conversionFactor: number }[]>();
+  // Map: childCode -> { parentCode, conversionFactor }
+  const childToParent = new Map<string, { parentCode: string; conversionFactor: number }>();
+  for (const v of rawVariants) {
+    const factor = parseFloat(v.conversionFactor);
+    const children = variantsByParent.get(v.parentCode) || [];
+    children.push({ childCode: v.childCode, conversionFactor: factor });
+    variantsByParent.set(v.parentCode, children);
+    childToParent.set(v.childCode, { parentCode: v.parentCode, conversionFactor: factor });
+  }
+  
   // ─── Build processed items ───
   const processed: ProcessedItem[] = [];
   const processedCodes = new Set<string>();
@@ -392,7 +540,11 @@ export async function processStockData(): Promise<void> {
   // 1. Process stock items (espelho fiel)
   for (const item of Array.from(stockByCode.values())) {
     const itemUn = parseFloat(item.quantidade);
-    const unitsPerBox = extractUnitsPerBox(item.descricaoItem);
+    // PRIORIDADE: usar unidadeDeVendaFator do Maxiprod (fonte oficial)
+    // Fallback: extrair da descrição do produto
+    const maxiprodFator = item.unidadeDeVendaFator ? parseFloat(item.unidadeDeVendaFator) : null;
+    const descFator = extractUnitsPerBox(item.descricaoItem);
+    const unitsPerBox = maxiprodFator || descFator;
     
     const orderData = orderByCode.get(item.codigoItem);
     const pedidosUn = orderData?.totalUn || 0;
@@ -415,11 +567,44 @@ export async function processStockData(): Promise<void> {
       : [];
     const pedidosPorCliente = [...reservaPorCliente, ...digitacaoPorCliente];
     
+    // Extrair estadoConfiguravel predominante e segmentos CRM dos pedidos
+    const allOrdersForItem = [...(orderData?.items || []), ...(digitacaoItems || [])];
+    const estadoConfCounts = new Map<string, number>();
+    const segCRMSet = new Set<string>();
+    for (const ord of allOrdersForItem) {
+      if (ord.estadoConfiguravel) {
+        estadoConfCounts.set(ord.estadoConfiguravel, (estadoConfCounts.get(ord.estadoConfiguravel) || 0) + 1);
+      }
+      if (ord.crmSegmento) {
+        segCRMSet.add(ord.crmSegmento);
+      }
+    }
+    // Estado configurável mais frequente
+    let estadoConfPredominante: string | null = null;
+    let maxCount = 0;
+    for (const [ec, count] of Array.from(estadoConfCounts.entries())) {
+      if (count > maxCount) { maxCount = count; estadoConfPredominante = ec; }
+    }
+    
+    // Classificar grupo/subgrupo base
+    const baseClassification = classifyGrupo(item.superGrupoCodigo || "", item.grupoCodigo || "");
+    
+    // Para itens de Industrialização, subgrupo é sempre "madeira"
+    // (Madeira Contabilizado foi removido - tudo fica como Madeira)
+    let finalSubgrupo = baseClassification.subgrupo;
+    if (baseClassification.grupo === "industrializacao" && estadoConfPredominante) {
+      const ec = estadoConfPredominante.toUpperCase();
+      if (ec === "MADEIRA" || ec === "MADEIRA CONTABILIZADO") {
+        finalSubgrupo = "madeira";
+      }
+    }
+    
     processed.push({
       codigoItem: item.codigoItem,
       descricaoItem: item.descricaoItem,
       unidadeMedida: item.unidadeMedida || "",
       grupoCodigo: item.grupoCodigo || "",
+      superGrupoCodigo: item.superGrupoCodigo || "",
       descricaoGrupo: item.descricaoGrupo || "",
       empresaDona: item.empresaDona || "",
       estoqueUn: itemUn,
@@ -438,7 +623,20 @@ export async function processStockData(): Promise<void> {
       projetadoUn,
       projetadoCx: unitsPerBox ? Math.floor(projetadoUn / unitsPerBox) : null,
       segmento: classifySegment(item.descricaoItem),
-      isKgProduct: (item.unidadeMedida || "").toLowerCase() === "kg",
+      grupo: baseClassification.grupo,
+      subgrupo: finalSubgrupo,
+      isKgProduct: isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem),
+      estadoConfiguravel: estadoConfPredominante,
+      segmentosCRM: Array.from(segCRMSet),
+      // Variações
+      isParent: variantsByParent.has(item.codigoItem),
+      isChild: childToParent.has(item.codigoItem),
+      parentCode: childToParent.get(item.codigoItem)?.parentCode || null,
+      variants: [], // preenchido no pós-processamento
+      variantConversionFactor: childToParent.get(item.codigoItem)?.conversionFactor || null,
+      pedidosCxProprio: unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null,
+      pedidosUnProprio: pedidosUn,
+      pedidosPorClienteProprio: [...pedidosPorCliente],
     });
     processedCodes.add(item.codigoItem);
   }
@@ -458,40 +656,165 @@ export async function processStockData(): Promise<void> {
     const poUn = poData.totalUn;
     const poCx = poData.totalCx;
     
+    // ─── Cruzar com pedidos de venda para itens PO-only ───
+    const orderData = orderByCode.get(code);
+    const pedidosUn = orderData?.totalUn || 0;
+    const reservaPorCliente = orderData
+      ? aggregateOrdersByClient(orderData.items, unitsPerBox)
+      : [];
+    const digitacaoItems = digitacaoByCode.get(code);
+    const digitacaoPorCliente = digitacaoItems
+      ? aggregateOrdersByClient(digitacaoItems, unitsPerBox)
+      : [];
+    const pedidosPorCliente = [...reservaPorCliente, ...digitacaoPorCliente];
+    
+    // Extrair estadoConfiguravel e segmentos CRM dos pedidos
+    const allOrdersForPOItem = [...(orderData?.items || []), ...(digitacaoItems || [])];
+    const estadoConfCountsPO = new Map<string, number>();
+    const segCRMSetPO = new Set<string>();
+    for (const ord of allOrdersForPOItem) {
+      if (ord.estadoConfiguravel) {
+        estadoConfCountsPO.set(ord.estadoConfiguravel, (estadoConfCountsPO.get(ord.estadoConfiguravel) || 0) + 1);
+      }
+      if (ord.crmSegmento) {
+        segCRMSetPO.add(ord.crmSegmento);
+      }
+    }
+    let estadoConfPredominantePO: string | null = null;
+    let maxCountPO = 0;
+    for (const [ec, count] of Array.from(estadoConfCountsPO.entries())) {
+      if (count > maxCountPO) { maxCountPO = count; estadoConfPredominantePO = ec; }
+    }
+    
+    const disponivelUn = 0 - pedidosUn; // estoque 0 - pedidos
+    const projetadoUn = disponivelUn + poUn;
+    
     processed.push({
       codigoItem: code,
       descricaoItem: descricaoItem,
       unidadeMedida: poItem.unidadeMedidaEstoque || poItem.unidadeMedida || "",
       grupoCodigo: "",
+      superGrupoCodigo: "",
       descricaoGrupo: poItem.codigoGrupo || "",
       empresaDona: poItem.empresaDona || "",
       estoqueUn: 0,
       estoqueCx: unitsPerBox ? 0 : null,
       unidadesPorCaixa: unitsPerBox,
-      pedidosUn: 0,
-      pedidosCx: unitsPerBox ? 0 : null,
-      pedidosPorCliente: [],
-      disponivelUn: 0,
-      disponivelCx: unitsPerBox ? 0 : null,
+      pedidosUn,
+      pedidosCx: unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null,
+      pedidosPorCliente,
+      disponivelUn,
+      disponivelCx: unitsPerBox ? Math.floor(disponivelUn / unitsPerBox) : null,
       poCx: poCx || null,
       poUn,
       poEntregas: Array.from(poData.entregas),
       poFornecedores: Array.from(poData.fornecedores),
       poLotes: aggregateLotes(poData.lotes),
-      projetadoUn: poUn,
-      projetadoCx: unitsPerBox ? Math.floor(poUn / unitsPerBox) : null,
+      projetadoUn,
+      projetadoCx: unitsPerBox ? Math.floor(projetadoUn / unitsPerBox) : null,
       segmento: classifySegment(descricaoItem),
-      isKgProduct: (poItem.unidadeMedidaEstoque || poItem.unidadeMedida || "").toLowerCase() === "kg",
+      ...classifyGrupoFromDesc(descricaoItem, poData.lotes[0]?.referenciaPO),
+      isKgProduct: isKgBasedProduct(poItem.unidadeMedidaEstoque || poItem.unidadeMedida || "", poItem.descricaoItem || poItem.descricao || ""),
+      estadoConfiguravel: estadoConfPredominantePO,
+      segmentosCRM: Array.from(segCRMSetPO),
+      // Variações
+      isParent: variantsByParent.has(code),
+      isChild: childToParent.has(code),
+      parentCode: childToParent.get(code)?.parentCode || null,
+      variants: [],
+      variantConversionFactor: childToParent.get(code)?.conversionFactor || null,
+      pedidosCxProprio: unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null,
+      pedidosUnProprio: pedidosUn,
+      pedidosPorClienteProprio: [...pedidosPorCliente],
     });
     processedCodes.add(code);
   }
   
+  // ─── Pós-processamento de variações ───
+  // Para cada produto pai, preencher variants[] com dados dos filhos
+  // e ajustar o disponível do pai descontando pedidos das variações
+  const processedByCode = new Map<string, ProcessedItem>();
+  for (const p of processed) {
+    processedByCode.set(p.codigoItem, p);
+  }
+  
+  for (const [parentCode, children] of Array.from(variantsByParent.entries())) {
+    const parent = processedByCode.get(parentCode);
+    if (!parent) continue;
+    
+    let extraPedidosUn = 0; // pedidos das variações convertidos em unidades do pai
+    
+    for (const child of children) {
+      const childItem = processedByCode.get(child.childCode);
+      if (!childItem) continue;
+      
+      // Pedidos da variação convertidos para unidades do pai
+      // Ex: 1 cx de 00002 (5000 un) = 0.5 cx do pai (10000 un)
+      // childItem.pedidosUn já está em unidades do filho
+      // Converter: pedidosUn_filho * (un_filho/un_pai) = pedidosUn_equivalente_pai
+      // Mas conversionFactor já é un_filho/un_pai, então:
+      // pedidosCx_filho * conversionFactor = pedidosCx_equivalente_pai
+      const childPedidosCx = childItem.pedidosCx || 0;
+      const childPedidosUn = childItem.pedidosUn;
+      const parentUnitsPerBox = parent.unidadesPorCaixa || 1;
+      
+      // Converter pedidos do filho para unidades do pai
+      extraPedidosUn += childPedidosUn * child.conversionFactor;
+      
+      // Agregar pedidos por cliente do filho
+      const childPedidosPorCliente = childItem.pedidosPorCliente || [];
+      
+      parent.variants.push({
+        codigoItem: child.childCode,
+        descricaoItem: childItem.descricaoItem,
+        conversionFactor: child.conversionFactor,
+        pedidosCx: childItem.pedidosCx,
+        pedidosUn: childItem.pedidosUn,
+        pedidosPorCliente: childPedidosPorCliente,
+        unidadesPorCaixa: childItem.unidadesPorCaixa,
+      });
+    }
+    
+    // Ajustar disponível do pai: descontar pedidos das variações
+    if (extraPedidosUn > 0) {
+      parent.pedidosUn += extraPedidosUn;
+      parent.disponivelUn = parent.estoqueUn - parent.pedidosUn;
+      if (parent.unidadesPorCaixa) {
+        parent.pedidosCx = Math.ceil(parent.pedidosUn / parent.unidadesPorCaixa);
+        parent.disponivelCx = Math.floor(parent.disponivelUn / parent.unidadesPorCaixa);
+        parent.projetadoUn = parent.disponivelUn + parent.poUn;
+        parent.projetadoCx = Math.floor(parent.projetadoUn / parent.unidadesPorCaixa);
+      }
+      
+      // Agregar pedidos das variações no pedidosPorCliente do pai
+      // para que o tooltip mostre todos os pedidos (próprios + variações)
+      for (const variant of parent.variants) {
+        for (const vpc of variant.pedidosPorCliente) {
+          // Converter quantidade para unidades do pai
+          const convertedQtdCx = vpc.quantidadeCx * variant.conversionFactor;
+          parent.pedidosPorCliente.push({
+            ...vpc,
+            quantidadeCx: convertedQtdCx,
+            cliente: `[${variant.codigoItem}] ${vpc.cliente}`,
+          });
+        }
+      }
+    }
+  }
+  
   // Save processed data to dashboard_data table
-  await db.delete(dashboardData);
-  await db.insert(dashboardData).values({
-    empresa: "TODAS",
-    dataJson: JSON.stringify(processed),
-  });
+  // Usar upsert para evitar tela branca durante sincronização
+  const existing = await db.select({ id: dashboardData.id }).from(dashboardData).where(eq(dashboardData.empresa, "TODAS")).limit(1);
+  if (existing.length > 0) {
+    await db.update(dashboardData)
+      .set({ dataJson: JSON.stringify(processed), computedAt: new Date() })
+      .where(eq(dashboardData.empresa, "TODAS"));
+  } else {
+    await db.insert(dashboardData).values({
+      empresa: "TODAS",
+      dataJson: JSON.stringify(processed),
+    });
+  }
   
   const bambuCount = processed.filter(p => p.segmento === "bambu").length;
   const industCount = processed.filter(p => p.segmento === "industrializado").length;

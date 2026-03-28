@@ -1,0 +1,67 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "accounts_payable"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "accounts_receivable"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "app_settings"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "bank_accounts"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "bank_transactions"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "dashboard_data"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "order_items"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "product_classification"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "product_pricing"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "product_segment_overrides"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "product_visibility"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "purchase_order_items"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "sales_invoice_items"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "sales_orders"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "sales_targets"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "scraper_status"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "stock_items"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TMh5HqmzfeBw9KakgJtjjo\n__drizzle_migrations\naccounts_payable\naccounts_receivable\napp_settings\nbank_accounts\nbank_transactions\ndashboard_data\norder_items\nproduct_classification\nproduct_pricing\nproduct_segment_overrides\nproduct_visibility\npurchase_order_items\nsales_invoice_items\nsales_orders\nsales_targets\nscraper_status\nstock_items\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

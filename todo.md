@@ -417,3 +417,963 @@
 - [x] Renomear "Manter em Estoque" para "Estoque"
 - [x] Coluna Est. Reg.: verde quando OK, vermelho quando COMPRA
 - [x] Card Alertas: mostrar apenas itens que precisam comprar do card Estoque
+- [x] Tooltip PO: melhorar visual (fundo escuro difícil de ler) - usar fundo claro
+- [x] Marca d'água na coluna Disponível nos 3 cards para destaque visual do time comercial
+- [x] Card Custo do Estoque Regulador: somar Est. Reg. × preço unitário do card Estoque, exibir em R$ quando Valorização ativa
+- [x] Mover card Custo do Estoque Regulador para dentro do card Valorização Total do Estoque
+- [x] Corrigir estética: 3 cards abertos devem ter alinhamentos iguais e consistentes
+- [x] Corrigir informações cortadas nas tabelas quando Valorização do Estoque está ativa
+- [x] Vendas: gráfico de linhas overlay sobre barras (evolução diária, mês anterior, melhor mês) sutil e delicado
+- [x] Vendas: aumentar tamanho do gráfico
+- [x] Vendas: corrigir eixo Y do gráfico - escala deve ir até o valor máximo das linhas acumuladas
+- [x] Vendas: escalas independentes - barras com maxVal (esquerdo), linhas com maxCumulative (própria escala)
+- [x] Vendas: valor abreviado à direita de cada linha acumulada no gráfico
+- [x] Vendas: fixar escala Y em 250k
+- [x] Vendas: corrigir gráfico que está todo errado após alterações de escala
+- [x] Vendas: tooltip nas barras mostrando pedidos referentes ao dia
+- [x] Vendas: linhas mais finas e cores mais fortes no gráfico
+- [x] Vendas: remover os 3 cards abaixo do gráfico
+- [x] Vendas: copiar card Inadimplência (gráfico de barras) da aba Financeiro para abaixo do gráfico
+- [x] Vendas: copiar card Clientes Inadimplentes da aba Financeiro para abaixo do gráfico
+- [x] Vendas: usar componentes compartilhados (alteração no Financeiro reflete automaticamente no Vendas)
+- [x] Vendas: card de Pedidos acima da Visão Geral listando pedidos do período
+- [x] Vendas: expandir pedido para ver itens e valores detalhados
+- [x] Vendas: endpoint tRPC para listar pedidos com itens
+- [x] Vendas: setas de ordenação (maior/menor) nas colunas do card de Pedidos
+- [x] Vendas: eliminar tabs (Visão Geral, Clientes, Produtos)
+- [x] Vendas: transformar gráfico Evolução Diária em card colapsável
+- [x] Vendas: remover KPI cards Clientes e Itens
+- [x] Vendas: adicionar filtro Faturado/A Faturar dentro do card de Pedidos
+- [x] Vendas: soma do valor filtrado no card de Pedidos ao usar filtro Faturado/A Faturar
+- [x] Vendas: card A Faturar (Anterior) com pedidos de meses anteriores não faturados
+- [x] Vendas: filtro por mês dentro do card A Faturar (Anterior)
+- [x] Vendas: endpoint tRPC para listar pedidos A Faturar anteriores
+- [x] Vendas: posicionar card abaixo do card Evolução Diária
+- [x] Vendas: card informativo de Pedidos em Digitação no rodapé (não soma em KPIs)
+- [x] Vendas: endpoint tRPC para listar pedidos em digitação
+- [x] BUG: Pedidos 500, 501, 502 aparecem em Digitação E A Faturar Anterior — corrigido: card Digitação agora exclui pedidos que já existem em sales_orders
+- [x] Vendas: mudar cor dos 3 cards (Pedidos, Evolução Diária, A Faturar Anterior) para verde, padronizar visual
+- [x] Vendas: padronizar esteticamente os 5 cards (fontes, setas, badges, espaçamentos idênticos)
+- [x] Vendas: aumentar letras da parte superior do card Evolução Diária (acumulado dos meses)
+- [x] Criar título no estilo da aba Financeiro para todas as abas (Estoque, Vendas, Configurações)
+- [x] Criar nova aba Faturamento entre Vendas e Financeiro
+- [x] Faturamento: endpoint tRPC para listar pedidos em aberto (A Faturar) e faturados (últimos 30 dias)
+- [x] Faturamento: cards colapsáveis no mesmo padrão visual das outras abas
+- [x] Faturamento: título no estilo Playfair Display "Dashboard de Faturamento Grupo Fox"
+- [x] Faturamento: KPIs resumo (total em aberto, total faturado, etc.)
+- [x] Faturamento: adicionar rota e link na navegação
+
+## Vinculação Pedidos x Notas Fiscais (15/03/2026)
+- [x] Investigar API GraphQL: vínculo entre itensDasNotasFiscais e itensDosPedidosDeVendas via itemDoPedidoDeVendaId
+- [x] Criar endpoint tRPC para buscar NFs vinculadas a pedidos faturados
+- [x] Atualizar card "Faturados (Últimos 30 dias)" para exibir NF vinculada (número, série, chave de acesso)
+- [x] Exibir dados de NF ao expandir pedido faturado (número NF, data emissão, chave de acesso)
+
+## Card "Autorizado a Faturar" (15/03/2026)
+- [x] Schema: tabela billing_authorizations (pedido, data autorização, autorizado por)
+- [x] Backend: endpoint tRPC para autorizar pedido (protegido por senha)
+- [x] Backend: endpoint tRPC para desautorizar pedido (protegido por senha)
+- [x] Backend: endpoint tRPC para listar pedidos autorizados
+- [x] Frontend: card "Autorizado a Faturar" entre Em Aberto e Faturados
+- [x] Frontend: botão de autorizar no card Em Aberto (com modal de senha)
+- [x] Frontend: pedidos autorizados saem do card Em Aberto e aparecem no card Autorizado a Faturar
+- [x] Frontend: pedidos faturados saem automaticamente do card Autorizado a Faturar
+- [x] Testes vitest para os novos endpoints (10 testes passando)
+
+## Bug: Erro no rodapé esquerdo (15/03/2026)
+- [x] Diagnosticar erro intermitente (card vermelho '1 erro') na aba Financeiro
+- [x] Corrigir o erro (era transitório do HMR + corrigido button aninhado no Billing.tsx)
+
+## Campos extras nos pedidos de venda (15/03/2026)
+- [x] Atualizar query GraphQL para buscar: condição de pagamento, transportadora, data de entrega, endereço completo, razão social, NCM
+- [x] Atualizar schema do banco (tabelas salesOrders e orderItems) com novos campos
+- [x] Atualizar processamento dos dados e routers para retornar novos campos
+- [x] Atualizar frontend para exibir novos campos ao expandir pedido (Faturamento)
+
+## Bug: Itens sumiram ao expandir pedido (15/03/2026)
+- [x] Restaurar tabela de itens do pedido na área expandida (itens estavam lá, detalhes novos empurravam para baixo)
+- [x] Adicionar data de entrega dos itens na tabela (coluna ENTREGA adicionada)
+
+## Redesign Faturamento: destaque no status e autorização (15/03/2026)
+- [x] Redesenhar linha do pedido: status e botão de autorização como elemento principal
+- [x] Criar caixa visual em volta do botão de autorizar (borda tracejada amber, hover solid)
+- [x] Reduzir ênfase no valor (text-xs text-slate-500, à direita)
+- [x] Tornar o status visualmente dominante (pill badge grande com ícone, borda e cores fortes)
+- [x] Adicionar coluna de data de entrega com destaque vermelho para vencidas
+
+## Destaque visual do pedido expandido (15/03/2026)
+- [x] Destacar pedido expandido com fundo, borda e sombra forte (borda teal grossa, ring, gradiente, sombra XL, todos os itens visíveis)
+
+## Bug: Produtos sem descrição na aba Vendas (16/03/2026)
+- [x] Diagnosticar por que alguns pedidos mostram cliente como '—' na aba Vendas
+- [x] Identificar todos os pedidos afetados (65 pedidos da empresa PALITOS INDUSTRIA com nomeFantasia null)
+- [x] Corrigir coleta de dados: usar razaoSocial como fallback quando nomeFantasia é null (apenas 1 pedido #490 sem dados no Maxiprod)
+
+## Filtros nos quadros semanais do Financeiro (16/03/2026)
+- [x] Adicionar setinha de filtro no canto superior direito de cada quadro semanal (A Receber e A Pagar)
+- [x] Opção de ordenar por valor crescente
+- [x] Opção de ordenar por valor decrescente
+- [x] Opção de ordenar por data (mais antiga e mais recente)
+- [x] Campo de busca pontual para pesquisar dentro de cada semana
+- [x] Aplicar filtros em todas as 8 semanas exibidas + card Vencidas
+
+## Coluna Vendedor na tabela Clientes Inadimplentes (16/03/2026)
+- [x] Investigar dados de vendedor: sales_orders local (362/1147 com representante) + GraphQL pedidosDeVenda (654 pedidos, 251 mapeamentos)
+- [x] Buscar vendedor via GraphQL do Maxiprod (pedidosDeVenda) com cache de 10 min + fallback local
+- [x] Mapeamento cliente->vendedor: 33/80 clientes inadimplentes com vendedor (47 sem vendedor no Maxiprod)
+- [x] Coluna "Vendedor" adicionada na tabela (entre Cliente e Valor Total) com ordenação e busca
+- [x] Testado com dados reais: JUVENAL TEIXEIRA, PEDRO AUGUSTO, JORDAO LAINE, CLARINDO, Daniel Da Conceição Tavares, ROMERA
+
+## Investigação: Clientes inadimplentes sem vendedor (16/03/2026)
+- [x] Consultar GraphQL do Maxiprod para cada cliente sem vendedor (exceto Johnson e Keure)
+- [x] Determinar se o campo vendedor está vazio no Maxiprod ou se a Manus não puxou corretamente → TODOS são erro de preenchimento no Maxiprod
+- [x] Gerar relatório detalhado com diagnóstico por cliente (25 com pedidos sem vendedor, 19 sem pedidos, 1 sem nome)
+
+## Buscar campo "responsável" dos pedidos de venda no Maxiprod (16/03/2026)
+- [x] Explorar campos adicionais: responsavelUsuario, representanteOuVendedor2/3, gestor, criacaoUsuario
+- [x] Buscar responsável de cada cliente: responsavelUsuario.nome funciona como fallback (556 mapeamentos vs 251 antes)
+- [x] Atualizar backend: query GraphQL agora busca responsavelUsuario { nome } como fallback
+- [x] Resultado: 62/80 clientes com vendedor (77.5%). 17 restantes sem pedido/NF/vendedor preferencial no Maxiprod
+
+## Corrigir total "A Receber" (16/03/2026)
+- [x] Filtrar A Receber para mostrar apenas tipos: TITULO, RECEITA, ADIANTAMENTO (excluir TITULO_PEDIDO_DE_VENDA e TITULO_PROPOSTA_DE_VENDA)
+- [x] Atualizar todas as queries: getSummary, getReceivableCalendar, getMonthlyBreakdown, getClientesInadimplentes, getContasAReceber, getAgingReport, getCashFlowChart, getTopClientes, getInadimplenciaDetail
+- [x] Total A Receber: R$ 2.645.534,04 (antes R$ 4.414.624,64) - filtro aplicado com sucesso
+
+## Divergência valores março A Receber (16/03/2026)
+- [x] Investigar: breakdown mensal mostrava mês inteiro (01/03-31/03) vs card mensal (16/03-31/03 a partir de hoje)
+- [x] Corrigir: getMonthlyBreakdown agora usa hoje como início para o mês corrente → ambos mostram R$ 669.015,82 (154 títulos)
+
+## Usar "valor líquido" no A Receber (16/03/2026)
+- [x] Analisar planilha CSV do Maxiprod para identificar campo "valor líquido" (coluna AO = R$ 2.579.814,98)
+- [x] Fórmula correta: valorAReceber = valorLiquido - valorRecebidoLiquido (desconta pagamentos parciais)
+- [x] Atualizar TODAS as queries de A Receber (getSummary, getMonthlyBreakdown, getContasAReceber, getAgingReport, getReceivableCalendar, getCashFlowChart, getInadimplenciaTimeline, getClientesInadimplentes, getInadimplenciaDetalhesMes, getTopClientes)
+- [x] Testes passando: 10/10 testes de valorAReceber + 24 testes financeiros existentes
+- [x] Total A Receber confirmado: R$ 2.579.814,98 ✓ (bate com Maxiprod)
+
+## Corte de inadimplência: 1 dia útil anterior (16/03/2026)
+- [x] Ajustar corte de vencidos/inadimplência para considerar vencido somente até 1 dia útil antes de hoje
+- [x] Função getPreviousBusinessDay(): Seg→Sex(-3), Dom→Sex(-2), demais→dia anterior(-1)
+- [x] Atualizar getSummary, getReceivableCalendar, getCashFlowChart, getInadimplenciaTimeline, getClientesInadimplentes, getInadimplenciaDetalhesMes, getAgingReport, topInadimplentes
+
+## Contas a Pagar: usar valor líquido (16/03/2026)
+- [x] Aplicar mesma lógica do A Receber no A Pagar: valorAPagar = valorLiquido - valorPagoLiquido
+- [x] Atualizar TODAS as queries: getSummary, getMonthlyBreakdown, getContasAPagar, getTopFornecedores, getCashFlowChart, getPaymentCalendar
+- [x] Corrigir paginação GraphQL (remover ORDER BY que causava overlap de 8 registros)
+- [x] Total A Pagar validado: R$ 11.985.872,83 ✓ (1669 registros, bate com Maxiprod)
+- [x] Fórmula travada - não alterar
+
+## Reestruturação Estoque: 3 Grupos com Subgrupos e Filtros (16/03/2026)
+- [ ] Investigar API GraphQL para entender campos de grupo/subgrupo dos itens de estoque
+- [ ] Mapear grupos do Maxiprod: Grupo 12 (IMPORTAÇÃO-REVENDA) → Subgrupo 20 (BAMBU), 21 (FIBRA)
+- [ ] Mapear grupos do Maxiprod: Grupo 05 (BAMBU) → Sub 06,07,08,14; Grupo 09 (FIBRA)
+- [ ] Grupo 1: Industrialização (Madeira, Serragem, Rojão) - aguardando dados do Fernando
+- [ ] Grupo 2: Importação de Matéria Prima (Madeira, Serragem, Rojão) - aguardando dados do Fernando
+- [ ] Grupo 3: Importação de Produtos Prontos/Revenda (Bambu, Fibra) - implementar primeiro
+- [ ] Implementar backend: queries GraphQL por grupo/subgrupo
+- [ ] Implementar frontend: filtros por grupo e subgrupo no dashboard de estoque
+- [ ] Testar e validar dados em tempo real
+
+## Saldos Bancários Automáticos via Balancete Contábil (16/03/2026)
+- [x] Investigar API GraphQL do Maxiprod para balancete contábil (contasContabeis + lancamentosContabeis)
+- [x] Mapear 14 contas bancárias: BB Mesa, CEF Palitos/Varetas/Espetos, Bradesco Espetos/Palitos/Varetas, Sicoob Espetos/Varetas/Palitos/Mesa, Sicredi Palitos/Espetos/Varetas
+- [x] Função syncBankBalances: busca contas 1.01.01.02.*, calcula saldoInicial + debitos - creditos
+- [x] Preencher automaticamente saldos na aba Configurações > Banco com botão "Atualizar Saldos"
+- [x] Agrupamento por empresa (Palitos, Varetas, Espetos, Mesa, Outros)
+- [x] Total validado: R$ 102.972,44 ✓ (bate com Maxiprod balancete)
+
+## Ajuste Layout Saldos Bancários (16/03/2026)
+- [x] Exibir 14 contas no formato "Banco + Empresa" conforme balancete do Maxiprod
+- [x] Remover agrupamento por empresa, listar contas individualmente ordenadas por código
+- [x] Função gerarNomeConta: simplifica nomes ("Banco Cooperativo Sicredi S.A." → "Sicredi")
+
+## Bug: Saldo Bradesco Espetos incorreto (16/03/2026)
+- [x] Diagnosticar: bug na linha saldoContabil !== 0 (saldo zero caía no fallback OFX)
+- [x] Corrigir: usar saldoContabilAtualizadoEm para detectar se tem saldo contábil (zero é válido!)
+- [x] Bradesco Espetos agora mostra R$ 0,00 ✓ (bate com Maxiprod)
+- [x] Sync automática: saldos bancários sincronizados junto com sync geral (a cada 5 min)
+
+## Filtro Estoque: Grupos 20 e 21 (16/03/2026)
+- [x] Manter espelho fiel (todos os itens) com filtros por grupo/subgrupo
+- [x] Filtros: Grupo (Bambu MP, Importação-Revenda, Industrialização) e Subgrupo (Varetas, Espetos, Palitos, etc.)
+- [x] Grupos 20 (BAMBU) e 21 (FIBRA) do super grupo 12 (IMPORTAÇÃO - REVENDA) acessíveis via filtro
+
+## Reestruturação do Estoque - Grupos e Subgrupos Hierárquicos
+- [x] Criar 3 grupos maiores: Industrialização (roxo), Importação MP, Importação Revenda
+- [x] Subgrupos Industrialização: Madeira (c/ variações Varetas/Espetos/Palitos), Serragem, Rojão
+- [x] Subgrupos Importação MP: Madeira Importada
+- [x] Subgrupos Importação Revenda: Bambu, Fibra
+- [x] Filtros hierárquicos: subgrupo só aparece após selecionar grupo
+- [x] Subgrupo Madeira com seleção de variações (Varetas, Espetos, Palitos)
+- [x] Mapear itens do Maxiprod para grupos/subgrupos (SG:05→Industrialização, SG:16 G:18/19→Import. MP, SG:12→Revenda)
+- [x] Agrupar visualmente itens por grupo/subgrupo (não misturar)
+- [x] Puxar estoque atual e real do Maxiprod
+- [x] Métricas adaptativas: cx para caixas, m3 para madeira importada
+- [x] Desocultar 12 itens de madeira importada (SG:16 G:18/19)
+- [x] Excluir itens de embalagem (SG:16 G:24) do dashboard
+- [x] Testes vitest para lógica de classificação de grupos (19 testes)
+
+## Vendedores na Aba Inadimplentes (17/03/2026)
+- [x] Identificar vendedor responsável por cada cliente a partir dos pedidos de venda do Maxiprod
+- [x] Excluir Brenda e Larissa da lista de vendedores (são editoras, não vendedoras)
+- [x] Preencher manualmente Johnson e Keure como "Grupo Fox"
+- [x] Adicionar coluna "Vendedor" na tabela de clientes inadimplentes
+- [x] Implementar filtro por vendedor (dropdown/seletor) na aba inadimplentes
+- [x] Testes vitest para lógica de mapeamento cliente→vendedor (18 testes passando)
+
+## Regras de Fallback Vendedores Inadimplentes (17/03/2026)
+- [x] Clientes sem vendedor + produto madeira → JORDAO
+- [x] Clientes sem vendedor + produto bambu → JUVENAL TEIXEIRA
+- [x] Filtro de vendedores atualiza automaticamente com novos vendedores do Maxiprod
+- [x] Adicionar GILSON ao filtro de vendedores
+- [x] Testes vitest para novas regras de fallback (17 testes)
+
+## Correções 17/03/2026 (manhã)
+- [x] Faturamento: filtrar apenas pedidos "A aprovar" e "Aprovados" (excluir "Em digitação") - campo estadoNota adicionado
+- [x] Estoque: restaurar abas Estoque / Produtos sob Encomenda / Outros - restaurado do checkpoint 17647be
+- [x] NÃO MEXER na aba Financeiro/Inadimplentes - confirmado
+- [x] Testes vitest para filtro de Digitação (10 testes passando)
+
+## Reorganização Estoque - Importação Revenda (17/03)
+- [x] Sincronizar dados atualizados do Maxiprod (63 estoque, 167 pedidos, 67 POs)
+- [x] Mover códigos 00011, 00028, 00030, 00031, 00065, 00198, 00199 para aba "Sob Encomenda" (00029 não existe no estoque)
+- [x] Não duplicar itens entre abas Estoque e Sob Encomenda
+- [x] NÃO mexer em Industrializados nem Importação de Matéria-Prima
+
+## Divergência Estoque 141cx (17/03)
+- [ ] Investigar divergência: Maxiprod 20.853 cx vs Dashboard 20.712 cx (141 cx diferença)
+- [ ] Comparar item a item dados do banco local vs GraphQL
+
+## Grupo Revenda + Subgrupos Bambu/Fibra (17/03)
+- [x] Criar grupo "Importação de Produtos Prontos (Revenda)" como filtro no Estoque
+- [x] Criar subgrupos Bambu e Fibra como filtro secundário
+- [x] Reclassificar itens: SG:12 G:20→Revenda/Bambu, SG:12 G:21→Revenda/Fibra (auto por superGrupoCodigo/grupoCodigo)
+- [x] Auto-classificar: nome com bambu → Subgrupo Bambu, nome com fibra → Subgrupo Fibra
+- [x] Filtros hierárquicos: Grupo → Subgrupo (subgrupo só aparece ao selecionar grupo)
+- [x] Senhas: configurações já desabilitadas (bypass), faturamento mantida
+- [x] Testes vitest para classificação grupo/subgrupo (16 testes passando)
+
+## Grupos Industrializado + Importação MP (17/03)
+- [x] Criar grupo Industrializado (cor roxa) no filtro do Estoque
+- [x] Subgrupos Industrializado: Madeira, Serragem, Rojão
+- [x] Itens de madeira em m³ (SG:16 G:18/19) → Grupo Industrializado / Subgrupo Madeira
+- [x] Criar grupo Importação de Matéria-Prima (cor amarela) no filtro
+- [x] Subgrupo Importação MP: Madeira (sem alimentar por enquanto)
+- [x] Filtros hierárquicos: subgrupo só aparece ao selecionar grupo correto
+- [x] Testes vitest (257 testes passando em 25 arquivos)
+
+## Correção Fonte de Dados Estoque (17/03/2026)
+- [x] Alterar fetchStock para usar query 'estoques' com tipo=NORMAL e filtro dentro do grupo 12
+- [x] Garantir que quantidades batam exatamente com a tela de Estoque do Maxiprod (filtro Dentro do grupo 12)
+- [x] Resolver duplicação de quantidades usando query 'estoques' tipo=NORMAL (não mais estoquesAgrupados)
+- [x] Classificar como grupo "Produtos Importados Prontos (Revenda)" com subgrupos Bambu e Fibra
+- [x] Verificar quantidades no browser após sincronização (todos os itens verificados batem 100%)
+- [x] Rodar testes vitest (257 testes passando em 25 arquivos)
+
+## Sistema de 3 Filtros Hierárquicos no Estoque (17/03/2026)
+- [x] Filtro 1 - Grupo: Industrializados, Produtos Importados Prontos (Revenda), Importação Matéria-Prima
+- [x] Filtro 2 - Subgrupo (estado configurável Maxiprod): Bambu/Fibra (Revenda), Madeira/Madeira Contabilizado (Importação MP), Madeira Importação (Industrializados)
+- [x] Filtro 3 - Segmento CRM do cliente: DISTRIBUIDORA, INDÚSTRIA, LOJA, LATICÍNIO, FOGOS, SERRAGEM, EXPORTAÇÃO
+- [x] Investigar campo "estado configurável" na API GraphQL do Maxiprod
+- [x] Puxar crmSegmento das empresas/clientes vinculados aos pedidos de venda
+- [x] Alterar stockProcessor para classificar itens nos 3 grupos com subgrupos corretos
+- [x] Implementar filtros hierárquicos no frontend (grupo → subgrupo → segmento)
+- [x] Vincular segmento CRM aos itens via pedidos de venda
+- [x] Testes vitest para nova lógica (257 testes passando em 25 arquivos)
+
+## Reestruturação Subgrupos (17/03/2026)
+- [x] Industrialização: remover subgrupos antigos (Rojão, Serragem, Madeira Importação)
+- [x] Industrialização: criar subgrupos Madeira e Madeira Contabilizado (baseado no estadoConfiguravel do pedido)
+- [x] Industrialização: dentro de cada subgrupo, filtro de Segmento CRM (INDÚSTRIA, EXPORTAÇÃO, LOJA, etc.)
+- [x] Importação Matéria-Prima: criar subgrupo "Madeira Importada" (sem alimentação, apenas estrutura)
+- [x] Manter hierarquia grupo→subgrupo→segmento CRM
+- [x] Testes vitest (257 testes passando em 25 arquivos)
+
+## Alterações Estoque + Vendas (17/03/2026 - Parte 2)
+- [x] Importação MP / Madeira Importada: linkar com POs de madeira que estão para chegar
+- [ ] Industrializados: remover subgrupo Madeira Contabilizado, deixar APENAS Madeira
+- [ ] Estoque: adicionar filtro de Segmento CRM (DISTRIBUIDORA, INDÚSTRIA, LOJA, etc.) que estava faltando
+- [x] Aba Vendas: implementar filtros hierárquicos grupo→subgrupo→segmento CRM
+- [x] Aba Vendas: Industrialização/Madeira deve mostrar vendas discriminadas por segmento do cliente
+- [x] Testes vitest (277 testes passando em 26 arquivos)
+
+## PO Madeira Importada (17/03/2026)
+- [x] Incluir PO de madeira importada (ESPETO DE MADEIRA 3.8x200mm, 900cx, código 00335) na coluna PO do dashboard de Estoque
+- [x] Garantir que POs de madeira importada apareçam na seção Import. Matéria-Prima → Madeira Importada
+- [x] Testes vitest (291 testes passando em 26 arquivos)
+
+## Remoção de Senhas - Configurações (17/03/2026)
+- [x] Remover autenticação/senhas da página de Configurações para acesso livre
+
+## Card de Conciliação Diária - Aba Financeiro (17/03/2026)
+- [x] Criar card independente de Conciliação da Semana abaixo da primeira semana
+- [x] Incluir 5 sub-cards (um para cada dia útil da semana) dentro do card principal
+- [x] Persistir dados de conciliação no banco de dados
+- [x] Testes vitest para conciliação (14 testes passando)
+
+## Reformulação Card Conciliação - Autorização de Pagamento (17/03/2026)
+- [x] Reformular card de Conciliação: mostrar contas a pagar listadas por dia da semana
+- [x] Checkbox de autorização de pagamento em cada conta (somente Fernando marca)
+- [x] Contas autorizadas ficam visíveis para o financeiro executar
+- [x] Schema no banco para persistir autorizações por conta/dia
+- [x] Backend: procedures para listar contas por dia e toggle de autorização
+- [x] Frontend: card com 5 dias (seg-sex), cada dia com lista de contas e checkbox
+- [x] Testes vitest para autorização de pagamento (18 testes passando)
+
+## Ajuste Card Autorização de Pagamentos (17/03/2026)
+- [x] Dias colapsados por padrão (expandir ao clicar)
+- [x] Dias passados desaparecem automaticamente
+
+## Visual Card Autorização (17/03/2026)
+- [x] Saldo bancário do dia no header do card
+- [x] Soma dos valores autorizados ao lado do saldo
+- [x] Conta autorizada: fundo verde sem line-through, com ícone de autorizado ao lado do nome
+
+## Ajuste Header DayCard (17/03/2026)
+- [x] Saldo bancário em verde no topo do card do dia (esquerda)
+- [x] Soma autorizada em vermelho ao lado do verde (meio)
+- [x] Total do dia em azul à direita
+
+## Ajuste Visual Tamanhos (17/03/2026)
+- [x] Números maiores no header de cada dia
+- [x] Verde mais forte nas contas autorizadas
+- [x] Ícone de check bem maior nas contas autorizadas
+
+## Subgrupo Máquina de Espetinho (18/03/2026)
+- [x] Mover MÁQUINA DE ESPETINHO para grupo importacao_revenda com subgrupo maquina_espetinho
+- [x] Adicionar subgrupo maquina_espetinho ao tipo ProcessedItem
+- [x] Atualizar classifyGrupoFromDesc para classificar MÁQUINA DE ESPETINHO
+- [x] Atualizar frontend para exibir o novo subgrupo
+
+## Eliminar aba Outros (18/03/2026)
+- [x] Investigar os 25 produtos em Outros e entender classificação atual
+- [x] Sob Encomenda: códigos 00011, 00028, 00029, 00030, 00031, 00198, 00199, 00065
+- [x] Demais produtos do grupo 20/21 (SG 12) vão para Estoque
+- [x] Eliminar seção Outros do dashboard
+- [x] Atualizar testes (324 testes passando)
+
+## Integração Vendas com Classificações (18/03/2026)
+- [x] Aba Vendas: filtros hierárquicos já implementados (Grupo, Subgrupo, Segmento CRM)
+- [x] Aba Vendas: Industrializados já aparecendo nas vendas
+- [x] Aba Vendas: melhorar layout visual - KPI principal grande, 3 cards de status, tabela de detalhamento por segmento
+- [x] Testes vitest passando (324/325, 1 timeout pré-existente)
+
+## Refatoração Configurações > Produtos (18/03/2026)
+- [x] Renomear coluna "Segmento" para "Grupo" com opções: Importação (Revenda), Importação Matéria Prima, Industrializados
+- [x] Renomear bolinha verde para "Em Estoque" e amarela para "Sob Encomenda" com labels visíveis
+- [x] Remover bolinha cinza (terceira opção)
+- [x] Manter opção de marcação manual e automática na coluna "A"
+- [x] R$/CX: calcular média das últimas 5 vendas do Maxiprod, com opção manual para produtos novos
+- [x] VD. MENSAL: tornar editável para vendedor estimar demanda
+- [x] Fator: manter 2,3 como padrão mas tornar editável
+- [x] Nova coluna Alerta: Fator × Estoque Atual ≤ VD. MENSAL → alerta de reposição
+- [x] Testes vitest passando (324/325, 1 timeout pré-existente em valorAReceber)
+- [x] Config Produtos: tornar "s/ preço" clicável/editável para inserção manual de preço
+- [x] Config Produtos: ordenar produtos por semelhança (nome/medida agrupados)
+- [x] Config Produtos: auto-classificar 75 produtos como "Em Estoque" (verde) baseado na aba Estoque
+- [x] Config Produtos: auto-classificar 8 produtos como "Sob Encomenda" (amarelo) baseado na aba Sob Encomenda
+- [x] Config Produtos: manter classificações editáveis após auto-preenchimento
+- [x] Investigar produto faltando: VARETA PARA ALGODÃO DOCE BAMBU 40X40MM - NÃO EXISTE NO MAXIPROD (cancelado)
+- [x] Corrigir descrições dos 3 espetos PALITIM - MANTER COMO MAXIPROD (cancelado pelo usuário)
+- [x] Verificar se erro vem do Maxiprod ou do dashboard - ERRO VEM DO MAXIPROD, manter espelho fiel
+- [x] VARETA DE APITO BAMBU 3,0 X 350 MM PCT 20KG: mudar unidade para KG na aba Configurações
+- [x] Aba Vendas: excluir pedidos "em digitação" do Maxiprod - SOIN #501/#502 removidos (estadoNotaPedido=Digitação), SC JOHNSON MEXICO #155 mantido (Aprovado)
+- [x] Aplicar filtro de exclusão "em digitação" em TODAS as abas/seções: salesRouter, billingRouter, financialRouter, routers.ts (getAvgSalesPrices). 335 testes passando.
+- [ ] Investigar e corrigir grupo "Outros" com R$ 27.909,28 no detalhamento por segmento da aba Vendas
+- [ ] Vendas: mover CANCELADO, AMOSTRA/BONIFICAÇÃO, GILSON e NULL para subgrupo "Outros"
+- [ ] Estoque: corrigir para mostrar apenas ~14.000 cx de produtos importados (Bambu/Fibra) do estoque real
+- [ ] Estoque: garantir que não está puxando de pedidos de venda, apenas do estoque do Maxiprod
+- [ ] Estoque: verificar se POs atualizadas estão refletidas corretamente
+- [ ] Estoque: investigar discrepância 14.012 cx (Maxiprod) vs 13.862 cx (dashboard) - 150 cx faltando
+- [ ] Estoque: investigar 182 itens (Maxiprod) vs 83 itens (dashboard) - 99 itens faltando
+
+## Correção: Conversão UN→CX usando fator oficial do Maxiprod (18/03/2026)
+- [x] Investigar discrepância de 150 caixas (dashboard 13.862 vs Maxiprod 14.012)
+- [x] Identificar causa raiz: 3 itens com fator de conversão incorreto (00058, 00061, 00063)
+- [x] Adicionar campo unidadeDeVendaFator ao schema stock_items
+- [x] Migrar banco de dados com novo campo
+- [x] Modificar transformStockData para salvar unidadeDeVendaFatorDeConversao do Maxiprod
+- [x] Modificar processStockData para priorizar fator do Maxiprod sobre extração da descrição
+- [x] Re-sincronizar dados e verificar total: 14.012 cx (bate 100% com Maxiprod)
+- [x] Criar testes unitários para validar lógica de conversão (6 testes passando)
+- [x] Todos os 341 testes passando
+
+## Ocultar item AMOSTRA-TESTE (18/03/2026)
+- [x] Ocultar item 00003A (AMOSTRA-TESTE ESPETO DE BAMBU) do dashboard de estoque
+
+## Melhorias Vendas e Reposição (18/03/2026)
+- [x] Aba Vendas: adicionar seta/dropdown no item "Outros" para mostrar detalhamento dos valores
+- [x] Config Produtos: refazer lógica de reposição - Consumo no lead time = Venda mensal × Fator
+- [x] Config Produtos: se Estoque atual < Consumo no lead time → Precisa pedir
+- [x] Config Produtos: mostrar quantidade a pedir = Consumo no lead time - Estoque atual
+
+## Vendedores Inadimplência + Estabilidade Sync (18/03/2026)
+- [x] Identificar clientes sem vendedor na aba de inadimplência (21 clientes - não estão no Kommo nem no Maxiprod)
+- [x] Puxar vendedores pelo responsável do pedido de venda no Maxiprod (apenas 4 com pedidos, sem vendedor cadastrado)
+- [x] Complementar vendedores faltantes via Kommo (clientes não cadastrados no CRM - aguardando Fernando)
+- [x] Investigar variações bruscas no Contas a Pagar/Receber (causa: DELETE ALL + RE-INSERT sem transação)
+- [x] Garantir consistência: transação atômica em TODAS as tabelas + validação de volume mínimo (50%)
+
+## Preço da Mercadoria - Média Últimas 5 Vendas (18/03/2026)
+- [x] Puxar preço médio das últimas 5 vendas do Maxiprod para produtos que já venderam (já estava funcionando)
+- [x] Manter preço manual para produtos que nunca venderam (já estava funcionando)
+- [x] Exibir "s/ preço" apenas quando não há vendas E não há preço manual (já estava funcionando)
+
+## Coluna PRODUTO - Largura e Redimensionamento (19/03/2026)
+- [x] Aumentar largura padrão da coluna PRODUTO para mostrar nome completo
+- [x] Adicionar redimensionamento manual (arrastar borda da coluna)
+
+## Correção Sobreposição Colunas GRUPO/ESTOQUE (19/03/2026)
+- [x] Corrigir sobreposição entre colunas GRUPO e ESTOQUE na tabela de estoque
+- [x] Manter coluna PRODUTO larga e redimensionável
+
+## Valorização de Produtos com PO (19/03/2026)
+- [ ] Investigar por que produtos com PO não estão sendo valorizados
+- [ ] Corrigir lógica para que todos os produtos com PO entrem no valor projetado
+- [ ] Garantir que valorização use preço médio das últimas 5 vendas (ou preço manual)
+
+## Preços Manuais para Produtos com PO sem Preço (19/03/2026)
+- [x] Inserir preços manuais factíveis para 12 produtos com PO que não têm preço
+- [x] Basear preços em produtos similares que já vendem
+- [x] Valorização agora 81/81 (100%) com preço - VLR PROJETADO: R$ 6.338.674,30
+
+## Coluna PRODUTO - Nome Completo na Valorização (19/03/2026)
+- [x] Mostrar nome completo do produto quando Valorização está ativa
+- [x] Manter demais colunas bem claras para leitura
+
+## Investigação: 1 Caixa a Menos no Dashboard vs Maxiprod (19/03/2026)
+- [ ] Investigar qual produto tem 1 caixa a menos no dashboard comparado ao Maxiprod
+- [ ] Identificar causa raiz (arredondamento, conversão un/cx, sync)
+
+## Valores Negativos de PO na Valorização (19/03/2026)
+- [ ] Investigar por que existem valores negativos de PO na valorização do estoque
+- [ ] POs que não chegaram não devem gerar valores negativos
+- [ ] Corrigir lógica de cálculo do Vlr PO
+
+## Card Estoque Total Expansível com Detalhamento (19/03/2026)
+- [ ] Incluir detalhamento do card Disponível dentro do card Estoque Total
+- [ ] Adicionar botão expandir/diminuir para ver resultado detalhado
+- [ ] Mostrar cálculo: Estoque Total - Pedidos = Disponível
+
+## Sistema Produto Pai com Variações (19/03/2026)
+- [x] Criar tabela product_variants no banco (parentCode, childCode, conversionFactor)
+- [x] Configurar 00001 como pai, 00002 (fator 0.5) e 00242 (fator 0.15) como variações
+- [x] Backend: calcular disponível do pai descontando pedidos das variações proporcionalmente
+- [x] Frontend: variações ocultas por padrão, ícone (+) para expandir sub-linhas
+- [x] Tela de configuração para gerenciar relações pai/variação
+- [x] Testes vitest para variações (352 testes passando)
+
+## Variação: 00009 como Pai de 00008, 00273, 00007 (19/03/2026)
+- [x] Verificar unidades por caixa dos 4 produtos (00009=5000, 00008=8000, 00273Z=5000, 00007=5000)
+- [x] Inserir relações pai/variação no banco (00008=1.6x, 00273Z=1.0x, 00007=1.0x)
+
+## Pedidos Detalhados no Produto Pai (19/03/2026)
+- [x] Mostrar composição dos pedidos no produto pai: quantos do pai + quantos de cada variação
+- [x] Aplicar regra sempre que houver produto pai com variações
+- [x] Backend: agregar pedidos das variações no pedidosPorCliente do pai
+- [x] Frontend: tooltip mostra composição (próprio + cada variação) com clientes detalhados
+
+## Investigação: Pedido 437 não desconta do estoque (19/03/2026)
+- [x] Verificar código do produto no pedido 437 após mudança para Tropical (00007TR)
+- [x] Verificar se o código do produto existe no stock_items (não existia, era PO-only)
+- [x] Corrigir mapeamento: stockProcessor agora cruza pedidos de venda com itens PO-only
+
+## Pedidos de Venda em Itens PO-Only (19/03/2026)
+- [x] Cruzar pedidos de venda com itens que só existem em PO (sem estoque)
+- [x] 00007TR agora aparece na seção Estoque com 700 cx pedidos e 700 cx PO
+
+## Produto 00058 - Unidade em Kg (19/03/2026)
+- [x] Mostrar "kg" em vez de "cx" para o produto 00058 em todas as colunas do dashboard
+
+## Agrupamento 00013 pai com variações (19/03/2026)
+- [x] Configurar 00013 como pai com variações 00012, 00013R e 00014 (mesmo padrão dos outros agrupamentos)
+
+## Agrupamento 00017 pai com variações (19/03/2026)
+- [x] Configurar 00017 como pai com variações 00015, 00016, 00241 e 00250
+
+## Agrupamento 00021 pai com variações (19/03/2026)
+- [x] Configurar 00021 como pai com variações 00145 e 00022
+
+## Agrupamento 00018 pai com variação (19/03/2026)
+- [x] Configurar 00018 como pai com variação 00023
+
+## Mover produtos para Sob Encomenda (19/03/2026)
+- [x] Mover 00262, 00244 e 00007TR para classificação "Sob Encomenda"
+
+## Mover produtos para Sob Encomenda (19/03/2026 - lote 2)
+- [x] Mover 00362, 00063, 00062, 00061, 00054, 00045, 00044 para "Sob Encomenda"
+
+## Agrupamento Palitos de Manicure (19/03/2026)
+- [x] Duas Pontas 4,0x125: pai 00036, variação 00034
+- [x] Duas Pontas 5,0x140: pai 00037, variações 00038, 00253
+- [x] Duas Pontas 5,0x160: pai 00040, variação 00041
+- [x] Duas Pontas 5,0x180: pai 00045, variação 00044
+- [x] Ponta/Chanfro 4,0x125: pai 00046, variações 00047, 00050
+- [x] Ponta/Chanfro 5,0x140: pai 00051, variação 00252
+
+## Contagem de itens (19/03/2026)
+- [x] Contagem de itens no dashboard deve contar apenas pais, excluindo variações filhas
+
+## Ordenação por comprimento (19/03/2026)
+- [x] Organizar lista de produtos por comprimento (número depois do X na medida) como ordenação padrão
+
+## Agrupamentos 00033 e 00148 (19/03/2026)
+- [x] Pai 00033, variação 00213
+- [x] Pai 00148, variação 00139
+
+## Agrupamento 00024 (19/03/2026)
+- [x] Pai 00024, variação 00025
+
+## Correção agrupamento 00023 (19/03/2026)
+- [x] Desfazer agrupamento do 00023 como variação (remover da tabela product_variants)
+
+## Mover 00148 para Sob Encomenda (19/03/2026)
+- [x] Mover 00148 para classificação "Sob Encomenda"
+
+## Agrupamento 00018/00131 (19/03/2026)
+- [x] Pai 00018, variação 00131
+
+## Agrupamento 00024/00023 (19/03/2026)
+- [x] Pai 00024, variação 00023
+
+## Mover 00136 para Sob Encomenda (19/03/2026)
+- [x] Mover 00136 para classificação "Sob Encomenda"
+
+## Agrupamento 00029/00136 (19/03/2026)
+- [x] Pai 00029, variação 00136
+
+## Zerar estoque regulador sob encomenda (19/03/2026)
+- [x] Zerar estoque regulador de todos os produtos classificados como Sob Encomenda
+
+## 00065 voltar para Estoque + agrupamento (19/03/2026)
+- [x] Mover 00065 de volta para classificação "estoque"
+- [x] Pai 00065, variação 00066
+
+## Corrigir alertas (19/03/2026)
+- [x] Card de alertas deve contar apenas produtos de Estoque, nunca de Sob Encomenda
+
+## Corrigir KPI Alertas (19/03/2026)
+- [x] KPI de Alertas deve contar apenas alertas do card Estoque, não de Sob Encomenda
+
+## Reorganizar cards da aba Vendas (20/03/2026)
+- [x] Remover card "A Faturar (Anterior)" dos 3 cards de status
+- [x] Incluir cards "Faturado" e "A Faturar" dentro do card principal "Valor Total do Período"
+- [x] Layout horizontal: Valor Total à esquerda, Faturado e A Faturar à direita no mesmo card
+- [x] Remover opção "Outros" do seletor de grupos na aba Vendas
+- [x] Excluir pedidos com estadoConfiguravel CANCELADO, AMOSTRA/BONIFICAÇÃO, GILSON e NULL dos cálculos de vendas
+- [x] Remover segmento "Outros" completamente da tabela de detalhamento por segmento
+- [x] Inverter posição: Evolução Diária acima de Pedidos na aba Vendas
+- [x] Renomear card Pedidos para "Pedidos Faturados" e filtrar só faturados
+- [x] Criar novo card "A Faturar Mês Atual" abaixo com pedidos a faturar do período
+- [x] Replicar modelo de detalhes de pedido da aba Faturamento na aba Vendas (mesmo layout ao expandir pedido)
+- [x] Adicionar código do produto abaixo de cada item nos pedidos da aba Vendas (mesmo modelo do estoque)
+- [x] Adicionar código do produto abaixo de cada item nos pedidos da aba Faturamento (mesmo modelo do estoque)
+- [x] Verificar se os produtos dos pedidos são idênticos aos do estoque
+- [x] Padronizar linha resumida dos pedidos na aba Vendas com mesma ordem/informações da aba Faturamento (UF, Emissão, Entrega)
+- [x] Corrigir alinhamento das colunas com os títulos nos cards de pedidos (aba Vendas e Faturamento)
+- [x] Coluna Entrega: remover símbolo/ícone de alerta
+- [x] Coluna Entrega: remover cor vermelha de fundo
+- [x] Coluna Entrega: lembrete sutil apenas para vencidos NÃO faturados
+- [x] Coluna Entrega: aumentar tamanho dos números para melhor visibilidade
+- [x] Aplicar mudanças na aba Vendas e na aba Faturamento
+- [x] Adicionar ordenação (sort) na coluna Entrega nos cards de pedidos (aba Vendas e Faturamento)
+- [x] Mover 3 seletores (Período, Empresa, Grupo) para acima do primeiro card, abaixo da data, bem destacados
+- [x] Quando grupo selecionado, tabela Detalhamento mostra breakdown por CRM ao invés de por grupo
+- [x] Remover coluna A Fat. Anterior da tabela de detalhamento por segmento/CRM na aba Vendas
+- [x] Conectar filtros de Grupo e CRM da aba Vendas aos cards de Inadimplência (filtrar automaticamente)
+- [x] Aumentar destaque visual do texto do período/mês na aba Vendas (letras maiores, mais visível)
+- [x] Card A Faturar Anterior: mudar cor para mesma do A Faturar Mês Atual
+- [x] Cards Inadimplência: mudar para tom de vermelho mais forte
+- [x] Adicionar tom de preenchimento (background color) nos últimos 6 cards da aba Vendas
+- [x] Aumentar tamanho do popup/tooltip de pedidos na aba Estoque (hover sobre número de caixas vendidas)
+- [x] Remover seção "Composição dos Pedidos" (códigos e fator de conversão) do tooltip de pedidos na aba Estoque
+- [x] Tooltip pedidos: remover palavra "Clientes", código e "próprio" dos títulos, mostrar medida/descrição do produto
+- [x] Corrigir overflow da coluna Grupo na tabela de estoque (texto sobrepondo números adjacentes, ex: produto 00335)
+- [x] Corrigir texto cortado no seletor de grupo quando "Produtos Importados" está selecionado
+- [x] Adicionar botão mostrar/ocultar valores monetários na aba Faturamento (igual aba Vendas, para produção não ver valores)
+- [x] Mover botão ocultar valores para cima dos cards (lado direito), fora do TopNav
+- [x] Valores ocultos devem desaparecer completamente (sem R$ •••••, sem nenhum sinal)
+- [x] Remover KPI cards "Faturado Parcial" e "Total Geral" da aba Faturamento
+- [x] Alterar card "Faturado (30 dias)" para "Faturado (Mês Corrente)" - filtrar apenas pedidos faturados no mês atual
+- [x] Melhorar estética da aba Faturamento com valores ocultos: aumentar letras, ajustar layout para ficar equilibrado
+- [x] Criar card "Aceite da Produção" na aba Faturamento acima dos pedidos em aberto
+- [x] Card com 3 grupos (Revenda, Industrializados, Matéria-Prima) como na aba Vendas
+- [x] Pedidos aprovados caem automaticamente no card de aceite
+- [x] Produção dá aceite e pedido passa para card Pedidos em Aberto
+- [x] Criar tabela no banco para registrar aceites da produção
+- [x] Endpoints para listar pendentes de aceite e registrar aceite
+- [x] BUG: Card Pedidos em Aberto foi substituído pelo Aceite da Produção - devem coexistir. Pedidos em Aberto deve mostrar TODOS os pedidos abertos (não apenas aceitos)
+- [x] BUG: Classificação de grupos na aba Faturamento não está correta - deve usar mesma lógica da aba Vendas
+- [x] Extrair função de classificação de grupos para módulo compartilhado (shared) para garantir consistência entre abas
+- [x] Aplicar classificação correta em todos os cards da aba Faturamento (Aceite, Pedidos em Aberto, Autorizado, Faturados)
+- [x] Remover filtro isOutros da aba Faturamento - AMOSTRA e BONIFICAÇÃO devem aparecer para a produção (manter apenas filtro de Digitação)
+- [x] Aba Faturamento: filtrar apenas pedidos APROVADOS (excluir "A aprovar" além de "Digitação")
+- [x] Badges visuais AMOSTRA e BONIFICAÇÃO em TODOS os cards da aba Faturamento (Aceite, Pedidos em Aberto, Autorizado, Faturados)
+
+## Detalhes Completos do Pedido na Aba Faturamento (21/03/2026)
+- [x] Levantar todos os campos disponíveis na API GraphQL do Maxiprod para itens de pedido
+- [x] Backend: puxar todos os campos detalhados dos itens (código, descrição completa, medida, unidade, observações)
+- [x] Frontend: redesenhar layout expandido do pedido com TODOS os detalhes para a produção
+- [x] Incluir: dados do cliente (razão social, endereço completo, IE, CNPJ, telefone, email)
+- [x] Incluir: dados de entrega (transportadora, condição de pagamento, prazo)
+- [x] Incluir: cada item com código, NCM, grupo, descrição completa, medida, quantidade, unidade
+- [x] Investigar e incluir observações do pedido da API GraphQL do Maxiprod (campo observacoes encontrado e implementado)
+- [x] Layout otimizado para impressão/leitura pela produção (2 colunas: Cliente + Logística + Endereço + Itens)
+- [x] Testes vitest para novos campos (41 testes passando)
+- [x] Aceite da Produção: separar pedidos normais de AMOSTRA/BONIFICAÇÃO dentro de cada grupo (Revenda, Industrializado, MP)
+- [x] Aceite: tabs individuais por grupo+tipo (Import. Revenda, Amostra Import. Revenda, Bonif. Import. Revenda, Industrializados, Amostra Indust., etc.)
+- [x] Investigar e corrigir classificação AMOSTRA/BONIFICAÇÃO — pedidos 643, 727, 689, 610, 721 corrigidos com heurística inteligente
+- [x] Heurística inteligente para AMOSTRA/BONIFICAÇÃO: obs "bonificação" → BONIF, valor baixo → AMOSTRA, valor normal → PEDIDO NORMAL
+- [x] Aceite: reordenar tabs — Prod. Importados → Industrializados → Amostras → Bonificações
+- [x] Padronizar aba Faturamento: tipografia, tamanho cards, setas, espaçamentos — padrão único
+- [x] Adicionar KPI card "Aceite da Produção" no topo da aba Faturamento, ao lado dos 3 cards existentes
+- [x] Corrigir fluxo exclusivo: pedido só pode estar em 1 etapa (Aceite → Em Aberto → Autorizado → Faturado), nunca em 2 ao mesmo tempo
+- [x] Auto-revogar aceite quando pedido sofre alteração no Maxiprod (pedido volta para Aceite da Produção)
+- [x] Destacar observações dos pedidos de forma bem visível e chamativa na aba Faturamento
+- [x] Indicador de OBS chamativo na frente da linha do pedido, junto ao número e badge de grupo
+- [x] Remover banner amarelo abaixo da linha, remover OBS do lado direito, melhorar badge OBS e mover para antes do número do pedido
+- [x] Ícone OBS amarelo e posicionado antes do nome do cliente (não antes do número do pedido)
+- [x] Mover ícone OBS amarelo para DEPOIS do nome do cliente (à direita)
+- [x] Padronizar rigorosamente os 3 BillingCards (Em Aberto, Autorizado, Faturado) para seguir exatamente o layout e informações do Aceite da Produção
+- [x] Copiar colunas do header do Aceite da Produção para os 3 BillingCards (mesmas colunas em todos)
+- [x] Adicionar setas de ordenação APENAS em Emissão e Entrega no Aceite e nos 3 BillingCards
+- [x] Copiar tabs de grupo (Todos, Prod. Importados, Industrializados, Matéria-Prima, Amostra, Bonif.) do Aceite para os 3 BillingCards
+- [x] Corrigir tabs de grupo nos BillingCards que não estão funcionando (especialmente Faturados)
+- [x] Ao abrir ou mudar de aba, todos os cards devem começar fechados (collapsed)
+- [x] Botão de gerar PDF do pedido para impressão pela produção (em todos os cards, incluindo faturado)
+- [x] PDF do pedido em preto e branco com logo do Grupo Fox
+- [x] Botão imprimir apenas no card Pedidos em Aberto (remover dos outros)
+- [x] PDF: remover faixa preta, corrigir proporção logo, traço na metade da folha, economizar tinta
+- [x] Aumentar tamanho da logo do Grupo Fox no PDF do pedido
+- [x] PDF: dimensionamento adaptativo - reduzir espaçamentos quando conteúdo ficar próximo da linha do meio, manter proporção quando houver espaço
+- [x] Corrigir nome do cliente remontado/sobreposto no PDF
+- [x] Sistema de observações da produção nos pedidos em aberto: ícone + modal, protegido por senha, editável pela produção, visível pelo comercial
+- [x] Ícone de observação da produção: sempre visível (não só no hover) e trocar para ícone mais adequado (StickyNote)
+- [x] Seletor de status da produção nos pedidos em aberto: em produção, falta de mercadoria, falta de matéria prima, pronto aguardando data, 25% pronto, 50% pronto, 75% pronto, em separação. Protegido por senha, visível apenas no card Pedidos em Aberto.
+- [x] Remover bolinhas coloridas do seletor de status da produção para dar mais espaço ao texto
+- [x] BUG CRÍTICO: Valor total do pedido 607 (Faturados) divergente da soma dos itens - causa: NF valorTotal era o total da NF inteira, não do pedido; fix: adicionado label "Valor total da NF" + linha "Total do Pedido" com soma dos itens
+- [x] Remover valor da NF da exibição nos pedidos faturados expandidos para evitar confusão com valor do pedido
+- [x] Remover campo de observação da produção (StickyNote) do card Autorizado a Faturar - deve sumir quando pedido passa para faturar
+- [x] Diminuir ícone de desfazer (tornar bem pequeno)
+- [x] Card Pedidos em Aberto: colunas desalinhadas com os títulos - corrigir layout
+- [x] Card Pedidos em Aberto: nome do cliente cortado - melhorado (truncate com tooltip, ícones movidos para coluna própria)
+- [x] Puxar nome do cliente mais para a esquerda no card Pedidos em Aberto (reduzido coluna Pedido de w-52/w-56 para w-40/w-44)
+- [x] Alinhar colunas dos cards Autorizado a Faturar, Faturados e Aceite da Produção para ficarem no mesmo padrão do Pedidos em Aberto
+- [x] Aumentar espaçamento entre as 4 colunas da direita (UF, Emissão, Entrega, Itens)
+- [x] Puxar título "Cliente" mais para o meio para melhor estética
+- [x] Card Autorizado a Faturar: badge do segmento deve ficar ao lado do número do pedido (mesma linha), não embaixo. Melhor distribuição de colunas.
+- [x] Card Faturados: checkbox "Pedido Coleta" na linha do pedido, protegido por senha
+- [x] Card Faturados: checkbox "Coletado" na linha do pedido, protegido por senha
+- [x] Tabela collection_status no banco para persistir os checkboxes
+- [x] Endpoints tRPC para get/save collection status
+- [x] Card Faturados: reduzir coluna Pedido para dar mais espaço ao nome do cliente
+- [x] Card Faturados: aumentar tamanho dos checkboxes de coleta (Ped. Coleta e Coletado) - h-6 w-6
+- [x] Card Faturados: remover espaçador de 110px (não tem botão de ação) e usar espaço para Pedido e Cliente
+- [x] Aba Faturamento: exibir total de volumes (soma das quantidades dos itens) na coluna Itens
+- [x] Card Faturados: nova coluna Transportadora entre NF e Ped. Coleta com seletor (Cliente Retira, Braspress, Flor de Minas, Rodo Naves, Delcio), protegido por senha
+- [x] Redimensionar colunas do card Faturados para acomodar nova coluna Transportadora
+- [x] Card Faturados: remover coluna UF para ganhar espaço
+- [x] Card Faturados: diminuir fonte das datas (Emissão e Entrega) para ganhar espaço
+- [x] Card Faturados: aumentar espaço para nome dos clientes (melhor legibilidade)
+- [x] Card Faturados: aproximar colunas Emissão e Entrega (reduzir largura)
+- [x] Card Faturados: diminuir levemente a fonte do nome do cliente
+- [x] Card Faturados: compactar colunas da direita (NF, Transp, Coleta, Itens)
+- [x] Card Faturados: aumentar tamanho dos checkboxes e dropdown de transportadora
+- [x] Card Faturados: diminuir número de itens e aumentar número de volumes na coluna Itens
+- [x] Card Faturados: centralizar melhor a coluna Transportadora
+- [x] Card Faturados: remover coluna Entrega
+- [x] Card Faturados: mover coluna Emissão para entre Transportadora e Ped. Coleta
+- [x] Card Faturados: nova coluna com seletor de data e horário (hora em hora) entre Coletado e Itens
+- [x] Backend: tabela e endpoints para persistir data/horário de coleta por pedido
+- [x] Card Faturados: aumentar fontes das colunas da direita (Transp., Emissão, Ped. Coleta, Coletado, Agendamento)
+- [x] Card Faturados: aumentar o micro card do seletor de transportadora
+- [x] Preencher todos os pedidos faturados com Braspress, coleta, coletado, data de ontem (20/03/2026) e horário 16:00
+- [x] Card Faturados: opção de limpar data e hora do agendamento (deixar sem preenchimento)
+- [x] Card Faturados: mover coluna Transportadora para entre Ped. Coleta e Coletado
+- [x] Card Faturados: mudar de 'mês corrente' para 'últimos 30 dias' (janela rolante)
+- [x] Card Faturados: pedidos não coletados sempre aparecem no topo (ordenação prioritária)
+- [x] Card Faturados: coloração verde claro para pedidos coletados
+- [x] Card Faturados: cor de atenção (amarelo/laranja) para pedidos pendentes de coleta
+- [x] Card Faturados: regra de preenchimento sequencial — Ped. Coleta e Transportadora habilitados desde o início
+- [x] Card Faturados: Coletado só habilita após Ped. Coleta E Transportadora preenchidos
+- [x] Card Faturados: Data/Hora (Agendamento) só habilita após Coletado marcado
+- [x] Bug fix: ao marcar Coletado, data e hora do agendamento preenchem automaticamente — devem ficar vazios (dados antigos do script removidos do banco)
+- [x] Substituir texto 'Grupo Fox' pela logo da empresa no header (canto superior esquerdo)
+- [x] Aumentar fontes dos títulos 'Dashboard de...' no topo de todas as páginas
+- [x] Reverter logo para o header (canto superior esquerdo) e aumentar tamanho (h-12), sem mexer nos títulos
+- [x] Copiar card 'Conectado ao Maxiprod' para as abas Vendas, Faturamento e Financeiro
+- [x] Aba Estoque: remover 5 mini cards (Revenda, Industrializados, Matéria-Prima, 32 com PO, Total) abaixo dos Pedidos de PO
+- [x] Aba Estoque: remover legendas do rodapé
+- [x] Aba Vendas: botão de exportar PDF ao lado do período
+- [x] PDF: resumo do card principal (totais de vendas)
+- [x] PDF: detalhamento por grupo de negócio e por CRM/vendedor
+- [x] PDF: gráfico de venda diária
+- [x] PDF: aumentar bastante a fonte da data de geração
+- [x] PDF: corrigir barra de progresso saindo do card principal
+- [x] PDF: adicionar legendas das linhas no gráfico (acumulado mês atual, meta, mês anterior)
+- [x] PDF: aproveitar melhor o espaço da folha para o gráfico
+- [x] Bug: label do período mostra texto diferente do selecionado ao filtrar período anterior
+- [x] Bug: botão Aplicar não funciona ao selecionar data personalizada na aba Vendas
+- [x] Bug: data personalizada 01/02 mostra label "31 de janeiro" em vez de "01 de fevereiro" (timezone/off-by-one)
+- [x] PDF: aumentar letras do período dentro do PDF
+- [x] PDF pedidos: adicionar soma total de caixas (volumes) no rodapé da tabela
+- [x] Regra: PDFs de pedidos sempre devem incluir total de volumes
+- [x] PDF pedidos: alinhar total volumes à direita na coluna Qtd (como resultado de soma)
+- [x] Financeiro: unificar card inadimplência e card clientes inadimplentes em um único card
+- [x] Financeiro: criar card Faturamento vs Contas a Pagar do mês atual acima do card Inadimplência
+- [x] Card mostra faturamento (NFs emitidas) vs contas a pagar vencendo no mês
+- [x] Card Faturamento: garantir que mostra TODAS as vendas faturadas no período
+- [x] Card Faturamento: mostrar contas efetivamente PAGAS (liquidadas) do dia 1 até hoje, não mês fechado
+- [x] Card Faturamento: adicionar seletor de período igual às outras abas (mês atual, anterior, personalizado)
+- [x] Sync: modificar sincronização para NÃO deletar contas que desaparecem da API (marcar como PAGO)
+- [x] Sync: registrar liquidacaoData quando conta desaparece da API (data da detecção)
+- [x] Card Faturamento: lógica híbrida (março p/ trás = vencimento, abril+ = contas pagas reais)
+- [x] Card Faturamento: transição automática para abril (CUTOFF_DATE = 2026-04-01 no código)
+- [x] Investigar fontes de dados no Maxiprod para obter valor real de contas pagas no mês
+- [x] Corrigir card Faturamento vs Contas Pagas com dados reais da API GraphQL (estado PAGO + liquidacaoData)
+- [x] Bug: contas pagas de janeiro mostrando apenas R$ 44K (Maxiprod purga dados após ~2 meses - limitação da API)
+- [x] Criar tabela paid_accounts_monthly para cache local de snapshots mensais
+- [x] Implementar cache automático: salva snapshot ao consultar, recupera do cache quando API não tem dados
+- [x] Adicionar sync de snapshots no scheduler (a cada hora)
+- [x] UI: aviso visual de dados parciais/indisponíveis no card Faturamento vs Contas Pagas
+- [x] UI: badge 'Dados salvos' quando usando cache local
+- [x] UI: aviso amarelo quando dados estão incompletos (< 100 contas para mês completo)
+- [x] Financeiro: criar card Vendas vs Contas Pagas (pedidos de venda vs contas pagas no período)
+- [x] Backend: endpoint para buscar total de vendas (pedidos) no período selecionado
+- [x] Frontend: componente VendasVsPagosCard com seletor de período e barras de progresso
+- [x] Reutilizar dados de contas pagas do endpoint existente (com cache/avisos)
+- [x] Bug: valor de vendas no card Vendas vs Contas Pagas diverge do total da aba Vendas (corrigido: mesma lógica de filtros)
+- [x] Financeiro: unificar cards Faturamento vs Contas Pagas e Vendas vs Contas Pagas em 1 card expansível
+- [x] Card compacto: mostrar resumo com Faturamento, Vendas e Contas Pagas em uma linha
+- [x] Card expandido: revelar detalhes completos (barras, contagens, avisos de dados parciais)
+- [x] Remover componentes antigos FaturamentoVsPagosCard e VendasVsPagosCard (mantidos como backup)
+- [x] Resumo Financeiro: barras de Faturado, Vendas e Contas Pagas expansíveis com lista de detalhes
+- [x] Backend: endpoint para listar NFs faturadas no período (cliente, número, valor, data)
+- [x] Backend: endpoint para listar pedidos de venda no período (cliente, número, valor, data)
+- [x] Backend: endpoint para listar contas pagas no período (fornecedor, valor, data liquidação)
+- [x] Frontend: sub-expansão em cada barra com tabela de itens e totalizador
+- [x] Resumo Financeiro: adicionar setinhas de ordenação nos cabeçalhos das tabelas de detalhes (Faturado, Vendas, Contas Pagas)
+- [x] Investigar: contas pagas de fevereiro com valor muito acima do real
+- [x] Investigar: verificar contas pagas de março se estão corretas
+- [x] Análise detalhada: campos usados, filtros, duplicatas, empresas múltiplas
+- [x] Contas Pagas: excluir previsões (DESPESA sem fornecedor e sem documento vinculado)
+- [x] Fev: R$ 2.095K → R$ 1.889K (excluiu 110 previsões = R$ 206K)
+- [x] Mar: R$ 1.037K → R$ 874K (excluiu 42 previsões = R$ 164K)
+- [x] Backend: aplicar deduplicação no fetchPaidAccountsTotal e fetchPaidAccountsDetails
+- [x] UI: badge '42 previsões excluídas' com tooltip mostrando valor excluído
+- [x] Reverter card Resumo Financeiro para versão anterior (checkpoint 76cdcfa9)
+- [x] Aplicar melhorias estéticas pontuais sem alterar estrutura: valores completos, espaçamento, cores
+- [x] Resumo Financeiro: adicionar variável "Recebimento" como primeiro item no card
+- [x] Backend: endpoint para buscar total de recebimentos (contas recebidas) no período
+- [x] Backend: endpoint para listar detalhes de recebimentos (cliente, valor, data)
+- [x] Frontend: incluir Recebimento no compact view e expanded view do card
+- [x] BUG: Recebimentos mostrando valor inflado (R$ 1.6M, deveria ser abaixo de R$ 1M) - corrigido usando OFX bancário
+- [x] Investigar tipos de contaAReceber incluídos (empréstimos, transferências, liberações não são recebimentos reais)
+- [x] Filtrar apenas recebimentos reais de clientes (excluir ADIANTAMENTO, RECEITA bancária, etc.)
+- [x] Validar valor final com precisão - R$ 554.757,47 via OFX
+- [x] Recebimentos: substituído por dados OFX bancário (Cobrança/Boleto + PIX + TED + Depósito)
+- [x] Recebimentos: OFX bancário garante que só entra dinheiro real (não depende de estado RECEBIDO)
+- [x] Recebimentos: OFX usa valor real do extrato bancário
+- [x] Explorar schema GraphQL do Maxiprod para conciliação bancária - encontrado itensOfx
+- [x] Resumo Financeiro: adicionar campo "Outras Entradas" (entradas bancárias não-cliente) - corrigido excluindo transf. internas
+- [x] Backend: endpoint getOtherInflows que retorna total e detalhes das entradas OFX excluídas dos recebimentos
+- [x] Frontend: incluir Outras Entradas no card com visual diferenciado (cor cinza/slate)
+- [x] Frontend: mostrar Total Entradas (Recebimentos + Outras Entradas) e saldo (Total Entradas - Contas Pagas)
+- [x] BUG: Outras Entradas mostrando R$ 865K - corrigido para R$ 153K excluindo transf. internas do grupo e Intercredis
+- [x] Analisar OFX completo (entradas + saídas) - identificado Conta Garantida Bradesco como rotativo
+- [x] Redesenhar lógica: Recebimentos (clientes) + Outras Entradas (ext.) excluindo transf. internas
+- [x] Resumo Financeiro: unificar Recebimentos + Outras Entradas + Total Entradas em um único card, manter grid 4 cards alinhados
+- [x] Gráfico de barras empilhadas: Recebimentos + Outras Entradas por mês no Resumo Financeiro expandido
+- [x] Backend: endpoint getMonthlyOFXInflows que retorna recebimentos e outras entradas por mês
+- [x] Frontend: gráfico stacked bar com Recebimentos (cor principal) + Outras Entradas (cor secundária) empilhados
+- [x] Remover gráfico separado de Evolução Mensal de Entradas
+- [x] Mesclar Recebimentos + Outras Entradas em uma única barra empilhada (stacked) na visão expandida
+- [x] Posicionar barra de Entradas acima da barra de Faturado
+- [x] Manter restante (Faturado, Vendas, Contas Pagas, saldos) como estava
+- [x] Adicionar setas de expandir (chevron) ao lado de Recebimentos e Outras na legenda da barra empilhada
+- [x] Resumo Financeiro: aumentar fontes/números, melhorar espaçamento, manter layout
+- [x] Excluir card "Ver Contas de" (com botões de meses) do dashboard Financeiro
+- [x] Adicionar seta de expandir no card "A Receber" para mostrar contas detalhadas por mês
+- [x] Adicionar seta de expandir no card "A Pagar" para mostrar contas detalhadas por mês
+- [x] Mover funcionalidade de visualização mensal de contas para dentro dos cards A Receber e A Pagar
+- [x] Reposicionar cards A Receber / A Pagar logo acima de Inadimplência
+- [x] Reposicionar card Fluxo de Caixa logo acima de Inadimplência
+- [x] Criar tabela payment_authorizations no banco (conta ID, status, comentário, data)
+- [x] Backend: endpoints tRPC para salvar/consultar status de autorização e comentários
+- [x] Frontend: seletor de status em cada conta a Pagar (Autorizado, Não Autorizado, Autorizado com Ressalva, Prorrogar, Outros)
+- [x] Frontend: ícone de comentário clicável em cada conta a Pagar para adicionar observações
+- [x] Integração: contas autorizadas já entram pré-selecionadas no card Autorização de Pagamentos
+- [ ] Testes automatizados para os endpoints de autorização
+- [x] Adicionar barra de resumo de status no topo de cada card semanal de Pagamentos e Vencidas
+- [x] Mostrar bolinhas coloridas com nome do status, quantidade e soma dos valores por status
+- [x] Adicionar setinhas de ordenação (Nome, Valor, Vencimento) na tabela expandida dos cards A Receber e A Pagar
+- [x] Aumentar área visível da tabela expandida para mostrar mais contas sem scroll apertado
+- [x] Excluir aba Metas da página Configurações
+- [x] Adicionar aba Senhas no lugar da aba Metas em Configurações
+- [x] Adicionar ícone de olho para mostrar/ocultar senha nos campos da aba Senhas
+- [x] Criar tabela no banco para operadores (nome, senha, permissões por seção)
+- [x] Backend: endpoints tRPC para CRUD de operadores e permissões
+- [x] Frontend: tabela de operadores na aba Senhas com campo de senha e checkboxes de permissão
+- [x] Pré-cadastrar 16 operadores (Maria, Erica, Marcos, Fernando, Gilson, Bruno, Guilherme, Flavio, Larissa, Brenda, Thiago, Thalita, Juvenal, Pedro, Jordao, Paula)
+- [x] Implementar controle de acesso nas páginas baseado nas permissões do operador logado
+- [x] Tela de login com logo grande do Grupo Fox, campo de senha e versão V.1.1.1
+- [x] Todos os operadores começam com acesso total (todas as permissões ticadas)
+- [x] Alerta ao clicar em aba sem permissão (todas as abas continuam visíveis)
+- [ ] Versão editável no painel de configurações
+- [x] Diminuir largura do quadro branco da tela de login (mais estreito)
+- [x] Aumentar a logo do Grupo Fox e posicioná-la fora do quadro branco
+- [x] Trocar logo da tela de login para versão colorida
+- [x] Remover retângulo branco atrás da logo
+- [x] Centralizar melhor a logo e adicionar efeito 3D
+- [x] Logo login: texto GRUPO FOX em verde forte
+- [x] Logo login: intensificar cores da raposa (tons mais fortes/chamativos)
+- [x] Logo login: corrigir posicionamento/centralização
+- [x] Logo login: letras GRUPO FOX em preto (mesmo estilo)
+- [x] Logo login: melhorar preenchimento da raposa (mais uniforme e bem acabado)
+- [x] Criar componente de frase motivacional na tela de login
+- [x] Banco de frases sobre crescimento, processo, resiliência com nome do autor
+- [x] Troca automática toda segunda-feira
+- [x] Tipografia elegante e posicionamento na tela de login (entre logo e card)
+- [x] Mover frase motivacional para acima da logo (topo da tela de login)
+- [x] Aumentar tamanho das letras da frase
+- [x] Filtrar banco de frases: somente autores estrangeiros de referência mundial
+- [x] Centralizar logo + login juntos no centro da tela
+- [x] Aproximar card de login da logo (reduzir espaço)
+- [x] Frase curta (max 2 linhas) de Napoleon Hill no topo
+- [x] Subir logo + login mais para cima na tela de login
+- [x] Fixar frase de Napoleon Hill como frase da semana atual
+- [x] Atualizar senhas de todos os operadores para o nome de cada um
+- [x] Criar painel de gerenciamento de usuários na aba Senhas (criar novo usuário+senha, editar, excluir)
+- [x] Adicionar coluna accessValorizacao no schema de operadores
+- [x] Atualizar backend para suportar permissão accessValorizacao
+- [x] Adicionar coluna de subgrupo "Valorização" na aba Senhas
+- [x] Restringir botão Valorização de Estoque na aba Estoque conforme permissão
+- [x] Corrigir 3 erros TS no financialRouter.ts (fetchPaidAccountsDetails, excludedCount, excludedTotal) - erros stale do watcher, build OK
+- [x] Corrigir erro JSX no Billing.tsx (linha 1809) - build OK sem erros
+- [x] PERMISSÕES GRANULARES - Mapear botões/ações da aba Faturamento
+- [x] PERMISSÕES GRANULARES - Mapear botões/campos editáveis da aba Financeiro (Billing)
+- [x] PERMISSÕES GRANULARES - Mapear sub-abas de Configurações
+- [x] PERMISSÕES GRANULARES - Criar tabela de permissões granulares no banco
+- [x] PERMISSÕES GRANULARES - Atualizar backend (settingsRouter)
+- [x] PERMISSÕES GRANULARES - Criar interface de gerenciamento na aba Senhas
+- [x] PERMISSÕES GRANULARES - Aplicar restrições na aba Faturamento
+- [x] PERMISSÕES GRANULARES - Aplicar restrições na aba Financeiro (Billing)
+- [x] PERMISSÕES GRANULARES - Aplicar restrições nas sub-abas de Configurações
+- [x] PERMISSÕES GRANULARES - Testar funcionalidades e corrigir problemas
+- [x] Corrigir alinhamento das colunas na aba Senhas (checkboxes desalinhados dos headers)
+- [x] Corrigir erro React key prop no OperatorManagementPanel (fragment sem key)
+- [x] Corrigir 3 erros TS no financialRouter.ts para acelerar publicação (tsc --noEmit e build passam limpo, watcher stale)
+- [x] Criar subgrupo Valorização de Estoque dentro da coluna Estoque na aba Senhas
+- [x] Marcar todas as permissões granulares como autorizadas por padrão para todos os operadores (416 registros, 16 ops x 26 perms)
+- [x] Alterar validação de senha no Faturamento/Financeiro para usar senha individual do operador logado
+- [x] BUG: Senha da Brenda (e possivelmente outros operadores) sendo sobrescrita para "Fernando" automaticamente - encontrar e corrigir a causa raiz
+- [x] Remover seção "Em Digitação" do detalhe do produto na aba Estoque (não é relevante para o usuário)
+- [x] BUG: Tela branca durante sincronização - manter dados anteriores visíveis enquanto novos dados carregam em segundo plano (keepPreviousData)
+- [x] Adicionar somatória total de unidades na seção "Itens do Pedido" na aba Faturamento
+- [x] BUG: Sincronização automática falhando - diagnosticar e corrigir (deadlock resolvido + retry)
+- [x] Sempre exibir nome completo (razão social) do cliente, nunca o apelido, em todo o dashboard
+- [ ] BUG: Aceite da produção vinculado ao operador - tornar global para que o aceite feito por um operador valha para todos
+- [x] Re-aceitar os 29 pedidos revogados pelo Auto-Revoke (36 pedidos restaurados no total)
+- [x] Tornar o Auto-Revoke menos sensível - só revogar em mudanças críticas (valor, quantidade, itens)
+- [x] BUG CRÍTICO: Pedidos aceitos voltando para "Aceite da Produção" - Auto-Revoke continua revogando indevidamente
+- [x] Recuperar todos os pedidos revogados indevidamente (36 pedidos restaurados)
+- [x] Desabilitar permanentemente o Auto-Revoke - revogação agora é apenas manual pelo operador
+- [x] Corrigir nome do cliente nos pedidos: usar razão social em vez de apelido do Maxiprod
+- [x] Auto-Revoke inteligente: pedidos alterados no Maxiprod voltam para Aceite da Produção com sinalização visual
+- [x] Sinalização visual: bordas vermelhas + bolinha vermelha nos pedidos modificados no Aceite da Produção
+- [x] BUG: Nome do cliente ainda mostra apelido em vez de razão social - corrigir definitivamente (corrigido no backend, aguardava publicação)
+- [x] Transportadoras: adicionar Camilo, Alfa, Trans Transportes, Correio, Zaz Trans
+- [x] Transportadoras: renomear "Rodo Naves" para "RodoNaves/Paulineres"
+- [x] Autorizado a Faturar: adicionar campo de observação para explicar motivo de não faturamento
+- [x] Senhas/Faturamento: adicionar caixa seletora de permissão para quem pode usar a observação (fat.observacaoFaturar)
+- [x] Transportadoras: corrigir "Zaz Trans" para "Zaz Tras"
+- [x] Renomear "Observação de Faturamento" para "Campo de Observação" na aba A Faturar
+- [x] Faturamento: adicionar opção "Aguardando Produção (Na Fila)" no seletor de Status dos Pedidos em Aberto
+- [x] Inadimplência: adicionar somatório do valor que falta pagar (Total - Já Pago)
+- [x] Vendas: criar card unificado "A Faturar (Completo)" juntando mês atual + anterior, com busca por cliente, últimos 90 dias
+- [x] Vendas: restaurar cards separados "Pedidos Faturados" e "A Faturar Mês Atual" e manter o card unificado "A Faturar (Completo)" como EXTRA adicional
+- [x] BUG: Sincronização falhando - diagnosticar e corrigir (sync estava OK, era apenas TS stale errors)
+- [x] BUG: Aba Faturamento mudou - restaurar ao estado anterior
+- [x] BUG: Faturamento - faltando seção "Aceite de Produção" - restaurar (card agora sempre visível, mostra 0 pedidos quando vazio)
+- [x] Faturamento: card Aceite da Produção deve permanecer visível mesmo com 0 pedidos (não ocultar automaticamente)
+- [x] Vendas: corrigir coluna "Entrega" na aba "A Faturar (Anterior)" mostrando "—" em vez da data de previsão
+- [x] Vendas: verificar previsões de entrega em todas as abas (Faturados, A Faturar Mês Atual, A Faturar Anterior, A Faturar Completo)
+- [x] BUG: Faturados - seleção de transportadora não funciona para pessoas autorizadas (Larissa e outros) - corrigido: agora aceita senha do operador
+- [x] BUG: Corrigir erros TypeScript em financialRouter.ts (fetchPaidAccountsDetails, excludedCount, excludedTotal) - eram erros stale do LSP, tsc --noEmit passa limpo
+- [x] BUG: Senha "Fernando" e outras senhas de operadores não funcionam na seleção de transportadora - corrigido setCollectionStatus (Ped. Coleta/Coletado) que usava apenas senha admin; todos os endpoints agora aceitam senha do operador
+- [x] BUG: Senha da Brenda não está funcionando no Faturamento - senha e permissões OK no banco, precisa republicar
+- [x] BUG: Larissa e outros operadores autorizados não conseguem adicionar observação nos pedidos "Autorizado a Faturar" - testado e funcionando no preview (precisa republicar)
+- [x] BUG: Senha da Brenda - aguardando republicação para testar (senha e permissões OK no banco)
+- [ ] Vendas: aumentar tamanho dos gráficos (Evolução Diária) e cards para melhor visibilidade
+- [ ] Global: aumentar tamanho de fonte e espaçamento em todos os cards expandidos em todas as abas
+- [ ] Faturados: adicionar horário de emissão da NF ao lado da data (buscar do Maxiprod)
+- [ ] Aceite da Produção: puxar detalhes da modificação feita no Maxiprod pelo vendedor quando pedido é modificado
+- [ ] Aceite da Produção: melhorar layout - mover nome do cliente mais pra direita, badge "Modificado" ao lado da descrição/segmento sem quebrar linha
+- [x] Faturamento: coluna de link de rastreio ao lado da transportadora nos pedidos faturados
+- [x] Faturamento: permissão granular fat.rastreio para controlar quem pode inserir link de rastreio
+- [x] Faturamento: caixa seletora na aba de senhas para selecionar quem pode colocar link de rastreio
+- [x] Aceite da Produção: padronizar badge MODIFICADO sempre à direita na mesma linha (não quebrar para baixo)
+- [x] Faturamento: adicionar transportadora FOB na lista de transportadoras
+- [x] Faturamento: garantir que coluna de link de rastreio esteja visível e funcional nos pedidos faturados
+- [x] Faturamento: adicionar permissão granular fat.verRastreio para controlar quem pode VER o link de rastreio (separada da fat.rastreio que controla quem pode EDITAR)
+- [x] Estoque: alerta rosa "Atenção" quando estoque está até 40% acima do estoque regulador
+- [x] Estoque: alerta laranja "Cuidado" quando estoque está até 20% acima do estoque regulador
+- [x] Estoque: trocar cores dos alertas - CUIDADO fica rosa e ATENÇÃO fica laranja
+- [x] BUG: Brenda não consegue selecionar Pedido de Coleta - adicionada verificação de permissão granular no backend
+- [x] BUG: Observação do pedido 749 - observações agora disponíveis em todos os cards (Em Aberto, Autorizado, Faturados)
+- [x] Faturamento: redesenhar coluna de rastreio - cabeçalho "RASTREIO" + campo input editável inline (copiar/colar link)
+- [x] Estoque: card de Alertas expandido com soma de Compra+Cuidado+Atenção e caixa seletora com produtos por tipo de alerta
+- [ ] BUG: Cancelamento de pedidos deve abater do segmento correto (importação, industrialização, etc.)
+- [x] BUG: Aceite da Produção - remover "Outros" de Amostra/Bonificação, mostrar apenas o tipo conforme Maxiprod
+- [x] Faturamento: adicionar coluna ENTREGA em "Autorizados para Faturar" (replicar da aba de pedidos)
+- [x] BUG: Pedidos 643 e 626 (Zé da Fera Armazém) não aceitam senhas - investigar e corrigir (wasModified resetado)
+- [x] Aceite da Produção: alerta verde (contorno retângulo + bolinha) quando novo pedido é gerado no "Alerta da Produção"
+- [x] Faturamento: alerta visual ao lado do pedido em "A Faturar" quando tiver observação da Larissa ou time comercial
+- [x] Sistema: validação automática de senhas e operadores durante sincronização para prevenir problemas recorrentes
+- [x] Faturamento: puxar sempre do Maxiprod os campos Responsável, Segmento e demais dados preenchidos nos pedidos
+- [x] Faturamento: alerta obrigatório quando pedido não tem Responsável/Segmento/Cond.Pagamento/Transportadora preenchidos - identificar vendedor responsável
+- [x] Sistema: sininho de notificações no canto superior direito com histórico de alertas e notificações do sistema
+- [x] Estoque: adicionar parênteses explicativos "Cuidado (20% acima do Est. Regulador)" e "Atenção (40% acima do Est. Regulador)"
+- [x] Estoque: corrigir contador de alertas para mostrar apenas itens que precisam de COMPRA (não somatório de todos)
+- [x] Faturamento: adicionar coluna "Horário" ao lado de "Emissão" no card "Autorizado a Faturar" - horário que o pedido foi enviado para autorizar
+- [x] Faturamento: corrigir bug de ícones "encavalando" no card "Faturados" - ícones de observação, NF e alertas sobrepondo o nome do cliente
+- [x] URGENTE: Estoque - corrigir cálculo de KG para varetas de apito: sacos de importação são 30kg (não 20kg), multiplicar quantidade PO × 30kg para estoque projetado
+- [ ] Sistema: painel de administração para personalizar quais tipos de notificações aparecem no sino (toggle por tipo)
+- [x] Estoque: adicionar tooltip/popover nos badges CUIDADO e ATENÇÃO na coluna STATUS mostrando a porcentagem acima do Est. Regulador (20% e 40% respectivamente)
+- [x] BUG: Faturados (Últ. 30 dias) - nome do cliente sobrepondo ícones de NF e alertas - reorganizar layout para leitura clara
+- [x] BUG: Pedidos 643 e 689 não mostram como "Prod. Importado (Revenda)" - corrigido: agora herdam grupo dos itens
+- [x] BUG: A Faturar (Completo) mostra 39 pedidos, mas Mês Atual (24) + Anterior (17) = 41 — corrigido: AMOSTRA/BONIFICAÇÃO não são mais excluídos
+- [x] Pedidos AMOSTRA/BONIFICAÇÃO: classificar grupo pelos itens do pedido e exibir label combinado (ex: Bonificação / Revenda, Amostra / Industr.) - nunca mostrar "Outros"
+- [x] Faturados: reorganizar ícones de alerta para ficarem abaixo do ícone da NF, alinhados verticalmente
+- [x] Faturamento: remover badge duplicado AMOSTRA/BONIFICAÇÃO (bolinha), manter apenas badge combinado (Amostra/Revenda etc), amarelo para Amostra, rosa para Bonificação
+- [x] Pedidos em Aberto: colunas desalinhadas - corrigido: gap-2, auto-width pedido, colunas maiores, status compacto
+- [x] Pedidos em Aberto: aplicar larguras fixas em TODAS as colunas (AÇÃO, PEDIDO, CLIENTE, ícones, Emissão, Entrega, ITENS, print, STATUS) para alinhamento perfeito entre linhas
+- [x] Faturados: hora da coleta sobrepondo o campo de link de rastreio - corrigido: agendamento 160px fixo, rastreio 180px fixo, texto menor
+- [x] Faturados: tabela cortada à direita - adicionado scroll horizontal (overflow-x-auto) com minWidth 1200px
+- [x] Faturados: faixa branca no scroll horizontal - fix CSS-only (width: fit-content; min-width: 100%) no overflow-x-auto, sem alterar layout das colunas
+- [x] Configurações/Senhas: seletores nas abas de senhas não estão funcionando - usuário confirmou que voltaram a funcionar
+- [x] Sincronização automática do Maxiprod: configurar para funcionar automaticamente para o Fernando e todos os operadores (refetchInterval 60s em todas as queries de Billing, Sales e Financial)
+- [x] Autorizado a Faturar: permitir que Brenda e operadores com permissão adicionem observações nos pedidos (já existia, basta ativar permissão fat.observacaoFaturar)
+- [x] Notificações: sininho piscando quando houver notificações novas não lidas (animação bell-ring contínua)
+- [x] Notificações: marcar como lido independente por operador (tabela notification_reads, cada operador tem seu estado)
+- [x] Login diário obrigatório: sessão expira à meia-noite, todos os operadores precisam logar novamente pela manhã
+- [x] Notificações: ocultar valores e preços (R$) nas notificações do sininho (removido do código e do banco)
+- [x] Estoque: tooltip "Abaixo do Est. Regulador" nos badges "Compra" na tabela e no card de Alertas
+- [x] Vendas: ocultar linha "A FATURAR (COMPLETO)" com toggle nas Configurações/Senhas (apenas admin pode ativar/desativar)
+- [x] Corrigir tratamento de faturamento parcial: mostrar saldo restante usando campo entregaFuturaQuantidadeEntregue da API Maxiprod
+- [x] Badge "Faturamento Parcial" nos pedidos com itens parcialmente faturados (BillingOrderRow + ProductionAcceptanceCard)
+- [x] Faturados: transportadora "Regional Gestão" já estava na lista de opções (confirmado funcional)
+- [x] Faturados: retorno de pedido alterado para Aceite da Produção com alerta "Modificado" (vermelho) - já funcional (auto-revoke detecta hash change, marca wasModified=true, frontend roteia para Aceite da Produção)
+- [x] Bug: Botão ACEITAR não funciona para pedido #525 (modificado + faturamento parcial) no Aceite da Produção - Corrigido: detecção de chave duplicada no Drizzle ORM atualizada (err.cause + err.code)
+- [x] Faturados: usar data de faturamento (NF) como filtro principal dos últimos 30 dias, com fallback para data de emissão quando não houver NF
+
+## Migração para Manus Team
+- [x] Migrar código-fonte completo do projeto para conta Team
+- [x] Migrar schema do banco de dados (20 migrações SQL aplicadas)
+- [x] Migrar 17 tabelas adicionais do banco original (operators, billing, notifications, etc.)
+- [x] Migrar dados de configuração (product_classification, product_pricing, product_visibility, etc.)
+- [x] Migrar dados de operadores e permissões granulares (452 permissões)
+- [x] Configurar credenciais do Maxiprod (MAXIPROD_EMAIL, MAXIPROD_PASSWORD, MAXIPROD_GRAPHQL_TOKEN)
+- [x] Atualizar código com versão completa do GitHub (812 arquivos, incluindo aba Faturamento)
+- [x] Corrigir colunas faltantes em stock_items, order_items e sales_orders
+- [x] Verificar funcionamento visual de todas as abas (Estoque, Vendas, Faturamento, Financeiro, Configurações)

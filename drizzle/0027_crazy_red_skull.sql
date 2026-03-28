@@ -1,0 +1,1 @@
+ALTER TABLE `stock_items` ADD `unidadeDeVendaFator` decimal(18,5);

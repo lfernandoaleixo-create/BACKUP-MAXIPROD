@@ -3,8 +3,9 @@
  * Contas a Pagar e Receber do Maxiprod (SOMENTE LEITURA)
  */
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
+import ConnectionStatusCard from "@/components/ConnectionStatusCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,10 +37,29 @@ import {
   Search,
   ArrowUpDown,
   Landmark,
+  SlidersHorizontal,
+  ArrowDownAZ,
+  ArrowUpAZ,
+  ArrowDown01,
+  ArrowUp01,
+  CalendarDays,
+  MessageSquare,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
+import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
+import WeekReconciliationCard from "@/components/WeekReconciliationCard";
+import ResumoFinanceiroCard from "@/components/ResumoFinanceiroCard";
+import { useOperator } from "@/contexts/OperatorContext";
 
 /* ---- Helpers ---- */
 function formatCurrency(n: number): string {
@@ -219,37 +239,450 @@ function AgingBar({ aging }: { aging: any }) {
   );
 }
 
-/* ---- Expandable Bucket Card ---- */
-function BucketCard({ bucket, colorClass, textColorClass }: {
+/* ---- Month Detail Table with sorting ---- */
+type MonthDetailSort = "nome_asc" | "nome_desc" | "valor_asc" | "valor_desc" | "data_asc" | "data_desc";
+
+function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
+  items: any[] | undefined;
+  isLoading: boolean;
+  nameField: string;
+  colorScheme: "emerald" | "red";
+}) {
+  const [sort, setSort] = useState<MonthDetailSort>("data_asc");
+
+  const colors = colorScheme === "emerald" ? {
+    border: "border-emerald-200",
+    headerBg: "bg-emerald-50",
+    headerText: "text-emerald-700",
+    hoverBg: "hover:bg-emerald-50/30",
+    valueText: "text-emerald-700",
+    sortActive: "text-emerald-600",
+    sortInactive: "text-slate-300",
+  } : {
+    border: "border-red-200",
+    headerBg: "bg-red-50",
+    headerText: "text-red-700",
+    hoverBg: "hover:bg-red-50/30",
+    valueText: "text-red-700",
+    sortActive: "text-red-600",
+    sortInactive: "text-slate-300",
+  };
+
+  const toggleSort = (field: "nome" | "valor" | "data") => {
+    if (sort === `${field}_asc`) setSort(`${field}_desc` as MonthDetailSort);
+    else setSort(`${field}_asc` as MonthDetailSort);
+  };
+
+  const sortedItems = useMemo(() => {
+    if (!items) return [];
+    const sorted = [...items];
+    switch (sort) {
+      case "nome_asc":
+        sorted.sort((a, b) => (a[nameField] || "").localeCompare(b[nameField] || ""));
+        break;
+      case "nome_desc":
+        sorted.sort((a, b) => (b[nameField] || "").localeCompare(a[nameField] || ""));
+        break;
+      case "valor_asc":
+        sorted.sort((a, b) => Number(a.valorLiquido || 0) - Number(b.valorLiquido || 0));
+        break;
+      case "valor_desc":
+        sorted.sort((a, b) => Number(b.valorLiquido || 0) - Number(a.valorLiquido || 0));
+        break;
+      case "data_asc":
+        sorted.sort((a, b) => (a.vencimentoData || "").localeCompare(b.vencimentoData || ""));
+        break;
+      case "data_desc":
+        sorted.sort((a, b) => (b.vencimentoData || "").localeCompare(a.vencimentoData || ""));
+        break;
+    }
+    return sorted;
+  }, [items, sort, nameField]);
+
+  const nameLabel = nameField === "cliente" ? "Cliente" : "Fornecedor";
+
+  const SortArrow = ({ field }: { field: "nome" | "valor" | "data" }) => {
+    const isActive = sort.startsWith(field);
+    const isAsc = sort === `${field}_asc`;
+    return (
+      <ArrowUpDown className={`w-3 h-3 ml-1 inline-block cursor-pointer transition-colors ${
+        isActive ? colors.sortActive : colors.sortInactive
+      } ${isActive && !isAsc ? "rotate-180" : ""}`} />
+    );
+  };
+
+  return (
+    <div className={`mt-1 ml-2 mr-2 mb-2 border ${colors.border} rounded-lg overflow-hidden`}>
+      <div className="max-h-[500px] overflow-y-auto">
+        {isLoading ? (
+          <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>
+        ) : !sortedItems.length ? (
+          <div className="text-center py-6 text-slate-400 text-xs">Nenhuma conta neste m\u00eas</div>
+        ) : (
+          <table className="w-full text-xs">
+            <thead className={`${colors.headerBg} sticky top-0 z-10`}>
+              <tr>
+                <th
+                  className={`px-3 py-2 text-left ${colors.headerText} font-semibold cursor-pointer select-none hover:opacity-80`}
+                  onClick={() => toggleSort("nome")}
+                >
+                  {nameLabel} <SortArrow field="nome" />
+                </th>
+                <th
+                  className={`px-3 py-2 text-right ${colors.headerText} font-semibold cursor-pointer select-none hover:opacity-80`}
+                  onClick={() => toggleSort("valor")}
+                >
+                  Valor <SortArrow field="valor" />
+                </th>
+                <th
+                  className={`px-3 py-2 text-center ${colors.headerText} font-semibold cursor-pointer select-none hover:opacity-80`}
+                  onClick={() => toggleSort("data")}
+                >
+                  Vencimento <SortArrow field="data" />
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {sortedItems.map((item: any, i: number) => (
+                <tr key={i} className={colors.hoverBg}>
+                  <td className="px-3 py-2 text-slate-700 truncate max-w-[200px]">{item[nameField] || "\u2014"}</td>
+                  <td className={`px-3 py-2 text-right font-semibold ${colors.valueText}`}>{formatCurrency(Number(item.valorLiquido || 0))}</td>
+                  <td className="px-3 py-2 text-center text-slate-500">{formatDate(item.vencimentoData)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+      {sortedItems.length > 0 && (
+        <div className={`${colors.headerBg} px-3 py-1.5 border-t ${colors.border} flex justify-between items-center`}>
+          <span className="text-[10px] text-slate-500">{sortedItems.length} contas</span>
+          <span className={`text-[10px] font-semibold ${colors.headerText}`}>
+            Total: {formatCurrency(sortedItems.reduce((sum: number, item: any) => sum + Number(item.valorLiquido || 0), 0))}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Sort types for bucket cards ---- */
+type BucketSortMode = "data_asc" | "data_desc" | "valor_asc" | "valor_desc" | "nome_asc";
+
+const SORT_LABELS: Record<BucketSortMode, { label: string; icon: React.ElementType }> = {
+  data_asc: { label: "Data (mais antiga)", icon: CalendarDays },
+  data_desc: { label: "Data (mais recente)", icon: CalendarDays },
+  valor_asc: { label: "Valor (crescente)", icon: ArrowUp01 },
+  valor_desc: { label: "Valor (decrescente)", icon: ArrowDown01 },
+  nome_asc: { label: "Nome (A-Z)", icon: ArrowDownAZ },
+};
+
+/* ---- Auth Status Config ---- */
+const AUTH_STATUS_OPTIONS = [
+  { value: "autorizado" as const, label: "Autorizado", color: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+  { value: "nao_autorizado" as const, label: "Nao Autorizado", color: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500" },
+  { value: "autorizado_ressalva" as const, label: "Com Ressalva", color: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+  { value: "prorrogar" as const, label: "Prorrogar", color: "bg-blue-50 text-blue-700 border-blue-200", dot: "bg-blue-500" },
+  { value: "outros" as const, label: "Outros", color: "bg-slate-100 text-slate-600 border-slate-300", dot: "bg-slate-400" },
+];
+
+function getAuthStatusConfig(status: string | null) {
+  return AUTH_STATUS_OPTIONS.find(o => o.value === status) || null;
+}
+
+/* ---- Comment Dialog ---- */
+function PaymentCommentDialog({ item, onClose }: { item: any; onClose: () => void }) {
+  const [comment, setComment] = useState(item.authNotes || "");
+  const utils = trpc.useUtils();
+  const updateNotes = trpc.financial.updatePaymentAuthNotes.useMutation({
+    onSuccess: () => {
+      utils.financial.getPaymentCalendar.invalidate();
+      utils.financial.getWeekReconciliation.invalidate();
+      onClose();
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl w-80 p-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-bold text-slate-700">Comentario</h4>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
+        </div>
+        <p className="text-xs text-slate-500 mb-2 truncate">{item.fornecedor} - {formatCurrency(item.valor)}</p>
+        <textarea
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+          placeholder="Adicionar observacao..."
+          className="w-full h-24 text-xs border border-slate-200 rounded-md p-2 resize-none focus:outline-none focus:ring-1 focus:ring-teal-400"
+          autoFocus
+        />
+        <div className="flex justify-end gap-2 mt-3">
+          <button onClick={onClose} className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 rounded">Cancelar</button>
+          <button
+            onClick={() => updateNotes.mutate({ accountPayableId: item.maxiprodId, notes: comment })}
+            disabled={updateNotes.isPending}
+            className="px-3 py-1.5 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50"
+          >
+            {updateNotes.isPending ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Expandable Bucket Card with sort & search ---- */
+function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize = true, canComment = true }: {
   bucket: { label: string; total: number; count: number; items: any[] };
   colorClass: string;
   textColorClass: string;
+  isPagar?: boolean;
+  canAuthorize?: boolean;
+  canComment?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [sortMode, setSortMode] = useState<BucketSortMode>("data_asc");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [commentItem, setCommentItem] = useState<any>(null);
   const VISIBLE = 5;
-  const hasMore = bucket.items.length > VISIBLE;
-  const visibleItems = expanded ? bucket.items : bucket.items.slice(0, VISIBLE);
+  const utils = trpc.useUtils();
+  const setAuthStatus = trpc.financial.setPaymentAuthStatus.useMutation({
+    onSuccess: () => {
+      utils.financial.getPaymentCalendar.invalidate();
+      utils.financial.getWeekReconciliation.invalidate();
+    },
+  });
+  const clearAuthStatus = trpc.financial.clearPaymentAuthStatus.useMutation({
+    onSuccess: () => {
+      utils.financial.getPaymentCalendar.invalidate();
+      utils.financial.getWeekReconciliation.invalidate();
+    },
+  });
+
+  const processedItems = useMemo(() => {
+    let items = [...bucket.items];
+
+    // Filter by search
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      items = items.filter((item: any) =>
+        (item.fornecedor || "").toLowerCase().includes(term) ||
+        (item.referenteA || "").toLowerCase().includes(term)
+      );
+    }
+
+    // Sort
+    switch (sortMode) {
+      case "data_asc":
+        items.sort((a: any, b: any) => (a.vencimento || "").localeCompare(b.vencimento || ""));
+        break;
+      case "data_desc":
+        items.sort((a: any, b: any) => (b.vencimento || "").localeCompare(a.vencimento || ""));
+        break;
+      case "valor_asc":
+        items.sort((a: any, b: any) => a.valor - b.valor);
+        break;
+      case "valor_desc":
+        items.sort((a: any, b: any) => b.valor - a.valor);
+        break;
+      case "nome_asc":
+        items.sort((a: any, b: any) => (a.fornecedor || "").localeCompare(b.fornecedor || ""));
+        break;
+    }
+
+    return items;
+  }, [bucket.items, sortMode, searchTerm]);
+
+  const filteredTotal = useMemo(() => {
+    if (!searchTerm.trim()) return bucket.total;
+    return processedItems.reduce((sum: number, item: any) => sum + item.valor, 0);
+  }, [processedItems, searchTerm, bucket.total]);
+
+  const hasMore = processedItems.length > VISIBLE;
+  const visibleItems = expanded ? processedItems : processedItems.slice(0, VISIBLE);
+  const hasItems = bucket.items.length > 0;
+
+  // Status summary for Pagar cards
+  const statusSummary = useMemo(() => {
+    if (!isPagar) return [];
+    const grouped: Record<string, { count: number; total: number }> = {};
+    for (const item of bucket.items) {
+      if (item.authStatus) {
+        if (!grouped[item.authStatus]) grouped[item.authStatus] = { count: 0, total: 0 };
+        grouped[item.authStatus].count++;
+        grouped[item.authStatus].total += item.valor || 0;
+      }
+    }
+    return AUTH_STATUS_OPTIONS
+      .filter(opt => grouped[opt.value])
+      .map(opt => ({ ...opt, count: grouped[opt.value].count, total: grouped[opt.value].total }));
+  }, [isPagar, bucket.items]);
 
   return (
     <div className={`rounded-lg border ${colorClass} p-3`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-sm font-semibold ${textColorClass}`}>{bucket.label}</span>
-        <div className="text-right">
-          <span className={`text-sm font-bold ${textColorClass}`}>{formatCurrency(bucket.total)}</span>
-          <span className="text-xs text-slate-400 ml-2">({bucket.count})</span>
-        </div>
-      </div>
-      {visibleItems.length > 0 && (
-        <div className="space-y-1">
-          {visibleItems.map((item: any, idx: number) => (
-            <div key={idx} className="flex items-baseline gap-x-2 text-xs leading-5">
-              <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0', maxWidth: 'calc(100% - 180px)' }}>{item.fornecedor}</span>
-              <span className="text-slate-400 whitespace-nowrap text-right shrink-0" style={{ width: '78px', fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>{formatDate(item.vencimento)}</span>
-              <span className="font-semibold text-slate-700 whitespace-nowrap text-right shrink-0" style={{ width: '90px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
+      {/* Status summary bar */}
+      {isPagar && statusSummary.length > 0 && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 pb-2 border-b border-dashed border-slate-200">
+          {statusSummary.map(s => (
+            <div key={s.value} className="flex items-center gap-1 text-[10px]">
+              <div className={`w-2 h-2 rounded-full ${s.dot} shrink-0`} />
+              <span className="text-slate-500 font-medium">{s.label}</span>
+              <span className="text-slate-400">({s.count})</span>
+              <span className="font-semibold text-slate-600">{formatCurrency(s.total)}</span>
             </div>
           ))}
         </div>
       )}
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-2">
+        <span className={`text-sm font-semibold ${textColorClass}`}>{bucket.label}</span>
+        <div className="flex items-center gap-1.5">
+          <div className="text-right">
+            <span className={`text-sm font-bold ${textColorClass}`}>{formatCurrency(filteredTotal)}</span>
+            <span className="text-xs text-slate-400 ml-1">({searchTerm.trim() ? processedItems.length : bucket.count})</span>
+          </div>
+          {/* Filter/Sort dropdown - only show when there are items */}
+          {hasItems && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1 rounded hover:bg-black/5 transition-colors focus:outline-none" title="Filtrar e ordenar">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="text-xs text-slate-500">Ordenar por</DropdownMenuLabel>
+                {(Object.entries(SORT_LABELS) as [BucketSortMode, { label: string; icon: React.ElementType }][]).map(([key, { label, icon: Icon }]) => (
+                  <DropdownMenuItem
+                    key={key}
+                    onClick={() => setSortMode(key)}
+                    className={`text-xs cursor-pointer ${sortMode === key ? "bg-slate-100 font-semibold" : ""}`}
+                  >
+                    <Icon className="w-3.5 h-3.5 mr-2" />
+                    {label}
+                    {sortMode === key && <span className="ml-auto text-teal-600">{"\u2713"}</span>}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchTerm(""); }}
+                  className="text-xs cursor-pointer"
+                >
+                  <Search className="w-3.5 h-3.5 mr-2" />
+                  {showSearch ? "Fechar busca" : "Buscar"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+
+      {/* Search input */}
+      {showSearch && (
+        <div className="mb-2 relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por nome..."
+            className="w-full pl-7 pr-7 py-1.5 text-xs border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-400 focus:border-teal-400"
+            autoFocus
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Items list */}
+      {visibleItems.length > 0 && (
+        <div className="space-y-1">
+          {visibleItems.map((item: any, idx: number) => {
+            const statusCfg = isPagar ? getAuthStatusConfig(item.authStatus) : null;
+            const hasNote = isPagar && item.authNotes;
+            return (
+              <div key={item.maxiprodId || idx} className={`text-xs leading-5 ${statusCfg ? 'rounded-md px-1.5 py-0.5 border ' + statusCfg.color : ''}`}>
+                <div className="flex items-center gap-x-1.5">
+                  <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.fornecedor}</span>
+                  <span className="text-slate-400 whitespace-nowrap text-right shrink-0" style={{ width: '60px', fontVariantNumeric: 'tabular-nums', fontSize: '10px' }}>{formatDate(item.vencimento)}</span>
+                  <span className="font-semibold text-slate-700 whitespace-nowrap text-right shrink-0" style={{ width: '78px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
+                  {isPagar && item.maxiprodId && (
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      {/* Status selector */}
+                      {canAuthorize && <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className={`p-0.5 rounded transition-colors focus:outline-none ${statusCfg ? '' : 'hover:bg-black/5'}`} title="Status">
+                            {statusCfg ? (
+                              <div className={`w-3 h-3 rounded-full ${statusCfg.dot}`} />
+                            ) : (
+                              <div className="w-3 h-3 rounded-full border-2 border-slate-300" />
+                            )}
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel className="text-xs text-slate-500">Autorizacao</DropdownMenuLabel>
+                          {AUTH_STATUS_OPTIONS.map(opt => (
+                            <DropdownMenuItem
+                              key={opt.value}
+                              onClick={() => setAuthStatus.mutate({ accountPayableId: item.maxiprodId, status: opt.value })}
+                              className={`text-xs cursor-pointer ${item.authStatus === opt.value ? 'bg-slate-100 font-semibold' : ''}`}
+                            >
+                              <div className={`w-2.5 h-2.5 rounded-full ${opt.dot} mr-2 shrink-0`} />
+                              {opt.label}
+                              {item.authStatus === opt.value && <span className="ml-auto text-teal-600">\u2713</span>}
+                            </DropdownMenuItem>
+                          ))}
+                          {item.authStatus && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => clearAuthStatus.mutate({ accountPayableId: item.maxiprodId })}
+                                className="text-xs cursor-pointer text-red-500"
+                              >
+                                <X className="w-3 h-3 mr-2" />Limpar
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>}
+                      {/* Comment icon */}
+                      {canComment && <button
+                        onClick={() => setCommentItem(item)}
+                        className={`p-0.5 rounded transition-colors focus:outline-none ${hasNote ? 'text-teal-600 hover:text-teal-700' : 'text-slate-300 hover:text-slate-500'}`}
+                        title={hasNote ? item.authNotes : 'Comentario'}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                      </button>}
+                    </div>
+                  )}
+                </div>
+                {isPagar && hasNote && (
+                  <p className="text-[10px] text-slate-500 italic truncate pl-1 mt-0.5">{item.authNotes}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Comment dialog */}
+      {commentItem && <PaymentCommentDialog item={commentItem} onClose={() => setCommentItem(null)} />}
+
+      {/* No results from search */}
+      {searchTerm.trim() && processedItems.length === 0 && (
+        <div className="text-center py-3 text-xs text-slate-400">
+          Nenhum resultado para "{searchTerm}"
+        </div>
+      )}
+
+      {/* Expand/collapse */}
       {hasMore && (
         <button
           onClick={() => setExpanded(!expanded)}
@@ -258,7 +691,7 @@ function BucketCard({ bucket, colorClass, textColorClass }: {
           {expanded ? (
             <><ChevronUp className="w-4 h-4" />Recolher</>
           ) : (
-            <><ChevronDown className="w-4 h-4" />+{bucket.items.length - VISIBLE} mais</>
+            <><ChevronDown className="w-4 h-4" />+{processedItems.length - VISIBLE} mais</>
           )}
         </button>
       )}
@@ -653,9 +1086,13 @@ function OverviewReceberTable() {
 }
 
 /* ---- Overview Calendars Side by Side ---- */
-function OverviewCalendars({ calendarPagar, loadingPagar }: {
+function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, canComment = true, canViewPagar = true, canViewReceber = true }: {
   calendarPagar: any;
   loadingPagar: boolean;
+  canAuthorize?: boolean;
+  canComment?: boolean;
+  canViewPagar?: boolean;
+  canViewReceber?: boolean;
 }) {
   const { data: calendarReceber, isLoading: loadingReceber } = trpc.financial.getReceivableCalendar.useQuery();
 
@@ -715,18 +1152,25 @@ function OverviewCalendars({ calendarPagar, loadingPagar }: {
           : weekColors[row.colorIdx % weekColors.length];
 
         return (
-          <div key={idx} className="grid grid-cols-2 gap-4">
-            <BucketCard
-              bucket={{ ...row.receber, label: row.label }}
-              colorClass={isVencida ? "border-emerald-300 bg-emerald-50" : `border-emerald-200 bg-emerald-50/50`}
-              textColorClass={isVencida ? "text-emerald-700" : "text-emerald-700"}
-            />
-            <BucketCard
-              bucket={{ ...row.pagar, label: row.label }}
-              colorClass={isVencida ? "border-red-300 bg-red-50" : `border-red-200 bg-red-50/50`}
-              textColorClass={isVencida ? "text-red-700" : "text-red-700"}
-            />
-          </div>
+          <React.Fragment key={idx}>
+            <div className="grid grid-cols-2 gap-4">
+              {canViewReceber && <BucketCard
+                bucket={{ ...row.receber, label: row.label }}
+                colorClass={isVencida ? "border-emerald-300 bg-emerald-50" : `border-emerald-200 bg-emerald-50/50`}
+                textColorClass={isVencida ? "text-emerald-700" : "text-emerald-700"}
+              />}
+              {canViewPagar && <BucketCard
+                bucket={{ ...row.pagar, label: row.label }}
+                colorClass={isVencida ? "border-red-300 bg-red-50" : `border-red-200 bg-red-50/50`}
+                textColorClass={isVencida ? "text-red-700" : "text-red-700"}
+                isPagar
+                canAuthorize={canAuthorize}
+                canComment={canComment}
+              />}
+            </div>
+            {/* Card de Conciliação após a primeira semana (idx=1, pois idx=0 é Vencidas) */}
+            {idx === 1 && <WeekReconciliationCard />}
+          </React.Fragment>
         );
       })}
 
@@ -782,8 +1226,8 @@ function BankBalanceCard() {
     byCompany.set(co, list);
   });
 
-  // Only show accounts that have saldoInicial set (configured)
-  const configuredAccounts = data.accounts.filter(a => a.saldoInicial !== 0 || a.saldoInicialData);
+  // Show accounts that have saldo contábil or saldoInicial configured
+  const configuredAccounts = data.accounts.filter(a => a.saldoContabil !== 0 || a.saldoInicial !== 0 || a.saldoInicialData);
   const hasConfigured = configuredAccounts.length > 0;
 
   return (
@@ -801,8 +1245,8 @@ function BankBalanceCard() {
             <h3 className="font-bold text-slate-800 text-sm">Saldo Bancário</h3>
             <p className="text-xs text-slate-500">
               {hasConfigured
-                ? `${configuredAccounts.length} contas configuradas`
-                : "Configure os saldos em Config > Bancos"}
+                ? `${configuredAccounts.length} contas | Balancete contábil`
+                : "Sincronize os saldos em Config > Bancos"}
             </p>
           </div>
         </div>
@@ -828,13 +1272,13 @@ function BankBalanceCard() {
           {!hasConfigured ? (
             <div className="text-center py-6 text-slate-400">
               <Landmark className="w-10 h-10 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">Nenhum saldo inicial configurado</p>
-              <p className="text-xs mt-1">Vá em <strong>Config &gt; Bancos</strong> para definir os saldos iniciais</p>
+              <p className="text-sm">Nenhum saldo bancário disponível</p>
+              <p className="text-xs mt-1">Vá em <strong>Config &gt; Bancos</strong> e clique em "Atualizar Saldos"</p>
             </div>
           ) : (
             <div className="space-y-4">
               {Array.from(byCompany.entries()).map(([company, accounts]) => {
-                const companyConfigured = accounts.filter(a => a.saldoInicial !== 0 || a.saldoInicialData);
+                const companyConfigured = accounts.filter(a => a.saldoContabil !== 0 || a.saldoInicial !== 0 || a.saldoInicialData);
                 if (companyConfigured.length === 0) return null;
                 const companyTotal = companyConfigured.reduce((s, a) => s + a.saldoAtual, 0);
                 return (
@@ -1198,751 +1642,12 @@ function CashFlowCard() {
   );
 }
 
-/* ---- Inadimplência Card with Line Chart ---- */
-/* ---- Painel de detalhes do mês selecionado ---- */
-function MesDetalhePanel({ mes, clienteFilter }: { mes: string; clienteFilter: string }) {
-  const { data, isLoading } = trpc.financial.getInadimplenciaDetalhesMes.useQuery(
-    { mes, clienteFilter: clienteFilter || undefined }
-  );
-
-  const formatMonth = (m: string) => {
-    const [y, mo] = m.split("-");
-    const months = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-    return `${months[parseInt(mo, 10) - 1]} ${y}`;
-  };
-
-  const formatDate = (d: string) => {
-    if (!d) return "";
-    const [y, m, day] = d.split("-");
-    return `${day}/${m}`;
-  };
-
-  if (isLoading) return (
-    <div className="flex items-center justify-center h-full">
-      <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-    </div>
-  );
-
-  if (!data || data.titulos.length === 0) return (
-    <div className="flex items-center justify-center h-full text-xs text-slate-400">
-      Sem títulos neste mês
-    </div>
-  );
-
-  return (
-    <div className="h-full flex flex-col">
-      <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50">
-        <p className="text-xs font-semibold text-slate-700">{formatMonth(mes)}</p>
-        <div className="flex items-center justify-between mt-0.5">
-          <span className="text-sm font-bold text-amber-700">{formatCurrency(data.total)}</span>
-          <span className="text-[10px] text-slate-400">{data.count} título{data.count !== 1 ? "s" : ""}</span>
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto">
-        {data.titulos.map((t: any, i: number) => (
-          <div key={i} className={`px-3 py-1.5 flex items-center justify-between gap-2 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/30"} hover:bg-amber-50/40 transition-colors`}>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-medium text-slate-700 truncate" title={t.cliente}>{t.cliente}</p>
-              <p className="text-[9px] text-slate-400">{formatDate(t.vencimento)}{t.referenteA ? ` · ${t.referenteA.split(" ref. ")[1] || t.referenteA}` : ""}</p>
-            </div>
-            <span className="text-[11px] font-semibold text-amber-700 whitespace-nowrap">{formatCurrency(t.valor)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function InadimplenciaCard({ summary }: { summary: any }) {
-  const [chartFilter, setChartFilter] = useState("");
-  const { data: timeline, isLoading } = trpc.financial.getInadimplenciaTimeline.useQuery(
-    chartFilter ? { clienteFilter: chartFilter } : undefined
-  );
-  const [collapsed, setCollapsed] = useState(true);
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [searchInput, setSearchInput] = useState("");
-  const [hoveredDot, setHoveredDot] = useState<number | null>(null);
-
-  const formatMonth = (mes: string) => {
-    const [y, m] = mes.split("-");
-    const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-    return `${months[parseInt(m, 10) - 1]}/${y.slice(2)}`;
-  };
-
-  const chartData = useMemo(() => {
-    if (!timeline || timeline.length === 0) return [];
-    let accumulated = 0;
-    return timeline.map((point: any) => {
-      accumulated += point.total;
-      return {
-        mes: point.mes,
-        label: formatMonth(point.mes),
-        valor: point.total,
-        acumulado: accumulated,
-        count: point.count,
-      };
-    });
-  }, [timeline]);
-
-  // Selecionar último mês por padrão quando dados carregam
-  useMemo(() => {
-    if (chartData.length > 0 && selectedIdx === null) {
-      setSelectedIdx(chartData.length - 1);
-    }
-  }, [chartData]);
-
-  // Dimensões do SVG - mais compacto para layout split
-  const svgWidth = 420;
-  const svgHeight = 220;
-  const paddingLeft = 50;
-  const paddingRight = 10;
-  const paddingTop = 15;
-  const paddingBottom = 30;
-  const chartW = svgWidth - paddingLeft - paddingRight;
-  const chartH = svgHeight - paddingTop - paddingBottom;
-
-  const maxVal = useMemo(() => {
-    if (chartData.length === 0) return 1;
-    return Math.max(...chartData.map((d: any) => d.valor), 1);
-  }, [chartData]);
-
-  const bars = useMemo(() => {
-    if (chartData.length === 0) return [];
-    const barW = Math.min(22, Math.max(8, (chartW - (chartData.length - 1) * 4) / chartData.length));
-    const gap = Math.min(4, (chartW - chartData.length * barW) / Math.max(chartData.length - 1, 1));
-    const totalBarsWidth = chartData.length * barW + (chartData.length - 1) * gap;
-    const offsetX = paddingLeft + (chartW - totalBarsWidth) / 2;
-    return chartData.map((d: any, i: number) => {
-      const x = offsetX + i * (barW + gap);
-      const h = Math.max((d.valor / maxVal) * chartH, 2);
-      const y = paddingTop + chartH - h;
-      return { x, y, w: barW, h, ...d };
-    });
-  }, [chartData, chartW, chartH, maxVal]);
-
-  const gridLines = useMemo(() => {
-    const lines = [];
-    const steps = 3;
-    for (let i = 0; i <= steps; i++) {
-      const val = (maxVal / steps) * i;
-      const y = paddingTop + chartH - (val / maxVal) * chartH;
-      lines.push({ y, val });
-    }
-    return lines;
-  }, [maxVal, chartH]);
-
-  const handleBarClick = (idx: number) => {
-    setSelectedIdx(idx);
-  };
-
-  return (
-    <div className="bg-white rounded-lg border border-amber-200 shadow-sm overflow-hidden">
-      {/* Header */}
-      <div
-        className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-amber-100/50 transition-colors"
-        onClick={() => setCollapsed(!collapsed)}
-      >
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600" />
-          <h3 className="text-sm font-bold text-amber-700">Inadimplência</h3>
-          <span className="text-[10px] text-amber-500 ml-1">{summary.receber.vencidas.count} títulos</span>
-          {collapsed ? <ChevronDown className="w-5 h-5 text-amber-600 ml-1" /> : <ChevronUp className="w-5 h-5 text-amber-600 ml-1" />}
-        </div>
-        <div className="text-right">
-          <span className="text-sm font-bold text-amber-800">{formatCurrency(summary.receber.vencidas.total)}</span>
-        </div>
-      </div>
-
-      {!collapsed && (
-        <div>
-          {/* Filtros compactos */}
-          <div className="px-5 py-2.5 bg-slate-50/50 border-b border-slate-100 flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[180px] max-w-[280px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
-              <Input
-                placeholder="Filtrar por cliente..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") setChartFilter(searchInput.trim()); }}
-                className="pl-8 h-7 text-xs bg-white border-slate-200"
-              />
-            </div>
-            <button
-              onClick={() => {
-                if (chartFilter === "keure") { setChartFilter(""); setSearchInput(""); }
-                else { setChartFilter("keure"); setSearchInput("keure"); }
-              }}
-              className={`px-3 py-1 rounded-md text-[10px] font-medium transition-all border ${
-                chartFilter === "keure"
-                  ? "bg-red-500 text-white border-red-500 shadow-sm"
-                  : "bg-white text-slate-500 border-slate-200 hover:border-red-300 hover:text-red-600"
-              }`}
-            >
-              Keure
-            </button>
-            <button
-              onClick={() => {
-                if (chartFilter === "johnson") { setChartFilter(""); setSearchInput(""); }
-                else { setChartFilter("johnson"); setSearchInput("johnson"); }
-              }}
-              className={`px-3 py-1 rounded-md text-[10px] font-medium transition-all border ${
-                chartFilter === "johnson"
-                  ? "bg-blue-500 text-white border-blue-500 shadow-sm"
-                  : "bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600"
-              }`}
-            >
-              Johnson
-            </button>
-            {chartFilter && (
-              <button
-                onClick={() => { setChartFilter(""); setSearchInput(""); }}
-                className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
-            </div>
-          ) : chartData.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-8">{chartFilter ? `Nenhum dado para "${chartFilter}"` : "Sem dados"}</p>
-          ) : (
-            <div className="flex flex-col lg:flex-row">
-              {/* Lado esquerdo: Gráfico */}
-              <div className="lg:w-[55%] p-4 lg:border-r border-slate-100">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h4 className="text-xs font-semibold text-slate-600">
-                      {chartFilter ? `Evolução — ${chartFilter.toUpperCase()}` : "Evolução Mensal"}
-                    </h4>
-                    <p className="text-[9px] text-slate-400 mt-0.5">Clique em uma barra para ver detalhes · <span className="text-amber-800/50">Linha = acumulado</span></p>
-                  </div>
-                </div>
-                <svg
-                  ref={svgRef}
-                  viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                  className="w-full h-auto"
-                >
-                  <defs>
-                    <linearGradient id="inadBarDefault" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#fcd34d" stopOpacity="0.9" />
-                      <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.6" />
-                    </linearGradient>
-                    <linearGradient id="inadBarActive" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f59e0b" />
-                      <stop offset="100%" stopColor="#d97706" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Grid lines - subtle */}
-                  {gridLines.map((line, i) => (
-                    <g key={i}>
-                      <line
-                        x1={paddingLeft}
-                        y1={line.y}
-                        x2={svgWidth - paddingRight}
-                        y2={line.y}
-                        stroke="#f1f5f9"
-                        strokeWidth="0.5"
-                      />
-                      <text
-                        x={paddingLeft - 5}
-                        y={line.y + 3}
-                        textAnchor="end"
-                        fill="#94a3b8"
-                        fontSize="7"
-                        fontFamily="system-ui"
-                      >
-                        {line.val >= 1000 ? `${(line.val / 1000).toFixed(0)}K` : line.val.toFixed(0)}
-                      </text>
-                    </g>
-                  ))}
-
-                  {/* Bars */}
-                  {bars.map((bar, i) => {
-                    const isActive = selectedIdx === i;
-                    return (
-                      <g key={i} className="cursor-pointer" onClick={() => handleBarClick(i)}>
-                        {/* Bar */}
-                        <rect
-                          x={bar.x}
-                          y={bar.y}
-                          width={bar.w}
-                          height={Math.max(bar.h, 2)}
-                          rx={bar.w > 12 ? 4 : 2}
-                          fill={isActive ? "url(#inadBarActive)" : "url(#inadBarDefault)"}
-                          opacity={selectedIdx !== null && !isActive ? 0.45 : 1}
-                          style={{ transition: "all 0.2s ease" }}
-                        />
-                        {/* Value on top of active bar */}
-                        {isActive && (
-                          <text
-                            x={bar.x + bar.w / 2}
-                            y={bar.y - 5}
-                            textAnchor="middle"
-                            fill="#92400e"
-                            fontSize="7.5"
-                            fontWeight="600"
-                            fontFamily="system-ui"
-                          >
-                            {formatCurrencyShort(bar.valor)}
-                          </text>
-                        )}
-                        {/* X label */}
-                        <text
-                          x={bar.x + bar.w / 2}
-                          y={paddingTop + chartH + 14}
-                          textAnchor="middle"
-                          fill={isActive ? "#92400e" : "#94a3b8"}
-                          fontSize="6.5"
-                          fontWeight={isActive ? "600" : "400"}
-                          fontFamily="system-ui"
-                          style={{ transition: "fill 0.2s ease" }}
-                        >
-                          {bar.label}
-                        </text>
-                        {/* Active indicator dot */}
-                        {isActive && (
-                          <circle
-                            cx={bar.x + bar.w / 2}
-                            cy={paddingTop + chartH + 21}
-                            r="1.5"
-                            fill="#f59e0b"
-                          />
-                        )}
-                      </g>
-                    );
-                  })}
-
-                  {/* Trend line - rendered AFTER bars so dots are on top and hoverable */}
-                  {bars.length > 1 && (() => {
-                    const maxAcum = bars.reduce((s: number, b: any) => s + b.valor, 0) || 1;
-                    const normalizedPoints = bars.map((bar: any, i: number) => {
-                      const acumAtI = bars.slice(0, i + 1).reduce((s: number, b: any) => s + b.valor, 0);
-                      const y = paddingTop + chartH - (acumAtI / maxAcum) * (chartH - 5);
-                      return { x: bar.x + bar.w / 2, y };
-                    });
-                    const pathD = normalizedPoints.map((p: any, i: number) => {
-                      if (i === 0) return `M ${p.x} ${p.y}`;
-                      const prev = normalizedPoints[i - 1];
-                      const cpx = (prev.x + p.x) / 2;
-                      return `C ${cpx} ${prev.y}, ${cpx} ${p.y}, ${p.x} ${p.y}`;
-                    }).join(" ");
-                    const acumValues = bars.map((_: any, i: number) =>
-                      bars.slice(0, i + 1).reduce((s: number, b: any) => s + b.valor, 0)
-                    );
-                    return (
-                      <g>
-                        {/* Line */}
-                        <path
-                          d={pathD}
-                          fill="none"
-                          stroke="#92400e"
-                          strokeWidth="1"
-                          strokeOpacity="0.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        {/* Dots on line - with hover tooltip */}
-                        {normalizedPoints.map((p: any, i: number) => (
-                          <g key={`dot-${i}`}>
-                            {/* Invisible larger hit area */}
-                            <circle
-                              cx={p.x}
-                              cy={p.y}
-                              r="10"
-                              fill="transparent"
-                              onMouseEnter={() => setHoveredDot(i)}
-                              onMouseLeave={() => setHoveredDot(null)}
-                              className="cursor-pointer"
-                              style={{ pointerEvents: "all" }}
-                            />
-                            {/* Visible dot */}
-                            <circle
-                              cx={p.x}
-                              cy={p.y}
-                              r={hoveredDot === i ? 4 : 2.5}
-                              fill="#92400e"
-                              fillOpacity={hoveredDot === i ? 0.8 : 0.5}
-                              stroke={hoveredDot === i ? "#fef3c7" : "none"}
-                              strokeWidth={hoveredDot === i ? 1.5 : 0}
-                              style={{ transition: "all 0.15s ease", pointerEvents: "none" }}
-                            />
-                            {/* Tooltip on hover */}
-                            {hoveredDot === i && (
-                              <g style={{ pointerEvents: "none" }}>
-                                <rect
-                                  x={p.x - 40}
-                                  y={p.y - 24}
-                                  width="80"
-                                  height="18"
-                                  rx="4"
-                                  fill="#292524"
-                                  fillOpacity="0.9"
-                                />
-                                <text
-                                  x={p.x}
-                                  y={p.y - 12}
-                                  textAnchor="middle"
-                                  fill="#fef3c7"
-                                  fontSize="7.5"
-                                  fontWeight="600"
-                                  fontFamily="system-ui"
-                                >
-                                  {formatCurrencyShort(acumValues[i])}
-                                </text>
-                              </g>
-                            )}
-                          </g>
-                        ))}
-                      </g>
-                    );
-                  })()}
-                </svg>
-              </div>
-
-              {/* Lado direito: Detalhes do mês */}
-              <div className="lg:w-[45%] bg-slate-50/30 flex flex-col" style={{ minHeight: "280px", maxHeight: "340px" }}>
-                {/* Resumo da série no topo */}
-                <div className="px-3 py-2 border-b border-slate-200 bg-gradient-to-r from-amber-50 to-amber-100/50">
-                  <p className="text-[10px] text-amber-600 font-medium uppercase tracking-wider">
-                    {chartFilter ? `Série — ${chartFilter.toUpperCase()}` : "Série Histórica"}
-                  </p>
-                  <div className="flex items-baseline gap-2 mt-0.5">
-                    <span className="text-lg font-bold text-amber-800">
-                      {formatCurrency(chartData.reduce((sum: number, d: any) => sum + d.valor, 0))}
-                    </span>
-                    <span className="text-[10px] text-amber-600/70">
-                      {chartData.reduce((sum: number, d: any) => sum + d.count, 0)} títulos · {chartData.length} meses
-                    </span>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                {selectedIdx !== null && chartData[selectedIdx] ? (
-                  <MesDetalhePanel
-                    mes={chartData[selectedIdx].mes}
-                    clienteFilter={chartFilter}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-400 py-12">
-                    <BarChart3 className="w-8 h-8 mb-2 opacity-30" />
-                    <p className="text-xs">Selecione um mês no gráfico</p>
-                  </div>
-                )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ---- Card Clientes Inadimplentes ---- */
-type SortFieldClientes = "valor" | "data" | "titulos";
-type SortDirClientes = "asc" | "desc";
-
-function ClientesInadimplentesCard() {
-  const { data: clientes, isLoading } = trpc.financial.getClientesInadimplentes.useQuery();
-  const [collapsed, setCollapsed] = useState(true);
-  const [expandedCliente, setExpandedCliente] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState<SortFieldClientes>("valor");
-  const [sortDir, setSortDir] = useState<SortDirClientes>("desc");
-
-  const totalGeral = useMemo(() => {
-    if (!clientes) return 0;
-    return clientes.reduce((sum: number, c: any) => sum + c.total, 0);
-  }, [clientes]);
-
-  // Enriquecer clientes com data do título mais antigo
-  const enrichedClientes = useMemo(() => {
-    if (!clientes) return [];
-    return clientes.map((c: any) => {
-      const oldest = c.titulos.reduce((min: string | null, t: any) => {
-        if (!t.vencimento) return min;
-        if (!min) return t.vencimento;
-        return t.vencimento < min ? t.vencimento : min;
-      }, null as string | null);
-      return { ...c, oldestDate: oldest };
-    });
-  }, [clientes]);
-
-  // Filtrar e ordenar
-  const filteredClientes = useMemo(() => {
-    let result = [...enrichedClientes];
-
-    // Busca
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter((c: any) => c.cliente.toLowerCase().includes(term));
-    }
-
-    // Ordenação
-    result.sort((a: any, b: any) => {
-      let cmp = 0;
-      switch (sortField) {
-        case "valor":
-          cmp = a.total - b.total;
-          break;
-        case "titulos":
-          cmp = a.count - b.count;
-          break;
-        case "data":
-          cmp = (a.oldestDate || "9999").localeCompare(b.oldestDate || "9999");
-          break;
-      }
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-
-    return result;
-  }, [enrichedClientes, searchTerm, sortField, sortDir]);
-
-  const handleSort = (field: SortFieldClientes) => {
-    if (sortField === field) {
-      setSortDir(sortDir === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDir("desc");
-    }
-  };
-
-  const toggleCliente = (clienteKey: string) => {
-    setExpandedCliente(expandedCliente === clienteKey ? null : clienteKey);
-  };
-
-  const SortIcon = ({ field }: { field: SortFieldClientes }) => (
-    <ArrowUpDown className={`w-3 h-3 inline ml-0.5 ${sortField === field ? "text-amber-600" : "text-slate-300"}`} />
-  );
-
-  return (
-    <div className="bg-white rounded-lg border border-amber-200 shadow-sm">
-      <div
-        className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-amber-100/50 transition-colors"
-        onClick={() => setCollapsed(!collapsed)}
-      >
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-amber-600" />
-          <h3 className="text-sm font-bold text-amber-700">Clientes Inadimplentes</h3>
-          {collapsed ? <ChevronDown className="w-5 h-5 text-amber-600" /> : <ChevronUp className="w-5 h-5 text-amber-600" />}
-        </div>
-        <div className="text-right">
-          <span className="text-sm font-bold text-amber-800">{clientes ? `${clientes.length} clientes` : "..."}</span>
-          <span className="text-xs text-amber-600 ml-2">{formatCurrency(totalGeral)}</span>
-        </div>
-      </div>
-      {!collapsed && (
-        <div>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
-            </div>
-          ) : !clientes || clientes.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-4">Nenhum cliente inadimplente</p>
-          ) : (
-            <>
-              {/* Barra de busca */}
-              <div className="px-4 py-2.5 border-b border-slate-100">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <Input
-                    placeholder="Buscar cliente..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 h-8 text-xs bg-white"
-                  />
-                </div>
-                {/* Filtros rápidos */}
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-[10px] text-slate-400 font-medium">Filtros:</span>
-                  <button
-                    onClick={() => setSearchTerm(searchTerm === "keure" ? "" : "keure")}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all border ${
-                      searchTerm.toLowerCase() === "keure"
-                        ? "bg-red-100 text-red-700 border-red-300"
-                        : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
-                    }`}
-                  >
-                    Keure
-                  </button>
-                  <button
-                    onClick={() => setSearchTerm(searchTerm === "johnson" ? "" : "johnson")}
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all border ${
-                      searchTerm.toLowerCase() === "johnson"
-                        ? "bg-blue-100 text-blue-700 border-blue-300"
-                        : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
-                    }`}
-                  >
-                    Johnson
-                  </button>
-                </div>
-                {searchTerm && (
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    {filteredClientes.length} de {clientes.length} clientes
-                  </p>
-                )}
-              </div>
-              <div className="max-h-[500px] overflow-y-auto">
-                <table className="w-full text-xs">
-                  <thead className="bg-slate-50 sticky top-0 z-10">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-slate-500 font-semibold w-8">#</th>
-                      <th className="px-3 py-2 text-left text-slate-500 font-semibold">Cliente</th>
-                      <th
-                        className="px-3 py-2 text-right text-slate-500 font-semibold cursor-pointer hover:text-amber-600 select-none"
-                        onClick={() => handleSort("valor")}
-                      >
-                        Valor Total <SortIcon field="valor" />
-                      </th>
-                      <th
-                        className="px-3 py-2 text-center text-slate-500 font-semibold cursor-pointer hover:text-amber-600 select-none"
-                        onClick={() => handleSort("titulos")}
-                      >
-                        Títulos <SortIcon field="titulos" />
-                      </th>
-                      <th
-                        className="px-3 py-2 text-center text-slate-500 font-semibold cursor-pointer hover:text-amber-600 select-none"
-                        onClick={() => handleSort("data")}
-                      >
-                        Mais Antigo <SortIcon field="data" />
-                      </th>
-                      <th className="px-3 py-2 text-right text-slate-500 font-semibold">% do Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredClientes.map((c: any, idx: number) => {
-                      const pct = totalGeral > 0 ? (c.total / totalGeral) * 100 : 0;
-                      const clienteKey = c.cliente;
-                      const isExpanded = expandedCliente === clienteKey;
-                      const diasAntigo = c.oldestDate ? daysUntil(c.oldestDate) : null;
-                      return (
-                        <React.Fragment key={clienteKey}>
-                          <tr
-                            className={`transition-colors cursor-pointer ${
-                              isExpanded ? "bg-amber-50" : "hover:bg-slate-50"
-                            }`}
-                            onClick={() => toggleCliente(clienteKey)}
-                          >
-                            <td className="px-4 py-2.5 text-slate-400 font-mono">{idx + 1}</td>
-                            <td className="px-3 py-2.5">
-                              <div className="flex items-center gap-1.5">
-                                <ChevronRight className={`w-4 h-4 text-amber-600 transition-transform flex-shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
-                                <span className="font-medium text-slate-800 truncate max-w-[240px]" title={c.cliente}>{c.cliente}</span>
-                              </div>
-                            </td>
-                            <td className="px-3 py-2.5 text-right">
-                              <span className="font-bold text-amber-700">{formatCurrency(c.total)}</span>
-                            </td>
-                            <td className="px-3 py-2.5 text-center">
-                              <Badge className="bg-amber-100 text-amber-700 text-[10px] border-0">{c.count}</Badge>
-                            </td>
-                            <td className="px-3 py-2.5 text-center">
-                              {c.oldestDate ? (
-                                <div>
-                                  <span className="text-slate-700">{formatDate(c.oldestDate)}</span>
-                                  {diasAntigo !== null && diasAntigo < 0 && (
-                                    <span className="text-red-500 text-[10px] ml-1">({Math.abs(diasAntigo)}d)</span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-slate-400">—</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2.5 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-amber-500 rounded-full"
-                                    style={{ width: `${Math.min(pct, 100)}%` }}
-                                  />
-                                </div>
-                                <span className="text-slate-500 w-10 text-right">{pct.toFixed(1)}%</span>
-                              </div>
-                            </td>
-                          </tr>
-                          {/* Detalhes dos títulos expandidos inline */}
-                          {isExpanded && (
-                            <tr>
-                              <td colSpan={6} className="p-0">
-                                <div className="bg-amber-50/60 border-t border-amber-100 px-6 py-3">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <h4 className="text-[11px] font-bold text-amber-700">
-                                      Títulos vencidos — {c.cliente}
-                                    </h4>
-                                    <span className="text-[10px] text-amber-600">
-                                      {c.count} título(s) • Total: {formatCurrency(c.total)}
-                                    </span>
-                                  </div>
-                                  <div className="bg-white rounded border border-amber-100 overflow-hidden">
-                                    <table className="w-full text-[11px]">
-                                      <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-200">
-                                          <th className="px-3 py-1.5 text-left text-slate-500 font-semibold">Vencimento</th>
-                                          <th className="px-3 py-1.5 text-left text-slate-500 font-semibold">Dias</th>
-                                          <th className="px-3 py-1.5 text-right text-slate-500 font-semibold">Valor</th>
-                                          <th className="px-3 py-1.5 text-left text-slate-500 font-semibold">Referência</th>
-                                          <th className="px-3 py-1.5 text-center text-slate-500 font-semibold">Parcela</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-slate-50">
-                                        {c.titulos.map((t: any, i: number) => {
-                                          const dias = daysUntil(t.vencimento);
-                                          return (
-                                            <tr key={i} className="hover:bg-amber-50/50">
-                                              <td className="px-3 py-1.5 text-slate-700">{formatDate(t.vencimento)}</td>
-                                              <td className="px-3 py-1.5">
-                                                {dias !== null && dias < 0 ? (
-                                                  <span className="text-red-600 font-semibold">{Math.abs(dias)}d atr.</span>
-                                                ) : (
-                                                  <span className="text-slate-400">—</span>
-                                                )}
-                                              </td>
-                                              <td className="px-3 py-1.5 text-right font-semibold text-amber-700">
-                                                {formatCurrency(t.valor)}
-                                              </td>
-                                              <td className="px-3 py-1.5 text-slate-500 truncate max-w-[200px]">
-                                                {t.referenteA || t.documento || "—"}
-                                              </td>
-                                              <td className="px-3 py-1.5 text-center text-slate-400">
-                                                {t.parcela || "—"}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {filteredClientes.length === 0 && searchTerm && (
-                <p className="text-xs text-slate-400 text-center py-4">Nenhum cliente encontrado para "{searchTerm}"</p>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ---- Main Financial Page ---- */
 export default function Financial() {
-  const { data: summary, isLoading: loadingSummary } = trpc.financial.getSummary.useQuery();
-  const { data: calendarData, isLoading: loadingCalendar } = trpc.financial.getPaymentCalendar.useQuery();
-  const { data: monthlyData, isLoading: loadingMonthly } = trpc.financial.getMonthlyBreakdown.useQuery();
+  const { hasGranularAccess } = useOperator();
+  const { data: summary, isLoading: loadingSummary } = trpc.financial.getSummary.useQuery(undefined, { refetchInterval: 60000 });
+  const { data: calendarData, isLoading: loadingCalendar } = trpc.financial.getPaymentCalendar.useQuery(undefined, { refetchInterval: 60000 });
+  const { data: monthlyData, isLoading: loadingMonthly } = trpc.financial.getMonthlyBreakdown.useQuery(undefined, { refetchInterval: 60000 });
 
   // Seletor de mês
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
@@ -1987,7 +1692,6 @@ export default function Financial() {
   return (
     <div className="min-h-screen bg-slate-50">
       <TopNav />
-
       <main className="container py-6 space-y-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
@@ -2004,141 +1708,22 @@ export default function Financial() {
           <>
             {/* Título elegante */}
             <div className="text-center py-2">
-              <h2 className="text-2xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+              <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
                 <span className="text-slate-700">Dashboard de Análise Financeira</span>
                 <span className="text-teal-600 ml-2">Grupo Fox</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-1 tracking-widest uppercase">Contas a Pagar e Receber</p>
+              <p className="text-sm text-slate-400 mt-1.5 tracking-widest uppercase">Contas a Pagar e Receber</p>
             </div>
 
-            {/* Inadimplência */}
-            {summary!.receber.vencidas.count > 0 && (
-              <InadimplenciaCard summary={summary!} />
-            )}
+            <ConnectionStatusCard />
 
-            {/* Clientes Inadimplentes */}
-            {summary!.receber.vencidas.count > 0 && (
-              <ClientesInadimplentesCard />
-            )}
+            {/* Resumo Financeiro (Faturamento + Vendas vs Contas Pagas) */}
+            {hasGranularAccess("fin.verResumoFinanceiro") && <ResumoFinanceiroCard />}
 
-            {/* Seletor de mês */}
-            <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-1">Ver contas de:</span>
-                {monthlyData?.map((m) => (
-                  <button
-                    key={m.label}
-                    onClick={() => setSelectedMonth(selectedMonth === m.label ? null : m.label)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      selectedMonth === m.label
-                        ? "bg-teal-600 text-white shadow-sm"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Tabelas do mês selecionado */}
-            {selectedMonth && monthRange && (
-              <div className="space-y-2">
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => setSelectedMonth(null)}
-                    className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 px-3 py-1.5 rounded-md border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    Ocultar detalhes
-                  </button>
-                </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Contas a Receber do mês */}
-                <div className="bg-white rounded-lg border border-emerald-200 shadow-sm overflow-hidden">
-                  <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-3 flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-emerald-700">A Receber - {selectedMonth}</h3>
-                    <span className="text-sm font-bold text-emerald-800">
-                      {loadingMonthReceber ? "..." : `${formatCurrency(monthReceber?.totalValor || 0)} (${monthReceber?.total || 0})`}
-                    </span>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {loadingMonthReceber ? (
-                      <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
-                    ) : monthReceber?.items.length === 0 ? (
-                      <div className="text-center py-8 text-slate-400 text-sm">Nenhuma conta neste mês</div>
-                    ) : (
-                      <table className="w-full text-xs">
-                        <thead className="bg-slate-50 sticky top-0">
-                          <tr>
-                            <th className="px-3 py-2 text-left text-slate-500 font-semibold">Cliente</th>
-                            <th className="px-3 py-2 text-right text-slate-500 font-semibold">Valor</th>
-                            <th className="px-3 py-2 text-center text-slate-500 font-semibold">Vencimento</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {monthReceber?.items.map((item: any, i: number) => (
-                            <tr key={i} className="hover:bg-slate-50">
-                              <td className="px-3 py-2 text-slate-700 truncate max-w-[200px]">{item.cliente || "—"}</td>
-                              <td className="px-3 py-2 text-right font-semibold text-emerald-700">{formatCurrency(Number(item.valorLiquido || 0))}</td>
-                              <td className="px-3 py-2 text-center text-slate-500">{formatDate(item.vencimentoData)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                </div>
-
-                {/* Contas a Pagar do mês */}
-                <div className="bg-white rounded-lg border border-red-200 shadow-sm overflow-hidden">
-                  <div className="bg-red-50 border-b border-red-200 px-4 py-3 flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-red-700">A Pagar - {selectedMonth}</h3>
-                    <span className="text-sm font-bold text-red-800">
-                      {loadingMonthPagar ? "..." : `${formatCurrency(monthPagar?.totalValor || 0)} (${monthPagar?.total || 0})`}
-                    </span>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {loadingMonthPagar ? (
-                      <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
-                    ) : monthPagar?.items.length === 0 ? (
-                      <div className="text-center py-8 text-slate-400 text-sm">Nenhuma conta neste mês</div>
-                    ) : (
-                      <table className="w-full text-xs">
-                        <thead className="bg-slate-50 sticky top-0">
-                          <tr>
-                            <th className="px-3 py-2 text-left text-slate-500 font-semibold">Fornecedor</th>
-                            <th className="px-3 py-2 text-right text-slate-500 font-semibold">Valor</th>
-                            <th className="px-3 py-2 text-center text-slate-500 font-semibold">Vencimento</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {monthPagar?.items.map((item: any, i: number) => (
-                            <tr key={i} className="hover:bg-slate-50">
-                              <td className="px-3 py-2 text-slate-700 truncate max-w-[200px]">{item.fornecedor || "—"}</td>
-                              <td className="px-3 py-2 text-right font-semibold text-red-700">{formatCurrency(Number(item.valorLiquido || 0))}</td>
-                              <td className="px-3 py-2 text-center text-slate-500">{formatDate(item.vencimentoData)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                </div>
-              </div>
-              </div>
-            )}
-
-            {/* 1. Fluxo de Caixa */}
-            <CashFlowCard />
-
-            {/* 2. Saldo Bancário */}
-            <BankBalanceCard />
-
-            {/* 3. Cards mensais lado a lado: A Receber vs A Pagar */}
+            {/* Cards mensais lado a lado: A Receber vs A Pagar */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* A Receber */}
-              <div className="bg-white rounded-lg border border-emerald-200 shadow-sm overflow-hidden">
+              {hasGranularAccess("fin.verContasReceber") && <div className="bg-white rounded-lg border border-emerald-200 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setShowCharts(!showCharts)}
                   className="w-full bg-emerald-50 border-b border-emerald-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-emerald-100 transition-colors"
@@ -2159,28 +1744,45 @@ export default function Financial() {
                     ) : monthlyData?.map((m, idx) => {
                       const maxTotal = Math.max(...(monthlyData || []).map(x => x.receber.total), 1);
                       const pct = (m.receber.total / maxTotal) * 100;
+                      const isSelected = selectedMonth === m.label;
                       return (
-                        <div key={idx} className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-slate-500 w-20 shrink-0">{m.label}</span>
-                          <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden relative">
-                            <div
-                              className="h-full bg-emerald-400 rounded-full transition-all"
-                              style={{ width: `${Math.max(pct, 1)}%` }}
+                        <div key={idx}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedMonth(isSelected ? null : m.label); }}
+                            className={`w-full flex items-center gap-3 py-1 px-2 rounded-md transition-colors cursor-pointer ${
+                              isSelected ? "bg-emerald-100 ring-1 ring-emerald-300" : "hover:bg-emerald-50/50"
+                            }`}
+                          >
+                            <span className="text-xs font-medium text-slate-500 w-20 shrink-0 text-left">{m.label}</span>
+                            <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden relative">
+                              <div
+                                className="h-full bg-emerald-400 rounded-full transition-all"
+                                style={{ width: `${Math.max(pct, 1)}%` }}
+                              />
+                            </div>
+                            <div className="text-right shrink-0 w-36">
+                              <span className="text-xs font-bold text-slate-800">{formatCurrency(m.receber.total)}</span>
+                              <span className="text-xs text-slate-400 ml-1">({m.receber.count})</span>
+                            </div>
+                            {isSelected ? <ChevronUp className="w-4 h-4 text-emerald-600 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" />}
+                          </button>
+                          {isSelected && (
+                            <MonthDetailTable
+                              items={monthReceber?.items}
+                              isLoading={loadingMonthReceber}
+                              nameField="cliente"
+                              colorScheme="emerald"
                             />
-                          </div>
-                          <div className="text-right shrink-0 w-36">
-                            <span className="text-xs font-bold text-slate-800">{formatCurrency(m.receber.total)}</span>
-                            <span className="text-xs text-slate-400 ml-1">({m.receber.count})</span>
-                          </div>
+                          )}
                         </div>
                       );
                     })}
                   </div>
                 )}
-              </div>
+              </div>}
 
               {/* A Pagar */}
-              <div className="bg-white rounded-lg border border-red-200 shadow-sm overflow-hidden">
+              {hasGranularAccess("fin.verContasPagar") && <div className="bg-white rounded-lg border border-red-200 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setShowCharts(!showCharts)}
                   className="w-full bg-red-50 border-b border-red-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-red-100 transition-colors"
@@ -2201,31 +1803,68 @@ export default function Financial() {
                     ) : monthlyData?.map((m, idx) => {
                       const maxTotal = Math.max(...(monthlyData || []).map(x => x.pagar.total), 1);
                       const pct = (m.pagar.total / maxTotal) * 100;
+                      const isSelected = selectedMonth === m.label;
                       return (
-                        <div key={idx} className="flex items-center gap-3">
-                          <span className="text-xs font-medium text-slate-500 w-20 shrink-0">{m.label}</span>
-                          <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden relative">
-                            <div
-                              className="h-full bg-red-400 rounded-full transition-all"
-                              style={{ width: `${Math.max(pct, 1)}%` }}
+                        <div key={idx}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedMonth(isSelected ? null : m.label); }}
+                            className={`w-full flex items-center gap-3 py-1 px-2 rounded-md transition-colors cursor-pointer ${
+                              isSelected ? "bg-red-100 ring-1 ring-red-300" : "hover:bg-red-50/50"
+                            }`}
+                          >
+                            <span className="text-xs font-medium text-slate-500 w-20 shrink-0 text-left">{m.label}</span>
+                            <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden relative">
+                              <div
+                                className="h-full bg-red-400 rounded-full transition-all"
+                                style={{ width: `${Math.max(pct, 1)}%` }}
+                              />
+                            </div>
+                            <div className="text-right shrink-0 w-36">
+                              <span className="text-xs font-bold text-slate-800">{formatCurrency(m.pagar.total)}</span>
+                              <span className="text-xs text-slate-400 ml-1">({m.pagar.count})</span>
+                            </div>
+                            {isSelected ? <ChevronUp className="w-4 h-4 text-red-600 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" />}
+                          </button>
+                          {isSelected && (
+                            <MonthDetailTable
+                              items={monthPagar?.items}
+                              isLoading={loadingMonthPagar}
+                              nameField="fornecedor"
+                              colorScheme="red"
                             />
-                          </div>
-                          <div className="text-right shrink-0 w-36">
-                            <span className="text-xs font-bold text-slate-800">{formatCurrency(m.pagar.total)}</span>
-                            <span className="text-xs text-slate-400 ml-1">({m.pagar.count})</span>
-                          </div>
+                          )}
                         </div>
                       );
                     })}
                   </div>
                 )}
-              </div>
+              </div>}
             </div>
 
-            {/* 4. Calendários lado a lado */}
+            {/* Fluxo de Caixa */}
+            {hasGranularAccess("fin.verFluxoCaixa") && <CashFlowCard />}
+
+            {/* Inadimplência */}
+            {hasGranularAccess("fin.verInadimplencia") && summary!.receber.vencidas.count > 0 && (
+              <InadimplenciaCard summary={summary!} />
+            )}
+
+            {/* Clientes Inadimplentes */}
+            {hasGranularAccess("fin.verInadimplencia") && summary!.receber.vencidas.count > 0 && (
+              <ClientesInadimplentesCard />
+            )}
+
+            {/* Saldo Bancário */}
+            {hasGranularAccess("fin.verSaldoBancario") && <BankBalanceCard />}
+
+            {/* Calendários lado a lado */}
             <OverviewCalendars
               calendarPagar={calendarData}
               loadingPagar={loadingCalendar}
+              canAuthorize={hasGranularAccess("fin.autorizacaoPagamento")}
+              canComment={hasGranularAccess("fin.comentarioPagamento")}
+              canViewPagar={hasGranularAccess("fin.verContasPagar")}
+              canViewReceber={hasGranularAccess("fin.verContasReceber")}
             />
 
           </>

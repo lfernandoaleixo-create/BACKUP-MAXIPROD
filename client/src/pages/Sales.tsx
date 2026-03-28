@@ -3,8 +3,9 @@
  * Analytics de pedidos de venda do Maxiprod
  */
 
-import { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import { trpc } from "@/lib/trpc";
+import ConnectionStatusCard from "@/components/ConnectionStatusCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +33,29 @@ import {
   Search,
   ArrowUpDown,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
+  Package,
+  ClipboardList,
+  Calendar,
+  PenLine,
+  Building2,
+  CreditCard,
+  Truck,
+  AlertCircle,
+  CheckCircle,
+  Copy,
+  User,
+  FileDown,
+  Phone,
+  Mail,
+  ListFilter,
 } from "lucide-react";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
+import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
+import { generateSalesPDF } from "@/lib/salesPdfExport";
 
 /* ---- Helpers ---- */
 function formatCurrencyFull(n: number): string {
@@ -100,8 +121,13 @@ function getPeriodRange(period: string): { start: string; end: string; label: st
     if (startDate && endDate) {
       const s = new Date(startDate + "T00:00:00.000Z");
       const e = new Date(endDate + "T23:59:59.999Z");
-      const fmtStart = s.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-      const fmtEnd = e.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+      // Use local date parts for display to avoid UTC→local timezone shift
+      const [sY, sM, sD] = startDate.split("-").map(Number);
+      const [eY, eM, eD] = endDate.split("-").map(Number);
+      const sLocal = new Date(sY, sM - 1, sD);
+      const eLocal = new Date(eY, eM - 1, eD);
+      const fmtStart = sLocal.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+      const fmtEnd = eLocal.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
       return { start: s.toISOString(), end: e.toISOString(), label: `${fmtStart} a ${fmtEnd}` };
     }
   }
@@ -186,105 +212,364 @@ function KPICardWithBreakdown({ label, value, sub, icon: Icon, theme, segments }
   );
 }
 
-/* ---- Daily Evolution Chart (CSS bars) - All days of month ---- */
-function DailyChart({ data, mode, period }: { data: Array<{ day: string; value: number; orders: number }>; mode: "value" | "orders"; period: string }) {
-  // Build a map of existing data
+/* ---- Segment Table Body with expandable "Outros" ---- */
+type SegmentDetail = { name: string; value: number; faturado: number; aFaturar: number; aFaturarAnterior: number };
+type SegmentRow = { name: string; value: number; faturado: number; aFaturar: number; aFaturarAnterior: number; detail?: SegmentDetail[] };
+
+function SegmentTableBody({ segments, totalValue }: { segments: SegmentRow[]; totalValue: number }) {
+  const [outrosExpanded, setOutrosExpanded] = useState(false);
+
+  return (
+    <tbody className="divide-y divide-slate-50">
+      {segments.map((seg) => {
+        const pctTotal = totalValue > 0 ? ((seg.value / totalValue) * 100) : 0;
+        const segColor = seg.name.includes("Revenda") ? "bg-teal-500" : seg.name.includes("Industrializado") ? "bg-violet-500" : seg.name.includes("Mat\u00e9ria") ? "bg-blue-500" : "bg-slate-400";
+        const isOutros = seg.name === "Outros" && seg.detail && seg.detail.length > 0;
+
+        return (
+          <React.Fragment key={seg.name}>
+            <tr
+              className={`hover:bg-slate-50 transition-colors ${isOutros ? "cursor-pointer" : ""}`}
+              onClick={isOutros ? () => setOutrosExpanded(!outrosExpanded) : undefined}
+            >
+              <td className="px-5 py-3">
+                <div className="flex items-center gap-2.5">
+                  <span className={`w-3 h-3 rounded-full ${segColor} flex-shrink-0`} />
+                  <span className="text-sm font-semibold text-slate-800">{seg.name}</span>
+                  {isOutros && (
+                    outrosExpanded
+                      ? <ChevronUp className="w-4 h-4 text-slate-400" />
+                      : <ChevronDown className="w-4 h-4 text-slate-400" />
+                  )}
+                </div>
+              </td>
+              <td className="px-4 py-3 text-right">
+                <span className="text-sm font-bold text-slate-900">{formatCurrencyFull(seg.value)}</span>
+              </td>
+              <td className="px-4 py-3 text-right">
+                <span className="text-sm font-semibold text-emerald-700">{formatCurrencyFull(seg.faturado)}</span>
+              </td>
+              <td className="px-4 py-3 text-right">
+                <span className="text-sm font-semibold text-orange-700">{seg.aFaturar > 0 ? formatCurrencyFull(seg.aFaturar) : "\u2014"}</span>
+              </td>
+              <td className="px-4 py-3 text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-full ${segColor} rounded-full`} style={{ width: `${pctTotal}%` }} />
+                  </div>
+                  <span className="text-xs font-bold text-slate-600 w-10 text-right">{pctTotal.toFixed(0)}%</span>
+                </div>
+              </td>
+            </tr>
+            {isOutros && outrosExpanded && seg.detail!.map((d) => {
+              const dPct = totalValue > 0 ? ((d.value / totalValue) * 100) : 0;
+              return (
+                <tr key={`outros-${d.name}`} className="bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
+                  <td className="px-5 py-2 pl-12">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0" />
+                      <span className="text-xs font-medium text-slate-600">{d.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <span className="text-xs font-semibold text-slate-700">{formatCurrencyFull(d.value)}</span>
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <span className="text-xs font-medium text-emerald-600">{formatCurrencyFull(d.faturado)}</span>
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <span className="text-xs font-medium text-orange-600">{d.aFaturar > 0 ? formatCurrencyFull(d.aFaturar) : "\u2014"}</span>
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <span className="text-xs text-slate-500">{dPct.toFixed(1)}%</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </React.Fragment>
+        );
+      })}
+    </tbody>
+  );
+}
+
+/* ---- Daily Evolution Chart (SVG bars + line overlays) ---- */
+function DailyChart({ data, mode, period, comparison }: {
+  data: Array<{ day: string; value: number; orders: number; orderList?: Array<{ pedido: string; cliente: string; valor: number }> }>;
+  mode: "value" | "orders";
+  period: string;
+  comparison?: {
+    currentMonth: Array<{ day: number; value: number; cumulative: number }>;
+    currentMonthLabel?: string;
+    lastMonth: Array<{ day: number; value: number; cumulative: number }>;
+    lastMonthLabel?: string;
+    bestMonth: Array<{ day: number; value: number; cumulative: number }>;
+    bestMonthLabel?: string;
+  } | null;
+}) {
+  const [hoveredDay, setHoveredDay] = useState<string | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const dataMap = useMemo(() => {
-    const map = new Map<string, { value: number; orders: number }>();
+    const map = new Map<string, { value: number; orders: number; orderList?: Array<{ pedido: string; cliente: string; valor: number }> }>();
     for (const d of data) {
-      map.set(d.day, { value: d.value, orders: d.orders });
+      map.set(d.day, { value: d.value, orders: d.orders, orderList: d.orderList });
     }
     return map;
   }, [data]);
 
-  // Generate all days of the current selected month(s)
   const allDays = useMemo(() => {
     if (data.length === 0) return [];
-
-    // For single-month periods, show all days 1-31 of that month
     if (period === "current_month" || period === "last_month") {
       const firstDay = data[0]?.day || new Date().toISOString().substring(0, 10);
       const [y, m] = firstDay.split("-").map(Number);
       const daysInMonth = new Date(y, m, 0).getDate();
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-
-      const days: Array<{ day: string; value: number; orders: number; isFuture: boolean }> = [];
+      const days: Array<{ day: string; value: number; orders: number; isFuture: boolean; orderList?: Array<{ pedido: string; cliente: string; valor: number }> }> = [];
       for (let d = 1; d <= daysInMonth; d++) {
         const dayStr = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
         const existing = dataMap.get(dayStr);
-        days.push({
-          day: dayStr,
-          value: existing?.value || 0,
-          orders: existing?.orders || 0,
-          isFuture: dayStr > todayStr,
-        });
+        days.push({ day: dayStr, value: existing?.value || 0, orders: existing?.orders || 0, isFuture: dayStr > todayStr, orderList: existing?.orderList });
       }
       return days;
     }
-
-    // For multi-month periods, just use the data as-is
-    return data.map(d => ({ ...d, isFuture: false }));
+    return data.map(d => ({ ...d, isFuture: false, orderList: d.orderList }));
   }, [data, dataMap, period]);
 
   if (allDays.length === 0) return <p className="text-sm text-slate-400 text-center py-8">Sem dados para o periodo</p>;
 
   const key = mode === "value" ? "value" : "orders";
   const maxVal = Math.max(...allDays.map((d) => d[key]), 1);
-  const maxBarHeight = 140; // px
 
   const formatWeekday = (dayStr: string) => {
     const d = new Date(dayStr + "T12:00:00");
-    const weekdays = ["D", "S", "T", "Q", "Q", "S", "S"];
-    return weekdays[d.getDay()];
+    return ["D", "S", "T", "Q", "Q", "S", "S"][d.getDay()];
   };
 
-  return (
-    <div className="overflow-x-auto">
-      <div className="flex items-end gap-px" style={{ minWidth: "100%" }}>
-        {allDays.map((item, idx) => {
-          const val = item[key];
-          const barHeight = val > 0 ? Math.max(Math.round((val / maxVal) * maxBarHeight), 3) : 0;
-          const isWeekend = new Date(item.day + "T12:00:00").getDay() === 0 || new Date(item.day + "T12:00:00").getDay() === 6;
-          const dayNum = parseInt(item.day.split("-")[2]);
+  // SVG dimensions - bigger chart
+  const svgWidth = 1000;
+  const svgHeight = 420;
+  const paddingLeft = 65;
+  const paddingRight = 75;
+  const paddingTop = 25;
+  const paddingBottom = 55;
+  const plotW = svgWidth - paddingLeft - paddingRight;
+  const plotH = svgHeight - paddingTop - paddingBottom;
 
-          return (
-            <div
-              key={idx}
-              className="flex flex-col items-center"
-              style={{ flex: "1", minWidth: "22px", maxWidth: "32px" }}
-              title={`Dia ${dayNum} (${formatWeekday(item.day)}) \u2014 ${mode === "value" ? formatCurrencyFull(item.value) : item.orders + " pedidos"}`}
-            >
-              {/* Value label */}
-              <span className="text-[10px] font-bold text-slate-600 text-center whitespace-nowrap" style={{ minHeight: "16px" }}>
-                {val > 0 ? (mode === "value" ? (val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)) : val) : ""}
-              </span>
-              {/* Bar */}
-              <div className="w-full relative" style={{ height: `${maxBarHeight}px` }}>
-                <div
-                  className={`w-[70%] mx-auto rounded-t-sm absolute bottom-0 left-[15%] transition-all duration-300 ${
-                    item.isFuture ? "bg-slate-50 border border-dashed border-slate-200" :
-                    val === 0 ? "bg-slate-100" :
-                    isWeekend ? "bg-slate-300" : "bg-teal-500"
-                  }`}
-                  style={{ height: item.isFuture ? `${maxBarHeight}px` : val > 0 ? `${barHeight}px` : "2px" }}
-                />
-              </div>
-              {/* Day number */}
-              <span className={`text-[11px] font-semibold mt-1 ${isWeekend ? "text-red-400" : "text-slate-600"}`}>
-                {dayNum}
-              </span>
-              {/* Weekday */}
-              <span className={`text-[10px] ${isWeekend ? "text-red-300" : "text-slate-400"}`}>
-                {formatWeekday(item.day)}
-              </span>
+  const barWidth = Math.min(20, plotW / allDays.length * 0.65);
+  const barGap = (plotW - barWidth * allDays.length) / Math.max(allDays.length - 1, 1);
+
+  // Cumulative line data
+  const showLines = mode === "value" && comparison && (period === "current_month" || period === "last_month");
+  const allCumulatives = showLines ? [
+    ...(comparison?.currentMonth?.map(d => d.cumulative) || []),
+    ...(comparison?.lastMonth?.map(d => d.cumulative) || []),
+    ...(comparison?.bestMonth?.map(d => d.cumulative) || []),
+  ] : [];
+  const realMaxCumulative = Math.max(...allCumulatives, 1);
+  // Round up to nice number for right axis
+  const maxCumulative = showLines ? Math.ceil(realMaxCumulative / 500000) * 500000 || 500000 : realMaxCumulative;
+
+  // Dual scale: bars use maxVal (left axis), lines use maxCumulative (right axis)
+
+  const buildLinePath = (lineData: Array<{ day: number; cumulative: number }>) => {
+    if (!lineData || lineData.length === 0) return "";
+    return lineData.map((d, i) => {
+      const x = paddingLeft + ((d.day - 1) / Math.max(allDays.length - 1, 1)) * plotW;
+      const y = paddingTop + plotH - (d.cumulative / maxCumulative) * plotH;
+      return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    }).join(" ");
+  };
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(pct => ({
+    value: maxVal * pct,
+    y: paddingTop + plotH - pct * plotH,
+  }));
+
+  const todayDay = new Date().getDate();
+  const currentLatest = comparison?.currentMonth?.length ? comparison.currentMonth[comparison.currentMonth.length - 1] : null;
+  const lastLatest = comparison?.lastMonth?.length ? comparison.lastMonth[comparison.lastMonth.length - 1] : null;
+  const bestLatest = comparison?.bestMonth?.length ? comparison.bestMonth[comparison.bestMonth.length - 1] : null;
+
+  return (
+    <div className="relative">
+      {/* Legend for lines */}
+      {showLines && (
+        <div className="flex flex-wrap gap-6 mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-[3px] bg-teal-500 rounded" />
+            <span className="text-sm font-medium text-teal-700">Acum. Atual ({comparison?.currentMonthLabel})</span>
+            {currentLatest && <span className="text-sm text-teal-600 font-bold">{formatCurrencyFull(currentLatest.cumulative)}</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-[3px] bg-blue-600 rounded" />
+            <span className="text-sm font-medium text-blue-700">Anterior ({comparison?.lastMonthLabel})</span>
+            {lastLatest && <span className="text-sm text-blue-600 font-bold">{formatCurrencyFull(lastLatest.cumulative)}</span>}
+          </div>
+          {comparison?.bestMonth && comparison.bestMonth.length > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-[3px] bg-amber-600 rounded border-t border-dashed border-amber-600" />
+              <span className="text-sm font-medium text-amber-700">Melhor ({comparison?.bestMonthLabel})</span>
+              {bestLatest && <span className="text-sm text-amber-600 font-bold">{formatCurrencyFull(bestLatest.cumulative)}</span>}
             </div>
-          );
-        })}
+          )}
+        </div>
+      )}
+
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full" style={{ minWidth: "600px" }}>
+          {/* Grid lines + left axis (bars) */}
+          {yTicks.map((tick, i) => (
+            <g key={`grid-${i}`}>
+              <line x1={paddingLeft} y1={tick.y} x2={svgWidth - paddingRight} y2={tick.y} stroke="#f1f5f9" strokeWidth="1" />
+              <text x={paddingLeft - 8} y={tick.y + 4} textAnchor="end" fill="#94a3b8" fontSize="10">
+                {mode === "value" ? (tick.value >= 1000 ? `${(tick.value / 1000).toFixed(0)}k` : tick.value.toFixed(0)) : tick.value.toFixed(0)}
+              </text>
+            </g>
+          ))}
+
+          {/* Right axis ticks (cumulative) */}
+          {showLines && [0, 0.25, 0.5, 0.75, 1].map((pct, i) => {
+            const val = maxCumulative * pct;
+            const yPos = paddingTop + plotH - pct * plotH;
+            return (
+              <text key={`rtick-${i}`} x={svgWidth - paddingRight + 8} y={yPos + 4} fill="#94a3b8" fontSize="9" fontWeight="500">
+                {val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)}
+              </text>
+            );
+          })}
+
+          {/* Bars */}
+          {allDays.map((item, idx) => {
+            const val = item[key];
+            const barH = val > 0 ? Math.max((val / maxVal) * plotH, 2) : 1;
+            const x = paddingLeft + idx * (barWidth + barGap);
+            const y = paddingTop + plotH - barH;
+            const isWeekend = new Date(item.day + "T12:00:00").getDay() === 0 || new Date(item.day + "T12:00:00").getDay() === 6;
+            const dayNum = parseInt(item.day.split("-")[2]);
+
+            return (
+              <g key={`bar-${idx}`}>
+                <rect
+                  x={x}
+                  y={item.isFuture ? paddingTop : y}
+                  width={barWidth}
+                  height={item.isFuture ? plotH : barH}
+                  rx="2"
+                  fill={item.isFuture ? "#f8fafc" : val === 0 ? "#f1f5f9" : isWeekend ? "#cbd5e1" : "#14b8a6"}
+                  opacity={item.isFuture ? 0.5 : 0.85}
+                  stroke={item.isFuture ? "#e2e8f0" : "none"}
+                  strokeWidth={item.isFuture ? 1 : 0}
+                  strokeDasharray={item.isFuture ? "3 2" : "none"}
+                />
+                {val > 0 && !item.isFuture && (
+                  <text x={x + barWidth / 2} y={y - 6} textAnchor="middle" fill="#475569" fontSize="11" fontWeight="600">
+                    {mode === "value" ? (val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)) : val}
+                  </text>
+                )}
+                <text x={x + barWidth / 2} y={paddingTop + plotH + 18} textAnchor="middle" fill={isWeekend ? "#f87171" : "#475569"} fontSize="13" fontWeight="600">
+                  {dayNum}
+                </text>
+                <text x={x + barWidth / 2} y={paddingTop + plotH + 34} textAnchor="middle" fill={isWeekend ? "#fca5a5" : "#94a3b8"} fontSize="11">
+                  {formatWeekday(item.day)}
+                </text>
+                {/* Invisible wider rect for hover */}
+                <rect
+                  x={x - barGap / 2}
+                  y={paddingTop}
+                  width={barWidth + barGap}
+                  height={plotH}
+                  fill="transparent"
+                  style={{ cursor: "pointer" }}
+                  onMouseEnter={(e) => {
+                    setHoveredDay(item.day);
+                    const svgRect = (e.target as SVGElement).closest("svg")?.getBoundingClientRect();
+                    if (svgRect) {
+                      const relX = e.clientX - svgRect.left;
+                      setTooltipPos({ x: relX, y: 0 });
+                    }
+                  }}
+                  onMouseLeave={() => setHoveredDay(null)}
+                />
+              </g>
+            );
+          })}
+
+          {/* Overlay: cumulative lines (subtle) */}
+          {showLines && comparison?.bestMonth && comparison.bestMonth.length > 0 && (
+            <path d={buildLinePath(comparison.bestMonth)} fill="none" stroke="#d97706" strokeWidth="1.2" strokeDasharray="5 3" opacity="0.85" />
+          )}
+          {showLines && comparison?.lastMonth && comparison.lastMonth.length > 0 && (
+            <path d={buildLinePath(comparison.lastMonth)} fill="none" stroke="#2563eb" strokeWidth="1.2" opacity="0.85" />
+          )}
+          {showLines && comparison?.currentMonth && comparison.currentMonth.length > 0 && (
+            <>
+              <path d={buildLinePath(comparison.currentMonth)} fill="none" stroke="#0d9488" strokeWidth="1.5" opacity="0.9" />
+              {currentLatest && (
+                <circle
+                  cx={paddingLeft + ((currentLatest.day - 1) / Math.max(allDays.length - 1, 1)) * plotW}
+                  cy={paddingTop + plotH - (currentLatest.cumulative / maxCumulative) * plotH}
+                  r="4" fill="#0d9488" stroke="white" strokeWidth="2"
+                />
+              )}
+            </>
+          )}
+
+          {/* Today marker */}
+          {(period === "current_month") && todayDay <= allDays.length && (
+            <line
+              x1={paddingLeft + (todayDay - 1) * (barWidth + barGap) + barWidth / 2}
+              y1={paddingTop}
+              x2={paddingLeft + (todayDay - 1) * (barWidth + barGap) + barWidth / 2}
+              y2={paddingTop + plotH}
+              stroke="#0d9488" strokeWidth="1" strokeDasharray="4 3" opacity="0.4"
+            />
+          )}
+        </svg>
       </div>
+
+      {/* Tooltip with order details */}
+      {hoveredDay && (() => {
+        const hoveredItem = allDays.find(d => d.day === hoveredDay);
+        if (!hoveredItem || hoveredItem.isFuture) return null;
+        const dayNum = parseInt(hoveredDay.split("-")[2]);
+        const orders = hoveredItem.orderList || [];
+        const tooltipLeft = tooltipPos.x > 500 ? tooltipPos.x - 260 : tooltipPos.x + 10;
+        return (
+          <div
+            className="absolute bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50 pointer-events-none"
+            style={{ left: `${tooltipLeft}px`, top: "10px", minWidth: "240px", maxWidth: "300px" }}
+          >
+            <div className="flex items-center justify-between mb-2 border-b border-slate-100 pb-2">
+              <span className="text-xs font-bold text-slate-700">Dia {dayNum} ({formatWeekday(hoveredDay)})</span>
+              <span className="text-xs font-bold text-teal-600">{formatCurrencyFull(hoveredItem.value)}</span>
+            </div>
+            {orders.length > 0 ? (
+              <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                {orders.map((o, i) => (
+                  <div key={i} className="flex items-center justify-between text-[10px] py-0.5">
+                    <div className="flex items-center gap-1 min-w-0 flex-1">
+                      <span className="text-slate-500 font-mono">#{o.pedido}</span>
+                      <span className="text-slate-600 truncate">{o.cliente}</span>
+                    </div>
+                    <span className="text-slate-700 font-semibold ml-2 whitespace-nowrap">{formatCurrencyFull(o.valor)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-slate-400">Sem pedidos neste dia</p>
+            )}
+            {orders.length > 0 && (
+              <div className="mt-2 pt-1 border-t border-slate-100 text-[10px] text-slate-500">
+                {orders.length} pedido{orders.length > 1 ? "s" : ""}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
+
 
 /* ---- Cumulative Line Chart with comparison ---- */
 function CumulativeLineChart({ comparison }: {
@@ -308,12 +593,12 @@ function CumulativeLineChart({ comparison }: {
   const maxCumulative = Math.max(...allCumulatives, 1);
 
   // Chart dimensions
-  const chartWidth = 800;
-  const chartHeight = 220;
-  const paddingLeft = 80;
-  const paddingRight = 20;
-  const paddingTop = 10;
-  const paddingBottom = 30;
+  const chartWidth = 1000;
+  const chartHeight = 300;
+  const paddingLeft = 85;
+  const paddingRight = 25;
+  const paddingTop = 15;
+  const paddingBottom = 35;
   const plotWidth = chartWidth - paddingLeft - paddingRight;
   const plotHeight = chartHeight - paddingTop - paddingBottom;
 
@@ -803,15 +1088,1398 @@ function SimpleBarChart({ data, labelKey, valueKey, formatValue, maxBars = 10, c
   );
 }
 
+/* ---- Orders Card ---- */
+type OrderData = {
+  pedido: string;
+  cliente: string;
+  clienteApelido: string;
+  uf: string;
+  dataEmissao: string;
+  estadoItem: string;
+  valorTotal: number;
+  condicaoPagamento?: string | null;
+  transportadora?: string | null;
+  razaoSocial?: string | null;
+  inscricaoEstadual?: string | null;
+  endereco?: {
+    logradouro: string;
+    numero: string;
+    complemento: string;
+    bairro: string;
+    cep: string;
+    cidade: string;
+    uf: string;
+  } | null;
+  valorTotalPedido?: number | null;
+  representante?: string | null;
+  empresa?: string | null;
+  itens: Array<{
+    descricao: string;
+    quantidade: number;
+    valorUnitario: number;
+    valorTotal: number;
+    estadoItem: string;
+    dataEntregaItem?: string | null;
+    codigoGrupo?: string;
+    codigoItem?: string | null;
+    descricaoItem?: string | null;
+  }>;
+};
+
+function OrderStatusBadge({ status }: { status: string }) {
+  if (status === "Faturado") return <Badge className="bg-emerald-100 text-emerald-700 text-xs border-0">Faturado</Badge>;
+  if (status === "A faturar") return <Badge className="bg-orange-100 text-orange-700 text-xs border-0">A Faturar</Badge>;
+  if (status === "Misto") return <Badge className="bg-blue-100 text-blue-700 text-xs border-0">Misto</Badge>;
+  return <Badge variant="outline" className="text-xs">{status}</Badge>;
+}
+
+function formatDateBR(dateStr: string): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("pt-BR");
+}
+
+function OrderRow({ order }: { order: OrderData }) {
+  const [expanded, setExpanded] = useState(false);
+  const displayName = order.cliente;
+  const dateStr = order.dataEmissao ? formatDateBR(order.dataEmissao) : "—";
+
+  // Determine earliest delivery date for the order
+  const earliestDelivery = useMemo(() => {
+    const dates = order.itens
+      .map(i => i.dataEntregaItem)
+      .filter(Boolean)
+      .map(d => new Date(d!))
+      .filter(d => !isNaN(d.getTime()));
+    if (dates.length === 0) return null;
+    return new Date(Math.min(...dates.map(d => d.getTime())));
+  }, [order.itens]);
+
+  // Only show overdue indicator for non-faturado orders
+  const isFaturado = order.estadoItem === "Faturado";
+  const isOverdue = !isFaturado && earliestDelivery && earliestDelivery < new Date();
+
+  return (
+    <div className={`transition-all duration-300 ${
+      expanded 
+        ? "border-2 border-teal-400 bg-teal-50/40 rounded-xl my-3 mx-2 shadow-xl shadow-teal-200/60 relative z-10 ring-4 ring-teal-200/40" 
+        : "border-b border-slate-100"
+    }`}>
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className={`w-full flex items-center gap-2 px-4 py-3 transition-colors text-left cursor-pointer ${
+          expanded 
+            ? "bg-gradient-to-r from-teal-100/80 via-teal-50 to-white border-b-2 border-teal-400 py-4 rounded-t-xl" 
+            : "hover:bg-slate-50"
+        }`}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
+      >
+        {/* STATUS */}
+        <div className="w-28 flex-shrink-0">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shadow-sm ${
+            order.estadoItem === "Faturado" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
+            order.estadoItem === "A faturar" ? "bg-orange-100 text-orange-800 border-orange-300" :
+            order.estadoItem === "Misto" ? "bg-blue-100 text-blue-800 border-blue-300" :
+            "bg-slate-100 text-slate-700 border-slate-300"
+          }`}>
+            {order.estadoItem === "A faturar" && <Clock className="w-3.5 h-3.5" />}
+            {order.estadoItem === "Faturado" && <CheckCircle className="w-3.5 h-3.5" />}
+            {order.estadoItem === "Misto" && <AlertCircle className="w-3.5 h-3.5" />}
+            {order.estadoItem}
+          </span>
+        </div>
+
+        {/* Expand arrow */}
+        <div className="flex-shrink-0 text-slate-400">
+          {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        </div>
+
+        {/* Pedido number */}
+        <div className="w-14 flex-shrink-0">
+          <span className="text-sm font-bold text-teal-600">#{order.pedido}</span>
+        </div>
+
+        {/* Client name */}
+        <div className="flex-1 min-w-0">
+          <span className="text-base text-slate-700 truncate block" title={order.cliente}>{displayName}</span>
+        </div>
+
+        {/* UF */}
+        <div className="w-10 flex-shrink-0 text-center">
+          {order.uf && <span className="text-sm text-slate-500 font-medium">{order.uf}</span>}
+        </div>
+
+        {/* Data emissão */}
+        <div className="w-20 flex-shrink-0 text-center">
+          <span className="text-base text-slate-500">{dateStr}</span>
+        </div>
+
+        {/* Delivery date */}
+        <div className="w-24 flex-shrink-0 text-center">
+          {earliestDelivery ? (
+            <div className="flex flex-col items-center">
+              <span className={`text-sm font-medium ${
+                isOverdue ? "text-orange-600" : "text-slate-600"
+              }`}>
+                {earliestDelivery.toLocaleDateString("pt-BR")}
+              </span>
+              {isOverdue && (
+                <span className="text-[9px] text-orange-500 font-medium">vencida</span>
+              )}
+            </div>
+          ) : (
+            <span className="text-sm text-slate-300">—</span>
+          )}
+        </div>
+
+        {/* Items count */}
+        <div className="w-12 flex-shrink-0 text-center">
+          <span className="text-sm text-slate-500">{order.itens.length} {order.itens.length === 1 ? "item" : "itens"}</span>
+        </div>
+
+        {/* Value */}
+        <div className="w-24 flex-shrink-0 text-right">
+          <span className="text-sm font-medium text-slate-600">{formatCurrencyFull(order.valorTotal)}</span>
+        </div>
+      </div>
+
+      {/* Expanded details */}
+      {expanded && (
+        <div className="bg-white border-t-0 rounded-b-xl overflow-hidden">
+          {/* Order details section */}
+          {(order.condicaoPagamento || order.transportadora || order.razaoSocial || order.endereco || order.representante) && (
+            <div className="px-4 py-3 pl-12 bg-blue-50/40 border-b border-blue-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {/* Razão Social */}
+                {order.razaoSocial && (
+                  <div className="flex items-start gap-2">
+                    <Building2 className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-xs text-slate-400 uppercase font-semibold block">Razão Social</span>
+                      <span className="text-sm text-slate-700">{order.razaoSocial}</span>
+                      {order.inscricaoEstadual && (
+                        <span className="text-xs text-slate-400 block">IE: {order.inscricaoEstadual}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {/* Condição de Pagamento */}
+                {order.condicaoPagamento && (
+                  <div className="flex items-start gap-2">
+                    <CreditCard className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-xs text-slate-400 uppercase font-semibold block">Condição de Pagamento</span>
+                      <span className="text-sm text-slate-700 font-medium">{order.condicaoPagamento} dias</span>
+                    </div>
+                  </div>
+                )}
+                {/* Transportadora */}
+                {order.transportadora && (
+                  <div className="flex items-start gap-2">
+                    <Truck className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-xs text-slate-400 uppercase font-semibold block">Transportadora</span>
+                      <span className="text-sm text-slate-700">{order.transportadora}</span>
+                    </div>
+                  </div>
+                )}
+                {/* Representante */}
+                {order.representante && (
+                  <div className="flex items-start gap-2">
+                    <User className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-xs text-slate-400 uppercase font-semibold block">Representante</span>
+                      <span className="text-sm text-slate-700">{order.representante}</span>
+                    </div>
+                  </div>
+                )}
+                {/* Endereço */}
+                {order.endereco && (
+                  <div className="flex items-start gap-2 sm:col-span-2 lg:col-span-3">
+                    <MapPin className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-xs text-slate-400 uppercase font-semibold block">Endereço de Entrega</span>
+                      <span className="text-sm text-slate-700">
+                        {order.endereco.logradouro}{order.endereco.numero ? `, ${order.endereco.numero}` : ""}
+                        {order.endereco.complemento ? ` - ${order.endereco.complemento}` : ""}
+                        {order.endereco.bairro ? ` — ${order.endereco.bairro}` : ""}
+                        {order.endereco.cidade ? `, ${order.endereco.cidade}` : ""}
+                        {order.endereco.uf ? `/${order.endereco.uf}` : ""}
+                        {order.endereco.cep ? ` — CEP: ${order.endereco.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}` : ""}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {/* Valor total do pedido */}
+                {order.valorTotalPedido && order.valorTotalPedido !== order.valorTotal && (
+                  <div className="flex items-start gap-2">
+                    <DollarSign className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <span className="text-xs text-slate-400 uppercase font-semibold block">Valor Total do Pedido</span>
+                      <span className="text-sm text-slate-700 font-medium">{formatCurrencyFull(order.valorTotalPedido)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Items table */}
+          <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+            <span className="text-sm font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <Package className="w-3.5 h-3.5 text-teal-600" />
+              Itens do Pedido ({order.itens.length})
+            </span>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="text-xs text-slate-500 uppercase">
+                <th className="px-4 py-2 text-left pl-12">Produto</th>
+                <th className="px-3 py-2 text-right w-20">Qtd</th>
+                <th className="px-3 py-2 text-right w-28">Valor Unit.</th>
+                <th className="px-3 py-2 text-right w-28">Valor Total</th>
+                <th className="px-3 py-2 text-center w-24">Entrega</th>
+                <th className="px-3 py-2 text-center w-20">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.itens.map((item, idx) => (
+                <tr key={idx} className="border-t border-slate-100 hover:bg-slate-100/50">
+                  <td className="px-4 py-2 pl-12">
+                    <span className="text-base font-medium text-slate-800">{item.descricao}</span>
+                    {item.codigoItem && <div className="text-xs text-slate-400 mt-0.5">Cod: {item.codigoItem}</div>}
+                  </td>
+                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatNumber(item.quantidade)}</td>
+                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatCurrencyFull(item.valorUnitario)}</td>
+                  <td className="px-3 py-2.5 text-base font-semibold text-slate-800 text-right">{formatCurrencyFull(item.valorTotal)}</td>
+                  <td className="px-3 py-2 text-center">
+                    {item.dataEntregaItem ? (
+                      <span className="text-xs text-slate-600">{formatDateBR(item.dataEntregaItem)}</span>
+                    ) : (
+                      <span className="text-xs text-slate-300">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className={`text-xs font-medium ${
+                      item.estadoItem === "Faturado" ? "text-emerald-600" :
+                      item.estadoItem === "A faturar" ? "text-orange-600" :
+                      item.estadoItem === "Faturado parcial" ? "text-blue-600" : "text-slate-500"
+                    }`}>
+                      {item.estadoItem}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type OrderSortField = "pedido" | "cliente" | "uf" | "data" | "entrega" | "status" | "itens" | "valor";
+type OrderSortDir = "asc" | "desc";
+
+function SortableHeader({ field, label, currentSort, currentDir, onSort, className }: {
+  field: OrderSortField;
+  label: string;
+  currentSort: OrderSortField;
+  currentDir: OrderSortDir;
+  onSort: (field: OrderSortField) => void;
+  className?: string;
+}) {
+  const isActive = currentSort === field;
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onSort(field); }}
+      className={`flex items-center gap-1 hover:text-teal-600 transition-colors select-none ${className || ""}`}
+    >
+      {label}
+      <ArrowUpDown className={`w-3 h-3 ${isActive ? "text-teal-600" : "text-slate-300"}`} />
+    </button>
+  );
+}
+
+function OrdersCard({ orders, title = "Pedidos", variant = "all" }: { orders: OrderData[]; title?: string; variant?: "all" | "faturado" | "a_faturar" }) {
+  const [expanded, setExpanded] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "faturado" | "a_faturar">("all");
+  const [sortField, setSortField] = useState<OrderSortField>("data");
+  const [sortDir, setSortDir] = useState<OrderSortDir>("desc");
+
+  const handleSort = (field: OrderSortField) => {
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
+
+  const totalValue = useMemo(() => orders.reduce((sum, o) => sum + o.valorTotal, 0), [orders]);
+
+  const statusCounts = useMemo(() => {
+    const faturadoOrders = orders.filter(o => o.estadoItem === "Faturado");
+    const aFaturarOrders = orders.filter(o => o.estadoItem !== "Faturado");
+    return {
+      faturado: faturadoOrders.length,
+      aFaturar: aFaturarOrders.length,
+      faturadoValue: faturadoOrders.reduce((sum, o) => sum + o.valorTotal, 0),
+      aFaturarValue: aFaturarOrders.reduce((sum, o) => sum + o.valorTotal, 0),
+    };
+  }, [orders]);
+
+  const filtered = useMemo(() => {
+    let result = orders;
+
+    // Status filter
+    if (statusFilter === "faturado") {
+      result = result.filter(o => o.estadoItem === "Faturado");
+    } else if (statusFilter === "a_faturar") {
+      result = result.filter(o => o.estadoItem !== "Faturado");
+    }
+
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      result = result.filter(o =>
+        o.pedido.toLowerCase().includes(s) ||
+        o.cliente.toLowerCase().includes(s) ||
+        (o.clienteApelido && o.clienteApelido.toLowerCase().includes(s)) ||
+        o.uf.toLowerCase().includes(s)
+      );
+    }
+
+    const sorted = [...result].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "pedido":
+          cmp = Number(a.pedido) - Number(b.pedido);
+          break;
+        case "cliente": {
+          const nameA = a.cliente.toLowerCase();
+          const nameB = b.cliente.toLowerCase();
+          cmp = nameA.localeCompare(nameB);
+          break;
+        }
+        case "uf":
+          cmp = (a.uf || "").localeCompare(b.uf || "");
+          break;
+        case "data":
+          cmp = (a.dataEmissao || "").localeCompare(b.dataEmissao || "");
+          break;
+        case "entrega": {
+          const aDate = a.itens.map(i => i.dataEntregaItem).filter(Boolean).sort()[0] || "";
+          const bDate = b.itens.map(i => i.dataEntregaItem).filter(Boolean).sort()[0] || "";
+          cmp = aDate.localeCompare(bDate);
+          break;
+        }
+        case "status":
+          cmp = (a.estadoItem || "").localeCompare(b.estadoItem || "");
+          break;
+        case "itens":
+          cmp = a.itens.length - b.itens.length;
+          break;
+        case "valor":
+          cmp = a.valorTotal - b.valorTotal;
+          break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return sorted;
+  }, [orders, searchTerm, statusFilter, sortField, sortDir]);
+
+  const filteredTotal = useMemo(() => filtered.reduce((sum, o) => sum + o.valorTotal, 0), [filtered]);
+
+  return (
+    <div className={`${variant === "a_faturar" ? "bg-orange-50/40" : "bg-emerald-50/40"} rounded-lg border ${variant === "a_faturar" ? "border-orange-200" : "border-emerald-200"} shadow-sm overflow-hidden`}>
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className={`w-full flex items-center justify-between px-5 py-4 ${variant === "a_faturar" ? "hover:bg-orange-50/50" : "hover:bg-emerald-50/50"} transition-colors`}
+      >
+        <div className="flex items-center gap-3">
+          <ClipboardList className={`w-5 h-5 ${variant === "a_faturar" ? "text-orange-600" : "text-emerald-600"}`} />
+          <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">{title}</h3>
+          <Badge variant="outline" className="text-xs">{orders.length} pedidos</Badge>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-bold text-slate-800">{formatCurrencyFull(totalValue)}</span>
+          {expanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className={`border-t ${variant === "a_faturar" ? "border-orange-200" : "border-emerald-200"}`}>
+          {/* Filters: search */}
+          <div className={`px-4 py-3 ${variant === "a_faturar" ? "bg-orange-50/30 border-b border-orange-100" : "bg-emerald-50/30 border-b border-emerald-100"} flex flex-col sm:flex-row gap-2`}>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Buscar por pedido, cliente, UF..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-white h-8 text-sm"
+              />
+            </div>
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <span className="text-xs text-slate-500">{filtered.length} pedidos</span>
+              <span className="text-sm font-bold text-slate-800">{formatCurrencyFull(filteredTotal)}</span>
+            </div>
+          </div>
+
+          {/* Table header */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+            {/* Status */}
+            <div className="w-28 flex-shrink-0">
+              <SortableHeader field="status" label="Status" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            </div>
+            {/* Arrow spacer */}
+            <div className="w-4 flex-shrink-0" />
+            {/* Pedido */}
+            <div className="w-14 flex-shrink-0">
+              <SortableHeader field="pedido" label="Pedido" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            </div>
+            {/* Cliente */}
+            <div className="flex-1 min-w-0">
+              <SortableHeader field="cliente" label="Cliente" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            </div>
+            {/* UF */}
+            <div className="w-10 flex-shrink-0 text-center">
+              <SortableHeader field="uf" label="UF" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Emissão */}
+            <div className="w-20 flex-shrink-0 text-center">
+              <SortableHeader field="data" label="Emissão" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Entrega */}
+            <div className="w-24 flex-shrink-0 text-center">
+              <SortableHeader field="entrega" label="Entrega" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Itens */}
+            <div className="w-12 flex-shrink-0 text-center">
+              <SortableHeader field="itens" label="Itens" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Valor */}
+            <div className="w-24 flex-shrink-0 text-right">
+              <SortableHeader field="valor" label="Valor" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-end" />
+            </div>
+          </div>
+
+          {/* Orders list */}
+          <div className="max-h-[500px] overflow-y-auto">
+            {filtered.map((order) => (
+              <OrderRow key={order.pedido} order={order} />
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-8 text-slate-400">
+                <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhum pedido encontrado</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Previous Unbilled Card ---- */
+type PreviousOrderData = OrderData & { month: string };
+
+function getMonthLabelFull(monthStr: string): string {
+  const [y, m] = monthStr.split("-");
+  const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  return `${months[parseInt(m) - 1]} ${y}`;
+}
+
+function PreviousUnbilledCard({ months, orders }: { months: string[]; orders: PreviousOrderData[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<OrderSortField>("data");
+  const [sortDir, setSortDir] = useState<OrderSortDir>("desc");
+
+  const handleSort = (field: OrderSortField) => {
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
+
+  const totalValue = useMemo(() => orders.reduce((sum, o) => sum + o.valorTotal, 0), [orders]);
+
+  // Month counts
+  const monthCounts = useMemo(() => {
+    const counts: Record<string, { count: number; value: number }> = {};
+    for (const o of orders) {
+      if (!counts[o.month]) counts[o.month] = { count: 0, value: 0 };
+      counts[o.month].count++;
+      counts[o.month].value += o.valorTotal;
+    }
+    return counts;
+  }, [orders]);
+
+  const filtered = useMemo(() => {
+    let result = orders;
+
+    // Month filter
+    if (selectedMonth !== "all") {
+      result = result.filter(o => o.month === selectedMonth);
+    }
+
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      result = result.filter(o =>
+        o.pedido.toLowerCase().includes(s) ||
+        o.cliente.toLowerCase().includes(s) ||
+        (o.clienteApelido && o.clienteApelido.toLowerCase().includes(s)) ||
+        o.uf.toLowerCase().includes(s)
+      );
+    }
+
+    const sorted = [...result].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "pedido":
+          cmp = Number(a.pedido) - Number(b.pedido);
+          break;
+        case "cliente": {
+          const nameA = a.cliente.toLowerCase();
+          const nameB = b.cliente.toLowerCase();
+          cmp = nameA.localeCompare(nameB);
+          break;
+        }
+        case "uf":
+          cmp = (a.uf || "").localeCompare(b.uf || "");
+          break;
+        case "data":
+          cmp = (a.dataEmissao || "").localeCompare(b.dataEmissao || "");
+          break;
+        case "entrega": {
+          const aDate = a.itens.map(i => i.dataEntregaItem).filter(Boolean).sort()[0] || "";
+          const bDate = b.itens.map(i => i.dataEntregaItem).filter(Boolean).sort()[0] || "";
+          cmp = aDate.localeCompare(bDate);
+          break;
+        }
+        case "status":
+          cmp = (a.estadoItem || "").localeCompare(b.estadoItem || "");
+          break;
+        case "itens":
+          cmp = a.itens.length - b.itens.length;
+          break;
+        case "valor":
+          cmp = a.valorTotal - b.valorTotal;
+          break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return sorted;
+  }, [orders, searchTerm, selectedMonth, sortField, sortDir]);
+
+  const filteredTotal = useMemo(() => filtered.reduce((sum, o) => sum + o.valorTotal, 0), [filtered]);
+
+  if (orders.length === 0) return null;
+
+  return (
+    <div className="bg-orange-50/40 rounded-lg border border-orange-200 shadow-sm overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-orange-50/70 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-orange-600" />
+          <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">A Faturar (Anterior)</h3>
+          <Badge variant="outline" className="text-xs">{orders.length} pedidos</Badge>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-bold text-slate-800">{formatCurrencyFull(totalValue)}</span>
+          {expanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="border-t border-orange-200">
+          {/* Filters: month + search */}
+          <div className="px-4 py-3 bg-orange-50/30 border-b border-orange-100 flex flex-col sm:flex-row gap-2">
+            <div className="flex gap-1 bg-white rounded-md border border-slate-200 p-0.5 flex-shrink-0 flex-wrap">
+              <button
+                onClick={() => setSelectedMonth("all")}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${selectedMonth === "all" ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+              >
+                Todos ({orders.length})
+              </button>
+              {months.map(m => (
+                <button
+                  key={m}
+                  onClick={() => setSelectedMonth(m)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${selectedMonth === m ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  {getMonthLabel(m)} ({monthCounts[m]?.count || 0})
+                </button>
+              ))}
+            </div>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Buscar por pedido, cliente, UF..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-white h-8 text-sm"
+              />
+            </div>
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <span className="text-xs text-slate-500">{filtered.length} pedidos</span>
+              <span className="text-sm font-bold text-slate-800">{formatCurrencyFull(filteredTotal)}</span>
+            </div>
+          </div>
+
+          {/* Table header */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+            {/* Status */}
+            <div className="w-28 flex-shrink-0">
+              <SortableHeader field="status" label="Status" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            </div>
+            {/* Arrow spacer */}
+            <div className="w-4 flex-shrink-0" />
+            {/* Pedido */}
+            <div className="w-14 flex-shrink-0">
+              <SortableHeader field="pedido" label="Pedido" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            </div>
+            {/* Cliente */}
+            <div className="flex-1 min-w-0">
+              <SortableHeader field="cliente" label="Cliente" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            </div>
+            {/* UF */}
+            <div className="w-10 flex-shrink-0 text-center">
+              <SortableHeader field="uf" label="UF" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Emissão */}
+            <div className="w-20 flex-shrink-0 text-center">
+              <SortableHeader field="data" label="Emissão" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Entrega */}
+            <div className="w-24 flex-shrink-0 text-center">
+              <SortableHeader field="entrega" label="Entrega" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Itens */}
+            <div className="w-12 flex-shrink-0 text-center">
+              <SortableHeader field="itens" label="Itens" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Valor */}
+            <div className="w-24 flex-shrink-0 text-right">
+              <SortableHeader field="valor" label="Valor" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-end" />
+            </div>
+          </div>
+
+          {/* Orders list */}
+          <div className="max-h-[500px] overflow-y-auto">
+            {filtered.map((order, idx) => (
+              <OrderRow key={`${order.pedido}-${order.month}-${idx}`} order={order} />
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-8 text-slate-400">
+                <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhum pedido encontrado</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Unified Unbilled Card (A Faturar Completo - 90 dias) ---- */
+type UnifiedOrderData = OrderData & { month: string; clienteTelefone?: string | null; clienteEmail?: string | null; observacoes?: string | null };
+
+function UnifiedUnbilledCard({ months, orders, totalValue }: { months: string[]; orders: UnifiedOrderData[]; totalValue: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<OrderSortField>("data");
+  const [sortDir, setSortDir] = useState<OrderSortDir>("desc");
+
+  const handleSort = (field: OrderSortField) => {
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
+
+  // Month counts
+  const monthCounts = useMemo(() => {
+    const counts: Record<string, { count: number; value: number }> = {};
+    for (const o of orders) {
+      if (!counts[o.month]) counts[o.month] = { count: 0, value: 0 };
+      counts[o.month].count++;
+      counts[o.month].value += o.valorTotal;
+    }
+    return counts;
+  }, [orders]);
+
+  const filtered = useMemo(() => {
+    let result = orders;
+
+    // Month filter
+    if (selectedMonth !== "all") {
+      result = result.filter(o => o.month === selectedMonth);
+    }
+
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      result = result.filter(o =>
+        o.pedido.toLowerCase().includes(s) ||
+        o.cliente.toLowerCase().includes(s) ||
+        (o.clienteApelido && o.clienteApelido.toLowerCase().includes(s)) ||
+        o.uf.toLowerCase().includes(s) ||
+        (o.razaoSocial && o.razaoSocial.toLowerCase().includes(s)) ||
+        (o.representante && o.representante.toLowerCase().includes(s)) ||
+        (o.empresa && o.empresa.toLowerCase().includes(s))
+      );
+    }
+
+    const sorted = [...result].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "pedido":
+          cmp = Number(a.pedido) - Number(b.pedido);
+          break;
+        case "cliente": {
+          const nameA = a.cliente.toLowerCase();
+          const nameB = b.cliente.toLowerCase();
+          cmp = nameA.localeCompare(nameB);
+          break;
+        }
+        case "uf":
+          cmp = (a.uf || "").localeCompare(b.uf || "");
+          break;
+        case "data":
+          cmp = (a.dataEmissao || "").localeCompare(b.dataEmissao || "");
+          break;
+        case "entrega": {
+          const aDate = a.itens.map(i => i.dataEntregaItem).filter(Boolean).sort()[0] || "";
+          const bDate = b.itens.map(i => i.dataEntregaItem).filter(Boolean).sort()[0] || "";
+          cmp = aDate.localeCompare(bDate);
+          break;
+        }
+        case "status":
+          cmp = (a.estadoItem || "").localeCompare(b.estadoItem || "");
+          break;
+        case "itens":
+          cmp = a.itens.length - b.itens.length;
+          break;
+        case "valor":
+          cmp = a.valorTotal - b.valorTotal;
+          break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return sorted;
+  }, [orders, searchTerm, selectedMonth, sortField, sortDir]);
+
+  const filteredTotal = useMemo(() => filtered.reduce((sum, o) => sum + o.valorTotal, 0), [filtered]);
+
+  if (orders.length === 0) return null;
+
+  return (
+    <div className="bg-gradient-to-br from-amber-50/60 via-orange-50/40 to-white rounded-lg border border-orange-300 shadow-md overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-orange-50/70 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
+            <ListFilter className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">A Faturar (Completo)</h3>
+            <span className="text-[10px] text-slate-500">Últimos 90 dias • {months.length} {months.length === 1 ? "mês" : "meses"}</span>
+          </div>
+          <Badge className="bg-orange-100 text-orange-700 text-xs border-0 font-bold">{orders.length} pedidos</Badge>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-lg font-bold text-slate-800">{formatCurrencyFull(totalValue)}</span>
+          {expanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="border-t border-orange-200">
+          {/* Filters: month tabs + search */}
+          <div className="px-4 py-3 bg-orange-50/30 border-b border-orange-100 flex flex-col gap-2">
+            {/* Month tabs */}
+            <div className="flex gap-1 bg-white rounded-md border border-slate-200 p-0.5 flex-shrink-0 flex-wrap">
+              <button
+                onClick={() => setSelectedMonth("all")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${selectedMonth === "all" ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
+              >
+                Todos ({orders.length})
+              </button>
+              {months.map(m => (
+                <button
+                  key={m}
+                  onClick={() => setSelectedMonth(m)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${selectedMonth === m ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
+                >
+                  {getMonthLabelFull(m)} ({monthCounts[m]?.count || 0}) • {formatCurrencyFull(monthCounts[m]?.value || 0)}
+                </button>
+              ))}
+            </div>
+            {/* Search + count */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Buscar por pedido, cliente, razão social, representante, UF..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 bg-white h-9 text-sm"
+                />
+              </div>
+              <div className="flex-shrink-0 flex items-center gap-3 px-2">
+                <span className="text-xs text-slate-500">{filtered.length} pedidos</span>
+                <span className="text-sm font-bold text-orange-700">{formatCurrencyFull(filteredTotal)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Table header */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+            {/* Status */}
+            <div className="w-28 flex-shrink-0">
+              <SortableHeader field="status" label="Status" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            </div>
+            {/* Arrow spacer */}
+            <div className="w-4 flex-shrink-0" />
+            {/* Pedido */}
+            <div className="w-14 flex-shrink-0">
+              <SortableHeader field="pedido" label="Pedido" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            </div>
+            {/* Cliente */}
+            <div className="flex-1 min-w-0">
+              <SortableHeader field="cliente" label="Cliente" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
+            </div>
+            {/* UF */}
+            <div className="w-10 flex-shrink-0 text-center">
+              <SortableHeader field="uf" label="UF" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Emissão */}
+            <div className="w-20 flex-shrink-0 text-center">
+              <SortableHeader field="data" label="Emissão" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Entrega */}
+            <div className="w-24 flex-shrink-0 text-center">
+              <SortableHeader field="entrega" label="Entrega" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Itens */}
+            <div className="w-12 flex-shrink-0 text-center">
+              <SortableHeader field="itens" label="Itens" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
+            </div>
+            {/* Valor */}
+            <div className="w-24 flex-shrink-0 text-right">
+              <SortableHeader field="valor" label="Valor" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-end" />
+            </div>
+          </div>
+
+          {/* Orders list */}
+          <div className="max-h-[600px] overflow-y-auto">
+            {filtered.map((order, idx) => (
+              <UnifiedOrderRow key={`${order.pedido}-${order.month}-${idx}`} order={order} />
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-8 text-slate-400">
+                <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhum pedido encontrado</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UnifiedOrderRow({ order }: { order: UnifiedOrderData }) {
+  const [expanded, setExpanded] = useState(false);
+  const displayName = order.cliente;
+  const dateStr = order.dataEmissao ? formatDateBR(order.dataEmissao) : "\u2014";
+
+  // Determine earliest delivery date for the order
+  const earliestDelivery = useMemo(() => {
+    const dates = order.itens
+      .map(i => i.dataEntregaItem)
+      .filter(Boolean)
+      .map(d => new Date(d!))
+      .filter(d => !isNaN(d.getTime()));
+    if (dates.length === 0) return null;
+    return new Date(Math.min(...dates.map(d => d.getTime())));
+  }, [order.itens]);
+
+  const isOverdue = earliestDelivery && earliestDelivery < new Date();
+
+  return (
+    <div className={`transition-all duration-300 ${
+      expanded 
+        ? "border-2 border-orange-400 bg-orange-50/40 rounded-xl my-3 mx-2 shadow-xl shadow-orange-200/60 relative z-10 ring-4 ring-orange-200/40" 
+        : "border-b border-slate-100"
+    }`}>
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors text-left cursor-pointer ${
+          expanded 
+            ? "bg-gradient-to-r from-orange-100/80 via-orange-50 to-white border-b-2 border-orange-400 py-3.5 rounded-t-xl" 
+            : "hover:bg-slate-50"
+        }`}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
+      >
+        {/* STATUS */}
+        <div className="w-28 flex-shrink-0">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shadow-sm ${
+            order.estadoItem === "Faturado" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
+            order.estadoItem === "A faturar" ? "bg-orange-100 text-orange-800 border-orange-300" :
+            order.estadoItem === "Misto" ? "bg-blue-100 text-blue-800 border-blue-300" :
+            "bg-slate-100 text-slate-700 border-slate-300"
+          }`}>
+            {order.estadoItem === "A faturar" && <Clock className="w-3.5 h-3.5" />}
+            {order.estadoItem === "Faturado" && <CheckCircle className="w-3.5 h-3.5" />}
+            {order.estadoItem === "Misto" && <AlertCircle className="w-3.5 h-3.5" />}
+            {order.estadoItem}
+          </span>
+        </div>
+
+        {/* Expand arrow */}
+        <div className="flex-shrink-0 text-slate-400">
+          {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        </div>
+
+        {/* Pedido number */}
+        <div className="w-14 flex-shrink-0">
+          <span className="text-xs font-bold text-orange-600">#{order.pedido}</span>
+        </div>
+
+        {/* Client name */}
+        <div className="flex-1 min-w-0">
+          <span className="text-base text-slate-700 truncate block" title={order.cliente}>{displayName}</span>
+        </div>
+
+        {/* UF */}
+        <div className="w-10 flex-shrink-0 text-center">
+          {order.uf && <span className="text-sm text-slate-500 font-medium">{order.uf}</span>}
+        </div>
+
+        {/* Data emissão */}
+        <div className="w-20 flex-shrink-0 text-center">
+          <span className="text-base text-slate-500">{dateStr}</span>
+        </div>
+
+        {/* Delivery date */}
+        <div className="w-24 flex-shrink-0 text-center">
+          {earliestDelivery ? (
+            <div className="flex flex-col items-center">
+              <span className={`text-sm font-medium ${
+                isOverdue ? "text-orange-600" : "text-slate-600"
+              }`}>
+                {earliestDelivery.toLocaleDateString("pt-BR")}
+              </span>
+              {isOverdue && (
+                <span className="text-[9px] text-orange-500 font-medium">vencida</span>
+              )}
+            </div>
+          ) : (
+            <span className="text-sm text-slate-300">\u2014</span>
+          )}
+        </div>
+
+        {/* Items count */}
+        <div className="w-12 flex-shrink-0 text-center">
+          <span className="text-sm text-slate-500">{order.itens.length} {order.itens.length === 1 ? "item" : "itens"}</span>
+        </div>
+
+        {/* Value */}
+        <div className="w-24 flex-shrink-0 text-right">
+          <span className="text-sm font-medium text-slate-600">{formatCurrencyFull(order.valorTotal)}</span>
+        </div>
+      </div>
+
+      {/* Expanded details */}
+      {expanded && (
+        <div className="bg-white border-t-0 rounded-b-xl overflow-hidden">
+          {/* Order details section - ALL customer info */}
+          <div className="px-4 py-3 pl-12 bg-blue-50/40 border-b border-blue-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* Razão Social */}
+              {order.razaoSocial && (
+                <div className="flex items-start gap-2">
+                  <Building2 className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Razão Social</span>
+                    <span className="text-xs text-slate-700">{order.razaoSocial}</span>
+                    {order.inscricaoEstadual && (
+                      <span className="text-xs text-slate-400 block">IE: {order.inscricaoEstadual}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {/* Condição de Pagamento */}
+              {order.condicaoPagamento && (
+                <div className="flex items-start gap-2">
+                  <CreditCard className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Condição de Pagamento</span>
+                    <span className="text-xs text-slate-700 font-medium">{order.condicaoPagamento} dias</span>
+                  </div>
+                </div>
+              )}
+              {/* Transportadora */}
+              {order.transportadora && (
+                <div className="flex items-start gap-2">
+                  <Truck className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Transportadora</span>
+                    <span className="text-xs text-slate-700">{order.transportadora}</span>
+                  </div>
+                </div>
+              )}
+              {/* Representante */}
+              {order.representante && (
+                <div className="flex items-start gap-2">
+                  <User className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Representante</span>
+                    <span className="text-xs text-slate-700">{order.representante}</span>
+                  </div>
+                </div>
+              )}
+              {/* Empresa */}
+              {order.empresa && (
+                <div className="flex items-start gap-2">
+                  <Factory className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Empresa</span>
+                    <span className="text-xs text-slate-700">{order.empresa}</span>
+                  </div>
+                </div>
+              )}
+              {/* Telefone */}
+              {order.clienteTelefone && (
+                <div className="flex items-start gap-2">
+                  <Phone className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Telefone</span>
+                    <span className="text-xs text-slate-700">{order.clienteTelefone}</span>
+                  </div>
+                </div>
+              )}
+              {/* Email */}
+              {order.clienteEmail && (
+                <div className="flex items-start gap-2">
+                  <Mail className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Email</span>
+                    <span className="text-xs text-slate-700">{order.clienteEmail}</span>
+                  </div>
+                </div>
+              )}
+              {/* Endereço */}
+              {order.endereco && (
+                <div className="flex items-start gap-2 sm:col-span-2 lg:col-span-3">
+                  <MapPin className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Endereço de Entrega</span>
+                    <span className="text-xs text-slate-700">
+                      {order.endereco.logradouro}{order.endereco.numero ? `, ${order.endereco.numero}` : ""}
+                      {order.endereco.complemento ? ` - ${order.endereco.complemento}` : ""}
+                      {order.endereco.bairro ? ` \u2014 ${order.endereco.bairro}` : ""}
+                      {order.endereco.cidade ? `, ${order.endereco.cidade}` : ""}
+                      {order.endereco.uf ? `/${order.endereco.uf}` : ""}
+                      {order.endereco.cep ? ` \u2014 CEP: ${order.endereco.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}` : ""}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {/* Valor total do pedido */}
+              {order.valorTotalPedido && order.valorTotalPedido !== order.valorTotal && (
+                <div className="flex items-start gap-2">
+                  <DollarSign className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Valor Total do Pedido</span>
+                    <span className="text-xs text-slate-700 font-medium">{formatCurrencyFull(order.valorTotalPedido)}</span>
+                  </div>
+                </div>
+              )}
+              {/* Observações */}
+              {order.observacoes && (
+                <div className="flex items-start gap-2 sm:col-span-2 lg:col-span-3">
+                  <PenLine className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <span className="text-xs text-slate-400 uppercase font-semibold block">Observações</span>
+                    <span className="text-xs text-slate-700 whitespace-pre-line">{order.observacoes}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Items table */}
+          <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+            <span className="text-sm font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <Package className="w-3.5 h-3.5 text-orange-600" />
+              Itens do Pedido ({order.itens.length})
+            </span>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="text-xs text-slate-500 uppercase">
+                <th className="px-4 py-2 text-left pl-12">Produto</th>
+                <th className="px-3 py-2 text-right w-20">Qtd</th>
+                <th className="px-3 py-2 text-right w-28">Valor Unit.</th>
+                <th className="px-3 py-2 text-right w-28">Valor Total</th>
+                <th className="px-3 py-2 text-center w-24">Entrega</th>
+                <th className="px-3 py-2 text-center w-20">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.itens.map((item, idx) => (
+                <tr key={idx} className="border-t border-slate-100 hover:bg-slate-100/50">
+                  <td className="px-4 py-2 pl-12">
+                    <span className="text-base font-medium text-slate-800">{item.descricao}</span>
+                    {item.codigoItem && <div className="text-xs text-slate-400 mt-0.5">Cod: {item.codigoItem}</div>}
+                  </td>
+                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatNumber(item.quantidade)}</td>
+                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatCurrencyFull(item.valorUnitario)}</td>
+                  <td className="px-3 py-2.5 text-base font-semibold text-slate-800 text-right">{formatCurrencyFull(item.valorTotal)}</td>
+                  <td className="px-3 py-2 text-center">
+                    {item.dataEntregaItem ? (
+                      <span className="text-xs text-slate-600">{formatDateBR(item.dataEntregaItem)}</span>
+                    ) : (
+                      <span className="text-xs text-slate-300">\u2014</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className={`text-xs font-medium ${
+                      item.estadoItem === "Faturado" ? "text-emerald-600" :
+                      item.estadoItem === "A faturar" ? "text-orange-600" :
+                      item.estadoItem === "Faturado parcial" ? "text-blue-600" : "text-slate-500"
+                    }`}>
+                      {item.estadoItem}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---- Draft Orders Card (Em Digitação) ---- */
+type DraftOrderData = {
+  pedido: string;
+  cliente: string;
+  dataEmissao: string;
+  valorTotal: number;
+  itens: Array<{
+    descricao: string;
+    codigoItem: string;
+    quantidade: number;
+    valorUnitario: number;
+    valorTotal: number;
+  }>;
+};
+
+function DraftOrderRow({ order }: { order: DraftOrderData }) {
+  const [expanded, setExpanded] = useState(false);
+  const dateStr = order.dataEmissao ? new Date(order.dataEmissao).toLocaleDateString("pt-BR") : "\u2014";
+
+  return (
+    <div className="border-b border-slate-100 last:border-b-0">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50/50 transition-colors text-left"
+      >
+        <div className="w-4 flex-shrink-0">
+          {expanded ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+        </div>
+        <div className="w-16 flex-shrink-0">
+          <span className="text-sm font-medium text-blue-600">#{order.pedido}</span>
+        </div>
+        <div className="flex-1 truncate">
+          <span className="text-sm text-slate-700">{order.cliente}</span>
+        </div>
+        <div className="w-20 flex-shrink-0 text-center">
+          <span className="text-xs text-slate-500">{dateStr}</span>
+        </div>
+        <div className="w-12 flex-shrink-0 text-center">
+          <span className="text-sm text-slate-500">{order.itens.length} {order.itens.length === 1 ? "item" : "itens"}</span>
+        </div>
+        <div className="w-28 flex-shrink-0 text-right">
+          <span className="text-sm font-semibold text-slate-600">{formatCurrencyFull(order.valorTotal)}</span>
+        </div>
+      </button>
+
+      {/* Expanded items */}
+      {expanded && (
+        <div className="bg-slate-50 border-t border-slate-100">
+          <table className="w-full">
+            <thead>
+              <tr className="text-xs text-slate-500 uppercase">
+                <th className="px-4 py-2 text-left pl-12">Produto</th>
+                <th className="px-3 py-2 text-right w-20">Qtd</th>
+                <th className="px-3 py-2 text-right w-28">Valor Unit.</th>
+                <th className="px-3 py-2 text-right w-28">Valor Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.itens.map((item, idx) => (
+                <tr key={idx} className="border-t border-slate-100 hover:bg-slate-100/50">
+                  <td className="px-4 py-2 pl-12">
+                    <span className="text-base font-medium text-slate-800">{item.descricao}</span>
+                    {item.codigoItem && <div className="text-xs text-slate-400 mt-0.5">Cod: {item.codigoItem}</div>}
+                  </td>
+                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatNumber(item.quantidade)}</td>
+                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatCurrencyFull(item.valorUnitario)}</td>
+                  <td className="px-3 py-2.5 text-base font-semibold text-slate-800 text-right">{formatCurrencyFull(item.valorTotal)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DraftOrdersCard({ orders }: { orders: DraftOrderData[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const totalValue = useMemo(() => orders.reduce((sum, o) => sum + o.valorTotal, 0), [orders]);
+  const totalItems = useMemo(() => orders.reduce((sum, o) => sum + o.itens.length, 0), [orders]);
+
+  const filtered = useMemo(() => {
+    if (!searchTerm) return orders;
+    const s = searchTerm.toLowerCase();
+    return orders.filter(o =>
+      o.pedido.toLowerCase().includes(s) ||
+      o.cliente.toLowerCase().includes(s) ||
+      o.itens.some(i => i.descricao.toLowerCase().includes(s) || i.codigoItem.toLowerCase().includes(s))
+    );
+  }, [orders, searchTerm]);
+
+  if (orders.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-lg border border-dashed border-slate-300 shadow-sm overflow-hidden opacity-80">
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <PenLine className="w-5 h-5 text-slate-400" />
+          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Em Digitação</h3>
+          <Badge variant="outline" className="text-xs text-slate-400 border-slate-300">{orders.length} pedidos · {totalItems} itens</Badge>
+          <span className="text-xs text-slate-400 italic">Informativo — não soma nos KPIs</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-bold text-slate-500">{formatCurrencyFull(totalValue)}</span>
+          {expanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="border-t border-dashed border-slate-300">
+          {/* Search */}
+          <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Buscar por pedido, cliente, produto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-white h-8 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Table header */}
+          <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+            <div className="w-4 flex-shrink-0" />
+            <div className="w-16 flex-shrink-0">Pedido</div>
+            <div className="flex-1">Cliente</div>
+            <div className="w-20 flex-shrink-0 text-center">Data</div>
+            <div className="w-12 flex-shrink-0 text-center">Itens</div>
+            <div className="w-28 flex-shrink-0 text-right">Valor</div>
+          </div>
+
+          {/* Orders list */}
+          <div className="max-h-[400px] overflow-y-auto">
+            {filtered.map((order) => (
+              <DraftOrderRow key={order.pedido} order={order} />
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-8 text-slate-400">
+                <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhum pedido encontrado</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---- Main Sales Page ---- */
 export default function Sales() {
   const [period, setPeriod] = useState("current_month");
-  const [team, setTeam] = useState<"all" | "industrializacao" | "importacao">("all");
+  const [grupo, setGrupo] = useState("all");
+  const [subgrupo, setSubgrupo] = useState("all");
+  const [crmSegmento, setCrmSegmento] = useState("all");
   const [chartMode, setChartMode] = useState<"value" | "orders">("value");
-  const [activeTab, setActiveTab] = useState<"overview" | "clients" | "products">("overview");
+  const [chartExpanded, setChartExpanded] = useState(false);
   const [showCustomDates, setShowCustomDates] = useState(false);
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
+  const customStartRef = useRef("");
+  const customEndRef = useRef("");
+  const [pdfExporting, setPdfExporting] = useState(false);
+
+  // Available filter options from DB
+  const { data: availableFilters } = trpc.sales.getAvailableFilters.useQuery();
+
+  // Reset subgrupo when grupo changes
+  const handleGrupoChange = useCallback((v: string) => {
+    setGrupo(v);
+    setSubgrupo("all");
+  }, []);
+
+  // Available subgrupos for the selected grupo
+  const subgrupoOptions = useMemo(() => {
+    if (!availableFilters || grupo === "all") return [];
+    return availableFilters.subgrupos[grupo] || [];
+  }, [availableFilters, grupo]);
 
   const handlePeriodChange = useCallback((v: string) => {
     if (v === "custom") {
@@ -819,79 +2487,192 @@ export default function Sales() {
       // Don't change period yet, wait for dates
     } else {
       setShowCustomDates(false);
+      setCustomStart("");
+      setCustomEnd("");
+      customStartRef.current = "";
+      customEndRef.current = "";
       setPeriod(v);
     }
   }, []);
 
-  const applyCustomDates = useCallback((s?: string, e?: string) => {
-    const startVal = s || customStart;
-    const endVal = e || customEnd;
+  const applyCustomDates = useCallback(() => {
+    // Read from refs first, then fallback to DOM inputs
+    let startVal = customStartRef.current;
+    let endVal = customEndRef.current;
+    if (!startVal || !endVal) {
+      const dateInputs = document.querySelectorAll('input[type="date"]') as NodeListOf<HTMLInputElement>;
+      const visibleInputs = Array.from(dateInputs).filter(i => i.offsetParent !== null);
+      if (visibleInputs.length >= 2) {
+        startVal = startVal || visibleInputs[0].value;
+        endVal = endVal || visibleInputs[1].value;
+        // Sync refs and state
+        if (visibleInputs[0].value) {
+          customStartRef.current = visibleInputs[0].value;
+          setCustomStart(visibleInputs[0].value);
+        }
+        if (visibleInputs[1].value) {
+          customEndRef.current = visibleInputs[1].value;
+          setCustomEnd(visibleInputs[1].value);
+        }
+      }
+    }
     if (startVal && endVal) {
       setPeriod(`custom:${startVal}:${endVal}`);
     }
-  }, [customStart, customEnd]);
+  }, []);
 
   const handleCustomStartChange = useCallback((val: string) => {
     setCustomStart(val);
-    if (val && customEnd) {
-      setPeriod(`custom:${val}:${customEnd}`);
-    }
-  }, [customEnd]);
+    customStartRef.current = val;
+  }, []);
 
   const handleCustomEndChange = useCallback((val: string) => {
     setCustomEnd(val);
-    if (customStart && val) {
-      setPeriod(`custom:${customStart}:${val}`);
-    }
-  }, [customStart]);
+    customEndRef.current = val;
+  }, []);
 
   const { start, end, label } = useMemo(() => getPeriodRange(period), [period]);
 
+  // Filter params object (stable reference)
+  const filterParams = useMemo(() => ({
+    grupo: grupo as any,
+    subgrupo,
+    crmSegmento,
+  }), [grupo, subgrupo, crmSegmento]);
+
   const { data: dateRange } = trpc.sales.getDateRange.useQuery();
   const { data: analytics, isLoading } = trpc.sales.getAnalytics.useQuery(
-    { startDate: start, endDate: end, team },
-    { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0 }
+    { startDate: start, endDate: end, ...filterParams },
+    { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0, refetchInterval: 60000 }
   );
 
   // Cumulative comparison data for line chart
   const { data: comparison } = trpc.sales.getCumulativeComparison.useQuery(
-    { team },
-    { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0 }
+    { ...filterParams },
+    { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0, refetchInterval: 60000 }
   );
 
+  // Financial summary for inadimplência cards
+  const { data: financialSummary } = trpc.financial.getSummary.useQuery(undefined, { refetchInterval: 60000 });
+
+  // Orders list for the period
+  const { data: orders } = trpc.sales.getOrders.useQuery(
+    { startDate: start, endDate: end, ...filterParams },
+    { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0, refetchInterval: 60000 }
+  );
+
+  // Previous unbilled orders
+  const { data: previousUnbilled } = trpc.sales.getPreviousUnbilled.useQuery(
+    { currentPeriodStart: start, ...filterParams },
+    { enabled: !!dateRange && (dateRange.totalCount ?? 0) > 0, refetchInterval: 60000 }
+  );
+
+  // Feature toggle: A Faturar (Completo) visibility
+  const { data: aFaturarCompletoToggle } = trpc.settings.getFeatureToggle.useQuery(
+    { key: "vendas_a_faturar_completo" },
+    { refetchInterval: 30000 }
+  );
+  const showAFaturarCompleto = aFaturarCompletoToggle?.enabled ?? false;
+
+  // All unbilled orders (last 90 days) - unified card
+  const { data: allUnbilled } = trpc.sales.getAllUnbilled.useQuery(
+    { ...filterParams },
+    { enabled: showAFaturarCompleto && !!dateRange && (dateRange.totalCount ?? 0) > 0, refetchInterval: 60000 }
+  );
+
+  // Draft orders (Em Digitação) - informational only
+  const { data: draftOrders } = trpc.sales.getDraftOrders.useQuery(undefined, { refetchInterval: 60000 });
+
   const hasData = dateRange && (dateRange.totalCount ?? 0) > 0;
+
+  const handleExportPdf = useCallback(async () => {
+    if (!analytics || pdfExporting) return;
+    setPdfExporting(true);
+    try {
+      // Ensure chart is expanded so SVG is in the DOM
+      const wasExpanded = chartExpanded;
+      if (!wasExpanded) {
+        setChartExpanded(true);
+        // Wait for React to render the chart
+        await new Promise(r => setTimeout(r, 300));
+      }
+      await generateSalesPDF(
+        analytics,
+        label,
+        grupo,
+        crmSegmento,
+        "sales-daily-chart",
+        comparison,
+      );
+      // Restore chart state if it was collapsed
+      if (!wasExpanded) {
+        setChartExpanded(false);
+      }
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+    } finally {
+      setPdfExporting(false);
+    }
+  }, [analytics, pdfExporting, chartExpanded, label, grupo, crmSegmento, comparison]);
 
   return (
     <div className="min-h-screen bg-slate-50">
       <TopNav />
-
-      {/* Filters bar */}
-      <div className="bg-white border-b border-slate-100">
+      {/* Filters bar - hidden, moved below */}
+      <div className="hidden">
         <div className="container py-2.5">
           <div className="flex items-center gap-2 flex-wrap">
-              {/* Segment filter */}
-              <Select value={team} onValueChange={(v) => setTeam(v as any)}>
-                <SelectTrigger className="w-52 bg-white">
-                  <SelectValue placeholder="Segmento" />
+              {/* Grupo filter */}
+              <Select value={grupo} onValueChange={handleGrupoChange}>
+                <SelectTrigger className="w-72 bg-white">
+                  <SelectValue placeholder="Grupo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">
-                    <span className="flex items-center gap-2">Todos os Segmentos</span>
+                    <span className="flex items-center gap-2">Todos os Grupos</span>
                   </SelectItem>
-                  <SelectItem value="industrializacao">
-                    <span className="flex items-center gap-2">
-                      <Factory className="w-3.5 h-3.5 text-violet-500" />
-                      Industrializacao
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="importacao">
-                    <span className="flex items-center gap-2">
-                      <Leaf className="w-3.5 h-3.5 text-teal-500" />
-                      Importacao (Bambu)
-                    </span>
-                  </SelectItem>
+                  {(availableFilters?.grupos || []).map((g) => (
+                    <SelectItem key={g.value} value={g.value}>
+                      <span className="flex items-center gap-2">
+                        {g.value === "importacao_revenda" && <Leaf className="w-3.5 h-3.5 text-teal-500" />}
+                        {g.value === "industrializacao" && <Factory className="w-3.5 h-3.5 text-violet-500" />}
+                        {g.value === "importacao_mp" && <Package className="w-3.5 h-3.5 text-blue-500" />}
+                        {g.label}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+
+              {/* Subgrupo filter - only shown when a grupo is selected */}
+              {grupo !== "all" && subgrupoOptions.length > 1 && (
+                <Select value={subgrupo} onValueChange={setSubgrupo}>
+                  <SelectTrigger className="w-48 bg-white">
+                    <SelectValue placeholder="Subgrupo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Subgrupos</SelectItem>
+                    {subgrupoOptions.map((s: { value: string; label: string }) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* CRM Segmento filter */}
+              {(availableFilters?.crmSegmentos || []).length > 0 && (
+                <Select value={crmSegmento} onValueChange={setCrmSegmento}>
+                  <SelectTrigger className="w-48 bg-white">
+                    <SelectValue placeholder="Segmento CRM" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Seg. CRM</SelectItem>
+                    {(availableFilters?.crmSegmentos || []).map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
               {/* Period selector */}
               <Select
@@ -929,10 +2710,9 @@ export default function Sales() {
                 onChange={(e) => handleCustomEndChange(e.target.value)}
                 className="px-3 py-1.5 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               />
-              <Button
+                <Button
                 size="sm"
                 onClick={() => applyCustomDates()}
-                disabled={!customStart || !customEnd}
                 className="bg-teal-500 hover:bg-teal-600 text-white"
               >
                 Aplicar
@@ -940,7 +2720,7 @@ export default function Sales() {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => { setShowCustomDates(false); setPeriod("current_month"); setCustomStart(""); setCustomEnd(""); }}
+                onClick={() => { setShowCustomDates(false); setPeriod("current_month"); setCustomStart(""); setCustomEnd(""); customStartRef.current = ""; customEndRef.current = ""; }}
                 className="text-slate-500"
               >
                 Limpar
@@ -951,6 +2731,16 @@ export default function Sales() {
       </div>
 
       <main className="container py-6 space-y-6">
+        <div className="text-center py-2">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+            <span className="text-slate-700">Dashboard de Vendas</span>
+            <span className="text-teal-600 ml-2">Grupo Fox</span>
+          </h2>
+          <p className="text-sm text-slate-400 mt-1.5 tracking-widest uppercase">Pedidos, Faturamento e Inadimplência</p>
+        </div>
+
+        <ConnectionStatusCard />
+
         {!hasData ? (
           <div className="text-center py-20">
             <BarChart3 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
@@ -964,192 +2754,342 @@ export default function Sales() {
           </div>
         ) : analytics ? (
           <>
-            {/* Period + team label */}
+            {/* Filters bar - destacado */}
+            <div className="bg-white rounded-xl border-2 border-teal-200 shadow-sm p-4 mb-2">
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Grupo filter */}
+                <Select value={grupo} onValueChange={handleGrupoChange}>
+                  <SelectTrigger className="w-72 bg-slate-50 border-slate-200 font-medium">
+                    <SelectValue placeholder="Grupo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <span className="flex items-center gap-2">Todos os Grupos</span>
+                    </SelectItem>
+                    {(availableFilters?.grupos || []).map((g) => (
+                      <SelectItem key={g.value} value={g.value}>
+                        <span className="flex items-center gap-2">
+                          {g.value === "importacao_revenda" && <Leaf className="w-3.5 h-3.5 text-teal-500" />}
+                          {g.value === "industrializacao" && <Factory className="w-3.5 h-3.5 text-violet-500" />}
+                          {g.value === "importacao_mp" && <Package className="w-3.5 h-3.5 text-blue-500" />}
+                          {g.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Subgrupo filter */}
+                {grupo !== "all" && subgrupoOptions.length > 1 && (
+                  <Select value={subgrupo} onValueChange={setSubgrupo}>
+                    <SelectTrigger className="w-48 bg-slate-50 border-slate-200 font-medium">
+                      <SelectValue placeholder="Subgrupo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os Subgrupos</SelectItem>
+                      {subgrupoOptions.map((s: { value: string; label: string }) => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {/* CRM Segmento filter */}
+                {(availableFilters?.crmSegmentos || []).length > 0 && (
+                  <Select value={crmSegmento} onValueChange={setCrmSegmento}>
+                    <SelectTrigger className="w-48 bg-slate-50 border-slate-200 font-medium">
+                      <SelectValue placeholder="Segmento CRM" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos Seg. CRM</SelectItem>
+                      {(availableFilters?.crmSegmentos || []).map((s) => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {/* Period selector */}
+                <Select
+                  value={period.startsWith("custom:") ? "custom" : period}
+                  onValueChange={handlePeriodChange}
+                >
+                  <SelectTrigger className="w-48 bg-slate-50 border-slate-200 font-medium">
+                    <SelectValue placeholder="Periodo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="current_month">Mes atual</SelectItem>
+                    <SelectItem value="last_month">Mes anterior</SelectItem>
+                    <SelectItem value="last_3_months">Ultimos 3 meses</SelectItem>
+                    <SelectItem value="last_6_months">Ultimos 6 meses</SelectItem>
+                    <SelectItem value="all">Todo o periodo</SelectItem>
+                    <SelectItem value="custom">Periodo personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* PDF Export button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportPdf}
+                  disabled={pdfExporting || !analytics}
+                  className="ml-auto bg-white border-slate-200 hover:bg-teal-50 hover:border-teal-300 text-slate-600 hover:text-teal-700 transition-colors"
+                >
+                  {pdfExporting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileDown className="w-4 h-4 mr-2" />
+                  )}
+                  {pdfExporting ? "Gerando..." : "Exportar PDF"}
+                </Button>
+              </div>
+
+              {/* Custom date range picker */}
+              {(showCustomDates || period.startsWith("custom:")) && (
+                <div className="flex items-center gap-3 mt-3 pt-3 border-t border-slate-100">
+                  <span className="text-xs font-medium text-slate-500 uppercase">De:</span>
+                  <input
+                    type="date"
+                    value={customStart || (period.startsWith("custom:") ? period.split(":")[1] : "")}
+                    onChange={(e) => handleCustomStartChange(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                  <span className="text-xs font-medium text-slate-500 uppercase">Ate:</span>
+                  <input
+                    type="date"
+                    value={customEnd || (period.startsWith("custom:") ? period.split(":")[2] : "")}
+                    onChange={(e) => handleCustomEndChange(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => applyCustomDates()}
+                    className="bg-teal-500 hover:bg-teal-600 text-white"
+                  >
+                    Aplicar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setShowCustomDates(false); setPeriod("current_month"); setCustomStart(""); setCustomEnd(""); customStartRef.current = ""; customEndRef.current = ""; }}
+                    className="text-slate-500"
+                  >
+                    Limpar
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Period + filter label */}
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <p className="text-sm text-slate-500">
-                Periodo: <span className="font-semibold text-slate-700">{label}</span>
-                {team !== "all" && (
+              <p className="text-base text-slate-500">
+                Periodo: <span className="text-lg font-bold text-slate-800">{label}</span>
+                {grupo !== "all" && (
                   <>
                     {" "}&bull;{" "}
                     <span className="font-semibold text-slate-700">
-                      {team === "industrializacao" ? "Industrializacao" : "Importacao (Bambu)"}
+                      {availableFilters?.grupos.find(g => g.value === grupo)?.label || grupo}
                     </span>
+                  </>
+                )}
+                {subgrupo !== "all" && (
+                  <>
+                    {" "}&rsaquo;{" "}
+                    <span className="font-semibold text-slate-700">
+                      {subgrupoOptions.find((s: { value: string; label: string }) => s.value === subgrupo)?.label || subgrupo}
+                    </span>
+                  </>
+                )}
+                {crmSegmento !== "all" && (
+                  <>
+                    {" "}&bull;{" "}
+                    <span className="font-semibold text-teal-600">{crmSegmento}</span>
                   </>
                 )}
                 {" "}&mdash; {analytics.totalItems} itens em {analytics.totalOrders} pedidos
               </p>
             </div>
 
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              <KPICardWithBreakdown
-                label="Valor Total"
-                value={formatCurrencyFull(analytics.totalValue)}
-                sub={`${analytics.totalOrders} pedidos`}
-                icon={DollarSign}
-                theme="teal"
-                segments={(analytics.bySegmentKPI || []).map(s => ({
-                  name: s.name,
-                  value: formatCurrencyFull(s.value),
-                  color: s.name === "Bambu" ? "bg-teal-500" : s.name === "Industrializado" ? "bg-violet-500" : "bg-slate-400",
-                }))}
-              />
-              <KPICardWithBreakdown
-                label="Faturado"
-                value={formatCurrencyFull(analytics.totalFaturado)}
-                sub={`${((analytics.totalFaturado / (analytics.totalValue || 1)) * 100).toFixed(0)}% do total`}
-                icon={FileCheck}
-                theme="emerald"
-                segments={(analytics.bySegmentKPI || []).filter(s => s.faturado > 0).map(s => ({
-                  name: s.name,
-                  value: formatCurrencyFull(s.faturado),
-                  color: s.name === "Bambu" ? "bg-teal-500" : s.name === "Industrializado" ? "bg-violet-500" : "bg-slate-400",
-                }))}
-              />
-              <KPICardWithBreakdown
-                label="A Faturar (Periodo)"
-                value={formatCurrencyFull(analytics.totalAFaturar)}
-                sub="Periodo selecionado"
-                icon={Clock}
-                theme="orange"
-                segments={(analytics.bySegmentKPI || []).filter(s => s.aFaturar > 0).map(s => ({
-                  name: s.name,
-                  value: formatCurrencyFull(s.aFaturar),
-                  color: s.name === "Bambu" ? "bg-teal-500" : s.name === "Industrializado" ? "bg-violet-500" : "bg-slate-400",
-                }))}
-              />
-              <KPICardWithBreakdown
-                label="A Faturar (Anterior)"
-                value={formatCurrencyFull(analytics.totalAFaturarAnterior ?? 0)}
-                sub="Meses anteriores"
-                icon={AlertTriangle}
-                theme="red"
-                segments={(analytics.bySegmentKPI || []).filter(s => s.aFaturarAnterior > 0).map(s => ({
-                  name: s.name,
-                  value: formatCurrencyFull(s.aFaturarAnterior),
-                  color: s.name === "Bambu" ? "bg-teal-500" : s.name === "Industrializado" ? "bg-violet-500" : "bg-slate-400",
-                }))}
-              />
-              <KPICard
-                label="Clientes"
-                value={formatNumber(analytics.totalClients)}
-                sub="Unicos no periodo"
-                icon={Users}
-                theme="violet"
-              />
-              <KPICard
-                label="Itens"
-                value={formatNumber(analytics.totalItems)}
-                sub="Linhas de pedido"
-                icon={TrendingUp}
-                theme="indigo"
-              />
+            {/* KPI Principal - Valor Total + Faturado + A Faturar */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="h-1.5 bg-gradient-to-r from-teal-400 to-teal-600" />
+              <div className="grid grid-cols-1 md:grid-cols-3">
+                {/* Valor Total */}
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-teal-50">
+                      <DollarSign className="w-4.5 h-4.5 text-teal-600" />
+                    </div>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Valor Total do Periodo</p>
+                  </div>
+                  <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{formatCurrencyFull(analytics.totalValue)}</p>
+                  <p className="text-xs text-slate-400 mt-1.5">{analytics.totalOrders} pedidos &bull; {analytics.totalClients} clientes</p>
+                  <p className="text-xs text-slate-400">Ticket medio: {formatCurrencyFull(analytics.ticketMedio)}</p>
+                </div>
+
+                {/* Faturado */}
+                <div className="p-5 border-t md:border-t-0 md:border-l border-slate-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-50">
+                      <FileCheck className="w-4.5 h-4.5 text-emerald-600" />
+                    </div>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Faturado</p>
+                  </div>
+                  <p className="text-2xl font-extrabold text-emerald-700 tracking-tight">{formatCurrencyFull(analytics.totalFaturado)}</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(((analytics.totalFaturado / (analytics.totalValue || 1)) * 100), 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-emerald-600 whitespace-nowrap">
+                      {((analytics.totalFaturado / (analytics.totalValue || 1)) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* A Faturar */}
+                <div className="p-5 border-t md:border-t-0 md:border-l border-slate-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-orange-50">
+                      <Clock className="w-4.5 h-4.5 text-orange-600" />
+                    </div>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">A Faturar (Periodo)</p>
+                  </div>
+                  <p className="text-2xl font-extrabold text-orange-700 tracking-tight">{formatCurrencyFull(analytics.totalAFaturar)}</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-orange-500 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(((analytics.totalAFaturar / (analytics.totalValue || 1)) * 100), 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-orange-600 whitespace-nowrap">
+                      {((analytics.totalAFaturar / (analytics.totalValue || 1)) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Tab navigation */}
-            <div className="flex gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-fit">
-              {[
-                { key: "overview" as const, label: "Visao Geral" },
-                { key: "clients" as const, label: `Clientes (${analytics.byClient.length})` },
-                { key: "products" as const, label: `Produtos (${analytics.byProduct.length})` },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    activeTab === tab.key
-                      ? "bg-teal-500 text-white shadow-sm"
-                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            {/* Tabela de Detalhamento por Segmento / CRM */}
+            {(() => {
+              const showCrm = grupo !== "all" && (analytics.byCrmSegmentKPI || []).length > 0;
+              const segments = showCrm ? (analytics.byCrmSegmentKPI || []) : (analytics.bySegmentKPI || []);
+              const title = showCrm ? "Detalhamento por CRM" : "Detalhamento por Segmento";
+              const colLabel = showCrm ? "Segmento CRM" : "Segmento";
+              return segments.length > 0 ? (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-3 bg-slate-50 border-b border-slate-200">
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{title}</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{colLabel}</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Valor Total</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-emerald-600 uppercase tracking-wider">Faturado</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-orange-600 uppercase tracking-wider">A Faturar</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">% Total</th>
+                      </tr>
+                    </thead>
+                    <SegmentTableBody segments={segments} totalValue={analytics.totalValue} />
+                    <tfoot>
+                      <tr className="border-t-2 border-slate-200 bg-slate-50">
+                        <td className="px-5 py-3">
+                          <span className="text-sm font-bold text-slate-700 uppercase">Total</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-sm font-extrabold text-slate-900">{formatCurrencyFull(analytics.totalValue)}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-sm font-extrabold text-emerald-700">{formatCurrencyFull(analytics.totalFaturado)}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-sm font-extrabold text-orange-700">{formatCurrencyFull(analytics.totalAFaturar)}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="text-xs font-bold text-slate-600">100%</span>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            ) : null;
+            })()}
 
-            {/* Tab content */}
-            {activeTab === "overview" && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Daily evolution */}
-                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm lg:col-span-2">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                      Evolucao Diaria
-                    </h3>
+            {/* Card Evolução Diária - colapsável */}
+            <div className="bg-emerald-50/40 rounded-lg border border-emerald-200 shadow-sm overflow-hidden">
+              <button
+                onClick={() => setChartExpanded(!chartExpanded)}
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-emerald-50/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <BarChart3 className="w-6 h-6 text-emerald-600" />
+                  <h3 className="text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Diaria</h3>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-base font-bold text-slate-800">{formatCurrencyFull(analytics.totalValue)}</span>
+                  {chartExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                </div>
+              </button>
+              {chartExpanded && (
+                <div id="sales-daily-chart" className="border-t border-emerald-200 p-5">
+                  <div className="flex items-center justify-end mb-4">
                     <div className="flex gap-1 bg-slate-100 rounded-md p-0.5">
                       <button
                         onClick={() => setChartMode("value")}
-                        className={`px-3 py-1 text-xs rounded-md ${chartMode === "value" ? "bg-white shadow-sm text-slate-700" : "text-slate-500"}`}
+                        className={`px-4 py-1.5 text-sm rounded-md ${chartMode === "value" ? "bg-white shadow-sm text-slate-700" : "text-slate-500"}`}
                       >
                         Valor (R$)
                       </button>
                       <button
                         onClick={() => setChartMode("orders")}
-                        className={`px-3 py-1 text-xs rounded-md ${chartMode === "orders" ? "bg-white shadow-sm text-slate-700" : "text-slate-500"}`}
+                        className={`px-4 py-1.5 text-sm rounded-md ${chartMode === "orders" ? "bg-white shadow-sm text-slate-700" : "text-slate-500"}`}
                       >
                         Pedidos
                       </button>
                     </div>
                   </div>
-                  <DailyChart data={analytics.byDay} mode={chartMode} period={period} />
+                  <DailyChart data={analytics.byDay} mode={chartMode} period={period} comparison={comparison} />
                 </div>
+              )}
+            </div>
 
-                {/* Cumulative comparison line chart */}
-                {comparison && comparison.currentMonth.length > 0 && (
-                  <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm lg:col-span-2">
-                    <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-teal-500" />
-                      Evolucao Acumulada — Mes Atual vs Anterior vs Melhor
-                    </h3>
-                    <CumulativeLineChart comparison={comparison} />
-                  </div>
-                )}
+            {/* Card Pedidos Faturados */}
+            {orders && orders.filter(o => o.estadoItem === "Faturado").length > 0 && (
+              <OrdersCard orders={orders.filter(o => o.estadoItem === "Faturado")} title="Pedidos Faturados" variant="faturado" />
+            )}
 
-                {/* By UF */}
-                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-blue-500" />
-                    Vendas por UF
-                  </h3>
-                  <UFTable data={analytics.byUF} />
-                </div>
+            {/* Card A Faturar Mês Atual */}
+            {orders && orders.filter(o => o.estadoItem !== "Faturado").length > 0 && (
+              <OrdersCard orders={orders.filter(o => o.estadoItem !== "Faturado")} title='A Faturar "Mês Atual"' variant="a_faturar" />
+            )}
 
-                {/* By Segmento */}
-                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4 flex items-center gap-2">
-                    <Tag className="w-4 h-4 text-violet-500" />
-                    Vendas por Segmento
-                  </h3>
-                  <SegmentoList data={analytics.bySegmento} />
-                </div>
+            {/* Card A Faturar (Anterior) */}
+            {previousUnbilled && previousUnbilled.orders.length > 0 && (
+              <PreviousUnbilledCard months={previousUnbilled.months} orders={previousUnbilled.orders} />
+            )}
 
-                {/* Top Products (bar) */}
-                <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm lg:col-span-2">
-                  <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">
-                    Top 10 Produtos por Valor
-                  </h3>
-                  <SimpleBarChart
-                    data={analytics.byProduct}
-                    labelKey="name"
-                    valueKey="value"
-                    formatValue={formatCurrencyFull}
-                    maxBars={10}
-                    color="bg-teal-500"
-                  />
-                </div>
+            {/* Card EXTRA: A Faturar (Completo) - Pesquisa rápida últimos 90 dias */}
+            {showAFaturarCompleto && allUnbilled && allUnbilled.orders.length > 0 && (
+              <UnifiedUnbilledCard months={allUnbilled.months} orders={allUnbilled.orders} totalValue={allUnbilled.totalValue} />
+            )}
+
+            {/* Cards de Inadimplência - compartilhados com aba Financeiro */}
+            {financialSummary && financialSummary.receber.vencidas.count > 0 && (
+              <div className="space-y-4">
+                <InadimplenciaCard summary={financialSummary} grupo={grupo} crmSegmento={crmSegmento} />
+                <ClientesInadimplentesCard grupo={grupo} crmSegmento={crmSegmento} />
               </div>
             )}
 
-            {activeTab === "clients" && (
-              <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                <ClientRanking data={analytics.byClient} />
-              </div>
-            )}
-
-            {activeTab === "products" && (
-              <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-                <ProductRanking data={analytics.byProduct} />
-              </div>
+            {/* Card Em Digitação - informativo, não soma nos KPIs */}
+            {draftOrders && draftOrders.orders.length > 0 && (
+              <DraftOrdersCard orders={draftOrders.orders} />
             )}
           </>
         ) : null}

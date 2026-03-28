@@ -3,7 +3,8 @@
  * Painéis: Metas de Vendas, Alertas, Alterar Senha
  */
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, Fragment } from "react";
+import { useOperator } from "@/contexts/OperatorContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,13 @@ import {
   DollarSign,
   Calendar,
   Edit3,
+  RefreshCw,
+  ShieldAlert,
+  GitBranch,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
@@ -353,7 +361,7 @@ function AlertSettingsPanel({ adminPassword }: { adminPassword: string }) {
     if (result.success) {
       toast.success("Configurações de alertas salvas");
     } else {
-      toast.error(result.error || "Erro ao salvar");
+      toast.error("Erro ao salvar");
     }
   };
 
@@ -448,86 +456,478 @@ function AlertSettingsPanel({ adminPassword }: { adminPassword: string }) {
   );
 }
 
-// ─── Change Password Panel ─────────────────────────────────────
-function ChangePasswordPanel({ adminPassword }: { adminPassword: string }) {
-  const [currentPwd, setCurrentPwd] = useState("");
-  const [newPwd, setNewPwd] = useState("");
-  const [confirmPwd, setConfirmPwd] = useState("");
-  const changeMutation = trpc.settings.changePassword.useMutation();
+// ─── Feature Toggles Panel ────────────────────────────────────
+const FEATURE_TOGGLES = [
+  { key: "vendas_a_faturar_completo", label: "A Faturar (Completo)", description: "Exibir card 'A Faturar (Completo)' na aba Vendas com todos os pedidos dos últimos 90 dias" },
+];
 
-  const handleChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPwd !== confirmPwd) {
-      toast.error("As senhas não conferem");
-      return;
-    }
-    if (newPwd.length < 4) {
-      toast.error("A nova senha deve ter no mínimo 4 caracteres");
-      return;
-    }
-    const result = await changeMutation.mutateAsync({
-      currentPassword: currentPwd,
-      newPassword: newPwd,
-    });
-    if (result.success) {
-      toast.success("Senha alterada com sucesso");
-      setCurrentPwd("");
-      setNewPwd("");
-      setConfirmPwd("");
-    } else {
-      toast.error(result.error || "Erro ao alterar senha");
-    }
-  };
+function FeatureTogglesPanel() {
+  const utils = trpc.useUtils();
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
       <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-        <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
-          <KeyRound className="w-5 h-5 text-red-500" />
+        <div className="w-10 h-10 bg-cyan-50 rounded-lg flex items-center justify-center">
+          <Eye className="w-5 h-5 text-cyan-600" />
         </div>
         <div>
-          <h2 className="font-bold text-slate-800">Alterar Senha</h2>
-          <p className="text-xs text-slate-500">Altere a senha de acesso às configurações</p>
+          <h2 className="font-bold text-slate-800">Visibilidade de Seções</h2>
+          <p className="text-xs text-slate-500">Ativar ou desativar seções para todos os operadores</p>
         </div>
       </div>
+      <div className="p-5 space-y-4">
+        {FEATURE_TOGGLES.map((ft) => (
+          <FeatureToggleRow key={ft.key} featureKey={ft.key} label={ft.label} description={ft.description} utils={utils} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
-      <form onSubmit={handleChange} className="p-5 space-y-4">
-        <div>
-          <label className="text-xs font-medium text-slate-600 mb-1 block">Senha Atual</label>
-          <Input
-            type="password"
-            value={currentPwd}
-            onChange={(e) => setCurrentPwd(e.target.value)}
-            placeholder="Digite a senha atual"
-          />
+function FeatureToggleRow({ featureKey, label, description, utils }: { featureKey: string; label: string; description: string; utils: any }) {
+  const { data, isLoading } = trpc.settings.getFeatureToggle.useQuery({ key: featureKey });
+  const toggleMutation = trpc.settings.setFeatureToggle.useMutation({
+    onSuccess: () => {
+      utils.settings.getFeatureToggle.invalidate({ key: featureKey });
+      toast.success(`${label} ${!data?.enabled ? "ativado" : "desativado"}`);
+    },
+  });
+
+  const enabled = data?.enabled ?? false;
+
+  return (
+    <div className="border border-slate-100 rounded-lg p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <span className="font-medium text-sm text-slate-700">{label}</span>
+          <p className="text-xs text-slate-500 mt-0.5">{description}</p>
         </div>
-        <div>
-          <label className="text-xs font-medium text-slate-600 mb-1 block">Nova Senha</label>
-          <Input
-            type="password"
-            value={newPwd}
-            onChange={(e) => setNewPwd(e.target.value)}
-            placeholder="Digite a nova senha"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-slate-600 mb-1 block">Confirmar Nova Senha</label>
-          <Input
-            type="password"
-            value={confirmPwd}
-            onChange={(e) => setConfirmPwd(e.target.value)}
-            placeholder="Confirme a nova senha"
-          />
-        </div>
-        <Button
-          type="submit"
-          disabled={changeMutation.isPending || !currentPwd || !newPwd || !confirmPwd}
-          className="w-full bg-red-500 hover:bg-red-600"
+        <button
+          onClick={() => toggleMutation.mutate({ key: featureKey, enabled: !enabled })}
+          disabled={isLoading || toggleMutation.isPending}
+          className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ml-4 ${
+            enabled ? "bg-teal-500" : "bg-slate-200"
+          } ${(isLoading || toggleMutation.isPending) ? "opacity-50" : ""}`}
         >
-          {changeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <KeyRound className="w-4 h-4 mr-2" />}
-          Alterar Senha
-        </Button>
-      </form>
+          <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-transform ${
+            enabled ? "translate-x-5.5" : "translate-x-0.5"
+          }`} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Operator Management Panel ─────────────────────────────────────
+const PERMISSION_COLS = [
+  { key: "accessEstoque" as const, label: "Estoque", color: "bg-teal-500" },
+  { key: "accessValorizacao" as const, label: "Valoriz.", color: "bg-amber-500", sub: true },
+  { key: "accessVendas" as const, label: "Vendas", color: "bg-blue-500" },
+  { key: "accessFaturamento" as const, label: "Faturamento", color: "bg-violet-500" },
+  { key: "accessFinanceiro" as const, label: "Financeiro", color: "bg-emerald-500" },
+  { key: "accessConfiguracoes" as const, label: "Config.", color: "bg-red-500" },
+];
+
+// Definição de permissões granulares por aba
+interface GranularPermDef {
+  key: string;
+  label: string;
+  parentTab: string; // qual aba principal (faturamento, financeiro, configuracoes)
+}
+
+const GRANULAR_ESTOQUE: GranularPermDef[] = [
+  { key: "est.valorizacao", label: "Valoriza\u00e7\u00e3o de Estoque", parentTab: "estoque" },
+];
+
+const GRANULAR_FATURAMENTO: GranularPermDef[] = [
+  { key: "fat.toggleValores", label: "Ocultar/Mostrar Valores", parentTab: "faturamento" },
+  { key: "fat.aceiteProducao", label: "Aceitar Pedido (Produc.)", parentTab: "faturamento" },
+  { key: "fat.autorizarFaturamento", label: "Autorizar Faturamento", parentTab: "faturamento" },
+  { key: "fat.desautorizarFaturamento", label: "Desautorizar Faturamento", parentTab: "faturamento" },
+  { key: "fat.notaProducao", label: "Nota de Produc.", parentTab: "faturamento" },
+  { key: "fat.statusProducao", label: "Status Produc.", parentTab: "faturamento" },
+  { key: "fat.imprimirPedido", label: "Imprimir Pedido", parentTab: "faturamento" },
+  { key: "fat.pedidoColeta", label: "Pedido de Coleta", parentTab: "faturamento" },
+  { key: "fat.coletado", label: "Marcar Coletado", parentTab: "faturamento" },
+  { key: "fat.transportadora", label: "Selec. Transportadora", parentTab: "faturamento" },
+  { key: "fat.agendamentoColeta", label: "Agendar Coleta", parentTab: "faturamento" },
+  { key: "fat.observacaoFaturar", label: "Obs. Autorizado a Faturar", parentTab: "faturamento" },
+  { key: "fat.verRastreio", label: "Ver Link de Rastreio", parentTab: "faturamento" },
+  { key: "fat.rastreio", label: "Editar Link de Rastreio", parentTab: "faturamento" },
+];
+
+const GRANULAR_FINANCEIRO: GranularPermDef[] = [
+  { key: "fin.autorizacaoPagamento", label: "Autorizar Pagamento", parentTab: "financeiro" },
+  { key: "fin.comentarioPagamento", label: "Comentar Pagamento", parentTab: "financeiro" },
+  { key: "fin.verContasPagar", label: "Ver Contas a Pagar", parentTab: "financeiro" },
+  { key: "fin.verContasReceber", label: "Ver Contas a Receber", parentTab: "financeiro" },
+  { key: "fin.verInadimplencia", label: "Ver Inadimpl\u00eancia", parentTab: "financeiro" },
+  { key: "fin.verSaldoBancario", label: "Ver Saldo Banc\u00e1rio", parentTab: "financeiro" },
+  { key: "fin.verFluxoCaixa", label: "Ver Fluxo de Caixa", parentTab: "financeiro" },
+  { key: "fin.verResumoFinanceiro", label: "Ver Resumo Financeiro", parentTab: "financeiro" },
+];
+
+const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
+  { key: "cfg.senhas", label: "Senhas", parentTab: "configuracoes" },
+  { key: "cfg.produtos", label: "Produtos", parentTab: "configuracoes" },
+  { key: "cfg.alertas", label: "Alertas", parentTab: "configuracoes" },
+  { key: "cfg.bancos", label: "Bancos", parentTab: "configuracoes" },
+  { key: "cfg.variacoes", label: "Varia\u00e7\u00f5es", parentTab: "configuracoes" },
+  { key: "cfg.dados", label: "Dados", parentTab: "configuracoes" },
+];
+
+const ALL_GRANULAR_PERMS = [...GRANULAR_ESTOQUE, ...GRANULAR_FATURAMENTO, ...GRANULAR_FINANCEIRO, ...GRANULAR_CONFIGURACOES];
+
+const GRANULAR_GROUPS = [
+  { parentTab: "estoque", label: "Estoque", color: "bg-teal-500", perms: GRANULAR_ESTOQUE },
+  { parentTab: "faturamento", label: "Faturamento", color: "bg-violet-500", perms: GRANULAR_FATURAMENTO },
+  { parentTab: "financeiro", label: "Financeiro", color: "bg-emerald-500", perms: GRANULAR_FINANCEIRO },
+  { parentTab: "configuracoes", label: "Configura\u00e7\u00f5es", color: "bg-red-500", perms: GRANULAR_CONFIGURACOES },
+];
+
+function OperatorManagementPanel() {
+  const utils = trpc.useUtils();
+  const { data: operatorList, isLoading } = trpc.settings.getOperators.useQuery();
+  const { data: allGranularPerms } = trpc.settings.getAllGranularPermissions.useQuery();
+  const seedMutation = trpc.settings.seedOperators.useMutation({
+    onSuccess: () => utils.settings.getOperators.invalidate(),
+  });
+  const updatePasswordMutation = trpc.settings.updateOperatorPassword.useMutation({
+    onSuccess: () => utils.settings.getOperators.invalidate(),
+  });
+  const updatePermissionMutation = trpc.settings.updateOperatorPermission.useMutation({
+    onSuccess: () => utils.settings.getOperators.invalidate(),
+  });
+  const setGranularMutation = trpc.settings.setGranularPermission.useMutation({
+    onSuccess: () => utils.settings.getAllGranularPermissions.invalidate(),
+  });
+  const createMutation = trpc.settings.createOperator.useMutation({
+    onSuccess: () => {
+      utils.settings.getOperators.invalidate();
+      setNewName("");
+    },
+  });
+  const deleteMutation = trpc.settings.deleteOperator.useMutation({
+    onSuccess: () => utils.settings.getOperators.invalidate(),
+  });
+
+  const [passwordVisibility, setPasswordVisibility] = useState<Record<number, boolean>>({});
+  const [editingPasswords, setEditingPasswords] = useState<Record<number, string>>({});
+  const [newName, setNewName] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [expandedOperator, setExpandedOperator] = useState<number | null>(null);
+
+  // Build a map: operatorId -> { permKey -> enabled }
+  const granularMap = useMemo(() => {
+    const map: Record<number, Record<string, boolean>> = {};
+    if (allGranularPerms) {
+      for (const gp of allGranularPerms) {
+        if (!map[gp.operatorId]) map[gp.operatorId] = {};
+        map[gp.operatorId][gp.permissionKey] = !!gp.enabled;
+      }
+    }
+    return map;
+  }, [allGranularPerms]);
+
+  const getGranularValue = (operatorId: number, key: string): boolean => {
+    // Se não existe no mapa, default = autorizado (true)
+    if (!granularMap[operatorId] || !(key in granularMap[operatorId])) return true;
+    return granularMap[operatorId][key] === true;
+  };
+
+  const handleGranularToggle = (operatorId: number, key: string) => {
+    const current = getGranularValue(operatorId, key);
+    setGranularMutation.mutate({ operatorId, permissionKey: key, enabled: !current });
+  };
+
+  // Auto-seed operators if table is empty
+  const hasSeeded = useMemo(() => {
+    if (operatorList && operatorList.length === 0) {
+      seedMutation.mutate();
+      return false;
+    }
+    return true;
+  }, [operatorList]);
+
+  const togglePasswordVisibility = (id: number) => {
+    setPasswordVisibility(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handlePasswordChange = (id: number, value: string) => {
+    setEditingPasswords(prev => ({ ...prev, [id]: value }));
+  };
+
+  const savePassword = (id: number) => {
+    const pwd = editingPasswords[id];
+    if (pwd !== undefined) {
+      // Find the original password from the server data
+      const originalOp = operatorList?.find(op => op.id === id);
+      const originalPwd = originalOp?.password || "";
+      
+      // Only save if the password actually changed
+      if (pwd === originalPwd) {
+        // No change - just exit editing mode silently
+        setEditingPasswords(prev => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        return;
+      }
+      
+      // Don't allow saving empty passwords
+      if (!pwd.trim()) {
+        toast.error("Senha não pode ficar vazia");
+        // Revert to original
+        setEditingPasswords(prev => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        return;
+      }
+      
+      updatePasswordMutation.mutate({ id, password: pwd });
+      setEditingPasswords(prev => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      toast.success(`Senha de ${originalOp?.name || 'operador'} atualizada`);
+    }
+  };
+
+  const handlePermissionToggle = (id: number, field: typeof PERMISSION_COLS[number]["key"], currentValue: boolean) => {
+    updatePermissionMutation.mutate({ id, field, value: !currentValue });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+      <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+            <Lock className="w-5 h-5 text-red-500" />
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-800">Controle de Acesso</h2>
+            <p className="text-xs text-slate-500">Defina senhas e permissões para cada operador</p>
+          </div>
+        </div>
+        <Badge variant="outline" className="text-xs">{operatorList?.length || 0} operadores</Badge>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full table-fixed" style={{ minWidth: "800px" }}>
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" style={{ width: "120px" }}>Operador</th>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" style={{ width: "130px" }}>Senha</th>
+              {PERMISSION_COLS.map(col => (
+                <th key={col.key} className={`px-1 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider ${'sub' in col && col.sub ? 'text-[10px]' : ''}`} style={{ width: "80px" }}>
+                  <div className="flex flex-col items-center gap-1">
+                    {'sub' in col && col.sub && <span className="text-[9px] text-slate-400 -mb-1">&#8627; sub</span>}
+                    <div className={`w-3 h-3 rounded-full ${col.color}`} />
+                    {col.label}
+                  </div>
+                </th>
+              ))}
+              <th className="px-1 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider" style={{ width: "50px" }}>Ação</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {operatorList?.map((op) => {
+              const isEditing = editingPasswords[op.id] !== undefined;
+              const displayPwd = isEditing ? editingPasswords[op.id] : op.password;
+              const showPwd = passwordVisibility[op.id];
+              const isExpanded = expandedOperator === op.id;
+              const hasAnyParentTab = (tab: string) => {
+                if (tab === "estoque") return op.accessEstoque;
+                if (tab === "faturamento") return op.accessFaturamento;
+                if (tab === "financeiro") return op.accessFinanceiro;
+                if (tab === "configuracoes") return op.accessConfiguracoes;
+                return false;
+              };
+
+              return (
+                <Fragment key={op.id}>
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="px-2 py-2">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setExpandedOperator(isExpanded ? null : op.id)}
+                        className="text-slate-400 hover:text-slate-600 transition-colors"
+                        title="Ver permiss\u00f5es detalhadas"
+                      >
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                      <span className="font-medium text-slate-800 text-sm">{op.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-2 py-2">
+                    <div className="flex items-center gap-1">
+                      <div className="relative flex-1">
+                        <Input
+                          type={showPwd ? "text" : "password"}
+                          value={displayPwd}
+                          onChange={(e) => handlePasswordChange(op.id, e.target.value)}
+                          placeholder="Definir senha"
+                          className="h-8 text-sm pr-8"
+                          onBlur={() => {
+                            // Small delay to allow click on the save button to fire first
+                            setTimeout(() => {
+                              if (editingPasswords[op.id] !== undefined) savePassword(op.id);
+                            }, 150);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && isEditing) savePassword(op.id);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility(op.id)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                          {showPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                      {isEditing && (
+                        <button
+                          onClick={() => savePassword(op.id)}
+                          className="text-emerald-500 hover:text-emerald-700 transition-colors"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                  {PERMISSION_COLS.map(col => (
+                    <td key={col.key} className="px-1 py-2 text-center">
+                      <button
+                        onClick={() => handlePermissionToggle(op.id, col.key, (op as any)[col.key])}
+                        className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+                          (op as any)[col.key]
+                            ? `${col.color} border-transparent text-white`
+                            : "border-slate-300 hover:border-slate-400 bg-white"
+                        }`}
+                      >
+                        {(op as any)[col.key] && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    </td>
+                  ))}
+                  <td className="px-1 py-2 text-center">
+                    <button
+                      onClick={() => {
+                        if (confirm(`Excluir operador ${op.name}?`)) {
+                          deleteMutation.mutate({ id: op.id });
+                        }
+                      }}
+                      className="text-slate-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+                {isExpanded && (
+                  <tr key={`${op.id}-granular`}>
+                    <td colSpan={PERMISSION_COLS.length + 3} className="px-4 py-4 bg-slate-50/80">
+                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                        Permiss\u00f5es Detalhadas de {op.name}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {GRANULAR_GROUPS.map(group => {
+                          const parentEnabled = hasAnyParentTab(group.parentTab);
+                          return (
+                            <div key={group.parentTab} className={`rounded-lg border p-3 ${parentEnabled ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-50'}`}>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className={`w-3 h-3 rounded-full ${group.color}`} />
+                                <span className="text-xs font-bold text-slate-700 uppercase">{group.label}</span>
+                                {!parentEnabled && <span className="text-[10px] text-red-400">(aba desabilitada)</span>}
+                              </div>
+                              <div className="space-y-2">
+                                {group.perms.map(perm => {
+                                  const enabled = getGranularValue(op.id, perm.key);
+                                  return (
+                                    <div key={perm.key} className="flex items-center justify-between">
+                                      <span className="text-xs text-slate-600">{perm.label}</span>
+                                      <button
+                                        onClick={() => parentEnabled && handleGranularToggle(op.id, perm.key)}
+                                        disabled={!parentEnabled}
+                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                          enabled
+                                            ? `${group.color} border-transparent text-white`
+                                            : parentEnabled
+                                              ? "border-slate-300 hover:border-slate-400 bg-white"
+                                              : "border-slate-200 bg-slate-100 cursor-not-allowed"
+                                        }`}
+                                      >
+                                        {enabled && <Check className="w-3 h-3" />}
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Add new operator */}
+      <div className="p-4 border-t border-slate-100">
+        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Novo Usuário</p>
+        <div className="flex items-center gap-2">
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Nome"
+            className="h-8 text-sm flex-1 max-w-[200px]"
+          />
+          <Input
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Senha"
+            type="password"
+            className="h-8 text-sm flex-1 max-w-[160px]"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newName.trim() && newPassword.trim()) {
+                createMutation.mutate({ name: newName.trim(), password: newPassword.trim() });
+                setNewPassword("");
+              }
+            }}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (newName.trim() && newPassword.trim()) {
+                createMutation.mutate({ name: newName.trim(), password: newPassword.trim() });
+                setNewPassword("");
+              }
+            }}
+            disabled={!newName.trim() || !newPassword.trim() || createMutation.isPending}
+            className="h-8"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Adicionar
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -618,6 +1018,14 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
   });
   const removeClassificationMutation = trpc.settings.removeProductClassification.useMutation({
     onSuccess: () => utils.settings.getProductClassifications.invalidate(),
+  });
+  const autoClassifyMutation = trpc.settings.autoClassifyProducts.useMutation({
+    onSuccess: (data) => {
+      utils.settings.getProductClassifications.invalidate();
+      if (data.success) {
+        toast.success(`Auto-classificação concluída: ${data.estoque} em estoque, ${data.encomenda} sob encomenda`);
+      }
+    },
   });
 
   // Product pricing
@@ -713,8 +1121,9 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
 
   const segmentLabel = (s: string) => {
     switch (s) {
-      case "industrializacao": return "Industrialização";
-      case "importacao": return "Importação";
+      case "industrializacao": return "Industrializados";
+      case "importacao": return "Import. (Revenda)";
+      case "importacao_mp": return "Import. Mat. Prima";
       case "outros": return "Outros";
       default: return s;
     }
@@ -724,6 +1133,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
     switch (s) {
       case "industrializacao": return "bg-violet-100 text-violet-700";
       case "importacao": return "bg-teal-100 text-teal-700";
+      case "importacao_mp": return "bg-blue-100 text-blue-700";
       default: return "bg-slate-100 text-slate-600";
     }
   };
@@ -760,6 +1170,47 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
     } else if (filterVisibility === "hidden") {
       result = result.filter(p => !p.visible);
     }
+
+    // Ordenar por semelhança: primeiro por tipo de produto (extraído do nome), depois por medida
+    result.sort((a, b) => {
+      // Extrair tipo base do produto (ex: "ESPETO DE BAMBU", "PALITO DE DENTE", "VARETA DE FIBRA")
+      const getProductType = (desc: string) => {
+        const d = desc.toUpperCase();
+        // Extrair as primeiras palavras significativas (até encontrar medida numérica)
+        const words = d.split(/\s+/);
+        const typeWords: string[] = [];
+        for (const w of words) {
+          if (/^\d/.test(w) || w === "C/" || w === "C" || w === "X") break;
+          typeWords.push(w);
+        }
+        return typeWords.join(" ");
+      };
+
+      // Extrair medida numérica principal (ex: 4.0, 3.0, 200)
+      const getMeasure = (desc: string) => {
+        const match = desc.match(/(\d+[,.]?\d*)\s*[xX*]\s*(\d+[,.]?\d*)/);
+        if (match) {
+          return parseFloat(match[1].replace(",", ".")) * 1000 + parseFloat(match[2].replace(",", "."));
+        }
+        const singleMatch = desc.match(/(\d+[,.]?\d*)\s*(?:MM|mm|CM|cm)/);
+        if (singleMatch) return parseFloat(singleMatch[1].replace(",", "."));
+        return 0;
+      };
+
+      const typeA = getProductType(a.descricao);
+      const typeB = getProductType(b.descricao);
+      
+      if (typeA !== typeB) return typeA.localeCompare(typeB, "pt-BR");
+      
+      // Mesmo tipo: ordenar por medida
+      const measureA = getMeasure(a.descricao);
+      const measureB = getMeasure(b.descricao);
+      if (measureA !== measureB) return measureA - measureB;
+      
+      // Mesma medida: ordenar por descrição completa
+      return a.descricao.localeCompare(b.descricao, "pt-BR");
+    });
+
     return result;
   }, [products, search, filterSegment, filterOverride, filterVisibility, classificationMap]);
 
@@ -782,7 +1233,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
       password: adminPassword,
       descricao,
       codigoGrupo,
-      segment: newSegment as "industrializacao" | "importacao",
+      segment: newSegment as "industrializacao" | "importacao" | "importacao_mp",
     });
     if (result.success) {
       toast.success(`Segmento alterado para ${segmentLabel(newSegment)}`);
@@ -820,9 +1271,21 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
   const hiddenCount = products?.filter(p => !p.visible).length || 0;
   const indCount = filtered.filter(p => p.currentSegment === "industrializacao").length;
   const impCount = filtered.filter(p => p.currentSegment === "importacao").length;
+  const impMpCount = filtered.filter(p => p.currentSegment === "importacao_mp").length;
   const outrosCount = filtered.filter(p => p.currentSegment === "outros").length;
   const visibleCount = filtered.filter(p => p.visible).length;
   const filteredHiddenCount = filtered.filter(p => !p.visible).length;
+
+  // Compute alert: estoque < vendaMensal * fator (consumo no lead time)
+  const alertCount = filtered.filter(p => {
+    const pricing = pricingMap.get(p.codigoItem || "");
+    if (!pricing?.vendaMensal) return false;
+    const fator = parseFloat(pricing.fatorMultiplicacao || "2.3") || 2.3;
+    const isKg = (p as any).isKgProduct;
+    const estoqueAtual = isKg ? ((p as any).estoqueUn ?? 0) : ((p as any).estoqueCx ?? 0);
+    const consumoLeadTime = Math.round(pricing.vendaMensal * fator);
+    return estoqueAtual < consumoLeadTime;
+  }).length;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
@@ -833,11 +1296,40 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
               <ArrowRightLeft className="w-5 h-5 text-violet-600" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-800">Segmentos dos Produtos</h2>
-              <p className="text-xs text-slate-500">Reclassifique produtos entre segmentos</p>
+              <h2 className="font-bold text-slate-800">Produtos</h2>
+              <p className="text-xs text-slate-500">Gerencie grupos, classificações e parâmetros de estoque</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {(() => {
+              const estoqueCount = filtered.filter(p => (p as any)._classification === "estoque").length;
+              const encomendaCount = filtered.filter(p => (p as any)._classification === "encomenda").length;
+              const semClassificacao = filtered.filter(p => !(p as any)._classification).length;
+              return (
+                <>
+                  {estoqueCount > 0 && (
+                    <Badge className="bg-emerald-50 text-emerald-600 border-0 text-xs">
+                      {estoqueCount} em estoque
+                    </Badge>
+                  )}
+                  {encomendaCount > 0 && (
+                    <Badge className="bg-amber-50 text-amber-600 border-0 text-xs">
+                      {encomendaCount} sob encomenda
+                    </Badge>
+                  )}
+                  {semClassificacao > 0 && (
+                    <button
+                      onClick={() => autoClassifyMutation.mutate()}
+                      disabled={autoClassifyMutation.isPending}
+                      className="text-[10px] px-2 py-1 rounded bg-teal-50 text-teal-600 hover:bg-teal-100 transition-colors disabled:opacity-50"
+                      title="Classificar automaticamente produtos sem classificação baseado na aba Estoque"
+                    >
+                      {autoClassifyMutation.isPending ? "Classificando..." : `Auto-classificar ${semClassificacao} pendentes`}
+                    </button>
+                  )}
+                </>
+              );
+            })()}
             {hiddenCount > 0 && (
               <Badge className="bg-red-100 text-red-700 border-0 text-xs">
                 {hiddenCount} oculto{hiddenCount > 1 ? "s" : ""}
@@ -863,14 +1355,14 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
             />
           </div>
           <Select value={filterSegment} onValueChange={setFilterSegment}>
-            <SelectTrigger className="w-full sm:w-44">
-              <SelectValue placeholder="Segmento" />
+            <SelectTrigger className="w-full sm:w-52">
+              <SelectValue placeholder="Grupo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos Segmentos</SelectItem>
-              <SelectItem value="industrializacao">Industrialização</SelectItem>
-              <SelectItem value="importacao">Importação</SelectItem>
-              <SelectItem value="outros">Outros</SelectItem>
+              <SelectItem value="all">Todos os Grupos</SelectItem>
+              <SelectItem value="importacao">Import. (Revenda)</SelectItem>
+              <SelectItem value="importacao_mp">Import. Mat. Prima</SelectItem>
+              <SelectItem value="industrializacao">Industrializados</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterOverride} onValueChange={setFilterOverride}>
@@ -900,15 +1392,24 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
           <Badge variant="outline" className="text-xs">
             {filtered.length} produtos
           </Badge>
-          <Badge className="bg-violet-50 text-violet-600 border-0 text-xs">
-            {indCount} Industrialização
-          </Badge>
           <Badge className="bg-teal-50 text-teal-600 border-0 text-xs">
-            {impCount} Importação
+            {impCount} Import. (Revenda)
+          </Badge>
+          <Badge className="bg-blue-50 text-blue-600 border-0 text-xs">
+            {impMpCount} Import. Mat. Prima
+          </Badge>
+          <Badge className="bg-violet-50 text-violet-600 border-0 text-xs">
+            {indCount} Industrializados
           </Badge>
           {outrosCount > 0 && (
             <Badge className="bg-slate-50 text-slate-500 border-0 text-xs">
               {outrosCount} Outros
+            </Badge>
+          )}
+          {alertCount > 0 && (
+            <Badge className="bg-red-50 text-red-600 border-0 text-xs">
+              <ShieldAlert className="w-3 h-3 mr-1" />
+              {alertCount} Alerta{alertCount > 1 ? "s" : ""} de Reposição
             </Badge>
           )}
           {filteredHiddenCount > 0 && (
@@ -932,7 +1433,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
             <p className="text-sm">Nenhum produto encontrado</p>
           </div>
         ) : (
-          <table className="w-full" style={{ minWidth: "1300px" }}>
+          <table className="w-full" style={{ minWidth: "1400px" }}>
             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
               <tr>
                 <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "50px" }}>Vis.</th>
@@ -941,15 +1442,31 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                 <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "45px" }}>Grp</th>
                 <th className="px-2 py-2.5 text-right text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "75px" }}>Estoque</th>
                 <th className="px-2 py-2.5 text-right text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "80px" }}>Dispon.</th>
-                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "120px" }}>Segmento</th>
-                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "40px" }} title="Manter em Estoque"><span className="inline-block w-3 h-3 rounded-full bg-emerald-400"></span></th>
-                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "40px" }} title="Sob Encomenda"><span className="inline-block w-3 h-3 rounded-full bg-amber-400"></span></th>
-                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "40px" }} title="Outros"><span className="inline-block w-3 h-3 rounded-full bg-slate-400"></span></th>
-                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "35px" }} title="Auto = preço automático (bolinha marcada). Desmarque para digitar preço manual.">A</th>
+                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "140px" }}>Grupo</th>
+                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "65px" }} title="Manter em Estoque">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[8px] leading-tight">Em</span>
+                    <span className="text-[8px] leading-tight">Estoque</span>
+                    <span className="inline-block w-3 h-3 rounded-full bg-emerald-400 mt-0.5"></span>
+                  </div>
+                </th>
+                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "65px" }} title="Sob Encomenda">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[8px] leading-tight">Sob</span>
+                    <span className="text-[8px] leading-tight">Encomenda</span>
+                    <span className="inline-block w-3 h-3 rounded-full bg-amber-400 mt-0.5"></span>
+                  </div>
+                </th>
+                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "35px" }} title="A = Automático (marcado) ou Manual (desmarcado). Aplica-se à classificação e ao preço.">A</th>
                 <th className="px-2 py-2.5 text-right text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "120px" }}>R$/Cx</th>
-                <th className="px-2 py-2.5 text-right text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "90px" }} title="Venda mensal em caixas (preenchido manualmente)">Vd. Mensal</th>
-                <th className="px-2 py-2.5 text-right text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "60px" }} title="Fator de multiplicação (padrão 2,3)">Fator</th>
-                <th className="px-2 py-2.5 text-right text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "80px" }} title="Prazo em dias para acionar compra (preenchido manualmente)">Prazo (d)</th>
+                <th className="px-2 py-2.5 text-right text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "90px" }} title="Estoque Regulador - Venda mensal em caixas (editável)">Vd. Mensal</th>
+                <th className="px-2 py-2.5 text-right text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "60px" }} title="Fator de multiplicação (padrão 2,3 - editável)">Fator</th>
+                <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "70px" }} title="Alerta de Reposição: Fator × Estoque ≤ Vd. Mensal">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[8px] leading-tight">Alerta</span>
+                    <span className="text-[8px] leading-tight">Reposição</span>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -1002,15 +1519,28 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                     </td>
                     {/* Estoque */}
                     <td className="px-2 py-2 text-right">
-                      <span className="text-[12px] font-semibold text-slate-700">{(product as any).estoqueCx ?? 0} cx</span>
+                      <span className="text-[12px] font-semibold text-slate-700">
+                        {(product as any).isKgProduct
+                          ? `${((product as any).estoqueUn ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} kg`
+                          : `${(product as any).estoqueCx ?? 0} cx`
+                        }
+                      </span>
                     </td>
                     {/* Disponível */}
                     <td className="px-2 py-2 text-right">
-                      <span className={`text-[12px] font-semibold ${((product as any).disponivelCx ?? 0) < 0 ? "text-red-600" : ((product as any).disponivelCx ?? 0) === 0 ? "text-amber-600" : "text-emerald-600"}`}>
-                        {(product as any).disponivelCx ?? 0} cx
-                      </span>
+                      {(() => {
+                        const isKg = (product as any).isKgProduct;
+                        const val = isKg ? ((product as any).disponivelUn ?? 0) : ((product as any).disponivelCx ?? 0);
+                        const unit = isKg ? "kg" : "cx";
+                        const displayVal = isKg ? val.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) : val;
+                        return (
+                          <span className={`text-[12px] font-semibold ${val < 0 ? "text-red-600" : val === 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                            {displayVal} {unit}
+                          </span>
+                        );
+                      })()}
                     </td>
-                    {/* Segmento */}
+                    {/* Grupo */}
                     <td className="px-2 py-2">
                       <Select
                         value={product.currentSegment}
@@ -1020,12 +1550,13 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="industrializacao">Industrialização</SelectItem>
-                          <SelectItem value="importacao">Importação</SelectItem>
+                          <SelectItem value="importacao">Import. (Revenda)</SelectItem>
+                          <SelectItem value="importacao_mp">Import. Mat. Prima</SelectItem>
+                          <SelectItem value="industrializacao">Industrializados</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
-                    {/* Classificação: Estoque */}
+                    {/* Classificação: Em Estoque */}
                     <td className="px-2 py-2 text-center">
                       <input
                         type="radio"
@@ -1033,10 +1564,10 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                         checked={(product as any)._classification === "estoque"}
                         onChange={() => handleClassification(product.codigoItem || "", product.descricao, "estoque")}
                         className="w-4 h-4 accent-emerald-600 cursor-pointer"
-                        title="Manter em Estoque"
+                        title="Em Estoque"
                       />
                     </td>
-                    {/* Classificação: Encomenda */}
+                    {/* Classificação: Sob Encomenda */}
                     <td className="px-2 py-2 text-center">
                       <input
                         type="radio"
@@ -1047,18 +1578,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                         title="Sob Encomenda"
                       />
                     </td>
-                    {/* Classificação: Outros */}
-                    <td className="px-2 py-2 text-center">
-                      <input
-                        type="radio"
-                        name={`class-${product.codigoItem}`}
-                        checked={(product as any)._classification === "outros"}
-                        onChange={() => handleClassification(product.codigoItem || "", product.descricao, "outros")}
-                        className="w-4 h-4 accent-slate-500 cursor-pointer"
-                        title="Outros"
-                      />
-                    </td>
-                    {/* Auto checkbox */}
+                    {/* Auto checkbox - aplica-se à classificação e ao preço */}
                     <td className="px-2 py-2 text-center">
                       <input
                         type="checkbox"
@@ -1107,7 +1627,17 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                           {formatCurrency(displayPrice)}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-slate-300 italic">s/ preço</span>
+                        <button
+                          onClick={() => {
+                            handlePricingMode(product.codigoItem || "", "manual");
+                            setEditingPrice(product.codigoItem || "");
+                            setEditPriceValue("");
+                          }}
+                          className="text-[10px] text-slate-300 italic hover:text-teal-500 hover:underline cursor-pointer transition-colors"
+                          title="Clique para inserir preço manualmente"
+                        >
+                          s/ preço
+                        </button>
                       )}
                     </td>
                     {/* Venda Mensal */}
@@ -1157,7 +1687,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                           className={`text-[12px] cursor-pointer hover:underline ${pricing?.vendaMensal != null ? "font-semibold text-slate-700" : "text-slate-300 italic"}`}
                           title="Clique para definir venda mensal"
                         >
-                          {pricing?.vendaMensal != null ? `${pricing.vendaMensal} cx` : "—"}
+                          {pricing?.vendaMensal != null ? `${pricing.vendaMensal} ${(product as any).isKgProduct ? "kg" : "cx"}` : "—"}
                         </button>
                       )}
                     </td>
@@ -1212,56 +1742,30 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                         </button>
                       )}
                     </td>
-                    {/* Prazo Compra */}
-                    <td className="px-2 py-2 text-right">
-                      {editingStockField?.codigoItem === product.codigoItem && editingStockField?.field === "prazoCompraDias" ? (
-                        <div className="flex items-center gap-1 justify-end">
-                          <Input
-                            value={editStockValue}
-                            onChange={(e) => setEditStockValue(e.target.value)}
-                            className="w-14 h-6 text-[11px] text-right px-1"
-                            placeholder="0"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                const val = parseInt(editStockValue);
-                                setStockSettingsMutation.mutate({
-                                  codigoItem: product.codigoItem || "",
-                                  vendaMensal: pricing?.vendaMensal ?? null,
-                                  fatorMultiplicacao: pricing?.fatorMultiplicacao ?? "2.3",
-                                  prazoCompraDias: isNaN(val) ? null : val,
-                                });
-                                setEditingStockField(null);
-                                toast.success("Prazo de compra salvo");
-                              }
-                              if (e.key === "Escape") setEditingStockField(null);
-                            }}
-                            onBlur={() => {
-                              const val = parseInt(editStockValue);
-                              if (editStockValue !== "") {
-                                setStockSettingsMutation.mutate({
-                                  codigoItem: product.codigoItem || "",
-                                  vendaMensal: pricing?.vendaMensal ?? null,
-                                  fatorMultiplicacao: pricing?.fatorMultiplicacao ?? "2.3",
-                                  prazoCompraDias: isNaN(val) ? null : val,
-                                });
-                              }
-                              setEditingStockField(null);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditingStockField({ codigoItem: product.codigoItem || "", field: "prazoCompraDias" });
-                            setEditStockValue(pricing?.prazoCompraDias != null ? String(pricing.prazoCompraDias) : "");
-                          }}
-                          className={`text-[12px] cursor-pointer hover:underline ${pricing?.prazoCompraDias != null ? "font-semibold text-slate-700" : "text-slate-300 italic"}`}
-                          title="Clique para definir prazo de compra em dias"
-                        >
-                          {pricing?.prazoCompraDias != null ? `${pricing.prazoCompraDias} d` : "—"}
-                        </button>
-                      )}
+                    {/* Alerta de Reposição */}
+                    <td className="px-2 py-2 text-center">
+                      {(() => {
+                        const vendaMensal = pricing?.vendaMensal;
+                        if (!vendaMensal) return <span className="text-[10px] text-slate-300">—</span>;
+                        const fator = parseFloat(pricing?.fatorMultiplicacao || "2.3") || 2.3;
+                        const isKg = (product as any).isKgProduct;
+                        const estoqueAtual = isKg ? ((product as any).estoqueUn ?? 0) : ((product as any).estoqueCx ?? 0);
+                        const unit = isKg ? "kg" : "cx";
+                        const consumoLeadTime = Math.round(vendaMensal * fator);
+                        const needsAlert = estoqueAtual < consumoLeadTime;
+                        const qtdPedir = needsAlert ? consumoLeadTime - estoqueAtual : 0;
+                        return needsAlert ? (
+                          <div className="flex flex-col items-center" title={`Consumo no lead time: ${vendaMensal} ${unit}/mês × ${fator.toLocaleString("pt-BR")} meses = ${consumoLeadTime} ${unit}\nEstoque atual: ${estoqueAtual} ${unit}\n${estoqueAtual} < ${consumoLeadTime} → Pedir ${qtdPedir} ${unit}`}>
+                            <ShieldAlert className="w-4 h-4 text-red-500" />
+                            <span className="text-[9px] text-red-500 font-semibold">PEDIR {qtdPedir} {unit}</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center" title={`Consumo no lead time: ${vendaMensal} ${unit}/mês × ${fator.toLocaleString("pt-BR")} meses = ${consumoLeadTime} ${unit}\nEstoque atual: ${estoqueAtual} ${unit}\n${estoqueAtual} ≥ ${consumoLeadTime} → OK`}>
+                            <span className="inline-block w-3 h-3 rounded-full bg-emerald-400"></span>
+                            <span className="text-[9px] text-emerald-600 font-medium">OK</span>
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
@@ -1274,11 +1778,11 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
       {/* Legenda */}
       <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50">
         <div className="flex flex-wrap items-center gap-4 text-[10px] text-slate-400">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Manter em Estoque</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Em Estoque</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Sob Encomenda</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Outros</span>
-          <span>A = Auto (bolinha marcada). Desmarque para digitar preço manual.</span>
-          <span className="ml-auto">Vd. Mensal = Venda mensal (cx) | Fator = Multiplicação (padrão 2,3) | Prazo (d) = Prazo de compra (dias)</span>
+          <span>A = Automático (marcado) / Manual (desmarcado)</span>
+          <span>R$/Cx = Média das últimas 5 vendas (auto) ou preço manual</span>
+          <span className="ml-auto">Alerta: Estoque &lt; (Vd. Mensal × Fator) = Hora de pedir!</span>
         </div>
       </div>
     </div>
@@ -1289,100 +1793,64 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
 function BankBalancesPanel() {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.financial.getBankBalances.useQuery();
-  const updateMutation = trpc.financial.updateBankBalance.useMutation({
-    onSuccess: () => {
+  const syncMutation = trpc.dashboard.syncBankBalances.useMutation({
+    onSuccess: (result) => {
       utils.financial.getBankBalances.invalidate();
-      toast.success("Saldo atualizado com sucesso");
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
     },
-    onError: () => toast.error("Erro ao atualizar saldo"),
+    onError: () => toast.error("Erro ao sincronizar saldos"),
   });
-
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editSaldo, setEditSaldo] = useState("");
-  const [editData, setEditData] = useState("");
-  const [globalDate, setGlobalDate] = useState(() => new Date().toISOString().split("T")[0]);
-
-  const startEdit = (acc: any) => {
-    setEditingId(acc.maxiprodId);
-    setEditSaldo(acc.saldoInicial ? String(acc.saldoInicial) : "0");
-    setEditData(acc.saldoInicialData || globalDate);
-  };
-
-  const saveEdit = async (maxiprodId: number) => {
-    const val = parseFloat(editSaldo.replace(/\./g, "").replace(",", "."));
-    if (isNaN(val)) {
-      toast.error("Valor inválido");
-      return;
-    }
-    await updateMutation.mutateAsync({
-      maxiprodId,
-      saldoInicial: String(val),
-      saldoInicialData: editData,
-    });
-    setEditingId(null);
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditSaldo("");
-    setEditData("");
-  };
 
   const formatCurrency = (v: number) =>
     v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-  const shortBankName = (name: string) => {
-    if (name.includes("Bradesco")) return "Bradesco";
-    if (name.includes("Sicredi")) return "Sicredi";
-    if (name.includes("BANCOOB") || name.includes("Sicoob")) return "Sicoob";
-    if (name.includes("Caixa")) return "Caixa";
-    if (name.includes("Brasil")) return "BB";
-    return name.substring(0, 15);
-  };
-
-  const shortCompany = (name: string) => {
-    if (name.includes("PALITOS")) return "Palitos";
-    if (name.includes("VARETAS")) return "Varetas";
-    if (name.includes("ESPETOS")) return "Espetos";
-    if (name.includes("MESA")) return "Mesa";
-    return name;
-  };
+  // Contas já vem com nomeConta no formato "Banco + Empresa" do backend
+  const accounts = data?.accounts || [];
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
       <div className="p-5 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-            <Landmark className="w-5 h-5 text-indigo-600" />
-          </div>
-          <div>
-            <h2 className="font-bold text-slate-800">Saldos Bancários</h2>
-            <p className="text-xs text-slate-500">Defina o saldo inicial de cada conta para cálculo do saldo atual</p>
-          </div>
-        </div>
-        {/* Seletor de data de referência global */}
-        <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-indigo-600" />
-              <span className="text-sm font-medium text-slate-700">Data de referência dos saldos:</span>
-              <Input
-                type="date"
-                value={globalDate}
-                onChange={(e) => setGlobalDate(e.target.value)}
-                className="bg-white w-44 h-8 text-sm"
-              />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
+              <Landmark className="w-5 h-5 text-indigo-600" />
             </div>
-            <p className="text-xs text-slate-400">Informe o saldo de cada conta nesta data. O sistema calcula o saldo atual com as movimentações posteriores.</p>
+            <div>
+              <h2 className="font-bold text-slate-800">Saldos Bancários</h2>
+              <p className="text-xs text-slate-500">Saldos do balancete contábil do Maxiprod (automático)</p>
+            </div>
           </div>
+          <Button
+            size="sm"
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending}
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
+            {syncMutation.isPending ? (
+              <><Loader2 className="w-4 h-4 animate-spin mr-1" />Sincronizando...</>
+            ) : (
+              <><RefreshCw className="w-4 h-4 mr-1" />Atualizar Saldos</>
+            )}
+          </Button>
         </div>
 
-        {data && (
+        {data && data.totalSaldoContabil !== undefined && data.totalSaldoContabil !== 0 && (
           <div className="mt-3 p-3 bg-indigo-50 rounded-lg">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-indigo-700">Saldo Total Consolidado</span>
-              <span className={`text-lg font-bold ${data.totalSaldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-                {formatCurrency(data.totalSaldo)}
+              <div>
+                <span className="text-sm font-medium text-indigo-700">Saldo Total (Balancete)</span>
+                {data.accounts[0]?.saldoContabilAtualizadoEm && (
+                  <p className="text-xs text-indigo-500 mt-0.5">
+                    Atualizado em {new Date(data.accounts[0].saldoContabilAtualizadoEm).toLocaleString("pt-BR")}
+                  </p>
+                )}
+              </div>
+              <span className={`text-lg font-bold ${data.totalSaldoContabil >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                {formatCurrency(data.totalSaldoContabil)}
               </span>
             </div>
           </div>
@@ -1399,101 +1867,28 @@ function BankBalancesPanel() {
           <div className="text-center py-8 text-slate-400">
             <Landmark className="w-10 h-10 mx-auto mb-2 opacity-40" />
             <p className="text-sm">Nenhuma conta bancária encontrada</p>
-            <p className="text-xs mt-1">Sincronize os dados do Maxiprod primeiro</p>
+            <p className="text-xs mt-1">Clique em "Atualizar Saldos" para buscar do Maxiprod</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {data.accounts.map((acc) => (
-              <div
-                key={acc.maxiprodId}
-                className="border border-slate-100 rounded-lg p-4 hover:bg-slate-50/50 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-slate-800">
-                      {shortBankName(acc.bancoNome || "")}
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      Ag {acc.agencia || "—"} / Cc {acc.contaNumero}
-                    </span>
-                    <Badge variant="outline" className="text-xs">
-                      {shortCompany(acc.empresaNome || "")}
-                    </Badge>
-                  </div>
-                  <span className={`font-bold text-sm ${acc.saldoAtual >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+          <div className="divide-y divide-slate-100">
+            {accounts.map((acc: any) => (
+              <div key={acc.maxiprodId} className="flex items-center justify-between py-3 px-3 hover:bg-slate-50 transition-colors">
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-slate-800">
+                    {acc.nomeConta || acc.bancoNome}
+                  </span>
+                  <span className="text-xs text-slate-400">{acc.codigoEstruturado}</span>
+                </div>
+                <div className="text-right">
+                  <span className={`text-sm font-bold tabular-nums ${acc.saldoAtual >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                     {formatCurrency(acc.saldoAtual)}
                   </span>
+                  {acc.totalDebitos > 0 && (
+                    <div className="text-xs text-slate-400">
+                      D: {formatCurrency(acc.totalDebitos)} | C: {formatCurrency(acc.totalCreditos)}
+                    </div>
+                  )}
                 </div>
-
-                {editingId === acc.maxiprodId ? (
-                  <div className="bg-indigo-50/50 rounded-lg p-3 mt-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">
-                          <DollarSign className="w-3 h-3 inline mr-1" />
-                          Saldo Inicial (R$)
-                        </label>
-                        <Input
-                          type="text"
-                          value={editSaldo}
-                          onChange={(e) => setEditSaldo(e.target.value)}
-                          placeholder="Ex: 50000.00"
-                          className="bg-white"
-                          autoFocus
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">
-                          <Calendar className="w-3 h-3 inline mr-1" />
-                          Data de Referência
-                        </label>
-                        <Input
-                          type="date"
-                          value={editData}
-                          onChange={(e) => setEditData(e.target.value)}
-                          className="bg-white"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => saveEdit(acc.maxiprodId)}
-                          disabled={updateMutation.isPending}
-                          className="bg-indigo-600 hover:bg-indigo-700 flex-1"
-                        >
-                          {updateMutation.isPending ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <><Save className="w-4 h-4 mr-1" />Salvar</>
-                          )}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={cancelEdit}>
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <div className="flex items-center gap-4">
-                      <span>
-                        Saldo inicial: <strong className="text-slate-700">{formatCurrency(acc.saldoInicial)}</strong>
-                        {acc.saldoInicialData && (
-                          <span className="ml-1">em {acc.saldoInicialData.split("-").reverse().join("/")}</span>
-                        )}
-                      </span>
-                      <span>
-                        Movimentação: <strong className={acc.movimentacao >= 0 ? "text-emerald-600" : "text-red-600"}>
-                          {acc.movimentacao >= 0 ? "+" : ""}{formatCurrency(acc.movimentacao)}
-                        </strong>
-                      </span>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={() => startEdit(acc)} className="text-indigo-600 hover:text-indigo-700">
-                      <Edit3 className="w-3 h-3 mr-1" />
-                      Editar
-                    </Button>
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -1503,28 +1898,250 @@ function BankBalancesPanel() {
   );
 }
 
-// ─── Main Settings Page ────────────────────────────────────────
+// ─── Variants Panel (Variações Pai/Filho) ───────────────────────────────────
+function VariantsPanel() {
+  const utils = trpc.useUtils();
+  const { data: variants, isLoading } = trpc.settings.getVariants.useQuery();
+  const { data: dashData } = trpc.dashboard.getData.useQuery();
+  const addMutation = trpc.settings.addVariant.useMutation({
+    onSuccess: () => {
+      utils.settings.getVariants.invalidate();
+      toast.success("Variação adicionada");
+    },
+  });
+  const removeMutation = trpc.settings.removeVariant.useMutation({
+    onSuccess: () => {
+      utils.settings.getVariants.invalidate();
+      toast.success("Variação removida");
+    },
+  });
+
+  const [parentCode, setParentCode] = useState("");
+  const [childCode, setChildCode] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
+  // Mapa de produtos para mostrar nomes
+  const productMap = useMemo(() => {
+    const map = new Map<string, { descricao: string; unPorCx: number | null }>();
+    if (dashData?.items) {
+      for (const item of dashData.items as any[]) {
+        map.set(item.codigoItem, { descricao: item.descricaoItem, unPorCx: item.unidadesPorCaixa });
+      }
+    }
+    return map;
+  }, [dashData]);
+
+  // Agrupar variações por pai
+  const grouped = useMemo(() => {
+    const map = new Map<string, Array<{ childCode: string; conversionFactor: string }>>(); 
+    if (variants) {
+      for (const v of variants) {
+        const list = map.get(v.parentCode) || [];
+        list.push({ childCode: v.childCode, conversionFactor: v.conversionFactor });
+        map.set(v.parentCode, list);
+      }
+    }
+    return map;
+  }, [variants]);
+
+  const handleAdd = () => {
+    if (!parentCode || !childCode) {
+      toast.error("Selecione o produto pai e o produto filho");
+      return;
+    }
+    if (parentCode === childCode) {
+      toast.error("Produto pai e filho não podem ser iguais");
+      return;
+    }
+    const parentInfo = productMap.get(parentCode);
+    const childInfo = productMap.get(childCode);
+    if (!parentInfo?.unPorCx || !childInfo?.unPorCx) {
+      toast.error("Ambos os produtos precisam ter unidades por caixa definidas");
+      return;
+    }
+    const factor = childInfo.unPorCx / parentInfo.unPorCx;
+    addMutation.mutate({ parentCode, childCode, conversionFactor: factor });
+    setChildCode("");
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <GitBranch className="w-5 h-5 text-teal-600" />
+              Variações de Produto
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">
+              Configure quais produtos são variações de um produto pai. Quando uma variação é vendida, o estoque do pai é descontado proporcionalmente.
+            </p>
+          </div>
+          <Button onClick={() => setShowForm(!showForm)} size="sm" className="bg-teal-600 hover:bg-teal-700">
+            <Plus className="w-4 h-4 mr-1" /> Nova Variação
+          </Button>
+        </div>
+
+        {/* Formulário para adicionar */}
+        {showForm && (
+          <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-4">
+            <p className="text-sm font-medium text-teal-800 mb-3">Adicionar Variação</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">Produto Pai (estoque principal)</label>
+                <Select value={parentCode} onValueChange={setParentCode}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Selecione o pai..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(productMap.entries()).map(([code, info]) => (
+                      <SelectItem key={code} value={code}>
+                        {code} - {info.descricao?.substring(0, 50)} ({info.unPorCx || '?'} un/cx)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">Produto Filho (variação)</label>
+                <Select value={childCode} onValueChange={setChildCode}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Selecione o filho..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(productMap.entries()).filter(([code]) => code !== parentCode).map(([code, info]) => (
+                      <SelectItem key={code} value={code}>
+                        {code} - {info.descricao?.substring(0, 50)} ({info.unPorCx || '?'} un/cx)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {parentCode && childCode && productMap.get(parentCode)?.unPorCx && productMap.get(childCode)?.unPorCx && (
+              <div className="mt-3 p-2 bg-white rounded border border-teal-200">
+                <p className="text-xs text-slate-600">
+                  Fator de conversão calculado: <strong className="text-teal-700">
+                    {(productMap.get(childCode)!.unPorCx! / productMap.get(parentCode)!.unPorCx!).toFixed(4)}x
+                  </strong>
+                  <span className="text-slate-400 ml-2">
+                    ({productMap.get(childCode)!.unPorCx} un ÷ {productMap.get(parentCode)!.unPorCx} un)
+                  </span>
+                </p>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  1 cx vendida do filho = {(productMap.get(childCode)!.unPorCx! / productMap.get(parentCode)!.unPorCx!).toFixed(4)} cx descontada do pai
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2 mt-3">
+              <Button onClick={handleAdd} size="sm" className="bg-teal-600 hover:bg-teal-700" disabled={addMutation.isPending}>
+                {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
+                Adicionar
+              </Button>
+              <Button onClick={() => { setShowForm(false); setParentCode(''); setChildCode(''); }} size="sm" variant="outline">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Lista de variações agrupadas por pai */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+          </div>
+        ) : grouped.size === 0 ? (
+          <div className="text-center py-8 text-slate-400">
+            <GitBranch className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">Nenhuma variação configurada</p>
+            <p className="text-xs mt-1">Clique em "Nova Variação" para começar</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {Array.from(grouped.entries()).map(([pCode, children]) => {
+              const parentInfo = productMap.get(pCode);
+              return (
+                <div key={pCode} className="border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="bg-slate-50 px-4 py-3 flex items-center gap-3">
+                    <Package className="w-4 h-4 text-teal-600" />
+                    <div className="flex-1">
+                      <span className="font-medium text-sm text-slate-800">{pCode}</span>
+                      <span className="text-xs text-slate-500 ml-2">{parentInfo?.descricao?.substring(0, 60) || 'Produto não encontrado'}</span>
+                      {parentInfo?.unPorCx && <span className="text-xs text-teal-600 ml-2">({parentInfo.unPorCx} un/cx)</span>}
+                    </div>
+                    <Badge variant="outline" className="text-xs text-teal-600">{children.length} variaç{children.length > 1 ? 'ões' : 'ão'}</Badge>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {children.map((child) => {
+                      const childInfo = productMap.get(child.childCode);
+                      return (
+                        <div key={child.childCode} className="px-4 py-2 flex items-center gap-3 hover:bg-slate-50">
+                          <span className="text-slate-300 text-sm">└</span>
+                          <div className="flex-1">
+                            <span className="text-sm text-slate-700">{child.childCode}</span>
+                            <span className="text-xs text-slate-500 ml-2">{childInfo?.descricao?.substring(0, 50) || '?'}</span>
+                            {childInfo?.unPorCx && <span className="text-xs text-slate-400 ml-1">({childInfo.unPorCx} un/cx)</span>}
+                          </div>
+                          <span className="text-xs font-mono text-teal-600 bg-teal-50 px-2 py-0.5 rounded">
+                            {parseFloat(child.conversionFactor).toFixed(4)}x
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-600 hover:bg-red-50 h-7 w-7 p-0"
+                            onClick={() => removeMutation.mutate({ parentCode: pCode, childCode: child.childCode })}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Settings Page ────────────────────────────────────────────────────────────
 export default function SettingsPage() {
+  const { hasGranularAccess } = useOperator();
   // TEMPORÁRIO: senha desabilitada
   const [adminPassword, setAdminPassword] = useState<string>("bypass");
-  const [activeTab, setActiveTab] = useState<"targets" | "alerts" | "products" | "data" | "bank" | "password">("targets");
+  const [activeTab, setActiveTab] = useState<"passwords" | "alerts" | "products" | "data" | "bank" | "variants" | "visibility">("passwords");
 
   // if (!adminPassword) {
   //   return <PasswordGate onUnlock={setAdminPassword} />;
   // }
 
-  const tabs = [
-    { id: "targets" as const, label: "Metas", icon: Target, color: "text-teal-600" },
-    { id: "products" as const, label: "Produtos", icon: ArrowRightLeft, color: "text-violet-600" },
-    { id: "alerts" as const, label: "Alertas", icon: Bell, color: "text-amber-600" },
-    { id: "bank" as const, label: "Bancos", icon: Landmark, color: "text-indigo-600" },
-    { id: "data" as const, label: "Dados", icon: Package, color: "text-blue-600" },
-    { id: "password" as const, label: "Senha", icon: KeyRound, color: "text-red-500" },
+  const allTabs = [
+    { id: "passwords" as const, label: "Senhas", icon: Lock, color: "text-red-600", perm: "cfg.senhas" },
+    { id: "products" as const, label: "Produtos", icon: ArrowRightLeft, color: "text-violet-600", perm: "cfg.produtos" },
+    { id: "alerts" as const, label: "Alertas", icon: Bell, color: "text-amber-600", perm: "cfg.alertas" },
+    { id: "visibility" as const, label: "Visibilidade", icon: Eye, color: "text-cyan-600", perm: "cfg.alertas" },
+    { id: "bank" as const, label: "Bancos", icon: Landmark, color: "text-indigo-600", perm: "cfg.bancos" },
+    { id: "variants" as const, label: "Variações", icon: GitBranch, color: "text-teal-500", perm: "cfg.variacoes" },
+    { id: "data" as const, label: "Dados", icon: Package, color: "text-blue-600", perm: "cfg.dados" },
   ];
+  const tabs = allTabs.filter(t => hasGranularAccess(t.perm));
 
   return (
     <div className="min-h-screen bg-slate-50">
       <TopNav />
+
+      <div className="container">
+        <div className="text-center py-4">
+          <h2 className="text-2xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+            <span className="text-slate-700">Configurações</span>
+            <span className="text-teal-600 ml-2">Grupo Fox</span>
+          </h2>
+          <p className="text-xs text-slate-400 mt-1 tracking-widest uppercase">Senhas, Produtos, Alertas e Dados</p>
+        </div>
+      </div>
 
       {/* Navigation Tabs */}
       <div className="bg-white border-b border-slate-200">
@@ -1549,13 +2166,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Content */}
-      <main className={`container py-6 ${activeTab === "products" ? "max-w-7xl px-6" : "max-w-3xl"}`}>
-        {activeTab === "targets" && <SalesTargetsPanel adminPassword={adminPassword} />}
+      <main className={`container py-6 ${(activeTab === "products" || activeTab === "passwords") ? "max-w-7xl px-6" : "max-w-3xl"}`}>
+        {activeTab === "passwords" && <OperatorManagementPanel />}
         {activeTab === "products" && <ProductSegmentsPanel adminPassword={adminPassword} />}
         {activeTab === "alerts" && <AlertSettingsPanel adminPassword={adminPassword} />}
+        {activeTab === "visibility" && <FeatureTogglesPanel />}
         {activeTab === "bank" && <BankBalancesPanel />}
+        {activeTab === "variants" && <VariantsPanel />}
         {activeTab === "data" && <DataInfoPanel />}
-        {activeTab === "password" && <ChangePasswordPanel adminPassword={adminPassword} />}
       </main>
     </div>
   );

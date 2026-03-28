@@ -1,0 +1,1 @@
+ALTER TABLE `operators` ADD `accessValorizacao` boolean DEFAULT false NOT NULL;

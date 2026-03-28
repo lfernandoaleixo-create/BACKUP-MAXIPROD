@@ -8,7 +8,7 @@
  * Usa node-cron para agendamento. O timezone é America/Sao_Paulo (UTC-3).
  */
 import { schedule, type ScheduledTask } from "node-cron";
-import { runGraphQLSync } from "./maxiprodGraphQL";
+import { runGraphQLSync, syncBankBalances, syncPaidAccountsSnapshots } from "./maxiprodGraphQL";
 
 let scheduledTask: ScheduledTask | null = null;
 
@@ -28,6 +28,23 @@ export function startScheduler(): void {
       const result = await runGraphQLSync();
       if (result.success) {
         console.log(`[Scheduler] Sync completed successfully: ${result.counts?.stock} estoque, ${result.counts?.openOrders} pedidos, ${result.counts?.purchaseOrders} POs, ${result.counts?.salesOrders} vendas`);
+        // Sync saldos bancários do balancete contábil (SOMENTE LEITURA)
+        try {
+          const bankResult = await syncBankBalances();
+          console.log(`[Scheduler] Bank balances synced: ${bankResult.accounts} contas, total R$ ${bankResult.totalSaldo.toFixed(2)}`);
+        } catch (bankErr: any) {
+          console.error(`[Scheduler] Bank balance sync failed: ${bankErr.message}`);
+        }
+        // Sync paid accounts snapshots (once per hour, at the top of the hour)
+        const now = new Date();
+        if (now.getMinutes() < 5) {
+          try {
+            await syncPaidAccountsSnapshots();
+            console.log(`[Scheduler] Paid accounts snapshots synced`);
+          } catch (paidErr: any) {
+            console.error(`[Scheduler] Paid accounts sync failed: ${paidErr.message}`);
+          }
+        }
       } else {
         console.error(`[Scheduler] Sync failed: ${result.error}`);
       }

@@ -1,0 +1,82 @@
+{
+  "query": "\nSELECT 'users' as tabela, COUNT(*) as registros FROM users\nUNION ALL SELECT 'stock_items', COUNT(*) FROM stock_items\nUNION ALL SELECT 'order_items', COUNT(*) FROM order_items\nUNION ALL SELECT 'purchase_order_items', COUNT(*) FROM purchase_order_items\nUNION ALL SELECT 'sales_orders', COUNT(*) FROM sales_orders\nUNION ALL SELECT 'sales_invoice_items', COUNT(*) FROM sales_invoice_items\nUNION ALL SELECT 'accounts_receivable', COUNT(*) FROM accounts_receivable\nUNION ALL SELECT 'accounts_payable', COUNT(*) FROM accounts_payable\nUNION ALL SELECT 'bank_accounts', COUNT(*) FROM bank_accounts\nUNION ALL SELECT 'bank_transactions', COUNT(*) FROM bank_transactions\nUNION ALL SELECT 'product_classification', COUNT(*) FROM product_classification\nUNION ALL SELECT 'product_pricing', COUNT(*) FROM product_pricing\nUNION ALL SELECT 'product_visibility', COUNT(*) FROM product_visibility\nUNION ALL SELECT 'product_segment_overrides', COUNT(*) FROM product_segment_overrides\nUNION ALL SELECT 'app_settings', COUNT(*) FROM app_settings\nUNION ALL SELECT 'sales_targets', COUNT(*) FROM sales_targets\nUNION ALL SELECT 'dashboard_data', COUNT(*) FROM dashboard_data\nUNION ALL SELECT 'scraper_status', COUNT(*) FROM scraper_status;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT 'users' as tabela, COUNT(*) as registros FROM users\nUNION ALL SELECT 'stock_items', COUNT(*) FROM stock_items\nUNION ALL SELECT 'order_items', COUNT(*) FROM order_items\nUNION ALL SELECT 'purchase_order_items', COUNT(*) FROM purchase_order_items\nUNION ALL SELECT 'sales_orders', COUNT(*) FROM sales_orders\nUNION ALL SELECT 'sales_invoice_items', COUNT(*) FROM sales_invoice_items\nUNION ALL SELECT 'accounts_receivable', COUNT(*) FROM accounts_receivable\nUNION ALL SELECT 'accounts_payable', COUNT(*) FROM accounts_payable\nUNION ALL SELECT 'bank_accounts', COUNT(*) FROM bank_accounts\nUNION ALL SELECT 'bank_transactions', COUNT(*) FROM bank_transactions\nUNION ALL SELECT 'product_classification', COUNT(*) FROM product_classification\nUNION ALL SELECT 'product_pricing', COUNT(*) FROM product_pricing\nUNION ALL SELECT 'product_visibility', COUNT(*) FROM product_visibility\nUNION ALL SELECT 'product_segment_overrides', COUNT(*) FROM product_segment_overrides\nUNION ALL SELECT 'app_settings', COUNT(*) FROM app_settings\nUNION ALL SELECT 'sales_targets', COUNT(*) FROM sales_targets\nUNION ALL SELECT 'dashboard_data', COUNT(*) FROM dashboard_data\nUNION ALL SELECT 'scraper_status', COUNT(*) FROM scraper_status;\n",
+  "rows": [
+    {
+      "tabela": "stock_items",
+      "registros": "66"
+    },
+    {
+      "tabela": "users",
+      "registros": "1"
+    },
+    {
+      "tabela": "purchase_order_items",
+      "registros": "43"
+    },
+    {
+      "tabela": "order_items",
+      "registros": "114"
+    },
+    {
+      "tabela": "sales_orders",
+      "registros": "1293"
+    },
+    {
+      "tabela": "sales_invoice_items",
+      "registros": "0"
+    },
+    {
+      "tabela": "bank_accounts",
+      "registros": "0"
+    },
+    {
+      "tabela": "accounts_receivable",
+      "registros": "647"
+    },
+    {
+      "tabela": "product_classification",
+      "registros": "0"
+    },
+    {
+      "tabela": "bank_transactions",
+      "registros": "0"
+    },
+    {
+      "tabela": "product_pricing",
+      "registros": "0"
+    },
+    {
+      "tabela": "accounts_payable",
+      "registros": "1857"
+    },
+    {
+      "tabela": "product_visibility",
+      "registros": "0"
+    },
+    {
+      "tabela": "app_settings",
+      "registros": "0"
+    },
+    {
+      "tabela": "sales_targets",
+      "registros": "0"
+    },
+    {
+      "tabela": "product_segment_overrides",
+      "registros": "0"
+    },
+    {
+      "tabela": "scraper_status",
+      "registros": "1"
+    },
+    {
+      "tabela": "dashboard_data",
+      "registros": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\tregistros\nstock_items\t66\nusers\t1\npurchase_order_items\t43\norder_items\t114\nsales_orders\t1293\nsales_invoice_items\t0\nbank_accounts\t0\naccounts_receivable\t647\nproduct_classification\t0\nbank_transactions\t0\nproduct_pricing\t0\naccounts_payable\t1857\nproduct_visibility\t0\napp_settings\t0\nsales_targets\t0\nproduct_segment_overrides\t0\nscraper_status\t1\ndashboard_data\t1\n",
+  "stderr": "",
+  "execution_time_ms": 104
+}

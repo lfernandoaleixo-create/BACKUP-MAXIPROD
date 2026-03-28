@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE `bank_accounts` ADD COLUMN `codigoEstruturado` varchar(50) AFTER `updatedAt`;\nALTER TABLE `bank_accounts` ADD COLUMN `contaContabilId` bigint AFTER `codigoEstruturado`;\nALTER TABLE `bank_accounts` ADD COLUMN `saldoContabil` decimal(18,2) AFTER `contaContabilId`;\nALTER TABLE `bank_accounts` ADD COLUMN `totalDebitos` decimal(18,2) AFTER `saldoContabil`;\nALTER TABLE `bank_accounts` ADD COLUMN `totalCreditos` decimal(18,2) AFTER `totalDebitos`;\nALTER TABLE `bank_accounts` ADD COLUMN `saldoContabilAtualizadoEm` varchar(50) AFTER `totalCreditos`;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nALTER TABLE `bank_accounts` ADD COLUMN `codigoEstruturado` varchar(50) AFTER `updatedAt`;\nALTER TABLE `bank_accounts` ADD COLUMN `contaContabilId` bigint AFTER `codigoEstruturado`;\nALTER TABLE `bank_accounts` ADD COLUMN `saldoContabil` decimal(18,2) AFTER `contaContabilId`;\nALTER TABLE `bank_accounts` ADD COLUMN `totalDebitos` decimal(18,2) AFTER `saldoContabil`;\nALTER TABLE `bank_accounts` ADD COLUMN `totalCreditos` decimal(18,2) AFTER `totalDebitos`;\nALTER TABLE `bank_accounts` ADD COLUMN `saldoContabilAtualizadoEm` varchar(50) AFTER `totalCreditos`;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1395
+}

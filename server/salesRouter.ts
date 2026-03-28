@@ -1,8 +1,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, productSegmentOverrides } from "../drizzle/schema";
-import { sql, and, gte, lte, desc, asc, inArray } from "drizzle-orm";
+import { salesOrders, orderItems } from "../drizzle/schema";
+import { sql, and, gte, lte } from "drizzle-orm";
 
 /**
  * Sales analytics router
@@ -36,6 +36,8 @@ export const salesRouter = router({
         representante: z.string().nullable().optional(),
         segmento: z.string().nullable().optional(),
         regiao: z.string().nullable().optional(),
+        estadoConfiguravel: z.string().nullable().optional(),
+        crmSegmento: z.string().nullable().optional(),
       })),
     }))
     .mutation(async ({ input }) => {
@@ -67,6 +69,8 @@ export const salesRouter = router({
         representante: item.representante || null,
         segmento: item.segmento || null,
         regiao: item.regiao || null,
+        estadoConfiguravel: item.estadoConfiguravel || null,
+        crmSegmento: item.crmSegmento || null,
       }));
 
       // Insert in batches of 50
@@ -84,26 +88,49 @@ export const salesRouter = router({
     .input(z.object({
       startDate: z.string(), // ISO date string
       endDate: z.string(),   // ISO date string
+      grupo: z.enum(["all", "importacao_revenda", "industrializacao", "importacao_mp"]).optional().default("all"),
+      subgrupo: z.string().optional().default("all"),
+      crmSegmento: z.string().optional().default("all"),
+      // Keep legacy team for backward compat
       team: z.enum(["all", "industrializacao", "importacao"]).optional().default("all"),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return null;
 
-      // Default segment classification by codigoGrupo
-      const importacaoGroups = ["07", "08", "20", "VARETA", "ESPETO"];
-      const industrializacaoGroups = ["02", "03", "04", "06", "09", "11", "13", "14", "15", "PALITO"];
+      // Map estadoConfiguravel to grupo
+      const estadoToGrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        return "outros";
+      };
 
-      // Load product segment overrides
-      const overrides = await db.select().from(productSegmentOverrides);
-      const overrideMap = new Map(overrides.map(o => [o.descricao, o.segment]));
+      // Map estadoConfiguravel to subgrupo
+      const estadoToSubgrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU") return "bambu";
+        if (e === "FIBRA") return "fibra";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        return "outros";
+      };
+
+      // Legacy team mapping
+      const teamToGrupo = (team: string): string => {
+        if (team === "importacao") return "importacao_revenda";
+        if (team === "industrializacao") return "industrializacao";
+        return "all";
+      };
 
       const conditions = [
         gte(salesOrders.dataEmissao, input.startDate),
         lte(salesOrders.dataEmissao, input.endDate + "T23:59:59.999Z"),
       ];
 
-      // Query all items in the date range (filter by team in-memory to respect overrides)
       const allItems = await db
         .select()
         .from(salesOrders)
@@ -111,19 +138,38 @@ export const salesRouter = router({
           and(...conditions)
         );
 
-      // Apply team filter using overrides
-      const getItemSegment = (item: typeof allItems[0]) => {
-        const override = overrideMap.get(item.descricao || "");
-        if (override) return override;
-        const grupo = (item.codigoGrupo || "").toUpperCase();
-        if (importacaoGroups.includes(grupo)) return "importacao";
-        if (industrializacaoGroups.includes(grupo)) return "industrializacao";
-        return "outros";
+      // Determine effective grupo filter (new filters take priority over legacy team)
+      const effectiveGrupo = input.grupo !== "all" ? input.grupo : teamToGrupo(input.team || "all");
+
+      // REGRA DE NEGÓCIO: Excluir pedidos em "Digitação" - não são confirmados
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
       };
 
-      let items = allItems;
-      if (input.team !== "all") {
-        items = allItems.filter(item => getItemSegment(item) === input.team);
+      // REGRA DE NEGÓCIO: Excluir itens que caem em "outros" (CANCELADO, GILSON, NULL)
+      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
+      const isAmostraBonif = (estado: string | null) => {
+        if (!estado) return false;
+        const e = estado.toUpperCase();
+        return e.includes("AMOSTRA") || e.includes("BONIFICA");
+      };
+      const isOutros = (estado: string | null) => {
+        if (isAmostraBonif(estado)) return false;
+        return estadoToGrupo(estado) === "outros";
+      };
+
+      // Apply hierarchical filters
+      let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      if (effectiveGrupo !== "all") {
+        items = items.filter(item => estadoToGrupo(item.estadoConfiguravel) === effectiveGrupo);
+      }
+      if (input.subgrupo !== "all") {
+        items = items.filter(item => estadoToSubgrupo(item.estadoConfiguravel) === input.subgrupo);
+      }
+      if (input.crmSegmento !== "all") {
+        items = items.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
       }
 
       if (items.length === 0) {
@@ -170,9 +216,15 @@ export const salesRouter = router({
             sql`${salesOrders.dataEmissao} < ${input.startDate}`
           )
         );
-      let anteriorItems = allAFaturarAnterior;
-      if (input.team !== "all") {
-        anteriorItems = allAFaturarAnterior.filter(item => getItemSegment(item) === input.team);
+      let anteriorItems = allAFaturarAnterior.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      if (effectiveGrupo !== "all") {
+        anteriorItems = anteriorItems.filter(item => estadoToGrupo(item.estadoConfiguravel) === effectiveGrupo);
+      }
+      if (input.subgrupo !== "all") {
+        anteriorItems = anteriorItems.filter(item => estadoToSubgrupo(item.estadoConfiguravel) === input.subgrupo);
+      }
+      if (input.crmSegmento !== "all") {
+        anteriorItems = anteriorItems.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
       }
       const totalAFaturarAnterior = anteriorItems
         .reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
@@ -198,14 +250,22 @@ export const salesRouter = router({
         .sort((a, b) => a.month.localeCompare(b.month));
 
       // By day
-      const dayMap = new Map<string, { value: number; orders: Set<string>; items: number }>();
+      const dayMap = new Map<string, { value: number; orders: Set<string>; items: number; orderDetails: Map<string, { cliente: string; valor: number }> }>();
       for (const item of items) {
         if (!item.dataEmissao) continue;
         const dayKey = item.dataEmissao.substring(0, 10); // YYYY-MM-DD
-        if (!dayMap.has(dayKey)) dayMap.set(dayKey, { value: 0, orders: new Set(), items: 0 });
+        if (!dayMap.has(dayKey)) dayMap.set(dayKey, { value: 0, orders: new Set(), items: 0, orderDetails: new Map() });
         const d = dayMap.get(dayKey)!;
         d.value += Number(item.valorTotal || 0);
-        if (item.pedido) d.orders.add(item.pedido);
+        if (item.pedido) {
+          d.orders.add(item.pedido);
+          const existing = d.orderDetails.get(item.pedido);
+          if (existing) {
+            existing.valor += Number(item.valorTotal || 0);
+          } else {
+            d.orderDetails.set(item.pedido, { cliente: item.clienteApelido || item.cliente || "—", valor: Number(item.valorTotal || 0) });
+          }
+        }
         d.items++;
       }
       const byDay = Array.from(dayMap.entries())
@@ -214,6 +274,11 @@ export const salesRouter = router({
           value: Math.round(data.value * 100) / 100,
           orders: data.orders.size,
           items: data.items,
+          orderList: Array.from(data.orderDetails.entries()).map(([pedido, det]) => ({
+            pedido,
+            cliente: det.cliente,
+            valor: Math.round(det.valor * 100) / 100,
+          })).sort((a, b) => b.valor - a.valor),
         }))
         .sort((a, b) => a.day.localeCompare(b.day));
 
@@ -306,16 +371,17 @@ export const salesRouter = router({
         .map(([segmento, value]) => ({ segmento, value: Math.round(value * 100) / 100 }))
         .sort((a, b) => b.value - a.value);
 
-      // Segment breakdown for KPI cards
-      const segmentLabels: Record<string, string> = {
-        importacao: "Bambu",
+      // Segment breakdown for KPI cards - uses filtered items to reflect active filters
+      const grupoLabels: Record<string, string> = {
+        importacao_revenda: "Revenda (Bambu/Fibra)",
         industrializacao: "Industrializado",
-        outros: "Outros",
+        importacao_mp: "Import. Mat\u00e9ria-Prima",
       };
       const segBreakdown: Record<string, { value: number; faturado: number; aFaturar: number }> = {};
-      for (const item of allItems) {
-        const seg = getItemSegment(item);
-        const label = segmentLabels[seg] || seg;
+      for (const item of items) {
+        const seg = estadoToGrupo(item.estadoConfiguravel);
+        if (seg === "outros") continue; // Excluir itens "outros"
+        const label = grupoLabels[seg] || seg;
         if (!segBreakdown[label]) segBreakdown[label] = { value: 0, faturado: 0, aFaturar: 0 };
         segBreakdown[label].value += Number(item.valorTotal || 0);
         if (item.estadoItem === "Faturado") segBreakdown[label].faturado += Number(item.valorTotal || 0);
@@ -323,9 +389,10 @@ export const salesRouter = router({
       }
       // Segment breakdown for A Faturar Anterior
       const segBreakdownAnterior: Record<string, number> = {};
-      for (const item of allAFaturarAnterior) {
-        const seg = getItemSegment(item);
-        const label = segmentLabels[seg] || seg;
+      for (const item of anteriorItems) {
+        const seg = estadoToGrupo(item.estadoConfiguravel);
+        if (seg === "outros") continue; // Excluir itens "outros"
+        const label = grupoLabels[seg] || seg;
         segBreakdownAnterior[label] = (segBreakdownAnterior[label] || 0) + Number(item.valorTotal || 0);
       }
       // Build final breakdown arrays
@@ -335,6 +402,28 @@ export const salesRouter = router({
         faturado: Math.round(d.faturado * 100) / 100,
         aFaturar: Math.round(d.aFaturar * 100) / 100,
         aFaturarAnterior: Math.round((segBreakdownAnterior[name] || 0) * 100) / 100,
+      })).sort((a, b) => b.value - a.value);
+
+      // CRM Segment breakdown - breakdown by crmSegmento field
+      const crmBreakdown: Record<string, { value: number; faturado: number; aFaturar: number }> = {};
+      for (const item of items) {
+        const crm = item.crmSegmento || "Sem CRM";
+        if (!crmBreakdown[crm]) crmBreakdown[crm] = { value: 0, faturado: 0, aFaturar: 0 };
+        crmBreakdown[crm].value += Number(item.valorTotal || 0);
+        if (item.estadoItem === "Faturado") crmBreakdown[crm].faturado += Number(item.valorTotal || 0);
+        if (item.estadoItem === "A faturar") crmBreakdown[crm].aFaturar += Number(item.valorTotal || 0);
+      }
+      const crmBreakdownAnterior: Record<string, number> = {};
+      for (const item of anteriorItems) {
+        const crm = item.crmSegmento || "Sem CRM";
+        crmBreakdownAnterior[crm] = (crmBreakdownAnterior[crm] || 0) + Number(item.valorTotal || 0);
+      }
+      const byCrmSegmentKPI = Object.entries(crmBreakdown).map(([name, d]) => ({
+        name,
+        value: Math.round(d.value * 100) / 100,
+        faturado: Math.round(d.faturado * 100) / 100,
+        aFaturar: Math.round(d.aFaturar * 100) / 100,
+        aFaturarAnterior: Math.round((crmBreakdownAnterior[name] || 0) * 100) / 100,
       })).sort((a, b) => b.value - a.value);
 
       return {
@@ -347,6 +436,7 @@ export const salesRouter = router({
         totalAFaturarAnterior: Math.round(totalAFaturarAnterior * 100) / 100,
         ticketMedio: uniqueOrders.size > 0 ? Math.round((totalValue / uniqueOrders.size) * 100) / 100 : 0,
         bySegmentKPI,
+        byCrmSegmentKPI,
         byMonth,
         byDay,
         byWeek,
@@ -358,42 +448,172 @@ export const salesRouter = router({
     }),
 
   /**
+   * Get available hierarchical filter options from sales_orders data
+   */
+  getAvailableFilters: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { grupos: [], subgrupos: {}, crmSegmentos: [] };
+
+    const allItems = (await db.select({
+      estadoConfiguravel: salesOrders.estadoConfiguravel,
+      crmSegmento: salesOrders.crmSegmento,
+      estadoNota: salesOrders.estadoNota,
+    }).from(salesOrders)).filter(item => {
+      // REGRA DE NEGÓCIO: Excluir pedidos em "Digitação"
+      if (!item.estadoNota) return true;
+      const n = item.estadoNota.toUpperCase();
+      return n !== 'DIGITAÇÃO' && n !== 'DIGITACAO';
+    });
+
+    // Map estadoConfiguravel to grupo/subgrupo
+    const estadoToGrupo = (estado: string | null): string => {
+      if (!estado) return "outros";
+      const e = estado.toUpperCase();
+      if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+      if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+      if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+      return "outros";
+    };
+
+    const estadoToSubgrupo = (estado: string | null): string => {
+      if (!estado) return "outros";
+      const e = estado.toUpperCase();
+      if (e === "BAMBU") return "bambu";
+      if (e === "FIBRA") return "fibra";
+      if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
+      if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+      return "outros";
+    };
+
+    // Collect unique values
+    const grupoSet = new Set<string>();
+    const subgrupoMap: Record<string, Set<string>> = {};
+    const crmSegmentoSet = new Set<string>();
+
+    for (const item of allItems) {
+      const grupo = estadoToGrupo(item.estadoConfiguravel);
+      if (grupo === "outros") continue; // Excluir itens "outros"
+      const subgrupo = estadoToSubgrupo(item.estadoConfiguravel);
+      grupoSet.add(grupo);
+      if (!subgrupoMap[grupo]) subgrupoMap[grupo] = new Set();
+      subgrupoMap[grupo].add(subgrupo);
+      if (item.crmSegmento) crmSegmentoSet.add(item.crmSegmento.toUpperCase());
+    }
+
+    const grupoLabels: Record<string, string> = {
+      importacao_revenda: "Prod. Importados (Revenda)",
+      industrializacao: "Industrializados",
+      importacao_mp: "Import. Mat\u00e9ria-Prima",
+      outros: "Outros",
+    };
+
+    const subgrupoLabels: Record<string, string> = {
+      bambu: "Bambu",
+      fibra: "Fibra",
+      madeira: "Madeira",
+      madeira_importada: "Madeira Importada",
+      outros: "Outros",
+    };
+
+    const grupos = Array.from(grupoSet)
+      .filter(g => g !== "outros")
+      .map(g => ({
+        value: g,
+        label: grupoLabels[g] || g,
+      }));
+
+    const subgrupos: Record<string, Array<{ value: string; label: string }>> = {};
+    for (const [grupo, subs] of Object.entries(subgrupoMap)) {
+      subgrupos[grupo] = Array.from(subs).map(s => ({
+        value: s,
+        label: subgrupoLabels[s] || s,
+      }));
+    }
+
+    const crmSegmentos = Array.from(crmSegmentoSet).sort().map(s => ({
+      value: s,
+      label: s,
+    }));
+
+    return { grupos, subgrupos, crmSegmentos };
+  }),
+
+  /**
    * Get cumulative daily data for current month, last month, and best month
    * Used for the comparison line chart
    */
   getCumulativeComparison: publicProcedure
     .input(z.object({
+      grupo: z.enum(["all", "importacao_revenda", "industrializacao", "importacao_mp"]).optional().default("all"),
+      subgrupo: z.string().optional().default("all"),
+      crmSegmento: z.string().optional().default("all"),
+      // Legacy
       team: z.enum(["all", "industrializacao", "importacao"]).optional().default("all"),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return null;
 
-      // Default segment classification by codigoGrupo
-      const importacaoGroups = ["07", "08", "20", "VARETA", "ESPETO"];
-      const industrializacaoGroups = ["02", "03", "04", "06", "09", "11", "13", "14", "15", "PALITO"];
-
-      // Load product segment overrides
-      const overrides = await db.select().from(productSegmentOverrides);
-      const overrideMap = new Map(overrides.map(o => [o.descricao, o.segment]));
-
-      const getItemSegment = (item: any) => {
-        const override = overrideMap.get(item.descricao || "");
-        if (override) return override;
-        const grupo = (item.codigoGrupo || "").toUpperCase();
-        if (importacaoGroups.includes(grupo)) return "importacao";
-        if (industrializacaoGroups.includes(grupo)) return "industrializacao";
+      // Map estadoConfiguravel to grupo
+      const estadoToGrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
         return "outros";
       };
 
-      // Get ALL sales orders then filter by team in-memory (respecting overrides)
+      const estadoToSubgrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU") return "bambu";
+        if (e === "FIBRA") return "fibra";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        return "outros";
+      };
+
+      const teamToGrupo = (team: string): string => {
+        if (team === "importacao") return "importacao_revenda";
+        if (team === "industrializacao") return "industrializacao";
+        return "all";
+      };
+
       const rawItems = await db
         .select()
         .from(salesOrders);
 
-      const allItems = input.team !== "all"
-        ? rawItems.filter(item => getItemSegment(item) === input.team)
-        : rawItems;
+      const effectiveGrupo = input.grupo !== "all" ? input.grupo : teamToGrupo(input.team || "all");
+
+      // REGRA DE NEGÓCIO: Excluir pedidos em "Digitação"
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+
+      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
+      const isAmostraBonif = (estado: string | null) => {
+        if (!estado) return false;
+        const e = estado.toUpperCase();
+        return e.includes("AMOSTRA") || e.includes("BONIFICA");
+      };
+      const isOutros = (estado: string | null) => {
+        if (isAmostraBonif(estado)) return false;
+        return estadoToGrupo(estado) === "outros";
+      };
+
+      let allItems = rawItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      if (effectiveGrupo !== "all") {
+        allItems = allItems.filter(item => estadoToGrupo(item.estadoConfiguravel) === effectiveGrupo);
+      }
+      if (input.subgrupo !== "all") {
+        allItems = allItems.filter(item => estadoToSubgrupo(item.estadoConfiguravel) === input.subgrupo);
+      }
+      if (input.crmSegmento !== "all") {
+        allItems = allItems.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
+      }
 
       if (allItems.length === 0) return { currentMonth: [], lastMonth: [], bestMonth: [], bestMonthLabel: "" };
 
@@ -487,7 +707,10 @@ export const salesRouter = router({
         maxDate: sql<string>`MAX(dataEmissao)`,
         totalCount: sql<number>`COUNT(*)`,
       })
-      .from(salesOrders);
+      .from(salesOrders)
+      .where(
+        sql`(${salesOrders.estadoNota} IS NULL OR UPPER(${salesOrders.estadoNota}) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))`
+      );
 
     if (!result[0] || result[0].totalCount === 0) {
       return { minDate: null, maxDate: null, totalCount: 0 };
@@ -499,4 +722,638 @@ export const salesRouter = router({
       totalCount: result[0].totalCount,
     };
   }),
+
+  /**
+   * Get orders list with items for the given date range
+   * Groups sales_orders rows by pedido number, returns each order with its items
+   */
+  getOrders: publicProcedure
+    .input(z.object({
+      startDate: z.string(),
+      endDate: z.string(),
+      grupo: z.enum(["all", "importacao_revenda", "industrializacao", "importacao_mp"]).optional().default("all"),
+      subgrupo: z.string().optional().default("all"),
+      crmSegmento: z.string().optional().default("all"),
+      // Legacy
+      team: z.enum(["all", "industrializacao", "importacao"]).optional().default("all"),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      // Map estadoConfiguravel to grupo
+      const estadoToGrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        return "outros";
+      };
+
+      const estadoToSubgrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU") return "bambu";
+        if (e === "FIBRA") return "fibra";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        return "outros";
+      };
+
+      const teamToGrupo = (team: string): string => {
+        if (team === "importacao") return "importacao_revenda";
+        if (team === "industrializacao") return "industrializacao";
+        return "all";
+      };
+
+      const conditions = [
+        gte(salesOrders.dataEmissao, input.startDate),
+        lte(salesOrders.dataEmissao, input.endDate + "T23:59:59.999Z"),
+      ];
+
+      const allItems = await db
+        .select()
+        .from(salesOrders)
+        .where(and(...conditions));
+
+      const effectiveGrupo = input.grupo !== "all" ? input.grupo : teamToGrupo(input.team || "all");
+
+      // REGRA DE NEGÓCIO: Excluir pedidos em "Digitação"
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+
+      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
+      const isAmostraBonif = (estado: string | null) => {
+        if (!estado) return false;
+        const e = estado.toUpperCase();
+        return e.includes("AMOSTRA") || e.includes("BONIFICA");
+      };
+      const isOutros = (estado: string | null) => {
+        if (isAmostraBonif(estado)) return false;
+        return estadoToGrupo(estado) === "outros";
+      };
+
+      let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      if (effectiveGrupo !== "all") {
+        items = items.filter(item => estadoToGrupo(item.estadoConfiguravel) === effectiveGrupo);
+      }
+      if (input.subgrupo !== "all") {
+        items = items.filter(item => estadoToSubgrupo(item.estadoConfiguravel) === input.subgrupo);
+      }
+      if (input.crmSegmento !== "all") {
+        items = items.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
+      }
+
+      // Group by pedido
+      const orderMap = new Map<string, {
+        pedido: string;
+        cliente: string;
+        clienteApelido: string;
+        uf: string;
+        dataEmissao: string;
+        estadoItem: string;
+        valorTotal: number;
+        condicaoPagamento: string | null;
+        transportadora: string | null;
+        razaoSocial: string | null;
+        inscricaoEstadual: string | null;
+        endereco: { logradouro: string; numero: string; complemento: string; bairro: string; cep: string; cidade: string; uf: string } | null;
+        valorTotalPedido: number | null;
+        representante: string | null;
+        empresa: string | null;
+        itens: Array<{
+          descricao: string;
+          quantidade: number;
+          valorUnitario: number;
+          valorTotal: number;
+          estadoItem: string;
+          dataEntregaItem: string | null;
+          codigoGrupo: string;
+          codigoItem: string | null;
+          descricaoItem: string | null;
+        }>;
+      }>();
+
+      for (const item of items) {
+        const pedido = item.pedido || "S/N";
+        if (!orderMap.has(pedido)) {
+          const hasEndereco = item.enderecoLogradouro || item.enderecoCidade;
+          orderMap.set(pedido, {
+            pedido,
+            cliente: item.cliente || "—",
+            clienteApelido: item.clienteApelido || "",
+            uf: item.uf || "",
+            dataEmissao: item.dataEmissao || "",
+            estadoItem: item.estadoItem || "",
+            valorTotal: 0,
+            condicaoPagamento: item.condicaoPagamento || null,
+            transportadora: item.transportadora || null,
+            razaoSocial: item.razaoSocial || null,
+            inscricaoEstadual: item.inscricaoEstadual || null,
+            endereco: hasEndereco ? {
+              logradouro: item.enderecoLogradouro || "",
+              numero: item.enderecoNumero || "",
+              complemento: item.enderecoComplemento || "",
+              bairro: item.enderecoBairro || "",
+              cep: item.enderecoCep || "",
+              cidade: item.enderecoCidade || "",
+              uf: item.uf || "",
+            } : null,
+            valorTotalPedido: item.valorTotalPedido ? Number(item.valorTotalPedido) : null,
+            representante: item.representante || null,
+            empresa: item.empresa || null,
+            itens: [],
+          });
+        }
+        const order = orderMap.get(pedido)!;
+        const val = Number(item.valorTotal || 0);
+        order.valorTotal += val;
+        // Track mixed status
+        if (order.estadoItem !== item.estadoItem && order.itens.length > 0) {
+          order.estadoItem = "Misto";
+        }
+        order.itens.push({
+          descricao: item.descricao || "—",
+          quantidade: Number(item.quantidade || 0),
+          valorUnitario: Number(item.valorUnitario || 0),
+          valorTotal: val,
+          estadoItem: item.estadoItem || "",
+          dataEntregaItem: item.dataEntrega || null,
+          codigoGrupo: item.codigoGrupo || "",
+          codigoItem: item.codigoItem || null,
+          descricaoItem: item.descricaoItem || null,
+        });
+      }
+
+      // Convert to array and round values
+      const orders = Array.from(orderMap.values()).map(o => ({
+        ...o,
+        valorTotal: Math.round(o.valorTotal * 100) / 100,
+        itens: o.itens.map(i => ({
+          ...i,
+          valorTotal: Math.round(i.valorTotal * 100) / 100,
+          valorUnitario: Math.round(i.valorUnitario * 100) / 100,
+        })),
+      }));
+
+      // Sort by date descending (most recent first)
+      orders.sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao));
+
+      return orders;
+    }),
+
+  /**
+   * Get orders from previous months that are still not fully billed (A Faturar)
+   * Returns orders grouped by month with items
+   */
+  getPreviousUnbilled: publicProcedure
+    .input(z.object({
+      currentPeriodStart: z.string(),
+      grupo: z.enum(["all", "importacao_revenda", "industrializacao", "importacao_mp"]).optional().default("all"),
+      subgrupo: z.string().optional().default("all"),
+      crmSegmento: z.string().optional().default("all"),
+      // Legacy
+      team: z.enum(["all", "industrializacao", "importacao"]).optional().default("all"),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { months: [], orders: [] };
+
+      // Map estadoConfiguravel to grupo
+      const estadoToGrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        return "outros";
+      };
+
+      const estadoToSubgrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU") return "bambu";
+        if (e === "FIBRA") return "fibra";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        return "outros";
+      };
+
+      const teamToGrupo = (team: string): string => {
+        if (team === "importacao") return "importacao_revenda";
+        if (team === "industrializacao") return "industrializacao";
+        return "all";
+      };
+
+      // Get all items before the current period that are not Faturado
+      const allItems = await db
+        .select()
+        .from(salesOrders)
+        .where(and(
+          sql`${salesOrders.dataEmissao} < ${input.currentPeriodStart}`,
+          sql`${salesOrders.estadoItem} != 'Faturado'`,
+        ));
+
+      const effectiveGrupo = input.grupo !== "all" ? input.grupo : teamToGrupo(input.team || "all");
+
+      // REGRA DE NEGÓCIO: Excluir pedidos em "Digitação"
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+
+      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
+      const isAmostraBonif = (estado: string | null) => {
+        if (!estado) return false;
+        const e = estado.toUpperCase();
+        return e.includes("AMOSTRA") || e.includes("BONIFICA");
+      };
+      const isOutros = (estado: string | null) => {
+        if (isAmostraBonif(estado)) return false;
+        return estadoToGrupo(estado) === "outros";
+      };
+
+      let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      if (effectiveGrupo !== "all") {
+        items = items.filter(item => estadoToGrupo(item.estadoConfiguravel) === effectiveGrupo);
+      }
+      if (input.subgrupo !== "all") {
+        items = items.filter(item => estadoToSubgrupo(item.estadoConfiguravel) === input.subgrupo);
+      }
+      if (input.crmSegmento !== "all") {
+        items = items.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
+      }
+
+      // Extract distinct months
+      const monthSet = new Set<string>();
+      for (const item of items) {
+        if (item.dataEmissao) {
+          const month = item.dataEmissao.substring(0, 7); // YYYY-MM
+          monthSet.add(month);
+        }
+      }
+      const months = Array.from(monthSet).sort().reverse();
+
+      // Group by pedido
+      const orderMap = new Map<string, {
+        pedido: string;
+        cliente: string;
+        clienteApelido: string;
+        uf: string;
+        dataEmissao: string;
+        dataEntrega: string;
+        month: string;
+        estadoItem: string;
+        valorTotal: number;
+        itens: Array<{
+          descricao: string;
+          quantidade: number;
+          valorUnitario: number;
+          valorTotal: number;
+          estadoItem: string;
+          codigoItem: string | null;
+          descricaoItem: string | null;
+          dataEntregaItem: string | null;
+        }>;
+      }>();
+
+      for (const item of items) {
+        const pedido = item.pedido || "S/N";
+        const month = (item.dataEmissao || "").substring(0, 7);
+        const key = `${pedido}-${month}`;
+        if (!orderMap.has(key)) {
+          orderMap.set(key, {
+            pedido,
+            cliente: item.cliente || "\u2014",
+            clienteApelido: item.clienteApelido || "",
+            uf: item.uf || "",
+            dataEmissao: item.dataEmissao || "",
+            dataEntrega: item.dataEntrega || "",
+            month,
+            estadoItem: item.estadoItem || "",
+            valorTotal: 0,
+            itens: [],
+          });
+        }
+        const order = orderMap.get(key)!;
+        const val = Number(item.valorTotal || 0);
+        order.valorTotal += val;
+        if (order.estadoItem !== item.estadoItem && order.itens.length > 0) {
+          order.estadoItem = "Misto";
+        }
+        order.itens.push({
+          descricao: item.descricao || "\u2014",
+          quantidade: Number(item.quantidade || 0),
+          valorUnitario: Number(item.valorUnitario || 0),
+          valorTotal: val,
+          estadoItem: item.estadoItem || "",
+          codigoItem: item.codigoItem || null,
+          descricaoItem: item.descricaoItem || null,
+          dataEntregaItem: item.dataEntrega || null,
+        });
+      }
+
+      const orders = Array.from(orderMap.values()).map(o => ({
+        ...o,
+        valorTotal: Math.round(o.valorTotal * 100) / 100,
+        itens: o.itens.map(i => ({
+          ...i,
+          valorTotal: Math.round(i.valorTotal * 100) / 100,
+          valorUnitario: Math.round(i.valorUnitario * 100) / 100,
+        })),
+      }));
+
+      orders.sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao));
+
+      return { months, orders };
+    }),
+
+  /**
+   * Get draft orders (Em Digitação) - informational only, not counted in KPIs
+   */
+  getDraftOrders: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return { orders: [] };
+
+      // Query order_items where estadoNota is "Digitação"
+      const items = await db
+        .select()
+        .from(orderItems)
+        .where(
+          sql`${orderItems.estadoNota} IN ('Digitação', 'Digitacao')`
+        );
+
+      if (items.length === 0) return { orders: [] };
+
+      // Get all pedido numbers from sales_orders to exclude duplicates
+      // A pedido that exists in sales_orders (with status A faturar/Faturado) should NOT appear in Digitação
+      const salesPedidos = await db
+        .select({ pedido: salesOrders.pedido })
+        .from(salesOrders);
+      const salesPedidoSet = new Set(salesPedidos.map(p => p.pedido).filter(Boolean));
+
+      // Filter out items whose numeroPedido already exists in sales_orders
+      const filteredItems = items.filter(item => {
+        const pedido = item.numeroPedido || "S/N";
+        return !salesPedidoSet.has(pedido);
+      });
+
+      if (filteredItems.length === 0) return { orders: [] };
+
+      // Group by numeroPedido
+      const orderMap = new Map<string, {
+        pedido: string;
+        cliente: string;
+        dataEmissao: string;
+        valorTotal: number;
+        itens: Array<{
+          descricao: string;
+          codigoItem: string;
+          quantidade: number;
+          valorUnitario: number;
+          valorTotal: number;
+        }>;
+      }>();
+
+      for (const item of filteredItems) {
+        const pedido = item.numeroPedido || "S/N";
+        if (!orderMap.has(pedido)) {
+          orderMap.set(pedido, {
+            pedido,
+            cliente: item.cliente || "\u2014",
+            dataEmissao: item.dataEmissao || "",
+            valorTotal: 0,
+            itens: [],
+          });
+        }
+        const order = orderMap.get(pedido)!;
+        const val = Number(item.valorTotal || 0);
+        order.valorTotal += val;
+        order.itens.push({
+          descricao: item.descricao || "\u2014",
+          codigoItem: item.codigoItem || "",
+          quantidade: Number(item.quantidade || 0),
+          valorUnitario: Number(item.valorUnitario || 0),
+          valorTotal: val,
+        });
+      }
+
+      const orders = Array.from(orderMap.values()).map(o => ({
+        ...o,
+        valorTotal: Math.round(o.valorTotal * 100) / 100,
+        itens: o.itens.map(i => ({
+          ...i,
+          valorTotal: Math.round(i.valorTotal * 100) / 100,
+          valorUnitario: Math.round(i.valorUnitario * 100) / 100,
+        })),
+      }));
+
+      orders.sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao));
+
+      return { orders };
+    }),
+
+  /**
+   * Get ALL unbilled orders from last 90 days (combines current month + previous months)
+   * Returns unified list with all customer information, grouped by month
+   */
+  getAllUnbilled: publicProcedure
+    .input(z.object({
+      grupo: z.enum(["all", "importacao_revenda", "industrializacao", "importacao_mp"]).optional().default("all"),
+      subgrupo: z.string().optional().default("all"),
+      crmSegmento: z.string().optional().default("all"),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { months: [], orders: [], totalValue: 0 };
+
+      // Map estadoConfiguravel to grupo
+      const estadoToGrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        return "outros";
+      };
+
+      const estadoToSubgrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU") return "bambu";
+        if (e === "FIBRA") return "fibra";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
+        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        return "outros";
+      };
+
+      // Calculate 90 days ago
+      const now = new Date();
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      const cutoffDate = ninetyDaysAgo.toISOString().substring(0, 10);
+
+      // Get all non-Faturado items from last 90 days
+      const allItems = await db
+        .select()
+        .from(salesOrders)
+        .where(and(
+          sql`${salesOrders.estadoItem} != 'Faturado'`,
+          sql`${salesOrders.dataEmissao} >= ${cutoffDate}`,
+        ));
+
+      // REGRA DE NEGÓCIO: Excluir pedidos em "Digitação" e grupo "outros"
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+
+      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
+      const isAmostraBonif = (estado: string | null) => {
+        if (!estado) return false;
+        const e = estado.toUpperCase();
+        return e.includes("AMOSTRA") || e.includes("BONIFICA");
+      };
+      const isOutros = (estado: string | null) => {
+        if (isAmostraBonif(estado)) return false;
+        return estadoToGrupo(estado) === "outros";
+      };
+
+      let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+
+      // Apply filters
+      if (input.grupo !== "all") {
+        items = items.filter(item => estadoToGrupo(item.estadoConfiguravel) === input.grupo);
+      }
+      if (input.subgrupo !== "all") {
+        items = items.filter(item => estadoToSubgrupo(item.estadoConfiguravel) === input.subgrupo);
+      }
+      if (input.crmSegmento !== "all") {
+        items = items.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
+      }
+
+      // Extract distinct months
+      const monthSet = new Set<string>();
+      for (const item of items) {
+        if (item.dataEmissao) {
+          const month = item.dataEmissao.substring(0, 7); // YYYY-MM
+          monthSet.add(month);
+        }
+      }
+      const months = Array.from(monthSet).sort().reverse();
+
+      // Group by pedido
+      const orderMap = new Map<string, {
+        pedido: string;
+        cliente: string;
+        clienteApelido: string;
+        uf: string;
+        dataEmissao: string;
+        dataEntrega: string;
+        month: string;
+        estadoItem: string;
+        valorTotal: number;
+        condicaoPagamento: string | null;
+        transportadora: string | null;
+        razaoSocial: string | null;
+        inscricaoEstadual: string | null;
+        endereco: { logradouro: string; numero: string; complemento: string; bairro: string; cep: string; cidade: string; uf: string } | null;
+        valorTotalPedido: number | null;
+        representante: string | null;
+        empresa: string | null;
+        clienteTelefone: string | null;
+        clienteEmail: string | null;
+        observacoes: string | null;
+        itens: Array<{
+          descricao: string;
+          quantidade: number;
+          valorUnitario: number;
+          valorTotal: number;
+          estadoItem: string;
+          dataEntregaItem: string | null;
+          codigoGrupo: string;
+          codigoItem: string | null;
+          descricaoItem: string | null;
+        }>;
+      }>();
+
+      for (const item of items) {
+        const pedido = item.pedido || "S/N";
+        const month = (item.dataEmissao || "").substring(0, 7);
+        const key = `${pedido}-${month}`;
+        if (!orderMap.has(key)) {
+          const hasEndereco = item.enderecoLogradouro || item.enderecoCidade;
+          orderMap.set(key, {
+            pedido,
+            cliente: item.cliente || "\u2014",
+            clienteApelido: item.clienteApelido || "",
+            uf: item.uf || "",
+            dataEmissao: item.dataEmissao || "",
+            dataEntrega: item.dataEntrega || "",
+            month,
+            estadoItem: item.estadoItem || "",
+            valorTotal: 0,
+            condicaoPagamento: item.condicaoPagamento || null,
+            transportadora: item.transportadora || null,
+            razaoSocial: item.razaoSocial || null,
+            inscricaoEstadual: item.inscricaoEstadual || null,
+            endereco: hasEndereco ? {
+              logradouro: item.enderecoLogradouro || "",
+              numero: item.enderecoNumero || "",
+              complemento: item.enderecoComplemento || "",
+              bairro: item.enderecoBairro || "",
+              cep: item.enderecoCep || "",
+              cidade: item.enderecoCidade || "",
+              uf: item.uf || "",
+            } : null,
+            valorTotalPedido: item.valorTotalPedido ? Number(item.valorTotalPedido) : null,
+            representante: item.representante || null,
+            empresa: item.empresa || null,
+            clienteTelefone: item.clienteTelefone || null,
+            clienteEmail: item.clienteEmail || null,
+            observacoes: item.observacoes || null,
+            itens: [],
+          });
+        }
+        const order = orderMap.get(key)!;
+        const val = Number(item.valorTotal || 0);
+        order.valorTotal += val;
+        if (order.estadoItem !== item.estadoItem && order.itens.length > 0) {
+          order.estadoItem = "Misto";
+        }
+        order.itens.push({
+          descricao: item.descricao || "\u2014",
+          quantidade: Number(item.quantidade || 0),
+          valorUnitario: Number(item.valorUnitario || 0),
+          valorTotal: val,
+          estadoItem: item.estadoItem || "",
+          dataEntregaItem: item.dataEntrega || null,
+          codigoGrupo: item.codigoGrupo || "",
+          codigoItem: item.codigoItem || null,
+          descricaoItem: item.descricaoItem || null,
+        });
+      }
+
+      const orders = Array.from(orderMap.values()).map(o => ({
+        ...o,
+        valorTotal: Math.round(o.valorTotal * 100) / 100,
+        itens: o.itens.map(i => ({
+          ...i,
+          valorTotal: Math.round(i.valorTotal * 100) / 100,
+          valorUnitario: Math.round(i.valorUnitario * 100) / 100,
+        })),
+      }));
+
+      orders.sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao));
+
+      const totalValue = orders.reduce((sum, o) => sum + o.valorTotal, 0);
+
+      return { months, orders, totalValue: Math.round(totalValue * 100) / 100 };
+    }),
 });

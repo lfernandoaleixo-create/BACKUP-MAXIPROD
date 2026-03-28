@@ -5,19 +5,23 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { dashboardData, scraperStatus, salesOrders } from "../drizzle/schema";
-import { sql, desc, eq } from "drizzle-orm";
-import { runGraphQLSync, testGraphQLConnection, getSyncProgress } from "./maxiprodGraphQL";
+import { sql, desc, eq, and } from "drizzle-orm";
+import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
 import { isSchedulerRunning } from "./scheduler";
 import { processStockData } from "./stockProcessor";
 import { salesRouter } from "./salesRouter";
 import { settingsRouter } from "./settingsRouter";
 import { financialRouter } from "./financialRouter";
+import { billingRouter } from "./billingRouter";
+import { notificationRouter } from "./notificationRouter";
 
 export const appRouter = router({
   system: systemRouter,
   sales: salesRouter,
   settings: settingsRouter,
   financial: financialRouter,
+  billing: billingRouter,
+  notifications: notificationRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -120,6 +124,29 @@ export const appRouter = router({
     }),
 
     /**
+     * Sync bank balances from accounting ledger (balancete contábil)
+     * SOMENTE LEITURA - fetches contasContabeis + lancamentosContabeis
+     */
+    syncBankBalances: publicProcedure.mutation(async () => {
+      try {
+        const result = await syncBankBalances();
+        return {
+          success: true,
+          message: `Saldos atualizados: ${result.accounts} contas`,
+          accounts: result.accounts,
+          totalSaldo: result.totalSaldo,
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          message: error.message || 'Erro ao sincronizar saldos bancários',
+          accounts: 0,
+          totalSaldo: 0,
+        };
+      }
+    }),
+
+    /**
      * Get scheduler status (every 5 min, business hours)
      */
     getSchedulerStatus: publicProcedure.query(() => {
@@ -129,6 +156,7 @@ export const appRouter = router({
         timezone: "America/Sao_Paulo",
       };
     }),
+
 
     /**
      * Reprocess dashboard data from existing raw data in DB
@@ -186,6 +214,7 @@ export const appRouter = router({
       };
 
       // Get all sales ordered by date desc
+      // REGRA DE NEGÓCIO: Excluir pedidos em "Digitação" - não são confirmados
       const allSales = await db
         .select({
           descricao: salesOrders.descricao,
@@ -193,7 +222,10 @@ export const appRouter = router({
           dataEmissao: salesOrders.dataEmissao,
         })
         .from(salesOrders)
-        .where(sql`${salesOrders.valorUnitario} > 0`)
+        .where(and(
+          sql`${salesOrders.valorUnitario} > 0`,
+          sql`(${salesOrders.estadoNota} IS NULL OR UPPER(${salesOrders.estadoNota}) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))`
+        ))
         .orderBy(desc(salesOrders.dataEmissao));
 
       // Build sales index by tipo+medida

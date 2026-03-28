@@ -574,6 +574,83 @@ describe("stockProcessor - Espelho Fiel do Maxiprod", () => {
   });
 });
 
+describe("stockProcessor - isKgProduct detection", () => {
+  beforeEach(() => {
+    mockStockItems.length = 0;
+    mockOrderItems.length = 0;
+    mockPurchaseOrderItems.length = 0;
+    insertedDashboardData = null;
+  });
+
+  it("should set isKgProduct=true for products with unidadeMedida=kg", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00207",
+        descricaoItem: "VARETA DE BAMBU NATURAL 3,0 X 250 MM",
+        unidadeMedida: "kg",
+        quantidade: "30000",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00207");
+    expect(item.isKgProduct).toBe(true);
+  });
+
+  it("should set isKgProduct=true for products with KG in description (PCT 20KG)", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00058",
+        descricaoItem: "VARETA DE APITO BAMBU 3,0 X 350 MM PCT 20KG",
+        unidadeMedida: "un",
+        quantidade: "80400",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00058");
+    expect(item.isKgProduct).toBe(true);
+  });
+
+  it("should set isKgProduct=false for regular products without KG", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00100",
+        descricaoItem: "VARETA DE BAMBU 3,0 X 250 MM C/ 5.000 UNID",
+        unidadeMedida: "UN",
+        quantidade: "50000",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00100");
+    expect(item.isKgProduct).toBe(false);
+  });
+
+  it("should NOT set isKgProduct=true when description has KG but also has UNID", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00999",
+        descricaoItem: "VARETA BAMBU 3,0 X 250 MM C/ 5.000 UNID PESO 2KG",
+        unidadeMedida: "UN",
+        quantidade: "50000",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00999");
+    expect(item.isKgProduct).toBe(false);
+  });
+});
+
 describe("stockProcessor - pedidosPorCliente tooltip data", () => {
   beforeEach(() => {
     mockStockItems.length = 0;

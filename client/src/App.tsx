@@ -4,8 +4,11 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { OperatorProvider, useOperator } from "./contexts/OperatorContext";
+import LoginScreen from "./components/LoginScreen";
 import Home from "./pages/Home";
 import Sales from "./pages/Sales";
+import Billing from "./pages/Billing";
 import Financial from "./pages/Financial";
 import SettingsPage from "./pages/SettingsPage";
 
@@ -15,6 +18,7 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/vendas"} component={Sales} />
+      <Route path={"/faturamento"} component={Billing} />
       <Route path={"/financeiro"} component={Financial} />
       <Route path={"/configuracoes"} component={SettingsPage} />
       <Route path={"/404"} component={NotFound} />
@@ -23,14 +27,26 @@ function Router() {
   );
 }
 
+function AppContent() {
+  const { isLoggedIn } = useOperator();
+
+  if (!isLoggedIn) {
+    return <LoginScreen />;
+  }
+
+  return <Router />;
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <OperatorProvider>
+          <TooltipProvider>
+            <Toaster />
+            <AppContent />
+          </TooltipProvider>
+        </OperatorProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

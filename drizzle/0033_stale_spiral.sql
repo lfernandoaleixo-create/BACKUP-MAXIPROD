@@ -1,0 +1,1 @@
+ALTER TABLE `production_acceptance` ADD `orderHash` varchar(64);

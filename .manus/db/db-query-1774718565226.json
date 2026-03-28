@@ -1,0 +1,42 @@
+{
+  "query": "\nSELECT 'product_classification' as tabela, COUNT(*) as registros FROM product_classification\nUNION ALL SELECT 'product_pricing', COUNT(*) FROM product_pricing\nUNION ALL SELECT 'product_visibility', COUNT(*) FROM product_visibility\nUNION ALL SELECT 'product_segment_overrides', COUNT(*) FROM product_segment_overrides\nUNION ALL SELECT 'app_settings', COUNT(*) FROM app_settings\nUNION ALL SELECT 'sales_targets', COUNT(*) FROM sales_targets\nUNION ALL SELECT 'bank_accounts', COUNT(*) FROM bank_accounts\nUNION ALL SELECT 'bank_transactions', COUNT(*) FROM bank_transactions;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT 'product_classification' as tabela, COUNT(*) as registros FROM product_classification\nUNION ALL SELECT 'product_pricing', COUNT(*) FROM product_pricing\nUNION ALL SELECT 'product_visibility', COUNT(*) FROM product_visibility\nUNION ALL SELECT 'product_segment_overrides', COUNT(*) FROM product_segment_overrides\nUNION ALL SELECT 'app_settings', COUNT(*) FROM app_settings\nUNION ALL SELECT 'sales_targets', COUNT(*) FROM sales_targets\nUNION ALL SELECT 'bank_accounts', COUNT(*) FROM bank_accounts\nUNION ALL SELECT 'bank_transactions', COUNT(*) FROM bank_transactions;\n",
+  "rows": [
+    {
+      "tabela": "app_settings",
+      "registros": "2"
+    },
+    {
+      "tabela": "product_visibility",
+      "registros": "25"
+    },
+    {
+      "tabela": "product_pricing",
+      "registros": "107"
+    },
+    {
+      "tabela": "product_classification",
+      "registros": "139"
+    },
+    {
+      "tabela": "product_segment_overrides",
+      "registros": "32"
+    },
+    {
+      "tabela": "sales_targets",
+      "registros": "0"
+    },
+    {
+      "tabela": "bank_accounts",
+      "registros": "30"
+    },
+    {
+      "tabela": "bank_transactions",
+      "registros": "800"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\tregistros\napp_settings\t2\nproduct_visibility\t25\nproduct_pricing\t107\nproduct_classification\t139\nproduct_segment_overrides\t32\nsales_targets\t0\nbank_accounts\t30\nbank_transactions\t800\n",
+  "stderr": "",
+  "execution_time_ms": 126
+}
