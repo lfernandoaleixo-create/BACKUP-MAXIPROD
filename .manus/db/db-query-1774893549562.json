@@ -1,0 +1,150 @@
+{
+  "query": "SELECT pedido, modifiedAt FROM production_acceptance WHERE wasModified = 1 ORDER BY pedido;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, modifiedAt FROM production_acceptance WHERE wasModified = 1 ORDER BY pedido;",
+  "rows": [
+    {
+      "pedido": "155",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "285",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "355",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "356",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "358",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "383",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "384",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "385",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "406",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "407",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "437",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "523",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "535",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "622",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "729",
+      "modifiedAt": "2026-03-30 17:58:55"
+    },
+    {
+      "pedido": "735",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "752",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "761",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "762",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "763",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "766",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "777",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "782",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "783",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "785",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "787",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "795",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "796",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "797",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "799",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "801",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "802",
+      "modifiedAt": "2026-03-30 17:58:56"
+    },
+    {
+      "pedido": "803",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "804",
+      "modifiedAt": "2026-03-30 17:32:34"
+    },
+    {
+      "pedido": "806",
+      "modifiedAt": "2026-03-30 17:58:56"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\tmodifiedAt\n155\t2026-03-30 17:58:55\n285\t2026-03-30 17:58:55\n355\t2026-03-30 17:58:55\n356\t2026-03-30 17:58:55\n358\t2026-03-30 17:58:55\n383\t2026-03-30 17:58:55\n384\t2026-03-30 17:58:55\n385\t2026-03-30 17:58:55\n406\t2026-03-30 17:58:55\n407\t2026-03-30 17:58:55\n437\t2026-03-30 17:58:55\n523\t2026-03-30 17:58:55\n535\t2026-03-30 17:58:56\n622\t2026-03-30 17:58:55\n729\t2026-03-30 17:58:55\n735\t2026-03-30 17:58:56\n752\t2026-03-30 17:58:56\n761\t2026-03-30 17:58:56\n762\t2026-03-30 17:58:56\n763\t2026-03-30 17:58:56\n766\t2026-03-30 17:58:56\n777\t2026-03-30 17:58:56\n782\t2026-03-30 17:58:56\n783\t2026-03-30 17:58:56\n785\t2026-03-30 17:58:56\n787\t2026-03-30 17:58:56\n795\t2026-03-30 17:58:56\n796\t2026-03-30 17:58:56\n797\t2026-03-30 17:58:56\n799\t2026-03-30 17:58:56\n801\t2026-03-30 17:32:33\n802\t2026-03-30 17:58:56\n803\t2026-03-30 17:32:33\n804\t2026-03-30 17:32:34\n806\t2026-03-30 17:58:56\n",
+  "stderr": "",
+  "execution_time_ms": 371
+}

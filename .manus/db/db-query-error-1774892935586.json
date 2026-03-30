@@ -1,0 +1,8 @@
+{
+  "query": "SELECT billing_status, COUNT(*) as total FROM sales_order_items WHERE billing_status IS NOT NULL GROUP BY billing_status ORDER BY total DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT billing_status, COUNT(*) as total FROM sales_order_items WHERE billing_status IS NOT NULL GROUP BY billing_status ORDER BY total DESC;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'tmh5hqmzfebw9kakgjtjjo.sales_order_items' doesn't exist"
+  ]
+}

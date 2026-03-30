@@ -1388,3 +1388,4 @@
 - [x] Validar: Total R$ 1.344.925,88 (Vendas R$ 864.274,26 + Demais R$ 480.651,62) - EXATO vs planilha
 - [x] Usar lancamentosContabeis DEBITO em contas bancárias com contrapartida CREDITO
 - [x] Implementar no backend usando classificação por conta CREDITO contrapartida
+- [x] BUG: Aba Faturamento - pedidos aprovados voltaram para aceite da produção - corrigido: resetado wasModified e atualizado orderHash para 32 pedidos (mantendo apenas 801, 803, 804 como legitimamente modificados)

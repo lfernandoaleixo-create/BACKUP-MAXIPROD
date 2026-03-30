@@ -23,19 +23,33 @@ vi.mock("./db", () => ({
     // We need to import the actual schema symbols to compare
     const schema = await import("../drizzle/schema");
     return {
-      select: vi.fn().mockReturnValue({
+      select: vi.fn((...args: any[]) => ({
         from: vi.fn((table: any) => {
+          // For dashboardData table, return chainable where/limit (upsert check)
+          if (table === schema.dashboardData) {
+            return {
+              where: vi.fn(() => ({
+                limit: vi.fn(() => Promise.resolve([])),
+              })),
+            };
+          }
+          // For data tables, return the mock arrays directly
           if (table === schema.stockItems) return Promise.resolve(mockStockItems);
           if (table === schema.orderItems) return Promise.resolve(mockOrderItems);
           if (table === schema.purchaseOrderItems) return Promise.resolve(mockPurchaseOrderItems);
           return Promise.resolve([]);
         }),
-      }),
+      })),
       delete: vi.fn(() => Promise.resolve()),
       insert: vi.fn().mockReturnValue({
         values: vi.fn((data: any) => {
           insertedDashboardData = data;
           return Promise.resolve();
+        }),
+      }),
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn(() => Promise.resolve()),
         }),
       }),
     };

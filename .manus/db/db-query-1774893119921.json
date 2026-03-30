@@ -1,0 +1,50 @@
+{
+  "query": "SELECT pedido, modifiedAt FROM production_acceptance WHERE wasModified = 1 ORDER BY modifiedAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, modifiedAt FROM production_acceptance WHERE wasModified = 1 ORDER BY modifiedAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "pedido": "804",
+      "modifiedAt": "2026-03-30 17:32:34"
+    },
+    {
+      "pedido": "777",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "762",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "766",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "761",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "535",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "285",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "763",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "752",
+      "modifiedAt": "2026-03-30 17:32:33"
+    },
+    {
+      "pedido": "735",
+      "modifiedAt": "2026-03-30 17:32:33"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\tmodifiedAt\n804\t2026-03-30 17:32:34\n777\t2026-03-30 17:32:33\n762\t2026-03-30 17:32:33\n766\t2026-03-30 17:32:33\n761\t2026-03-30 17:32:33\n535\t2026-03-30 17:32:33\n285\t2026-03-30 17:32:33\n763\t2026-03-30 17:32:33\n752\t2026-03-30 17:32:33\n735\t2026-03-30 17:32:33\n",
+  "stderr": "",
+  "execution_time_ms": 355
+}

@@ -39,6 +39,9 @@ const sampleItems = [
     representante: null,
     segmento: "INDUSTRIA",
     regiao: null,
+    estadoConfiguravel: "BAMBU",
+    estadoNota: "Aprovado",
+    crmSegmento: "DISTRIBUIDORA",
   },
   {
     dataEmissao: "2026-02-20T12:00:00.000Z",
@@ -61,6 +64,9 @@ const sampleItems = [
     representante: null,
     segmento: "DISTRIBUIDORA",
     regiao: null,
+    estadoConfiguravel: "BAMBU",
+    estadoNota: "Aprovado",
+    crmSegmento: "DISTRIBUIDORA",
   },
   {
     dataEmissao: "2026-03-05T12:00:00.000Z",
@@ -83,6 +89,9 @@ const sampleItems = [
     representante: null,
     segmento: "INDUSTRIA",
     regiao: null,
+    estadoConfiguravel: "BAMBU",
+    estadoNota: "Aprovado",
+    crmSegmento: "DISTRIBUIDORA",
   },
 ];
 
