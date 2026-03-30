@@ -534,9 +534,7 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
               <th className="px-3 py-2 text-right text-slate-500 font-semibold cursor-pointer hover:text-red-600 select-none" onClick={() => handleSort("valor")}>
                 Falta Pagar <SortIcon field="valor" />
               </th>
-              <th className="px-3 py-2 text-right text-slate-500 font-semibold hidden lg:table-cell">
-                Já Pago
-              </th>
+
               <th className="px-3 py-2 text-center text-slate-500 font-semibold cursor-pointer hover:text-red-600 select-none" onClick={() => handleSort("titulos")}>
                 Títulos <SortIcon field="titulos" />
               </th>
@@ -575,13 +573,7 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
                     <td className="px-3 py-2.5 text-right">
                       <span className="font-bold text-red-700">{formatCurrency(c.total)}</span>
                     </td>
-                    <td className="px-3 py-2.5 text-right hidden lg:table-cell">
-                      {(c.totalPago || 0) > 0 ? (
-                        <span className="text-emerald-600 text-[11px] font-medium">{formatCurrency(c.totalPago)}</span>
-                      ) : (
-                        <span className="text-slate-300 text-[11px]">—</span>
-                      )}
-                    </td>
+
                     <td className="px-3 py-2.5 text-center">
                       <Badge className="bg-red-100 text-red-700 text-[10px] border-0">{c.count}</Badge>
                     </td>
@@ -737,12 +729,6 @@ export function InadimplenciaCard({ summary, grupo, crmSegmento }: { summary: an
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 text-right">
-            {totaisClientes.totalPago > 0 && (
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-[9px] text-slate-400 uppercase tracking-wider leading-none">Já Pago</span>
-                <span className="text-xs font-semibold text-emerald-600">{formatCurrency(totaisClientes.totalPago)}</span>
-              </div>
-            )}
             <div className="flex flex-col items-end">
               <span className="text-[9px] text-red-500 uppercase tracking-wider leading-none">Falta Pagar</span>
               <span className="text-sm font-bold text-red-700">{formatCurrency(totaisClientes.faltaPagar)}</span>
