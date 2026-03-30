@@ -1,0 +1,18 @@
+{
+  "query": "SELECT \n  COUNT(*) as total,\n  SUM(CASE WHEN transportadora IS NULL OR transportadora = '' THEN 1 ELSE 0 END) as sem_transportadora,\n  SUM(CASE WHEN representante IS NULL OR representante = '' THEN 1 ELSE 0 END) as sem_representante,\n  SUM(CASE WHEN segmento IS NULL OR segmento = '' THEN 1 ELSE 0 END) as sem_segmento,\n  SUM(CASE WHEN crmSegmento IS NULL OR crmSegmento = '' THEN 1 ELSE 0 END) as sem_crm_segmento,\n  SUM(CASE WHEN condicaoPagamento IS NULL OR condicaoPagamento = '' THEN 1 ELSE 0 END) as sem_cond_pagamento\nFROM sales_orders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT \n  COUNT(*) as total,\n  SUM(CASE WHEN transportadora IS NULL OR transportadora = '' THEN 1 ELSE 0 END) as sem_transportadora,\n  SUM(CASE WHEN representante IS NULL OR representante = '' THEN 1 ELSE 0 END) as sem_representante,\n  SUM(CASE WHEN segmento IS NULL OR segmento = '' THEN 1 ELSE 0 END) as sem_segmento,\n  SUM(CASE WHEN crmSegmento IS NULL OR crmSegmento = '' THEN 1 ELSE 0 END) as sem_crm_segmento,\n  SUM(CASE WHEN condicaoPagamento IS NULL OR condicaoPagamento = '' THEN 1 ELSE 0 END) as sem_cond_pagamento\nFROM sales_orders;",
+  "rows": [
+    {
+      "total": "1294",
+      "sem_transportadora": "604",
+      "sem_representante": "823",
+      "sem_segmento": "380",
+      "sem_crm_segmento": "380",
+      "sem_cond_pagamento": "271"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tsem_transportadora\tsem_representante\tsem_segmento\tsem_crm_segmento\tsem_cond_pagamento\n1294\t604\t823\t380\t380\t271\n",
+  "stderr": "",
+  "execution_time_ms": 131
+}

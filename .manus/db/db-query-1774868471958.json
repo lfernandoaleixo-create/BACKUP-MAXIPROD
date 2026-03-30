@@ -1,0 +1,60 @@
+{
+  "query": "SELECT pedido, cliente, empresa, representante, segmento, crmSegmento, condicaoPagamento, transportadora \nFROM sales_orders \nWHERE representante IS NOT NULL AND representante != '' \nLIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, cliente, empresa, representante, segmento, crmSegmento, condicaoPagamento, transportadora \nFROM sales_orders \nWHERE representante IS NOT NULL AND representante != '' \nLIMIT 5;",
+  "rows": [
+    {
+      "pedido": "100",
+      "cliente": "MAISA CRISTINA DIAS 34250917860",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "JUVENAL TEIXEIRA",
+      "segmento": "INDUSTRIA",
+      "crmSegmento": "INDUSTRIA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "BTU - BRASPRESS - VAG"
+    },
+    {
+      "pedido": "100",
+      "cliente": "MAISA CRISTINA DIAS 34250917860",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "JUVENAL TEIXEIRA",
+      "segmento": "INDUSTRIA",
+      "crmSegmento": "INDUSTRIA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "BTU - BRASPRESS - VAG"
+    },
+    {
+      "pedido": "100",
+      "cliente": "MAISA CRISTINA DIAS 34250917860",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "JUVENAL TEIXEIRA",
+      "segmento": "INDUSTRIA",
+      "crmSegmento": "INDUSTRIA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "BTU - BRASPRESS - VAG"
+    },
+    {
+      "pedido": "100",
+      "cliente": "MAISA CRISTINA DIAS 34250917860",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "JUVENAL TEIXEIRA",
+      "segmento": "INDUSTRIA",
+      "crmSegmento": "INDUSTRIA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "BTU - BRASPRESS - VAG"
+    },
+    {
+      "pedido": "101",
+      "cliente": "ESPETINHOS SABORES E COMPANHIA LTDA",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "JUVENAL TEIXEIRA",
+      "segmento": "INDUSTRIA",
+      "crmSegmento": "INDUSTRIA",
+      "condicaoPagamento": "28/45",
+      "transportadora": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\tcliente\tempresa\trepresentante\tsegmento\tcrmSegmento\tcondicaoPagamento\ttransportadora\n100\tMAISA CRISTINA DIAS 34250917860\tPALITOS INDUSTRIA\tJUVENAL TEIXEIRA\tINDUSTRIA\tINDUSTRIA\t21/35\tBTU - BRASPRESS - VAG\n100\tMAISA CRISTINA DIAS 34250917860\tPALITOS INDUSTRIA\tJUVENAL TEIXEIRA\tINDUSTRIA\tINDUSTRIA\t21/35\tBTU - BRASPRESS - VAG\n100\tMAISA CRISTINA DIAS 34250917860\tPALITOS INDUSTRIA\tJUVENAL TEIXEIRA\tINDUSTRIA\tINDUSTRIA\t21/35\tBTU - BRASPRESS - VAG\n100\tMAISA CRISTINA DIAS 34250917860\tPALITOS INDUSTRIA\tJUVENAL TEIXEIRA\tINDUSTRIA\tINDUSTRIA\t21/35\tBTU - BRASPRESS - VAG\n101\tESPETINHOS SABORES E COMPANHIA LTDA\tPALITOS INDUSTRIA\tJUVENAL TEIXEIRA\tINDUSTRIA\tINDUSTRIA\t28/45\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 66
+}

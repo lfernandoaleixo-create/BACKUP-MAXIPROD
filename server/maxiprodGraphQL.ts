@@ -286,7 +286,8 @@ async function fetchOpenSalesOrderItems(): Promise<any[]> {
           observacoesInternas
           ultimaAlteracaoData
           ultimaAlteracaoUsuario { nome }
-          representanteOuVendedor1 { nomeFantasia }
+          representanteOuVendedor1 { nomeFantasia razaoSocial }
+          responsavelUsuario { nome }
         }
       }
     }
@@ -354,7 +355,8 @@ async function fetchAllSalesOrderItems(): Promise<any[]> {
           observacoesInternas
           ultimaAlteracaoData
           ultimaAlteracaoUsuario { nome }
-          representanteOuVendedor1 { nomeFantasia }
+          representanteOuVendedor1 { nomeFantasia razaoSocial }
+          responsavelUsuario { nome }
         }
       }
     }
@@ -582,9 +584,64 @@ function transformPurchaseOrderItems(graphqlItems: any[]): any[] {
   });
 }
 
+// Editoras que NÃO são vendedoras (apenas editam pedidos no Maxiprod)
+// Regras confirmadas com Fernando 17/03/2026
+const EDITORES_NAO_VENDEDORES_SYNC = ["BRENDA", "LARISSA"];
+
+// Clientes com vendedor fixo "Grupo Fox" (definido manualmente por Fernando)
+const CLIENTES_GRUPO_FOX_SYNC = ["JOHNSON", "KEURE", "S C JOHNSON", "SC JOHNSON", "S. C. JOHNSON"];
+
+function isClienteGrupoFoxSync(nome: string): boolean {
+  const upper = nome.toUpperCase();
+  return CLIENTES_GRUPO_FOX_SYNC.some(prefix => upper.includes(prefix));
+}
+
+function isEditorNaoVendedorSync(nome: string): boolean {
+  return EDITORES_NAO_VENDEDORES_SYNC.includes(nome.toUpperCase().trim());
+}
+
+/**
+ * Resolve representante/vendedor from GraphQL data using fallback logic:
+ * 1. representanteOuVendedor1.nomeFantasia (priority)
+ * 2. representanteOuVendedor1.razaoSocial (fallback if nomeFantasia is null)
+ * 3. responsavelUsuario.nome (fallback, excluding editors Brenda/Larissa)
+ * 4. Override: Johnson/Keure clients → "Grupo Fox"
+ */
+function resolveRepresentante(pv: any): string {
+  const clienteNome = pv.cliente?.nomeFantasia || pv.cliente?.razaoSocial || "";
+  
+  // Override manual: clientes Johnson e Keure → "Grupo Fox"
+  if (clienteNome && isClienteGrupoFoxSync(clienteNome)) {
+    return "Grupo Fox";
+  }
+  
+  // 1. Prioridade: representanteOuVendedor1
+  let rep = pv.representanteOuVendedor1?.nomeFantasia 
+    || pv.representanteOuVendedor1?.razaoSocial 
+    || "";
+  
+  // 2. Fallback: responsavelUsuario (se não for editor)
+  if (!rep) {
+    const responsavel = pv.responsavelUsuario?.nome || "";
+    if (responsavel && !isEditorNaoVendedorSync(responsavel)) {
+      rep = responsavel;
+    }
+  }
+  
+  return rep;
+}
+
 /**
  * Transform GraphQL sales order items to the format expected by sales_orders table
  * Now includes empresa identification from pedidoDeVenda.minhaEmpresaId
+ * 
+ * Enhanced representante resolution:
+ * - Uses representanteOuVendedor1 (nomeFantasia → razaoSocial fallback)
+ * - Falls back to responsavelUsuario (excluding editors Brenda/Larissa)
+ * - Overrides Johnson/Keure clients to "Grupo Fox"
+ * 
+ * Enhanced transportadora resolution:
+ * - Uses nomeFantasia → razaoSocial fallback
  */
 function transformSalesOrders(graphqlItems: any[]): any[] {
   return graphqlItems.map((item) => {
@@ -601,6 +658,14 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       PARCIALMENTE_FATURADO_COM_ENTREGA_FUTURA: "Parc. faturado c/ entrega futura",
       CANCELADO: "Cancelado",
     };
+
+    // Resolve representante with fallback logic
+    const representante = resolveRepresentante(pv);
+    
+    // Resolve transportadora with razaoSocial fallback
+    const transportadoraNome = pv.transportadora?.nomeFantasia 
+      || pv.transportadora?.razaoSocial 
+      || null;
 
     return {
       dataEmissao: pv.emissaoData || null,
@@ -621,12 +686,12 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       codigoGrupo: i.grupoDescricao || "",
       idGrupoItem: i.grupoId || null,
       empresa: getCompanyName(pv.minhaEmpresaId),
-      representante: pv.representanteOuVendedor1?.nomeFantasia || "",
+      representante: representante,
       segmento: cliente.crmSegmento?.descricao || "",
       regiao: uf || "",
       // Novos campos
       condicaoPagamento: pv.condicaoDePagamento || null,
-      transportadora: pv.transportadora?.nomeFantasia || null,
+      transportadora: transportadoraNome,
       razaoSocial: cliente.razaoSocial || null,
       inscricaoEstadual: cliente.inscricaoEstadual || null,
       enderecoLogradouro: cliente.endereco?.logradouro || null,

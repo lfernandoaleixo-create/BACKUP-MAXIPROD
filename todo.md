@@ -1378,3 +1378,4 @@
 - [x] Corrigir colunas faltantes em stock_items, order_items e sales_orders
 - [x] Verificar funcionamento visual de todas as abas (Estoque, Vendas, Faturamento, Financeiro, Configurações)
 - [x] Adicionar transportadora "Transexport" à lista de transportadoras
+- [x] Corrigir integração Maxiprod: puxar transportadora, segmento, condição de pagamento e representante dos pedidos de venda - Adicionado responsavelUsuario como fallback para representante, razaoSocial como fallback para nomeFantasia (representante e transportadora), lógica de exclusão de editoras (Brenda/Larissa), override Johnson/Keure → Grupo Fox

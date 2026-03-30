@@ -1,0 +1,130 @@
+{
+  "query": "SELECT \n  pedido, cliente, empresa, representante, segmento, crmSegmento, condicaoPagamento, transportadora,\n  estadoItem, dataEmissao\nFROM sales_orders \nWHERE (representante IS NULL OR representante = '') \n  AND estadoItem NOT IN ('Cancelado', 'Faturado')\nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT \n  pedido, cliente, empresa, representante, segmento, crmSegmento, condicaoPagamento, transportadora,\n  estadoItem, dataEmissao\nFROM sales_orders \nWHERE (representante IS NULL OR representante = '') \n  AND estadoItem NOT IN ('Cancelado', 'Faturado')\nLIMIT 10;",
+  "rows": [
+    {
+      "pedido": "127",
+      "cliente": "SOIN SOCIEDADE INDUSTRIAL IMPORTAÇÃO E EXPORTAÇÃO LTDA",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "INDUSTRIA",
+      "crmSegmento": "INDUSTRIA",
+      "condicaoPagamento": "NULL",
+      "transportadora": "NULL",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-12-08T12:00:00.000-03:00"
+    },
+    {
+      "pedido": "155",
+      "cliente": "SC JOHNSON AND SON- MEXICO",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "EXPORTAÇÃO",
+      "crmSegmento": "EXPORTAÇÃO",
+      "condicaoPagamento": "60",
+      "transportadora": "NULL",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-12-10T12:00:00.000-03:00"
+    },
+    {
+      "pedido": "175",
+      "cliente": "TIAGO HENRIQUE DA SILVA NEVES 41061208877",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "LOJA",
+      "crmSegmento": "LOJA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "NULL",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-12-15T12:00:00.000-03:00"
+    },
+    {
+      "pedido": "175",
+      "cliente": "TIAGO HENRIQUE DA SILVA NEVES 41061208877",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "LOJA",
+      "crmSegmento": "LOJA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "NULL",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-12-15T12:00:00.000-03:00"
+    },
+    {
+      "pedido": "176",
+      "cliente": "GMR DISTRIBUIDORA LTDA",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "DISTRIBUIDORA",
+      "crmSegmento": "DISTRIBUIDORA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "NULL",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-12-15T12:00:00.000-03:00"
+    },
+    {
+      "pedido": "176",
+      "cliente": "GMR DISTRIBUIDORA LTDA",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "DISTRIBUIDORA",
+      "crmSegmento": "DISTRIBUIDORA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "NULL",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-12-15T12:00:00.000-03:00"
+    },
+    {
+      "pedido": "186",
+      "cliente": "MAZE DESIGNER GRAFICO IMPRESSOS, COMUNICACAO VISUAL E PERSON",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "LOJA",
+      "crmSegmento": "LOJA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "NULL",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-12-16T12:00:00.000-03:00"
+    },
+    {
+      "pedido": "186",
+      "cliente": "MAZE DESIGNER GRAFICO IMPRESSOS, COMUNICACAO VISUAL E PERSON",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "LOJA",
+      "crmSegmento": "LOJA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "NULL",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-12-16T12:00:00.000-03:00"
+    },
+    {
+      "pedido": "186",
+      "cliente": "MAZE DESIGNER GRAFICO IMPRESSOS, COMUNICACAO VISUAL E PERSON",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "LOJA",
+      "crmSegmento": "LOJA",
+      "condicaoPagamento": "21/35",
+      "transportadora": "NULL",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-12-16T12:00:00.000-03:00"
+    },
+    {
+      "pedido": "285",
+      "cliente": "A. M. SOARES PRODUTOS DE LIMPEZA LTDA",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "INDUSTRIA",
+      "crmSegmento": "INDUSTRIA",
+      "condicaoPagamento": "28 35 42 49 56",
+      "transportadora": "EXPRESSO FLOR DE MINAS LTDA",
+      "estadoItem": "A faturar",
+      "dataEmissao": "2025-11-10T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\tcliente\tempresa\trepresentante\tsegmento\tcrmSegmento\tcondicaoPagamento\ttransportadora\testadoItem\tdataEmissao\n127\tSOIN SOCIEDADE INDUSTRIAL IMPORTAÇÃO E EXPORTAÇÃO LTDA\tPALITOS INDUSTRIA\t\tINDUSTRIA\tINDUSTRIA\tNULL\tNULL\tA faturar\t2025-12-08T12:00:00.000-03:00\n155\tSC JOHNSON AND SON- MEXICO\tPALITOS INDUSTRIA\t\tEXPORTAÇÃO\tEXPORTAÇÃO\t60\tNULL\tA faturar\t2025-12-10T12:00:00.000-03:00\n175\tTIAGO HENRIQUE DA SILVA NEVES 41061208877\tPALITOS INDUSTRIA\t\tLOJA\tLOJA\t21/35\tNULL\tA faturar\t2025-12-15T12:00:00.000-03:00\n175\tTIAGO HENRIQUE DA SILVA NEVES 41061208877\tPALITOS INDUSTRIA\t\tLOJA\tLOJA\t21/35\tNULL\tA faturar\t2025-12-15T12:00:00.000-03:00\n176\tGMR DISTRIBUIDORA LTDA\tPALITOS INDUSTRIA\t\tDISTRIBUIDORA\tDISTRIBUIDORA\t21/35\tNULL\tA faturar\t2025-12-15T12:00:00.000-03:00\n176\tGMR DISTRIBUIDORA LTDA\tPALITOS INDUSTRIA\t\tDISTRIBUIDORA\tDISTRIBUIDORA\t21/35\tNULL\tA faturar\t2025-12-15T12:00:00.000-03:00\n186\tMAZE DESIGNER GRAFICO IMPRESSOS, COMUNICACAO VISUAL E PERSON\tPALITOS INDUSTRIA\t\tLOJA\tLOJA\t21/35\tNULL\tA faturar\t2025-12-16T12:00:00.000-03:00\n186\tMAZE DESIGNER GRAFICO IMPRESSOS, COMUNICACAO VISUAL E PERSON\tPALITOS INDUSTRIA\t\tLOJA\tLOJA\t21/35\tNULL\tA faturar\t2025-12-16T12:00:00.000-03:00\n186\tMAZE DESIGNER GRAFICO IMPRESSOS, COMUNICACAO VISUAL E PERSON\tPALITOS INDUSTRIA\t\tLOJA\tLOJA\t21/35\tNULL\tA faturar\t2025-12-16T12:00:00.000-03:00\n285\tA. M. SOARES PRODUTOS DE LIMPEZA LTDA\tPALITOS INDUSTRIA\t\tINDUSTRIA\tINDUSTRIA\t28 35 42 49 56\tEXPRESSO FLOR DE MINAS LTDA\tA faturar\t2025-11-10T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 71
+}

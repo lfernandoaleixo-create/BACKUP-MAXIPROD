@@ -1,0 +1,60 @@
+{
+  "query": "SELECT pedido, cliente, empresa, representante, segmento, crmSegmento, condicaoPagamento, transportadora \nFROM sales_orders \nWHERE transportadora IS NOT NULL AND transportadora != '' \nLIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, cliente, empresa, representante, segmento, crmSegmento, condicaoPagamento, transportadora \nFROM sales_orders \nWHERE transportadora IS NOT NULL AND transportadora != '' \nLIMIT 5;",
+  "rows": [
+    {
+      "pedido": "3",
+      "cliente": "UTUMI E UTUMI LTDA",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "",
+      "crmSegmento": "NULL",
+      "condicaoPagamento": "30 45 60",
+      "transportadora": "BTU - BRASPRESS - VAG"
+    },
+    {
+      "pedido": "3",
+      "cliente": "UTUMI E UTUMI LTDA",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "",
+      "crmSegmento": "NULL",
+      "condicaoPagamento": "30 45 60",
+      "transportadora": "BTU - BRASPRESS - VAG"
+    },
+    {
+      "pedido": "6",
+      "cliente": "COMERCIO DE OLEOS E ESSENCIAS SILVEIRA MARTINS LTDA - EPP",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "",
+      "crmSegmento": "NULL",
+      "condicaoPagamento": "21 35",
+      "transportadora": "EXPRESSO FLOR DE MINAS LTDA"
+    },
+    {
+      "pedido": "6",
+      "cliente": "COMERCIO DE OLEOS E ESSENCIAS SILVEIRA MARTINS LTDA - EPP",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "",
+      "crmSegmento": "NULL",
+      "condicaoPagamento": "21 35",
+      "transportadora": "EXPRESSO FLOR DE MINAS LTDA"
+    },
+    {
+      "pedido": "4",
+      "cliente": "FONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP",
+      "empresa": "PALITOS INDUSTRIA",
+      "representante": "",
+      "segmento": "",
+      "crmSegmento": "NULL",
+      "condicaoPagamento": "Fixa",
+      "transportadora": "EXPRESSO FLOR DE MINAS LTDA"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\tcliente\tempresa\trepresentante\tsegmento\tcrmSegmento\tcondicaoPagamento\ttransportadora\n3\tUTUMI E UTUMI LTDA\tPALITOS INDUSTRIA\t\t\tNULL\t30 45 60\tBTU - BRASPRESS - VAG\n3\tUTUMI E UTUMI LTDA\tPALITOS INDUSTRIA\t\t\tNULL\t30 45 60\tBTU - BRASPRESS - VAG\n6\tCOMERCIO DE OLEOS E ESSENCIAS SILVEIRA MARTINS LTDA - EPP\tPALITOS INDUSTRIA\t\t\tNULL\t21 35\tEXPRESSO FLOR DE MINAS LTDA\n6\tCOMERCIO DE OLEOS E ESSENCIAS SILVEIRA MARTINS LTDA - EPP\tPALITOS INDUSTRIA\t\t\tNULL\t21 35\tEXPRESSO FLOR DE MINAS LTDA\n4\tFONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP\tPALITOS INDUSTRIA\t\t\tNULL\tFixa\tEXPRESSO FLOR DE MINAS LTDA\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}
