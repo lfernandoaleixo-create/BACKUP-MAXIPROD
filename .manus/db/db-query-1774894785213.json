@@ -1,0 +1,18 @@
+{
+  "query": "SELECT wasModified, COUNT(*) as total FROM production_acceptance GROUP BY wasModified;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT wasModified, COUNT(*) as total FROM production_acceptance GROUP BY wasModified;",
+  "rows": [
+    {
+      "wasModified": "0",
+      "total": "101"
+    },
+    {
+      "wasModified": "1",
+      "total": "3"
+    }
+  ],
+  "messages": [],
+  "stdout": "wasModified\ttotal\n0\t101\n1\t3\n",
+  "stderr": "",
+  "execution_time_ms": 384
+}

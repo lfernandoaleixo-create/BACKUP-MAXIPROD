@@ -998,6 +998,99 @@ export const billingRouter = router({
     }),
 
   /**
+   * TEMP: Recalculate order hashes for all accepted orders to prevent false modification detection.
+   * Uses local DB salesOrders data (same source as getOpenOrders) to compute fresh hashes.
+   */
+  recalcOrderHashes: publicProcedure
+    .mutation(async () => {
+      const db = await getDb();
+      if (!db) return { success: false, updated: 0 };
+
+      // Get all accepted orders
+      const acceptedRows = await db.select({
+        pedido: productionAcceptance.pedido,
+        orderHash: productionAcceptance.orderHash,
+        wasModified: productionAcceptance.wasModified,
+      }).from(productionAcceptance);
+
+      // Get sales order items from local DB (same source as getOpenOrders)
+      const allItems = await db.select().from(salesOrders);
+      const openItems = allItems.filter(i => 
+        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial") &&
+        isAprovadoOuFaturado(i.estadoNota)
+      );
+
+      // Helper to format ISO date to DD/MM/YYYY (same as getOpenOrders)
+      const formatDate = (d: string | null): string => {
+        if (!d) return "";
+        try {
+          const date = new Date(d);
+          if (isNaN(date.getTime())) return d;
+          return date.toLocaleDateString("pt-BR");
+        } catch { return d; }
+      };
+
+      // Build order map with EXACT same logic as getOpenOrders
+      const orderMap = new Map<string, any>();
+      for (const item of openItems) {
+        const key = item.pedido || "";
+        if (!key) continue;
+        if (!orderMap.has(key)) {
+          orderMap.set(key, {
+            pedido: item.pedido || "",
+            cliente: item.cliente || "",
+            dataEntrega: formatDate(item.dataEntrega),
+            observacoes: item.observacoes || "",
+            valorTotal: 0,
+            itens: [] as any[],
+          });
+        }
+        const order = orderMap.get(key)!;
+        const vtOriginal = parseFloat(String(item.valorTotal || 0));
+        const qtdOriginal = parseFloat(String(item.quantidade || 0));
+        const qtdFaturada = item.quantidadeFaturada ? parseFloat(String(item.quantidadeFaturada)) : 0;
+        const vuOriginal = parseFloat(String(item.valorUnitario || 0));
+        const isParcial = item.estadoItem === "Faturado parcial" && qtdFaturada > 0;
+        const qtdEfetiva = isParcial ? Math.max(qtdOriginal - qtdFaturada, 0) : qtdOriginal;
+        const vtEfetivo = isParcial ? (qtdEfetiva * vuOriginal) : vtOriginal;
+        order.valorTotal += vtEfetivo;
+        order.itens.push({
+          descricao: item.descricao || "",
+          quantidade: qtdEfetiva,
+          valorUnitario: vuOriginal,
+          valorTotal: Math.round(vtEfetivo * 100) / 100,
+        });
+      }
+
+      let updated = 0;
+      const skipPedidos = ['801', '803', '804'];
+      for (const row of acceptedRows) {
+        if (skipPedidos.includes(row.pedido)) continue;
+        const orderData = orderMap.get(row.pedido);
+        if (!orderData) continue;
+        const valorRounded = Math.round(orderData.valorTotal * 100) / 100;
+        const newHash = computeOrderHash({
+          pedido: orderData.pedido,
+          cliente: orderData.cliente,
+          dataEntrega: orderData.dataEntrega,
+          observacoes: orderData.observacoes,
+          valorTotal: valorRounded,
+          itens: orderData.itens,
+        });
+        if (row.orderHash !== newHash) {
+          await db.update(productionAcceptance)
+            .set({ orderHash: newHash, wasModified: false, modifiedAt: null })
+            .where(eq(productionAcceptance.pedido, row.pedido));
+          updated++;
+          console.log(`[RecalcHashes] Pedido #${row.pedido}: hash ${row.orderHash?.slice(0,8)}... -> ${newHash.slice(0,8)}...`);
+        }
+      }
+
+      console.log(`[RecalcHashes] Updated ${updated} order hashes out of ${acceptedRows.length} (skipped 801,803,804)`);
+      return { success: true, updated, total: acceptedRows.length };
+    }),
+
+  /**
    * Get all production notes for given pedidos
    */
   getProductionNotes: publicProcedure

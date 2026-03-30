@@ -1389,3 +1389,4 @@
 - [x] Usar lancamentosContabeis DEBITO em contas bancárias com contrapartida CREDITO
 - [x] Implementar no backend usando classificação por conta CREDITO contrapartida
 - [x] BUG: Aba Faturamento - pedidos aprovados voltaram para aceite da produção - corrigido: resetado wasModified e atualizado orderHash para 32 pedidos (mantendo apenas 801, 803, 804 como legitimamente modificados)
+- [x] BUG PERSISTENTE: Faturamento - pedidos continuam sendo re-marcados como wasModified. Corrigido: resetado wasModified + recalculado hashes com endpoint recalcOrderHashes. Auto-revoke confirmado estável (0 re-marcações após getOverview).

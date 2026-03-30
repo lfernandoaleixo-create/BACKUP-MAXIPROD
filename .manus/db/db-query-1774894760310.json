@@ -1,0 +1,112 @@
+{
+  "query": "SELECT pedido FROM production_acceptance WHERE wasModified = 1 ORDER BY CAST(pedido AS SIGNED);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido FROM production_acceptance WHERE wasModified = 1 ORDER BY CAST(pedido AS SIGNED);",
+  "rows": [
+    {
+      "pedido": "285"
+    },
+    {
+      "pedido": "355"
+    },
+    {
+      "pedido": "356"
+    },
+    {
+      "pedido": "358"
+    },
+    {
+      "pedido": "383"
+    },
+    {
+      "pedido": "384"
+    },
+    {
+      "pedido": "385"
+    },
+    {
+      "pedido": "406"
+    },
+    {
+      "pedido": "407"
+    },
+    {
+      "pedido": "437"
+    },
+    {
+      "pedido": "523"
+    },
+    {
+      "pedido": "535"
+    },
+    {
+      "pedido": "622"
+    },
+    {
+      "pedido": "729"
+    },
+    {
+      "pedido": "735"
+    },
+    {
+      "pedido": "752"
+    },
+    {
+      "pedido": "761"
+    },
+    {
+      "pedido": "762"
+    },
+    {
+      "pedido": "763"
+    },
+    {
+      "pedido": "766"
+    },
+    {
+      "pedido": "777"
+    },
+    {
+      "pedido": "782"
+    },
+    {
+      "pedido": "783"
+    },
+    {
+      "pedido": "785"
+    },
+    {
+      "pedido": "787"
+    },
+    {
+      "pedido": "795"
+    },
+    {
+      "pedido": "796"
+    },
+    {
+      "pedido": "797"
+    },
+    {
+      "pedido": "799"
+    },
+    {
+      "pedido": "801"
+    },
+    {
+      "pedido": "802"
+    },
+    {
+      "pedido": "803"
+    },
+    {
+      "pedido": "804"
+    },
+    {
+      "pedido": "806"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\n285\n355\n356\n358\n383\n384\n385\n406\n407\n437\n523\n535\n622\n729\n735\n752\n761\n762\n763\n766\n777\n782\n783\n785\n787\n795\n796\n797\n799\n801\n802\n803\n804\n806\n",
+  "stderr": "",
+  "execution_time_ms": 342
+}
