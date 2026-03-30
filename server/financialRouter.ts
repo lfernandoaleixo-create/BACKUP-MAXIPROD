@@ -2335,9 +2335,10 @@ export const financialRouter = router({
   }),
 
   /**
-   * Total de Recebimentos no período
-   * Busca contaAReceber com estado RECEBIDO e liquidacaoData no período.
-   * Usa valorRecebidoLiquido como valor líquido recebido.
+   * Total de Entradas no período (Vendas/Revenda + Demais Receitas)
+   * Busca contaAReceber com estado RECEBIDO e tipo TITULO ou RECEITA.
+   * Classifica por plano de contas contábil.
+   * Campo 'recebimentos' = Vendas/Revenda (para compatibilidade com frontend)
    */
   getReceivedTotal: publicProcedure
     .input(z.object({
@@ -2364,8 +2365,8 @@ export const financialRouter = router({
       periodStart,
       periodEnd,
       recebimentos: {
-        total: receivedData.total,
-        count: receivedData.count,
+        total: receivedData.vendasRevenda,
+        count: receivedData.vendasRevendaCount,
       },
     };
   }),
@@ -2447,4 +2448,6 @@ export const financialRouter = router({
     .query(async ({ input }) => {
       return await fetchMonthlyOFXInflows(input.months);
     }),
+
+
 });

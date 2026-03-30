@@ -376,14 +376,14 @@ function CompactSummary({
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-slate-500 flex items-center gap-1">
                 <Banknote className="w-3 h-3 text-amber-500" />
-                Recebimentos
+                Vendas/Revenda
               </span>
               <span className="text-[11px] font-semibold text-amber-600">{formatCurrencyShort(recebimentos)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-slate-500 flex items-center gap-1">
                 <ArrowRightLeft className="w-3 h-3 text-slate-400" />
-                Outras
+                Demais Receitas
               </span>
               <span className="text-[11px] font-semibold text-slate-500">{formatCurrencyShort(outrasEntradas)}</span>
             </div>
@@ -527,7 +527,7 @@ function ExpandedDetails({
         </div>
       )}
 
-      {/* Entradas: single stacked bar (Recebimentos + Outras) */}
+      {/* Entradas: single stacked bar (Vendas/Revenda + Demais Receitas) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -537,20 +537,20 @@ function ExpandedDetails({
           </div>
         </div>
 
-        {/* Stacked bar: Recebimentos (amber) + Outras (gray) */}
+        {/* Stacked bar: Vendas/Revenda (amber) + Demais Receitas (gray) */}
         <div className="h-5 bg-slate-100 rounded-full overflow-hidden flex">
           {recebimentos > 0 && (
             <div
               className="h-full bg-amber-500 transition-all duration-700 relative"
               style={{ width: `${(recebimentos / Math.max(totalEntradas, contasPagas, 1)) * 100}%` }}
-              title={`Recebimentos: ${formatCurrency(recebimentos)}`}
+              title={`Vendas/Revenda: ${formatCurrency(recebimentos)}`}
             />
           )}
           {outrasEntradas > 0 && (
             <div
               className="h-full bg-slate-400 transition-all duration-700 relative"
               style={{ width: `${(outrasEntradas / Math.max(totalEntradas, contasPagas, 1)) * 100}%` }}
-              title={`Outras Entradas: ${formatCurrency(outrasEntradas)}`}
+              title={`Demais Receitas: ${formatCurrency(outrasEntradas)}`}
             />
           )}
         </div>
@@ -558,13 +558,13 @@ function ExpandedDetails({
         {/* Legend + expandable details */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-5">
-            {/* Recebimentos */}
+            {/* Vendas/Revenda */}
             <div
               className="flex items-center gap-2 cursor-pointer hover:bg-amber-50 rounded-md px-2 py-1 -mx-2 transition-colors"
               onClick={() => setShowReceivedDetail(!showReceivedDetail)}
             >
               <div className="w-3 h-3 rounded-sm bg-amber-500" />
-              <span className="text-xs text-slate-600 font-medium">Recebimentos</span>
+              <span className="text-xs text-slate-600 font-medium">Vendas/Revenda</span>
               <span className="text-xs font-bold text-amber-700">{formatCurrencyShort(recebimentos)}</span>
               <span className="text-[10px] text-slate-400">({receivedData?.recebimentos?.count ?? 0})</span>
               {showReceivedDetail ? (
@@ -574,13 +574,13 @@ function ExpandedDetails({
               )}
             </div>
 
-            {/* Outras Entradas */}
+            {/* Demais Receitas */}
             <div
               className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 rounded-md px-2 py-1 -mx-2 transition-colors"
               onClick={() => setShowOtherInflowsDetail(!showOtherInflowsDetail)}
             >
               <div className="w-3 h-3 rounded-sm bg-slate-400" />
-              <span className="text-xs text-slate-600 font-medium">Outras</span>
+              <span className="text-xs text-slate-600 font-medium">Demais Receitas</span>
               <span className="text-xs font-bold text-slate-600">{formatCurrencyShort(outrasEntradas)}</span>
               <span className="text-[10px] text-slate-400">({otherInflowsData?.outrasEntradas?.count ?? 0})</span>
               <Tooltip>
@@ -588,7 +588,7 @@ function ExpandedDetails({
                   <Info className="w-2.5 h-2.5 text-slate-400" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-xs">
-                  Emprestimos, liberacoes bancarias, rendimentos e outras entradas que nao sao pagamentos de clientes.
+                  Receitas que não são de venda/revenda: empréstimos, rendimentos, reembolsos e outras receitas operacionais.
                 </TooltipContent>
               </Tooltip>
               {showOtherInflowsDetail ? (
@@ -826,7 +826,10 @@ interface ReceivedItem {
   descricao: string;
   valor: number;
   data: string;
-  contaBancariaId: string;
+  tipo: string;
+  classificacao: 'vendas' | 'outras';
+  contaCodigo: string;
+  contaDescricao: string;
 }
 
 function ReceivedDetailTable({ startDate, endDate }: { startDate: string; endDate: string }) {
@@ -880,13 +883,14 @@ function ReceivedDetailTable({ startDate, endDate }: { startDate: string; endDat
     <div className="mt-2 border border-slate-200 rounded-lg overflow-hidden">
       <div className="px-3 py-1.5 bg-amber-50/50 border-b border-amber-100 text-[10px] text-amber-600 flex items-center gap-1">
         <Info className="w-3 h-3" />
-        Fonte: Extrato bancario (OFX) — Cobranca/Boleto + PIX Recebido + TED + Deposito
+        Fonte: Maxiprod Financeiro &gt; Extrato detalhado por Receita e Despesa (contaAReceber)
       </div>
       <div className="max-h-64 overflow-y-auto">
         <table className="w-full text-xs">
           <thead className="bg-amber-50 sticky top-0">
             <tr>
               <SortHeader label="Descricao" field="descricao" currentField={sortField} currentDir={sortDir} onSort={handleSort} colorClass="text-amber-700" />
+              <th className="px-3 py-2 text-left text-amber-700 font-semibold text-[10px] uppercase">Tipo</th>
               <SortHeader label="Data" field="data" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="center" colorClass="text-amber-700" />
               <SortHeader label="Valor" field="valor" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="right" colorClass="text-amber-700" />
             </tr>
@@ -894,7 +898,12 @@ function ReceivedDetailTable({ startDate, endDate }: { startDate: string; endDat
           <tbody className="divide-y divide-slate-100">
             {sorted.map((item, idx) => (
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                <td className="px-3 py-1.5 text-slate-700 max-w-[300px] truncate" title={item.descricao}>{item.descricao}</td>
+                <td className="px-3 py-1.5 text-slate-700 max-w-[250px] truncate" title={item.descricao}>{item.descricao}</td>
+                <td className="px-3 py-1.5">
+                  <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-medium ${item.classificacao === 'vendas' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {item.classificacao === 'vendas' ? 'Venda' : 'Outra'}
+                  </span>
+                </td>
                 <td className="px-3 py-1.5 text-center text-slate-500">{formatDate(item.data)}</td>
                 <td className="px-3 py-1.5 text-right font-semibold text-amber-700">{formatCurrency(item.valor)}</td>
               </tr>
@@ -902,7 +911,7 @@ function ReceivedDetailTable({ startDate, endDate }: { startDate: string; endDat
           </tbody>
           <tfoot className="bg-amber-50 border-t border-amber-200">
             <tr>
-              <td colSpan={2} className="px-3 py-2 font-bold text-amber-800">Total ({sorted.length} entradas)</td>
+              <td colSpan={3} className="px-3 py-2 font-bold text-amber-800">Total ({sorted.length} entradas)</td>
               <td className="px-3 py-2 text-right font-bold text-amber-800">
                 {formatCurrency(sorted.reduce((sum, i) => sum + i.valor, 0))}
               </td>
@@ -919,7 +928,7 @@ interface OtherInflowItem {
   valor: number;
   data: string;
   categoria: string;
-  contaBancariaId: string;
+  contaCodigo: string;
 }
 
 function OtherInflowsDetailTable({ startDate, endDate }: { startDate: string; endDate: string }) {
@@ -991,7 +1000,7 @@ function OtherInflowsDetailTable({ startDate, endDate }: { startDate: string; en
     <div className="mt-2 border border-slate-200 rounded-lg overflow-hidden">
       <div className="px-3 py-1.5 bg-slate-100/80 border-b border-slate-200 text-[10px] text-slate-500 flex items-center gap-1">
         <Info className="w-3 h-3" />
-        Transferencias, emprestimos, liberacoes e outras entradas nao vinculadas a clientes
+        Demais receitas (não-venda): empréstimos, rendimentos, reembolsos e outras receitas operacionais
       </div>
       {/* Category summary */}
       <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-2">
@@ -1392,7 +1401,7 @@ function EntradasStackedChart() {
   if (!data?.months?.length) {
     return (
       <div className="text-center py-4 text-xs text-slate-400">
-        Sem dados OFX disponíveis para o período
+        Sem dados disponíveis para o período
       </div>
     );
   }
@@ -1421,11 +1430,11 @@ function EntradasStackedChart() {
       <div className="flex items-center gap-4 mb-3">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-amber-500" />
-          <span className="text-[10px] text-slate-500">Recebimentos (Clientes)</span>
+          <span className="text-[10px] text-slate-500">Vendas/Revenda</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm bg-slate-400" />
-          <span className="text-[10px] text-slate-500">Outras Entradas</span>
+          <span className="text-[10px] text-slate-500">Demais Receitas</span>
         </div>
       </div>
 
@@ -1450,7 +1459,7 @@ function EntradasStackedChart() {
                     <div
                       className="h-full bg-amber-500 transition-all duration-700 relative group/rec"
                       style={{ width: `${recPct}%` }}
-                      title={`Recebimentos: ${formatCurrency(month.recebimentos)}`}
+                      title={`Vendas/Revenda: ${formatCurrency(month.recebimentos)}`}
                     >
                       {recPct > 15 && (
                         <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white">
@@ -1463,7 +1472,7 @@ function EntradasStackedChart() {
                     <div
                       className="h-full bg-slate-400 transition-all duration-700 relative"
                       style={{ width: `${outrasPct}%` }}
-                      title={`Outras Entradas: ${formatCurrency(month.outrasEntradas)}`}
+                      title={`Demais Receitas: ${formatCurrency(month.outrasEntradas)}`}
                     >
                       {outrasPct > 12 && (
                         <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white">
@@ -1485,11 +1494,11 @@ function EntradasStackedChart() {
                 <div className="flex items-center gap-3 text-[9px] text-slate-400">
                   <span>
                     <span className="inline-block w-2 h-2 rounded-sm bg-amber-500 mr-1" />
-                    Receb: {formatCurrency(month.recebimentos)} ({month.recebimentosCount})
+                    Vendas: {formatCurrency(month.recebimentos)} ({month.recebimentosCount})
                   </span>
                   <span>
                     <span className="inline-block w-2 h-2 rounded-sm bg-slate-400 mr-1" />
-                    Outras: {formatCurrency(month.outrasEntradas)} ({month.outrasEntradasCount})
+                    Demais: {formatCurrency(month.outrasEntradas)} ({month.outrasEntradasCount})
                   </span>
                 </div>
               </div>
@@ -1504,7 +1513,7 @@ function EntradasStackedChart() {
           Média mensal: {formatCurrency(months.reduce((s, m) => s + m.total, 0) / months.length)}
         </span>
         <span className="text-[10px] text-slate-400">
-          Fonte: Extrato bancário (OFX)
+          Fonte: Maxiprod Financeiro (contaAReceber)
         </span>
       </div>
     </div>

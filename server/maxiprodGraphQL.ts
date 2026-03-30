@@ -28,6 +28,7 @@ import { processStockData } from "./stockProcessor";
 
 const GRAPHQL_URL = "https://api.maxiprod.com.br/graphql/";
 
+
 // Company ID to name mapping
 const COMPANY_MAP: Record<number, string> = {
   409300001619248: "PALITOS INDUSTRIA",
@@ -1948,126 +1949,261 @@ function isInternalTransfer(descricao: string): boolean {
 }
 
 /**
- * Fetch total received (cash inflow) using OFX bank statement data.
- * Filters only Cobrança/Boleto and PIX Recebido entries (real client payments).
+ * Contas do plano de contas que representam receita de vendas/revenda.
+ * Usadas para classificar entradas como "Vendas/Revenda" vs "Demais Receitas".
+ * 
+ * Para adicionar novas contas de venda, basta incluir o codigoEstruturado aqui.
+ */
+const SALES_REVENUE_ACCOUNTS = new Set([
+  '3.01.01.01', // Receita da venda de produtos de fabricação própria MADEIRA
+  '3.01.01.02', // Receita da revenda de mercadorias BAMBU
+  '3.01.01.03', // Receita de revenda mercadoria FIBRA
+  '3.01.01.04', // Receita da venda de produtos de fabricação propria SERRAGEM
+  '3.01.01.05', // Receita da venda de produtos de fabricação propria ROJÃO
+]);
+
+/**
+ * Contas bancárias do Ativo que representam transferências entre contas.
+ * Entradas classificadas com essas contas devem ser EXCLUÍDAS do total de entradas.
+ * 
+ * Para adicionar novas contas bancárias (ex: novo banco), basta incluir o codigoEstruturado aqui.
+ */
+const BANK_TRANSFER_ACCOUNTS = new Set([
+  '1.01.01.02.01', // BB Mesa
+  '1.01.01.02.02', // CEF Palitos
+  '1.01.01.02.03', // CEF Varetas
+  '1.01.01.02.04', // CEF Espetos
+  '1.01.01.02.05', // Bradesco Espetos
+  '1.01.01.02.06', // Bradesco Palitos
+  '1.01.01.02.07', // Bradesco Varetas
+  '1.01.01.02.08', // Sicoob Espetos
+  '1.01.01.02.09', // Sicoob Varetas
+  '1.01.01.02.10', // Sicoob Palitos
+  '1.01.01.02.11', // Sicoob Mesa
+  '1.01.01.02.13', // Sicredi Palitos
+  '1.01.01.02.14', // Sicredi Espetos
+  '1.01.01.02.15', // Sicredi Varetas
+  '1.01.01.02.16', // Sicredi Mesa
+]);
+
+/**
+ * Classifica uma entrada pelo codigoEstruturado da conta contábil.
+ * - Contas 3.01.01.01 a 3.01.01.05 = vendas/revenda
+ * - Contas 1.01.01.02.* = transferências bancárias (excluir)
+ * - Demais = outras receitas
+ */
+function classifyByAccountCode(contaCodigo?: string): 'vendas' | 'outras' | 'transferencia' {
+  if (!contaCodigo) return 'outras';
+  if (SALES_REVENUE_ACCOUNTS.has(contaCodigo)) return 'vendas';
+  if (BANK_TRANSFER_ACCOUNTS.has(contaCodigo) || contaCodigo.startsWith('1.01.01.02')) return 'transferencia';
+  return 'outras';
+}
+
+/** Conta "Clientes" — contrapartida de recebimentos de NFs de venda */
+const CLIENTS_ACCOUNT = '1.01.02.01.01';
+
+/**
+ * Classifica uma entrada pelo codigoEstruturado da conta CREDITO (contrapartida).
+ * - Clientes (1.01.02.01.01) ou contas 3.01.01.01-05 = vendas/revenda
+ * - Contas 1.01.01.02.* = transferências bancárias (excluir)
+ * - Demais = outras receitas
+ */
+function classifyCounterpart(contaCodigo?: string): 'vendas' | 'outras' | 'transferencia' {
+  if (!contaCodigo) return 'outras';
+  if (contaCodigo === CLIENTS_ACCOUNT) return 'vendas';
+  if (SALES_REVENUE_ACCOUNTS.has(contaCodigo)) return 'vendas';
+  if (BANK_TRANSFER_ACCOUNTS.has(contaCodigo) || contaCodigo.startsWith('1.01.01.02')) return 'transferencia';
+  return 'outras';
+}
+
+type LancEntry = { id: number; valor: number; debitoOuCredito: string; data: string; contaContabil: { codigoEstruturado: string; descricao: string } };
+
+/**
+ * Busca TODOS os lancamentosContabeis no período e retorna um Map por ID.
+ * Usado internamente para cruzar DEBITO bancário com CREDITO contrapartida.
+ */
+async function fetchAllLancamentos(startISO: string, endISO: string): Promise<Map<number, LancEntry>> {
+  const map = new Map<number, LancEntry>();
+  let skip = 0;
+  const take = 200;
+  while (true) {
+    const data = await gql<any>(`{
+      lancamentosContabeis(
+        skip: ${skip}, take: ${take},
+        where: { data: { gte: "${startISO}", lte: "${endISO}" } },
+        order: { id: ASC }
+      ) { totalCount items { id valor debitoOuCredito data contaContabil { codigoEstruturado descricao } } }
+    }`);
+    if (!data?.lancamentosContabeis) break;
+    for (const item of data.lancamentosContabeis.items) map.set(item.id, item);
+    skip += take;
+    if (skip >= data.lancamentosContabeis.totalCount) break;
+  }
+  return map;
+}
+
+type ClassifiedEntry = {
+  valor: number;
+  data: string;
+  bankAccount: string;
+  counterpartCode: string;
+  counterpartDesc: string;
+  classificacao: 'vendas' | 'outras';
+};
+
+/**
+ * Processa lancamentosContabeis para extrair Entradas do caixa/banco.
+ * Para cada DEBITO em conta bancária, busca a contrapartida CREDITO (ID+1..ID+20)
+ * e classifica pela conta da contrapartida.
+ * Exclui transferências entre contas bancárias.
+ * Fonte: Financeiro > Extrato detalhado por Receita e Despesa
+ * SOMENTE LEITURA
+ */
+async function processEntradas(startDate: string, endDate: string): Promise<{
+  entries: ClassifiedEntry[];
+  vendasRevenda: number;
+  vendasRevendaCount: number;
+  demaisReceitas: number;
+  demaisReceitasCount: number;
+  total: number;
+  count: number;
+}> {
+  const startISO = `${startDate}T00:00:00.000-03:00`;
+  const endISO = `${endDate}T23:59:59.999-03:00`;
+
+  const allEntries = await fetchAllLancamentos(startISO, endISO);
+
+  // Identify bank DEBITO entries
+  const bankDebits: LancEntry[] = [];
+  const bankDebitIds = new Set<number>();
+  for (const e of Array.from(allEntries.values())) {
+    if (e.debitoOuCredito === 'DEBITO' && e.contaContabil.codigoEstruturado.startsWith('1.01.01.02')) {
+      bankDebits.push(e);
+      bankDebitIds.add(e.id);
+    }
+  }
+
+  let vendasRevenda = 0, vendasRevendaCount = 0;
+  let demaisReceitas = 0, demaisReceitasCount = 0;
+  const entries: ClassifiedEntry[] = [];
+
+  for (const d of bankDebits) {
+    // Find the FIRST CREDITO counterpart in sequential IDs to determine classification
+    let firstCpCode: string | undefined;
+    let firstCpDesc: string | undefined;
+    let isTransfer = false;
+
+    for (let offset = 1; offset <= 50; offset++) {
+      const cp = allEntries.get(d.id + offset);
+      if (!cp) continue;
+      if (cp.debitoOuCredito !== 'CREDITO') {
+        if (bankDebitIds.has(d.id + offset)) break;
+        continue;
+      }
+
+      const cls = classifyCounterpart(cp.contaContabil.codigoEstruturado);
+      if (cls === 'transferencia') {
+        isTransfer = true;
+        break; // bank-to-bank transfer, skip entire entry
+      }
+
+      // Use first non-transfer CREDITO as the classification
+      firstCpCode = cp.contaContabil.codigoEstruturado;
+      firstCpDesc = cp.contaContabil.descricao;
+      break;
+    }
+
+    if (isTransfer) continue;
+
+    // Use the DEBITO value (bank entry amount), classified by the counterpart
+    const cls = classifyCounterpart(firstCpCode);
+    const entry: ClassifiedEntry = {
+      valor: Math.round(d.valor * 100) / 100,
+      data: d.data?.slice(0, 10) || '-',
+      bankAccount: d.contaContabil.descricao,
+      counterpartCode: firstCpCode || '-',
+      counterpartDesc: firstCpDesc || '-',
+      classificacao: cls === 'vendas' ? 'vendas' : 'outras',
+    };
+    entries.push(entry);
+
+    if (cls === 'vendas') {
+      vendasRevenda += d.valor;
+      vendasRevendaCount++;
+    } else {
+      demaisReceitas += d.valor;
+      demaisReceitasCount++;
+    }
+  }
+
+  const total = vendasRevenda + demaisReceitas;
+  console.log(`[Entradas] ${startDate} a ${endDate}: Total R$ ${total.toFixed(2)} (Vendas R$ ${vendasRevenda.toFixed(2)}, Outras R$ ${demaisReceitas.toFixed(2)}) - ${entries.length} de ${bankDebits.length} lançamentos`);
+
+  return {
+    entries,
+    vendasRevenda: Math.round(vendasRevenda * 100) / 100,
+    vendasRevendaCount,
+    demaisReceitas: Math.round(demaisReceitas * 100) / 100,
+    demaisReceitasCount,
+    total: Math.round(total * 100) / 100,
+    count: entries.length,
+  };
+}
+
+/**
+ * Fetch total de Entradas via lancamentosContabeis.
+ * Fonte: Financeiro > Extrato detalhado por Receita e Despesa
  * SOMENTE LEITURA
  */
 export async function fetchReceivedAccountsTotal(startDate: string, endDate: string): Promise<{
   total: number;
   count: number;
+  vendasRevenda: number;
+  vendasRevendaCount: number;
+  demaisReceitas: number;
+  demaisReceitasCount: number;
 }> {
   try {
-    const startISO = `${startDate}T00:00:00.000-03:00`;
-    const endISO = `${endDate}T23:59:59.999-03:00`;
-
-    let allItems: { valor: number; descricao: string }[] = [];
-    let skip = 0;
-    const take = 200;
-    let totalCount = 0;
-
-    while (true) {
-      const data = await gql<any>(`{
-        itensOfx(
-          skip: ${skip}, take: ${take},
-          where: {
-            data: {
-              gte: "${startISO}",
-              lte: "${endISO}"
-            },
-            valor: { gt: 0 }
-          }
-        ) {
-          totalCount
-          items {
-            valor
-            descricao
-          }
-        }
-      }`);
-
-      if (!data?.itensOfx) break;
-      totalCount = data.itensOfx.totalCount;
-      allItems.push(...data.itensOfx.items);
-      skip += take;
-      if (skip >= totalCount) break;
-    }
-
-    // Filter only real client inflows (Cobrança + PIX Recebido)
-    const realInflows = allItems.filter(item => isRealClientInflow(item.descricao, item.valor));
-    const total = realInflows.reduce((sum, item) => sum + (item.valor || 0), 0);
-
-    console.log(`[ReceivedOFX] ${startDate} a ${endDate}: R$ ${total.toFixed(2)} (${realInflows.length} de ${allItems.length} entradas positivas)`);
-
+    const result = await processEntradas(startDate, endDate);
     return {
-      total: Math.round(total * 100) / 100,
-      count: realInflows.length,
+      total: result.total,
+      count: result.count,
+      vendasRevenda: result.vendasRevenda,
+      vendasRevendaCount: result.vendasRevendaCount,
+      demaisReceitas: result.demaisReceitas,
+      demaisReceitasCount: result.demaisReceitasCount,
     };
   } catch (error: any) {
     console.error("[fetchReceivedAccountsTotal] Error:", error.message);
-    return { total: 0, count: 0 };
+    return { total: 0, count: 0, vendasRevenda: 0, vendasRevendaCount: 0, demaisReceitas: 0, demaisReceitasCount: 0 };
   }
 }
 
 /**
- * Fetch detailed received (cash inflow) items using OFX bank statement data.
- * Returns individual OFX entries filtered to Cobrança/Boleto and PIX Recebido.
+ * Fetch detailed Entradas via lancamentosContabeis.
  * SOMENTE LEITURA
  */
 export async function fetchReceivedAccountsDetails(startDate: string, endDate: string): Promise<{
   descricao: string;
   valor: number;
   data: string;
-  contaBancariaId: string;
+  tipo: string;
+  classificacao: 'vendas' | 'outras';
+  contaCodigo: string;
+  contaDescricao: string;
 }[]> {
   try {
-    const startISO = `${startDate}T00:00:00.000-03:00`;
-    const endISO = `${endDate}T23:59:59.999-03:00`;
-
-    let allItems: { descricao: string; valor: number; data: string; contaBancariaId: number }[] = [];
-    let skip = 0;
-    const take = 200;
-    let totalCount = 0;
-
-    while (true) {
-      const data = await gql<any>(`{
-        itensOfx(
-          skip: ${skip}, take: ${take},
-          where: {
-            data: {
-              gte: "${startISO}",
-              lte: "${endISO}"
-            },
-            valor: { gt: 0 }
-          },
-          order: { valor: DESC }
-        ) {
-          totalCount
-          items {
-            descricao
-            valor
-            data
-            contaBancariaId
-          }
-        }
-      }`);
-
-      if (!data?.itensOfx) break;
-      totalCount = data.itensOfx.totalCount;
-      allItems.push(...data.itensOfx.items);
-      skip += take;
-      if (skip >= totalCount) break;
-    }
-
-    // Filter only real client inflows
-    const realInflows = allItems.filter(item => isRealClientInflow(item.descricao, item.valor));
-
-    return realInflows
+    const result = await processEntradas(startDate, endDate);
+    return result.entries
       .sort((a, b) => b.valor - a.valor)
-      .map(item => ({
-        descricao: item.descricao || '-',
-        valor: Math.round(item.valor * 100) / 100,
-        data: item.data?.slice(0, 10) || '-',
-        contaBancariaId: String(item.contaBancariaId || '-'),
+      .map(e => ({
+        descricao: e.counterpartDesc,
+        valor: e.valor,
+        data: e.data,
+        tipo: e.bankAccount,
+        classificacao: e.classificacao,
+        contaCodigo: e.counterpartCode,
+        contaDescricao: e.counterpartDesc,
       }));
   } catch (error: any) {
     console.error("[fetchReceivedAccountsDetails] Error:", error.message);
@@ -2075,10 +2211,8 @@ export async function fetchReceivedAccountsDetails(startDate: string, endDate: s
   }
 }
 
-
 /**
- * Fetch "Outras Entradas" — all positive OFX entries that are NOT real client payments.
- * These include: inter-company transfers, loans, bank liberations, rendimentos, etc.
+ * Fetch "Outras Entradas" — demais receitas (não-vendas).
  * SOMENTE LEITURA
  */
 export async function fetchOtherInflowsTotal(startDate: string, endDate: string): Promise<{
@@ -2086,56 +2220,8 @@ export async function fetchOtherInflowsTotal(startDate: string, endDate: string)
   count: number;
 }> {
   try {
-    const startISO = `${startDate}T00:00:00.000-03:00`;
-    const endISO = `${endDate}T23:59:59.999-03:00`;
-
-    let allItems: { valor: number; descricao: string }[] = [];
-    let skip = 0;
-    const take = 200;
-    let totalCount = 0;
-
-    while (true) {
-      const data = await gql<any>(`{
-        itensOfx(
-          skip: ${skip}, take: ${take},
-          where: {
-            data: {
-              gte: "${startISO}",
-              lte: "${endISO}"
-            },
-            valor: { gt: 0 }
-          }
-        ) {
-          totalCount
-          items {
-            valor
-            descricao
-          }
-        }
-      }`);
-
-      if (!data?.itensOfx) break;
-      totalCount = data.itensOfx.totalCount;
-      allItems.push(...data.itensOfx.items);
-      skip += take;
-      if (skip >= totalCount) break;
-    }
-
-    // Filter items that are NOT real client inflows AND NOT internal transfers
-    // Only keep real external money: empréstimos, liberações, depósitos, etc.
-    const otherInflows = allItems.filter(item => 
-      item.valor > 0 && 
-      !isRealClientInflow(item.descricao, item.valor) &&
-      !isInternalTransfer(item.descricao)
-    );
-    const total = otherInflows.reduce((sum, item) => sum + (item.valor || 0), 0);
-
-    console.log(`[OtherInflows] ${startDate} a ${endDate}: R$ ${total.toFixed(2)} (${otherInflows.length} entradas, excl. transf. internas)`);
-
-    return {
-      total: Math.round(total * 100) / 100,
-      count: otherInflows.length,
-    };
+    const data = await fetchReceivedAccountsTotal(startDate, endDate);
+    return { total: data.demaisReceitas, count: data.demaisReceitasCount };
   } catch (error: any) {
     console.error("[fetchOtherInflowsTotal] Error:", error.message);
     return { total: 0, count: 0 };
@@ -2143,7 +2229,7 @@ export async function fetchOtherInflowsTotal(startDate: string, endDate: string)
 }
 
 /**
- * Fetch detailed "Outras Entradas" items — non-client OFX inflows with categorization.
+ * Fetch detailed "Outras Entradas".
  * SOMENTE LEITURA
  */
 export async function fetchOtherInflowsDetails(startDate: string, endDate: string): Promise<{
@@ -2151,62 +2237,18 @@ export async function fetchOtherInflowsDetails(startDate: string, endDate: strin
   valor: number;
   data: string;
   categoria: string;
-  contaBancariaId: string;
+  contaCodigo: string;
 }[]> {
   try {
-    const startISO = `${startDate}T00:00:00.000-03:00`;
-    const endISO = `${endDate}T23:59:59.999-03:00`;
-
-    let allItems: { descricao: string; valor: number; data: string; contaBancariaId: number }[] = [];
-    let skip = 0;
-    const take = 200;
-    let totalCount = 0;
-
-    while (true) {
-      const data = await gql<any>(`{
-        itensOfx(
-          skip: ${skip}, take: ${take},
-          where: {
-            data: {
-              gte: "${startISO}",
-              lte: "${endISO}"
-            },
-            valor: { gt: 0 }
-          },
-          order: { valor: DESC }
-        ) {
-          totalCount
-          items {
-            descricao
-            valor
-            data
-            contaBancariaId
-          }
-        }
-      }`);
-
-      if (!data?.itensOfx) break;
-      totalCount = data.itensOfx.totalCount;
-      allItems.push(...data.itensOfx.items);
-      skip += take;
-      if (skip >= totalCount) break;
-    }
-
-    // Filter items that are NOT real client inflows AND NOT internal transfers
-    const otherInflows = allItems.filter(item => 
-      item.valor > 0 && 
-      !isRealClientInflow(item.descricao, item.valor) &&
-      !isInternalTransfer(item.descricao)
-    );
-
-    return otherInflows
-      .sort((a, b) => b.valor - a.valor)
+    const allDetails = await fetchReceivedAccountsDetails(startDate, endDate);
+    return allDetails
+      .filter(item => item.classificacao === 'outras')
       .map(item => ({
-        descricao: item.descricao || '-',
-        valor: Math.round(item.valor * 100) / 100,
-        data: item.data?.slice(0, 10) || '-',
-        categoria: categorizeOtherInflow(item.descricao),
-        contaBancariaId: String(item.contaBancariaId || '-'),
+        descricao: item.descricao,
+        valor: item.valor,
+        data: item.data,
+        categoria: item.contaDescricao,
+        contaCodigo: item.contaCodigo,
       }));
   } catch (error: any) {
     console.error("[fetchOtherInflowsDetails] Error:", error.message);
@@ -2214,23 +2256,8 @@ export async function fetchOtherInflowsDetails(startDate: string, endDate: strin
   }
 }
 
-/** Categorize non-client, non-internal inflows for display */
-function categorizeOtherInflow(descricao: string): string {
-  const d = (descricao || '').toUpperCase();
-  if (d.includes('SILVERIO') || d.includes('SILVÉRIO') || d.includes('EMPREST')) return 'Empréstimo';
-  if (d.includes('LIBERA')) return 'Liberação Bancária';
-  if (d.includes('TRANSF') && d.includes('PIX')) return 'Transf. PIX';
-  if (d.includes('RENTAB') || d.includes('RENDIM')) return 'Rendimento';
-  if (d.includes('TED') || d.includes('DOC')) return 'TED/DOC';
-  if (d.includes('DEP')) return 'Depósito';
-  if (d.includes('SICOOB')) return 'Transf. Sicoob';
-  return 'Outros';
-}
-
-
 /**
- * Fetch monthly OFX inflows breakdown (Recebimentos vs Outras Entradas) for multiple months.
- * Used for the stacked bar chart in Resumo Financeiro.
+ * Fetch monthly Entradas breakdown for stacked bar chart.
  * SOMENTE LEITURA
  */
 export async function fetchMonthlyOFXInflows(months: { startDate: string; endDate: string; label: string }[]): Promise<{
@@ -2245,66 +2272,21 @@ export async function fetchMonthlyOFXInflows(months: { startDate: string; endDat
 }> {
   try {
     const results = [];
-
     for (const month of months) {
-      const startISO = `${month.startDate}T00:00:00.000-03:00`;
-      const endISO = `${month.endDate}T23:59:59.999-03:00`;
-
-      let allItems: { valor: number; descricao: string }[] = [];
-      let skip = 0;
-      const take = 200;
-      let totalCount = 0;
-
-      while (true) {
-        const data = await gql<any>(`{
-          itensOfx(
-            skip: ${skip}, take: ${take},
-            where: {
-              data: {
-                gte: "${startISO}",
-                lte: "${endISO}"
-              },
-              valor: { gt: 0 }
-            }
-          ) {
-            totalCount
-            items {
-              valor
-              descricao
-            }
-          }
-        }`);
-
-        if (!data?.itensOfx) break;
-        totalCount = data.itensOfx.totalCount;
-        allItems.push(...data.itensOfx.items);
-        skip += take;
-        if (skip >= totalCount) break;
-      }
-
-      const recebimentosItems = allItems.filter(item => isRealClientInflow(item.descricao, item.valor));
-      const outrasItems = allItems.filter(item =>
-        item.valor > 0 &&
-        !isRealClientInflow(item.descricao, item.valor) &&
-        !isInternalTransfer(item.descricao)
-      );
-
-      const recebimentos = Math.round(recebimentosItems.reduce((sum, item) => sum + (item.valor || 0), 0) * 100) / 100;
-      const outrasEntradas = Math.round(outrasItems.reduce((sum, item) => sum + (item.valor || 0), 0) * 100) / 100;
-
+      const data = await fetchReceivedAccountsTotal(month.startDate, month.endDate);
       results.push({
         label: month.label,
-        recebimentos,
-        outrasEntradas,
-        total: Math.round((recebimentos + outrasEntradas) * 100) / 100,
-        recebimentosCount: recebimentosItems.length,
-        outrasEntradasCount: outrasItems.length,
+        recebimentos: data.vendasRevenda,
+        outrasEntradas: data.demaisReceitas,
+        total: data.total,
+        recebimentosCount: data.vendasRevendaCount,
+        outrasEntradasCount: data.demaisReceitasCount,
       });
     }
-
     return { months: results };
   } catch (error: any) {
     console.error("[fetchMonthlyOFXInflows] Error:", error.message);
     return { months: [] };
   }
 }
+

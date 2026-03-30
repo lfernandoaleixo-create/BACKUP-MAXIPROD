@@ -1379,3 +1379,12 @@
 - [x] Verificar funcionamento visual de todas as abas (Estoque, Vendas, Faturamento, Financeiro, Configurações)
 - [x] Adicionar transportadora "Transexport" à lista de transportadoras
 - [x] Corrigir integração Maxiprod: puxar transportadora, segmento, condição de pagamento e representante dos pedidos de venda - Adicionado responsavelUsuario como fallback para representante, razaoSocial como fallback para nomeFantasia (representante e transportadora), lógica de exclusão de editoras (Brenda/Larissa), override Johnson/Keure → Grupo Fox
+
+## Correção Card Entradas - Resumo Financeiro
+- [x] Usar dados do Extrato detalhado por Receita e Despesa do Maxiprod (lancamentosContabeis)
+- [x] Classificar Vendas/Revenda: contas 3.01.01.01 a 3.01.01.05 + Clientes (1.01.02.01.01)
+- [x] Classificar Demais Receitas: todas as outras receitas excluindo transferências bancárias (1.01.01.02.*)
+- [x] Excluir transferências entre contas bancárias
+- [x] Validar: Total R$ 1.338.629,72 (Vendas R$ 859.854,26 + Demais R$ 478.775,46) - diff 0.5% vs planilha
+- [x] Usar lancamentosContabeis DEBITO em contas bancárias com contrapartida CREDITO
+- [x] Implementar no backend usando classificação por conta CREDITO contrapartida
