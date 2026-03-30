@@ -1995,24 +1995,21 @@ const BANK_TRANSFER_ACCOUNTS = new Set([
 function classifyByAccountCode(contaCodigo?: string): 'vendas' | 'outras' | 'transferencia' {
   if (!contaCodigo) return 'outras';
   if (SALES_REVENUE_ACCOUNTS.has(contaCodigo)) return 'vendas';
-  if (BANK_TRANSFER_ACCOUNTS.has(contaCodigo) || contaCodigo.startsWith('1.01.01.02')) return 'transferencia';
+  if (BANK_TRANSFER_ACCOUNTS.has(contaCodigo) || contaCodigo.startsWith('1.01.01.02') || contaCodigo === '1.01.01.01') return 'transferencia';
   return 'outras';
 }
-
-/** Conta "Clientes" — contrapartida de recebimentos de NFs de venda */
-const CLIENTS_ACCOUNT = '1.01.02.01.01';
 
 /**
  * Classifica uma entrada pelo codigoEstruturado da conta CREDITO (contrapartida).
  * - Clientes (1.01.02.01.01) ou contas 3.01.01.01-05 = vendas/revenda
- * - Contas 1.01.01.02.* = transferências bancárias (excluir)
+ * - Contas 1.01.01.02.* ou 1.01.01.01 (Caixa) = transferências bancárias (excluir)
  * - Demais = outras receitas
  */
 function classifyCounterpart(contaCodigo?: string): 'vendas' | 'outras' | 'transferencia' {
   if (!contaCodigo) return 'outras';
-  if (contaCodigo === CLIENTS_ACCOUNT) return 'vendas';
+  if (contaCodigo === '1.01.02.01.01') return 'vendas'; // Clientes
   if (SALES_REVENUE_ACCOUNTS.has(contaCodigo)) return 'vendas';
-  if (BANK_TRANSFER_ACCOUNTS.has(contaCodigo) || contaCodigo.startsWith('1.01.01.02')) return 'transferencia';
+  if (BANK_TRANSFER_ACCOUNTS.has(contaCodigo) || contaCodigo.startsWith('1.01.01.02') || contaCodigo === '1.01.01.01') return 'transferencia';
   return 'outras';
 }
 
@@ -2077,7 +2074,7 @@ async function processEntradas(startDate: string, endDate: string): Promise<{
   const bankDebits: LancEntry[] = [];
   const bankDebitIds = new Set<number>();
   for (const e of Array.from(allEntries.values())) {
-    if (e.debitoOuCredito === 'DEBITO' && e.contaContabil.codigoEstruturado.startsWith('1.01.01.02')) {
+    if (e.debitoOuCredito === 'DEBITO' && (e.contaContabil.codigoEstruturado.startsWith('1.01.01.02') || e.contaContabil.codigoEstruturado.startsWith('1.01.01.01'))) {
       bankDebits.push(e);
       bankDebitIds.add(e.id);
     }

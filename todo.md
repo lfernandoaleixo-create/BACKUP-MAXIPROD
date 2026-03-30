@@ -1385,6 +1385,6 @@
 - [x] Classificar Vendas/Revenda: contas 3.01.01.01 a 3.01.01.05 + Clientes (1.01.02.01.01)
 - [x] Classificar Demais Receitas: todas as outras receitas excluindo transferências bancárias (1.01.01.02.*)
 - [x] Excluir transferências entre contas bancárias
-- [x] Validar: Total R$ 1.338.629,72 (Vendas R$ 859.854,26 + Demais R$ 478.775,46) - diff 0.5% vs planilha
+- [x] Validar: Total R$ 1.344.925,88 (Vendas R$ 864.274,26 + Demais R$ 480.651,62) - EXATO vs planilha
 - [x] Usar lancamentosContabeis DEBITO em contas bancárias com contrapartida CREDITO
 - [x] Implementar no backend usando classificação por conta CREDITO contrapartida
