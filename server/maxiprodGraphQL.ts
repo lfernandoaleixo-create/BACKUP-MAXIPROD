@@ -1557,7 +1557,7 @@ export async function fetchPaidAccountsTotal(startDate: string, endDate: string)
     const startISO = `${startDate}T00:00:00.000-03:00`;
     const endISO = `${endDate}T23:59:59.999-03:00`;
 
-    let allItems: { valorPagoLiquido: number; tipo: string; fornecedor: { apelido: string | null; razaoSocial: string | null } | null; documentoVinculadoNumero: string | null; notaFiscalId: number | null }[] = [];
+    let allItems: { valorPagoLiquido: number; tipo: string; fornecedor: { apelido: string | null; razaoSocial: string | null } | null; documentoVinculadoNumero: string | null; notaFiscalId: number | null; liquidacaoConta: { codigoEstruturado: string; descricao: string } | null }[] = [];
     let skip = 0;
     const take = 200;
     let totalCount = 0;
@@ -1581,6 +1581,7 @@ export async function fetchPaidAccountsTotal(startDate: string, endDate: string)
             fornecedor { apelido razaoSocial }
             documentoVinculadoNumero
             notaFiscalId
+            liquidacaoConta { codigoEstruturado descricao }
           }
         }
       }`);
@@ -1592,19 +1593,30 @@ export async function fetchPaidAccountsTotal(startDate: string, endDate: string)
       if (skip >= totalCount) break;
     }
 
-    // Filter out previsões: DESPESA without fornecedor AND without document
-    const { realItems, excludedCount, excludedTotal } = filterOutPrevisoes(allItems);
+    // Excluir lançamentos baixados na conta contábil 2.04.01 ("Baixa Contas a Pagar - anterior início conciliação")
+    // Esses são ajustes contábeis que não representam pagamentos reais do mês
+    let excludedBaixaCount = 0;
+    let excludedBaixaTotal = 0;
+    const filteredItems = allItems.filter(item => {
+      const liqCodigo = item.liquidacaoConta?.codigoEstruturado || '';
+      if (liqCodigo.startsWith('2.04.01')) {
+        excludedBaixaCount++;
+        excludedBaixaTotal += item.valorPagoLiquido || 0;
+        return false;
+      }
+      return true;
+    });
+    if (excludedBaixaCount > 0) {
+      console.log(`[PaidAccounts] Excluídos ${excludedBaixaCount} lançamentos de Baixa Contas a Pagar (2.04.01): R$ ${excludedBaixaTotal.toFixed(2)}`);
+    }
 
-    const total = realItems.reduce((sum, item) => sum + (item.valorPagoLiquido || 0), 0);
+    const total = filteredItems.reduce((sum, item) => sum + (item.valorPagoLiquido || 0), 0);
     const apiResult = {
       total: Math.round(total * 100) / 100,
-      count: realItems.length,
-      excludedCount,
-      excludedTotal: Math.round(excludedTotal * 100) / 100,
+      count: filteredItems.length,
+      excludedCount: excludedBaixaCount,
+      excludedTotal: Math.round(excludedBaixaTotal * 100) / 100,
     };
-    if (excludedCount > 0) {
-      console.log(`[PaidAccounts] Excluídas ${excludedCount} previsões (R$ ${excludedTotal.toFixed(2)}) de ${totalCount} contas`);
-    }
 
     // Determine the year-month for caching
     const startParts = startDate.split('-').map(Number);
@@ -1742,7 +1754,7 @@ export async function syncPaidAccountsSnapshots(): Promise<void> {
       const startISO = `${startDate}T00:00:00.000-03:00`;
       const endISO = `${endDate}T23:59:59.999-03:00`;
 
-      let allItems: { valorPagoLiquido: number }[] = [];
+      let allItems: { valorPagoLiquido: number; liquidacaoConta: { codigoEstruturado: string } | null }[] = [];
       let skip = 0;
       const take = 200;
       let totalCount = 0;
@@ -1760,7 +1772,7 @@ export async function syncPaidAccountsSnapshots(): Promise<void> {
             }
           ) {
             totalCount
-            items { valorPagoLiquido }
+            items { valorPagoLiquido liquidacaoConta { codigoEstruturado } }
           }
         }`);
 
@@ -1776,14 +1788,19 @@ export async function syncPaidAccountsSnapshots(): Promise<void> {
         continue;
       }
 
-      const total = allItems.reduce((sum, item) => sum + (item.valorPagoLiquido || 0), 0);
+      // Excluir lançamentos baixados na conta contábil 2.04.01
+      const filteredItems = allItems.filter(item => {
+        const liqCodigo = item.liquidacaoConta?.codigoEstruturado || '';
+        return !liqCodigo.startsWith('2.04.01');
+      });
+      const total = filteredItems.reduce((sum, item) => sum + (item.valorPagoLiquido || 0), 0);
       const roundedTotal = Math.round(total * 100) / 100;
-      const isComplete = totalCount > 100;
+      const isComplete = filteredItems.length > 100;
 
       await db.insert(paidAccountsMonthly).values({
         yearMonth: ym,
         totalPago: String(roundedTotal),
-        count: totalCount,
+        count: filteredItems.length,
         source: 'liquidacaoData',
         isComplete,
       }).onDuplicateKeyUpdate({
@@ -1794,7 +1811,7 @@ export async function syncPaidAccountsSnapshots(): Promise<void> {
         },
       });
 
-      console.log(`[PaidAccounts Sync] ${ym}: R$ ${roundedTotal} (${totalCount} contas, complete=${isComplete})`);
+      console.log(`[PaidAccounts Sync] ${ym}: R$ ${roundedTotal} (${filteredItems.length} contas, complete=${isComplete})`);
     } catch (err: any) {
       console.error(`[PaidAccounts Sync] Error for ${ym}:`, err.message);
     }
@@ -1819,6 +1836,7 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
     const endISO = `${endDate}T23:59:59.999-03:00`;
 
     let allItems: { descricao: string; fornecedor: string; valorPagoLiquido: number; liquidacaoData: string; vencimentoData: string }[] = [];
+    let excludedBaixaCount = 0;
     let skip = 0;
     const take = 200;
     let totalCount = 0;
@@ -1850,6 +1868,7 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
             vencimentoData
             parcela
             parcelasQuantidadeTotal
+            liquidacaoConta { codigoEstruturado }
           }
         }
       }`);
@@ -1858,11 +1877,12 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
       totalCount = data.contaAPagar.totalCount;
 
       for (const item of data.contaAPagar.items) {
-        // Filter out previsões: DESPESA without fornecedor AND without document
-        const forn = (item.fornecedor?.apelido || item.fornecedor?.razaoSocial || '').trim();
-        const hasDoc = !!item.documentoVinculadoNumero || !!item.notaFiscalId;
-        const isPrevisao = item.tipo === 'DESPESA' && forn === '' && !hasDoc;
-        if (isPrevisao) continue;
+        // Excluir lançamentos baixados na conta contábil 2.04.01 ("Baixa Contas a Pagar - anterior início conciliação")
+        const liqCodigo = item.liquidacaoConta?.codigoEstruturado || '';
+        if (liqCodigo.startsWith('2.04.01')) {
+          excludedBaixaCount++;
+          continue;
+        }
 
         // Build description from available fields
         const parts: string[] = [];
