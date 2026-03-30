@@ -1377,3 +1377,4 @@
 - [x] Atualizar código com versão completa do GitHub (812 arquivos, incluindo aba Faturamento)
 - [x] Corrigir colunas faltantes em stock_items, order_items e sales_orders
 - [x] Verificar funcionamento visual de todas as abas (Estoque, Vendas, Faturamento, Financeiro, Configurações)
+- [x] Adicionar transportadora "Transexport" à lista de transportadoras

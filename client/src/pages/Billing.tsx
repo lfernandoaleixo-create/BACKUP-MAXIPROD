@@ -130,6 +130,7 @@ const TRANSPORT_LABELS: Record<string, string> = {
   zaz_trans: "Zaz Tras",
   fob: "FOB",
   regional_gestao: "Regional Gestão",
+  transexport: "Transexport",
 };
 
 /* ---- KPI Card ---- */
