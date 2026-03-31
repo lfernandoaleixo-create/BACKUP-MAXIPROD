@@ -1916,6 +1916,69 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
 }
 
 /**
+ * Fetch total de Faturamento via Notas Fiscais do Maxiprod (Vendas > Notas Fiscais).
+ * Filtros: emissaoData no período, estado EMITIDA, estadoConfiguravel em FIBRA/BAMBU/MADEIRA/ROJÃO/SERRAGEM.
+ * SOMENTE LEITURA
+ */
+const FATURAMENTO_ESTADOS_CONFIGURAVEIS = new Set(['FIBRA', 'BAMBU', 'MADEIRA', 'ROJÃO', 'SERRAGEM']);
+
+export async function fetchInvoicesTotal(startDate: string, endDate: string): Promise<{
+  total: number;
+  count: number;
+}> {
+  try {
+    const startISO = `${startDate}T00:00:00.000-03:00`;
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+
+    let allItems: { valorTotal: number; estadoConfiguravel: { descricao: string } | null }[] = [];
+    let skip = 0;
+    const take = 200;
+
+    while (true) {
+      const data = await gql<any>(`{
+        notasFiscais(
+          skip: ${skip}
+          take: ${take}
+          where: {
+            emissaoData: { gte: "${startISO}", lte: "${endISO}" }
+            estado: { eq: EMITIDA }
+          }
+        ) {
+          totalCount
+          items {
+            valorTotal
+            estadoConfiguravel { descricao }
+          }
+        }
+      }`);
+
+      if (!data?.notasFiscais) break;
+      const items = data.notasFiscais.items;
+      allItems.push(...items);
+      skip += take;
+      if (skip >= data.notasFiscais.totalCount) break;
+    }
+
+    // Filter by estadoConfiguravel
+    const filtered = allItems.filter(item => {
+      const ec = (item.estadoConfiguravel?.descricao || '').toUpperCase();
+      return FATURAMENTO_ESTADOS_CONFIGURAVEIS.has(ec);
+    });
+
+    const total = filtered.reduce((sum, item) => sum + (item.valorTotal || 0), 0);
+    const roundedTotal = Math.round(total * 100) / 100;
+
+    const excludedCount = allItems.length - filtered.length;
+    console.log(`[Faturamento NFs] ${startDate} a ${endDate}: R$ ${roundedTotal.toFixed(2)} (${filtered.length} NFs, excluídas ${excludedCount} NFs de outros tipos)`);
+
+    return { total: roundedTotal, count: filtered.length };
+  } catch (error: any) {
+    console.error("[fetchInvoicesTotal] Error:", error.message);
+    return { total: 0, count: 0 };
+  }
+}
+
+/**
  * Fetch total received accounts (Recebimentos) for a period.
  * Queries contaAReceber with estado=RECEBIDO and liquidacaoData in the period.
  * Uses valorRecebidoLiquido as the received amount (valor líquido conforme Maxiprod).

@@ -8,7 +8,7 @@ import { getDb } from "./db";
 import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
-import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows } from "./maxiprodGraphQL";
+import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal } from "./maxiprodGraphQL";
 
 /**
  * Tipos válidos de contas a receber (conforme filtro do Maxiprod):
@@ -2048,20 +2048,9 @@ export const financialRouter = router({
       periodEnd = todayBR;
     }
 
-    // Faturamento: TODAS as vendas faturadas no período
-    const [faturamento] = await db
-      .select({
-        total: sql<string>`COALESCE(SUM(CAST(${salesOrders.valorTotal} AS DECIMAL(18,2))), 0)`,
-        count: sql<number>`COUNT(*)`,
-      })
-      .from(salesOrders)
-      .where(
-        and(
-          eq(salesOrders.estadoItem, 'Faturado'),
-          gte(salesOrders.dataEmissao, periodStart),
-          lte(salesOrders.dataEmissao, periodEnd)
-        )
-      );
+    // Faturamento: Notas Fiscais do Maxiprod (Vendas > Notas Fiscais)
+    // Filtros: emissão no período, estado EMITIDA, estadoConfiguravel em FIBRA/BAMBU/MADEIRA/ROJÃO/SERRAGEM
+    const faturamento = await fetchInvoicesTotal(periodStart, periodEnd);
 
     // Contas Pagas: busca diretamente da API GraphQL do Maxiprod (estado PAGO + liquidacaoData)
     const paidData = await fetchPaidAccountsTotal(periodStart, periodEnd);
@@ -2073,7 +2062,7 @@ export const financialRouter = router({
     const endDate = new Date(endParts[0], endParts[1] - 1, endParts[2]);
     const periodLabel = `${startDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} a ${endDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
 
-    const faturamentoTotal = Math.round(Number(faturamento?.total || 0) * 100) / 100;
+    const faturamentoTotal = faturamento.total;
 
     return {
       periodLabel,

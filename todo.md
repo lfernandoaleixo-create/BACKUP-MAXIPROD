@@ -1392,3 +1392,4 @@
 - [x] BUG PERSISTENTE: Faturamento - pedidos continuam sendo re-marcados como wasModified. Corrigido: resetado wasModified + recalculado hashes com endpoint recalcOrderHashes. Auto-revoke confirmado estável (0 re-marcações após getOverview).
 - [x] Card Contas Pagas: usar dados de Contas a Pagar do Maxiprod (Financeiro>Contas a Pagar, aba Liquidação), filtrando por data de liquidação do mês, excluindo conta 290 / classificação 2.04.01. Total março: R$ 1.291.138,66 (exato)
 - [x] Remover valor "Já Pago" em verde do card Inadimplência (abas Vendas e Financeiro)
+- [x] Card Faturamento (aba Financeiro): usar Notas Fiscais do Maxiprod (Vendas>Notas Fiscais), filtro emissão mês corrente, estado Emitida, estadoConfiguravel FIBRA/BAMBU/MADEIRA/ROJÃO/SERRAGEM. Validado: R$ 1.346.666,91 (até 30/03) + R$ 575 (NF de 31/03) = R$ 1.347.241,91 (correto)
