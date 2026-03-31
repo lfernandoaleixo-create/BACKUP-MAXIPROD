@@ -1396,3 +1396,11 @@
 - [x] Card Saldo Bancário: ajustar layout para tabela com Saldo Inicial (1º dia mês), Saldo Atual (dia atual) e Variação de Saldo, conforme modelo Excel
 - [x] Card Saldo Bancário: corrigir nomes dos bancos - agora usa descricao direta do balancete contábil (ex: Sicoob Espetos, Sicredi Palitos, BB Mesa)
 - [x] Card Saldo Bancário: mostrar Saldo Inicial, Saldo Atual e Variação (com R$ e cor verde/vermelha) no header antes de expandir o card
+
+## Correção Filtro de Datas - Aba Vendas (31/03/2026)
+- [x] BUG: Vendas do dia 31/03 (dia atual) não apareciam na aba Vendas - corrigido: toISOString() convertia para UTC causando exclusão do último dia do mês
+- [x] Frontend: getMonthRange agora retorna strings YYYY-MM-DD puras (sem conversão UTC)
+- [x] Backend: getAnalytics e getOrders agora usam SUBSTRING(dataEmissao, 1, 10) para comparação segura
+- [x] Backend: getPreviousUnbilled e filtro A Faturar Anterior também corrigidos
+- [x] Testes: 6 novos testes em salesDateFilter.test.ts cobrindo BRT timezone, último dia do mês, ISO e YYYY-MM-DD
+- [x] Todos os 38 testes de sales passando (sales.test.ts + salesHierarchicalFilters.test.ts + salesAllUnbilled.test.ts + salesDateFilter.test.ts)

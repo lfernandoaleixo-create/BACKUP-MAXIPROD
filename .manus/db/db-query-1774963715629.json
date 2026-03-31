@@ -1,0 +1,14 @@
+{
+  "query": "SELECT DISTINCT LEFT(\"dataEmissao\", 20) as sample, COUNT(*) as cnt FROM sales_orders WHERE \"dataEmissao\" IS NOT NULL GROUP BY LEFT(\"dataEmissao\", 20) ORDER BY sample DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT LEFT(\"dataEmissao\", 20) as sample, COUNT(*) as cnt FROM sales_orders WHERE \"dataEmissao\" IS NOT NULL GROUP BY LEFT(\"dataEmissao\", 20) ORDER BY sample DESC LIMIT 20;",
+  "rows": [
+    {
+      "sample": "dataEmissao",
+      "cnt": "1318"
+    }
+  ],
+  "messages": [],
+  "stdout": "sample\tcnt\ndataEmissao\t1318\n",
+  "stderr": "",
+  "execution_time_ms": 398
+}

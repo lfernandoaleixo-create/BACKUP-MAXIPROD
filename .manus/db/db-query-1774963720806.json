@@ -1,0 +1,40 @@
+{
+  "query": "SELECT \"dataEmissao\" FROM sales_orders WHERE \"dataEmissao\" IS NOT NULL ORDER BY \"dataEmissao\" DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT \"dataEmissao\" FROM sales_orders WHERE \"dataEmissao\" IS NOT NULL ORDER BY \"dataEmissao\" DESC LIMIT 10;",
+  "rows": [
+    {
+      "dataEmissao": "dataEmissao"
+    },
+    {
+      "dataEmissao": "dataEmissao"
+    },
+    {
+      "dataEmissao": "dataEmissao"
+    },
+    {
+      "dataEmissao": "dataEmissao"
+    },
+    {
+      "dataEmissao": "dataEmissao"
+    },
+    {
+      "dataEmissao": "dataEmissao"
+    },
+    {
+      "dataEmissao": "dataEmissao"
+    },
+    {
+      "dataEmissao": "dataEmissao"
+    },
+    {
+      "dataEmissao": "dataEmissao"
+    },
+    {
+      "dataEmissao": "dataEmissao"
+    }
+  ],
+  "messages": [],
+  "stdout": "dataEmissao\ndataEmissao\ndataEmissao\ndataEmissao\ndataEmissao\ndataEmissao\ndataEmissao\ndataEmissao\ndataEmissao\ndataEmissao\ndataEmissao\n",
+  "stderr": "",
+  "execution_time_ms": 391
+}

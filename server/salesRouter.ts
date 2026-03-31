@@ -126,9 +126,12 @@ export const salesRouter = router({
         return "all";
       };
 
+      // Comparar apenas a parte YYYY-MM-DD da dataEmissao (evita bugs de timezone)
+      const startDay = input.startDate.substring(0, 10); // "YYYY-MM-DD"
+      const endDay = input.endDate.substring(0, 10);     // "YYYY-MM-DD"
       const conditions = [
-        gte(salesOrders.dataEmissao, input.startDate),
-        lte(salesOrders.dataEmissao, input.endDate + "T23:59:59.999Z"),
+        sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+        sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`,
       ];
 
       const allItems = await db
@@ -213,7 +216,7 @@ export const salesRouter = router({
         .where(
           and(
             sql`${salesOrders.estadoItem} = 'A faturar'`,
-            sql`${salesOrders.dataEmissao} < ${input.startDate}`
+            sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) < ${startDay}`
           )
         );
       let anteriorItems = allAFaturarAnterior.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
@@ -767,9 +770,12 @@ export const salesRouter = router({
         return "all";
       };
 
+      // Comparar apenas a parte YYYY-MM-DD da dataEmissao (evita bugs de timezone)
+      const startDay = input.startDate.substring(0, 10);
+      const endDay = input.endDate.substring(0, 10);
       const conditions = [
-        gte(salesOrders.dataEmissao, input.startDate),
-        lte(salesOrders.dataEmissao, input.endDate + "T23:59:59.999Z"),
+        sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+        sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`,
       ];
 
       const allItems = await db
@@ -954,7 +960,7 @@ export const salesRouter = router({
         .select()
         .from(salesOrders)
         .where(and(
-          sql`${salesOrders.dataEmissao} < ${input.currentPeriodStart}`,
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) < ${input.currentPeriodStart.substring(0, 10)}`,
           sql`${salesOrders.estadoItem} != 'Faturado'`,
         ));
 

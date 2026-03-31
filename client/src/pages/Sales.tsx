@@ -73,43 +73,49 @@ function getMonthLabel(monthStr: string): string {
 }
 
 /* ---- Period helpers ---- */
-function getMonthRange(year: number, month: number): { start: string; end: string } {
-  const start = new Date(year, month, 1);
-  const end = new Date(year, month + 1, 0);
+// Usa strings YYYY-MM-DD para evitar bugs de timezone (UTC vs BRT)
+function pad2(n: number): string { return n < 10 ? `0${n}` : `${n}`; }
+
+function getMonthRangeStr(year: number, month: number): { start: string; end: string } {
+  // month: 0-indexed (0=Jan, 11=Dec)
+  const lastDay = new Date(year, month + 1, 0).getDate();
   return {
-    start: start.toISOString(),
-    end: end.toISOString(),
+    start: `${year}-${pad2(month + 1)}-01`,
+    end: `${year}-${pad2(month + 1)}-${pad2(lastDay)}`,
   };
 }
 
 function getPeriodRange(period: string): { start: string; end: string; label: string } {
   const now = new Date();
+  // Usar data local do navegador (que está no fuso do usuário)
+  const y = now.getFullYear();
+  const m = now.getMonth(); // 0-indexed
   
   if (period === "current_month") {
-    const { start, end } = getMonthRange(now.getFullYear(), now.getMonth());
+    const { start, end } = getMonthRangeStr(y, m);
     return { start, end, label: now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) };
   }
   if (period === "last_month") {
-    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const { start, end } = getMonthRange(d.getFullYear(), d.getMonth());
+    const d = new Date(y, m - 1, 1);
+    const { start, end } = getMonthRangeStr(d.getFullYear(), d.getMonth());
     return { start, end, label: d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) };
   }
   if (period === "last_3_months") {
-    const d = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-    const { start } = getMonthRange(d.getFullYear(), d.getMonth());
-    const { end } = getMonthRange(now.getFullYear(), now.getMonth());
+    const d = new Date(y, m - 2, 1);
+    const { start } = getMonthRangeStr(d.getFullYear(), d.getMonth());
+    const { end } = getMonthRangeStr(y, m);
     return { start, end, label: "Ultimos 3 meses" };
   }
   if (period === "last_6_months") {
-    const d = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    const { start } = getMonthRange(d.getFullYear(), d.getMonth());
-    const { end } = getMonthRange(now.getFullYear(), now.getMonth());
+    const d = new Date(y, m - 5, 1);
+    const { start } = getMonthRangeStr(d.getFullYear(), d.getMonth());
+    const { end } = getMonthRangeStr(y, m);
     return { start, end, label: "Ultimos 6 meses" };
   }
   if (period === "all") {
     return {
-      start: "2020-01-01T00:00:00.000Z",
-      end: "2030-12-31T23:59:59.999Z",
+      start: "2020-01-01",
+      end: "2030-12-31",
       label: "Todo o periodo",
     };
   }
@@ -119,19 +125,16 @@ function getPeriodRange(period: string): { start: string; end: string; label: st
     const startDate = parts[1];
     const endDate = parts[2];
     if (startDate && endDate) {
-      const s = new Date(startDate + "T00:00:00.000Z");
-      const e = new Date(endDate + "T23:59:59.999Z");
-      // Use local date parts for display to avoid UTC→local timezone shift
       const [sY, sM, sD] = startDate.split("-").map(Number);
       const [eY, eM, eD] = endDate.split("-").map(Number);
       const sLocal = new Date(sY, sM - 1, sD);
       const eLocal = new Date(eY, eM - 1, eD);
       const fmtStart = sLocal.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
       const fmtEnd = eLocal.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
-      return { start: s.toISOString(), end: e.toISOString(), label: `${fmtStart} a ${fmtEnd}` };
+      return { start: startDate, end: endDate, label: `${fmtStart} a ${fmtEnd}` };
     }
   }
-  const { start, end } = getMonthRange(now.getFullYear(), now.getMonth());
+  const { start, end } = getMonthRangeStr(y, m);
   return { start, end, label: now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }) };
 }
 
