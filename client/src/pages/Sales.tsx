@@ -3003,7 +3003,7 @@ export default function Sales() {
                         />
                       </div>
                       <span className="text-xs font-bold text-purple-600 whitespace-nowrap">
-                        {((analytics.totalAmostraBonif / (analytics.totalValue || 1)) * 100).toFixed(1)}%
+                        {((analytics.totalAmostraBonif / (analytics.totalValue || 1)) * 100).toFixed(1)}% do total de vendas
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-1.5">{analytics.pedidosAmostraBonif} pedidos</p>
