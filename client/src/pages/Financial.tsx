@@ -63,7 +63,10 @@ import { useOperator } from "@/contexts/OperatorContext";
 
 /* ---- Helpers ---- */
 function formatCurrency(n: number): string {
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
+  const abs = Math.abs(n);
+  const formatted = abs.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
+  if (n < 0) return formatted.replace("R$", "R$ -");
+  return formatted;
 }
 
 function formatCurrencyShort(n: number): string {
@@ -1184,11 +1187,15 @@ function BankBalanceCard() {
   const { data, isLoading } = trpc.financial.getBankBalancesDetailed.useQuery();
   const [collapsed, setCollapsed] = useState(true);
 
-  const fmt = (v: number) =>
-    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const fmt = (v: number) => {
+    const abs = Math.abs(v);
+    const formatted = abs.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    if (v < 0) return formatted.replace("R$", "R$ -");
+    return formatted;
+  };
 
   const fmtShort = (v: number) =>
-    v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (isLoading) {
     return (
