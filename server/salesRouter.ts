@@ -151,17 +151,9 @@ export const salesRouter = router({
         return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
       };
 
-      // REGRA DE NEGÓCIO: Excluir itens que caem em "outros" (CANCELADO, GILSON, NULL)
-      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
-      const isAmostraBonif = (estado: string | null) => {
-        if (!estado) return false;
-        const e = estado.toUpperCase();
-        return e.includes("AMOSTRA") || e.includes("BONIFICA");
-      };
-      const isOutros = (estado: string | null) => {
-        if (isAmostraBonif(estado)) return false;
-        return estadoToGrupo(estado) === "outros";
-      };
+      // REGRA DE NEGÓCIO: Excluir itens "outros" (CANCELADO, AMOSTRA, BONIFICAÇÃO, GILSON, NULL)
+      // Mesma regra do card Vendas da aba Financeiro
+      const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
 
       // Apply hierarchical filters
       let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
@@ -596,16 +588,8 @@ export const salesRouter = router({
         return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
       };
 
-      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
-      const isAmostraBonif = (estado: string | null) => {
-        if (!estado) return false;
-        const e = estado.toUpperCase();
-        return e.includes("AMOSTRA") || e.includes("BONIFICA");
-      };
-      const isOutros = (estado: string | null) => {
-        if (isAmostraBonif(estado)) return false;
-        return estadoToGrupo(estado) === "outros";
-      };
+      // REGRA DE NEGÓCIO: Excluir itens "outros" (CANCELADO, AMOSTRA, BONIFICAÇÃO, GILSON, NULL)
+      const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
 
       let allItems = rawItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
       if (effectiveGrupo !== "all") {
@@ -792,16 +776,8 @@ export const salesRouter = router({
         return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
       };
 
-      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
-      const isAmostraBonif = (estado: string | null) => {
-        if (!estado) return false;
-        const e = estado.toUpperCase();
-        return e.includes("AMOSTRA") || e.includes("BONIFICA");
-      };
-      const isOutros = (estado: string | null) => {
-        if (isAmostraBonif(estado)) return false;
-        return estadoToGrupo(estado) === "outros";
-      };
+      // REGRA DE NEGÓCIO: Excluir itens "outros" (CANCELADO, AMOSTRA, BONIFICAÇÃO, GILSON, NULL)
+      const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
 
       let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
       if (effectiveGrupo !== "all") {
@@ -973,16 +949,8 @@ export const salesRouter = router({
         return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
       };
 
-      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
-      const isAmostraBonif = (estado: string | null) => {
-        if (!estado) return false;
-        const e = estado.toUpperCase();
-        return e.includes("AMOSTRA") || e.includes("BONIFICA");
-      };
-      const isOutros = (estado: string | null) => {
-        if (isAmostraBonif(estado)) return false;
-        return estadoToGrupo(estado) === "outros";
-      };
+      // REGRA DE NEGÓCIO: Excluir itens "outros" (CANCELADO, AMOSTRA, BONIFICAÇÃO, GILSON, NULL)
+      const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
 
       let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
       if (effectiveGrupo !== "all") {
@@ -1220,16 +1188,8 @@ export const salesRouter = router({
         return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
       };
 
-      // NOTA: AMOSTRA/BONIFICAÇÃO NÃO são excluídos — são pedidos especiais válidos
-      const isAmostraBonif = (estado: string | null) => {
-        if (!estado) return false;
-        const e = estado.toUpperCase();
-        return e.includes("AMOSTRA") || e.includes("BONIFICA");
-      };
-      const isOutros = (estado: string | null) => {
-        if (isAmostraBonif(estado)) return false;
-        return estadoToGrupo(estado) === "outros";
-      };
+      // REGRA DE NEGÓCIO: Excluir itens "outros" (CANCELADO, AMOSTRA, BONIFICAÇÃO, GILSON, NULL)
+      const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
 
       let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
 

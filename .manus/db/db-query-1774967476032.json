@@ -1,0 +1,15 @@
+{
+  "query": "\n-- Total com filtro atual (exclui Digitação e \"outros\" onde outros = grupo \"outros\")\nSELECT \n  COUNT(DISTINCT pedido) as pedidos,\n  COUNT(DISTINCT cliente) as clientes,\n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND (estadoNotaPedido IS NULL OR UPPER(estadoNotaPedido) NOT IN ('DIGITAÇÃO', 'DIGITACAO'));\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Total com filtro atual (exclui Digitação e \"outros\" onde outros = grupo \"outros\")\nSELECT \n  COUNT(DISTINCT pedido) as pedidos,\n  COUNT(DISTINCT cliente) as clientes,\n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND (estadoNotaPedido IS NULL OR UPPER(estadoNotaPedido) NOT IN ('DIGITAÇÃO', 'DIGITACAO'));\n",
+  "rows": [
+    {
+      "pedidos": "204",
+      "clientes": "171",
+      "total": "1052877.02"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedidos\tclientes\ttotal\n204\t171\t1052877.02\n",
+  "stderr": "",
+  "execution_time_ms": 415
+}

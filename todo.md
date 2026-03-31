@@ -1410,3 +1410,8 @@
 - [x] Investigar filtros de estados configuráveis usados no card Vendas da aba Financeiro
 - [x] Aplicar mesmos filtros no salesRouter (getAnalytics) - ambos já usavam mesma lógica, diferença era bug de timezone
 - [x] Validar que o valor final bate entre as duas abas - R$ 1.021.342,70 confirmado via SQL + correção timezone no financialRouter
+
+## Correção Valor Total do Período - Aba Vendas (31/03/2026)
+- [x] BUG: Valor Total mostra R$ 1.029.377,02 em vez de R$ 1.021.342,70 - corrigido: isOutros agora exclui AMOSTRA/BONIFICAÇÃO (igual aba Financeiro)
+- [x] Investigar quais itens estão sendo incluídos a mais - AMOSTRA (R$ 360) + BONIFICAÇÃO (R$ 7.674) + CANCELADO (R$ 23.500)
+- [x] Corrigir filtro para bater com card Vendas da aba Financeiro - removido isAmostraBonif de todas as 6 ocorrências no salesRouter
