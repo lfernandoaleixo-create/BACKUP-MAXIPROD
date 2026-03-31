@@ -8,7 +8,7 @@ import { getDb } from "./db";
 import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
-import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal } from "./maxiprodGraphQL";
+import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchBankBalancesWithInitial } from "./maxiprodGraphQL";
 
 /**
  * Tipos válidos de contas a receber (conforme filtro do Maxiprod):
@@ -1594,6 +1594,47 @@ export const financialRouter = router({
       totalSaldoContabil: Math.round(totalSaldoContabil * 100) / 100,
     };
   }),
+
+  /**
+   * Get bank balances with saldo inicial, saldo atual, and variação.
+   * Uses lancamentosContabeis from Maxiprod balancete.
+   * Period: 1st of current month to today (or custom dates).
+   */
+  getBankBalancesDetailed: publicProcedure
+    .input(z.object({
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const todayBR = getTodayBR();
+      let periodStart: string;
+      let periodEnd: string;
+
+      if (input?.startDate && input?.endDate) {
+        periodStart = input.startDate;
+        periodEnd = input.endDate;
+      } else {
+        const [curY, curM] = todayBR.split('-').map(Number);
+        periodStart = `${curY}-${String(curM).padStart(2, '0')}-01`;
+        periodEnd = todayBR;
+      }
+
+      const data = await fetchBankBalancesWithInitial(periodStart, periodEnd);
+
+      // Generate period label
+      const startParts = periodStart.split('-').map(Number);
+      const endParts = periodEnd.split('-').map(Number);
+      const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+      const endDate = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+      const periodLabel = `${startDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} até ${endDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+
+      return {
+        periodLabel,
+        periodStart,
+        periodEnd,
+        ...data,
+      };
+    }),
 
   /**
    * Update saldo inicial for a bank account

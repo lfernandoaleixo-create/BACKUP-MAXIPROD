@@ -1181,28 +1181,14 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
 
 /* ---- Bank Balance Card ---- */
 function BankBalanceCard() {
-  const { data, isLoading } = trpc.financial.getBankBalances.useQuery();
+  const { data, isLoading } = trpc.financial.getBankBalancesDetailed.useQuery();
   const [collapsed, setCollapsed] = useState(true);
 
-  const formatCurrency = (v: number) =>
+  const fmt = (v: number) =>
     v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-  const shortBank = (name: string) => {
-    if (name.includes("Bradesco")) return "Bradesco";
-    if (name.includes("Sicredi")) return "Sicredi";
-    if (name.includes("BANCOOB") || name.includes("Sicoob")) return "Sicoob";
-    if (name.includes("Caixa")) return "Caixa";
-    if (name.includes("Brasil")) return "BB";
-    return name.substring(0, 12);
-  };
-
-  const shortCo = (name: string) => {
-    if (name.includes("PALITOS")) return "Palitos";
-    if (name.includes("VARETAS")) return "Varetas";
-    if (name.includes("ESPETOS")) return "Espetos";
-    if (name.includes("MESA")) return "Mesa";
-    return name;
-  };
+  const fmtShort = (v: number) =>
+    v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (isLoading) {
     return (
@@ -1217,18 +1203,10 @@ function BankBalanceCard() {
 
   if (!data || data.accounts.length === 0) return null;
 
-  // Group accounts by company
-  const byCompany = new Map<string, typeof data.accounts>();
-  data.accounts.forEach(acc => {
-    const co = acc.empresaNome || "Outros";
-    const list = byCompany.get(co) || [];
-    list.push(acc);
-    byCompany.set(co, list);
-  });
-
-  // Show accounts that have saldo contábil or saldoInicial configured
-  const configuredAccounts = data.accounts.filter(a => a.saldoContabil !== 0 || a.saldoInicial !== 0 || a.saldoInicialData);
-  const hasConfigured = configuredAccounts.length > 0;
+  // Filter out accounts with zero everywhere
+  const activeAccounts = data.accounts.filter(
+    a => a.saldoInicial !== 0 || a.saldoAtual !== 0 || a.variacao !== 0
+  );
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
@@ -1244,20 +1222,16 @@ function BankBalanceCard() {
           <div className="text-left">
             <h3 className="font-bold text-slate-800 text-sm">Saldo Bancário</h3>
             <p className="text-xs text-slate-500">
-              {hasConfigured
-                ? `${configuredAccounts.length} contas | Balancete contábil`
-                : "Sincronize os saldos em Config > Bancos"}
+              {activeAccounts.length} contas | {data.periodLabel}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          {hasConfigured && (
-            <span className={`font-bold text-lg tabular-nums ${
-              data.totalSaldo >= 0 ? "text-emerald-600" : "text-red-600"
-            }`}>
-              {formatCurrency(data.totalSaldo)}
-            </span>
-          )}
+          <span className={`font-bold text-lg tabular-nums ${
+            data.totalSaldoAtual >= 0 ? "text-emerald-600" : "text-red-600"
+          }`}>
+            {fmt(data.totalSaldoAtual)}
+          </span>
           {collapsed ? (
             <ChevronDown className="w-5 h-5 text-slate-400" />
           ) : (
@@ -1266,53 +1240,61 @@ function BankBalanceCard() {
         </div>
       </button>
 
-      {/* Content */}
+      {/* Content - Table */}
       {!collapsed && (
-        <div className="border-t border-slate-100 p-4">
-          {!hasConfigured ? (
-            <div className="text-center py-6 text-slate-400">
-              <Landmark className="w-10 h-10 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">Nenhum saldo bancário disponível</p>
-              <p className="text-xs mt-1">Vá em <strong>Config &gt; Bancos</strong> e clique em "Atualizar Saldos"</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {Array.from(byCompany.entries()).map(([company, accounts]) => {
-                const companyConfigured = accounts.filter(a => a.saldoContabil !== 0 || a.saldoInicial !== 0 || a.saldoInicialData);
-                if (companyConfigured.length === 0) return null;
-                const companyTotal = companyConfigured.reduce((s, a) => s + a.saldoAtual, 0);
-                return (
-                  <div key={company}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                        {shortCo(company)}
-                      </span>
-                      <span className={`text-sm font-bold tabular-nums ${
-                        companyTotal >= 0 ? "text-emerald-600" : "text-red-600"
-                      }`}>
-                        {formatCurrency(companyTotal)}
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      {companyConfigured.map(acc => (
-                        <div key={acc.maxiprodId} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-slate-50">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-700 font-medium">{shortBank(acc.bancoNome || "")}</span>
-                            <span className="text-xs text-slate-400">Cc {acc.contaNumero}</span>
-                          </div>
-                          <span className={`text-sm font-semibold tabular-nums ${
-                            acc.saldoAtual >= 0 ? "text-emerald-600" : "text-red-600"
-                          }`}>
-                            {formatCurrency(acc.saldoAtual)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+        <div className="border-t border-slate-100">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left py-2.5 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Conta Bancária</th>
+                  <th className="text-right py-2.5 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Saldo Inicial</th>
+                  <th className="text-right py-2.5 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Saldo Atual</th>
+                  <th className="text-right py-2.5 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Variação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeAccounts.map((acc, idx) => (
+                  <tr key={acc.codigoEstruturado} className={`border-b border-slate-50 ${
+                    idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                  } hover:bg-indigo-50/30 transition-colors`}>
+                    <td className="py-2 px-4 font-medium text-slate-700">{acc.descricao}</td>
+                    <td className="py-2 px-4 text-right tabular-nums text-slate-600">
+                      R$ {fmtShort(acc.saldoInicial)}
+                    </td>
+                    <td className={`py-2 px-4 text-right tabular-nums font-semibold ${
+                      acc.saldoAtual >= 0 ? "text-emerald-600" : "text-red-600"
+                    }`}>
+                      R$ {fmtShort(acc.saldoAtual)}
+                    </td>
+                    <td className={`py-2 px-4 text-right tabular-nums ${
+                      acc.variacao > 0 ? "text-emerald-600" : acc.variacao < 0 ? "text-red-600" : "text-slate-500"
+                    }`}>
+                      {acc.variacao > 0 ? "+" : ""}{fmtShort(acc.variacao)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold">
+                  <td className="py-2.5 px-4 text-slate-800">TOTAL</td>
+                  <td className="py-2.5 px-4 text-right tabular-nums text-slate-800">
+                    R$ {fmtShort(data.totalSaldoInicial)}
+                  </td>
+                  <td className={`py-2.5 px-4 text-right tabular-nums ${
+                    data.totalSaldoAtual >= 0 ? "text-emerald-700" : "text-red-700"
+                  }`}>
+                    R$ {fmtShort(data.totalSaldoAtual)}
+                  </td>
+                  <td className={`py-2.5 px-4 text-right tabular-nums ${
+                    data.totalVariacao > 0 ? "text-emerald-700" : data.totalVariacao < 0 ? "text-red-700" : "text-slate-600"
+                  }`}>
+                    {data.totalVariacao > 0 ? "+" : ""}{fmtShort(data.totalVariacao)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       )}
     </div>

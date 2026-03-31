@@ -2370,3 +2370,130 @@ export async function fetchMonthlyOFXInflows(months: { startDate: string; endDat
   }
 }
 
+
+/**
+ * Fetch bank balances with saldo inicial (before period) and saldo final (up to period end).
+ * Queries contasContabeis (Caixa 1.01.01.01.* + Bancos 1.01.01.02.*) and lancamentosContabeis.
+ * Returns per-account breakdown with saldo inicial, saldo atual, and variação.
+ * SOMENTE LEITURA
+ */
+export async function fetchBankBalancesWithInitial(startDate: string, endDate: string): Promise<{
+  accounts: Array<{
+    codigoEstruturado: string;
+    descricao: string;
+    saldoInicial: number;
+    saldoAtual: number;
+    variacao: number;
+  }>;
+  totalSaldoInicial: number;
+  totalSaldoAtual: number;
+  totalVariacao: number;
+}> {
+  try {
+    const startISO = `${startDate}T00:00:00.000-03:00`;
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+
+    // Get all Disponível accounts: Caixa (1.01.01.01.*) + Bancos (1.01.01.02.*)
+    const contasData = await gql<any>(`{
+      contasContabeis(skip: 0, take: 100, where: {
+        or: [
+          { codigoEstruturado: { startsWith: "1.01.01.01." } }
+          { codigoEstruturado: { startsWith: "1.01.01.02." } }
+        ]
+      }) {
+        totalCount
+        items { id codigoEstruturado descricao analiticaOuSintetica }
+      }
+    }`);
+
+    if (!contasData?.contasContabeis?.items) {
+      throw new Error("Não foi possível buscar contas contábeis");
+    }
+
+    const contas = contasData.contasContabeis.items
+      .filter((c: any) => c.analiticaOuSintetica === 'ANALITICA')
+      .sort((a: any, b: any) => a.codigoEstruturado.localeCompare(b.codigoEstruturado));
+
+    let totalSaldoInicial = 0;
+    let totalSaldoAtual = 0;
+    const accounts: Array<{
+      codigoEstruturado: string;
+      descricao: string;
+      saldoInicial: number;
+      saldoAtual: number;
+      variacao: number;
+    }> = [];
+
+    for (const conta of contas) {
+      // Saldo Inicial = all lancamentos BEFORE start of period (debitos - creditos for Ativo)
+      const lancBefore = await fetchAllPages('lancamentosContabeis', (skip: number, take: number) => `{
+        lancamentosContabeis(
+          skip: ${skip}, take: ${take},
+          where: {
+            contaContabilId: { eq: ${conta.id} }
+            data: { lt: "${startISO}" }
+          }
+        ) {
+          totalCount
+          items { valor debitoOuCredito }
+        }
+      }`);
+
+      let debBefore = 0, credBefore = 0;
+      for (const l of lancBefore as any[]) {
+        const val = parseFloat(l.valor) || 0;
+        if (l.debitoOuCredito === 'DEBITO') debBefore += val;
+        else credBefore += val;
+      }
+      const saldoInicial = Math.round((debBefore - credBefore) * 100) / 100;
+
+      // Saldo Final = all lancamentos up to end of period (debitos - creditos for Ativo)
+      const lancAll = await fetchAllPages('lancamentosContabeis', (skip: number, take: number) => `{
+        lancamentosContabeis(
+          skip: ${skip}, take: ${take},
+          where: {
+            contaContabilId: { eq: ${conta.id} }
+            data: { lte: "${endISO}" }
+          }
+        ) {
+          totalCount
+          items { valor debitoOuCredito }
+        }
+      }`);
+
+      let debAll = 0, credAll = 0;
+      for (const l of lancAll as any[]) {
+        const val = parseFloat(l.valor) || 0;
+        if (l.debitoOuCredito === 'DEBITO') debAll += val;
+        else credAll += val;
+      }
+      const saldoAtual = Math.round((debAll - credAll) * 100) / 100;
+      const variacao = Math.round((saldoAtual - saldoInicial) * 100) / 100;
+
+      totalSaldoInicial += saldoInicial;
+      totalSaldoAtual += saldoAtual;
+
+      accounts.push({
+        codigoEstruturado: conta.codigoEstruturado,
+        descricao: conta.descricao,
+        saldoInicial,
+        saldoAtual,
+        variacao,
+      });
+    }
+
+    const totalVariacao = Math.round((totalSaldoAtual - totalSaldoInicial) * 100) / 100;
+
+    console.log(`[BankBalances] ${startDate} a ${endDate}: ${accounts.length} contas, Inicial R$ ${totalSaldoInicial.toFixed(2)}, Atual R$ ${totalSaldoAtual.toFixed(2)}, Variação R$ ${totalVariacao.toFixed(2)}`);
+
+    return {
+      accounts,
+      totalSaldoInicial: Math.round(totalSaldoInicial * 100) / 100,
+      totalSaldoAtual: Math.round(totalSaldoAtual * 100) / 100,
+      totalVariacao,
+    };
+  } catch (error: any) {
+    console.error("[fetchBankBalancesWithInitial] Error:", error.message);
+    return { accounts: [], totalSaldoInicial: 0, totalSaldoAtual: 0, totalVariacao: 0 };
+  }
+}
