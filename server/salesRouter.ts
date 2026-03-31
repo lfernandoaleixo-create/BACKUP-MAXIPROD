@@ -176,6 +176,10 @@ export const salesRouter = router({
           totalFaturado: 0,
           totalAFaturar: 0,
           totalAFaturarAnterior: 0,
+          totalAmostraBonif: 0,
+          totalAmostra: 0,
+          totalBonificacao: 0,
+          pedidosAmostraBonif: 0,
           ticketMedio: 0,
           bySegmentKPI: [],
           byMonth: [],
@@ -199,6 +203,24 @@ export const salesRouter = router({
       const totalAFaturar = items
         .filter((i) => i.estadoItem === "A faturar")
         .reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
+
+      // Amostra/Bonificação: itens excluídos do total mas mostrados em card separado
+      const isAmostraBonif = (estado: string | null) => {
+        if (!estado) return false;
+        const e = estado.toUpperCase();
+        return e.includes("AMOSTRA") || e.includes("BONIFICA");
+      };
+      const amostraBonifItems = allItems.filter(item => 
+        !isDigitacao(item.estadoNota) && isAmostraBonif(item.estadoConfiguravel)
+      );
+      const totalAmostra = amostraBonifItems
+        .filter(i => (i.estadoConfiguravel || "").toUpperCase().includes("AMOSTRA"))
+        .reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
+      const totalBonificacao = amostraBonifItems
+        .filter(i => (i.estadoConfiguravel || "").toUpperCase().includes("BONIFICA"))
+        .reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
+      const totalAmostraBonif = totalAmostra + totalBonificacao;
+      const pedidosAmostraBonif = new Set(amostraBonifItems.map(i => i.pedido).filter(Boolean)).size;
 
       // A Faturar Anterior: query ALL "A faturar" items from BEFORE the selected period
       // This is independent of the date filter - shows accumulated backlog
@@ -429,6 +451,10 @@ export const salesRouter = router({
         totalFaturado: Math.round(totalFaturado * 100) / 100,
         totalAFaturar: Math.round(totalAFaturar * 100) / 100,
         totalAFaturarAnterior: Math.round(totalAFaturarAnterior * 100) / 100,
+        totalAmostraBonif: Math.round(totalAmostraBonif * 100) / 100,
+        totalAmostra: Math.round(totalAmostra * 100) / 100,
+        totalBonificacao: Math.round(totalBonificacao * 100) / 100,
+        pedidosAmostraBonif,
         ticketMedio: uniqueOrders.size > 0 ? Math.round((totalValue / uniqueOrders.size) * 100) / 100 : 0,
         bySegmentKPI,
         byCrmSegmentKPI,

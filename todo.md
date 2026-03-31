@@ -1415,3 +1415,9 @@
 - [x] BUG: Valor Total mostra R$ 1.029.377,02 em vez de R$ 1.021.342,70 - corrigido: isOutros agora exclui AMOSTRA/BONIFICAÇÃO (igual aba Financeiro)
 - [x] Investigar quais itens estão sendo incluídos a mais - AMOSTRA (R$ 360) + BONIFICAÇÃO (R$ 7.674) + CANCELADO (R$ 23.500)
 - [x] Corrigir filtro para bater com card Vendas da aba Financeiro - removido isAmostraBonif de todas as 6 ocorrências no salesRouter
+
+## Card Amostra/Bonificação separado - Aba Vendas (31/03/2026)
+- [x] Backend: calcular totalAmostraBonif (soma de AMOSTRA + BONIFICAÇÃO) no getAnalytics
+- [x] Backend: retornar quantidade de pedidos e breakdown (amostra vs bonificação)
+- [x] Frontend: criar card separado mostrando valor e % em relação ao Valor Total do Período
+- [x] Regra permanente: sempre manter esse card separado na aba Vendas

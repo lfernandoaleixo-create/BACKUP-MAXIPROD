@@ -51,6 +51,7 @@ import {
   Phone,
   Mail,
   ListFilter,
+  Gift,
 } from "lucide-react";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
@@ -2973,6 +2974,41 @@ export default function Sales() {
                     </span>
                   </div>
                 </div>
+
+                {/* Amostra / Bonificação */}
+                {analytics.totalAmostraBonif > 0 && (
+                  <div className="p-5 border-t md:border-t-0 md:border-l border-slate-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-purple-50">
+                        <Gift className="w-4.5 h-4.5 text-purple-600" />
+                      </div>
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Amostra / Bonificação</p>
+                    </div>
+                    <p className="text-2xl font-extrabold text-purple-700 tracking-tight">{formatCurrencyFull(analytics.totalAmostraBonif)}</p>
+                    <div className="mt-2 space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-400">Amostra</span>
+                        <span className="font-semibold text-purple-600">{formatCurrencyFull(analytics.totalAmostra)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-400">Bonificação</span>
+                        <span className="font-semibold text-purple-600">{formatCurrencyFull(analytics.totalBonificacao)}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(((analytics.totalAmostraBonif / (analytics.totalValue || 1)) * 100), 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-purple-600 whitespace-nowrap">
+                        {((analytics.totalAmostraBonif / (analytics.totalValue || 1)) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1.5">{analytics.pedidosAmostraBonif} pedidos</p>
+                  </div>
+                )}
               </div>
             </div>
 
