@@ -1,0 +1,25 @@
+{
+  "query": "\nSELECT \n  estadoNotaPedido, \n  COUNT(*) as qtd, \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\nGROUP BY estadoNotaPedido\nORDER BY total DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT \n  estadoNotaPedido, \n  COUNT(*) as qtd, \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\nGROUP BY estadoNotaPedido\nORDER BY total DESC;\n",
+  "rows": [
+    {
+      "estadoNotaPedido": "Faturado",
+      "qtd": "295",
+      "total": "933621.05"
+    },
+    {
+      "estadoNotaPedido": "Aprovado",
+      "qtd": "41",
+      "total": "119255.97"
+    },
+    {
+      "estadoNotaPedido": "Digitação",
+      "qtd": "10",
+      "total": "41980.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "estadoNotaPedido\tqtd\ttotal\nFaturado\t295\t933621.05\nAprovado\t41\t119255.97\nDigitação\t10\t41980.00\n",
+  "stderr": "",
+  "execution_time_ms": 404
+}

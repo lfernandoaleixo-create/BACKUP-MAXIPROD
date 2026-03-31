@@ -1404,3 +1404,9 @@
 - [x] Backend: getPreviousUnbilled e filtro A Faturar Anterior também corrigidos
 - [x] Testes: 6 novos testes em salesDateFilter.test.ts cobrindo BRT timezone, último dia do mês, ISO e YYYY-MM-DD
 - [x] Todos os 38 testes de sales passando (sales.test.ts + salesHierarchicalFilters.test.ts + salesAllUnbilled.test.ts + salesDateFilter.test.ts)
+
+## Ajuste Card Valor Total do Período - Aba Vendas (31/03/2026)
+- [x] Aba Vendas: card "Valor Total do Período" deve usar mesmas regras do card "Vendas" (azul) da aba Financeiro (R$ 1.021.342,70)
+- [x] Investigar filtros de estados configuráveis usados no card Vendas da aba Financeiro
+- [x] Aplicar mesmos filtros no salesRouter (getAnalytics) - ambos já usavam mesma lógica, diferença era bug de timezone
+- [x] Validar que o valor final bate entre as duas abas - R$ 1.021.342,70 confirmado via SQL + correção timezone no financialRouter

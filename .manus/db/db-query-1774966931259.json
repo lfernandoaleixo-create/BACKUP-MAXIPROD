@@ -1,0 +1,13 @@
+{
+  "query": "\nSELECT \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total_aba_vendas_atual\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND (estadoNotaPedido IS NULL OR UPPER(estadoNotaPedido) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))\n  AND UPPER(COALESCE(estadoConfiguravel, '')) NOT IN ('CANCELADO', 'AMOSTRA', 'BONIFICAÇÃO', 'BONIFICACAO', 'GILSON', '');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total_aba_vendas_atual\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND (estadoNotaPedido IS NULL OR UPPER(estadoNotaPedido) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))\n  AND UPPER(COALESCE(estadoConfiguravel, '')) NOT IN ('CANCELADO', 'AMOSTRA', 'BONIFICAÇÃO', 'BONIFICACAO', 'GILSON', '');\n",
+  "rows": [
+    {
+      "total_aba_vendas_atual": "1021342.70"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_aba_vendas_atual\n1021342.70\n",
+  "stderr": "",
+  "execution_time_ms": 430
+}

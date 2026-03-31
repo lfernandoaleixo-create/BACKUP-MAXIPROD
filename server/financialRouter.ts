@@ -2158,17 +2158,17 @@ export const financialRouter = router({
     }
 
     // === VENDAS: mesma lógica do getAnalytics da aba Vendas ===
-    // A aba Vendas usa ISO timestamps para filtro de data
-    const startISO = periodStart.includes('T') ? periodStart : periodStart + 'T00:00:00.000Z';
-    const endISO = periodEnd.includes('T') ? periodEnd : periodEnd + 'T23:59:59.999Z';
+    // Usar SUBSTRING para comparação segura de datas (evita bug de timezone)
+    const startDay = periodStart.substring(0, 10);
+    const endDay = periodEnd.substring(0, 10);
 
     const allItems = await db
       .select()
       .from(salesOrders)
       .where(
         and(
-          gte(salesOrders.dataEmissao, startISO),
-          lte(salesOrders.dataEmissao, endISO)
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`
         )
       );
 

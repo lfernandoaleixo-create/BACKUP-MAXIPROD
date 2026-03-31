@@ -1,0 +1,34 @@
+{
+  "query": "SHOW COLUMNS FROM sales_orders LIKE '%estado%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SHOW COLUMNS FROM sales_orders LIKE '%estado%';",
+  "rows": [
+    {
+      "Field": "estadoItem",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "estadoNotaPedido",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "estadoConfiguravel",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nestadoItem\tvarchar(50)\tYES\t\tNULL\t\nestadoNotaPedido\tvarchar(50)\tYES\t\tNULL\t\nestadoConfiguravel\tvarchar(100)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 374
+}

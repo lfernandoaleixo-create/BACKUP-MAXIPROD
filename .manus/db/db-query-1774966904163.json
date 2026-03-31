@@ -1,0 +1,40 @@
+{
+  "query": "\nSELECT \n  estadoConfiguravel, \n  COUNT(*) as qtd, \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\nGROUP BY estadoConfiguravel\nORDER BY total DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT \n  estadoConfiguravel, \n  COUNT(*) as qtd, \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\nGROUP BY estadoConfiguravel\nORDER BY total DESC;\n",
+  "rows": [
+    {
+      "estadoConfiguravel": "BAMBU",
+      "qtd": "198",
+      "total": "615290.00"
+    },
+    {
+      "estadoConfiguravel": "MADEIRA",
+      "qtd": "99",
+      "total": "376697.15"
+    },
+    {
+      "estadoConfiguravel": "FIBRA",
+      "qtd": "4",
+      "total": "71335.55"
+    },
+    {
+      "estadoConfiguravel": "CANCELADO",
+      "qtd": "1",
+      "total": "23500.00"
+    },
+    {
+      "estadoConfiguravel": "BONIFICAÇÃO",
+      "qtd": "15",
+      "total": "7674.32"
+    },
+    {
+      "estadoConfiguravel": "AMOSTRA",
+      "qtd": "29",
+      "total": "360.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "estadoConfiguravel\tqtd\ttotal\nBAMBU\t198\t615290.00\nMADEIRA\t99\t376697.15\nFIBRA\t4\t71335.55\nCANCELADO\t1\t23500.00\nBONIFICAÇÃO\t15\t7674.32\nAMOSTRA\t29\t360.00\n",
+  "stderr": "",
+  "execution_time_ms": 464
+}

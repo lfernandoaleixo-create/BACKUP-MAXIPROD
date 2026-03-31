@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  estadoNota, \n  COUNT(*) as qtd, \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\nGROUP BY estadoNota\nORDER BY total DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT \n  estadoNota, \n  COUNT(*) as qtd, \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\nGROUP BY estadoNota\nORDER BY total DESC;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'estadonota' in 'group statement'"
+  ]
+}

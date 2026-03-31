@@ -1,0 +1,13 @@
+{
+  "query": "\nSELECT \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total_sem_null\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND (estadoNotaPedido IS NULL OR UPPER(estadoNotaPedido) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))\n  AND estadoConfiguravel IN ('BAMBU', 'FIBRA', 'MADEIRA', 'MADEIRA CONTABILIZADO', 'MADEIRA IMPORTAÇÃO', 'MADEIRA IMPORTACAO', 'MADEIRA IMPORTADA');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT \n  ROUND(SUM(CAST(valorTotal AS DECIMAL(15,2))), 2) as total_sem_null\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND (estadoNotaPedido IS NULL OR UPPER(estadoNotaPedido) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))\n  AND estadoConfiguravel IN ('BAMBU', 'FIBRA', 'MADEIRA', 'MADEIRA CONTABILIZADO', 'MADEIRA IMPORTAÇÃO', 'MADEIRA IMPORTACAO', 'MADEIRA IMPORTADA');\n",
+  "rows": [
+    {
+      "total_sem_null": "1021342.70"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_sem_null\n1021342.70\n",
+  "stderr": "",
+  "execution_time_ms": 411
+}
