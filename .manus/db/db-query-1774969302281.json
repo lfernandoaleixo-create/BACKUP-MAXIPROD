@@ -1,0 +1,46 @@
+{
+  "query": "SELECT pedido, estadoItem, quantidade, quantidadeFaturada, valorTotal, valorUnitario, estadoNotaPedido\nFROM sales_orders \nWHERE pedido = '645';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, estadoItem, quantidade, quantidadeFaturada, valorTotal, valorUnitario, estadoNotaPedido\nFROM sales_orders \nWHERE pedido = '645';",
+  "rows": [
+    {
+      "pedido": "645",
+      "estadoItem": "Faturado",
+      "quantidade": "115.00000",
+      "quantidadeFaturada": "115.00000",
+      "valorTotal": "15525.00",
+      "valorUnitario": "135.00000",
+      "estadoNotaPedido": "Faturado"
+    },
+    {
+      "pedido": "645",
+      "estadoItem": "Faturado",
+      "quantidade": "45.00000",
+      "quantidadeFaturada": "45.00000",
+      "valorTotal": "6750.00",
+      "valorUnitario": "150.00000",
+      "estadoNotaPedido": "Faturado"
+    },
+    {
+      "pedido": "645",
+      "estadoItem": "Faturado",
+      "quantidade": "15.00000",
+      "quantidadeFaturada": "15.00000",
+      "valorTotal": "1950.00",
+      "valorUnitario": "130.00000",
+      "estadoNotaPedido": "Faturado"
+    },
+    {
+      "pedido": "645",
+      "estadoItem": "Faturado",
+      "quantidade": "20.00000",
+      "quantidadeFaturada": "20.00000",
+      "valorTotal": "2800.00",
+      "valorUnitario": "140.00000",
+      "estadoNotaPedido": "Faturado"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\testadoItem\tquantidade\tquantidadeFaturada\tvalorTotal\tvalorUnitario\testadoNotaPedido\n645\tFaturado\t115.00000\t115.00000\t15525.00\t135.00000\tFaturado\n645\tFaturado\t45.00000\t45.00000\t6750.00\t150.00000\tFaturado\n645\tFaturado\t15.00000\t15.00000\t1950.00\t130.00000\tFaturado\n645\tFaturado\t20.00000\t20.00000\t2800.00\t140.00000\tFaturado\n",
+  "stderr": "",
+  "execution_time_ms": 396
+}

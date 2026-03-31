@@ -1,0 +1,17 @@
+{
+  "query": "SELECT pedido, estadoItem, valorTotal, descricao, estadoConfiguravel\nFROM sales_orders \nWHERE pedido = '762'\nORDER BY estadoItem;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, estadoItem, valorTotal, descricao, estadoConfiguravel\nFROM sales_orders \nWHERE pedido = '762'\nORDER BY estadoItem;",
+  "rows": [
+    {
+      "pedido": "762",
+      "estadoItem": "Faturado parcial",
+      "valorTotal": "33600.00",
+      "descricao": "ESPETO DE BAMBU 5,0 X 350 MM C/ 5 X 1.000 UNID.",
+      "estadoConfiguravel": "BAMBU"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\testadoItem\tvalorTotal\tdescricao\testadoConfiguravel\n762\tFaturado parcial\t33600.00\tESPETO DE BAMBU 5,0 X 350 MM C/ 5 X 1.000 UNID.\tBAMBU\n",
+  "stderr": "",
+  "execution_time_ms": 394
+}

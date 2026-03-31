@@ -1,0 +1,402 @@
+{
+  "query": "DESCRIBE sales_orders;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute DESCRIBE sales_orders;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "dataEmissao",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "dataEntrega",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "dataAprovacao",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "pedido",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "cliente",
+      "Type": "varchar(300)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "clienteApelido",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "uf",
+      "Type": "varchar(5)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "descricao",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "estadoItem",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "quantidade",
+      "Type": "decimal(18,5)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorUnitario",
+      "Type": "decimal(18,5)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorTotal",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorContabil",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorFaturar",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "fatorConversao",
+      "Type": "decimal(18,5)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "codigoGrupo",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "idGrupoItem",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "empresa",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "representante",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "segmento",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "regiao",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "collectedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "condicaoPagamento",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "transportadora",
+      "Type": "varchar(300)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "razaoSocial",
+      "Type": "varchar(300)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "inscricaoEstadual",
+      "Type": "varchar(30)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "enderecoLogradouro",
+      "Type": "varchar(300)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "enderecoNumero",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "enderecoComplemento",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "enderecoBairro",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "enderecoCep",
+      "Type": "varchar(15)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "enderecoCidade",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorTotalPedido",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "estadoNotaPedido",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "estadoConfiguravel",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "crmSegmento",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "codigoItem",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "descricaoItem",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "unidadeMedidaCodigo",
+      "Type": "varchar(10)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "unidadeMedidaDescricao",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "quantidadeUnidadeItem",
+      "Type": "decimal(18,5)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ncm",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "clienteTelefone",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "clienteEmail",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "transportadoraRazaoSocial",
+      "Type": "varchar(300)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "grupoDescricao",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "observacoes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "quantidadeFaturada",
+      "Type": "decimal(18,5)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\ndataEmissao\tvarchar(50)\tYES\t\tNULL\t\ndataEntrega\tvarchar(50)\tYES\t\tNULL\t\ndataAprovacao\tvarchar(50)\tYES\t\tNULL\t\npedido\tvarchar(20)\tYES\t\tNULL\t\ncliente\tvarchar(300)\tYES\t\tNULL\t\nclienteApelido\tvarchar(200)\tYES\t\tNULL\t\nuf\tvarchar(5)\tYES\t\tNULL\t\ndescricao\ttext\tYES\t\tNULL\t\nestadoItem\tvarchar(50)\tYES\t\tNULL\t\nquantidade\tdecimal(18,5)\tYES\t\tNULL\t\nvalorUnitario\tdecimal(18,5)\tYES\t\tNULL\t\nvalorTotal\tdecimal(18,2)\tYES\t\tNULL\t\nvalorContabil\tdecimal(18,2)\tYES\t\tNULL\t\nvalorFaturar\tdecimal(18,2)\tYES\t\tNULL\t\nfatorConversao\tdecimal(18,5)\tYES\t\tNULL\t\ncodigoGrupo\tvarchar(50)\tYES\t\tNULL\t\nidGrupoItem\tbigint\tYES\t\tNULL\t\nempresa\tvarchar(100)\tYES\t\tNULL\t\nrepresentante\tvarchar(200)\tYES\t\tNULL\t\nsegmento\tvarchar(100)\tYES\t\tNULL\t\nregiao\tvarchar(100)\tYES\t\tNULL\t\ncollectedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\ncondicaoPagamento\tvarchar(100)\tYES\t\tNULL\t\ntransportadora\tvarchar(300)\tYES\t\tNULL\t\nrazaoSocial\tvarchar(300)\tYES\t\tNULL\t\ninscricaoEstadual\tvarchar(30)\tYES\t\tNULL\t\nenderecoLogradouro\tvarchar(300)\tYES\t\tNULL\t\nenderecoNumero\tvarchar(20)\tYES\t\tNULL\t\nenderecoComplemento\tvarchar(200)\tYES\t\tNULL\t\nenderecoBairro\tvarchar(200)\tYES\t\tNULL\t\nenderecoCep\tvarchar(15)\tYES\t\tNULL\t\nenderecoCidade\tvarchar(200)\tYES\t\tNULL\t\nvalorTotalPedido\tdecimal(18,2)\tYES\t\tNULL\t\nestadoNotaPedido\tvarchar(50)\tYES\t\tNULL\t\nestadoConfiguravel\tvarchar(100)\tYES\t\tNULL\t\ncrmSegmento\tvarchar(100)\tYES\t\tNULL\t\ncodigoItem\tvarchar(50)\tYES\t\tNULL\t\ndescricaoItem\ttext\tYES\t\tNULL\t\nunidadeMedidaCodigo\tvarchar(10)\tYES\t\tNULL\t\nunidadeMedidaDescricao\tvarchar(50)\tYES\t\tNULL\t\nquantidadeUnidadeItem\tdecimal(18,5)\tYES\t\tNULL\t\nncm\tvarchar(20)\tYES\t\tNULL\t\nclienteTelefone\tvarchar(50)\tYES\t\tNULL\t\nclienteEmail\tvarchar(200)\tYES\t\tNULL\t\ntransportadoraRazaoSocial\tvarchar(300)\tYES\t\tNULL\t\ngrupoDescricao\tvarchar(100)\tYES\t\tNULL\t\nobservacoes\ttext\tYES\t\tNULL\t\nquantidadeFaturada\tdecimal(18,5)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 347
+}

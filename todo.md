@@ -1421,3 +1421,16 @@
 - [x] Backend: retornar quantidade de pedidos e breakdown (amostra vs bonificação)
 - [x] Frontend: criar card separado mostrando valor e % em relação ao Valor Total do Período
 - [x] Regra permanente: sempre manter esse card separado na aba Vendas
+
+## Divergências Cards Faturado e A Faturar - Aba Vendas (31/03/2026)
+- [ ] BUG: Card Faturado diverge do Maxiprod (esperado R$ 881.690,48 - coluna V da planilha)
+- [ ] BUG: Card A Faturar diverge do Maxiprod (esperado R$ 102.835,97 - coluna W da planilha)
+- [ ] Investigar planilha Excel para entender colunas V e W e quais estados/filtros usam
+- [ ] Corrigir filtros no salesRouter para bater com Maxiprod
+- [x] Card Amostra/Bonificação: porcentagem com 2 casas decimais (atualmente 1)
+
+## REGRA PERMANENTE (31/03/2026)
+- [x] NÃO MEXER em outras abas ou configurações sem autorização explícita do usuário. Apenas a aba solicitada.
+
+## Visibilidade Card Amostra/Bonificação
+- [x] Tornar card Amostra/Bonificação visível para todos os usuários na aba Vendas

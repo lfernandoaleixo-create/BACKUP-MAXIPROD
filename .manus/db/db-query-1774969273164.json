@@ -1,0 +1,16 @@
+{
+  "query": "SELECT \n  SUM(CASE WHEN quantidadeFaturada IS NOT NULL AND quantidadeFaturada > 0 \n    THEN ROUND(quantidadeFaturada * valorUnitario, 2) ELSE 0 END) as total_faturado_calc,\n  SUM(CASE WHEN estadoItem = 'Faturado' THEN valorTotal ELSE 0 END) as total_faturado_estado,\n  SUM(CASE WHEN estadoItem = 'A faturar' THEN valorTotal ELSE 0 END) as total_afaturar_estado,\n  SUM(valorTotal) as total_geral\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoConfiguravel IS NOT NULL\n  AND estadoItem != 'Digitação';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT \n  SUM(CASE WHEN quantidadeFaturada IS NOT NULL AND quantidadeFaturada > 0 \n    THEN ROUND(quantidadeFaturada * valorUnitario, 2) ELSE 0 END) as total_faturado_calc,\n  SUM(CASE WHEN estadoItem = 'Faturado' THEN valorTotal ELSE 0 END) as total_faturado_estado,\n  SUM(CASE WHEN estadoItem = 'A faturar' THEN valorTotal ELSE 0 END) as total_afaturar_estado,\n  SUM(valorTotal) as total_geral\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoConfiguravel IS NOT NULL\n  AND estadoItem != 'Digitação';",
+  "rows": [
+    {
+      "total_faturado_calc": "915719.27",
+      "total_faturado_estado": "902186.73",
+      "total_afaturar_estado": "177535.97",
+      "total_geral": "1113322.70"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_faturado_calc\ttotal_faturado_estado\ttotal_afaturar_estado\ttotal_geral\n915719.27\t902186.73\t177535.97\t1113322.70\n",
+  "stderr": "",
+  "execution_time_ms": 425
+}

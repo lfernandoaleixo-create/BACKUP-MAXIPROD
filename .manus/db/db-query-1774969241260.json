@@ -1,0 +1,18 @@
+{
+  "query": "SELECT pedido, estadoItem, quantidade, valorTotal, valorUnitario, quantidadeFaturada\nFROM sales_orders \nWHERE pedido = '762';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, estadoItem, quantidade, valorTotal, valorUnitario, quantidadeFaturada\nFROM sales_orders \nWHERE pedido = '762';",
+  "rows": [
+    {
+      "pedido": "762",
+      "estadoItem": "Faturado parcial",
+      "quantidade": "140.00000",
+      "valorTotal": "33600.00",
+      "valorUnitario": "240.00000",
+      "quantidadeFaturada": "68.00000"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\testadoItem\tquantidade\tvalorTotal\tvalorUnitario\tquantidadeFaturada\n762\tFaturado parcial\t140.00000\t33600.00\t240.00000\t68.00000\n",
+  "stderr": "",
+  "execution_time_ms": 396
+}

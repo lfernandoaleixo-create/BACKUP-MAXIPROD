@@ -1,0 +1,40 @@
+{
+  "query": "SELECT \n  pedido,\n  SUM(valorTotal) as vl_total,\n  SUM(ROUND(COALESCE(quantidadeFaturada, 0) * valorUnitario, 2)) as vl_faturado_calc,\n  SUM(valorTotal) - SUM(ROUND(COALESCE(quantidadeFaturada, 0) * valorUnitario, 2)) as vl_a_faturar_calc\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoConfiguravel IS NOT NULL\n  AND estadoItem != 'Digitação'\n  AND pedido IN ('645', '762', '609', '648', '733')\nGROUP BY pedido\nORDER BY pedido;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT \n  pedido,\n  SUM(valorTotal) as vl_total,\n  SUM(ROUND(COALESCE(quantidadeFaturada, 0) * valorUnitario, 2)) as vl_faturado_calc,\n  SUM(valorTotal) - SUM(ROUND(COALESCE(quantidadeFaturada, 0) * valorUnitario, 2)) as vl_a_faturar_calc\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoConfiguravel IS NOT NULL\n  AND estadoItem != 'Digitação'\n  AND pedido IN ('645', '762', '609', '648', '733')\nGROUP BY pedido\nORDER BY pedido;",
+  "rows": [
+    {
+      "pedido": "609",
+      "vl_total": "11890.00",
+      "vl_faturado_calc": "11890.00",
+      "vl_a_faturar_calc": "0.00"
+    },
+    {
+      "pedido": "645",
+      "vl_total": "27025.00",
+      "vl_faturado_calc": "27025.00",
+      "vl_a_faturar_calc": "0.00"
+    },
+    {
+      "pedido": "648",
+      "vl_total": "4520.00",
+      "vl_faturado_calc": "4520.00",
+      "vl_a_faturar_calc": "0.00"
+    },
+    {
+      "pedido": "733",
+      "vl_total": "27600.00",
+      "vl_faturado_calc": "27600.00",
+      "vl_a_faturar_calc": "0.00"
+    },
+    {
+      "pedido": "762",
+      "vl_total": "33600.00",
+      "vl_faturado_calc": "16320.00",
+      "vl_a_faturar_calc": "17280.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\tvl_total\tvl_faturado_calc\tvl_a_faturar_calc\n609\t11890.00\t11890.00\t0.00\n645\t27025.00\t27025.00\t0.00\n648\t4520.00\t4520.00\t0.00\n733\t27600.00\t27600.00\t0.00\n762\t33600.00\t16320.00\t17280.00\n",
+  "stderr": "",
+  "execution_time_ms": 379
+}

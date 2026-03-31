@@ -1,0 +1,136 @@
+{
+  "query": "SELECT pedido, \n  SUM(valorTotal) as total_db,\n  SUM(ROUND(COALESCE(quantidadeFaturada, 0) * valorUnitario, 2)) as faturado_calc,\n  GROUP_CONCAT(DISTINCT estadoItem) as estados\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND pedido IN ('616','609','649','648','645','654','652','678','699','688','716','726','734','733','762','770','793','788','800','798','816')\nGROUP BY pedido\nORDER BY pedido;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, \n  SUM(valorTotal) as total_db,\n  SUM(ROUND(COALESCE(quantidadeFaturada, 0) * valorUnitario, 2)) as faturado_calc,\n  GROUP_CONCAT(DISTINCT estadoItem) as estados\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND pedido IN ('616','609','649','648','645','654','652','678','699','688','716','726','734','733','762','770','793','788','800','798','816')\nGROUP BY pedido\nORDER BY pedido;",
+  "rows": [
+    {
+      "pedido": "609",
+      "total_db": "11890.00",
+      "faturado_calc": "11890.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "616",
+      "total_db": "2200.00",
+      "faturado_calc": "2200.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "645",
+      "total_db": "27025.00",
+      "faturado_calc": "27025.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "648",
+      "total_db": "4520.00",
+      "faturado_calc": "4520.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "649",
+      "total_db": "9555.00",
+      "faturado_calc": "9555.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "652",
+      "total_db": "2640.00",
+      "faturado_calc": "2640.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "654",
+      "total_db": "1080.00",
+      "faturado_calc": "1080.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "678",
+      "total_db": "2000.00",
+      "faturado_calc": "2000.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "688",
+      "total_db": "2800.00",
+      "faturado_calc": "2800.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "699",
+      "total_db": "2850.00",
+      "faturado_calc": "2850.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "716",
+      "total_db": "1026.00",
+      "faturado_calc": "1026.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "726",
+      "total_db": "2700.00",
+      "faturado_calc": "2700.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "733",
+      "total_db": "27600.00",
+      "faturado_calc": "27600.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "734",
+      "total_db": "2176.00",
+      "faturado_calc": "2176.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "762",
+      "total_db": "33600.00",
+      "faturado_calc": "16320.00",
+      "estados": "Faturado parcial"
+    },
+    {
+      "pedido": "770",
+      "total_db": "18300.00",
+      "faturado_calc": "18300.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "788",
+      "total_db": "4400.00",
+      "faturado_calc": "4400.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "793",
+      "total_db": "2000.00",
+      "faturado_calc": "2000.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "798",
+      "total_db": "10500.00",
+      "faturado_calc": "10500.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "800",
+      "total_db": "5630.00",
+      "faturado_calc": "5630.00",
+      "estados": "Faturado"
+    },
+    {
+      "pedido": "816",
+      "total_db": "2875.00",
+      "faturado_calc": "2875.00",
+      "estados": "Faturado"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\ttotal_db\tfaturado_calc\testados\n609\t11890.00\t11890.00\tFaturado\n616\t2200.00\t2200.00\tFaturado\n645\t27025.00\t27025.00\tFaturado\n648\t4520.00\t4520.00\tFaturado\n649\t9555.00\t9555.00\tFaturado\n652\t2640.00\t2640.00\tFaturado\n654\t1080.00\t1080.00\tFaturado\n678\t2000.00\t2000.00\tFaturado\n688\t2800.00\t2800.00\tFaturado\n699\t2850.00\t2850.00\tFaturado\n716\t1026.00\t1026.00\tFaturado\n726\t2700.00\t2700.00\tFaturado\n733\t27600.00\t27600.00\tFaturado\n734\t2176.00\t2176.00\tFaturado\n762\t33600.00\t16320.00\tFaturado parcial\n770\t18300.00\t18300.00\tFaturado\n788\t4400.00\t4400.00\tFaturado\n793\t2000.00\t2000.00\tFaturado\n798\t10500.00\t10500.00\tFaturado\n800\t5630.00\t5630.00\tFaturado\n816\t2875.00\t2875.00\tFaturado\n",
+  "stderr": "",
+  "execution_time_ms": 387
+}

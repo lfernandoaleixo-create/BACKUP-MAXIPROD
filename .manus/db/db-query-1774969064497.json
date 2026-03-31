@@ -1,0 +1,130 @@
+{
+  "query": "SELECT pedido, estadoItem, valorTotal, valorContabil, valorFaturar, estadoConfiguravel\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoItem != 'Digitação'\nORDER BY pedido\nLIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, estadoItem, valorTotal, valorContabil, valorFaturar, estadoConfiguravel\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoItem != 'Digitação'\nORDER BY pedido\nLIMIT 15;",
+  "rows": [
+    {
+      "pedido": "564",
+      "estadoItem": "Faturado",
+      "valorTotal": "920.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "564",
+      "estadoItem": "Faturado",
+      "valorTotal": "368.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "600",
+      "estadoItem": "Faturado",
+      "valorTotal": "12400.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "MADEIRA"
+    },
+    {
+      "pedido": "604",
+      "estadoItem": "Faturado",
+      "valorTotal": "2500.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "605",
+      "estadoItem": "Faturado",
+      "valorTotal": "10000.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "MADEIRA"
+    },
+    {
+      "pedido": "607",
+      "estadoItem": "Faturado",
+      "valorTotal": "3450.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "607",
+      "estadoItem": "Faturado",
+      "valorTotal": "2700.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "608",
+      "estadoItem": "Faturado",
+      "valorTotal": "6300.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "609",
+      "estadoItem": "Faturado",
+      "valorTotal": "1750.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "609",
+      "estadoItem": "Faturado",
+      "valorTotal": "2900.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "609",
+      "estadoItem": "Faturado",
+      "valorTotal": "6880.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "609",
+      "estadoItem": "Faturado",
+      "valorTotal": "360.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "pedido": "611",
+      "estadoItem": "Faturado",
+      "valorTotal": "3686.40",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "MADEIRA"
+    },
+    {
+      "pedido": "612",
+      "estadoItem": "Faturado",
+      "valorTotal": "737.28",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "MADEIRA"
+    },
+    {
+      "pedido": "613",
+      "estadoItem": "Faturado",
+      "valorTotal": "1470.00",
+      "valorContabil": "NULL",
+      "valorFaturar": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\testadoItem\tvalorTotal\tvalorContabil\tvalorFaturar\testadoConfiguravel\n564\tFaturado\t920.00\tNULL\tNULL\tBAMBU\n564\tFaturado\t368.00\tNULL\tNULL\tBAMBU\n600\tFaturado\t12400.00\tNULL\tNULL\tMADEIRA\n604\tFaturado\t2500.00\tNULL\tNULL\tBAMBU\n605\tFaturado\t10000.00\tNULL\tNULL\tMADEIRA\n607\tFaturado\t3450.00\tNULL\tNULL\tBAMBU\n607\tFaturado\t2700.00\tNULL\tNULL\tBAMBU\n608\tFaturado\t6300.00\tNULL\tNULL\tBAMBU\n609\tFaturado\t1750.00\tNULL\tNULL\tBAMBU\n609\tFaturado\t2900.00\tNULL\tNULL\tBAMBU\n609\tFaturado\t6880.00\tNULL\tNULL\tBAMBU\n609\tFaturado\t360.00\tNULL\tNULL\tBAMBU\n611\tFaturado\t3686.40\tNULL\tNULL\tMADEIRA\n612\tFaturado\t737.28\tNULL\tNULL\tMADEIRA\n613\tFaturado\t1470.00\tNULL\tNULL\tBAMBU\n",
+  "stderr": "",
+  "execution_time_ms": 383
+}

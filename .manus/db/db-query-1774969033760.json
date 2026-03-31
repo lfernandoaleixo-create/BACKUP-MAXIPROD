@@ -1,0 +1,16 @@
+{
+  "query": "SELECT \n  SUM(valorContabil) as total_faturado_contabil,\n  SUM(valorFaturar) as total_a_faturar,\n  SUM(valorTotal) as total_valor_total,\n  COUNT(*) as total_itens\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoConfiguravel IS NOT NULL\n  AND estadoItem != 'Digitação';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT \n  SUM(valorContabil) as total_faturado_contabil,\n  SUM(valorFaturar) as total_a_faturar,\n  SUM(valorTotal) as total_valor_total,\n  COUNT(*) as total_itens\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoConfiguravel IS NOT NULL\n  AND estadoItem != 'Digitação';",
+  "rows": [
+    {
+      "total_faturado_contabil": "NULL",
+      "total_a_faturar": "NULL",
+      "total_valor_total": "1063322.70",
+      "total_itens": "301"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_faturado_contabil\ttotal_a_faturar\ttotal_valor_total\ttotal_itens\nNULL\tNULL\t1063322.70\t301\n",
+  "stderr": "",
+  "execution_time_ms": 399
+}

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT pedido, item, estadoItem, valorTotal, valorContabil, valorFaturar, estadoConfiguravel\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoItem != 'Digitação'\nORDER BY pedido\nLIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, item, estadoItem, valorTotal, valorContabil, valorFaturar, estadoConfiguravel\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoItem != 'Digitação'\nORDER BY pedido\nLIMIT 15;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'item' in 'field list'"
+  ]
+}

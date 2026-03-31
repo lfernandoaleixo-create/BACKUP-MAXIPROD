@@ -2917,7 +2917,7 @@ export default function Sales() {
             {/* KPI Principal - Valor Total + Faturado + A Faturar */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="h-1.5 bg-gradient-to-r from-teal-400 to-teal-600" />
-              <div className="grid grid-cols-1 md:grid-cols-3">
+              <div className="grid grid-cols-1 md:grid-cols-4">
                 {/* Valor Total */}
                 <div className="p-5">
                   <div className="flex items-center gap-2 mb-2">
@@ -2976,8 +2976,7 @@ export default function Sales() {
                 </div>
 
                 {/* Amostra / Bonificação */}
-                {analytics.totalAmostraBonif > 0 && (
-                  <div className="p-5 border-t md:border-t-0 md:border-l border-slate-100">
+                <div className="p-5 border-t md:border-t-0 md:border-l border-slate-100">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-purple-50">
                         <Gift className="w-4.5 h-4.5 text-purple-600" />
@@ -3003,13 +3002,12 @@ export default function Sales() {
                         />
                       </div>
                       <span className="text-xs font-bold text-purple-600 whitespace-nowrap">
-                        {((analytics.totalAmostraBonif / (analytics.totalValue || 1)) * 100).toFixed(1)}%
+                        {((analytics.totalAmostraBonif / (analytics.totalValue || 1)) * 100).toFixed(2)}%
                       </span>
                     </div>
                     <p className="text-[10px] text-slate-400 mt-1 italic">Percentual que amostra/bonificação representam no total de vendas do período</p>
                     <p className="text-xs text-slate-400 mt-1">{analytics.pedidosAmostraBonif} pedidos</p>
                   </div>
-                )}
               </div>
             </div>
 

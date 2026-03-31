@@ -1,0 +1,34 @@
+{
+  "query": "SELECT pedido, estadoItem, valorTotal, descricao\nFROM sales_orders \nWHERE pedido = '645'\nORDER BY estadoItem;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, estadoItem, valorTotal, descricao\nFROM sales_orders \nWHERE pedido = '645'\nORDER BY estadoItem;",
+  "rows": [
+    {
+      "pedido": "645",
+      "estadoItem": "Faturado",
+      "valorTotal": "15525.00",
+      "descricao": "ESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID."
+    },
+    {
+      "pedido": "645",
+      "estadoItem": "Faturado",
+      "valorTotal": "6750.00",
+      "descricao": "ESPETO DE BAMBU 4,5 X 250 MM  C/ 5 X 1.000 UNID."
+    },
+    {
+      "pedido": "645",
+      "estadoItem": "Faturado",
+      "valorTotal": "1950.00",
+      "descricao": "ESPETO DE BAMBU 4,0 X 220 MM  C/ 5 X 1.000 UNID."
+    },
+    {
+      "pedido": "645",
+      "estadoItem": "Faturado",
+      "valorTotal": "2800.00",
+      "descricao": "ESPETO DE BAMBU 4,5 X 250 MM MEIA PONTA C/ 5 X 1.000 UNID."
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\testadoItem\tvalorTotal\tdescricao\n645\tFaturado\t15525.00\tESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.\n645\tFaturado\t6750.00\tESPETO DE BAMBU 4,5 X 250 MM  C/ 5 X 1.000 UNID.\n645\tFaturado\t1950.00\tESPETO DE BAMBU 4,0 X 220 MM  C/ 5 X 1.000 UNID.\n645\tFaturado\t2800.00\tESPETO DE BAMBU 4,5 X 250 MM MEIA PONTA C/ 5 X 1.000 UNID.\n",
+  "stderr": "",
+  "execution_time_ms": 385
+}

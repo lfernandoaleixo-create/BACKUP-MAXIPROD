@@ -1,0 +1,25 @@
+{
+  "query": "SELECT estadoItem, COUNT(*) as qtd, SUM(valorTotal) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoConfiguravel IS NOT NULL\n  AND estadoItem != 'Digitação'\nGROUP BY estadoItem\nORDER BY total DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT estadoItem, COUNT(*) as qtd, SUM(valorTotal) as total\nFROM sales_orders \nWHERE SUBSTRING(dataEmissao, 1, 10) >= '2026-03-01' \n  AND SUBSTRING(dataEmissao, 1, 10) <= '2026-03-31'\n  AND estadoConfiguravel NOT IN ('AMOSTRA', 'BONIFICAÇÃO', 'CANCELADO')\n  AND estadoConfiguravel IS NOT NULL\n  AND estadoItem != 'Digitação'\nGROUP BY estadoItem\nORDER BY total DESC;",
+  "rows": [
+    {
+      "estadoItem": "Faturado",
+      "qtd": "260",
+      "total": "902186.73"
+    },
+    {
+      "estadoItem": "A faturar",
+      "qtd": "40",
+      "total": "127535.97"
+    },
+    {
+      "estadoItem": "Faturado parcial",
+      "qtd": "1",
+      "total": "33600.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "estadoItem\tqtd\ttotal\nFaturado\t260\t902186.73\nA faturar\t40\t127535.97\nFaturado parcial\t1\t33600.00\n",
+  "stderr": "",
+  "execution_time_ms": 394
+}
