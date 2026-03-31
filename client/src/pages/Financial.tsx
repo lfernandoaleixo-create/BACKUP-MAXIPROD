@@ -1226,16 +1226,33 @@ function BankBalanceCard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <span className={`font-bold text-lg tabular-nums ${
-            data.totalSaldoAtual >= 0 ? "text-emerald-600" : "text-red-600"
-          }`}>
-            {fmt(data.totalSaldoAtual)}
-          </span>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wide leading-tight">Saldo Inicial</p>
+            <span className="text-sm font-semibold tabular-nums text-slate-600">
+              {fmt(data.totalSaldoInicial)}
+            </span>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wide leading-tight">Saldo Atual</p>
+            <span className={`text-sm font-bold tabular-nums ${
+              data.totalSaldoAtual >= 0 ? "text-emerald-600" : "text-red-600"
+            }`}>
+              {fmt(data.totalSaldoAtual)}
+            </span>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-slate-400 uppercase tracking-wide leading-tight">Variação</p>
+            <span className={`text-sm font-bold tabular-nums ${
+              data.totalVariacao >= 0 ? "text-emerald-600" : "text-red-600"
+            }`}>
+              {data.totalVariacao >= 0 ? "+" : ""}R$ {fmtShort(data.totalVariacao)}
+            </span>
+          </div>
           {collapsed ? (
-            <ChevronDown className="w-5 h-5 text-slate-400" />
+            <ChevronDown className="w-5 h-5 text-slate-400 ml-1" />
           ) : (
-            <ChevronUp className="w-5 h-5 text-slate-400" />
+            <ChevronUp className="w-5 h-5 text-slate-400 ml-1" />
           )}
         </div>
       </button>
@@ -1270,7 +1287,7 @@ function BankBalanceCard() {
                     <td className={`py-2 px-4 text-right tabular-nums ${
                       acc.variacao > 0 ? "text-emerald-600" : acc.variacao < 0 ? "text-red-600" : "text-slate-500"
                     }`}>
-                      {acc.variacao > 0 ? "+" : ""}{fmtShort(acc.variacao)}
+                      {acc.variacao > 0 ? "+" : ""}R$ {fmtShort(acc.variacao)}
                     </td>
                   </tr>
                 ))}
@@ -1289,7 +1306,7 @@ function BankBalanceCard() {
                   <td className={`py-2.5 px-4 text-right tabular-nums ${
                     data.totalVariacao > 0 ? "text-emerald-700" : data.totalVariacao < 0 ? "text-red-700" : "text-slate-600"
                   }`}>
-                    {data.totalVariacao > 0 ? "+" : ""}{fmtShort(data.totalVariacao)}
+                    {data.totalVariacao > 0 ? "+" : ""}R$ {fmtShort(data.totalVariacao)}
                   </td>
                 </tr>
               </tfoot>
