@@ -1246,7 +1246,7 @@ function BankBalanceCard() {
             <span className={`text-sm font-bold tabular-nums ${
               data.totalVariacao >= 0 ? "text-emerald-600" : "text-red-600"
             }`}>
-              {data.totalVariacao >= 0 ? "+" : ""}R$ {fmtShort(data.totalVariacao)}
+              R$ {data.totalVariacao >= 0 ? "+" : ""}{fmtShort(data.totalVariacao)}
             </span>
           </div>
           {collapsed ? (
@@ -1287,7 +1287,7 @@ function BankBalanceCard() {
                     <td className={`py-2 px-4 text-right tabular-nums ${
                       acc.variacao > 0 ? "text-emerald-600" : acc.variacao < 0 ? "text-red-600" : "text-slate-500"
                     }`}>
-                      {acc.variacao > 0 ? "+" : ""}R$ {fmtShort(acc.variacao)}
+                      R$ {acc.variacao > 0 ? "+" : ""}{fmtShort(acc.variacao)}
                     </td>
                   </tr>
                 ))}
@@ -1306,7 +1306,7 @@ function BankBalanceCard() {
                   <td className={`py-2.5 px-4 text-right tabular-nums ${
                     data.totalVariacao > 0 ? "text-emerald-700" : data.totalVariacao < 0 ? "text-red-700" : "text-slate-600"
                   }`}>
-                    {data.totalVariacao > 0 ? "+" : ""}R$ {fmtShort(data.totalVariacao)}
+                    R$ {data.totalVariacao > 0 ? "+" : ""}{fmtShort(data.totalVariacao)}
                   </td>
                 </tr>
               </tfoot>
