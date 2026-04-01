@@ -1462,3 +1462,4 @@
 - [x] Executar recalcOrderHashes na versão publicada para resetar os 31 pedidos
 - [x] Verificar que os pedidos voltaram para suas abas corretas (modifiedPedidos: [] - vazio!)
 - [x] Card reduzido do Saldo Bancário: mostrar apenas Saldo Atual (remover Saldo Inicial e Variação)
+- [x] Variação do Saldo Bancário: recalcular no frontend como saldoAtual - saldoInicial (por linha e total)

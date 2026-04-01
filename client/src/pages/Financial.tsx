@@ -1286,11 +1286,13 @@ function BankBalanceCard() {
                     }`}>
                       {acc.saldoAtual < 0 ? "R$ -" : "R$ "}{fmtShort(acc.saldoAtual)}
                     </td>
+                    {(() => { const v = acc.saldoAtual - acc.saldoInicial; return (
                     <td className={`py-2 px-4 text-right tabular-nums ${
-                      acc.variacao > 0 ? "text-emerald-600" : acc.variacao < 0 ? "text-red-600" : "text-slate-500"
+                      v > 0 ? "text-emerald-600" : v < 0 ? "text-red-600" : "text-slate-500"
                     }`}>
-                      {acc.variacao > 0 ? "+R$ " : acc.variacao < 0 ? "-R$ " : "R$ "}{fmtShort(acc.variacao)}
+                      {v > 0 ? "+R$ " : v < 0 ? "-R$ " : "R$ "}{fmtShort(v)}
                     </td>
+                    ); })()}
                   </tr>
                 ))}
               </tbody>
@@ -1305,11 +1307,13 @@ function BankBalanceCard() {
                   }`}>
                     {data.totalSaldoAtual < 0 ? "R$ -" : "R$ "}{fmtShort(data.totalSaldoAtual)}
                   </td>
+                  {(() => { const tv = data.totalSaldoAtual - data.totalSaldoInicial; return (
                   <td className={`py-2.5 px-4 text-right tabular-nums ${
-                    totalVariacao > 0 ? "text-emerald-700" : totalVariacao < 0 ? "text-red-700" : "text-slate-600"
+                    tv > 0 ? "text-emerald-700" : tv < 0 ? "text-red-700" : "text-slate-600"
                   }`}>
-                    {totalVariacao > 0 ? "+R$ " : totalVariacao < 0 ? "-R$ " : "R$ "}{fmtShort(totalVariacao)}
+                    {tv > 0 ? "+R$ " : tv < 0 ? "-R$ " : "R$ "}{fmtShort(tv)}
                   </td>
+                  ); })()}
                 </tr>
               </tfoot>
             </table>
