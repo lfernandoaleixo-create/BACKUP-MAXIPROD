@@ -745,3 +745,18 @@ export const notificationReads = mysqlTable("notification_reads", {
 });
 export type NotificationRead = typeof notificationReads.$inferSelect;
 export type InsertNotificationRead = typeof notificationReads.$inferInsert;
+
+/**
+ * Conciliação bancária diária.
+ * Registra quando a conciliação foi feita em um determinado dia.
+ * Reseta automaticamente no dia seguinte (verificado por data).
+ * Apenas operador "Thiago" pode marcar.
+ */
+export const bankReconciliation = mysqlTable("bank_reconciliation", {
+  id: int("id").autoincrement().primaryKey(),
+  date: varchar("date", { length: 10 }).notNull().unique(), // YYYY-MM-DD
+  checkedBy: varchar("checkedBy", { length: 200 }).notNull(),
+  checkedAt: timestamp("checkedAt").defaultNow().notNull(),
+});
+export type BankReconciliation = typeof bankReconciliation.$inferSelect;
+export type InsertBankReconciliation = typeof bankReconciliation.$inferInsert;

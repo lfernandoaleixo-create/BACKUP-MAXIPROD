@@ -351,6 +351,13 @@
       "when": 1774467928046,
       "tag": "0049_clammy_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1775068064372,
+      "tag": "0050_curved_retro_girl",
+      "breakpoints": true
     }
   ]
 }

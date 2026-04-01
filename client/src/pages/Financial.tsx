@@ -44,6 +44,8 @@ import {
   ArrowUp01,
   CalendarDays,
   MessageSquare,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -1186,6 +1188,22 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
 function BankBalanceCard() {
   const { data, isLoading } = trpc.financial.getBankBalancesDetailed.useQuery();
   const [collapsed, setCollapsed] = useState(true);
+  const { data: reconStatus, refetch: refetchRecon } = trpc.financial.getBankReconciliationStatus.useQuery();
+  const setReconMutation = trpc.financial.setBankReconciliation.useMutation({
+    onSuccess: (res) => {
+      if (res.success) {
+        refetchRecon();
+        setShowPasswordDialog(false);
+        setPasswordInput("");
+        setPasswordError("");
+      } else {
+        setPasswordError(res.error || "Erro desconhecido");
+      }
+    },
+  });
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const fmt = (v: number) => {
     const abs = Math.abs(v);
@@ -1240,6 +1258,29 @@ function BankBalanceCard() {
             <p className="text-xs text-slate-500">
               {activeAccounts.length} contas | {data.periodLabel}
             </p>
+          </div>
+          {/* Checkbox Conciliação Feita */}
+          <div
+            className={`ml-4 flex items-center gap-1.5 px-2.5 py-1 rounded-md cursor-pointer transition-colors ${
+              reconStatus?.reconciled
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (reconStatus?.reconciled) return; // já marcado hoje
+              setShowPasswordDialog(true);
+            }}
+            title={reconStatus?.reconciled ? `Conciliado por ${reconStatus.reconciledBy}` : "Clique para marcar conciliação"}
+          >
+            {reconStatus?.reconciled ? (
+              <CheckSquare className="w-4 h-4 text-emerald-600" />
+            ) : (
+              <Square className="w-4 h-4" />
+            )}
+            <span className="text-xs font-medium whitespace-nowrap">
+              {reconStatus?.reconciled ? "Conciliação Feita" : "Conciliação Feita"}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -1317,6 +1358,49 @@ function BankBalanceCard() {
                 </tr>
               </tfoot>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog de senha para conciliação */}
+      {showPasswordDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { setShowPasswordDialog(false); setPasswordInput(""); setPasswordError(""); }}>
+          <div className="bg-white rounded-lg p-6 w-80 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-bold text-slate-800 mb-2">Confirmar Conciliação</h4>
+            <p className="text-sm text-slate-500 mb-4">Digite a senha para marcar a conciliação como feita.</p>
+            <input
+              type="password"
+              placeholder="Senha"
+              value={passwordInput}
+              onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(""); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && passwordInput) {
+                  setReconMutation.mutate({ password: passwordInput, reconciled: true });
+                }
+              }}
+              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              autoFocus
+            />
+            {passwordError && <p className="text-xs text-red-500 mb-2">{passwordError}</p>}
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => { setShowPasswordDialog(false); setPasswordInput(""); setPasswordError(""); }}
+                className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (passwordInput) {
+                    setReconMutation.mutate({ password: passwordInput, reconciled: true });
+                  }
+                }}
+                disabled={!passwordInput || setReconMutation.isPending}
+                className="flex-1 px-3 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50"
+              >
+                {setReconMutation.isPending ? "Salvando..." : "Confirmar"}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -2467,7 +2467,7 @@ export const financialRouter = router({
    * Entradas OFX mensais (Recebimentos vs Outras Entradas) para gráfico de barras empilhadas.
    * Retorna breakdown por mês para visualização comparativa.
    */
-  getMonthlyOFXInflows: publicProcedure
+    getMonthlyOFXInflows: publicProcedure
     .input(z.object({
       months: z.array(z.object({
         startDate: z.string(),
@@ -2479,5 +2479,72 @@ export const financialRouter = router({
       return await fetchMonthlyOFXInflows(input.months);
     }),
 
+  /**
+   * Get bank reconciliation status for today.
+   * Returns whether the reconciliation checkbox was checked today.
+   */
+  getBankReconciliationStatus: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return { reconciled: false, reconciledBy: null };
 
+      const todayBR = getTodayBR();
+      const rows = await db
+        .select()
+        .from(dailyReconciliation)
+        .where(eq(dailyReconciliation.date, todayBR))
+        .limit(1);
+
+      if (rows.length > 0 && rows[0].reconciled) {
+        return { reconciled: true, reconciledBy: rows[0].reconciledBy || null };
+      }
+      return { reconciled: false, reconciledBy: null };
+    }),
+
+  /**
+   * Set bank reconciliation for today.
+   * Requires password "Thiago" to mark as reconciled.
+   */
+  setBankReconciliation: publicProcedure
+    .input(z.object({
+      password: z.string(),
+      reconciled: z.boolean(),
+    }))
+    .mutation(async ({ input }) => {
+      // Validate password
+      if (input.password !== "Thiago") {
+        return { success: false, error: "Senha incorreta" };
+      }
+
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const todayBR = getTodayBR();
+
+      const existing = await db
+        .select()
+        .from(dailyReconciliation)
+        .where(eq(dailyReconciliation.date, todayBR))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db
+          .update(dailyReconciliation)
+          .set({
+            reconciled: input.reconciled,
+            reconciledBy: input.reconciled ? "Thiago" : null,
+            reconciledAt: input.reconciled ? new Date() : null,
+          })
+          .where(eq(dailyReconciliation.date, todayBR));
+      } else {
+        await db.insert(dailyReconciliation).values({
+          date: todayBR,
+          reconciled: input.reconciled,
+          reconciledBy: input.reconciled ? "Thiago" : null,
+          reconciledAt: input.reconciled ? new Date() : null,
+        });
+      }
+
+      return { success: true };
+    }),
 });
