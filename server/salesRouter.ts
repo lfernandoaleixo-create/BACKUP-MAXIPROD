@@ -197,7 +197,7 @@ export const salesRouter = router({
       const uniqueClients = new Set(items.map((i) => i.cliente).filter(Boolean));
       const totalValue = items.reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
       const totalFaturado = items
-        .filter((i) => i.estadoItem === "Faturado")
+        .filter((i) => i.estadoItem === "Faturado" || i.estadoItem === "Faturado c/ entrega futura" || i.estadoItem === "Faturado parcial")
         .reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
       // A Faturar within the selected period
       const totalAFaturar = items
@@ -401,7 +401,7 @@ export const salesRouter = router({
         const label = grupoLabels[seg] || seg;
         if (!segBreakdown[label]) segBreakdown[label] = { value: 0, faturado: 0, aFaturar: 0 };
         segBreakdown[label].value += Number(item.valorTotal || 0);
-        if (item.estadoItem === "Faturado") segBreakdown[label].faturado += Number(item.valorTotal || 0);
+        if (item.estadoItem === "Faturado" || item.estadoItem === "Faturado c/ entrega futura" || item.estadoItem === "Faturado parcial") segBreakdown[label].faturado += Number(item.valorTotal || 0);
         if (item.estadoItem === "A faturar") segBreakdown[label].aFaturar += Number(item.valorTotal || 0);
       }
       // Segment breakdown for A Faturar Anterior
@@ -427,7 +427,7 @@ export const salesRouter = router({
         const crm = item.crmSegmento || "Sem CRM";
         if (!crmBreakdown[crm]) crmBreakdown[crm] = { value: 0, faturado: 0, aFaturar: 0 };
         crmBreakdown[crm].value += Number(item.valorTotal || 0);
-        if (item.estadoItem === "Faturado") crmBreakdown[crm].faturado += Number(item.valorTotal || 0);
+        if (item.estadoItem === "Faturado" || item.estadoItem === "Faturado c/ entrega futura" || item.estadoItem === "Faturado parcial") crmBreakdown[crm].faturado += Number(item.valorTotal || 0);
         if (item.estadoItem === "A faturar") crmBreakdown[crm].aFaturar += Number(item.valorTotal || 0);
       }
       const crmBreakdownAnterior: Record<string, number> = {};
