@@ -1210,10 +1210,19 @@ function BankBalanceCard() {
 
   if (!data || data.accounts.length === 0) return null;
 
+  // Recalcular variação no frontend: Saldo Atual - Saldo Inicial
+  const accountsWithVariacao = data.accounts.map(a => ({
+    ...a,
+    variacao: Math.round((a.saldoAtual - a.saldoInicial) * 100) / 100,
+  }));
+
   // Filter out accounts with zero everywhere
-  const activeAccounts = data.accounts.filter(
+  const activeAccounts = accountsWithVariacao.filter(
     a => a.saldoInicial !== 0 || a.saldoAtual !== 0 || a.variacao !== 0
   );
+
+  // Recalcular totais
+  const totalVariacao = Math.round(activeAccounts.reduce((sum, a) => sum + a.variacao, 0) * 100) / 100;
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
@@ -1251,9 +1260,9 @@ function BankBalanceCard() {
           <div className="text-right">
             <p className="text-[10px] text-slate-400 uppercase tracking-wide leading-tight">Variação</p>
             <span className={`text-sm font-bold tabular-nums ${
-              data.totalVariacao >= 0 ? "text-emerald-600" : "text-red-600"
+              totalVariacao >= 0 ? "text-emerald-600" : "text-red-600"
             }`}>
-              {data.totalVariacao > 0 ? "+" : data.totalVariacao < 0 ? "-" : ""}R$ {fmtShort(data.totalVariacao)}
+              {totalVariacao > 0 ? "+" : totalVariacao < 0 ? "-" : ""}R$ {fmtShort(totalVariacao)}
             </span>
           </div>
           {collapsed ? (
@@ -1311,9 +1320,9 @@ function BankBalanceCard() {
                     R$ {fmtShort(data.totalSaldoAtual)}
                   </td>
                   <td className={`py-2.5 px-4 text-right tabular-nums ${
-                    data.totalVariacao > 0 ? "text-emerald-700" : data.totalVariacao < 0 ? "text-red-700" : "text-slate-600"
+                    totalVariacao > 0 ? "text-emerald-700" : totalVariacao < 0 ? "text-red-700" : "text-slate-600"
                   }`}>
-                    {data.totalVariacao > 0 ? "+" : data.totalVariacao < 0 ? "-" : ""}R$ {fmtShort(data.totalVariacao)}
+                    {totalVariacao > 0 ? "+" : totalVariacao < 0 ? "-" : ""}R$ {fmtShort(totalVariacao)}
                   </td>
                 </tr>
               </tfoot>
