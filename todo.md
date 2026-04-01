@@ -1463,3 +1463,4 @@
 - [x] Verificar que os pedidos voltaram para suas abas corretas (modifiedPedidos: [] - vazio!)
 - [x] Card reduzido do Saldo Bancário: mostrar apenas Saldo Atual (remover Saldo Inicial e Variação)
 - [x] Variação do Saldo Bancário: recalcular no frontend como saldoAtual - saldoInicial (por linha e total)
+- [x] Totais dos cards A Receber e A Pagar na aba Financeiro: devem ser a soma dos meses exibidos na tabela

@@ -1739,7 +1739,7 @@ export default function Financial() {
                     {showReceberChart ? <ChevronUp className="w-5 h-5 text-emerald-600" /> : <ChevronDown className="w-5 h-5 text-emerald-600" />}
                   </h3>
                   <span className="text-sm font-bold text-emerald-800">
-                    Total: {formatCurrency(summary!.receber.emAberto.total)}
+                    Total: {formatCurrency(monthlyData ? monthlyData.reduce((s, m) => s + m.receber.total, 0) : (summary!.receber.emAberto.total))}
                   </span>
                 </button>
                 {showReceberChart && (
@@ -1798,7 +1798,7 @@ export default function Financial() {
                     {showPagarChart ? <ChevronUp className="w-5 h-5 text-red-600" /> : <ChevronDown className="w-5 h-5 text-red-600" />}
                   </h3>
                   <span className="text-sm font-bold text-red-800">
-                    Total: {formatCurrency(summary!.pagar.emAberto.total)}
+                    Total: {formatCurrency(monthlyData ? monthlyData.reduce((s, m) => s + m.pagar.total, 0) : (summary!.pagar.emAberto.total))}
                   </span>
                 </button>
                 {showPagarChart && (
