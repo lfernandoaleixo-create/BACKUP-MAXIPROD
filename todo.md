@@ -1470,3 +1470,5 @@
 - [x] Contas a Pagar: quando fornecedor vazio, usar Descrição e Anotações como fallback
 - [x] Coletar campos descrição e anotações do Maxiprod no sync de contas a pagar (já existiam no schema)
 - [x] Backend: fallback fornecedor > referenteA > observacoes > "Sem nome" nas 2 queries de contas a pagar
+- [x] Contas a Pagar: usar razaoSocial em vez de nomeFantasia no sync do Maxiprod
+- [x] Contas a Pagar: garantir fallback (razaoSocial > referenteA > observacoes) para TODOS os meses e todas as views

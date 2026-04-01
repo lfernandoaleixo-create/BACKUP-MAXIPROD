@@ -350,7 +350,7 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
             <tbody className="divide-y divide-slate-100">
               {sortedItems.map((item: any, i: number) => (
                 <tr key={i} className={colors.hoverBg}>
-                  <td className="px-3 py-2 text-slate-700 truncate max-w-[200px]">{item[nameField] || "\u2014"}</td>
+                  <td className="px-3 py-2 text-slate-700 truncate max-w-[200px]">{item[nameField] || (nameField === "fornecedor" ? (item.referenteA || item.observacoes || "\u2014") : "\u2014")}</td>
                   <td className={`px-3 py-2 text-right font-semibold ${colors.valueText}`}>{formatCurrency(Number(item.valorLiquido || 0))}</td>
                   <td className="px-3 py-2 text-center text-slate-500">{formatDate(item.vencimentoData)}</td>
                 </tr>
@@ -615,7 +615,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
             return (
               <div key={item.maxiprodId || idx} className={`text-xs leading-5 ${statusCfg ? 'rounded-md px-1.5 py-0.5 border ' + statusCfg.color : ''}`}>
                 <div className="flex items-center gap-x-1.5">
-                  <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.fornecedor}</span>
+                  <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.fornecedor || item.referenteA || "\u2014"}</span>
                   <span className="text-slate-400 whitespace-nowrap text-right shrink-0" style={{ width: '60px', fontVariantNumeric: 'tabular-nums', fontSize: '10px' }}>{formatDate(item.vencimento)}</span>
                   <span className="font-semibold text-slate-700 whitespace-nowrap text-right shrink-0" style={{ width: '78px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
                   {isPagar && item.maxiprodId && (
@@ -840,8 +840,7 @@ function ContasAPagarTable() {
                 return (
                   <tr key={idx} className={`hover:bg-slate-50 transition-colors ${isOverdue ? "bg-red-50/50" : ""}`}>
                     <td className="px-3 py-2.5">
-                      <span className="text-sm font-medium text-slate-800">{item.fornecedor || "—"}</span>
-                    </td>
+                    <span className="text-sm font-medium text-slate-800">{item.fornecedor || item.referenteA || item.observacoes || "\u2014"}</span>                  </td>
                     <td className="px-3 py-2.5">
                       <span className="text-xs text-slate-500 truncate block max-w-[200px]">{item.referenteA || "—"}</span>
                     </td>

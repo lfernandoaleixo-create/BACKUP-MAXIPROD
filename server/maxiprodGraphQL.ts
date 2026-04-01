@@ -897,7 +897,7 @@ function transformAccountsPayable(items: any[]): any[] {
     observacoes: item.observacoes || null,
     documentoVinculadoNumero: item.documentoVinculadoNumero || null,
     bloqueado: item.bloqueado || false,
-    fornecedor: item.fornecedor?.nomeFantasia || item.fornecedor?.razaoSocial || "",
+    fornecedor: item.fornecedor?.razaoSocial || item.fornecedor?.nomeFantasia || "",
     centroDeCustosId: item.centroDeCustos?.id || null,
     contaId: item.conta?.id || null,
     empresaId: item.minhaEmpresaId || null,
@@ -1895,7 +1895,7 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
         
         allItems.push({
           descricao: parts.join(' | ') || '-',
-          fornecedor: item.fornecedor?.nomeFantasia || item.fornecedor?.razaoSocial || '-',
+          fornecedor: item.fornecedor?.razaoSocial || item.fornecedor?.nomeFantasia || '-',
           valorPagoLiquido: item.valorPagoLiquido || 0,
           liquidacaoData: item.liquidacaoData?.slice(0, 10) || '-',
           vencimentoData: item.vencimentoData?.slice(0, 10) || '-',
