@@ -1262,7 +1262,7 @@ function BankBalanceCard() {
             <span className={`text-sm font-bold tabular-nums ${
               totalVariacao >= 0 ? "text-emerald-600" : "text-red-600"
             }`}>
-              {totalVariacao > 0 ? "+" : totalVariacao < 0 ? "-" : ""}R$ {fmtShort(totalVariacao)}
+              {totalVariacao > 0 ? "+R$ " : totalVariacao < 0 ? "-R$ " : "R$ "}{fmtShort(totalVariacao)}
             </span>
           </div>
           {collapsed ? (
@@ -1292,18 +1292,18 @@ function BankBalanceCard() {
                     idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"
                   } hover:bg-indigo-50/30 transition-colors`}>
                     <td className="py-2 px-4 font-medium text-slate-700">{acc.descricao}</td>
-                    <td className="py-2 px-4 text-right tabular-nums text-slate-600">
-                      R$ {fmtShort(acc.saldoInicial)}
+                    <td className={`py-2 px-4 text-right tabular-nums ${acc.saldoInicial < 0 ? "text-red-600" : "text-slate-600"}`}>
+                      {acc.saldoInicial < 0 ? "R$ -" : "R$ "}{fmtShort(acc.saldoInicial)}
                     </td>
                     <td className={`py-2 px-4 text-right tabular-nums font-semibold ${
                       acc.saldoAtual >= 0 ? "text-emerald-600" : "text-red-600"
                     }`}>
-                      R$ {fmtShort(acc.saldoAtual)}
+                      {acc.saldoAtual < 0 ? "R$ -" : "R$ "}{fmtShort(acc.saldoAtual)}
                     </td>
                     <td className={`py-2 px-4 text-right tabular-nums ${
                       acc.variacao > 0 ? "text-emerald-600" : acc.variacao < 0 ? "text-red-600" : "text-slate-500"
                     }`}>
-                      {acc.variacao > 0 ? "+" : acc.variacao < 0 ? "-" : ""}R$ {fmtShort(acc.variacao)}
+                      {acc.variacao > 0 ? "+R$ " : acc.variacao < 0 ? "-R$ " : "R$ "}{fmtShort(acc.variacao)}
                     </td>
                   </tr>
                 ))}
@@ -1311,18 +1311,18 @@ function BankBalanceCard() {
               <tfoot>
                 <tr className="bg-slate-100 border-t-2 border-slate-300 font-bold">
                   <td className="py-2.5 px-4 text-slate-800">TOTAL</td>
-                  <td className="py-2.5 px-4 text-right tabular-nums text-slate-800">
-                    R$ {fmtShort(data.totalSaldoInicial)}
+                  <td className={`py-2.5 px-4 text-right tabular-nums ${data.totalSaldoInicial < 0 ? "text-red-700" : "text-slate-800"}`}>
+                    {data.totalSaldoInicial < 0 ? "R$ -" : "R$ "}{fmtShort(data.totalSaldoInicial)}
                   </td>
                   <td className={`py-2.5 px-4 text-right tabular-nums ${
                     data.totalSaldoAtual >= 0 ? "text-emerald-700" : "text-red-700"
                   }`}>
-                    R$ {fmtShort(data.totalSaldoAtual)}
+                    {data.totalSaldoAtual < 0 ? "R$ -" : "R$ "}{fmtShort(data.totalSaldoAtual)}
                   </td>
                   <td className={`py-2.5 px-4 text-right tabular-nums ${
                     totalVariacao > 0 ? "text-emerald-700" : totalVariacao < 0 ? "text-red-700" : "text-slate-600"
                   }`}>
-                    {totalVariacao > 0 ? "+" : totalVariacao < 0 ? "-" : ""}R$ {fmtShort(totalVariacao)}
+                    {totalVariacao > 0 ? "+R$ " : totalVariacao < 0 ? "-R$ " : "R$ "}{fmtShort(totalVariacao)}
                   </td>
                 </tr>
               </tfoot>

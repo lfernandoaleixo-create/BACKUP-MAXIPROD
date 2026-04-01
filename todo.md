@@ -1439,3 +1439,8 @@
 - [x] Variação = Saldo Atual - Saldo Inicial (corrigido: fmtShort usava Math.abs removendo sinal, agora sinal é explícito)
 - [x] Positiva: verde com sinal +
 - [x] Negativa: vermelha com sinal -
+- [x] BUG: Sicredi Varetas mostrava variação +R$ 10.000 em vez de -R$ 1.892 - causa raiz: saldoInicial era NEGATIVO (-5.946,01) mas fmtShort usava Math.abs, exibindo como positivo (R$ 5.946,01). Variação correta: 4.053,99 - (-5.946,01) = 10.000 (matematicamente correto, mas visualmente confuso)
+- [x] Corrigido: coluna Saldo Inicial agora exibe sinal negativo quando valor é negativo (R$ -5.946,01)
+- [x] Corrigido: coluna Saldo Atual também exibe sinal negativo quando aplicável
+- [x] Corrigido: coluna Variação usa formato consistente +R$/−R$/R$ para positivo/negativo/zero
+- [x] Corrigido: linha TOTAL e header do card também atualizados com mesma lógica
