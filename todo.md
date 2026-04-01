@@ -1435,8 +1435,7 @@
 ## Visibilidade Card Amostra/Bonificação
 - [x] Tornar card Amostra/Bonificação visível para todos os usuários na aba Vendas
 
-## Pedidos "Faturado c/ entrega futura" (31/03/2026)
-- [x] BUG: Pedido 808 sumiu do dashboard - estado "Faturado c/ entrega futura" - corrigido
-- [x] Regra: pedidos "Faturado c/ entrega futura" devem aparecer na aba Vendas (como faturado financeiramente)
-- [x] Regra: pedidos "Faturado c/ entrega futura" devem continuar na Produção/Faturamento como "Em Aberto" (mercadoria não entregue)
-- [x] Aplicar essa lógica para TODOS os pedidos com esse estado, não apenas o 808
+## Correção Coluna Variação - Saldo Bancário
+- [x] Variação = Saldo Atual - Saldo Inicial (corrigido: fmtShort usava Math.abs removendo sinal, agora sinal é explícito)
+- [x] Positiva: verde com sinal +
+- [x] Negativa: vermelha com sinal -

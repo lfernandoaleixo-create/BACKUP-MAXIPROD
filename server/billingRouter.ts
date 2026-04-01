@@ -224,7 +224,7 @@ export const billingRouter = router({
       // NOTA: NÃO filtrar isOutros aqui - AMOSTRA e BONIFICAÇÃO devem aparecer para a produção
       // Usa funções compartilhadas de shared/grupoClassification.ts
       const openItems = allItems.filter(i => 
-        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial" || i.estadoItem === "Faturado c/ entrega futura") &&
+        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial") &&
         isAprovadoOuFaturado(i.estadoNota)
       );
       
@@ -1016,7 +1016,7 @@ export const billingRouter = router({
       // Get sales order items from local DB (same source as getOpenOrders)
       const allItems = await db.select().from(salesOrders);
       const openItems = allItems.filter(i => 
-        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial" || i.estadoItem === "Faturado c/ entrega futura") &&
+        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial") &&
         isAprovadoOuFaturado(i.estadoNota)
       );
 
