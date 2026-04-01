@@ -456,6 +456,9 @@ export const billingRouter = router({
       // Em vez de deletar o aceite, marca o pedido com wasModified=true
       // para que volte ao "Aceite da Produção" com sinalização visual vermelha.
       // Só compara campos críticos: valorTotal, quantidade, valorUnitario, descrição dos itens.
+      // PROTEÇÃO: Se mais de 5 pedidos mudaram de hash ao mesmo tempo, é provável que seja
+      // uma mudança no código (filtro, cálculo) e NÃO uma alteração real no Maxiprod.
+      // Nesse caso, atualiza os hashes silenciosamente sem marcar como modificado.
       try {
         const acceptedRows = await db.select({
           pedido: productionAcceptance.pedido,
@@ -463,35 +466,72 @@ export const billingRouter = router({
           wasModified: productionAcceptance.wasModified,
         }).from(productionAcceptance);
 
+        // FASE 1: Identificar quais pedidos tiveram hash alterado
+        const changedOrders: Array<{ pedido: string; currentHash: string; cliente: string; grupoKey: string }> = [];
+        const missingHashOrders: Array<{ pedido: string; currentHash: string }> = [];
+
         for (const row of acceptedRows) {
+          if (row.wasModified) continue; // Já marcado como modificado, não reprocessar
           const currentOrder = openOrders.find(o => o.pedido === row.pedido);
           if (!currentOrder) continue; // Pedido já faturado ou não existe mais
           
           const currentHash = currentOrder.orderHash;
           
-          // Se não tem hash armazenado (migração), atualizar com hash atual sem marcar como modificado
+          // Se não tem hash armazenado (migração), atualizar silenciosamente
           if (!row.orderHash) {
-            await db.update(productionAcceptance)
-              .set({ orderHash: currentHash })
-              .where(eq(productionAcceptance.pedido, row.pedido));
+            missingHashOrders.push({ pedido: row.pedido, currentHash });
             continue;
           }
           
-          // Se o hash mudou, marcar como modificado (volta para Aceite com sinalização)
-          if (row.orderHash !== currentHash && !row.wasModified) {
-            console.log(`[Auto-Revoke] Pedido #${row.pedido} foi modificado no Maxiprod (hash antigo: ${row.orderHash?.slice(0,8)}..., novo: ${currentHash?.slice(0,8)}...)`);
+          // Se o hash mudou, registrar para análise
+          if (row.orderHash !== currentHash) {
+            changedOrders.push({
+              pedido: row.pedido,
+              currentHash,
+              cliente: currentOrder.cliente,
+              grupoKey: currentOrder.grupoKey,
+            });
+          }
+        }
+
+        // Atualizar hashes faltantes silenciosamente
+        for (const { pedido, currentHash } of missingHashOrders) {
+          await db.update(productionAcceptance)
+            .set({ orderHash: currentHash })
+            .where(eq(productionAcceptance.pedido, pedido));
+        }
+
+        // FASE 2: Decidir se é mudança real ou mudança de código
+        // REGRA DE PROTEÇÃO: Se mais de 5 pedidos mudaram ao mesmo tempo,
+        // é quase certamente uma mudança no código/filtro, NÃO no Maxiprod.
+        // Nesse caso, atualiza os hashes silenciosamente sem marcar como modificado.
+        const MASS_CHANGE_THRESHOLD = 5;
+        
+        if (changedOrders.length > MASS_CHANGE_THRESHOLD) {
+          // MUDANÇA EM MASSA DETECTADA - provavelmente mudança no código
+          console.warn(`[Auto-Revoke] PROTEÇÃO ATIVADA: ${changedOrders.length} pedidos com hash diferente (threshold: ${MASS_CHANGE_THRESHOLD}). Atualizando hashes silenciosamente sem marcar como modificado.`);
+          for (const { pedido, currentHash } of changedOrders) {
+            await db.update(productionAcceptance)
+              .set({ orderHash: currentHash })
+              .where(eq(productionAcceptance.pedido, pedido));
+          }
+          console.log(`[Auto-Revoke] ${changedOrders.length} hashes atualizados silenciosamente. Pedidos: ${changedOrders.map(o => o.pedido).join(', ')}`);
+        } else if (changedOrders.length > 0) {
+          // Poucos pedidos mudaram - provavelmente mudança real no Maxiprod
+          for (const { pedido, currentHash, cliente, grupoKey } of changedOrders) {
+            console.log(`[Auto-Revoke] Pedido #${pedido} foi modificado no Maxiprod`);
             await db.update(productionAcceptance)
               .set({ wasModified: true, modifiedAt: new Date(), orderHash: currentHash })
-              .where(eq(productionAcceptance.pedido, row.pedido));
+              .where(eq(productionAcceptance.pedido, pedido));
             // Gerar notificação de pedido modificado
             try {
               const { createNotification } = await import("./notificationRouter");
               await createNotification({
                 type: "pedido_modificado",
-                title: `Pedido #${row.pedido} Modificado`,
-                message: `O pedido #${row.pedido} (${currentOrder.cliente}) foi alterado no Maxiprod e retornou ao Aceite da Produção.`,
+                title: `Pedido #${pedido} Modificado`,
+                message: `O pedido #${pedido} (${cliente}) foi alterado no Maxiprod e retornou ao Aceite da Produção.`,
                 severity: "warning",
-                metadata: { pedido: row.pedido, cliente: currentOrder.cliente, grupo: currentOrder.grupoKey },
+                metadata: { pedido, cliente, grupo: grupoKey },
               });
             } catch (e) { console.error("[Notification] Error:", e); }
           }
@@ -998,13 +1038,14 @@ export const billingRouter = router({
     }),
 
   /**
-   * TEMP: Recalculate order hashes for all accepted orders to prevent false modification detection.
+   * Recalculate order hashes for all accepted orders AND reset wasModified flags.
    * Uses local DB salesOrders data (same source as getOpenOrders) to compute fresh hashes.
+   * This fixes false auto-revoke caused by code changes (e.g., filter changes).
    */
   recalcOrderHashes: publicProcedure
     .mutation(async () => {
       const db = await getDb();
-      if (!db) return { success: false, updated: 0 };
+      if (!db) return { success: false, updated: 0, resetModified: 0 };
 
       // Get all accepted orders
       const acceptedRows = await db.select({
@@ -1063,9 +1104,8 @@ export const billingRouter = router({
       }
 
       let updated = 0;
-      const skipPedidos = ['801', '803', '804'];
+      let resetModified = 0;
       for (const row of acceptedRows) {
-        if (skipPedidos.includes(row.pedido)) continue;
         const orderData = orderMap.get(row.pedido);
         if (!orderData) continue;
         const valorRounded = Math.round(orderData.valorTotal * 100) / 100;
@@ -1077,17 +1117,20 @@ export const billingRouter = router({
           valorTotal: valorRounded,
           itens: orderData.itens,
         });
-        if (row.orderHash !== newHash) {
+        const needsHashUpdate = row.orderHash !== newHash;
+        const needsModifiedReset = row.wasModified;
+        if (needsHashUpdate || needsModifiedReset) {
           await db.update(productionAcceptance)
             .set({ orderHash: newHash, wasModified: false, modifiedAt: null })
             .where(eq(productionAcceptance.pedido, row.pedido));
-          updated++;
-          console.log(`[RecalcHashes] Pedido #${row.pedido}: hash ${row.orderHash?.slice(0,8)}... -> ${newHash.slice(0,8)}...`);
+          if (needsHashUpdate) updated++;
+          if (needsModifiedReset) resetModified++;
+          console.log(`[RecalcHashes] Pedido #${row.pedido}: hash ${needsHashUpdate ? 'updated' : 'same'}, wasModified ${needsModifiedReset ? 'reset' : 'same'}`);
         }
       }
 
-      console.log(`[RecalcHashes] Updated ${updated} order hashes out of ${acceptedRows.length} (skipped 801,803,804)`);
-      return { success: true, updated, total: acceptedRows.length };
+      console.log(`[RecalcHashes] Updated ${updated} hashes, reset ${resetModified} wasModified flags out of ${acceptedRows.length} total`);
+      return { success: true, updated, resetModified, total: acceptedRows.length };
     }),
 
   /**

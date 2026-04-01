@@ -1444,3 +1444,18 @@
 - [x] Corrigido: coluna Saldo Atual também exibe sinal negativo quando aplicável
 - [x] Corrigido: coluna Variação usa formato consistente +R$/−R$/R$ para positivo/negativo/zero
 - [x] Corrigido: linha TOTAL e header do card também atualizados com mesma lógica
+
+## BUG GRAVE: Pedidos voltando para Aceite de Produção (01/04/2026)
+- [x] Investigar causa raiz: pedidos já aceitos estão reaparecendo na aba Aceite de Produção
+- [x] Identificar o mecanismo exato que está resetando o status de aceite
+  - CAUSA RAIZ: Commit b4f8c82 adicionou "Faturado c/ entrega futura" ao filtro openItems, mudando o hash de 31 pedidos
+  - O auto-revoke marcou todos como wasModified=true, fazendo voltarem para Aceite
+  - O commit 443b854 reverteu o filtro, mas os 31 pedidos continuaram marcados no banco
+- [x] Implementar correção definitiva para que isso nunca mais ocorra
+  - Proteção contra auto-revoke em massa: threshold de 5 pedidos
+  - Se mais de 5 hashes mudam ao mesmo tempo, atualiza silenciosamente (mudança de código)
+  - Se 1-5 hashes mudam, marca como modificado (mudança real no Maxiprod)
+- [x] Adicionar proteções/salvaguardas contra recorrência
+  - recalcOrderHashes atualizado: agora reseta wasModified=false e recalcula hashes
+  - 11 novos testes em autoRevoke.test.ts validando a lógica de proteção
+- [ ] Chamar recalcOrderHashes na versão publicada para resetar os 31 pedidos afetados
