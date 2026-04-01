@@ -889,6 +889,7 @@ export const financialRouter = router({
         valorPagoLiquido: accountsPayable.valorPagoLiquido,
         vencimentoData: accountsPayable.vencimentoData,
         referenteA: accountsPayable.referenteA,
+        observacoes: accountsPayable.observacoes,
         parcela: accountsPayable.parcela,
         parcelasQuantidadeTotal: accountsPayable.parcelasQuantidadeTotal,
         empresaNome: accountsPayable.empresaNome,
@@ -930,7 +931,7 @@ export const financialRouter = router({
       const calAuth = calAuthMap.get(item.maxiprodId);
       const entry = {
         maxiprodId: item.maxiprodId,
-        fornecedor: item.cliente || "Sem nome",
+        fornecedor: item.cliente || item.referenteA || item.observacoes || "Sem nome",
         valor,
         vencimento: vencStr,
         referenteA: item.referenteA || "",
@@ -1690,6 +1691,7 @@ export const financialRouter = router({
         valorPagoLiquido: accountsPayable.valorPagoLiquido,
         vencimentoData: accountsPayable.vencimentoData,
         referenteA: accountsPayable.referenteA,
+        observacoes: accountsPayable.observacoes,
         parcela: accountsPayable.parcela,
         parcelasQuantidadeTotal: accountsPayable.parcelasQuantidadeTotal,
         empresaNome: accountsPayable.empresaNome,
@@ -1732,7 +1734,7 @@ export const financialRouter = router({
       const authData = authMap.get(item.maxiprodId);
       const entry: PayableItem = {
         maxiprodId: item.maxiprodId,
-        fornecedor: item.fornecedor || "Sem nome",
+        fornecedor: item.fornecedor || item.referenteA || item.observacoes || "Sem nome",
         valor,
         vencimento: vencStr,
         referenteA: item.referenteA || "",

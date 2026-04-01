@@ -1467,3 +1467,6 @@
 - [x] Checkbox "Conciliação Feita" no card Saldo Bancário: tabela no banco + endpoint tRPC
 - [x] Checkbox "Conciliação Feita" no card Saldo Bancário: UI com validação de senha Thiago
 - [x] Checkbox "Conciliação Feita": reseta automaticamente no dia seguinte (query por data de hoje)
+- [x] Contas a Pagar: quando fornecedor vazio, usar Descrição e Anotações como fallback
+- [x] Coletar campos descrição e anotações do Maxiprod no sync de contas a pagar (já existiam no schema)
+- [x] Backend: fallback fornecedor > referenteA > observacoes > "Sem nome" nas 2 queries de contas a pagar
