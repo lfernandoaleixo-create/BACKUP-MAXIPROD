@@ -1244,25 +1244,11 @@ function BankBalanceCard() {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-[10px] text-slate-400 uppercase tracking-wide leading-tight">Saldo Inicial</p>
-            <span className="text-sm font-semibold tabular-nums text-slate-600">
-              {fmt(data.totalSaldoInicial)}
-            </span>
-          </div>
-          <div className="text-right">
             <p className="text-[10px] text-slate-400 uppercase tracking-wide leading-tight">Saldo Atual</p>
             <span className={`text-sm font-bold tabular-nums ${
               data.totalSaldoAtual >= 0 ? "text-emerald-600" : "text-red-600"
             }`}>
               {fmt(data.totalSaldoAtual)}
-            </span>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] text-slate-400 uppercase tracking-wide leading-tight">Variação</p>
-            <span className={`text-sm font-bold tabular-nums ${
-              totalVariacao >= 0 ? "text-emerald-600" : "text-red-600"
-            }`}>
-              {totalVariacao > 0 ? "+R$ " : totalVariacao < 0 ? "-R$ " : "R$ "}{fmtShort(totalVariacao)}
             </span>
           </div>
           {collapsed ? (

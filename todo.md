@@ -1458,4 +1458,7 @@
 - [x] Adicionar proteções/salvaguardas contra recorrência
   - recalcOrderHashes atualizado: agora reseta wasModified=false e recalcula hashes
   - 11 novos testes em autoRevoke.test.ts validando a lógica de proteção
-- [ ] Chamar recalcOrderHashes na versão publicada para resetar os 31 pedidos afetados
+- [x] Chamar recalcOrderHashes na versão publicada para resetar os 31 pedidos afetados
+- [x] Executar recalcOrderHashes na versão publicada para resetar os 31 pedidos
+- [x] Verificar que os pedidos voltaram para suas abas corretas (modifiedPedidos: [] - vazio!)
+- [x] Card reduzido do Saldo Bancário: mostrar apenas Saldo Atual (remover Saldo Inicial e Variação)
