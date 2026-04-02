@@ -1529,14 +1529,6 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
     }
 
     const sorted = [...result].sort((a, b) => {
-      // REGRA: Pedidos não coletados sempre no topo (apenas no card Faturados)
-      if (collectionStatuses) {
-        const aColetado = collectionStatuses[a.pedido]?.coletado === true;
-        const bColetado = collectionStatuses[b.pedido]?.coletado === true;
-        if (aColetado !== bColetado) {
-          return aColetado ? 1 : -1; // não coletados primeiro
-        }
-      }
 
       let cmp = 0;
       switch (sortField) {

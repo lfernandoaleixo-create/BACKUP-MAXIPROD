@@ -1917,10 +1917,12 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
 
 /**
  * Fetch total de Faturamento via Notas Fiscais do Maxiprod (Vendas > Notas Fiscais).
- * Filtros: emissaoData no período, estado EMITIDA, estadoConfiguravel em FIBRA/BAMBU/MADEIRA/ROJÃO/SERRAGEM.
+ * Filtros: emissaoData no período, estado EMITIDA, entradaOuSaida SAIDA.
+ * Inclui TODAS as NFs de saída emitidas (BAMBU, MADEIRA, FIBRA, AMOSTRA, MADEIRA/FIBRA, etc.)
+ * Exclui apenas NFs com estadoConfiguravel CANCELADO ou sem classificação.
  * SOMENTE LEITURA
  */
-const FATURAMENTO_ESTADOS_CONFIGURAVEIS = new Set(['FIBRA', 'BAMBU', 'MADEIRA', 'ROJÃO', 'SERRAGEM']);
+const FATURAMENTO_ESTADOS_EXCLUIDOS = new Set(['CANCELADO']);
 
 export async function fetchInvoicesTotal(startDate: string, endDate: string): Promise<{
   total: number;
@@ -1930,7 +1932,7 @@ export async function fetchInvoicesTotal(startDate: string, endDate: string): Pr
     const startISO = `${startDate}T00:00:00.000-03:00`;
     const endISO = `${endDate}T23:59:59.999-03:00`;
 
-    let allItems: { valorTotal: number; estadoConfiguravel: { descricao: string } | null }[] = [];
+    let allItems: { valorTotal: number; numero: number; serie: number; estadoConfiguravel: { descricao: string } | null; entradaOuSaida: string }[] = [];
     let skip = 0;
     const take = 200;
 
@@ -1947,7 +1949,10 @@ export async function fetchInvoicesTotal(startDate: string, endDate: string): Pr
           totalCount
           items {
             valorTotal
+            numero
+            serie
             estadoConfiguravel { descricao }
+            entradaOuSaida
           }
         }
       }`);
@@ -1959,10 +1964,12 @@ export async function fetchInvoicesTotal(startDate: string, endDate: string): Pr
       if (skip >= data.notasFiscais.totalCount) break;
     }
 
-    // Filter by estadoConfiguravel
+    // Filter: only SAIDA NFs, exclude CANCELADO
     const filtered = allItems.filter(item => {
+      if (item.entradaOuSaida !== 'SAIDA') return false;
       const ec = (item.estadoConfiguravel?.descricao || '').toUpperCase();
-      return FATURAMENTO_ESTADOS_CONFIGURAVEIS.has(ec);
+      if (!ec || FATURAMENTO_ESTADOS_EXCLUIDOS.has(ec)) return false;
+      return true;
     });
 
     const total = filtered.reduce((sum, item) => sum + (item.valorTotal || 0), 0);
@@ -1975,6 +1982,164 @@ export async function fetchInvoicesTotal(startDate: string, endDate: string): Pr
   } catch (error: any) {
     console.error("[fetchInvoicesTotal] Error:", error.message);
     return { total: 0, count: 0 };
+  }
+}
+
+/**
+ * Fetch lista detalhada de NFs do Maxiprod para exibição no Financeiro.
+ * Mesmos filtros do fetchInvoicesTotal: SAIDA + EMITIDA + estadoConfiguravel válido.
+ */
+export async function fetchInvoicesDetails(startDate: string, endDate: string): Promise<{
+  numero: number;
+  serie: number;
+  valorTotal: number;
+  emissaoData: string;
+  estadoConfiguravel: string;
+  nomeDestinatario: string;
+}[]> {
+  try {
+    const startISO = `${startDate}T00:00:00.000-03:00`;
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+
+    let allItems: any[] = [];
+    let skip = 0;
+    const take = 200;
+
+    while (true) {
+      const data = await gql<any>(`{
+        notasFiscais(
+          skip: ${skip}
+          take: ${take}
+          where: {
+            emissaoData: { gte: "${startISO}", lte: "${endISO}" }
+            estado: { eq: EMITIDA }
+          }
+        ) {
+          totalCount
+          items {
+            id
+            numero
+            serie
+            valorTotal
+            emissaoData
+            estadoConfiguravel { descricao }
+            entradaOuSaida
+          }
+        }
+      }`);
+
+      if (!data?.notasFiscais) break;
+      allItems.push(...data.notasFiscais.items);
+      skip += take;
+      if (skip >= data.notasFiscais.totalCount) break;
+    }
+
+    // Same filter as fetchInvoicesTotal
+    const filtered = allItems.filter(item => {
+      if (item.entradaOuSaida !== 'SAIDA') return false;
+      const ec = (item.estadoConfiguravel?.descricao || '').toUpperCase();
+      if (!ec || FATURAMENTO_ESTADOS_EXCLUIDOS.has(ec)) return false;
+      return true;
+    });
+
+    // Buscar pedidos vinculados via itensDasNotasFiscais
+    // Usa itemDoPedidoDeVendaId (campo existente no tipo NotaFiscalItem)
+    const nfIds = filtered.map(item => item.id).filter(Boolean);
+    const nfToPedido: Record<number, string> = {};
+    
+    if (nfIds.length > 0) {
+      try {
+        for (let i = 0; i < nfIds.length; i += 100) {
+          const batch = nfIds.slice(i, i + 100);
+          const idsStr = batch.join(',');
+          const nfItemsData = await gql<any>(`{
+            itensDasNotasFiscais(
+              skip: 0, take: 500,
+              where: {
+                notaFiscalId: { in: [${idsStr}] }
+              }
+            ) {
+              totalCount
+              items {
+                notaFiscalId
+                itemDoPedidoDeVendaId
+              }
+            }
+          }`);
+          
+          if (nfItemsData?.itensDasNotasFiscais?.items) {
+            // Collect unique itemDoPedidoDeVendaIds per NF
+            const nfToItemIds = new Map<number, number[]>();
+            for (const nfItem of nfItemsData.itensDasNotasFiscais.items) {
+              if (nfItem.itemDoPedidoDeVendaId) {
+                if (!nfToItemIds.has(nfItem.notaFiscalId)) {
+                  nfToItemIds.set(nfItem.notaFiscalId, []);
+                }
+                nfToItemIds.get(nfItem.notaFiscalId)!.push(nfItem.itemDoPedidoDeVendaId);
+              }
+            }
+            
+            // Now get pedido numbers from itensDosPedidosDeVendas
+            const allItemIds = Array.from(new Set(
+              Array.from(nfToItemIds.values()).flat()
+            ));
+            
+            if (allItemIds.length > 0) {
+              const itemIdsStr = allItemIds.join(',');
+              const pedidoItemsData = await gql<any>(`{
+                itensDosPedidosDeVendas(
+                  skip: 0, take: 500,
+                  where: { id: { in: [${itemIdsStr}] } }
+                ) {
+                  totalCount
+                  items {
+                    id
+                    pedidoDeVenda { numero }
+                  }
+                }
+              }`);
+              
+              if (pedidoItemsData?.itensDosPedidosDeVendas?.items) {
+                const itemToPedido = new Map<number, string>();
+                for (const pi of pedidoItemsData.itensDosPedidosDeVendas.items) {
+                  if (pi.pedidoDeVenda?.numero) {
+                    itemToPedido.set(pi.id, String(pi.pedidoDeVenda.numero));
+                  }
+                }
+                
+                // Map NF -> pedido
+                for (const [nfId, itemIds] of Array.from(nfToItemIds.entries())) {
+                  for (const itemId of itemIds) {
+                    const pedNum = itemToPedido.get(itemId);
+                    if (pedNum) {
+                      nfToPedido[nfId] = pedNum;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (err: any) {
+        console.error('[fetchInvoicesDetails] Error fetching pedido links:', err.message);
+      }
+    }
+
+    return filtered.map(item => {
+      const pedidoNum = nfToPedido[item.id] || '-';
+      return {
+        numero: item.numero,
+        serie: item.serie,
+        valorTotal: Math.round((item.valorTotal || 0) * 100) / 100,
+        emissaoData: item.emissaoData || '',
+        estadoConfiguravel: (item.estadoConfiguravel?.descricao || '').toUpperCase(),
+        nomeDestinatario: pedidoNum,
+      };
+    }).sort((a, b) => a.emissaoData.localeCompare(b.emissaoData));
+  } catch (error: any) {
+    console.error("[fetchInvoicesDetails] Error:", error.message);
+    return [];
   }
 }
 

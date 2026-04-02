@@ -1472,3 +1472,10 @@
 - [x] Backend: fallback fornecedor > referenteA > observacoes > "Sem nome" nas 2 queries de contas a pagar
 - [x] Contas a Pagar: usar razaoSocial em vez de nomeFantasia no sync do Maxiprod
 - [x] Contas a Pagar: garantir fallback (razaoSocial > referenteA > observacoes) para TODOS os meses e todas as views
+
+## Correção: NFs no Faturamento e Financeiro (02/04/2026)
+- [x] Faturamento (Billing): pedido 808 (NORTESUL, entrega futura) excluído automaticamente via estadoItem != 'Faturado' - 9 NFs em 01/04
+- [x] Financeiro: fetchInvoicesTotal e fetchInvoicesDetails agora incluem TODAS as NFs de saída emitidas (AMOSTRA, MADEIRA/FIBRA, etc.) - 10 NFs em 01/04 + 1 de 02/04
+- [x] Financeiro: getBillingDetails reescrito para buscar NFs diretamente da API Maxiprod (não mais de sales_orders)
+- [x] Ordenação por data de emissão em ambas as abas (removida regra de não-coletados no topo)
+- [x] Não desconfigurar nada do que já funciona

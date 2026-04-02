@@ -8,7 +8,7 @@ import { getDb } from "./db";
 import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
-import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchBankBalancesWithInitial } from "./maxiprodGraphQL";
+import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial } from "./maxiprodGraphQL";
 
 /**
  * Tipos válidos de contas a receber (conforme filtro do Maxiprod):
@@ -2239,48 +2239,43 @@ export const financialRouter = router({
       endDate: z.string(),
     }))
     .query(async ({ input }) => {
+    // Buscar NFs diretamente da API Maxiprod (mesma fonte do total)
+    const nfs = await fetchInvoicesDetails(input.startDate, input.endDate);
+    
+    // Buscar nomes dos clientes do banco local usando os pedidos das NFs
     const db = await getDb();
-    if (!db) return [];
-
-    const rows = await db
-      .select({
-        pedido: salesOrders.pedido,
-        cliente: salesOrders.cliente,
-        valorTotal: salesOrders.valorTotal,
-        dataEmissao: salesOrders.dataEmissao,
-        descricaoItem: salesOrders.descricaoItem,
-      })
-      .from(salesOrders)
-      .where(
-        and(
-          eq(salesOrders.estadoItem, 'Faturado'),
-          gte(salesOrders.dataEmissao, input.startDate),
-          lte(salesOrders.dataEmissao, input.endDate)
-        )
-      )
-      .orderBy(desc(salesOrders.dataEmissao));
-
-    // Agrupar por pedido para mostrar um resumo por NF
-    const pedidoMap = new Map<string, { pedido: string; cliente: string; total: number; data: string; itens: number }>();
-    for (const row of rows) {
-      const key = row.pedido || 'sem-pedido';
-      if (!pedidoMap.has(key)) {
-        pedidoMap.set(key, {
-          pedido: row.pedido || '-',
-          cliente: row.cliente || '-',
-          total: 0,
-          data: row.dataEmissao?.slice(0, 10) || '-',
-          itens: 0,
-        });
+    const pedidoToCliente = new Map<string, string>();
+    if (db) {
+      const pedidoNums = Array.from(new Set(nfs.map(n => n.nomeDestinatario).filter(p => p !== '-')));
+      if (pedidoNums.length > 0) {
+        // Buscar em batches
+        for (let i = 0; i < pedidoNums.length; i += 100) {
+          const batch = pedidoNums.slice(i, i + 100);
+          const rows = await db
+            .select({ pedido: salesOrders.pedido, cliente: salesOrders.cliente })
+            .from(salesOrders)
+            .where(inArray(salesOrders.pedido, batch));
+          for (const row of rows) {
+            if (row.pedido && row.cliente && !pedidoToCliente.has(row.pedido)) {
+              pedidoToCliente.set(row.pedido, row.cliente);
+            }
+          }
+        }
       }
-      const entry = pedidoMap.get(key)!;
-      entry.total += Number(row.valorTotal || 0);
-      entry.itens += 1;
     }
-
-    return Array.from(pedidoMap.values())
-      .sort((a, b) => b.total - a.total)
-      .map(e => ({ ...e, total: Math.round(e.total * 100) / 100 }));
+    
+    return nfs.map(nf => {
+      const pedido = nf.nomeDestinatario;
+      const cliente = pedidoToCliente.get(pedido) || `NF ${nf.numero}`;
+      const emDate = nf.emissaoData ? nf.emissaoData.slice(0, 10) : '-';
+      return {
+        pedido,
+        cliente,
+        total: nf.valorTotal,
+        data: emDate,
+        itens: 1,
+      };
+    }).sort((a, b) => a.data.localeCompare(b.data)); // Ordenar por data
   }),
 
   /**
