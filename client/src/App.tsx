@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Sales from "./pages/Sales";
 import Billing from "./pages/Billing";
 import Financial from "./pages/Financial";
+import RelatorioInadimplentes from "./pages/RelatorioInadimplentes";
 import SettingsPage from "./pages/SettingsPage";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path={"/vendas"} component={Sales} />
       <Route path={"/faturamento"} component={Billing} />
       <Route path={"/financeiro"} component={Financial} />
+      <Route path={"/relatorio-inadimplentes"} component={RelatorioInadimplentes} />
       <Route path={"/configuracoes"} component={SettingsPage} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

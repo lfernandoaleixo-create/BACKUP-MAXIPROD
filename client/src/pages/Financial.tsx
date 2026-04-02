@@ -56,7 +56,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import TopNav from "@/components/TopNav";
 import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
 import WeekReconciliationCard from "@/components/WeekReconciliationCard";
@@ -1886,6 +1886,22 @@ export default function Financial() {
             {/* Clientes Inadimplentes */}
             {hasGranularAccess("fin.verInadimplencia") && summary!.receber.vencidas.count > 0 && (
               <ClientesInadimplentesCard />
+            )}
+
+            {/* Botão Relatório de Inadimplentes */}
+            {hasGranularAccess("fin.verInadimplencia") && (
+              <div className="flex justify-center">
+                <Link href="/relatorio-inadimplentes">
+                  <Button
+                    variant="outline"
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 gap-2"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    Relatório Completo de Inadimplentes
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
             )}
 
             {/* Saldo Bancário */}

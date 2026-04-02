@@ -1503,3 +1503,13 @@
 - [x] Investigar por que pedido 808 (NORTESUL, faturado c/ entrega futura) sumiu da aba Faturamento
 - [x] Corrigir para que pedido 808 apareça como Em Aberto (mercadoria não entregue) - adicionado "Faturado c/ entrega futura" ao filtro openItems
 - [x] NÃO mexer em NENHUM outro pedido ou funcionalidade - apenas billingRouter.ts alterado (2 linhas)
+
+## Relatório de Inadimplentes (02/04/2026)
+- [x] Investigar dados de contas a receber no banco/API (campos disponíveis)
+- [x] Criar endpoint backend getRelatorioInadimplentes (busca direta API GraphQL Maxiprod)
+- [x] 7 colunas: Descrição, Venc., Venc. orig, Valor, Boleto/PIX (boletoNossoNumero), Minha empresa, Estado configurável
+- [x] Criar página RelatorioInadimplentes.tsx com tabela + resumo executivo (aging, top devedores, segmentos)
+- [x] Botão de acesso rápido na aba Financeiro + rota /relatorio-inadimplentes
+- [x] Exportar CSV + filtros por empresa/segmento/busca
+- [x] 7 testes unitários passando
+- [x] NÃO alterar nenhuma outra funcionalidade existente

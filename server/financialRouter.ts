@@ -2550,4 +2550,230 @@ export const financialRouter = router({
 
       return { success: true };
     }),
+
+  /**
+   * Relatório de Inadimplentes - busca diretamente da API GraphQL do Maxiprod
+   * Contas a receber EMITIDAS com vencimento nos últimos 3 anos até ontem
+   * 7 colunas: Descrição, Venc., Venc. orig, Valor, Boleto/PIX, Minha empresa, Estado configurável
+   */
+  getRelatorioInadimplentes: publicProcedure
+    .query(async () => {
+      const GRAPHQL_URL = "https://api.maxiprod.com.br/graphql/";
+      const token = ENV.maxiprodGraphqlToken;
+      if (!token) throw new Error("MAXIPROD_GRAPHQL_TOKEN não configurado");
+
+      // Calcular range: 3 anos atrás até ontem
+      const now = new Date();
+      const threeYearsAgo = new Date(now);
+      threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const startISO = threeYearsAgo.toISOString();
+      const endISO = yesterday.toISOString();
+
+      // Buscar todas as páginas da API GraphQL
+      const PAGE_SIZE = 500;
+      let allItems: any[] = [];
+      let skip = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const query = `{
+          contaAReceber(skip: ${skip}, take: ${PAGE_SIZE}, where: {
+            estado: { eq: EMITIDO },
+            vencimentoData: { gte: "${startISO}", lte: "${endISO}" }
+          }) {
+            totalCount
+            items {
+              id
+              referenteA
+              observacoes
+              boletoNossoNumero
+              boletoLinhaDigitavel
+              vencimentoData
+              vencimentoOriginalData
+              valorLiquido
+              valorRecebidoLiquido
+              documentoVinculadoNumero
+              parcela
+              parcelasQuantidadeTotal
+              tipo
+              cliente { razaoSocial nomeFantasia }
+              minhaEmpresa { razaoSocial nomeFantasia }
+              formaDeCobranca { meioDePagamento }
+            }
+          }
+        }`;
+
+        const resp = await fetch(GRAPHQL_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${token}`,
+          },
+          body: JSON.stringify({ query }),
+          signal: AbortSignal.timeout(30000),
+        });
+
+        const data = await resp.json();
+        if (data.errors) throw new Error(data.errors[0]?.message || "GraphQL error");
+
+        const result = data.contaAReceber || data.data?.contaAReceber;
+        if (!result) break;
+
+        const items = result.items || [];
+        allItems = allItems.concat(items);
+
+        if (items.length < PAGE_SIZE || allItems.length >= result.totalCount) {
+          hasMore = false;
+        } else {
+          skip += PAGE_SIZE;
+        }
+      }
+
+      // Segmentos conhecidos para extrair do referenteA
+      const SEGMENTOS = ["MADEIRA", "BAMBU", "ROJÃO", "ROJAO", "SERRAGEM", "PALITO", "VARETA", "ESPETO"];
+
+      function extrairEstadoConfiguravel(referenteA: string | null): string {
+        if (!referenteA) return "";
+        const upper = referenteA.toUpperCase();
+        for (const seg of SEGMENTOS) {
+          if (upper.includes(seg)) return seg === "ROJAO" ? "ROJÃO" : seg;
+        }
+        return "";
+      }
+
+      // Montar descrição no formato do Maxiprod: "CLIENTE ref. NF nº DOC parc. X/Y"
+      function montarDescricao(item: any): string {
+        const cliente = item.cliente?.razaoSocial || item.cliente?.nomeFantasia || "";
+        const doc = item.documentoVinculadoNumero;
+        const parcela = item.parcela;
+        const total = item.parcelasQuantidadeTotal;
+
+        let desc = cliente;
+        if (doc) desc += ` ref. NF nº ${doc}`;
+        if (parcela && total) desc += ` parc. ${parcela}/${total}`;
+        return desc;
+      }
+
+      // Formatar data ISO para DD/MM/YYYY
+      function formatDate(d: string | null): string {
+        if (!d) return "";
+        try {
+          const date = new Date(d);
+          return date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+        } catch { return ""; }
+      }
+
+      // Transformar items
+      const titulos = allItems.map(item => {
+        const valorLiq = Number(item.valorLiquido) || 0;
+        const valorRecebido = Number(item.valorRecebidoLiquido) || 0;
+        const saldoDevedor = valorLiq - valorRecebido;
+
+        // Boleto/PIX: número do boleto se existir, senão referenteA
+        let boletoPix = "";
+        if (item.boletoNossoNumero) {
+          boletoPix = item.boletoNossoNumero;
+        }
+
+        return {
+          id: item.id,
+          descricao: montarDescricao(item),
+          vencimento: formatDate(item.vencimentoData),
+          vencimentoOriginal: formatDate(item.vencimentoOriginalData),
+          vencimentoISO: item.vencimentoData?.split("T")[0] || "",
+          valor: saldoDevedor,
+          valorOriginal: valorLiq,
+          valorPago: valorRecebido,
+          boletoPix,
+          referenteA: item.referenteA || "",
+          minhaEmpresa: item.minhaEmpresa?.razaoSocial || item.minhaEmpresa?.nomeFantasia || "",
+          estadoConfiguravel: extrairEstadoConfiguravel(item.referenteA),
+          cliente: item.cliente?.razaoSocial || item.cliente?.nomeFantasia || "",
+          tipo: item.tipo || "",
+          formaCobranca: item.formaDeCobranca?.meioDePagamento || "",
+        };
+      }).filter(t => t.valor > 0); // Só mostrar com saldo devedor
+
+      // Ordenar por vencimento (mais antigo primeiro)
+      titulos.sort((a, b) => a.vencimentoISO.localeCompare(b.vencimentoISO));
+
+      // Resumo executivo
+      const totalDevido = titulos.reduce((s, t) => s + t.valor, 0);
+      const totalOriginal = titulos.reduce((s, t) => s + t.valorOriginal, 0);
+      const totalPago = titulos.reduce((s, t) => s + t.valorPago, 0);
+      const totalTitulos = titulos.length;
+
+      // Agrupar por cliente
+      const porCliente: Record<string, { total: number; count: number }> = {};
+      for (const t of titulos) {
+        if (!porCliente[t.cliente]) porCliente[t.cliente] = { total: 0, count: 0 };
+        porCliente[t.cliente].total += t.valor;
+        porCliente[t.cliente].count++;
+      }
+      const clientesRanking = Object.entries(porCliente)
+        .sort((a, b) => b[1].total - a[1].total)
+        .map(([nome, data]) => ({ cliente: nome, total: data.total, count: data.count }));
+
+      // Agrupar por empresa
+      const porEmpresa: Record<string, { total: number; count: number }> = {};
+      for (const t of titulos) {
+        const emp = t.minhaEmpresa || "Sem empresa";
+        if (!porEmpresa[emp]) porEmpresa[emp] = { total: 0, count: 0 };
+        porEmpresa[emp].total += t.valor;
+        porEmpresa[emp].count++;
+      }
+
+      // Agrupar por segmento (estado configurável)
+      const porSegmento: Record<string, { total: number; count: number }> = {};
+      for (const t of titulos) {
+        const seg = t.estadoConfiguravel || "Sem segmento";
+        if (!porSegmento[seg]) porSegmento[seg] = { total: 0, count: 0 };
+        porSegmento[seg].total += t.valor;
+        porSegmento[seg].count++;
+      }
+
+      // Agrupar por faixa de atraso
+      const hoje = new Date();
+      const faixas = { ate30: 0, de31a60: 0, de61a90: 0, de91a180: 0, acima180: 0 };
+      const faixasCount = { ate30: 0, de31a60: 0, de61a90: 0, de91a180: 0, acima180: 0 };
+      for (const t of titulos) {
+        const venc = new Date(t.vencimentoISO);
+        const dias = Math.floor((hoje.getTime() - venc.getTime()) / (1000 * 60 * 60 * 24));
+        if (dias <= 30) { faixas.ate30 += t.valor; faixasCount.ate30++; }
+        else if (dias <= 60) { faixas.de31a60 += t.valor; faixasCount.de31a60++; }
+        else if (dias <= 90) { faixas.de61a90 += t.valor; faixasCount.de61a90++; }
+        else if (dias <= 180) { faixas.de91a180 += t.valor; faixasCount.de91a180++; }
+        else { faixas.acima180 += t.valor; faixasCount.acima180++; }
+      }
+
+      return {
+        periodo: {
+          inicio: formatDate(startISO),
+          fim: formatDate(endISO),
+        },
+        resumo: {
+          totalDevido,
+          totalOriginal,
+          totalPago,
+          totalTitulos,
+          totalClientes: clientesRanking.length,
+          faixasAtraso: [
+            { faixa: "Até 30 dias", valor: faixas.ate30, count: faixasCount.ate30 },
+            { faixa: "31 a 60 dias", valor: faixas.de31a60, count: faixasCount.de31a60 },
+            { faixa: "61 a 90 dias", valor: faixas.de61a90, count: faixasCount.de61a90 },
+            { faixa: "91 a 180 dias", valor: faixas.de91a180, count: faixasCount.de91a180 },
+            { faixa: "Acima de 180 dias", valor: faixas.acima180, count: faixasCount.acima180 },
+          ],
+          porEmpresa: Object.entries(porEmpresa).map(([nome, data]) => ({ empresa: nome, total: data.total, count: data.count })),
+          porSegmento: Object.entries(porSegmento)
+            .sort((a, b) => b[1].total - a[1].total)
+            .map(([nome, data]) => ({ segmento: nome, total: data.total, count: data.count })),
+          topClientes: clientesRanking.slice(0, 10),
+        },
+        titulos,
+      };
+    }),
 });
