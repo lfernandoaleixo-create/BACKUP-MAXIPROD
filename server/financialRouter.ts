@@ -1697,6 +1697,7 @@ export const financialRouter = router({
         parcelasQuantidadeTotal: accountsPayable.parcelasQuantidadeTotal,
         empresaNome: accountsPayable.empresaNome,
         emissaoData: accountsPayable.emissaoData,
+        documentoVinculadoNumero: accountsPayable.documentoVinculadoNumero,
       })
       .from(accountsPayable)
       .where(eq(accountsPayable.estado, "EMITIDO"));
@@ -1715,6 +1716,8 @@ export const financialRouter = router({
       vencimento: string;
       emissaoData: string;
       referenteA: string;
+      observacoes: string;
+      documentoVinculadoNumero: string;
       parcela: string;
       empresaNome: string;
       authorized: boolean;
@@ -1742,6 +1745,8 @@ export const financialRouter = router({
         vencimento: vencStr,
         emissaoData: item.emissaoData?.split("T")[0] || "",
         referenteA: item.referenteA || "",
+        observacoes: item.observacoes || "",
+        documentoVinculadoNumero: item.documentoVinculadoNumero || "",
         parcela: item.parcela && item.parcelasQuantidadeTotal
           ? `${item.parcela}/${item.parcelasQuantidadeTotal}`
           : "",

@@ -4,7 +4,7 @@
  * Fernando marca as contas → Financeiro executa os pagamentos autorizados
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2,
@@ -12,6 +12,9 @@ import {
   ClipboardCheck,
   ChevronDown,
   ChevronUp,
+  ArrowUpDown,
+  Calendar,
+  DollarSign,
   AlertTriangle,
   CheckCheck,
   Landmark,
@@ -40,13 +43,18 @@ type PayableItem = {
   fornecedor: string;
   valor: number;
   vencimento: string;
+  emissaoData?: string;
   referenteA: string;
+  observacoes?: string;
+  documentoVinculadoNumero?: string;
   parcela: string;
   empresaNome: string;
   authorized: boolean;
   authStatus: string | null;
   authNotes: string | null;
 };
+
+type SortMode = 'fornecedor' | 'data' | 'valor';
 
 type DayData = {
   date: string;
@@ -79,6 +87,15 @@ function PayableRow({
   isToggling: boolean;
 }) {
   const badge = item.authStatus ? AUTH_STATUS_BADGE[item.authStatus] : null;
+
+  // Montar linha de detalhes: referenteA, observacoes, NF, parcela
+  const detailParts: string[] = [];
+  if (item.referenteA) detailParts.push(item.referenteA);
+  if (item.observacoes && item.observacoes !== item.referenteA) detailParts.push(item.observacoes);
+  if (item.documentoVinculadoNumero) detailParts.push(`NF ${item.documentoVinculadoNumero}`);
+  if (item.parcela) detailParts.push(`Parcela ${item.parcela}`);
+  const detailText = detailParts.join(" – ");
+
   return (
     <div
       className={`flex items-center gap-2 px-3 py-2 border-b border-slate-100 last:border-b-0 transition-colors ${
@@ -108,38 +125,30 @@ function PayableRow({
             <ShieldCheck className="w-6 h-6 text-emerald-600 flex-shrink-0" />
           )}
           <span
-            className={`text-sm font-semibold truncate ${
+            className={`text-sm font-semibold ${
               item.authorized ? "text-emerald-900" : "text-slate-800"
             }`}
+            style={{ wordBreak: "break-word" }}
           >
             {item.fornecedor}
           </span>
-          {item.parcela && (
-            <span
-              className={`text-[10px] font-medium flex-shrink-0 ${
-                item.authorized ? "text-emerald-500" : "text-slate-400"
-              }`}
-            >
-              ({item.parcela})
-            </span>
-          )}
           {badge && (
             <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${badge.bg} ${badge.text} shrink-0`}>
               {badge.label}
             </span>
           )}
         </div>
-        {item.referenteA && (
+        {detailText && (
           <p
-            className={`text-[10px] truncate ${
-              item.authorized ? "text-emerald-500/70" : "text-slate-400"
+            className={`text-[11px] whitespace-normal break-words ${
+              item.authorized ? "text-emerald-600/70" : "text-slate-500"
             }`}
           >
-            {item.referenteA}
+            {detailText}
           </p>
         )}
         {item.authNotes && (
-          <p className="text-[9px] text-slate-500 italic truncate mt-0.5">
+          <p className="text-[9px] text-slate-500 italic mt-0.5" style={{ wordBreak: "break-word" }}>
             {item.authNotes}
           </p>
         )}
@@ -189,12 +198,17 @@ function exportAuthPDF(
       rows += `<tr><td colspan="5" style="padding:8px 8px 4px;font-size:12px;font-weight:800;color:#92400e;background:#fffbeb;border-bottom:2px solid #fbbf24;text-transform:uppercase;">${currentForn}</td></tr>`;
     }
     idx++;
+    const pdfDetailParts: string[] = [];
+    if (item.referenteA) pdfDetailParts.push(item.referenteA);
+    if (item.observacoes && item.observacoes !== item.referenteA) pdfDetailParts.push(item.observacoes);
+    if (item.documentoVinculadoNumero) pdfDetailParts.push(`NF ${item.documentoVinculadoNumero}`);
+    if (item.parcela) pdfDetailParts.push(`Parcela ${item.parcela}`);
+    const pdfDetail = pdfDetailParts.join(' \u2013 ');
     rows += `
       <tr style="border-bottom:1px solid #e2e8f0;">
         <td style="padding:6px 8px;font-size:11px;color:#334155;">${idx}</td>
         <td style="padding:6px 8px;font-size:11px;color:#334155;">
-          ${item.referenteA ? `<span style="font-size:10px;color:#475569;">${item.referenteA}</span>` : ''}
-          ${item.parcela ? ` <span style="color:#94a3b8;font-size:9px;">parc. ${item.parcela}</span>` : ''}
+          ${pdfDetail ? `<span style="font-size:10px;color:#475569;">${pdfDetail}</span>` : '<span style="font-size:10px;color:#94a3b8;">Sem descri\u00e7\u00e3o</span>'}
         </td>
         <td style="padding:6px 8px;font-size:11px;color:#334155;">${item.empresaNome || ''}</td>
         <td style="padding:6px 8px;font-size:11px;color:#334155;text-align:right;">${item.vencimento.split('-').reverse().join('/')}</td>
@@ -310,15 +324,32 @@ function DayCard({
   const isToday = "isToday" in day ? day.isToday : false;
   const isPast = "isPast" in day ? day.isPast : false;
   const [expanded, setExpanded] = useState(isVencidas || isToday);
+  const [sortMode, setSortMode] = useState<SortMode>('fornecedor');
   const allAuthorized = day.count > 0 && day.authorizedCount === day.count;
 
-  // Items já vem ordenados do backend (fornecedor A-Z, depois NF/parcela)
+  // Ordenar items conforme o modo selecionado
+  const sortedItems = useMemo(() => {
+    const items = [...day.items];
+    if (sortMode === 'data') {
+      // Mais recente primeiro (emissaoData DESC)
+      items.sort((a, b) => (b.emissaoData || '').localeCompare(a.emissaoData || ''));
+    } else if (sortMode === 'valor') {
+      // Maior valor primeiro
+      items.sort((a, b) => b.valor - a.valor);
+    }
+    // 'fornecedor' = ordem padrão do backend (já vem ordenado)
+    return items;
+  }, [day.items, sortMode]);
+
   // Agrupar por fornecedor para exibir cabeçalhos como no relatório Maxiprod
-  const sortedItems = day.items; // já ordenado no backend
   const groupedItems = useMemo(() => {
+    if (sortMode !== 'fornecedor') {
+      // Sem agrupamento quando ordenado por data ou valor
+      return [{ fornecedor: '', items: sortedItems }];
+    }
     const groups: { fornecedor: string; items: PayableItem[] }[] = [];
     let currentGroup: { fornecedor: string; items: PayableItem[] } | null = null;
-    for (const item of day.items) {
+    for (const item of sortedItems) {
       if (!currentGroup || currentGroup.fornecedor !== item.fornecedor) {
         currentGroup = { fornecedor: item.fornecedor, items: [] };
         groups.push(currentGroup);
@@ -326,7 +357,7 @@ function DayCard({
       currentGroup.items.push(item);
     }
     return groups;
-  }, [day.items]);
+  }, [sortedItems, sortMode]);
 
   let borderColor = "border-slate-200";
   if (isVencidas) {
@@ -462,7 +493,7 @@ function DayCard({
       {/* Content */}
       {expanded && (
         <div className="bg-white">
-          {/* Authorize all / none toggle */}
+          {/* Authorize all / none toggle + Sort buttons */}
           {day.count > 1 && (
             <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <button
@@ -477,20 +508,54 @@ function DayCard({
               >
                 {allAuthorized ? "Desmarcar todos" : "Autorizar todos"}
               </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSortMode(sortMode === 'fornecedor' ? 'fornecedor' : 'fornecedor'); }}
+                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                    sortMode === 'fornecedor' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+                  }`}
+                  title="Ordenar por fornecedor (A-Z)"
+                >
+                  <ArrowUpDown className="w-3 h-3" />
+                  <span>A-Z</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSortMode(sortMode === 'data' ? 'fornecedor' : 'data'); }}
+                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                    sortMode === 'data' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+                  }`}
+                  title="Ordenar por data (mais recente primeiro)"
+                >
+                  <Calendar className="w-3 h-3" />
+                  <span>Data</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSortMode(sortMode === 'valor' ? 'fornecedor' : 'valor'); }}
+                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                    sortMode === 'valor' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+                  }`}
+                  title="Ordenar por valor (maior primeiro)"
+                >
+                  <DollarSign className="w-3 h-3" />
+                  <span>Valor</span>
+                </button>
+              </div>
             </div>
           )}
 
           {/* Items list - agrupados por fornecedor (estilo relatório Maxiprod) */}
           <div className="max-h-[400px] overflow-y-auto">
-            {groupedItems.map((group) => (
-              <div key={group.fornecedor}>
-                {/* Cabeçalho do fornecedor - destaque amarelo como Maxiprod */}
-                <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 border-t border-t-amber-100">
-                  <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
-                    {group.fornecedor}
-                  </span>
-                  <span className="text-[9px] text-amber-600 ml-2">({group.items.length})</span>
-                </div>
+            {groupedItems.map((group, gi) => (
+              <div key={group.fornecedor || `flat-${gi}`}>
+                {/* Cabeçalho do fornecedor - destaque amarelo como Maxiprod (só no modo fornecedor) */}
+                {sortMode === 'fornecedor' && group.fornecedor && (
+                  <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 border-t border-t-amber-100">
+                    <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                      {group.fornecedor}
+                    </span>
+                    <span className="text-[9px] text-amber-600 ml-2">({group.items.length})</span>
+                  </div>
+                )}
                 {group.items.map((item) => (
                   <PayableRow
                     key={item.maxiprodId}

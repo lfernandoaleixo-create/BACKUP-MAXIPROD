@@ -3,8 +3,24 @@
  * - Alphabetical ordering of items
  * - Saldo label renamed
  * - PDF export logic (saldo calculation)
+ * - Detail text assembly (referenteA, observacoes, NF, parcela)
  */
 import { describe, it, expect } from "vitest";
+
+/** Replica the detail text logic from PayableRow */
+function buildDetailText(item: {
+  referenteA?: string;
+  observacoes?: string;
+  documentoVinculadoNumero?: string;
+  parcela?: string;
+}): string {
+  const parts: string[] = [];
+  if (item.referenteA) parts.push(item.referenteA);
+  if (item.observacoes && item.observacoes !== item.referenteA) parts.push(item.observacoes);
+  if (item.documentoVinculadoNumero) parts.push(`NF ${item.documentoVinculadoNumero}`);
+  if (item.parcela) parts.push(`Parcela ${item.parcela}`);
+  return parts.join(" \u2013 ");
+}
 
 describe("WeekReconciliationCard improvements", () => {
   it("should sort items alphabetically by fornecedor", () => {
@@ -70,5 +86,87 @@ describe("WeekReconciliationCard improvements", () => {
     expect(formatCurrency(95386.59)).toContain("95.386,59");
     expect(formatCurrency(33680.0)).toContain("33.680,00");
     expect(formatCurrency(0)).toContain("0,00");
+  });
+});
+
+describe("PayableRow detail text assembly", () => {
+  it("should show all fields when referenteA, NF, and parcela are present", () => {
+    const detail = buildDetailText({
+      referenteA: "Matéria Prima - NF 21760",
+      observacoes: "",
+      documentoVinculadoNumero: "",
+      parcela: "3/4",
+    });
+    expect(detail).toBe("Matéria Prima - NF 21760 \u2013 Parcela 3/4");
+  });
+
+  it("should show NF and parcela when referenteA is empty", () => {
+    const detail = buildDetailText({
+      referenteA: "",
+      observacoes: "",
+      documentoVinculadoNumero: "21902",
+      parcela: "1/4",
+    });
+    expect(detail).toBe("NF 21902 \u2013 Parcela 1/4");
+  });
+
+  it("should show only NF when referenteA and parcela are empty", () => {
+    const detail = buildDetailText({
+      referenteA: "",
+      observacoes: "",
+      documentoVinculadoNumero: "725",
+      parcela: "",
+    });
+    expect(detail).toBe("NF 725");
+  });
+
+  it("should show only parcela when referenteA and NF are empty", () => {
+    const detail = buildDetailText({
+      referenteA: "",
+      observacoes: "",
+      documentoVinculadoNumero: "",
+      parcela: "2/4",
+    });
+    expect(detail).toBe("Parcela 2/4");
+  });
+
+  it("should include observacoes when different from referenteA", () => {
+    const detail = buildDetailText({
+      referenteA: "Matéria Prima",
+      observacoes: "Urgente - pagar até sexta",
+      documentoVinculadoNumero: "21760",
+      parcela: "1/2",
+    });
+    expect(detail).toBe("Matéria Prima \u2013 Urgente - pagar até sexta \u2013 NF 21760 \u2013 Parcela 1/2");
+  });
+
+  it("should NOT duplicate observacoes when same as referenteA", () => {
+    const detail = buildDetailText({
+      referenteA: "Matéria Prima",
+      observacoes: "Matéria Prima",
+      documentoVinculadoNumero: "",
+      parcela: "1/4",
+    });
+    expect(detail).toBe("Matéria Prima \u2013 Parcela 1/4");
+  });
+
+  it("should return empty string when all fields are empty", () => {
+    const detail = buildDetailText({
+      referenteA: "",
+      observacoes: "",
+      documentoVinculadoNumero: "",
+      parcela: "",
+    });
+    expect(detail).toBe("");
+  });
+
+  it("should handle cheque description without NF or parcela", () => {
+    const detail = buildDetailText({
+      referenteA: "CHEQUE SICOOB N° 129 REF NF 21929",
+      observacoes: "",
+      documentoVinculadoNumero: "",
+      parcela: "",
+    });
+    expect(detail).toBe("CHEQUE SICOOB N° 129 REF NF 21929");
   });
 });

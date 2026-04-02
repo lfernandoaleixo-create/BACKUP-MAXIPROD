@@ -1529,3 +1529,15 @@
 - [x] Adicionar `apelido` à query GraphQL e salvar como `fornecedorApelido` no banco
 - [x] Usar `fornecedorApelido` para agrupamento (fallback para `fornecedor`)
 - [x] NÃO alterar nenhuma outra funcionalidade
+
+## Trocar ícone de filtro por botões de ordenação na Autorização de Pagamentos (02/04/2026)
+- [ ] Substituir ícone de barrinhas (filtro) por 2 botões com setinhas (↑↓)
+- [ ] Botão 1: ordenar por data (mais recente → mais antiga)
+- [ ] Botão 2: ordenar por valor (maior → menor)
+- [ ] NÃO alterar nenhuma outra funcionalidade
+
+## Corrigir descrições e parcelas na Autorização de Pagamentos (02/04/2026)
+- [x] Garantir que TODOS os itens mostrem referenteA como descrição detalhada abaixo do nome
+- [x] Mostrar parcela (ex: 1/4, 2/4) em todos os itens como subtexto
+- [x] Buscar todas as informações do Maxiprod (referenteA, observacoes, NF, parcela)
+- [x] NÃO alterar nenhuma outra funcionalidade
