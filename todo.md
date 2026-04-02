@@ -1511,3 +1511,10 @@
 - [x] PDF com contas autorizadas, tabela formatada e saldo restante (Saldo sem Caixa Dinheiro - Total Autorizado)
 - [x] 5 testes unitários passando
 - [x] NÃO alterar nenhuma outra funcionalidade - apenas WeekReconciliationCard.tsx alterado
+
+## Ordenação por fornecedor estilo Maxiprod na Autorização de Pagamentos (02/04/2026)
+- [x] Agrupar contas por fornecedor (A-Z) com cabeçalho em destaque amarelo (como relatório Maxiprod)
+- [x] Dentro de cada fornecedor, ordenar por referenteA (NF) e parcela
+- [x] Manter mesmo visual e funcionalidade (checkbox, autorização, etc.)
+- [x] PDF também agrupado por fornecedor
+- [x] NÃO alterar nenhuma outra funcionalidade

@@ -1762,10 +1762,18 @@ export const financialRouter = router({
       // Contas após sexta-feira são ignoradas (aparecem na semana seguinte)
     }
 
-    // Ordenar por valor decrescente
-    vencidasItems.sort((a, b) => b.valor - a.valor);
+    // Ordenar por fornecedor (A-Z), depois por referenteA (NF/parcela) dentro de cada grupo
+    const sortByFornecedorThenRef = (a: PayableItem, b: PayableItem) => {
+      const cmpForn = a.fornecedor.localeCompare(b.fornecedor, 'pt-BR');
+      if (cmpForn !== 0) return cmpForn;
+      // Dentro do mesmo fornecedor: ordenar por referenteA (contém NF) e parcela
+      const cmpRef = (a.referenteA || '').localeCompare(b.referenteA || '', 'pt-BR');
+      if (cmpRef !== 0) return cmpRef;
+      return (a.parcela || '').localeCompare(b.parcela || '', 'pt-BR');
+    };
+    vencidasItems.sort(sortByFornecedorThenRef);
     for (const bucket of dayBuckets) {
-      bucket.sort((a, b) => b.valor - a.valor);
+      bucket.sort(sortByFornecedorThenRef);
     }
 
     // Montar resposta por dia

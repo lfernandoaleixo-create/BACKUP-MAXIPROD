@@ -174,21 +174,34 @@ function exportAuthPDF(
   const saldoRestante = saldoBancario - totalAutorizado;
   const hoje = new Date().toLocaleDateString('pt-BR');
 
-  // Construir HTML do PDF
-  const rows = authorizedItems
-    .sort((a, b) => a.fornecedor.localeCompare(b.fornecedor, 'pt-BR'))
-    .map((item, i) => `
+  // Agrupar por fornecedor (estilo relatório Maxiprod)
+  const sorted = [...authorizedItems].sort((a, b) => {
+    const cmpForn = a.fornecedor.localeCompare(b.fornecedor, 'pt-BR');
+    if (cmpForn !== 0) return cmpForn;
+    return (a.referenteA || '').localeCompare(b.referenteA || '', 'pt-BR');
+  });
+  let rows = '';
+  let currentForn = '';
+  let idx = 0;
+  for (const item of sorted) {
+    if (item.fornecedor !== currentForn) {
+      currentForn = item.fornecedor;
+      rows += `<tr><td colspan="5" style="padding:8px 8px 4px;font-size:12px;font-weight:800;color:#92400e;background:#fffbeb;border-bottom:2px solid #fbbf24;text-transform:uppercase;">${currentForn}</td></tr>`;
+    }
+    idx++;
+    rows += `
       <tr style="border-bottom:1px solid #e2e8f0;">
-        <td style="padding:6px 8px;font-size:11px;color:#334155;">${i + 1}</td>
-        <td style="padding:6px 8px;font-size:11px;color:#334155;font-weight:600;">
-          ${item.fornecedor}${item.parcela ? ` <span style="color:#94a3b8;font-weight:400;">(${item.parcela})</span>` : ''}
-          ${item.referenteA ? `<br/><span style="font-size:9px;color:#94a3b8;font-weight:400;">${item.referenteA}</span>` : ''}
+        <td style="padding:6px 8px;font-size:11px;color:#334155;">${idx}</td>
+        <td style="padding:6px 8px;font-size:11px;color:#334155;">
+          ${item.referenteA ? `<span style="font-size:10px;color:#475569;">${item.referenteA}</span>` : ''}
+          ${item.parcela ? ` <span style="color:#94a3b8;font-size:9px;">parc. ${item.parcela}</span>` : ''}
         </td>
         <td style="padding:6px 8px;font-size:11px;color:#334155;">${item.empresaNome || ''}</td>
         <td style="padding:6px 8px;font-size:11px;color:#334155;text-align:right;">${item.vencimento.split('-').reverse().join('/')}</td>
         <td style="padding:6px 8px;font-size:11px;color:#dc2626;text-align:right;font-weight:700;">${formatCurrency(item.valor)}</td>
       </tr>
-    `).join('');
+    `;
+  }
 
   const html = `
     <html>
@@ -222,7 +235,7 @@ function exportAuthPDF(
         <thead>
           <tr>
             <th style="width:30px;">#</th>
-            <th>Fornecedor</th>
+            <th>Descri\u00e7\u00e3o</th>
             <th>Empresa</th>
             <th style="text-align:right;">Vencimento</th>
             <th style="text-align:right;">Valor</th>
@@ -299,11 +312,21 @@ function DayCard({
   const [expanded, setExpanded] = useState(isVencidas || isToday);
   const allAuthorized = day.count > 0 && day.authorizedCount === day.count;
 
-  // Ordenar items por nome do fornecedor (ordem alfabética)
-  const sortedItems = useMemo(() => 
-    [...day.items].sort((a, b) => a.fornecedor.localeCompare(b.fornecedor, 'pt-BR')),
-    [day.items]
-  );
+  // Items já vem ordenados do backend (fornecedor A-Z, depois NF/parcela)
+  // Agrupar por fornecedor para exibir cabeçalhos como no relatório Maxiprod
+  const sortedItems = day.items; // já ordenado no backend
+  const groupedItems = useMemo(() => {
+    const groups: { fornecedor: string; items: PayableItem[] }[] = [];
+    let currentGroup: { fornecedor: string; items: PayableItem[] } | null = null;
+    for (const item of day.items) {
+      if (!currentGroup || currentGroup.fornecedor !== item.fornecedor) {
+        currentGroup = { fornecedor: item.fornecedor, items: [] };
+        groups.push(currentGroup);
+      }
+      currentGroup.items.push(item);
+    }
+    return groups;
+  }, [day.items]);
 
   let borderColor = "border-slate-200";
   if (isVencidas) {
@@ -457,17 +480,28 @@ function DayCard({
             </div>
           )}
 
-          {/* Items list - ordenados alfabeticamente */}
-          <div className="max-h-[300px] overflow-y-auto">
-            {sortedItems.map((item) => (
-              <PayableRow
-                key={item.maxiprodId}
-                item={item}
-                onToggle={() =>
-                  onToggleItem(item.maxiprodId, !item.authorized)
-                }
-                isToggling={togglingIds.has(item.maxiprodId)}
-              />
+          {/* Items list - agrupados por fornecedor (estilo relatório Maxiprod) */}
+          <div className="max-h-[400px] overflow-y-auto">
+            {groupedItems.map((group) => (
+              <div key={group.fornecedor}>
+                {/* Cabeçalho do fornecedor - destaque amarelo como Maxiprod */}
+                <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 border-t border-t-amber-100">
+                  <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                    {group.fornecedor}
+                  </span>
+                  <span className="text-[9px] text-amber-600 ml-2">({group.items.length})</span>
+                </div>
+                {group.items.map((item) => (
+                  <PayableRow
+                    key={item.maxiprodId}
+                    item={item}
+                    onToggle={() =>
+                      onToggleItem(item.maxiprodId, !item.authorized)
+                    }
+                    isToggling={togglingIds.has(item.maxiprodId)}
+                  />
+                ))}
+              </div>
             ))}
           </div>
 
