@@ -476,21 +476,9 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
   const [sortMode, setSortMode] = useState<BucketSortMode>("data_asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [commentItem, setCommentItem] = useState<any>(null);
+
   const VISIBLE = 5;
-  const utils = trpc.useUtils();
-  const setAuthStatus = trpc.financial.setPaymentAuthStatus.useMutation({
-    onSuccess: () => {
-      utils.financial.getPaymentCalendar.invalidate();
-      utils.financial.getWeekReconciliation.invalidate();
-    },
-  });
-  const clearAuthStatus = trpc.financial.clearPaymentAuthStatus.useMutation({
-    onSuccess: () => {
-      utils.financial.getPaymentCalendar.invalidate();
-      utils.financial.getWeekReconciliation.invalidate();
-    },
-  });
+
 
   const processedItems = useMemo(() => {
     let items = [...bucket.items];
@@ -553,19 +541,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
 
   return (
     <div className={`rounded-lg border ${colorClass} p-3`}>
-      {/* Status summary bar */}
-      {isPagar && statusSummary.length > 0 && (
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2 pb-2 border-b border-dashed border-slate-200">
-          {statusSummary.map(s => (
-            <div key={s.value} className="flex items-center gap-1 text-[10px]">
-              <div className={`w-2 h-2 rounded-full ${s.dot} shrink-0`} />
-              <span className="text-slate-500 font-medium">{s.label}</span>
-              <span className="text-slate-400">({s.count})</span>
-              <span className="font-semibold text-slate-600">{formatCurrency(s.total)}</span>
-            </div>
-          ))}
-        </div>
-      )}
+
       {/* Header row */}
       <div className="flex items-center justify-between mb-2">
         <span className={`text-sm font-semibold ${textColorClass}`}>{bucket.label}</span>
@@ -636,66 +612,18 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
       {visibleItems.length > 0 && (
         <div className="space-y-1">
           {visibleItems.map((item: any, idx: number) => {
-            const statusCfg = isPagar ? getAuthStatusConfig(item.authStatus) : null;
-            const hasNote = isPagar && item.authNotes;
             return (
-              <div key={item.maxiprodId || idx} className={`text-xs leading-5 ${statusCfg ? 'rounded-md px-1.5 py-0.5 border ' + statusCfg.color : ''}`}>
+              <div key={item.maxiprodId || idx} className="text-xs leading-5">
                 <div className="flex items-center gap-x-1.5">
                   <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.fornecedor || item.referenteA || "\u2014"}</span>
                   <span className="text-slate-400 whitespace-nowrap text-right shrink-0" style={{ width: '60px', fontVariantNumeric: 'tabular-nums', fontSize: '10px' }}>{formatDate(item.vencimento)}</span>
                   <span className="font-semibold text-slate-700 whitespace-nowrap text-right shrink-0" style={{ width: '78px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
-                  {isPagar && item.maxiprodId && (
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      {/* Status selector */}
-                      {canAuthorize && <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className={`p-0.5 rounded transition-colors focus:outline-none ${statusCfg ? '' : 'hover:bg-black/5'}`} title="Status">
-                            {statusCfg ? (
-                              <div className={`w-3 h-3 rounded-full ${statusCfg.dot}`} />
-                            ) : (
-                              <div className="w-3 h-3 rounded-full border-2 border-slate-300" />
-                            )}
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel className="text-xs text-slate-500">Autorizacao</DropdownMenuLabel>
-                          {AUTH_STATUS_OPTIONS.map(opt => (
-                            <DropdownMenuItem
-                              key={opt.value}
-                              onClick={() => setAuthStatus.mutate({ accountPayableId: item.maxiprodId, status: opt.value })}
-                              className={`text-xs cursor-pointer ${item.authStatus === opt.value ? 'bg-slate-100 font-semibold' : ''}`}
-                            >
-                              <div className={`w-2.5 h-2.5 rounded-full ${opt.dot} mr-2 shrink-0`} />
-                              {opt.label}
-                              {item.authStatus === opt.value && <span className="ml-auto text-teal-600">\u2713</span>}
-                            </DropdownMenuItem>
-                          ))}
-                          {item.authStatus && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => clearAuthStatus.mutate({ accountPayableId: item.maxiprodId })}
-                                className="text-xs cursor-pointer text-red-500"
-                              >
-                                <X className="w-3 h-3 mr-2" />Limpar
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>}
-                      {/* Comment icon */}
-                      {canComment && <button
-                        onClick={() => setCommentItem(item)}
-                        className={`p-0.5 rounded transition-colors focus:outline-none ${hasNote ? 'text-teal-600 hover:text-teal-700' : 'text-slate-300 hover:text-slate-500'}`}
-                        title={hasNote ? item.authNotes : 'Comentario'}
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                      </button>}
-                    </div>
-                  )}
                 </div>
-                {isPagar && hasNote && (
-                  <p className="text-[10px] text-slate-500 italic truncate pl-1 mt-0.5">{item.authNotes}</p>
+                {isPagar && item.referenteA && (
+                  <p className="text-[10px] text-slate-400 truncate pl-0.5 mt-0.5">{item.referenteA}</p>
+                )}
+                {!isPagar && item.referenteA && (
+                  <p className="text-[10px] text-slate-400 truncate pl-0.5 mt-0.5">{item.referenteA}</p>
                 )}
               </div>
             );
@@ -703,8 +631,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
         </div>
       )}
 
-      {/* Comment dialog */}
-      {commentItem && <PaymentCommentDialog item={commentItem} onClose={() => setCommentItem(null)} />}
+
 
       {/* No results from search */}
       {searchTerm.trim() && processedItems.length === 0 && (

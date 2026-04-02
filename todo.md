@@ -1483,3 +1483,8 @@
 ## Contas a Pagar: campo "Referente a" (02/04/2026)
 - [x] Exibir campo "Referente a" (referenteA) na tabela de Contas a Pagar ao lado do fornecedor
 - [x] Mostrar saldo restante (valorLiquido - valorPagoLiquido) nas contas individuais, com valor original riscado quando há abatimento
+
+## Card Pagamentos: descrições e checkboxes (02/04/2026)
+- [x] Adicionar referenteA como subtexto no card Pagamentos (BucketCard)
+- [x] Remover checkboxes/status de autorização/comentários do card Pagamentos (manter apenas no Autorização de Pagamentos)
+- [x] Nenhuma conta é ticada automaticamente (já era manual via banco de autorizações)
