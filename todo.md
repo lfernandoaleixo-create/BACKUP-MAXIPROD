@@ -1479,3 +1479,7 @@
 - [x] Financeiro: getBillingDetails reescrito para buscar NFs diretamente da API Maxiprod (não mais de sales_orders)
 - [x] Ordenação por data de emissão em ambas as abas (removida regra de não-coletados no topo)
 - [x] Não desconfigurar nada do que já funciona
+
+## Contas a Pagar: campo "Referente a" (02/04/2026)
+- [x] Exibir campo "Referente a" (referenteA) na tabela de Contas a Pagar ao lado do fornecedor
+- [x] Mostrar saldo restante (valorLiquido - valorPagoLiquido) nas contas individuais, com valor original riscado quando há abatimento

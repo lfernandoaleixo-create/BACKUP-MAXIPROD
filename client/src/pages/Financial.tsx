@@ -255,6 +255,13 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
 }) {
   const [sort, setSort] = useState<MonthDetailSort>("data_asc");
 
+  // Helper: saldo restante = valorLiquido - valorPagoLiquido (ou valorRecebidoLiquido)
+  const getSaldo = (item: any) => {
+    const liquido = Number(item.valorLiquido || 0);
+    const pago = Number(item.valorPagoLiquido || item.valorRecebidoLiquido || 0);
+    return liquido - pago;
+  };
+
   const colors = colorScheme === "emerald" ? {
     border: "border-emerald-200",
     headerBg: "bg-emerald-50",
@@ -289,10 +296,10 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
         sorted.sort((a, b) => (b[nameField] || "").localeCompare(a[nameField] || ""));
         break;
       case "valor_asc":
-        sorted.sort((a, b) => Number(a.valorLiquido || 0) - Number(b.valorLiquido || 0));
+        sorted.sort((a, b) => getSaldo(a) - getSaldo(b));
         break;
       case "valor_desc":
-        sorted.sort((a, b) => Number(b.valorLiquido || 0) - Number(a.valorLiquido || 0));
+        sorted.sort((a, b) => getSaldo(b) - getSaldo(a));
         break;
       case "data_asc":
         sorted.sort((a, b) => (a.vencimentoData || "").localeCompare(b.vencimentoData || ""));
@@ -333,11 +340,16 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
                 >
                   {nameLabel} <SortArrow field="nome" />
                 </th>
+                {nameField === "fornecedor" && (
+                  <th className={`px-3 py-2 text-left ${colors.headerText} font-semibold`}>
+                    Referente a
+                  </th>
+                )}
                 <th
                   className={`px-3 py-2 text-right ${colors.headerText} font-semibold cursor-pointer select-none hover:opacity-80`}
                   onClick={() => toggleSort("valor")}
                 >
-                  Valor <SortArrow field="valor" />
+                  Saldo <SortArrow field="valor" />
                 </th>
                 <th
                   className={`px-3 py-2 text-center ${colors.headerText} font-semibold cursor-pointer select-none hover:opacity-80`}
@@ -348,13 +360,27 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sortedItems.map((item: any, i: number) => (
-                <tr key={i} className={colors.hoverBg}>
-                  <td className="px-3 py-2 text-slate-700 truncate max-w-[200px]">{item[nameField] || (nameField === "fornecedor" ? (item.referenteA || item.observacoes || "\u2014") : "\u2014")}</td>
-                  <td className={`px-3 py-2 text-right font-semibold ${colors.valueText}`}>{formatCurrency(Number(item.valorLiquido || 0))}</td>
-                  <td className="px-3 py-2 text-center text-slate-500">{formatDate(item.vencimentoData)}</td>
-                </tr>
-              ))}
+              {sortedItems.map((item: any, i: number) => {
+                const saldo = getSaldo(item);
+                const temAbatimento = Number(item.valorPagoLiquido || item.valorRecebidoLiquido || 0) > 0;
+                return (
+                  <tr key={i} className={colors.hoverBg}>
+                    <td className="px-3 py-2 text-slate-700 truncate max-w-[180px]" title={item[nameField] || ""}>{item[nameField] || (nameField === "fornecedor" ? (item.referenteA || item.observacoes || "\u2014") : "\u2014")}</td>
+                    {nameField === "fornecedor" && (
+                      <td className="px-3 py-2 text-slate-500 text-[11px] truncate max-w-[220px]" title={item.referenteA || ""}>{item.referenteA || "\u2014"}</td>
+                    )}
+                    <td className={`px-3 py-2 text-right font-semibold ${colors.valueText}`}>
+                      {formatCurrency(saldo)}
+                      {temAbatimento && (
+                        <span className="block text-[10px] text-slate-400 font-normal line-through">
+                          {formatCurrency(Number(item.valorLiquido || 0))}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-center text-slate-500">{formatDate(item.vencimentoData)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -363,7 +389,7 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
         <div className={`${colors.headerBg} px-3 py-1.5 border-t ${colors.border} flex justify-between items-center`}>
           <span className="text-[10px] text-slate-500">{sortedItems.length} contas</span>
           <span className={`text-[10px] font-semibold ${colors.headerText}`}>
-            Total: {formatCurrency(sortedItems.reduce((sum: number, item: any) => sum + Number(item.valorLiquido || 0), 0))}
+            Total: {formatCurrency(sortedItems.reduce((sum: number, item: any) => sum + getSaldo(item), 0))}
           </span>
         </div>
       )}
