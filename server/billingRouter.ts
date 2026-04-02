@@ -223,8 +223,10 @@ export const billingRouter = router({
       // Pedidos "A aprovar" e "Digitação" NÃO devem aparecer.
       // NOTA: NÃO filtrar isOutros aqui - AMOSTRA e BONIFICAÇÃO devem aparecer para a produção
       // Usa funções compartilhadas de shared/grupoClassification.ts
+      // REGRA: "Faturado c/ entrega futura" = faturou financeiro mas mercadoria ainda não entregue
+      // Deve aparecer como pedido em aberto (produção precisa entregar)
       const openItems = allItems.filter(i => 
-        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial") &&
+        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial" || i.estadoItem === "Faturado c/ entrega futura") &&
         isAprovadoOuFaturado(i.estadoNota)
       );
       
@@ -1056,8 +1058,9 @@ export const billingRouter = router({
 
       // Get sales order items from local DB (same source as getOpenOrders)
       const allItems = await db.select().from(salesOrders);
+      // REGRA: "Faturado c/ entrega futura" = faturou financeiro mas mercadoria ainda não entregue
       const openItems = allItems.filter(i => 
-        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial") &&
+        (i.estadoItem === "A faturar" || i.estadoItem === "Faturado parcial" || i.estadoItem === "Faturado c/ entrega futura") &&
         isAprovadoOuFaturado(i.estadoNota)
       );
 

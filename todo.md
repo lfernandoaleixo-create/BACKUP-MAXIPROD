@@ -1498,3 +1498,8 @@
 ## Vendas: descrição completa sem truncar (02/04/2026)
 - [x] Remover truncate das descrições/observações na tabela de Vendas para exibir texto completo
 - [x] NÃO alterar nenhuma outra aba ou funcionalidade
+
+## Pedido 808 sumiu da aba Faturamento (02/04/2026)
+- [x] Investigar por que pedido 808 (NORTESUL, faturado c/ entrega futura) sumiu da aba Faturamento
+- [x] Corrigir para que pedido 808 apareça como Em Aberto (mercadoria não entregue) - adicionado "Faturado c/ entrega futura" ao filtro openItems
+- [x] NÃO mexer em NENHUM outro pedido ou funcionalidade - apenas billingRouter.ts alterado (2 linhas)
