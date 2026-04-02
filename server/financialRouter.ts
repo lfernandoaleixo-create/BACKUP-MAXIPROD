@@ -1695,6 +1695,7 @@ export const financialRouter = router({
         parcela: accountsPayable.parcela,
         parcelasQuantidadeTotal: accountsPayable.parcelasQuantidadeTotal,
         empresaNome: accountsPayable.empresaNome,
+        emissaoData: accountsPayable.emissaoData,
       })
       .from(accountsPayable)
       .where(eq(accountsPayable.estado, "EMITIDO"));
@@ -1711,6 +1712,7 @@ export const financialRouter = router({
       fornecedor: string;
       valor: number;
       vencimento: string;
+      emissaoData: string;
       referenteA: string;
       parcela: string;
       empresaNome: string;
@@ -1737,6 +1739,7 @@ export const financialRouter = router({
         fornecedor: item.fornecedor || item.referenteA || item.observacoes || "Sem nome",
         valor,
         vencimento: vencStr,
+        emissaoData: item.emissaoData?.split("T")[0] || "",
         referenteA: item.referenteA || "",
         parcela: item.parcela && item.parcelasQuantidadeTotal
           ? `${item.parcela}/${item.parcelasQuantidadeTotal}`
@@ -1762,18 +1765,16 @@ export const financialRouter = router({
       // Contas após sexta-feira são ignoradas (aparecem na semana seguinte)
     }
 
-    // Ordenar por fornecedor (A-Z), depois por referenteA (NF/parcela) dentro de cada grupo
-    const sortByFornecedorThenRef = (a: PayableItem, b: PayableItem) => {
+    // Ordenar por fornecedor (A-Z), depois por data de emissão crescente (padrão Maxiprod)
+    const sortByFornecedorThenEmissao = (a: PayableItem, b: PayableItem) => {
       const cmpForn = a.fornecedor.localeCompare(b.fornecedor, 'pt-BR');
       if (cmpForn !== 0) return cmpForn;
-      // Dentro do mesmo fornecedor: ordenar por referenteA (contém NF) e parcela
-      const cmpRef = (a.referenteA || '').localeCompare(b.referenteA || '', 'pt-BR');
-      if (cmpRef !== 0) return cmpRef;
-      return (a.parcela || '').localeCompare(b.parcela || '', 'pt-BR');
+      // Dentro do mesmo fornecedor: ordenar por data de emissão (mais antiga primeiro)
+      return (a.emissaoData || '').localeCompare(b.emissaoData || '');
     };
-    vencidasItems.sort(sortByFornecedorThenRef);
+    vencidasItems.sort(sortByFornecedorThenEmissao);
     for (const bucket of dayBuckets) {
-      bucket.sort(sortByFornecedorThenRef);
+      bucket.sort(sortByFornecedorThenEmissao);
     }
 
     // Montar resposta por dia

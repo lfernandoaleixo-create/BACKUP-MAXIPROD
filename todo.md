@@ -1518,3 +1518,8 @@
 - [x] Manter mesmo visual e funcionalidade (checkbox, autorização, etc.)
 - [x] PDF também agrupado por fornecedor
 - [x] NÃO alterar nenhuma outra funcionalidade
+
+## Corrigir ordenação Autorização de Pagamentos para padrão Maxiprod (02/04/2026)
+- [x] Ordenar por fornecedor A-Z, depois por data de emissão crescente (mais antiga primeiro) dentro de cada grupo
+- [x] Adicionar campo emissaoData ao select do getWeekReconciliation
+- [x] NÃO alterar nenhuma outra funcionalidade - apenas financialRouter.ts alterado
