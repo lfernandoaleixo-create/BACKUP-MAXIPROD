@@ -12,13 +12,28 @@ import {
   ClipboardCheck,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   AlertTriangle,
   CheckCheck,
   Landmark,
   ShieldCheck,
   FileDown,
+  Lock,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+const AUTH_PASSWORD = "Fernando";
 
 function formatCurrency(n: number): string {
   return n.toLocaleString("pt-BR", {
@@ -299,6 +314,8 @@ function DayCard({
   togglingIds,
   isVencidas,
   saldoBancario,
+  isAuthenticated,
+  onRequestAuth,
 }: {
   day:
     | DayData
@@ -315,11 +332,14 @@ function DayCard({
   togglingIds: Set<number>;
   isVencidas?: boolean;
   saldoBancario: number;
+  isAuthenticated: boolean;
+  onRequestAuth: (callback: () => void) => void;
 }) {
   const isToday = "isToday" in day ? day.isToday : false;
   const isPast = "isPast" in day ? day.isPast : false;
   const [expanded, setExpanded] = useState(isVencidas || isToday);
   const allAuthorized = day.count > 0 && day.authorizedCount === day.count;
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   // Items na ordem padrão do backend (por fornecedor)
   const sortedItems = day.items;
@@ -337,6 +357,35 @@ function DayCard({
     }
     return groups;
   }, [sortedItems]);
+
+  const toggleGroupCollapse = (fornecedor: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(fornecedor)) {
+        next.delete(fornecedor);
+      } else {
+        next.add(fornecedor);
+      }
+      return next;
+    });
+  };
+
+  // Wrapper para proteger toggle com senha
+  const handleProtectedToggleItem = (id: number, authorized: boolean) => {
+    if (isAuthenticated) {
+      onToggleItem(id, authorized);
+    } else {
+      onRequestAuth(() => onToggleItem(id, authorized));
+    }
+  };
+
+  const handleProtectedToggleAll = (ids: number[], authorized: boolean) => {
+    if (isAuthenticated) {
+      onToggleAll(ids, authorized);
+    } else {
+      onRequestAuth(() => onToggleAll(ids, authorized));
+    }
+  };
 
   let borderColor = "border-slate-200";
   if (isVencidas) {
@@ -478,9 +527,9 @@ function DayCard({
               <button
                 onClick={() => {
                   if (allAuthorized) {
-                    onToggleAll(allIds, false);
+                    handleProtectedToggleAll(allIds, false);
                   } else {
-                    onToggleAll(pendingIds, true);
+                    handleProtectedToggleAll(pendingIds, true);
                   }
                 }}
                 className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer transition-colors"
@@ -493,29 +542,46 @@ function DayCard({
 
           {/* Items list - agrupados por fornecedor (estilo relatório Maxiprod) */}
           <div className="max-h-[400px] overflow-y-auto">
-            {groupedItems.map((group, gi) => (
-              <div key={group.fornecedor || `flat-${gi}`}>
-                {/* Cabeçalho do fornecedor - destaque amarelo como Maxiprod (só no modo fornecedor) */}
-                {group.fornecedor && (
-                  <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 border-t border-t-amber-100">
-                    <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
-                      {group.fornecedor}
-                    </span>
-                    <span className="text-[9px] text-amber-600 ml-2">({group.items.length})</span>
-                  </div>
-                )}
-                {group.items.map((item) => (
-                  <PayableRow
-                    key={item.maxiprodId}
-                    item={item}
-                    onToggle={() =>
-                      onToggleItem(item.maxiprodId, !item.authorized)
-                    }
-                    isToggling={togglingIds.has(item.maxiprodId)}
-                  />
-                ))}
-              </div>
-            ))}
+            {groupedItems.map((group, gi) => {
+              const isGroupCollapsed = collapsedGroups.has(group.fornecedor);
+              const groupTotal = group.items.reduce((s, i) => s + i.valor, 0);
+              return (
+                <div key={group.fornecedor || `flat-${gi}`}>
+                  {/* Cabeçalho do fornecedor - colapsável com seta */}
+                  {group.fornecedor && (
+                    <button
+                      onClick={() => toggleGroupCollapse(group.fornecedor)}
+                      className="w-full px-3 py-1.5 bg-amber-50 border-b border-amber-200 border-t border-t-amber-100 flex items-center justify-between cursor-pointer hover:bg-amber-100/70 transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        {isGroupCollapsed ? (
+                          <ChevronRight className="w-3.5 h-3.5 text-amber-600" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5 text-amber-600" />
+                        )}
+                        <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                          {group.fornecedor}
+                        </span>
+                        <span className="text-[9px] text-amber-600">({group.items.length})</span>
+                      </div>
+                      <span className="text-xs font-bold text-amber-800 tabular-nums">
+                        {formatCurrency(groupTotal)}
+                      </span>
+                    </button>
+                  )}
+                  {!isGroupCollapsed && group.items.map((item) => (
+                    <PayableRow
+                      key={item.maxiprodId}
+                      item={item}
+                      onToggle={() =>
+                        handleProtectedToggleItem(item.maxiprodId, !item.authorized)
+                      }
+                      isToggling={togglingIds.has(item.maxiprodId)}
+                    />
+                  ))}
+                </div>
+              );
+            })}
           </div>
 
           {/* Footer summary */}
@@ -573,6 +639,35 @@ export default function WeekReconciliationCard() {
     });
 
   const [collapsed, setCollapsed] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [passwordError, setPasswordError] = useState(false);
+
+  const handleRequestAuth = useCallback((callback: () => void) => {
+    setPendingAction(() => callback);
+    setPasswordInput("");
+    setPasswordError(false);
+    setShowPasswordDialog(true);
+  }, []);
+
+  const handlePasswordSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (passwordInput === AUTH_PASSWORD) {
+      setIsAuthenticated(true);
+      setShowPasswordDialog(false);
+      setPasswordError(false);
+      toast.success("Acesso autorizado!");
+      if (pendingAction) {
+        pendingAction();
+        setPendingAction(null);
+      }
+    } else {
+      setPasswordError(true);
+      toast.error("Senha incorreta");
+    }
+  }, [passwordInput, pendingAction]);
 
   if (isLoading) {
     return (
@@ -699,6 +794,8 @@ export default function WeekReconciliationCard() {
                 togglingIds={togglingIds}
                 isVencidas
                 saldoBancario={saldoBancario}
+                isAuthenticated={isAuthenticated}
+                onRequestAuth={handleRequestAuth}
               />
             )}
 
@@ -713,11 +810,52 @@ export default function WeekReconciliationCard() {
                   onToggleAll={handleToggleAll}
                   togglingIds={togglingIds}
                   saldoBancario={saldoBancario}
+                  isAuthenticated={isAuthenticated}
+                  onRequestAuth={handleRequestAuth}
                 />
               ))}
           </div>
         </div>
       )}
+
+      {/* Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={(v) => { if (!v) { setPasswordInput(""); setPasswordError(false); setPendingAction(null); } setShowPasswordDialog(v); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-amber-600" />
+              Autorização Necessária
+            </DialogTitle>
+            <DialogDescription>
+              Digite a senha para autorizar ou desautorizar pagamentos.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePasswordSubmit}>
+            <div className="py-4">
+              <Input
+                type="password"
+                placeholder="Digite a senha..."
+                value={passwordInput}
+                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                autoFocus
+                className={`text-center text-lg tracking-widest ${passwordError ? 'border-red-400 ring-1 ring-red-400' : ''}`}
+              />
+              {passwordError && (
+                <p className="text-xs text-red-500 text-center mt-2">Senha incorreta. Tente novamente.</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setPasswordInput(""); setPasswordError(false); setPendingAction(null); setShowPasswordDialog(false); }}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={!passwordInput.trim()} className="bg-amber-600 hover:bg-amber-700">
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Confirmar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

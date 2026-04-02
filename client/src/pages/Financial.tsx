@@ -546,37 +546,58 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
             <span className={`text-sm font-bold ${textColorClass}`}>{formatCurrency(filteredTotal)}</span>
             <span className="text-xs text-slate-400 ml-1">({searchTerm.trim() ? processedItems.length : bucket.count})</span>
           </div>
-          {/* Filter/Sort dropdown - only show when there are items */}
+          {/* Sort arrows: DATA and VALOR */}
           {hasItems && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-1 rounded hover:bg-black/5 transition-colors focus:outline-none" title="Filtrar e ordenar">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel className="text-xs text-slate-500">Ordenar por</DropdownMenuLabel>
-                {(Object.entries(SORT_LABELS) as [BucketSortMode, { label: string; icon: React.ElementType }][]).map(([key, { label, icon: Icon }]) => (
-                  <DropdownMenuItem
-                    key={key}
-                    onClick={() => setSortMode(key)}
-                    className={`text-xs cursor-pointer ${sortMode === key ? "bg-slate-100 font-semibold" : ""}`}
+            <div className="flex items-center gap-2">
+              {/* DATA sort arrows */}
+              <div className="flex flex-col items-center">
+                <span className="text-[8px] font-bold text-slate-400 uppercase leading-none mb-0.5">Data</span>
+                <div className="flex flex-col items-center gap-0">
+                  <button
+                    onClick={() => setSortMode(sortMode === 'data_desc' ? 'data_asc' : 'data_desc')}
+                    className={`p-0 leading-none cursor-pointer transition-colors ${sortMode === 'data_desc' ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}`}
+                    title="Data mais recente primeiro"
                   >
-                    <Icon className="w-3.5 h-3.5 mr-2" />
-                    {label}
-                    {sortMode === key && <span className="ml-auto text-teal-600">{"\u2713"}</span>}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchTerm(""); }}
-                  className="text-xs cursor-pointer"
-                >
-                  <Search className="w-3.5 h-3.5 mr-2" />
-                  {showSearch ? "Fechar busca" : "Buscar"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setSortMode(sortMode === 'data_asc' ? 'data_desc' : 'data_asc')}
+                    className={`p-0 leading-none cursor-pointer transition-colors ${sortMode === 'data_asc' ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}`}
+                    title="Data mais antiga primeiro"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              {/* VALOR sort arrows */}
+              <div className="flex flex-col items-center">
+                <span className="text-[8px] font-bold text-slate-400 uppercase leading-none mb-0.5">Valor</span>
+                <div className="flex flex-col items-center gap-0">
+                  <button
+                    onClick={() => setSortMode(sortMode === 'valor_desc' ? 'valor_asc' : 'valor_desc')}
+                    className={`p-0 leading-none cursor-pointer transition-colors ${sortMode === 'valor_desc' ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}`}
+                    title="Maior valor primeiro"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setSortMode(sortMode === 'valor_asc' ? 'valor_desc' : 'valor_asc')}
+                    className={`p-0 leading-none cursor-pointer transition-colors ${sortMode === 'valor_asc' ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}`}
+                    title="Menor valor primeiro"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+              {/* Search toggle */}
+              <button
+                onClick={() => { setShowSearch(!showSearch); if (showSearch) setSearchTerm(""); }}
+                className={`p-1 rounded transition-colors cursor-pointer ${showSearch ? 'bg-teal-100 text-teal-600' : 'text-slate-400 hover:text-slate-600 hover:bg-black/5'}`}
+                title="Buscar"
+              >
+                <Search className="w-3.5 h-3.5" />
+              </button>
+            </div>
           )}
         </div>
       </div>

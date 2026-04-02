@@ -1549,3 +1549,9 @@
 - [ ] Campo Boleto/PIX: buscar Forma de Cobrança do título (não padrão Maxiprod)
 - [ ] Resumo executivo para diretoria
 - [x] Remover botões de ordenação (A-Z, Data, Valor) da Autorização de Pagamentos
+- [x] Recebimentos: trocar caixa seletora por 2 pares de setas (↑↓) com labels DATA e VALOR
+- [x] Pagamentos: trocar caixa seletora por 2 pares de setas (↑↓) com labels DATA e VALOR
+- [x] Setas DATA: ordenar do mais recente ao mais antigo
+- [x] Setas VALOR: ordenar do maior ao menor
+- [x] Autorização de Pagamentos: grupos colapsáveis por fornecedor (minimizar/maximizar com seta)
+- [x] Autorização de Pagamentos: proteção por senha "Fernando" para ticar/desticar checkboxes
