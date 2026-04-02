@@ -12,9 +12,6 @@ import {
   ClipboardCheck,
   ChevronDown,
   ChevronUp,
-  ArrowUpDown,
-  Calendar,
-  DollarSign,
   AlertTriangle,
   CheckCheck,
   Landmark,
@@ -53,8 +50,6 @@ type PayableItem = {
   authStatus: string | null;
   authNotes: string | null;
 };
-
-type SortMode = 'fornecedor' | 'data' | 'valor';
 
 type DayData = {
   date: string;
@@ -324,29 +319,13 @@ function DayCard({
   const isToday = "isToday" in day ? day.isToday : false;
   const isPast = "isPast" in day ? day.isPast : false;
   const [expanded, setExpanded] = useState(isVencidas || isToday);
-  const [sortMode, setSortMode] = useState<SortMode>('fornecedor');
   const allAuthorized = day.count > 0 && day.authorizedCount === day.count;
 
-  // Ordenar items conforme o modo selecionado
-  const sortedItems = useMemo(() => {
-    const items = [...day.items];
-    if (sortMode === 'data') {
-      // Mais recente primeiro (emissaoData DESC)
-      items.sort((a, b) => (b.emissaoData || '').localeCompare(a.emissaoData || ''));
-    } else if (sortMode === 'valor') {
-      // Maior valor primeiro
-      items.sort((a, b) => b.valor - a.valor);
-    }
-    // 'fornecedor' = ordem padrão do backend (já vem ordenado)
-    return items;
-  }, [day.items, sortMode]);
+  // Items na ordem padrão do backend (por fornecedor)
+  const sortedItems = day.items;
 
   // Agrupar por fornecedor para exibir cabeçalhos como no relatório Maxiprod
   const groupedItems = useMemo(() => {
-    if (sortMode !== 'fornecedor') {
-      // Sem agrupamento quando ordenado por data ou valor
-      return [{ fornecedor: '', items: sortedItems }];
-    }
     const groups: { fornecedor: string; items: PayableItem[] }[] = [];
     let currentGroup: { fornecedor: string; items: PayableItem[] } | null = null;
     for (const item of sortedItems) {
@@ -357,7 +336,7 @@ function DayCard({
       currentGroup.items.push(item);
     }
     return groups;
-  }, [sortedItems, sortMode]);
+  }, [sortedItems]);
 
   let borderColor = "border-slate-200";
   if (isVencidas) {
@@ -508,38 +487,7 @@ function DayCard({
               >
                 {allAuthorized ? "Desmarcar todos" : "Autorizar todos"}
               </button>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setSortMode(sortMode === 'fornecedor' ? 'fornecedor' : 'fornecedor'); }}
-                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
-                    sortMode === 'fornecedor' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
-                  }`}
-                  title="Ordenar por fornecedor (A-Z)"
-                >
-                  <ArrowUpDown className="w-3 h-3" />
-                  <span>A-Z</span>
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setSortMode(sortMode === 'data' ? 'fornecedor' : 'data'); }}
-                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
-                    sortMode === 'data' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
-                  }`}
-                  title="Ordenar por data (mais recente primeiro)"
-                >
-                  <Calendar className="w-3 h-3" />
-                  <span>Data</span>
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setSortMode(sortMode === 'valor' ? 'fornecedor' : 'valor'); }}
-                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
-                    sortMode === 'valor' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
-                  }`}
-                  title="Ordenar por valor (maior primeiro)"
-                >
-                  <DollarSign className="w-3 h-3" />
-                  <span>Valor</span>
-                </button>
-              </div>
+
             </div>
           )}
 
@@ -548,7 +496,7 @@ function DayCard({
             {groupedItems.map((group, gi) => (
               <div key={group.fornecedor || `flat-${gi}`}>
                 {/* Cabeçalho do fornecedor - destaque amarelo como Maxiprod (só no modo fornecedor) */}
-                {sortMode === 'fornecedor' && group.fornecedor && (
+                {group.fornecedor && (
                   <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 border-t border-t-amber-100">
                     <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
                       {group.fornecedor}

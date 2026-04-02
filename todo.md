@@ -1541,3 +1541,11 @@
 - [x] Mostrar parcela (ex: 1/4, 2/4) em todos os itens como subtexto
 - [x] Buscar todas as informações do Maxiprod (referenteA, observacoes, NF, parcela)
 - [x] NÃO alterar nenhuma outra funcionalidade
+
+## Relatório PDF de Inadimplentes (02/04/2026)
+- [ ] Analisar API GraphQL para campo Forma de Cobrança (Boleto/PIX)
+- [ ] Extrair contas a receber EMITIDAS vencidas (3 anos até ontem) do Maxiprod
+- [ ] Gerar PDF com 7 colunas: Descrição, Venc., Venc. orig, Boleto/PIX, Valor, Minha empresa, Estado configurável
+- [ ] Campo Boleto/PIX: buscar Forma de Cobrança do título (não padrão Maxiprod)
+- [ ] Resumo executivo para diretoria
+- [x] Remover botões de ordenação (A-Z, Data, Valor) da Autorização de Pagamentos
