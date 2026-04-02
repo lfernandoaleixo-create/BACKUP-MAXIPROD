@@ -36,6 +36,8 @@ import {
   X,
   Search,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Landmark,
   SlidersHorizontal,
   ArrowDownAZ,
@@ -546,48 +548,42 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
             <span className={`text-sm font-bold ${textColorClass}`}>{formatCurrency(filteredTotal)}</span>
             <span className="text-xs text-slate-400 ml-1">({searchTerm.trim() ? processedItems.length : bucket.count})</span>
           </div>
-          {/* Sort arrows: DATA and VALOR */}
+          {/* Sort arrows ↑↓ + Search */}
           {hasItems && (
-            <div className="flex items-center gap-2">
-              {/* DATA sort arrows */}
-              <div className="flex flex-col items-center">
-                <span className="text-[8px] font-bold text-slate-400 uppercase leading-none mb-0.5">Data</span>
-                <div className="flex flex-col items-center gap-0">
-                  <button
-                    onClick={() => setSortMode(sortMode === 'data_desc' ? 'data_asc' : 'data_desc')}
-                    className={`p-0 leading-none cursor-pointer transition-colors ${sortMode === 'data_desc' ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}`}
-                    title="Data mais recente primeiro"
-                  >
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setSortMode(sortMode === 'data_asc' ? 'data_desc' : 'data_asc')}
-                    className={`p-0 leading-none cursor-pointer transition-colors ${sortMode === 'data_asc' ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}`}
-                    title="Data mais antiga primeiro"
-                  >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+            <div className="flex items-end gap-1.5">
+              {/* DATA: label + ↑↓ */}
+              <div className="flex flex-col items-center gap-0">
+                <span className="text-[8px] font-semibold text-slate-400 uppercase leading-none">Data</span>
+                <button
+                  onClick={() => {
+                    if (sortMode === 'data_desc') setSortMode('data_asc');
+                    else setSortMode('data_desc');
+                  }}
+                  className={`flex items-center gap-0 cursor-pointer transition-colors p-0.5 rounded hover:bg-black/5 ${
+                    sortMode.startsWith('data') ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'
+                  }`}
+                  title={sortMode === 'data_desc' ? 'Data mais antiga primeiro' : 'Data mais recente primeiro'}
+                >
+                  <ArrowUp className="w-3 h-3" />
+                  <ArrowDown className="w-3 h-3 -ml-0.5" />
+                </button>
               </div>
-              {/* VALOR sort arrows */}
-              <div className="flex flex-col items-center">
-                <span className="text-[8px] font-bold text-slate-400 uppercase leading-none mb-0.5">Valor</span>
-                <div className="flex flex-col items-center gap-0">
-                  <button
-                    onClick={() => setSortMode(sortMode === 'valor_desc' ? 'valor_asc' : 'valor_desc')}
-                    className={`p-0 leading-none cursor-pointer transition-colors ${sortMode === 'valor_desc' ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}`}
-                    title="Maior valor primeiro"
-                  >
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setSortMode(sortMode === 'valor_asc' ? 'valor_desc' : 'valor_asc')}
-                    className={`p-0 leading-none cursor-pointer transition-colors ${sortMode === 'valor_asc' ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'}`}
-                    title="Menor valor primeiro"
-                  >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+              {/* VALOR: label + ↑↓ */}
+              <div className="flex flex-col items-center gap-0">
+                <span className="text-[8px] font-semibold text-slate-400 uppercase leading-none">Valor</span>
+                <button
+                  onClick={() => {
+                    if (sortMode === 'valor_desc') setSortMode('valor_asc');
+                    else setSortMode('valor_desc');
+                  }}
+                  className={`flex items-center gap-0 cursor-pointer transition-colors p-0.5 rounded hover:bg-black/5 ${
+                    sortMode.startsWith('valor') ? 'text-teal-600' : 'text-slate-300 hover:text-slate-500'
+                  }`}
+                  title={sortMode === 'valor_desc' ? 'Menor valor primeiro' : 'Maior valor primeiro'}
+                >
+                  <ArrowUp className="w-3 h-3" />
+                  <ArrowDown className="w-3 h-3 -ml-0.5" />
+                </button>
               </div>
               {/* Search toggle */}
               <button

@@ -1555,3 +1555,4 @@
 - [x] Setas VALOR: ordenar do maior ao menor
 - [x] Autorização de Pagamentos: grupos colapsáveis por fornecedor (minimizar/maximizar com seta)
 - [x] Autorização de Pagamentos: proteção por senha "Fernando" para ticar/desticar checkboxes
+- [x] Corrigir estilo das setas: usar ↑↓ lado a lado (ArrowUp/ArrowDown) com labels DATA e VALOR acima, conforme print do usuário
