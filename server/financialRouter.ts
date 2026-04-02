@@ -2324,7 +2324,7 @@ export const financialRouter = router({
     const items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
 
     // Agrupar por pedido
-    const pedidoMap = new Map<string, { pedido: string; cliente: string; total: number; data: string; itens: number; estado: string; grupo: string }>();
+    const pedidoMap = new Map<string, { pedido: string; cliente: string; total: number; data: string; itens: number; estado: string; grupo: string; observacoes: string; descricoes: string[] }>();
     for (const item of items) {
       const key = item.pedido || 'sem-pedido';
       if (!pedidoMap.has(key)) {
@@ -2336,16 +2336,22 @@ export const financialRouter = router({
           itens: 0,
           estado: item.estadoNota || '-',
           grupo: estadoToGrupo(item.estadoConfiguravel),
+          observacoes: item.observacoes || '',
+          descricoes: [],
         });
       }
       const entry = pedidoMap.get(key)!;
       entry.total += Number(item.valorTotal || 0);
       entry.itens += 1;
+      // Coletar descrições únicas dos itens
+      if (item.descricao && !entry.descricoes.includes(item.descricao)) {
+        entry.descricoes.push(item.descricao);
+      }
     }
 
     return Array.from(pedidoMap.values())
       .sort((a, b) => b.total - a.total)
-      .map(e => ({ ...e, total: Math.round(e.total * 100) / 100 }));
+      .map(e => ({ ...e, total: Math.round(e.total * 100) / 100, descricoes: e.descricoes.slice(0, 5) }));
   }),
 
   /**

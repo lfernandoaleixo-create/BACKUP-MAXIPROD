@@ -1488,3 +1488,9 @@
 - [x] Adicionar referenteA como subtexto no card Pagamentos (BucketCard)
 - [x] Remover checkboxes/status de autorização/comentários do card Pagamentos (manter apenas no Autorização de Pagamentos)
 - [x] Nenhuma conta é ticada automaticamente (já era manual via banco de autorizações)
+
+## Descrições detalhadas em Contas a Receber, Recebimentos e Vendas (02/04/2026)
+- [x] Contas a Receber (aba Financeiro): adicionar referenteA/descrição/anotações na tabela expandida
+- [x] Recebimentos (card lateral): adicionar referenteA como subtexto (como feito em Pagamentos)
+- [x] Vendas (aba Financeiro): adicionar observações e descrições dos itens nos pedidos expandidos
+- [x] NÃO alterar nenhuma outra aba - apenas Financial.tsx, ResumoFinanceiroCard.tsx e financialRouter.ts

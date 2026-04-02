@@ -340,11 +340,9 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
                 >
                   {nameLabel} <SortArrow field="nome" />
                 </th>
-                {nameField === "fornecedor" && (
-                  <th className={`px-3 py-2 text-left ${colors.headerText} font-semibold`}>
-                    Referente a
-                  </th>
-                )}
+                <th className={`px-3 py-2 text-left ${colors.headerText} font-semibold`}>
+                  Referente a
+                </th>
                 <th
                   className={`px-3 py-2 text-right ${colors.headerText} font-semibold cursor-pointer select-none hover:opacity-80`}
                   onClick={() => toggleSort("valor")}
@@ -365,10 +363,8 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
                 const temAbatimento = Number(item.valorPagoLiquido || item.valorRecebidoLiquido || 0) > 0;
                 return (
                   <tr key={i} className={colors.hoverBg}>
-                    <td className="px-3 py-2 text-slate-700 truncate max-w-[180px]" title={item[nameField] || ""}>{item[nameField] || (nameField === "fornecedor" ? (item.referenteA || item.observacoes || "\u2014") : "\u2014")}</td>
-                    {nameField === "fornecedor" && (
-                      <td className="px-3 py-2 text-slate-500 text-[11px] truncate max-w-[220px]" title={item.referenteA || ""}>{item.referenteA || "\u2014"}</td>
-                    )}
+                    <td className="px-3 py-2 text-slate-700 truncate max-w-[180px]" title={item[nameField] || ""}>{item[nameField] || (item.referenteA || item.observacoes || "\u2014")}</td>
+                    <td className="px-3 py-2 text-slate-500 text-[11px] truncate max-w-[220px]" title={item.referenteA || ""}>{item.referenteA || "\u2014"}</td>
                     <td className={`px-3 py-2 text-right font-semibold ${colors.valueText}`}>
                       {formatCurrency(saldo)}
                       {temAbatimento && (
@@ -619,10 +615,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                   <span className="text-slate-400 whitespace-nowrap text-right shrink-0" style={{ width: '60px', fontVariantNumeric: 'tabular-nums', fontSize: '10px' }}>{formatDate(item.vencimento)}</span>
                   <span className="font-semibold text-slate-700 whitespace-nowrap text-right shrink-0" style={{ width: '78px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
                 </div>
-                {isPagar && item.referenteA && (
-                  <p className="text-[10px] text-slate-400 truncate pl-0.5 mt-0.5">{item.referenteA}</p>
-                )}
-                {!isPagar && item.referenteA && (
+                {item.referenteA && (
                   <p className="text-[10px] text-slate-400 truncate pl-0.5 mt-0.5">{item.referenteA}</p>
                 )}
               </div>

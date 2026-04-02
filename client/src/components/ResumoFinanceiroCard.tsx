@@ -1156,6 +1156,8 @@ interface SalesItem {
   data: string;
   total: number;
   vendedor?: string;
+  observacoes?: string;
+  descricoes?: string[];
 }
 
 function SalesDetailTable({ startDate, endDate }: { startDate: string; endDate: string }) {
@@ -1225,15 +1227,23 @@ function SalesDetailTable({ startDate, endDate }: { startDate: string; endDate: 
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {sorted.map((item, idx) => (
-              <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                <td className="px-3 py-1.5 font-medium text-slate-700">{item.pedido}</td>
-                <td className="px-3 py-1.5 text-slate-600 max-w-[200px] truncate" title={item.cliente}>{item.cliente}</td>
-                <td className="px-3 py-1.5 text-center text-slate-500">{item.itens}</td>
-                <td className="px-3 py-1.5 text-center text-slate-500">{formatDate(item.data)}</td>
-                <td className="px-3 py-1.5 text-right font-semibold text-blue-700">{formatCurrency(item.total)}</td>
-              </tr>
-            ))}
+            {sorted.map((item, idx) => {
+              const detail = item.observacoes || (item.descricoes && item.descricoes.length > 0 ? item.descricoes.join(", ") : "");
+              return (
+                <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-3 py-1.5 font-medium text-slate-700">{item.pedido}</td>
+                  <td className="px-3 py-1.5 text-slate-600 max-w-[200px]">
+                    <span className="truncate block" title={item.cliente}>{item.cliente}</span>
+                    {detail && (
+                      <span className="text-[10px] text-slate-400 truncate block max-w-[200px]" title={detail}>{detail}</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 text-center text-slate-500">{item.itens}</td>
+                  <td className="px-3 py-1.5 text-center text-slate-500">{formatDate(item.data)}</td>
+                  <td className="px-3 py-1.5 text-right font-semibold text-blue-700">{formatCurrency(item.total)}</td>
+                </tr>
+              );
+            })}
           </tbody>
           <tfoot className="bg-blue-50 border-t border-blue-200">
             <tr>
