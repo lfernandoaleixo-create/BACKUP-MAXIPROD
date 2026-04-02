@@ -1503,3 +1503,11 @@
 - [x] Investigar por que pedido 808 (NORTESUL, faturado c/ entrega futura) sumiu da aba Faturamento
 - [x] Corrigir para que pedido 808 apareça como Em Aberto (mercadoria não entregue) - adicionado "Faturado c/ entrega futura" ao filtro openItems
 - [x] NÃO mexer em NENHUM outro pedido ou funcionalidade - apenas billingRouter.ts alterado (2 linhas)
+
+## Melhorias na Autorização de Pagamentos (02/04/2026)
+- [x] Ordenar nomes dos fornecedores em ordem alfabética dentro de cada dia
+- [x] Renomear "Saldo" para "Saldo sem Caixa Dinheiro"
+- [x] Adicionar botão "Exportar PDF" ao lado do valor Autorizado
+- [x] PDF com contas autorizadas, tabela formatada e saldo restante (Saldo sem Caixa Dinheiro - Total Autorizado)
+- [x] 5 testes unitários passando
+- [x] NÃO alterar nenhuma outra funcionalidade - apenas WeekReconciliationCard.tsx alterado

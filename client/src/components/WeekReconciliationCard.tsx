@@ -4,7 +4,7 @@
  * Fernando marca as contas → Financeiro executa os pagamentos autorizados
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2,
@@ -16,6 +16,7 @@ import {
   CheckCheck,
   Landmark,
   ShieldCheck,
+  FileDown,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -163,6 +164,112 @@ function PayableRow({
   );
 }
 
+/** Gera PDF com contas autorizadas e saldo restante */
+function exportAuthPDF(
+  authorizedItems: PayableItem[],
+  saldoBancario: number,
+  totalAutorizado: number,
+  dayLabel: string
+) {
+  const saldoRestante = saldoBancario - totalAutorizado;
+  const hoje = new Date().toLocaleDateString('pt-BR');
+
+  // Construir HTML do PDF
+  const rows = authorizedItems
+    .sort((a, b) => a.fornecedor.localeCompare(b.fornecedor, 'pt-BR'))
+    .map((item, i) => `
+      <tr style="border-bottom:1px solid #e2e8f0;">
+        <td style="padding:6px 8px;font-size:11px;color:#334155;">${i + 1}</td>
+        <td style="padding:6px 8px;font-size:11px;color:#334155;font-weight:600;">
+          ${item.fornecedor}${item.parcela ? ` <span style="color:#94a3b8;font-weight:400;">(${item.parcela})</span>` : ''}
+          ${item.referenteA ? `<br/><span style="font-size:9px;color:#94a3b8;font-weight:400;">${item.referenteA}</span>` : ''}
+        </td>
+        <td style="padding:6px 8px;font-size:11px;color:#334155;">${item.empresaNome || ''}</td>
+        <td style="padding:6px 8px;font-size:11px;color:#334155;text-align:right;">${item.vencimento.split('-').reverse().join('/')}</td>
+        <td style="padding:6px 8px;font-size:11px;color:#dc2626;text-align:right;font-weight:700;">${formatCurrency(item.valor)}</td>
+      </tr>
+    `).join('');
+
+  const html = `
+    <html>
+    <head>
+      <title>Autoriza\u00e7\u00e3o de Pagamentos - ${dayLabel}</title>
+      <style>
+        @page { margin: 20mm 15mm; size: A4; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #1e293b; margin: 0; padding: 0; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #4f46e5; padding-bottom: 12px; }
+        .header h1 { font-size: 18px; color: #4f46e5; margin: 0 0 4px 0; }
+        .header p { font-size: 11px; color: #64748b; margin: 0; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #f1f5f9; padding: 8px; font-size: 10px; text-transform: uppercase; color: #475569; text-align: left; border-bottom: 2px solid #cbd5e1; }
+        th:last-child, th:nth-child(4) { text-align: right; }
+        .summary { margin-top: 16px; border: 2px solid #4f46e5; border-radius: 8px; padding: 16px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+        .summary-row.total { border-top: 2px solid #e2e8f0; margin-top: 8px; padding-top: 12px; font-size: 15px; font-weight: 800; }
+        .green { color: #16a34a; }
+        .red { color: #dc2626; }
+        .blue { color: #2563eb; }
+        .footer { margin-top: 24px; text-align: center; font-size: 9px; color: #94a3b8; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Autoriza\u00e7\u00e3o de Pagamentos</h1>
+        <p>${dayLabel} &mdash; Emitido em ${hoje}</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:30px;">#</th>
+            <th>Fornecedor</th>
+            <th>Empresa</th>
+            <th style="text-align:right;">Vencimento</th>
+            <th style="text-align:right;">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+          <tr style="background:#f8fafc;">
+            <td colspan="4" style="padding:8px;font-size:12px;font-weight:700;text-align:right;">Total Autorizado (${authorizedItems.length} conta${authorizedItems.length > 1 ? 's' : ''}):</td>
+            <td style="padding:8px;font-size:13px;font-weight:800;color:#dc2626;text-align:right;">${formatCurrency(totalAutorizado)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="summary">
+        <div class="summary-row">
+          <span>Saldo sem Caixa Dinheiro:</span>
+          <span class="green" style="font-weight:700;">${formatCurrency(saldoBancario)}</span>
+        </div>
+        <div class="summary-row">
+          <span>Total Autorizado a Pagar:</span>
+          <span class="red" style="font-weight:700;">- ${formatCurrency(totalAutorizado)}</span>
+        </div>
+        <div class="summary-row total">
+          <span>Saldo Ap\u00f3s Pagamento:</span>
+          <span class="${saldoRestante >= 0 ? 'blue' : 'red'}">${formatCurrency(saldoRestante)}</span>
+        </div>
+      </div>
+
+      <div class="footer">
+        Grupo Fox &mdash; Dashboard de Gest\u00e3o &mdash; Gerado automaticamente
+      </div>
+    </body>
+    </html>
+  `;
+
+  // Abrir em nova janela para impressão/PDF
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.print();
+    }, 300);
+  }
+}
+
 function DayCard({
   day,
   onToggleItem,
@@ -191,6 +298,12 @@ function DayCard({
   const isPast = "isPast" in day ? day.isPast : false;
   const [expanded, setExpanded] = useState(isVencidas || isToday);
   const allAuthorized = day.count > 0 && day.authorizedCount === day.count;
+
+  // Ordenar items por nome do fornecedor (ordem alfabética)
+  const sortedItems = useMemo(() => 
+    [...day.items].sort((a, b) => a.fornecedor.localeCompare(b.fornecedor, 'pt-BR')),
+    [day.items]
+  );
 
   let borderColor = "border-slate-200";
   if (isVencidas) {
@@ -223,15 +336,15 @@ function DayCard({
           <div className="flex items-center gap-2">
             <Landmark className="w-5 h-5 text-emerald-600" />
             <div>
-              <span className="text-[10px] text-emerald-500 font-medium block leading-tight">Saldo</span>
+              <span className="text-[10px] text-emerald-500 font-medium block leading-tight">Saldo sem Caixa Dinheiro</span>
               <span className="text-lg font-extrabold tabular-nums text-emerald-600">
                 {formatCurrency(saldoBancario)}
               </span>
             </div>
           </div>
 
-          {/* Autorizado - VERMELHO */}
-          <div className="flex items-center gap-2">
+          {/* Autorizado - VERMELHO + Botão Exportar PDF */}
+          <div className="flex items-center gap-3">
             {day.authorizedTotal > 0 && (
               <>
                 <ShieldCheck className="w-5 h-5 text-red-500" />
@@ -240,6 +353,19 @@ function DayCard({
                   <span className="text-lg font-extrabold tabular-nums text-red-600">
                     {formatCurrency(day.authorizedTotal)}
                   </span>
+                </div>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    exportAuthPDF(sortedItems.filter(i => i.authorized), saldoBancario, day.authorizedTotal, day.dayLabel);
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); exportAuthPDF(sortedItems.filter(i => i.authorized), saldoBancario, day.authorizedTotal, day.dayLabel); } }}
+                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 hover:bg-red-100 border border-red-200 cursor-pointer transition-colors"
+                >
+                  <FileDown className="w-3.5 h-3.5 text-red-600" />
+                  <span className="text-[10px] font-semibold text-red-600 whitespace-nowrap">Exportar PDF</span>
                 </div>
               </>
             )}
@@ -331,9 +457,9 @@ function DayCard({
             </div>
           )}
 
-          {/* Items list */}
+          {/* Items list - ordenados alfabeticamente */}
           <div className="max-h-[300px] overflow-y-auto">
-            {day.items.map((item) => (
+            {sortedItems.map((item) => (
               <PayableRow
                 key={item.maxiprodId}
                 item={item}
