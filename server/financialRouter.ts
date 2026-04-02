@@ -1687,6 +1687,7 @@ export const financialRouter = router({
       .select({
         maxiprodId: accountsPayable.maxiprodId,
         fornecedor: accountsPayable.fornecedor,
+        fornecedorApelido: accountsPayable.fornecedorApelido,
         valorLiquido: accountsPayable.valorLiquido,
         valorPagoLiquido: accountsPayable.valorPagoLiquido,
         vencimentoData: accountsPayable.vencimentoData,
@@ -1736,7 +1737,7 @@ export const financialRouter = router({
       const authData = authMap.get(item.maxiprodId);
       const entry: PayableItem = {
         maxiprodId: item.maxiprodId,
-        fornecedor: item.fornecedor || item.referenteA || item.observacoes || "Sem nome",
+        fornecedor: item.fornecedorApelido || item.fornecedor || item.referenteA || item.observacoes || "Sem nome",
         valor,
         vencimento: vencStr,
         emissaoData: item.emissaoData?.split("T")[0] || "",

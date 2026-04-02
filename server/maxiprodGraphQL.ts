@@ -819,7 +819,7 @@ async function fetchAccountsPayable(): Promise<any[]> {
         observacoes
         documentoVinculadoNumero
         bloqueado
-        fornecedor { nomeFantasia razaoSocial }
+        fornecedor { apelido nomeFantasia razaoSocial }
         centroDeCustos { id }
         conta { id }
         minhaEmpresaId
@@ -898,6 +898,7 @@ function transformAccountsPayable(items: any[]): any[] {
     documentoVinculadoNumero: item.documentoVinculadoNumero || null,
     bloqueado: item.bloqueado || false,
     fornecedor: item.fornecedor?.razaoSocial || item.fornecedor?.nomeFantasia || "",
+    fornecedorApelido: item.fornecedor?.apelido || item.fornecedor?.nomeFantasia || item.fornecedor?.razaoSocial || "",
     centroDeCustosId: item.centroDeCustos?.id || null,
     contaId: item.conta?.id || null,
     empresaId: item.minhaEmpresaId || null,

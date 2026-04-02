@@ -1,0 +1,1 @@
+ALTER TABLE `accounts_payable` ADD `fornecedorApelido` varchar(300);

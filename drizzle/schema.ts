@@ -315,6 +315,7 @@ export const accountsPayable = mysqlTable("accounts_payable", {
   documentoVinculadoNumero: varchar("documentoVinculadoNumero", { length: 100 }),
   bloqueado: boolean("bloqueado").default(false),
   fornecedor: varchar("fornecedor", { length: 300 }),
+  fornecedorApelido: varchar("fornecedorApelido", { length: 300 }),
   centroDeCustosId: bigint("centroDeCustosId", { mode: "number" }),
   contaId: bigint("contaId", { mode: "number" }),
   empresaId: bigint("empresaId", { mode: "number" }),

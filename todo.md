@@ -1523,3 +1523,9 @@
 - [x] Ordenar por fornecedor A-Z, depois por data de emissão crescente (mais antiga primeiro) dentro de cada grupo
 - [x] Adicionar campo emissaoData ao select do getWeekReconciliation
 - [x] NÃO alterar nenhuma outra funcionalidade - apenas financialRouter.ts alterado
+
+## Corrigir nome do grupo na Autorização de Pagamentos (02/04/2026)
+- [x] Investigar: Maxiprod usa campo `apelido` do fornecedor (BENAZZI, BRADESCO, CEMIG, etc.)
+- [x] Adicionar `apelido` à query GraphQL e salvar como `fornecedorApelido` no banco
+- [x] Usar `fornecedorApelido` para agrupamento (fallback para `fornecedor`)
+- [x] NÃO alterar nenhuma outra funcionalidade
