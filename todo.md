@@ -1494,3 +1494,7 @@
 - [x] Recebimentos (card lateral): adicionar referenteA como subtexto (como feito em Pagamentos)
 - [x] Vendas (aba Financeiro): adicionar observações e descrições dos itens nos pedidos expandidos
 - [x] NÃO alterar nenhuma outra aba - apenas Financial.tsx, ResumoFinanceiroCard.tsx e financialRouter.ts
+
+## Vendas: descrição completa sem truncar (02/04/2026)
+- [x] Remover truncate das descrições/observações na tabela de Vendas para exibir texto completo
+- [x] NÃO alterar nenhuma outra aba ou funcionalidade

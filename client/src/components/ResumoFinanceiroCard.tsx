@@ -1232,10 +1232,10 @@ function SalesDetailTable({ startDate, endDate }: { startDate: string; endDate: 
               return (
                 <tr key={idx} className="hover:bg-slate-50 transition-colors">
                   <td className="px-3 py-1.5 font-medium text-slate-700">{item.pedido}</td>
-                  <td className="px-3 py-1.5 text-slate-600 max-w-[200px]">
-                    <span className="truncate block" title={item.cliente}>{item.cliente}</span>
+                  <td className="px-3 py-1.5 text-slate-600">
+                    <span className="block" title={item.cliente}>{item.cliente}</span>
                     {detail && (
-                      <span className="text-[10px] text-slate-400 truncate block max-w-[200px]" title={detail}>{detail}</span>
+                      <span className="text-[10px] text-slate-400 block whitespace-normal break-words">{detail}</span>
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-center text-slate-500">{item.itens}</td>
