@@ -242,9 +242,12 @@ async function fetchStock(): Promise<any[]> {
  * These items don't have stock in Maxiprod but are being sold.
  * Returns synthetic stock entries with quantity 0.
  */
-function extractMadeiraItemsFromOrders(orderData: any[]): any[] {
-  // Find all unique items from orders with estadoConfiguravel MADEIRA
-  const madeiraOrders = orderData.filter(o => {
+function extractMadeiraItemsFromOrders(openOrderData: any[], allSalesData: any[]): any[] {
+  // Combine open orders + all historical sales to find ALL madeira items
+  const allData = [...openOrderData, ...allSalesData];
+  
+  // Find all unique items from orders with estadoConfiguravel MADEIRA/SERRAGEM/ROJÃO
+  const madeiraOrders = allData.filter(o => {
     const ec = (o.estadoConfiguravel || '').toUpperCase();
     return ec.includes('MADEIRA') || ec.includes('SERRAGEM') || ec.includes('ROJ');
   });
@@ -276,7 +279,7 @@ function extractMadeiraItemsFromOrders(orderData: any[]): any[] {
     });
   }
 
-  console.log(`[GraphQL Sync] Found ${itemMap.size} unique madeira items from ${madeiraOrders.length} orders`);
+  console.log(`[GraphQL Sync] Found ${itemMap.size} unique madeira items from ${madeiraOrders.length} orders (open + historical)`);
   return Array.from(itemMap.values());
 }
 
@@ -1260,13 +1263,14 @@ export async function runGraphQLSync(): Promise<{
     const stockData = transformStockData(rawStock);
     const orderData = transformOrderItems(rawOpenOrders);
 
-    // Extract madeira items from orders and add to stock with qty 0
-    const madeiraData = extractMadeiraItemsFromOrders(orderData);
+    const salesData = transformSalesOrders(rawAllSales);
+
+    // Extract madeira items from BOTH open orders AND historical sales to get all 60+ products
+    const madeiraData = extractMadeiraItemsFromOrders(orderData, salesData);
     const existingCodes = new Set(stockData.map((s: any) => s.codigoItem));
     const newMadeiraItems = madeiraData.filter((m: any) => !existingCodes.has(m.codigoItem));
     stockData.push(...newMadeiraItems);
     console.log(`[GraphQL Sync] Added ${newMadeiraItems.length} madeira items (no stock) to dashboard`);
-    const salesData = transformSalesOrders(rawAllSales);
     const poData = transformPurchaseOrderItems(rawPOs);
     const payableData = transformAccountsPayable(rawPayable);
     const receivableData = transformAccountsReceivable(rawReceivable);
