@@ -1556,3 +1556,7 @@
 - [x] Autorização de Pagamentos: grupos colapsáveis por fornecedor (minimizar/maximizar com seta)
 - [x] Autorização de Pagamentos: proteção por senha "Fernando" para ticar/desticar checkboxes
 - [x] Corrigir estilo das setas: usar ↑↓ lado a lado (ArrowUp/ArrowDown) com labels DATA e VALOR acima, conforme print do usuário
+- [x] Relatório PDF: corrigir coluna Estado para usar Estado Configurável do Maxiprod (BAMBU, MADEIRA, etc.) em vez de estado padrão (EMITIDO)
+- [x] Relatório PDF: corrigir Estado Configurável — é campo do título (BAMBU, MADEIRA, ROJÃO, SERRAGEM), não do cliente
+- [x] Relatório PDF Abril 2026: corrigir Estado Configurável — centroDeCustos confirmado como campo correto (maioria dos títulos de abril não tem CC preenchido no Maxiprod)
+- [x] Criar card de produtos de madeira na aba Estoque (idêntico ao card Sob Encomenda)

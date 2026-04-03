@@ -53,6 +53,7 @@ import {
   Lock,
   Eye,
   EyeOff,
+  TreePine,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
@@ -1752,7 +1753,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const [segmentoFilter, setSegmentoFilter] = useState("all");
   const [sort, setSort] = useState<SortField>("comprimento");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false });
+  const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false, madeira: false });
   const [showFinancial, setShowFinancial] = useState(false);
 
   // Fetch classifications
@@ -1798,9 +1799,15 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   // Split items into 3 groups
   const estoqueItems = useMemo(() => items.filter(i => {
     const c = classificationMap.get(i.codigoItem);
+    // Excluir itens de industrialização (madeira) - eles vão no card Madeira
+    if (i.grupo === "industrializacao") return false;
     return c === "estoque" || !c || c === "outros";
   }), [items, classificationMap]);
   const encomendaItems = useMemo(() => items.filter(i => classificationMap.get(i.codigoItem) === "encomenda"), [items, classificationMap]);
+
+  // Itens de madeira: todos os produtos de industrialização (varetas, espetos, palitos, madeira serrada)
+  // Esses são os produtos industrializados de madeira que não têm estoque no Maxiprod
+  const madeiraItems = useMemo(() => items.filter(i => i.grupo === "industrializacao"), [items]);
 
   const revendaItems = useMemo(() => items.filter((i) => i.grupo === "importacao_revenda"), [items]);
   const industItems = useMemo(() => items.filter((i) => i.grupo === "industrializacao"), [items]);
@@ -1810,6 +1817,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const parentOnlyItems = useMemo(() => items.filter(i => !i.isChild), [items]);
   const parentOnlyEstoque = useMemo(() => estoqueItems.filter(i => !i.isChild), [estoqueItems]);
   const parentOnlyEncomenda = useMemo(() => encomendaItems.filter(i => !i.isChild), [encomendaItems]);
+  const parentOnlyMadeira = useMemo(() => madeiraItems.filter(i => !i.isChild), [madeiraItems]);
   const parentOnlyRevenda = useMemo(() => revendaItems.filter(i => !i.isChild), [revendaItems]);
   const parentOnlyIndust = useMemo(() => industItems.filter(i => !i.isChild), [industItems]);
   const parentOnlyMP = useMemo(() => mpItems.filter(i => !i.isChild), [mpItems]);
@@ -2162,6 +2170,22 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         items={encomendaItems}
         isOpen={openCards.encomenda}
         onToggle={() => toggleCard("encomenda")}
+        priceMap={priceMap}
+        showFinancial={showFinancial}
+        pricingOverrides={pricingOverrides ?? undefined}
+        hideAlerts={true}
+      />
+
+      <ClassificationCard
+        title="Madeira"
+        subtitle={`${parentOnlyMadeira.length} produtos industrializados de madeira`}
+        icon={TreePine}
+        iconBg="bg-green-100"
+        iconColor="text-green-700"
+        borderColor="border-l-green-600"
+        items={madeiraItems}
+        isOpen={openCards.madeira}
+        onToggle={() => toggleCard("madeira")}
         priceMap={priceMap}
         showFinancial={showFinancial}
         pricingOverrides={pricingOverrides ?? undefined}

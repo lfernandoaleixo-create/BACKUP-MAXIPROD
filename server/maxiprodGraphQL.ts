@@ -229,6 +229,58 @@ async function fetchStock(): Promise<any[]> {
 }
 
 /**
+ * Fetch madeira/industrialized items from Maxiprod
+ * These are items from groups 18/19 within supergroup 16 that typically
+ * have NO stock in Maxiprod but ARE being sold.
+ * We fetch them as catalog items (via 'itens' query) and add them
+ * to stock with quantity 0 so they appear in the dashboard.
+ */
+/**
+ * Extract unique madeira items from open sales orders.
+ * Instead of querying the 'itens' catalog (which returns 0),
+ * we extract items from orders with estadoConfiguravel containing MADEIRA.
+ * These items don't have stock in Maxiprod but are being sold.
+ * Returns synthetic stock entries with quantity 0.
+ */
+function extractMadeiraItemsFromOrders(orderData: any[]): any[] {
+  // Find all unique items from orders with estadoConfiguravel MADEIRA
+  const madeiraOrders = orderData.filter(o => {
+    const ec = (o.estadoConfiguravel || '').toUpperCase();
+    return ec.includes('MADEIRA') || ec.includes('SERRAGEM') || ec.includes('ROJ');
+  });
+
+  // Deduplicate by codigoItem
+  const itemMap = new Map<string, any>();
+  for (const order of madeiraOrders) {
+    const code = order.codigoItem;
+    if (!code || itemMap.has(code)) continue;
+    itemMap.set(code, {
+      codigoItem: code,
+      descricaoItem: order.descricao || order.descricaoItem || "",
+      quantidade: "0",
+      unidadeMedida: order.unidadeMedida || "",
+      custoUnitario: "0",
+      custoTotal: "0",
+      codigoGrupo: order.codigoGrupo || "",
+      descricaoGrupo: "",
+      codigoSuperGrupo: "",
+      descricaoSuperGrupo: "",
+      // Use grupo/supergrupo codes that classify as industrializacao/madeira
+      grupoCodigo: "18",
+      superGrupoCodigo: "16",
+      empresaDona: order.empresaDona || "PALITOS INDUSTRIA",
+      estoqueLocal: "Estoque",
+      tipoDecodificado: "Próprio",
+      maxiprodId: order.maxiprodId || null,
+      unidadeDeVendaFator: order.fatorConversao || null,
+    });
+  }
+
+  console.log(`[GraphQL Sync] Found ${itemMap.size} unique madeira items from ${madeiraOrders.length} orders`);
+  return Array.from(itemMap.values());
+}
+
+/**
  * Fetch open sales order items (A_FATURAR + FATURADO_COM_ENTREGA_FUTURA)
  * These are the orders that affect stock availability
  * Includes pedidoDeVenda.minhaEmpresaId for multi-company support
@@ -1201,12 +1253,19 @@ export async function runGraphQLSync(): Promise<{
       fetchOpenSalesOrderItems(),
       fetchAllSalesOrderItems(),
       fetchPurchaseOrderItems(),
-      fetchAccountsPayable().catch(e => { console.error("[GraphQL Sync] Payable fetch error:", e.message); return []; }),
-      fetchAccountsReceivable().catch(e => { console.error("[GraphQL Sync] Receivable fetch error:", e.message); return []; }),
+      fetchAccountsPayable().catch((e: any) => { console.error("[GraphQL Sync] Payable fetch error:", e.message); return []; }),
+      fetchAccountsReceivable().catch((e: any) => { console.error("[GraphQL Sync] Receivable fetch error:", e.message); return []; }),
     ]);
 
     const stockData = transformStockData(rawStock);
     const orderData = transformOrderItems(rawOpenOrders);
+
+    // Extract madeira items from orders and add to stock with qty 0
+    const madeiraData = extractMadeiraItemsFromOrders(orderData);
+    const existingCodes = new Set(stockData.map((s: any) => s.codigoItem));
+    const newMadeiraItems = madeiraData.filter((m: any) => !existingCodes.has(m.codigoItem));
+    stockData.push(...newMadeiraItems);
+    console.log(`[GraphQL Sync] Added ${newMadeiraItems.length} madeira items (no stock) to dashboard`);
     const salesData = transformSalesOrders(rawAllSales);
     const poData = transformPurchaseOrderItems(rawPOs);
     const payableData = transformAccountsPayable(rawPayable);
