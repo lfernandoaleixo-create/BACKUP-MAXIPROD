@@ -1569,3 +1569,5 @@
 - [x] Criar nova aba "Madeira" em Configurações com lista dos 63 itens e toggles de visibilidade para os 3 cards (Madeira, Semi Pronto, Aguardando Escolha)
 - [x] Criar card de busca de cliente na aba Vendas com resumo completo (pedidos, pagamentos, inadimplência, produtos) - posicionado como primeiro card abaixo da sincronização
 - [x] Refazer card de busca de cliente seguindo padrão visual dos outros cards da aba Vendas (mesma paleta, autocomplete no header, expansão ao selecionar)
+- [x] Corrigir dropdown do autocomplete de busca de cliente: deve sobrepor (z-index) os cards abaixo em vez de ficar escondido
+- [x] Garantir que TODOS os clientes cadastrados apareçam na busca, sem filtro de grupo ou categoria - buscar de todas as fontes disponíveis (pedidos, NFs, contas a receber)

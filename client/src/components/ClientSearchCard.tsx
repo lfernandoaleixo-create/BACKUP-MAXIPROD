@@ -99,7 +99,7 @@ export function ClientSearchCard() {
     : "";
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 shadow-sm relative" style={{ zIndex: showDropdown ? 100 : 'auto' }}>
       {/* Header - same pattern as Evolução Diária */}
       <div className="w-full flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">

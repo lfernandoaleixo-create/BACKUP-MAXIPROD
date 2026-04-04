@@ -1355,17 +1355,32 @@ export const salesRouter = router({
       const db = await getDb();
       if (!db) return [];
       const q = `%${input.query}%`;
-      const rows = await db.select({
-        cliente: salesOrders.cliente,
-        clienteApelido: salesOrders.clienteApelido,
-        uf: salesOrders.uf,
-        crmSegmento: salesOrders.crmSegmento,
-      }).from(salesOrders)
-        .where(or(like(salesOrders.cliente, q), like(salesOrders.clienteApelido, q)))
-        .groupBy(salesOrders.cliente, salesOrders.clienteApelido, salesOrders.uf, salesOrders.crmSegmento)
-        .orderBy(salesOrders.cliente)
-        .limit(20);
-      return rows;
+      // Search ALL clients from both sales_orders and accounts_receivable using UNION
+      const rows = await db.execute(sql`
+        SELECT cliente, clienteApelido, uf, crmSegmento
+        FROM (
+          SELECT cliente, clienteApelido, uf, crmSegmento
+          FROM sales_orders
+          WHERE (cliente LIKE ${q} OR clienteApelido LIKE ${q})
+            AND cliente IS NOT NULL AND cliente != ''
+          UNION
+          SELECT cliente, NULL as clienteApelido, NULL as uf, NULL as crmSegmento
+          FROM accounts_receivable
+          WHERE cliente LIKE ${q}
+            AND cliente IS NOT NULL AND cliente != ''
+        ) all_clients
+        GROUP BY cliente
+        ORDER BY cliente
+        LIMIT 30
+      `);
+      // mysql2 returns [rows, fields] - extract rows
+      const results = Array.isArray(rows) && Array.isArray(rows[0]) ? rows[0] : rows;
+      return (results as any[]).map((r: any) => ({
+        cliente: r.cliente || null,
+        clienteApelido: r.clienteApelido || null,
+        uf: r.uf || null,
+        crmSegmento: r.crmSegmento || null,
+      }));
     }),
 
   getClientSummary: publicProcedure
