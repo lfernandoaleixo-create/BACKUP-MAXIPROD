@@ -2169,6 +2169,10 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   // Fetch classifications
   const { data: classifications } = trpc.settings.getProductClassifications.useQuery();
 
+  // Fetch semi pronto and aguardando escolha stock for madeira KPIs
+  const { data: semiProntoKPI } = trpc.dashboard.getSemiProntoStock.useQuery(undefined, { refetchInterval: 30000 });
+  const { data: aguardandoKPI } = trpc.dashboard.getAguardandoEscolhaStock.useQuery(undefined, { refetchInterval: 30000 });
+
   // Fetch avg sales prices for valuation
   const { data: pricesData } = trpc.dashboard.getAvgSalesPrices.useQuery(undefined, {
     refetchInterval: 60000,
@@ -2237,6 +2241,28 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const totalDisponivelCx = items.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0);
   const totalPOCx = items.reduce((sum, i) => sum + (i.poCx ?? 0), 0);
   const totalProjetadoCx = items.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
+
+  // Madeira KPI totals (Madeira card + Semi Pronto + Aguardando Escolha)
+  const semiProntoTotal = useMemo(() => {
+    if (!semiProntoKPI?.items) return 0;
+    return semiProntoKPI.items.reduce((sum, sp) => sum + (parseFloat(String(sp.quantidade)) || 0), 0);
+  }, [semiProntoKPI]);
+
+  const aguardandoTotal = useMemo(() => {
+    if (!aguardandoKPI?.items) return 0;
+    return aguardandoKPI.items.reduce((sum, sp) => sum + (parseFloat(String(sp.quantidade)) || 0), 0);
+  }, [aguardandoKPI]);
+
+  const madeiraEstoqueCx = useMemo(() => {
+    const madeiraCardEstoque = madeiraItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
+    return madeiraCardEstoque + semiProntoTotal + aguardandoTotal;
+  }, [madeiraItems, semiProntoTotal, aguardandoTotal]);
+
+  const madeiraPedidosCx = useMemo(() => madeiraItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0), [madeiraItems]);
+  const madeiraDisponivelCx = madeiraEstoqueCx - madeiraPedidosCx;
+  const madeiraPOCx = useMemo(() => madeiraItems.reduce((sum, i) => sum + (i.poCx ?? 0), 0), [madeiraItems]);
+  const madeiraProjetadoCx = madeiraDisponivelCx + madeiraPOCx;
+  const madeiraProdutos = parentOnlyMadeira.length;
   const negativos = items.filter((i) => (i.disponivelCx ?? i.disponivelUn) < 0).length;
 
   // Custo do Estoque Regulador global (apenas itens do card Estoque)
@@ -2585,6 +2611,55 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         pricingOverrides={pricingOverrides ?? undefined}
         hideAlerts={true}
       />
+
+      {/* KPIs Madeira - Análise dos 3 grupos de madeira */}
+      <div className="mt-2 mb-1">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Resumo Madeira (Madeira + Semi Pronto + Aguardando Escolha)</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <KPICard
+          label="Estoque Total"
+          value={`${formatNumber(madeiraEstoqueCx)} cx`}
+          sub={`${madeiraProdutos} produtos`}
+          icon={TreePine}
+          theme="teal"
+        />
+        <KPICard
+          label="Pedidos (Venda)"
+          value={`${formatNumber(madeiraPedidosCx)} cx`}
+          sub="Pedidos de madeira"
+          icon={ShoppingCart}
+          theme="orange"
+        />
+        <KPICard
+          label="Disponivel"
+          value={`${formatNumber(madeiraDisponivelCx)} cx`}
+          sub="Estoque - Pedidos"
+          icon={CheckCircle2}
+          theme="emerald"
+        />
+        <KPICard
+          label="PO (A Receber)"
+          value={`${formatNumber(madeiraPOCx)} cx`}
+          sub="Pedidos de compra"
+          icon={Ship}
+          theme="blue"
+        />
+        <KPICard
+          label="Projetado"
+          value={`${formatNumber(madeiraProjetadoCx)} cx`}
+          sub="Disponivel + PO"
+          icon={TrendingUp}
+          theme="indigo"
+        />
+        <KPICard
+          label="Alertas"
+          value="Nenhum"
+          sub="Tudo em ordem"
+          icon={CheckCircle2}
+          theme="slate"
+        />
+      </div>
 
       <ClassificationCard
         title="Madeira"

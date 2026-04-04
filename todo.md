@@ -1563,3 +1563,4 @@
 - [x] Card Madeira: incluir todos os 60+ produtos vendidos historicamente (não apenas pedidos em aberto)
 - [x] Criar card "Madeira Semi Pronto" abaixo do card Madeira (cópia idêntica, estoque editável, demais campos zerados, sem relação com outros dados)
 - [x] Criar card "Madeira Aguardando Escolha" idêntico ao Semi Pronto (estoque editável, demais campos zerados, sem relação com outros dados)
+- [x] Criar 6 cards de resumo (Estoque Total, Pedidos, Disponível, PO, Projetado, Alertas) entre Sob Encomenda e Madeira para análise dos 3 grupos de madeira
