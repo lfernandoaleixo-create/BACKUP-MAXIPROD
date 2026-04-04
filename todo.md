@@ -1561,3 +1561,4 @@
 - [x] Relatório PDF Abril 2026: corrigir Estado Configurável — centroDeCustos confirmado como campo correto (maioria dos títulos de abril não tem CC preenchido no Maxiprod)
 - [x] Criar card de produtos de madeira na aba Estoque (idêntico ao card Sob Encomenda)
 - [x] Card Madeira: incluir todos os 60+ produtos vendidos historicamente (não apenas pedidos em aberto)
+- [x] Criar card "Madeira Semi Pronto" abaixo do card Madeira (cópia idêntica, estoque editável, demais campos zerados, sem relação com outros dados)

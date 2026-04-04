@@ -365,6 +365,13 @@
       "when": 1775148911063,
       "tag": "0051_new_maelstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "5",
+      "when": 1775264858210,
+      "tag": "0052_colorful_shooting_star",
+      "breakpoints": true
     }
   ]
 }

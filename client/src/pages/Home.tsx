@@ -6,7 +6,8 @@
  * Sem processamento de nomes, sem filtros manuais de grupo.
  */
 
-import React, { useState, useMemo, useRef, Fragment } from "react";
+import React, { useState, useMemo, useRef, Fragment, useCallback } from "react";
+import { toast } from "sonner";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ import {
   Eye,
   EyeOff,
   TreePine,
+  Hammer,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
@@ -1746,6 +1748,215 @@ function ClassificationCard({
   );
 }
 
+/* --- Semi Pronto Card (informativo, estoque editável manualmente) --- */
+function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
+  items: StockItem[];
+  isOpen: boolean;
+  onToggle: () => void;
+  operatorName?: string;
+}) {
+  const [search, setSearch] = useState("");
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch semi pronto stock data
+  const { data: semiProntoData } = trpc.dashboard.getSemiProntoStock.useQuery(undefined, {
+    refetchInterval: 30000,
+  });
+  const updateMutation = trpc.dashboard.updateSemiProntoStock.useMutation({
+    onSuccess: () => {
+      toast.success("Estoque atualizado!");
+      setEditingItem(null);
+    },
+    onError: () => toast.error("Erro ao salvar"),
+  });
+  const utils = trpc.useUtils();
+
+  // Map of codigoItem -> quantidade from DB
+  const semiProntoMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (semiProntoData?.items) {
+      for (const sp of semiProntoData.items) {
+        map.set(sp.codigoItem, parseFloat(String(sp.quantidade)) || 0);
+      }
+    }
+    return map;
+  }, [semiProntoData]);
+
+  // Only parent items (no children)
+  const parentItems = useMemo(() => items.filter(i => !i.isChild), [items]);
+
+  // Filter by search
+  const filtered = useMemo(() => {
+    if (!search.trim()) return parentItems;
+    const s = search.toLowerCase();
+    return parentItems.filter(i =>
+      i.descricaoItem.toLowerCase().includes(s) ||
+      i.codigoItem.toLowerCase().includes(s)
+    );
+  }, [parentItems, search]);
+
+  // Total estoque from manual entries
+  const totalEstoque = useMemo(() => {
+    let total = 0;
+    for (const item of parentItems) {
+      total += semiProntoMap.get(item.codigoItem) || 0;
+    }
+    return total;
+  }, [parentItems, semiProntoMap]);
+
+  const handleStartEdit = useCallback((codigoItem: string) => {
+    const current = semiProntoMap.get(codigoItem) || 0;
+    setEditingItem(codigoItem);
+    setEditValue(String(current));
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [semiProntoMap]);
+
+  const handleSave = useCallback(() => {
+    if (!editingItem) return;
+    const val = parseFloat(editValue) || 0;
+    updateMutation.mutate(
+      { codigoItem: editingItem, quantidade: val, operatorName: operatorName || undefined },
+      { onSuccess: () => utils.dashboard.getSemiProntoStock.invalidate() }
+    );
+  }, [editingItem, editValue, updateMutation, operatorName, utils]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSave();
+    if (e.key === "Escape") setEditingItem(null);
+  }, [handleSave]);
+
+  return (
+    <div className="bg-white rounded-xl border-l-4 border-l-amber-600 border border-slate-100 shadow-sm transition-all duration-300">
+      {/* Header */}
+      <button
+        onClick={onToggle}
+        className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+              <Hammer className="w-6 h-6 text-amber-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-bold text-slate-800">Madeira Semi Pronto</h3>
+                <span className="text-sm font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{parentItems.length} itens</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque manual</p>
+            </div>
+          </div>
+          {isOpen ? (
+            <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
+          )}
+        </div>
+
+        {/* Metrics row */}
+        <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
+          <div className="bg-teal-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
+            <p className="text-base font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-orange-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
+            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-emerald-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
+            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-blue-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">PO (Compra)</p>
+            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-indigo-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Projetado</p>
+            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-slate-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
+            <p className="text-base font-extrabold text-slate-700">{parentItems.length}</p>
+          </div>
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {isOpen && (
+        <div className="px-5 pb-5 space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Buscar produto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 h-9 text-sm"
+            />
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Código</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Produto</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-amber-600 uppercase">Estoque (cx)</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Pedidos</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Disponível</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">PO</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Projetado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((item) => {
+                  const qty = semiProntoMap.get(item.codigoItem) || 0;
+                  const isEditing = editingItem === item.codigoItem;
+                  return (
+                    <tr key={item.codigoItem} className="border-b border-slate-100 hover:bg-slate-50/50">
+                      <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>
+                      <td className="py-2 px-2 text-sm text-slate-700 max-w-[300px] truncate" title={item.descricaoItem}>{item.descricaoItem}</td>
+                      <td className="py-2 px-2 text-right">
+                        {isEditing ? (
+                          <input
+                            ref={inputRef}
+                            type="number"
+                            min="0"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            onBlur={handleSave}
+                            className="w-20 text-right text-sm border border-amber-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-amber-50"
+                          />
+                        ) : (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
+                            className="text-sm font-bold text-amber-700 hover:bg-amber-50 px-2 py-1 rounded cursor-pointer transition-colors min-w-[60px] text-right"
+                            title="Clique para editar"
+                          >
+                            {formatNumber(qty)}
+                          </button>
+                        )}
+                      </td>
+                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
+                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
+                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
+                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* --- Main Dashboard Content --- */
 function DashboardContent({ items }: { items: StockItem[] }) {
   const operatorCtx = useOperator();
@@ -1753,7 +1964,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const [segmentoFilter, setSegmentoFilter] = useState("all");
   const [sort, setSort] = useState<SortField>("comprimento");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false, madeira: false });
+  const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false, madeira: false, semiPronto: false });
   const [showFinancial, setShowFinancial] = useState(false);
 
   // Fetch classifications
@@ -2190,6 +2401,13 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         showFinancial={showFinancial}
         pricingOverrides={pricingOverrides ?? undefined}
         hideAlerts={true}
+      />
+
+      <SemiProntoCard
+        items={madeiraItems}
+        isOpen={openCards.semiPronto}
+        onToggle={() => toggleCard("semiPronto")}
+        operatorName={operatorCtx.operator?.name}
       />
 
 

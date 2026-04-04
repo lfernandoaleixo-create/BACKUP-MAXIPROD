@@ -761,3 +761,18 @@ export const bankReconciliation = mysqlTable("bank_reconciliation", {
 });
 export type BankReconciliation = typeof bankReconciliation.$inferSelect;
 export type InsertBankReconciliation = typeof bankReconciliation.$inferInsert;
+
+/**
+ * Estoque manual de produtos semi prontos (madeira).
+ * Puramente informativo - sem relação com outros dados do sistema.
+ * Operadores preenchem manualmente a quantidade em estoque.
+ */
+export const semiProntoStock = mysqlTable("semi_pronto_stock", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull().unique(),
+  quantidade: decimal("quantidade", { precision: 18, scale: 5 }).notNull().default("0"),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SemiProntoStock = typeof semiProntoStock.$inferSelect;
+export type InsertSemiProntoStock = typeof semiProntoStock.$inferInsert;
