@@ -1350,7 +1350,7 @@ export const salesRouter = router({
     }),
 
   searchClients: publicProcedure
-    .input(z.object({ query: z.string().min(2) }))
+    .input(z.object({ query: z.string().min(1) }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
