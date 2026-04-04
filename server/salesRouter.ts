@@ -1354,7 +1354,7 @@ export const salesRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-      const qPrefix = `${input.query}%`;
+      const qPrefix = `${input.query.toUpperCase()}%`;
       // Search ALL clients by PREFIX - typing "B" shows clients starting with "B"
       // No LIMIT - show all matching clients, the frontend handles scroll
       const rows = await db.execute(sql`

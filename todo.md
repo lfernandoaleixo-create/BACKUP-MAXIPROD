@@ -1575,3 +1575,4 @@
 - [x] Autocomplete: campo de busca sempre limpo e pronto para nova consulta, card expandido independente
 - [x] Corrigir autocomplete definitivamente: ao digitar "A" deve mostrar TODOS os clientes com A, sem limite de 30, com scroll no dropdown
 - [x] BUG: busca de clientes usa LIKE '%X%' (contém) em vez de LIKE 'X%' (começa com) - digitar B deve mostrar clientes que COMEÇAM com B
+- [x] BUG CRÍTICO: busca era case-sensitive - digitar minúsculo não encontrava nomes em UPPERCASE. Corrigido com toUpperCase() no backend
