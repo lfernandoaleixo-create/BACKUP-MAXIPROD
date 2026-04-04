@@ -2612,9 +2612,17 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         hideAlerts={true}
       />
 
-      {/* KPIs Madeira - Análise dos 3 grupos de madeira */}
-      <div className="mt-2 mb-1">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Resumo Madeira (Madeira + Semi Pronto + Aguardando Escolha)</p>
+      {/* ═══ SEÇÃO MADEIRA ═══ */}
+      <div className="mt-10 mb-5">
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-green-300 to-transparent" />
+          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-5 py-2">
+            <TreePine className="w-5 h-5 text-green-700" />
+            <span className="text-sm font-bold text-green-800 uppercase tracking-wider">Industrialização Madeira</span>
+          </div>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-green-300 to-transparent" />
+        </div>
+        <p className="text-center text-xs text-slate-400 mt-2">Madeira + Semi Pronto + Aguardando Escolha</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KPICard
