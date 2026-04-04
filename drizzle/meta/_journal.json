@@ -379,6 +379,13 @@
       "when": 1775266059584,
       "tag": "0053_giant_katie_power",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "5",
+      "when": 1775309198685,
+      "tag": "0054_romantic_omega_red",
+      "breakpoints": true
     }
   ]
 }

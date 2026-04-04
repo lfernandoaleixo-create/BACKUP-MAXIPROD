@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { appSettings, salesTargets, productSegmentOverrides, salesOrders, dashboardData, productVisibility, productClassification, productPricing, productVariants, operators, operatorGranularPermissions } from "../drizzle/schema";
+import { appSettings, salesTargets, productSegmentOverrides, salesOrders, dashboardData, productVisibility, productClassification, productPricing, productVariants, operators, operatorGranularPermissions, madeiraVisibility } from "../drizzle/schema";
 import { eq, and, sql } from "drizzle-orm";
 
 // Default admin password (can be changed via settings)
@@ -829,6 +829,76 @@ export const settingsRouter = router({
     .input(z.object({ key: z.string(), enabled: z.boolean() }))
     .mutation(async ({ input }) => {
       await setSetting(`feature_toggle_${input.key}`, input.enabled);
+      return { success: true };
+    }),
+
+  // ─── Madeira Visibility ────────────────────────────────────────────────
+  getMadeiraVisibility: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { items: [] };
+    const rows = await db.select().from(madeiraVisibility);
+    return { items: rows };
+  }),
+
+  setMadeiraVisibility: publicProcedure
+    .input(z.object({
+      codigoItem: z.string(),
+      card: z.enum(["madeira", "semiPronto", "aguardandoEscolha"]),
+      visible: z.boolean(),
+      updatedBy: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      const existing = await db.select().from(madeiraVisibility)
+        .where(and(eq(madeiraVisibility.codigoItem, input.codigoItem), eq(madeiraVisibility.card, input.card)));
+      if (existing.length > 0) {
+        await db.update(madeiraVisibility)
+          .set({ visible: input.visible, updatedBy: input.updatedBy })
+          .where(and(eq(madeiraVisibility.codigoItem, input.codigoItem), eq(madeiraVisibility.card, input.card)));
+      } else {
+        await db.insert(madeiraVisibility).values({
+          codigoItem: input.codigoItem,
+          card: input.card,
+          visible: input.visible,
+          updatedBy: input.updatedBy,
+        });
+      }
+      return { success: true };
+    }),
+
+  setBulkMadeiraVisibility: publicProcedure
+    .input(z.object({
+      codigoItem: z.string(),
+      madeira: z.boolean(),
+      semiPronto: z.boolean(),
+      aguardandoEscolha: z.boolean(),
+      updatedBy: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      const cards = [
+        { card: "madeira" as const, visible: input.madeira },
+        { card: "semiPronto" as const, visible: input.semiPronto },
+        { card: "aguardandoEscolha" as const, visible: input.aguardandoEscolha },
+      ];
+      for (const c of cards) {
+        const existing = await db.select().from(madeiraVisibility)
+          .where(and(eq(madeiraVisibility.codigoItem, input.codigoItem), eq(madeiraVisibility.card, c.card)));
+        if (existing.length > 0) {
+          await db.update(madeiraVisibility)
+            .set({ visible: c.visible, updatedBy: input.updatedBy })
+            .where(and(eq(madeiraVisibility.codigoItem, input.codigoItem), eq(madeiraVisibility.card, c.card)));
+        } else {
+          await db.insert(madeiraVisibility).values({
+            codigoItem: input.codigoItem,
+            card: c.card,
+            visible: c.visible,
+            updatedBy: input.updatedBy,
+          });
+        }
+      }
       return { success: true };
     }),
 });

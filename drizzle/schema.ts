@@ -791,3 +791,19 @@ export const aguardandoEscolhaStock = mysqlTable("aguardando_escolha_stock", {
 });
 export type AguardandoEscolhaStock = typeof aguardandoEscolhaStock.$inferSelect;
 export type InsertAguardandoEscolhaStock = typeof aguardandoEscolhaStock.$inferInsert;
+
+/**
+ * Visibilidade dos itens de madeira nos 3 cards (Madeira, Semi Pronto, Aguardando Escolha).
+ * Controla quais itens aparecem em cada card.
+ * Por padrão, todos os itens são visíveis (se não houver registro, é visível).
+ */
+export const madeiraVisibility = mysqlTable("madeira_visibility", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull(),
+  card: varchar("card", { length: 30 }).notNull(), // "madeira" | "semiPronto" | "aguardandoEscolha"
+  visible: boolean("visible").notNull().default(true),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MadeiraVisibility = typeof madeiraVisibility.$inferSelect;
+export type InsertMadeiraVisibility = typeof madeiraVisibility.$inferInsert;

@@ -2173,6 +2173,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const { data: semiProntoKPI } = trpc.dashboard.getSemiProntoStock.useQuery(undefined, { refetchInterval: 30000 });
   const { data: aguardandoKPI } = trpc.dashboard.getAguardandoEscolhaStock.useQuery(undefined, { refetchInterval: 30000 });
 
+  // Fetch madeira visibility settings
+  const { data: madeiraVisData } = trpc.settings.getMadeiraVisibility.useQuery();
+
   // Fetch avg sales prices for valuation
   const { data: pricesData } = trpc.dashboard.getAvgSalesPrices.useQuery(undefined, {
     refetchInterval: 60000,
@@ -2219,9 +2222,35 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   }), [items, classificationMap]);
   const encomendaItems = useMemo(() => items.filter(i => classificationMap.get(i.codigoItem) === "encomenda"), [items, classificationMap]);
 
+  // Build madeira visibility map
+  const madeiraVisMap = useMemo(() => {
+    const map: Record<string, { madeira: boolean; semiPronto: boolean; aguardandoEscolha: boolean }> = {};
+    if (madeiraVisData?.items) {
+      for (const row of madeiraVisData.items) {
+        if (!map[row.codigoItem]) map[row.codigoItem] = { madeira: true, semiPronto: true, aguardandoEscolha: true };
+        if (row.card === "madeira") map[row.codigoItem].madeira = row.visible;
+        if (row.card === "semiPronto") map[row.codigoItem].semiPronto = row.visible;
+        if (row.card === "aguardandoEscolha") map[row.codigoItem].aguardandoEscolha = row.visible;
+      }
+    }
+    return map;
+  }, [madeiraVisData]);
+
   // Itens de madeira: todos os produtos de industrialização (varetas, espetos, palitos, madeira serrada)
-  // Esses são os produtos industrializados de madeira que não têm estoque no Maxiprod
-  const madeiraItems = useMemo(() => items.filter(i => i.grupo === "industrializacao"), [items]);
+  const allMadeiraItems = useMemo(() => items.filter(i => i.grupo === "industrializacao"), [items]);
+  // Filtered by visibility for each card
+  const madeiraItems = useMemo(() => allMadeiraItems.filter(i => {
+    const vis = madeiraVisMap[i.codigoItem];
+    return !vis || vis.madeira;
+  }), [allMadeiraItems, madeiraVisMap]);
+  const madeiraItemsSemiPronto = useMemo(() => allMadeiraItems.filter(i => {
+    const vis = madeiraVisMap[i.codigoItem];
+    return !vis || vis.semiPronto;
+  }), [allMadeiraItems, madeiraVisMap]);
+  const madeiraItemsAguardando = useMemo(() => allMadeiraItems.filter(i => {
+    const vis = madeiraVisMap[i.codigoItem];
+    return !vis || vis.aguardandoEscolha;
+  }), [allMadeiraItems, madeiraVisMap]);
 
   const revendaItems = useMemo(() => items.filter((i) => i.grupo === "importacao_revenda"), [items]);
   const industItems = useMemo(() => items.filter((i) => i.grupo === "industrializacao"), [items]);
@@ -2686,14 +2715,14 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       />
 
       <SemiProntoCard
-        items={madeiraItems}
+        items={madeiraItemsSemiPronto}
         isOpen={openCards.semiPronto}
         onToggle={() => toggleCard("semiPronto")}
         operatorName={operatorCtx.operator?.name}
       />
 
       <AguardandoEscolhaCard
-        items={madeiraItems}
+        items={madeiraItemsAguardando}
         isOpen={openCards.aguardandoEscolha}
         onToggle={() => toggleCard("aguardandoEscolha")}
         operatorName={operatorCtx.operator?.name}

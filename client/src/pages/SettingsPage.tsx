@@ -45,6 +45,8 @@ import {
   ChevronUp,
   Eye,
   EyeOff,
+  TreePine,
+  ToggleLeft,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
@@ -2107,12 +2109,204 @@ function VariantsPanel() {
   );
 }
 
+// ─── Madeira Visibility Panel ──────────────────────────────────────────────────────
+function MadeiraVisibilityPanel() {
+  const { data: dashData } = trpc.dashboard.getData.useQuery();
+  const { data: visibilityData, isLoading: visLoading } = trpc.settings.getMadeiraVisibility.useQuery();
+  const utils = trpc.useUtils();
+  const { operator } = useOperator();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const setBulkVisibility = trpc.settings.setBulkMadeiraVisibility.useMutation({
+    onSuccess: () => {
+      utils.settings.getMadeiraVisibility.invalidate();
+      toast.success("Visibilidade atualizada!");
+    },
+    onError: () => toast.error("Erro ao atualizar visibilidade"),
+  });
+
+  // Get madeira items from dashboard items
+  const madeiraItems = useMemo(() => {
+    if (!dashData?.items) return [];
+    return (dashData.items as any[])
+      .filter((i: any) => i.grupo === "industrializacao")
+      .sort((a: any, b: any) => (a.codigoItem || "").localeCompare(b.codigoItem || ""));
+  }, [dashData]);
+
+  // Build visibility map: { codigoItem: { madeira: bool, semiPronto: bool, aguardandoEscolha: bool } }
+  const visibilityMap = useMemo(() => {
+    const map: Record<string, { madeira: boolean; semiPronto: boolean; aguardandoEscolha: boolean }> = {};
+    if (visibilityData?.items) {
+      for (const row of visibilityData.items) {
+        if (!map[row.codigoItem]) map[row.codigoItem] = { madeira: true, semiPronto: true, aguardandoEscolha: true };
+        if (row.card === "madeira") map[row.codigoItem].madeira = row.visible;
+        if (row.card === "semiPronto") map[row.codigoItem].semiPronto = row.visible;
+        if (row.card === "aguardandoEscolha") map[row.codigoItem].aguardandoEscolha = row.visible;
+      }
+    }
+    return map;
+  }, [visibilityData]);
+
+  const getVisibility = (codigoItem: string) => {
+    return visibilityMap[codigoItem] || { madeira: true, semiPronto: true, aguardandoEscolha: true };
+  };
+
+  const toggleVisibility = (codigoItem: string, card: "madeira" | "semiPronto" | "aguardandoEscolha") => {
+    const current = getVisibility(codigoItem);
+    setBulkVisibility.mutate({
+      codigoItem,
+      madeira: card === "madeira" ? !current.madeira : current.madeira,
+      semiPronto: card === "semiPronto" ? !current.semiPronto : current.semiPronto,
+      aguardandoEscolha: card === "aguardandoEscolha" ? !current.aguardandoEscolha : current.aguardandoEscolha,
+      updatedBy: operator?.name || undefined,
+    });
+  };
+
+  const filtered = madeiraItems.filter((item: any) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (item.codigoItem || "").toLowerCase().includes(term) ||
+           (item.descricaoItem || "").toLowerCase().includes(term);
+  });
+
+  // Count visible items per card
+  const countVisible = (card: "madeira" | "semiPronto" | "aguardandoEscolha") => {
+    return madeiraItems.filter((item: any) => {
+      const vis = getVisibility(item.codigoItem);
+      return vis[card];
+    }).length;
+  };
+
+  if (visLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-green-600" /></div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+            <TreePine className="w-5 h-5 text-green-700" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800">Visibilidade dos Produtos de Madeira</h3>
+            <p className="text-sm text-slate-500">Controle quais produtos aparecem em cada card na aba Estoque</p>
+          </div>
+        </div>
+
+        {/* Summary cards */}
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="bg-emerald-50 rounded-lg p-3 text-center border border-emerald-200">
+            <p className="text-xs text-emerald-600 font-medium">Madeira</p>
+            <p className="text-lg font-bold text-emerald-700">{countVisible("madeira")}/{madeiraItems.length}</p>
+            <p className="text-xs text-emerald-500">vis\u00edveis</p>
+          </div>
+          <div className="bg-amber-50 rounded-lg p-3 text-center border border-amber-200">
+            <p className="text-xs text-amber-600 font-medium">Semi Pronto</p>
+            <p className="text-lg font-bold text-amber-700">{countVisible("semiPronto")}/{madeiraItems.length}</p>
+            <p className="text-xs text-amber-500">vis\u00edveis</p>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-3 text-center border border-purple-200">
+            <p className="text-xs text-purple-600 font-medium">Aguardando Escolha</p>
+            <p className="text-lg font-bold text-purple-700">{countVisible("aguardandoEscolha")}/{madeiraItems.length}</p>
+            <p className="text-xs text-purple-500">vis\u00edveis</p>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Buscar por c\u00f3digo ou descri\u00e7\u00e3o..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {/* Products table */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="text-left px-4 py-3 font-medium text-slate-600">C\u00f3digo</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600">Descri\u00e7\u00e3o</th>
+              <th className="text-center px-4 py-3 font-medium text-emerald-600">
+                <div className="flex items-center justify-center gap-1">
+                  <TreePine className="w-3.5 h-3.5" />
+                  Madeira
+                </div>
+              </th>
+              <th className="text-center px-4 py-3 font-medium text-amber-600">
+                <div className="flex items-center justify-center gap-1">
+                  <ToggleLeft className="w-3.5 h-3.5" />
+                  Semi Pronto
+                </div>
+              </th>
+              <th className="text-center px-4 py-3 font-medium text-purple-600">
+                <div className="flex items-center justify-center gap-1">
+                  <ToggleLeft className="w-3.5 h-3.5" />
+                  Ag. Escolha
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={5} className="text-center py-8 text-slate-400">
+                {madeiraItems.length === 0 ? "Aguardando sincroniza\u00e7\u00e3o dos dados..." : "Nenhum produto encontrado"}
+              </td></tr>
+            ) : (
+              filtered.map((item: any, idx: number) => {
+                const vis = getVisibility(item.codigoItem);
+                return (
+                  <tr key={item.codigoItem || idx} className={`border-b border-slate-100 hover:bg-slate-50 ${idx % 2 === 0 ? "bg-white" : "bg-slate-25"}`}>
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{item.codigoItem}</td>
+                    <td className="px-4 py-2.5 text-slate-700 text-xs">{item.descricaoItem}</td>
+                    <td className="px-4 py-2.5 text-center">
+                      <button
+                        onClick={() => toggleVisibility(item.codigoItem, "madeira")}
+                        className={`w-8 h-5 rounded-full transition-colors relative ${vis.madeira ? "bg-emerald-500" : "bg-slate-300"}`}
+                        disabled={setBulkVisibility.isPending}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${vis.madeira ? "left-3.5" : "left-0.5"}`} />
+                      </button>
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      <button
+                        onClick={() => toggleVisibility(item.codigoItem, "semiPronto")}
+                        className={`w-8 h-5 rounded-full transition-colors relative ${vis.semiPronto ? "bg-amber-500" : "bg-slate-300"}`}
+                        disabled={setBulkVisibility.isPending}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${vis.semiPronto ? "left-3.5" : "left-0.5"}`} />
+                      </button>
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      <button
+                        onClick={() => toggleVisibility(item.codigoItem, "aguardandoEscolha")}
+                        className={`w-8 h-5 rounded-full transition-colors relative ${vis.aguardandoEscolha ? "bg-purple-500" : "bg-slate-300"}`}
+                        disabled={setBulkVisibility.isPending}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${vis.aguardandoEscolha ? "left-3.5" : "left-0.5"}`} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Settings Page ────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const { hasGranularAccess } = useOperator();
   // TEMPORÁRIO: senha desabilitada
   const [adminPassword, setAdminPassword] = useState<string>("bypass");
-  const [activeTab, setActiveTab] = useState<"passwords" | "alerts" | "products" | "data" | "bank" | "variants" | "visibility">("passwords");
+  const [activeTab, setActiveTab] = useState<"passwords" | "alerts" | "products" | "data" | "bank" | "variants" | "visibility" | "madeira">("passwords");
 
   // if (!adminPassword) {
   //   return <PasswordGate onUnlock={setAdminPassword} />;
@@ -2126,6 +2320,7 @@ export default function SettingsPage() {
     { id: "bank" as const, label: "Bancos", icon: Landmark, color: "text-indigo-600", perm: "cfg.bancos" },
     { id: "variants" as const, label: "Variações", icon: GitBranch, color: "text-teal-500", perm: "cfg.variacoes" },
     { id: "data" as const, label: "Dados", icon: Package, color: "text-blue-600", perm: "cfg.dados" },
+    { id: "madeira" as const, label: "Madeira", icon: TreePine, color: "text-green-700", perm: "cfg.produtos" },
   ];
   const tabs = allTabs.filter(t => hasGranularAccess(t.perm));
 
@@ -2174,6 +2369,7 @@ export default function SettingsPage() {
         {activeTab === "bank" && <BankBalancesPanel />}
         {activeTab === "variants" && <VariantsPanel />}
         {activeTab === "data" && <DataInfoPanel />}
+        {activeTab === "madeira" && <MadeiraVisibilityPanel />}
       </main>
     </div>
   );
