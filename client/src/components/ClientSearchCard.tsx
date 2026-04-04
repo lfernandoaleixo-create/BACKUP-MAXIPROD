@@ -88,9 +88,10 @@ export function ClientSearchCard() {
 
   const handleSelectClient = (clientName: string) => {
     setSelectedClient(clientName);
-    setSearchQuery(clientName);
+    setSearchQuery(""); // Limpa o campo de busca após selecionar
     setShowDropdown(false);
     setExpanded(true);
+    inputRef.current?.blur();
   };
 
   // Summary line for header
@@ -126,15 +127,16 @@ export function ClientSearchCard() {
                   }
                 }}
                 onFocus={() => {
-                  if (searchQuery.length >= 1 && !selectedClient) setShowDropdown(true);
+                  if (searchQuery.length >= 1) setShowDropdown(true);
                 }}
                 className="w-full h-8 pl-9 pr-8 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 text-slate-700 placeholder:text-slate-400"
               />
-              {selectedClient && (
+              {searchQuery.length > 0 && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    clearSelection();
+                    setSearchQuery("");
+                    setShowDropdown(false);
                     inputRef.current?.focus();
                   }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
@@ -145,7 +147,7 @@ export function ClientSearchCard() {
             </div>
 
             {/* Dropdown Results */}
-            {showDropdown && searchResults && searchResults.length > 0 && !selectedClient && (
+            {showDropdown && searchResults && searchResults.length > 0 && (
               <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
                 {searchResults.map((client, idx) => (
                   <button
@@ -186,12 +188,21 @@ export function ClientSearchCard() {
             <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
           )}
           {selectedClient && (
-            <button onClick={() => setExpanded(!expanded)}>
-              {expanded
-                ? <ChevronDown className="w-4 h-4 text-slate-400" />
-                : <ChevronRight className="w-4 h-4 text-slate-400" />
-              }
-            </button>
+            <>
+              <button onClick={() => setExpanded(!expanded)}>
+                {expanded
+                  ? <ChevronDown className="w-4 h-4 text-slate-400" />
+                  : <ChevronRight className="w-4 h-4 text-slate-400" />
+                }
+              </button>
+              <button
+                onClick={clearSelection}
+                className="text-slate-400 hover:text-red-500 transition-colors"
+                title="Fechar consulta"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       </div>

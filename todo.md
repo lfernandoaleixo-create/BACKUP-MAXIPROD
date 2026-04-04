@@ -1571,3 +1571,5 @@
 - [x] Refazer card de busca de cliente seguindo padrão visual dos outros cards da aba Vendas (mesma paleta, autocomplete no header, expansão ao selecionar)
 - [x] Corrigir dropdown do autocomplete de busca de cliente: deve sobrepor (z-index) os cards abaixo em vez de ficar escondido
 - [x] Garantir que TODOS os clientes cadastrados apareçam na busca, sem filtro de grupo ou categoria - buscar de todas as fontes disponíveis (pedidos, NFs, contas a receber)
+- [x] Autocomplete: limpar campo de busca após selecionar cliente (não manter nome no input)
+- [x] Autocomplete: campo de busca sempre limpo e pronto para nova consulta, card expandido independente
