@@ -1567,3 +1567,4 @@
 - [x] Melhorar separação visual entre seção Sob Encomenda e seção Madeira (espaçamento, divisor, título de seção)
 - [x] Alterar KPI card PO → "Madeira Semi Pronto" e KPI card Projetado → "Madeira Aguardando Escolha" na seção Madeira
 - [x] Criar nova aba "Madeira" em Configurações com lista dos 63 itens e toggles de visibilidade para os 3 cards (Madeira, Semi Pronto, Aguardando Escolha)
+- [x] Criar card de busca de cliente na aba Vendas com resumo completo (pedidos, pagamentos, inadimplência, produtos) - posicionado como primeiro card abaixo da sincronização

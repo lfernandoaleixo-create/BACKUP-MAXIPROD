@@ -1,8 +1,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems } from "../drizzle/schema";
-import { sql, and, gte, lte } from "drizzle-orm";
+import { salesOrders, orderItems, accountsReceivable } from "../drizzle/schema";
+import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
 
 /**
  * Sales analytics router
@@ -1347,5 +1347,197 @@ export const salesRouter = router({
       const totalValue = orders.reduce((sum, o) => sum + o.valorTotal, 0);
 
       return { months, orders, totalValue: Math.round(totalValue * 100) / 100 };
+    }),
+
+  searchClients: publicProcedure
+    .input(z.object({ query: z.string().min(2) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const q = `%${input.query}%`;
+      const rows = await db.select({
+        cliente: salesOrders.cliente,
+        clienteApelido: salesOrders.clienteApelido,
+        uf: salesOrders.uf,
+        crmSegmento: salesOrders.crmSegmento,
+      }).from(salesOrders)
+        .where(or(like(salesOrders.cliente, q), like(salesOrders.clienteApelido, q)))
+        .groupBy(salesOrders.cliente, salesOrders.clienteApelido, salesOrders.uf, salesOrders.crmSegmento)
+        .orderBy(salesOrders.cliente)
+        .limit(20);
+      return rows;
+    }),
+
+  getClientSummary: publicProcedure
+    .input(z.object({ clienteName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const cn = input.clienteName;
+
+      const allOrders = await db.select().from(salesOrders)
+        .where(eq(salesOrders.cliente, cn))
+        .orderBy(desc(salesOrders.dataEmissao));
+
+      const allReceivables = await db.select().from(accountsReceivable)
+        .where(eq(accountsReceivable.cliente, cn))
+        .orderBy(desc(accountsReceivable.vencimentoData));
+
+      const clientOrderItems = await db.select().from(orderItems)
+        .where(eq(orderItems.cliente, cn));
+
+      const now = new Date();
+      const nowStr = now.toISOString().slice(0, 10);
+
+      const firstOrder = allOrders.length > 0 ? allOrders[allOrders.length - 1] : null;
+      const clientInfo = {
+        nome: cn,
+        apelido: firstOrder?.clienteApelido || "",
+        uf: firstOrder?.uf || "",
+        crmSegmento: firstOrder?.crmSegmento || "",
+        razaoSocial: firstOrder?.razaoSocial || "",
+        telefone: firstOrder?.clienteTelefone || "",
+        email: firstOrder?.clienteEmail || "",
+        endereco: firstOrder ? [
+          firstOrder.enderecoLogradouro,
+          firstOrder.enderecoNumero,
+          firstOrder.enderecoComplemento,
+          firstOrder.enderecoBairro,
+          firstOrder.enderecoCidade,
+          firstOrder.uf,
+          firstOrder.enderecoCep,
+        ].filter(Boolean).join(", ") : "",
+        clienteDesde: firstOrder?.dataEmissao || "",
+      };
+
+      const totalPedidos = new Set(allOrders.map(o => o.pedido)).size;
+      const valorTotalPedidos = allOrders.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
+      const pedidosFaturados = allOrders.filter(o => o.estadoItem === "Faturado" || o.estadoItem === "Entrega futura");
+      const valorFaturado = pedidosFaturados.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
+      const pedidosAFaturar = allOrders.filter(o => o.estadoItem === "A faturar" || o.estadoItem === "Aprovado");
+      const valorAFaturar = pedidosAFaturar.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
+      const pedidosEmDigitacao = allOrders.filter(o => o.estadoNota === "Digita\u00e7\u00e3o" || o.estadoNota === "A aprovar");
+      const valorEmDigitacao = pedidosEmDigitacao.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
+
+      const titulosEmitidos = allReceivables.filter(r => r.estado === "EMITIDO");
+      const titulosRecebidos = allReceivables.filter(r => r.estado === "RECEBIDO");
+      const valorEmAberto = titulosEmitidos.reduce((s, r) => {
+        const original = parseFloat(r.valorOriginal || "0");
+        const recebido = parseFloat(r.valorRecebidoLiquido || "0");
+        return s + (original - recebido);
+      }, 0);
+      const valorRecebido = titulosRecebidos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
+
+      const titulosVencidos = titulosEmitidos.filter(r => {
+        if (!r.vencimentoData) return false;
+        return r.vencimentoData < nowStr;
+      });
+      const valorVencido = titulosVencidos.reduce((s, r) => {
+        const original = parseFloat(r.valorOriginal || "0");
+        const recebido = parseFloat(r.valorRecebidoLiquido || "0");
+        return s + (original - recebido);
+      }, 0);
+      const diasAtrasoList = titulosVencidos.map(r => {
+        const venc = new Date(r.vencimentoData!);
+        return Math.floor((now.getTime() - venc.getTime()) / (1000 * 60 * 60 * 24));
+      });
+      const diasAtrasoMedio = diasAtrasoList.length > 0 ? Math.round(diasAtrasoList.reduce((a, b) => a + b, 0) / diasAtrasoList.length) : 0;
+      const diasAtrasoMax = diasAtrasoList.length > 0 ? Math.max(...diasAtrasoList) : 0;
+
+      const productMap = new Map<string, { descricao: string; codigo: string; qtd: number; valor: number; count: number }>();
+      for (const o of allOrders) {
+        const key = o.descricaoItem || o.descricao || "";
+        const existing = productMap.get(key) || { descricao: key, codigo: o.codigoItem || "", qtd: 0, valor: 0, count: 0 };
+        existing.qtd += parseFloat(o.quantidade || "0");
+        existing.valor += parseFloat(o.valorTotal || "0");
+        existing.count += 1;
+        productMap.set(key, existing);
+      }
+      const topProducts = Array.from(productMap.values())
+        .sort((a, b) => b.valor - a.valor)
+        .slice(0, 15);
+
+      const monthlyMap = new Map<string, number>();
+      for (const o of allOrders) {
+        if (!o.dataEmissao) continue;
+        const month = o.dataEmissao.slice(0, 7);
+        monthlyMap.set(month, (monthlyMap.get(month) || 0) + parseFloat(o.valorTotal || "0"));
+      }
+      const monthlyEvolution = Array.from(monthlyMap.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .slice(-12)
+        .map(([month, valor]) => ({ month, valor: Math.round(valor * 100) / 100 }));
+
+      const seenPedidos = new Set<string>();
+      const recentOrders: Array<{ pedido: string; data: string; valor: number; status: string; itens: number }> = [];
+      for (const o of allOrders) {
+        if (!o.pedido || seenPedidos.has(o.pedido)) continue;
+        seenPedidos.add(o.pedido);
+        const ois = allOrders.filter((x: typeof allOrders[number]) => x.pedido === o.pedido);
+        const valorPedido = ois.reduce((s, x) => s + parseFloat(x.valorTotal || "0"), 0);
+        recentOrders.push({
+          pedido: o.pedido,
+          data: o.dataEmissao || "",
+          valor: Math.round(valorPedido * 100) / 100,
+          status: o.estadoNota || o.estadoItem || "",
+          itens: ois.length,
+        });
+        if (recentOrders.length >= 20) break;
+      }
+
+      const recentReceivables = allReceivables.slice(0, 20).map((r: typeof allReceivables[number]) => ({
+        documento: r.documentoVinculadoNumero || "",
+        emissao: r.emissaoData || "",
+        vencimento: r.vencimentoData || "",
+        liquidacao: r.liquidacaoData || "",
+        valorOriginal: Math.round(parseFloat(r.valorOriginal || "0") * 100) / 100,
+        valorRecebido: Math.round(parseFloat(r.valorRecebidoLiquido || "0") * 100) / 100,
+        estado: r.estado,
+        parcela: r.parcela,
+        totalParcelas: r.parcelasQuantidadeTotal,
+        referente: r.referenteA || "",
+      }));
+
+      const pendingItems = clientOrderItems.filter((oi: typeof clientOrderItems[number]) => {
+        const st = oi.estadoItem;
+        return st === "A faturar" || st === "Entrega futura" || st === "Aprovado";
+      }).map((oi: typeof clientOrderItems[number]) => ({
+        descricao: oi.descricao || "",
+        codigo: oi.codigoItem || "",
+        quantidade: parseFloat(oi.quantidade || "0"),
+        pedido: oi.numeroPedido || "",
+      }));
+
+      return {
+        clientInfo,
+        orders: {
+          totalPedidos,
+          valorTotalPedidos: Math.round(valorTotalPedidos * 100) / 100,
+          valorFaturado: Math.round(valorFaturado * 100) / 100,
+          valorAFaturar: Math.round(valorAFaturar * 100) / 100,
+          valorEmDigitacao: Math.round(valorEmDigitacao * 100) / 100,
+          pedidosFaturados: pedidosFaturados.length,
+          pedidosAFaturar: pedidosAFaturar.length,
+          pedidosEmDigitacao: pedidosEmDigitacao.length,
+        },
+        receivables: {
+          totalTitulos: allReceivables.length,
+          titulosEmAberto: titulosEmitidos.length,
+          titulosRecebidos: titulosRecebidos.length,
+          valorEmAberto: Math.round(valorEmAberto * 100) / 100,
+          valorRecebido: Math.round(valorRecebido * 100) / 100,
+        },
+        overdue: {
+          titulosVencidos: titulosVencidos.length,
+          valorVencido: Math.round(valorVencido * 100) / 100,
+          diasAtrasoMedio,
+          diasAtrasoMax,
+        },
+        topProducts,
+        monthlyEvolution,
+        recentOrders,
+        recentReceivables,
+        pendingItems,
+      };
     }),
 });

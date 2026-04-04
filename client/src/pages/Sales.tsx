@@ -6,6 +6,7 @@
 import React, { useState, useMemo, useCallback, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import ConnectionStatusCard from "@/components/ConnectionStatusCard";
+import { ClientSearchCard } from "@/components/ClientSearchCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -2744,6 +2745,8 @@ export default function Sales() {
         </div>
 
         <ConnectionStatusCard />
+
+        <ClientSearchCard />
 
         {!hasData ? (
           <div className="text-center py-20">
