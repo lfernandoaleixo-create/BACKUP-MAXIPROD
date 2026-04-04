@@ -148,20 +148,23 @@ export function ClientSearchCard() {
 
             {/* Dropdown Results */}
             {showDropdown && searchResults && searchResults.length > 0 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[70vh] overflow-y-auto">
+                <div className="sticky top-0 bg-slate-50 px-4 py-1.5 border-b border-slate-200 text-[10px] text-slate-500 font-medium">
+                  {searchResults.length} cliente{searchResults.length !== 1 ? 's' : ''} encontrado{searchResults.length !== 1 ? 's' : ''}
+                </div>
                 {searchResults.map((client, idx) => (
                   <button
                     key={idx}
-                    className="w-full px-4 py-2.5 text-left hover:bg-slate-50 flex items-center justify-between border-b border-slate-100 last:border-0 transition-colors"
+                    className="w-full px-4 py-2 text-left hover:bg-blue-50 flex items-center justify-between border-b border-slate-100 last:border-0 transition-colors"
                     onClick={() => handleSelectClient(client.cliente || "")}
                   >
-                    <div>
-                      <div className="font-medium text-sm text-slate-700">{client.cliente}</div>
-                      {client.clienteApelido && (
-                        <div className="text-xs text-slate-400">{client.clienteApelido}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-xs text-slate-700 truncate">{client.cliente}</div>
+                      {client.clienteApelido && client.clienteApelido !== client.cliente && (
+                        <div className="text-[10px] text-slate-400 truncate">{client.clienteApelido}</div>
                       )}
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5 shrink-0 ml-2">
                       {client.uf && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-medium">
                           {client.uf}

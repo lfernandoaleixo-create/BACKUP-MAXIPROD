@@ -1354,24 +1354,24 @@ export const salesRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-      const q = `%${input.query}%`;
+      const qContains = `%${input.query}%`;
       // Search ALL clients from both sales_orders and accounts_receivable using UNION
+      // No LIMIT - show all matching clients, the frontend handles scroll
       const rows = await db.execute(sql`
         SELECT cliente, clienteApelido, uf, crmSegmento
         FROM (
           SELECT cliente, clienteApelido, uf, crmSegmento
           FROM sales_orders
-          WHERE (cliente LIKE ${q} OR clienteApelido LIKE ${q})
+          WHERE (cliente LIKE ${qContains} OR clienteApelido LIKE ${qContains})
             AND cliente IS NOT NULL AND cliente != ''
           UNION
           SELECT cliente, NULL as clienteApelido, NULL as uf, NULL as crmSegmento
           FROM accounts_receivable
-          WHERE cliente LIKE ${q}
+          WHERE cliente LIKE ${qContains}
             AND cliente IS NOT NULL AND cliente != ''
         ) all_clients
         GROUP BY cliente
         ORDER BY cliente
-        LIMIT 30
       `);
       // mysql2 returns [rows, fields] - extract rows
       const results = Array.isArray(rows) && Array.isArray(rows[0]) ? rows[0] : rows;

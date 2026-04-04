@@ -1573,3 +1573,4 @@
 - [x] Garantir que TODOS os clientes cadastrados apareçam na busca, sem filtro de grupo ou categoria - buscar de todas as fontes disponíveis (pedidos, NFs, contas a receber)
 - [x] Autocomplete: limpar campo de busca após selecionar cliente (não manter nome no input)
 - [x] Autocomplete: campo de busca sempre limpo e pronto para nova consulta, card expandido independente
+- [x] Corrigir autocomplete definitivamente: ao digitar "A" deve mostrar TODOS os clientes com A, sem limite de 30, com scroll no dropdown
