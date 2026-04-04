@@ -1565,3 +1565,4 @@
 - [x] Criar card "Madeira Aguardando Escolha" idêntico ao Semi Pronto (estoque editável, demais campos zerados, sem relação com outros dados)
 - [x] Criar 6 cards de resumo (Estoque Total, Pedidos, Disponível, PO, Projetado, Alertas) entre Sob Encomenda e Madeira para análise dos 3 grupos de madeira
 - [x] Melhorar separação visual entre seção Sob Encomenda e seção Madeira (espaçamento, divisor, título de seção)
+- [x] Alterar KPI card PO → "Madeira Semi Pronto" e KPI card Projetado → "Madeira Aguardando Escolha" na seção Madeira

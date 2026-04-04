@@ -2647,17 +2647,17 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           theme="emerald"
         />
         <KPICard
-          label="PO (A Receber)"
-          value={`${formatNumber(madeiraPOCx)} cx`}
-          sub="Pedidos de compra"
-          icon={Ship}
+          label="Semi Pronto"
+          value={`${formatNumber(semiProntoTotal)} cx`}
+          sub="Estoque semi pronto"
+          icon={Hammer}
           theme="blue"
         />
         <KPICard
-          label="Projetado"
-          value={`${formatNumber(madeiraProjetadoCx)} cx`}
-          sub="Disponivel + PO"
-          icon={TrendingUp}
+          label="Aguardando Escolha"
+          value={`${formatNumber(aguardandoTotal)} cx`}
+          sub="Estoque aguardando"
+          icon={Clock}
           theme="indigo"
         />
         <KPICard
