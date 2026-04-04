@@ -776,3 +776,18 @@ export const semiProntoStock = mysqlTable("semi_pronto_stock", {
 });
 export type SemiProntoStock = typeof semiProntoStock.$inferSelect;
 export type InsertSemiProntoStock = typeof semiProntoStock.$inferInsert;
+
+/**
+ * Estoque manual de produtos aguardando escolha (madeira).
+ * Puramente informativo - sem relação com outros dados do sistema.
+ * Operadores preenchem manualmente a quantidade em estoque.
+ */
+export const aguardandoEscolhaStock = mysqlTable("aguardando_escolha_stock", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull().unique(),
+  quantidade: decimal("quantidade", { precision: 18, scale: 5 }).notNull().default("0"),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AguardandoEscolhaStock = typeof aguardandoEscolhaStock.$inferSelect;
+export type InsertAguardandoEscolhaStock = typeof aguardandoEscolhaStock.$inferInsert;

@@ -372,6 +372,13 @@
       "when": 1775264858210,
       "tag": "0052_colorful_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "5",
+      "when": 1775266059584,
+      "tag": "0053_giant_katie_power",
+      "breakpoints": true
     }
   ]
 }

@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { dashboardData, scraperStatus, salesOrders, semiProntoStock } from "../drizzle/schema";
+import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock } from "../drizzle/schema";
 import { sql, desc, eq, and } from "drizzle-orm";
 import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
 import { isSchedulerRunning } from "./scheduler";
@@ -327,6 +327,44 @@ export const appRouter = router({
         
         // Upsert: insert or update
         await db.insert(semiProntoStock)
+          .values({
+            codigoItem: input.codigoItem,
+            quantidade: String(input.quantidade),
+            updatedBy: input.operatorName || null,
+          })
+          .onDuplicateKeyUpdate({
+            set: {
+              quantidade: sql`${String(input.quantidade)}`,
+              updatedBy: input.operatorName || null,
+            },
+          });
+        
+        return { success: true };
+      }),
+    /**
+     * Get aguardando escolha stock (manual, informational only)
+     */
+    getAguardandoEscolhaStock: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { items: [] };
+      const rows = await db.select().from(aguardandoEscolhaStock);
+      return { items: rows };
+    }),
+
+    /**
+     * Update aguardando escolha stock quantity for a single item
+     */
+    updateAguardandoEscolhaStock: publicProcedure
+      .input(z.object({
+        codigoItem: z.string(),
+        quantidade: z.number().min(0),
+        operatorName: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB not available");
+        
+        await db.insert(aguardandoEscolhaStock)
           .values({
             codigoItem: input.codigoItem,
             quantidade: String(input.quantidade),
