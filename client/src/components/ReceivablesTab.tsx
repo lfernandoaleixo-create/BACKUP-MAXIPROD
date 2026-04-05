@@ -252,37 +252,89 @@ export default function ReceivablesTab() {
       )}
 
       {/* Cards resumo por empresa */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={`grid gap-4 ${empresas.length === 1 ? 'grid-cols-1' : empresas.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
         {empresas.map(emp => {
           const colors = getEmpresaColor(emp.nome);
           const pctVencido = emp.total > 0 ? (emp.vencido / emp.total) * 100 : 0;
           const isOpen = expandedEmpresas.has(emp.nome);
+          // Contar bancos únicos
+          const bancosSet = new Set<string>();
+          emp.meses.forEach(m => m.contas.forEach(c => bancosSet.add(`${c.bancoNome}|${c.contaNumero}`)));
+          const numBancos = bancosSet.size;
+          // Meses vencidos vs a vencer
+          const today = new Date().toISOString().substring(0, 7);
+          const mesesVencidos = emp.meses.filter(m => m.mes < today).length;
+          const mesesAVencer = emp.meses.filter(m => m.mes >= today).length;
 
           return (
             <button key={emp.nome} onClick={() => toggleSet(setExpandedEmpresas, emp.nome)}
-              className={`rounded-xl border-2 p-4 text-left transition-all hover:shadow-lg ${colors.bg} ${isOpen ? `${colors.border} ring-2 ring-offset-1 ring-blue-400 shadow-lg` : colors.border}`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/80 shadow-sm">
-                    <Building2 className={`w-5 h-5 ${colors.text}`} />
+              className={`rounded-2xl border-2 p-0 text-left transition-all hover:shadow-xl ${colors.bg} ${isOpen ? `${colors.border} ring-2 ring-offset-2 ring-blue-400 shadow-xl` : colors.border}`}>
+              {/* Top header com nome e total */}
+              <div className={`px-5 py-4 flex items-center justify-between ${colors.headerBg} rounded-t-xl`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-white shadow-sm border ${colors.border}`}>
+                    <Building2 className={`w-6 h-6 ${colors.text}`} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-slate-800">{shortEmpresaName(emp.nome)}</h3>
-                    <span className="text-xs text-slate-500">{emp.count} títulos · {emp.meses.length} {emp.meses.length === 1 ? "mês" : "meses"}</span>
+                    <h3 className={`font-bold text-lg ${colors.text}`}>{shortEmpresaName(emp.nome)}</h3>
+                    <span className="text-xs text-slate-500">{emp.nome}</span>
                   </div>
                 </div>
-                {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-              </div>
-              <div className="text-2xl font-bold text-slate-800 mb-3">{formatCurrency(emp.total)}</div>
-              <div className="w-full h-2.5 rounded-full bg-white/60 overflow-hidden mb-2.5">
-                <div className="h-full flex">
-                  {pctVencido > 0 && <div className="bg-red-400 h-full" style={{ width: `${pctVencido}%` }} />}
-                  <div className={`${colors.accent} h-full opacity-70`} style={{ width: `${100 - pctVencido}%` }} />
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <div className="text-2xl font-extrabold text-slate-800">{formatCurrency(emp.total)}</div>
+                    <div className="text-xs text-slate-500">{emp.count} títulos</div>
+                  </div>
+                  {isOpen ? <ChevronDown className="w-5 h-5 text-slate-400 ml-2" /> : <ChevronRight className="w-5 h-5 text-slate-400 ml-2" />}
                 </div>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-red-600 flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Vencido: {formatCurrency(emp.vencido)}</span>
-                <span className={`${colors.text} flex items-center gap-1`}><Clock className="w-3 h-3" />A vencer: {formatCurrency(emp.aVencer)}</span>
+
+              {/* Corpo com métricas */}
+              <div className="px-5 py-4 space-y-3">
+                {/* Barra de progresso */}
+                <div className="w-full h-3 rounded-full bg-white/70 overflow-hidden shadow-inner">
+                  <div className="h-full flex">
+                    {pctVencido > 0 && <div className="bg-red-400 h-full transition-all" style={{ width: `${pctVencido}%` }} />}
+                    <div className={`${colors.accent} h-full opacity-60 transition-all`} style={{ width: `${100 - pctVencido}%` }} />
+                  </div>
+                </div>
+
+                {/* Valores vencido / a vencer */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-red-50 rounded-lg px-3 py-2.5 border border-red-200">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                      <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Vencido</span>
+                    </div>
+                    <div className="text-base font-bold text-red-700">{formatCurrency(emp.vencido)}</div>
+                  </div>
+                  <div className={`${colors.bg} rounded-lg px-3 py-2.5 border ${colors.border}`}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Clock className={`w-3.5 h-3.5 ${colors.text}`} />
+                      <span className={`text-[10px] font-bold ${colors.text} uppercase tracking-wider`}>A Vencer</span>
+                    </div>
+                    <div className={`text-base font-bold ${colors.text}`}>{formatCurrency(emp.aVencer)}</div>
+                  </div>
+                </div>
+
+                {/* Stats linha inferior */}
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                  <div className="flex items-center gap-4 text-xs text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {emp.meses.length} {emp.meses.length === 1 ? "mês" : "meses"}
+                      {mesesVencidos > 0 && <span className="text-red-500 font-medium">({mesesVencidos} venc.)</span>}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Landmark className="w-3.5 h-3.5" />
+                      {numBancos} {numBancos === 1 ? "conta" : "contas"}
+                    </span>
+                  </div>
+                  <span className={`text-xs font-semibold ${colors.text} flex items-center gap-1`}>
+                    {isOpen ? "Recolher" : "Expandir"}
+                    {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                  </span>
+                </div>
               </div>
             </button>
           );

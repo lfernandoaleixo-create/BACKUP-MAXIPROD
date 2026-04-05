@@ -1631,3 +1631,7 @@
 - [x] Simplificar: remover nível "forma de recebimento", ao clicar no banco abrir lista direta por data
 - [x] Checkbox: adicionar seleção à esquerda de cada título para marcar boletos para desconto
 - [x] Barra de resumo: mostrar total selecionado e quantidade de boletos marcados para antecipação
+
+## Cards empresa Recebíveis - melhorias (05/04/2026)
+- [x] Cards empresa: ocupar largura total da tela (grid 1fr 1fr ou flex grow)
+- [x] Cards empresa: enriquecer informações (qtd meses, contas, breakdown vencido/a vencer, mini gráfico)
