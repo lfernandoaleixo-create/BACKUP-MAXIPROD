@@ -807,3 +807,35 @@ export const madeiraVisibility = mysqlTable("madeira_visibility", {
 });
 export type MadeiraVisibility = typeof madeiraVisibility.$inferSelect;
 export type InsertMadeiraVisibility = typeof madeiraVisibility.$inferInsert;
+
+
+/**
+ * Ações de cobrança por título de contas a receber.
+ * Cada registro vincula a um título (accountsReceivable.id) e armazena:
+ * - Status de cobrança (pendente, contatado, em_negociacao, promessa, protestado, juridico)
+ * - Histórico de contatos (JSON array)
+ * - Data de promessa de pagamento
+ * - Observações livres
+ * - Lembrete (data para cobrar novamente)
+ */
+export const collectionActions = mysqlTable("collection_actions", {
+  id: int("id").autoincrement().primaryKey(),
+  receivableId: int("receivableId").notNull(), // FK para accounts_receivable.id
+  status: varchar("status", { length: 30 }).notNull().default("pendente"),
+  // pendente | contatado | em_negociacao | promessa | protestado | juridico
+  promessaData: varchar("promessaData", { length: 30 }), // YYYY-MM-DD
+  promessaValor: decimal("promessaValor", { precision: 18, scale: 2 }),
+  lembreteData: varchar("lembreteData", { length: 30 }), // YYYY-MM-DD
+  observacoes: text("observacoes"),
+  contatoHistorico: json("contatoHistorico").$type<Array<{
+    data: string;
+    tipo: string; // ligacao | whatsapp | email | presencial | outro
+    resumo: string;
+    usuario?: string;
+  }>>().default([]),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CollectionAction = typeof collectionActions.$inferSelect;
+export type InsertCollectionAction = typeof collectionActions.$inferInsert;

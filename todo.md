@@ -1588,3 +1588,21 @@
 - [x] Recebíveis: controle por banco/conta com detalhamento expandível
 - [x] Recebíveis: filtro Em Aberto / Todos / Vencidos / A Vencer
 - [x] Backend: procedure getReceivablesByBank para agrupar recebíveis por banco e tipo
+
+## Inadimplência: Ferramentas de Cobrança por Título (05/04/2026)
+- [x] Criar tabela collection_actions no banco para registrar ações de cobrança por título
+- [x] Backend: procedures getOverdueTitles e upsertCollectionAction implementados
+- [x] Inadimplência: listar por TÍTULO (não por cliente) com dados completos (cliente, valor, vencimento, dias atraso)
+- [x] Ferramenta: Status de Cobrança (Pendente, Contatado, Em Negociação, Promessa de Pagamento, Protestado, Jurídico)
+- [x] Ferramenta: Registro de Contato (data, tipo, resumo de cada tentativa)
+- [x] Ferramenta: Data de Promessa de Pagamento
+- [x] Ferramenta: Observações (campo livre por título)
+- [x] Ferramenta: Alerta/Lembrete para cobrar novamente em X dias
+- [x] Ferramenta: Gerar carta/boleto de cobrança (PDF) - placeholder com toast
+
+## Recebíveis: Redesign Visual por Banco (05/04/2026)
+- [x] Recebíveis: separação visual por banco (PALITOS INDUSTRIA, VARETAS INDUSTRIA) com cards distintos
+- [x] Recebíveis: barra visual de proporção vencidos vs a vencer por banco
+- [x] Recebíveis: listagem cronológica com filtros A Receber/Recebidos/Todos
+- [x] Recebíveis: detalhes expandíveis de cada título (cliente, valor, vencimento, tipo, status)
+- [x] Recebíveis: totalizadores por banco com cores distintas

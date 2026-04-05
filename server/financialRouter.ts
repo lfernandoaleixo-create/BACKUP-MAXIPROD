@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial } from "./maxiprodGraphQL";
@@ -2683,5 +2683,244 @@ export const financialRouter = router({
         totals: { total: grandTotal, count: rows.length },
         items,
       };
+    }),
+
+  /**
+   * Listar todos os títulos vencidos individualmente com dados de cobrança
+   */
+  getOverdueTitles: publicProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      status: z.string().optional(),
+      sortBy: z.enum(["valor", "dias", "cliente", "vencimento"]).default("dias"),
+      sortDir: z.enum(["asc", "desc"]).default("desc"),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { titles: [], stats: { total: 0, count: 0, byStatus: {} } };
+
+      const cutoff = getPreviousBusinessDay();
+      const todayStr = getTodayBR();
+
+      // Buscar títulos vencidos com JOIN no banco
+      const rows = await db
+        .select({
+          id: accountsReceivable.id,
+          maxiprodId: accountsReceivable.maxiprodId,
+          cliente: accountsReceivable.cliente,
+          valorLiquido: accountsReceivable.valorLiquido,
+          valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+          vencimentoData: accountsReceivable.vencimentoData,
+          vencimentoOriginalData: accountsReceivable.vencimentoOriginalData,
+          emissaoData: accountsReceivable.emissaoData,
+          referenteA: accountsReceivable.referenteA,
+          tipo: accountsReceivable.tipo,
+          parcela: accountsReceivable.parcela,
+          parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
+          documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+          empresaNome: accountsReceivable.empresaNome,
+          observacoes: accountsReceivable.observacoes,
+          contaId: accountsReceivable.contaId,
+          bancoNome: bankAccounts.bancoNome,
+        })
+        .from(accountsReceivable)
+        .leftJoin(bankAccounts, eq(accountsReceivable.contaId, bankAccounts.maxiprodId))
+        .where(
+          and(
+            eq(accountsReceivable.estado, "EMITIDO"),
+            inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+            lte(accountsReceivable.vencimentoData, cutoff + "T23:59:59")
+          )
+        )
+        .orderBy(asc(accountsReceivable.vencimentoData));
+
+      // Buscar todas as ações de cobrança existentes
+      const allActions = await db.select().from(collectionActions);
+      const actionsMap: Record<number, typeof allActions[0]> = {};
+      for (const a of allActions) {
+        actionsMap[a.receivableId] = a;
+      }
+
+      // Buscar vendedor map
+      const graphqlMap = await fetchVendedorMapFromGraphQL();
+
+      // Filtrar e mapear
+      let titles = rows.map(row => {
+        const valorOriginal = Number(row.valorLiquido) || 0;
+        const valorPago = Number(row.valorRecebidoLiquido) || 0;
+        const valorAReceber = valorOriginal - valorPago;
+        const vencDate = (row.vencimentoData || "").split("T")[0];
+        const diasAtraso = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
+        const action = actionsMap[row.id];
+        const vendedor = graphqlMap[row.cliente || ""] || "";
+
+        return {
+          id: row.id,
+          cliente: row.cliente || "Sem nome",
+          valorAReceber,
+          valorOriginal,
+          valorPago,
+          vencimento: vencDate,
+          vencimentoOriginal: (row.vencimentoOriginalData || "").split("T")[0],
+          emissao: (row.emissaoData || "").split("T")[0],
+          referenteA: row.referenteA || "",
+          tipo: row.tipo || "",
+          parcela: row.parcela && row.parcelasQuantidadeTotal
+            ? `${row.parcela}/${row.parcelasQuantidadeTotal}` : "",
+          documento: row.documentoVinculadoNumero || "",
+          empresa: row.empresaNome || "",
+          banco: row.bancoNome || "",
+          diasAtraso,
+          vendedor,
+          observacoesMaxiprod: row.observacoes || "",
+          // Dados de cobrança
+          cobranca: action ? {
+            status: action.status,
+            promessaData: action.promessaData,
+            promessaValor: action.promessaValor ? Number(action.promessaValor) : null,
+            lembreteData: action.lembreteData,
+            observacoes: action.observacoes,
+            contatoHistorico: (action.contatoHistorico || []) as Array<{data: string; tipo: string; resumo: string; usuario?: string}>,
+            updatedAt: action.updatedAt?.toISOString() || "",
+          } : null,
+        };
+      }).filter(t => t.valorAReceber > 0);
+
+      // Filtro de busca
+      if (input?.search) {
+        const s = input.search.toUpperCase();
+        titles = titles.filter(t =>
+          t.cliente.toUpperCase().includes(s) ||
+          t.referenteA.toUpperCase().includes(s) ||
+          t.documento.toUpperCase().includes(s) ||
+          t.vendedor.toUpperCase().includes(s)
+        );
+      }
+
+      // Filtro de status de cobrança
+      if (input?.status && input.status !== "todos") {
+        if (input.status === "pendente") {
+          titles = titles.filter(t => !t.cobranca || t.cobranca.status === "pendente");
+        } else {
+          titles = titles.filter(t => t.cobranca?.status === input.status);
+        }
+      }
+
+      // Ordenação
+      const dir = input?.sortDir === "asc" ? 1 : -1;
+      switch (input?.sortBy) {
+        case "valor":
+          titles.sort((a, b) => (a.valorAReceber - b.valorAReceber) * dir);
+          break;
+        case "dias":
+          titles.sort((a, b) => (a.diasAtraso - b.diasAtraso) * dir);
+          break;
+        case "cliente":
+          titles.sort((a, b) => a.cliente.localeCompare(b.cliente) * dir);
+          break;
+        case "vencimento":
+          titles.sort((a, b) => a.vencimento.localeCompare(b.vencimento) * dir);
+          break;
+        default:
+          titles.sort((a, b) => (b.diasAtraso - a.diasAtraso));
+      }
+
+      // Estatísticas
+      const byStatus: Record<string, number> = {};
+      let totalValue = 0;
+      for (const t of titles) {
+        const st = t.cobranca?.status || "pendente";
+        byStatus[st] = (byStatus[st] || 0) + 1;
+        totalValue += t.valorAReceber;
+      }
+
+      return {
+        titles,
+        stats: { total: totalValue, count: titles.length, byStatus },
+      };
+    }),
+
+  /**
+   * Atualizar/criar ação de cobrança para um título
+   */
+  upsertCollectionAction: publicProcedure
+    .input(z.object({
+      receivableId: z.number(),
+      status: z.string().optional(),
+      promessaData: z.string().nullable().optional(),
+      promessaValor: z.number().nullable().optional(),
+      lembreteData: z.string().nullable().optional(),
+      observacoes: z.string().nullable().optional(),
+      novoContato: z.object({
+        tipo: z.string(),
+        resumo: z.string(),
+      }).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+
+      // Verificar se já existe ação para este título
+      const existing = await db
+        .select()
+        .from(collectionActions)
+        .where(eq(collectionActions.receivableId, input.receivableId))
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Update
+        const updates: any = {};
+        if (input.status !== undefined) updates.status = input.status;
+        if (input.promessaData !== undefined) updates.promessaData = input.promessaData;
+        if (input.promessaValor !== undefined) updates.promessaValor = input.promessaValor !== null ? String(input.promessaValor) : null;
+        if (input.lembreteData !== undefined) updates.lembreteData = input.lembreteData;
+        if (input.observacoes !== undefined) updates.observacoes = input.observacoes;
+
+        // Adicionar novo contato ao histórico
+        if (input.novoContato) {
+          const hist = (existing[0].contatoHistorico || []) as Array<any>;
+          hist.unshift({
+            data: new Date().toISOString(),
+            tipo: input.novoContato.tipo,
+            resumo: input.novoContato.resumo,
+          });
+          updates.contatoHistorico = hist;
+        }
+
+        await db.update(collectionActions)
+          .set(updates)
+          .where(eq(collectionActions.receivableId, input.receivableId));
+      } else {
+        // Insert
+        const hist = input.novoContato ? [{
+          data: new Date().toISOString(),
+          tipo: input.novoContato.tipo,
+          resumo: input.novoContato.resumo,
+        }] : [];
+
+        await db.insert(collectionActions).values({
+          receivableId: input.receivableId,
+          status: input.status || "pendente",
+          promessaData: input.promessaData || null,
+          promessaValor: input.promessaValor !== null && input.promessaValor !== undefined ? String(input.promessaValor) : null,
+          lembreteData: input.lembreteData || null,
+          observacoes: input.observacoes || null,
+          contatoHistorico: hist,
+        });
+      }
+
+      return { success: true };
+    }),
+
+  /**
+   * Deletar ação de cobrança (resetar título)
+   */
+  deleteCollectionAction: publicProcedure
+    .input(z.object({ receivableId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      await db.delete(collectionActions).where(eq(collectionActions.receivableId, input.receivableId));
+      return { success: true };
     }),
 });
