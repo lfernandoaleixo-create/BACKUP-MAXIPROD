@@ -149,7 +149,9 @@ function extractComprimento(descricao: string): number {
 
 function formatNumber(n: number | null): string {
   if (n === null || n === undefined) return "\u2014";
-  return n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  // Show decimal places when number is not integer (e.g., 11.6 for product 00808)
+  const fractionDigits = Number.isInteger(n) ? 0 : 1;
+  return n.toLocaleString("pt-BR", { maximumFractionDigits: fractionDigits });
 }
 
 function formatCurrency(n: number): string {

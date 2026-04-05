@@ -544,7 +544,8 @@ export async function processStockData(): Promise<void> {
     // Fallback: extrair da descrição do produto
     const maxiprodFator = item.unidadeDeVendaFator ? parseFloat(item.unidadeDeVendaFator) : null;
     const descFator = extractUnitsPerBox(item.descricaoItem);
-    const unitsPerBox = maxiprodFator || descFator;
+    // Produto 00808 (VARETA GLADE REEDS): estoque vem em kg, cada caixa = 11.6 kg
+    const unitsPerBox = item.codigoItem === '00808' ? 11.6 : (maxiprodFator || descFator);
     
     const orderData = orderByCode.get(item.codigoItem);
     const pedidosUn = orderData?.totalUn || 0;
@@ -625,7 +626,8 @@ export async function processStockData(): Promise<void> {
       segmento: classifySegment(item.descricaoItem),
       grupo: baseClassification.grupo,
       subgrupo: finalSubgrupo,
-      isKgProduct: isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem),
+      // Produto 00808: NÃO é kg product, é convertido para caixas (peso / 11.6)
+      isKgProduct: item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem),
       estadoConfiguravel: estadoConfPredominante,
       segmentosCRM: Array.from(segCRMSet),
       // Variações

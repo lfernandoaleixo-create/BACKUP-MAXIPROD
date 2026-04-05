@@ -1577,3 +1577,4 @@
 - [x] BUG: busca de clientes usa LIKE '%X%' (contém) em vez de LIKE 'X%' (começa com) - digitar B deve mostrar clientes que COMEÇAM com B
 - [x] BUG CRÍTICO: busca era case-sensitive - digitar minúsculo não encontrava nomes em UPPERCASE. Corrigido com toUpperCase() no backend
 - [x] Produto 808 (código 00808 - VARETA GLADE REEDS): campo volumes corrigido - divide por 11,6 kg para mostrar número de caixas
+- [x] Produto 00808: corrigir exibição em TODAS as telas (Estoque, Vendas, Faturamento) - dividir peso por 11,6 para mostrar caixas
