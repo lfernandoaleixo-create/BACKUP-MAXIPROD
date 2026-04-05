@@ -1141,7 +1141,7 @@ export const billingRouter = router({
    */
   getProductionNotes: publicProcedure
     .input(z.object({
-      pedidos: z.array(z.string()).max(200),
+      pedidos: z.array(z.string()).max(2000),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -1215,7 +1215,7 @@ export const billingRouter = router({
 
   getInvoicesForOrders: publicProcedure
     .input(z.object({
-      pedidos: z.array(z.string()).max(200),
+      pedidos: z.array(z.string()).max(2000),
     }))
     .query(async ({ input }) => {
       const { pedidos } = input;
@@ -1345,7 +1345,7 @@ export const billingRouter = router({
    */
   getProductionStatuses: publicProcedure
     .input(z.object({
-      pedidos: z.array(z.string()).max(200),
+      pedidos: z.array(z.string()).max(2000),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
