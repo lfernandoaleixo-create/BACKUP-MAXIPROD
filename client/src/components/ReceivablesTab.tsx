@@ -372,7 +372,7 @@ export default function ReceivablesTab() {
                   const currentMonth = mes.mes === today;
 
                   return (
-                    <div key={mes.mes} className={mi > 0 ? "border-t-2 border-slate-200" : ""}>
+                    <div key={mes.mes} className={mi > 0 ? "border-t-4 border-slate-300" : ""}>
                       {/* Header mês */}
                       <button onClick={() => toggleSet(setExpandedMeses, mesKey)}
                         className={`w-full px-5 py-3.5 flex items-center justify-between transition-all cursor-pointer ${
@@ -405,7 +405,7 @@ export default function ReceivablesTab() {
 
                       {/* Contas bancárias dentro do mês */}
                       {isMesOpen && (
-                        <div className="px-4 pb-4 pt-2 bg-slate-50/80 space-y-3">
+                        <div className={`pl-6 pr-4 pb-5 pt-3 space-y-3 border-l-4 ml-4 mr-2 mb-2 rounded-bl-xl ${isOverdueMonth ? "bg-red-100/60 border-l-red-400" : currentMonth ? "bg-blue-100/60 border-l-blue-400" : "bg-slate-200/70 border-l-slate-400"}`}>
                           {mes.contas.map((conta, ci) => {
                             const contaKey = `${mesKey}|${conta.bancoNome}|${conta.contaNumero}`;
                             const isContaOpen = expandedContas.has(contaKey);
@@ -420,7 +420,7 @@ export default function ReceivablesTab() {
                             const someContaSelected = contaItemIds.some(id => selectedIds.has(id));
 
                             return (
-                              <div key={ci} className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                              <div key={ci} className="rounded-xl border-2 border-slate-300 bg-white overflow-hidden shadow-md">
                                 {/* Header conta bancária */}
                                 <button onClick={() => toggleSet(setExpandedContas, contaKey)}
                                   className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-all cursor-pointer">

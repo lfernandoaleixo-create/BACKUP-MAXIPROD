@@ -1635,3 +1635,6 @@
 ## Cards empresa Recebíveis - melhorias (05/04/2026)
 - [x] Cards empresa: ocupar largura total da tela (grid 1fr 1fr ou flex grow)
 - [x] Cards empresa: enriquecer informações (qtd meses, contas, breakdown vencido/a vencer, mini gráfico)
+
+## Contraste visual contas vs meses (05/04/2026)
+- [x] Melhorar contraste entre área expandida das contas bancárias e os headers dos próximos meses
