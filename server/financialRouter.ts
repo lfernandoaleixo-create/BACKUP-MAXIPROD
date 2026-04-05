@@ -2625,7 +2625,7 @@ export const financialRouter = router({
       let grandVencido = 0;
       let grandAVencer = 0;
 
-      // Hierarquia: empresa → conta → tipo → mês
+      // Hierarquia: empresa → mês → banco/conta → forma de recebimento (tipo)
       type ItemData = {
         id: number; cliente: string; valorAReceber: number; valorOriginal: number;
         valorPago: number; vencimento: string; emissao: string;
@@ -2635,14 +2635,14 @@ export const financialRouter = router({
         agencia: string; isOverdue: boolean;
       };
 
-      // Build hierarchy maps
+      // Build hierarchy maps: empresa → mês → conta → tipo → items
       const empresaMap: Record<string, {
-        contas: Record<string, {
-          tipos: Record<string, {
-            meses: Record<string, { items: ItemData[]; total: number; count: number }>;
+        meses: Record<string, {
+          contas: Record<string, {
+            tipos: Record<string, { items: ItemData[]; total: number; count: number }>;
+            bancoNome: string; contaNumero: string; agencia: string;
             total: number; count: number;
           }>;
-          bancoNome: string; contaNumero: string; agencia: string;
           total: number; count: number; vencido: number; aVencer: number;
         }>;
         total: number; count: number; vencido: number; aVencer: number;
@@ -2688,40 +2688,41 @@ export const financialRouter = router({
 
         // Empresa level
         if (!empresaMap[empresa]) {
-          empresaMap[empresa] = { contas: {}, total: 0, count: 0, vencido: 0, aVencer: 0 };
+          empresaMap[empresa] = { meses: {}, total: 0, count: 0, vencido: 0, aVencer: 0 };
         }
         empresaMap[empresa].total += valorAReceber;
         empresaMap[empresa].count++;
         if (isOverdue) empresaMap[empresa].vencido += valorAReceber;
         else empresaMap[empresa].aVencer += valorAReceber;
 
-        // Conta level
-        if (!empresaMap[empresa].contas[contaKey]) {
-          empresaMap[empresa].contas[contaKey] = {
+        // Mês level
+        if (!empresaMap[empresa].meses[mesKey]) {
+          empresaMap[empresa].meses[mesKey] = { contas: {}, total: 0, count: 0, vencido: 0, aVencer: 0 };
+        }
+        const mes = empresaMap[empresa].meses[mesKey];
+        mes.total += valorAReceber;
+        mes.count++;
+        if (isOverdue) mes.vencido += valorAReceber;
+        else mes.aVencer += valorAReceber;
+
+        // Conta level (dentro do mês)
+        if (!mes.contas[contaKey]) {
+          mes.contas[contaKey] = {
             bancoNome, contaNumero, agencia,
-            tipos: {}, total: 0, count: 0, vencido: 0, aVencer: 0,
+            tipos: {}, total: 0, count: 0,
           };
         }
-        const conta = empresaMap[empresa].contas[contaKey];
+        const conta = mes.contas[contaKey];
         conta.total += valorAReceber;
         conta.count++;
-        if (isOverdue) conta.vencido += valorAReceber;
-        else conta.aVencer += valorAReceber;
 
-        // Tipo level
+        // Tipo level (forma de recebimento, dentro da conta)
         if (!conta.tipos[tipoKey]) {
-          conta.tipos[tipoKey] = { meses: {}, total: 0, count: 0 };
+          conta.tipos[tipoKey] = { items: [], total: 0, count: 0 };
         }
+        conta.tipos[tipoKey].items.push(item);
         conta.tipos[tipoKey].total += valorAReceber;
         conta.tipos[tipoKey].count++;
-
-        // Mês level
-        if (!conta.tipos[tipoKey].meses[mesKey]) {
-          conta.tipos[tipoKey].meses[mesKey] = { items: [], total: 0, count: 0 };
-        }
-        conta.tipos[tipoKey].meses[mesKey].items.push(item);
-        conta.tipos[tipoKey].meses[mesKey].total += valorAReceber;
-        conta.tipos[tipoKey].meses[mesKey].count++;
 
         grandTotal += valorAReceber;
         grandCount++;
@@ -2729,7 +2730,7 @@ export const financialRouter = router({
         else grandAVencer += valorAReceber;
       }
 
-      // Convert to sorted arrays
+      // Convert to sorted arrays: empresa → mês → conta → tipo
       const empresas = Object.entries(empresaMap)
         .sort(([, a], [, b]) => b.total - a.total)
         .map(([nome, emp]) => ({
@@ -2738,29 +2739,29 @@ export const financialRouter = router({
           count: emp.count,
           vencido: emp.vencido,
           aVencer: emp.aVencer,
-          contas: Object.values(emp.contas)
-            .sort((a, b) => b.total - a.total)
-            .map(conta => ({
-              bancoNome: conta.bancoNome,
-              contaNumero: conta.contaNumero,
-              agencia: conta.agencia,
-              total: conta.total,
-              count: conta.count,
-              vencido: conta.vencido,
-              aVencer: conta.aVencer,
-              tipos: Object.entries(conta.tipos)
-                .sort(([, a], [, b]) => b.total - a.total)
-                .map(([tipo, t]) => ({
-                  tipo,
-                  total: t.total,
-                  count: t.count,
-                  meses: Object.entries(t.meses)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([mes, m]) => ({
-                      mes,
-                      total: m.total,
-                      count: m.count,
-                      items: m.items,
+          meses: Object.entries(emp.meses)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([mes, m]) => ({
+              mes,
+              total: m.total,
+              count: m.count,
+              vencido: m.vencido,
+              aVencer: m.aVencer,
+              contas: Object.values(m.contas)
+                .sort((a, b) => b.total - a.total)
+                .map(conta => ({
+                  bancoNome: conta.bancoNome,
+                  contaNumero: conta.contaNumero,
+                  agencia: conta.agencia,
+                  total: conta.total,
+                  count: conta.count,
+                  tipos: Object.entries(conta.tipos)
+                    .sort(([, a], [, b]) => b.total - a.total)
+                    .map(([tipo, t]) => ({
+                      tipo,
+                      total: t.total,
+                      count: t.count,
+                      items: t.items,
                     })),
                 })),
             })),

@@ -107,9 +107,9 @@ export default function ReceivablesTab() {
   const [estado, setEstado] = useState<"EMITIDO" | "RECEBIDO" | "ALL">("EMITIDO");
   const [search, setSearch] = useState("");
   const [expandedEmpresas, setExpandedEmpresas] = useState<Set<string>>(new Set());
+  const [expandedMeses, setExpandedMeses] = useState<Set<string>>(new Set());
   const [expandedContas, setExpandedContas] = useState<Set<string>>(new Set());
   const [expandedTipos, setExpandedTipos] = useState<Set<string>>(new Set());
-  const [expandedMeses, setExpandedMeses] = useState<Set<string>>(new Set());
   const [expandedItem, setExpandedItem] = useState<number | null>(null);
 
   const { data, isLoading } = trpc.financial.getReceivablesByBank.useQuery({ estado });
@@ -118,30 +118,34 @@ export default function ReceivablesTab() {
   const filteredData = useMemo(() => {
     if (!data?.empresas || !search) return data;
     const s = search.toUpperCase();
-    
+
     const empresas = data.empresas.map(emp => {
-      const contas = emp.contas.map(conta => {
-        const tipos = conta.tipos.map(tipo => {
-          const meses = tipo.meses.map(mes => {
-            const items = mes.items.filter(i =>
+      const meses = emp.meses.map(mes => {
+        const contas = mes.contas.map(conta => {
+          const tipos = conta.tipos.map(tipo => {
+            const items = tipo.items.filter(i =>
               i.cliente.toUpperCase().includes(s) ||
               i.referenteA.toUpperCase().includes(s) ||
               i.documento.toUpperCase().includes(s)
             );
-            return { ...mes, items, total: items.reduce((a, b) => a + b.valorAReceber, 0), count: items.length };
-          }).filter(m => m.count > 0);
-          return { ...tipo, meses, total: meses.reduce((a, b) => a + b.total, 0), count: meses.reduce((a, b) => a + b.count, 0) };
-        }).filter(t => t.count > 0);
+            return { ...tipo, items, total: items.reduce((a, b) => a + b.valorAReceber, 0), count: items.length };
+          }).filter(t => t.count > 0);
+          return {
+            ...conta, tipos,
+            total: tipos.reduce((a, b) => a + b.total, 0),
+            count: tipos.reduce((a, b) => a + b.count, 0),
+          };
+        }).filter(c => c.count > 0);
         return {
-          ...conta, tipos,
-          total: tipos.reduce((a, b) => a + b.total, 0),
-          count: tipos.reduce((a, b) => a + b.count, 0),
+          ...mes, contas,
+          total: contas.reduce((a, b) => a + b.total, 0),
+          count: contas.reduce((a, b) => a + b.count, 0),
         };
-      }).filter(c => c.count > 0);
+      }).filter(m => m.count > 0);
       return {
-        ...emp, contas,
-        total: contas.reduce((a, b) => a + b.total, 0),
-        count: contas.reduce((a, b) => a + b.count, 0),
+        ...emp, meses,
+        total: meses.reduce((a, b) => a + b.total, 0),
+        count: meses.reduce((a, b) => a + b.count, 0),
       };
     }).filter(e => e.count > 0);
 
@@ -156,32 +160,8 @@ export default function ReceivablesTab() {
     };
   }, [data, search]);
 
-  function toggleEmpresa(nome: string) {
-    setExpandedEmpresas(prev => {
-      const next = new Set(prev);
-      if (next.has(nome)) next.delete(nome);
-      else next.add(nome);
-      return next;
-    });
-  }
-  function toggleConta(key: string) {
-    setExpandedContas(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
-  function toggleTipo(key: string) {
-    setExpandedTipos(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
-  function toggleMes(key: string) {
-    setExpandedMeses(prev => {
+  function toggleSet(setter: React.Dispatch<React.SetStateAction<Set<string>>>, key: string) {
+    setter(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -235,22 +215,20 @@ export default function ReceivablesTab() {
       </div>
 
       {/* Busca */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por cliente, documento ou referência..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Buscar por cliente, documento ou referência..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        {search && (
+          <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Cards resumo por empresa */}
@@ -263,7 +241,7 @@ export default function ReceivablesTab() {
           return (
             <button
               key={emp.nome}
-              onClick={() => toggleEmpresa(emp.nome)}
+              onClick={() => toggleSet(setExpandedEmpresas, emp.nome)}
               className={`rounded-xl border-2 p-4 text-left transition-all hover:shadow-lg ${colors.bg} ${
                 expandedEmpresas.has(emp.nome) ? `${colors.border} ring-2 ring-offset-1 ring-blue-400 shadow-lg` : colors.border
               }`}
@@ -275,7 +253,7 @@ export default function ReceivablesTab() {
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-slate-800">{shortEmpresaName(emp.nome)}</h3>
-                    <span className="text-xs text-slate-500">{emp.count} títulos · {emp.contas.length} conta{emp.contas.length !== 1 ? "s" : ""}</span>
+                    <span className="text-xs text-slate-500">{emp.count} títulos · {emp.meses.length} {emp.meses.length === 1 ? "mês" : "meses"}</span>
                   </div>
                 </div>
                 {expandedEmpresas.has(emp.nome)
@@ -314,7 +292,7 @@ export default function ReceivablesTab() {
         })}
       </div>
 
-      {/* Hierarquia expandida */}
+      {/* Hierarquia expandida: Empresa → Mês → Banco → Forma */}
       <div className="space-y-4">
         {empresas.filter(emp => expandedEmpresas.has(emp.nome)).map(emp => {
           const empColors = getEmpresaColor(emp.nome);
@@ -330,135 +308,143 @@ export default function ReceivablesTab() {
                     <span className="text-xs text-slate-500">{emp.count} títulos · {formatCurrency(emp.total)}</span>
                   </div>
                 </div>
-                <button onClick={() => toggleEmpresa(emp.nome)} className="text-slate-400 hover:text-slate-600">
+                <button onClick={() => toggleSet(setExpandedEmpresas, emp.nome)} className="text-slate-400 hover:text-slate-600">
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Contas bancárias */}
+              {/* Meses */}
               <div className="bg-white divide-y divide-slate-100">
-                {emp.contas.map((conta, ci) => {
-                  const contaKey = `${emp.nome}|${conta.bancoNome}|${conta.contaNumero}`;
-                  const bankColor = getBankColor(conta.bancoNome);
-                  const isContaOpen = expandedContas.has(contaKey);
-                  const pctVencido = conta.total > 0 ? (conta.vencido / conta.total) * 100 : 0;
-                  const contaLabel = conta.contaNumero
-                    ? `${shortBankName(conta.bancoNome)} · Ag ${conta.agencia || "-"} · Cc ${conta.contaNumero}`
-                    : shortBankName(conta.bancoNome);
+                {emp.meses.map((mes) => {
+                  const mesKey = `${emp.nome}|${mes.mes}`;
+                  const isMesOpen = expandedMeses.has(mesKey);
+                  const isOverdueMonth = mes.mes < new Date().toISOString().substring(0, 7);
+                  const currentMonth = mes.mes === new Date().toISOString().substring(0, 7);
 
                   return (
-                    <div key={ci}>
-                      {/* Header conta */}
+                    <div key={mes.mes}>
+                      {/* Header mês */}
                       <button
-                        onClick={() => toggleConta(contaKey)}
-                        className={`w-full px-5 py-3 flex items-center justify-between hover:bg-slate-50/80 transition-all cursor-pointer`}
+                        onClick={() => toggleSet(setExpandedMeses, mesKey)}
+                        className={`w-full px-5 py-3 flex items-center justify-between hover:bg-slate-50/80 transition-all cursor-pointer ${
+                          isOverdueMonth ? "bg-red-50/40" : currentMonth ? "bg-blue-50/30" : ""
+                        }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg ${bankColor.bg} ${bankColor.border} border flex items-center justify-center`}>
-                            <Landmark className={`w-4 h-4 ${bankColor.icon}`} />
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                            isOverdueMonth ? "bg-red-100 border border-red-200" : currentMonth ? "bg-blue-100 border border-blue-200" : "bg-slate-100 border border-slate-200"
+                          }`}>
+                            <Calendar className={`w-4 h-4 ${
+                              isOverdueMonth ? "text-red-500" : currentMonth ? "text-blue-500" : "text-slate-500"
+                            }`} />
                           </div>
                           <div className="text-left">
-                            <h4 className="font-semibold text-sm text-slate-800">{contaLabel}</h4>
-                            <div className="flex items-center gap-3 text-xs text-slate-500">
-                              <span>{conta.count} títulos</span>
-                              {conta.vencido > 0 && (
-                                <span className="text-red-500">
-                                  {formatCurrency(conta.vencido)} vencido
-                                </span>
+                            <h4 className={`font-semibold text-sm ${
+                              isOverdueMonth ? "text-red-700" : "text-slate-800"
+                            }`}>
+                              {formatMonth(mes.mes)}
+                              {isOverdueMonth && (
+                                <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">VENCIDO</span>
                               )}
+                              {currentMonth && (
+                                <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 font-medium">MÊS ATUAL</span>
+                              )}
+                            </h4>
+                            <div className="flex items-center gap-3 text-xs text-slate-500">
+                              <span>{mes.count} títulos</span>
+                              <span>{mes.contas.length} {mes.contas.length === 1 ? "conta" : "contas"}</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          {/* Mini barra */}
-                          <div className="hidden sm:block w-24 h-2 rounded-full bg-slate-100 overflow-hidden">
-                            {pctVencido > 0 && <div className="bg-red-400 h-full" style={{ width: `${pctVencido}%` }} />}
-                          </div>
-                          <span className="font-bold text-slate-800 text-sm">{formatCurrency(conta.total)}</span>
-                          {isContaOpen
+                          <span className={`font-bold text-sm ${isOverdueMonth ? "text-red-600" : "text-slate-800"}`}>
+                            {formatCurrency(mes.total)}
+                          </span>
+                          {isMesOpen
                             ? <ChevronDown className="w-4 h-4 text-slate-400" />
                             : <ChevronRight className="w-4 h-4 text-slate-400" />
                           }
                         </div>
                       </button>
 
-                      {/* Tipos dentro da conta */}
-                      {isContaOpen && (
+                      {/* Contas bancárias dentro do mês */}
+                      {isMesOpen && (
                         <div className="bg-slate-50/50 border-t border-slate-100">
-                          {conta.tipos.map((tipo, ti) => {
-                            const tipoKey = `${contaKey}|${tipo.tipo}`;
-                            const isTipoOpen = expandedTipos.has(tipoKey);
-                            const tipoInfo = TIPO_LABELS[tipo.tipo] || TIPO_LABELS.OUTROS;
-                            const TipoIcon = tipoInfo.icon;
+                          {mes.contas.map((conta, ci) => {
+                            const contaKey = `${mesKey}|${conta.bancoNome}|${conta.contaNumero}`;
+                            const bankColor = getBankColor(conta.bancoNome);
+                            const isContaOpen = expandedContas.has(contaKey);
+                            const contaLabel = conta.contaNumero
+                              ? `${shortBankName(conta.bancoNome)} · Ag ${conta.agencia || "-"} · Cc ${conta.contaNumero}`
+                              : shortBankName(conta.bancoNome);
 
                             return (
-                              <div key={ti}>
-                                {/* Header tipo */}
+                              <div key={ci}>
+                                {/* Header conta */}
                                 <button
-                                  onClick={() => toggleTipo(tipoKey)}
+                                  onClick={() => toggleSet(setExpandedContas, contaKey)}
                                   className="w-full px-5 pl-12 py-2.5 flex items-center justify-between hover:bg-white/60 transition-all cursor-pointer"
                                 >
                                   <div className="flex items-center gap-2.5">
-                                    <TipoIcon className="w-4 h-4 text-slate-400" />
-                                    <span className="text-sm font-medium text-slate-700">{tipoInfo.label}</span>
-                                    <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{tipo.count}</span>
+                                    <div className={`w-7 h-7 rounded-md ${bankColor.bg} ${bankColor.border} border flex items-center justify-center`}>
+                                      <Landmark className={`w-3.5 h-3.5 ${bankColor.icon}`} />
+                                    </div>
+                                    <div className="text-left">
+                                      <span className="text-sm font-medium text-slate-700">{contaLabel}</span>
+                                      <span className="text-xs text-slate-400 ml-2 bg-slate-100 px-1.5 py-0.5 rounded">{conta.count}</span>
+                                    </div>
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <span className="font-semibold text-sm text-slate-700">{formatCurrency(tipo.total)}</span>
-                                    {isTipoOpen
+                                    <span className="font-semibold text-sm text-slate-700">{formatCurrency(conta.total)}</span>
+                                    {isContaOpen
                                       ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                                       : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                                     }
                                   </div>
                                 </button>
 
-                                {/* Meses dentro do tipo */}
-                                {isTipoOpen && (
+                                {/* Formas de recebimento (tipos) dentro da conta */}
+                                {isContaOpen && (
                                   <div className="bg-white/80">
-                                    {tipo.meses.map((mes, mi) => {
-                                      const mesKey = `${tipoKey}|${mes.mes}`;
-                                      const isMesOpen = expandedMeses.has(mesKey);
-                                      const isOverdueMonth = mes.mes < new Date().toISOString().substring(0, 7);
+                                    {conta.tipos.map((tipo, ti) => {
+                                      const tipoKey = `${contaKey}|${tipo.tipo}`;
+                                      const isTipoOpen = expandedTipos.has(tipoKey);
+                                      const tipoInfo = TIPO_LABELS[tipo.tipo] || TIPO_LABELS.OUTROS;
+                                      const TipoIcon = tipoInfo.icon;
 
                                       return (
-                                        <div key={mi}>
-                                          {/* Header mês */}
+                                        <div key={ti}>
+                                          {/* Header tipo */}
                                           <button
-                                            onClick={() => toggleMes(mesKey)}
-                                            className={`w-full px-5 pl-16 py-2 flex items-center justify-between hover:bg-slate-50 transition-all cursor-pointer ${
-                                              isOverdueMonth ? "bg-red-50/30" : ""
-                                            }`}
+                                            onClick={() => toggleSet(setExpandedTipos, tipoKey)}
+                                            className="w-full px-5 pl-20 py-2 flex items-center justify-between hover:bg-slate-50 transition-all cursor-pointer"
                                           >
                                             <div className="flex items-center gap-2">
-                                              <Calendar className={`w-3.5 h-3.5 ${isOverdueMonth ? "text-red-400" : "text-slate-400"}`} />
-                                              <span className={`text-sm font-medium ${isOverdueMonth ? "text-red-600" : "text-slate-600"}`}>
-                                                {formatMonth(mes.mes)}
-                                              </span>
-                                              <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{mes.count}</span>
+                                              <TipoIcon className="w-3.5 h-3.5 text-slate-400" />
+                                              <span className="text-sm text-slate-600">{tipoInfo.label}</span>
+                                              <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{tipo.count}</span>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                              <span className={`font-semibold text-sm ${isOverdueMonth ? "text-red-600" : "text-slate-700"}`}>
-                                                {formatCurrency(mes.total)}
-                                              </span>
-                                              {isMesOpen
+                                              <span className="font-medium text-sm text-slate-600">{formatCurrency(tipo.total)}</span>
+                                              {isTipoOpen
                                                 ? <ChevronDown className="w-3 h-3 text-slate-400" />
                                                 : <ChevronRight className="w-3 h-3 text-slate-400" />
                                               }
                                             </div>
                                           </button>
 
-                                          {/* Items do mês */}
-                                          {isMesOpen && (
+                                          {/* Items do tipo */}
+                                          {isTipoOpen && (
                                             <div className="bg-white border-t border-slate-50">
                                               {/* Header tabela */}
-                                              <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px] gap-2 px-5 pl-20 py-1.5 bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                              <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px] gap-2 px-5 pl-24 py-1.5 bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                                                 <span>Cliente / Referência</span>
                                                 <span className="text-right">Valor</span>
                                                 <span>Vencimento</span>
                                                 <span className="text-center">Status</span>
                                               </div>
                                               <div className="divide-y divide-slate-50 max-h-[50vh] overflow-y-auto">
-                                                {mes.items.map(item => (
+                                                {tipo.items.map(item => (
                                                   <ItemRow
                                                     key={item.id}
                                                     item={item}
@@ -511,7 +497,7 @@ function ItemRow({ item, isExpanded, onToggle }: { item: ItemData; isExpanded: b
     <div>
       <div
         onClick={onToggle}
-        className={`grid grid-cols-1 md:grid-cols-[1fr_120px_100px_80px] gap-2 px-5 pl-20 py-2 cursor-pointer transition-colors items-center ${
+        className={`grid grid-cols-1 md:grid-cols-[1fr_120px_100px_80px] gap-2 px-5 pl-24 py-2 cursor-pointer transition-colors items-center ${
           item.isOverdue ? "hover:bg-red-50/50 bg-red-50/20" : "hover:bg-slate-50"
         }`}
       >
@@ -556,7 +542,7 @@ function ItemRow({ item, isExpanded, onToggle }: { item: ItemData; isExpanded: b
 
       {/* Detalhes expandidos */}
       {isExpanded && (
-        <div className="px-5 pl-20 pb-3 bg-slate-50/50">
+        <div className="px-5 pl-24 pb-3 bg-slate-50/50">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-white rounded-lg border border-slate-100">
             <DetailItem label="Valor Original" value={formatCurrency(item.valorOriginal)} />
             <DetailItem label="Valor Pago" value={formatCurrency(item.valorPago)} />

@@ -1620,3 +1620,8 @@
 - [x] Frontend: cards por empresa com totais, dentro cards por conta bancária, dentro por tipo, dentro por mês
 - [x] Frontend: InadimplenciaTab - adicionar cards de faixa de atraso (aging) e vista agrupada por cliente
 - [x] Testes: vitest para nova procedure getReceivablesHierarchical (skipped - procedure usa dados reais do GraphQL)
+
+## Reorganizar hierarquia Recebíveis: Empresa → Mês → Banco → Forma (05/04/2026)
+- [x] Reorganizar hierarquia: Empresa → Mês → Banco/Conta → Forma de Recebimento
+- [x] Backend: ajustar procedure getReceivablesHierarchical para nova hierarquia
+- [x] Frontend: redesenhar ReceivablesTab com cards empresa mostrando meses, dentro banco, dentro forma
