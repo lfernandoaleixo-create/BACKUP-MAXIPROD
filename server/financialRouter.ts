@@ -2565,4 +2565,123 @@ export const financialRouter = router({
 
       return { success: true };
     }),
+
+  /**
+   * Get receivables grouped by bank and type
+   * Para a sub-aba Recebíveis do Financeiro
+   */
+  getReceivablesByBank: publicProcedure
+    .input(z.object({
+      estado: z.enum(["EMITIDO", "RECEBIDO", "ALL"]).default("EMITIDO"),
+      dateFrom: z.string().optional(),
+      dateTo: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { byBank: [], byType: [], totals: { total: 0, count: 0 }, items: [] };
+
+      const estado = input?.estado || "EMITIDO";
+      const conditions = [
+        inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+      ];
+      if (estado !== "ALL") {
+        conditions.push(eq(accountsReceivable.estado, estado));
+      }
+      if (input?.dateFrom) {
+        conditions.push(gte(accountsReceivable.vencimentoData, input.dateFrom));
+      }
+      if (input?.dateTo) {
+        conditions.push(lte(accountsReceivable.vencimentoData, input.dateTo + "T23:59:59"));
+      }
+
+      // Buscar todos os recebíveis com JOIN na bankAccounts para obter o nome do banco
+      const rows = await db
+        .select({
+          id: accountsReceivable.id,
+          cliente: accountsReceivable.cliente,
+          valorLiquido: accountsReceivable.valorLiquido,
+          valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+          vencimentoData: accountsReceivable.vencimentoData,
+          emissaoData: accountsReceivable.emissaoData,
+          liquidacaoData: accountsReceivable.liquidacaoData,
+          referenteA: accountsReceivable.referenteA,
+          tipo: accountsReceivable.tipo,
+          estado: accountsReceivable.estado,
+          parcela: accountsReceivable.parcela,
+          parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
+          documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+          empresaNome: accountsReceivable.empresaNome,
+          contaId: accountsReceivable.contaId,
+          bancoNome: bankAccounts.bancoNome,
+          bancoAgencia: bankAccounts.agencia,
+          bancoConta: bankAccounts.contaNumero,
+        })
+        .from(accountsReceivable)
+        .leftJoin(bankAccounts, eq(accountsReceivable.contaId, bankAccounts.maxiprodId))
+        .where(and(...conditions))
+        .orderBy(asc(accountsReceivable.vencimentoData));
+
+      // Agrupar por banco
+      const bankMap: Record<string, { banco: string; total: number; count: number; vencido: number; aVencer: number }> = {};
+      // Agrupar por tipo
+      const typeMap: Record<string, { tipo: string; total: number; count: number }> = {};
+
+      const todayStr = getTodayBR();
+      let grandTotal = 0;
+
+      const items = rows.map(row => {
+        const valorOriginal = Number(row.valorLiquido) || 0;
+        const valorPago = Number(row.valorRecebidoLiquido) || 0;
+        const valorAReceber = valorOriginal - valorPago;
+        const vencDate = (row.vencimentoData || "").split("T")[0];
+        const isOverdue = vencDate < todayStr;
+
+        // Banco
+        const bancoKey = row.bancoNome || row.empresaNome || "Sem banco";
+        if (!bankMap[bancoKey]) {
+          bankMap[bancoKey] = { banco: bancoKey, total: 0, count: 0, vencido: 0, aVencer: 0 };
+        }
+        bankMap[bancoKey].total += valorAReceber;
+        bankMap[bancoKey].count++;
+        if (isOverdue) bankMap[bancoKey].vencido += valorAReceber;
+        else bankMap[bancoKey].aVencer += valorAReceber;
+
+        // Tipo
+        const tipoKey = row.tipo || "Outros";
+        if (!typeMap[tipoKey]) {
+          typeMap[tipoKey] = { tipo: tipoKey, total: 0, count: 0 };
+        }
+        typeMap[tipoKey].total += valorAReceber;
+        typeMap[tipoKey].count++;
+
+        grandTotal += valorAReceber;
+
+        return {
+          id: row.id,
+          cliente: row.cliente || "Sem nome",
+          valorAReceber,
+          valorOriginal,
+          valorPago,
+          vencimento: vencDate,
+          emissao: (row.emissaoData || "").split("T")[0],
+          liquidacao: row.liquidacaoData ? (row.liquidacaoData).split("T")[0] : null,
+          referenteA: row.referenteA || "",
+          tipo: row.tipo || "",
+          estado: row.estado,
+          parcela: row.parcela && row.parcelasQuantidadeTotal
+            ? `${row.parcela}/${row.parcelasQuantidadeTotal}` : "",
+          documento: row.documentoVinculadoNumero || "",
+          empresa: row.empresaNome || "",
+          banco: bancoKey,
+          isOverdue,
+        };
+      });
+
+      return {
+        byBank: Object.values(bankMap).sort((a, b) => b.total - a.total),
+        byType: Object.values(typeMap).sort((a, b) => b.total - a.total),
+        totals: { total: grandTotal, count: rows.length },
+        items,
+      };
+    }),
 });

@@ -1579,3 +1579,12 @@
 - [x] Produto 808 (código 00808 - VARETA GLADE REEDS): campo volumes corrigido - divide por 11,6 kg para mostrar número de caixas
 - [x] Produto 00808: corrigir exibição em TODAS as telas (Estoque, Vendas, Faturamento) - dividir peso por 11,6 para mostrar caixas
 - [x] BUG: Dashboard não carrega - erro Zod "Too big: expected array to have <=200 items" no campo pedidos - aumentado para 2000
+
+## Sub-abas Financeiro: Inadimplência e Recebíveis (05/04/2026)
+- [x] Financeiro: criar 3 sub-abas (Visão Geral, Inadimplência, Recebíveis)
+- [x] Inadimplência: gestão de cobrança com aging (1-15d, 16-30d, 31-60d, 61-90d, 90+d), busca, ordenação
+- [x] Inadimplência: lista de clientes devedores com títulos, vendedor, dias atraso, valor, pagamento parcial
+- [x] Recebíveis: controle por tipo de recebimento (Títulos vs Receitas)
+- [x] Recebíveis: controle por banco/conta com detalhamento expandível
+- [x] Recebíveis: filtro Em Aberto / Todos / Vencidos / A Vencer
+- [x] Backend: procedure getReceivablesByBank para agrupar recebíveis por banco e tipo

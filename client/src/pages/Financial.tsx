@@ -63,6 +63,8 @@ import TopNav from "@/components/TopNav";
 import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
 import WeekReconciliationCard from "@/components/WeekReconciliationCard";
 import ResumoFinanceiroCard from "@/components/ResumoFinanceiroCard";
+import InadimplenciaTab from "@/components/InadimplenciaTab";
+import ReceivablesTab from "@/components/ReceivablesTab";
 import { useOperator } from "@/contexts/OperatorContext";
 
 /* ---- Helpers ---- */
@@ -1696,6 +1698,7 @@ function CashFlowCard() {
 /* ---- Main Financial Page ---- */
 export default function Financial() {
   const { hasGranularAccess } = useOperator();
+  const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis">("visao-geral");
   const { data: summary, isLoading: loadingSummary } = trpc.financial.getSummary.useQuery(undefined, { refetchInterval: 60000 });
   const { data: calendarData, isLoading: loadingCalendar } = trpc.financial.getPaymentCalendar.useQuery(undefined, { refetchInterval: 60000 });
   const { data: monthlyData, isLoading: loadingMonthly } = trpc.financial.getMonthlyBreakdown.useQuery(undefined, { refetchInterval: 60000 });
@@ -1744,7 +1747,66 @@ export default function Financial() {
     <div className="min-h-screen bg-slate-50">
       <TopNav />
       <main className="container py-6 space-y-6">
-        {isLoading ? (
+        {/* Título elegante */}
+        <div className="text-center py-2">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+            <span className="text-slate-700">Dashboard de Análise Financeira</span>
+            <span className="text-teal-600 ml-2">Grupo Fox</span>
+          </h2>
+          <p className="text-sm text-slate-400 mt-1.5 tracking-widest uppercase">Contas a Pagar e Receber</p>
+        </div>
+
+        {/* Sub-abas */}
+        <div className="flex items-center justify-center gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1">
+          <button
+            onClick={() => setActiveTab("visao-geral")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              activeTab === "visao-geral"
+                ? "bg-teal-600 text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Visão Geral
+          </button>
+          <button
+            onClick={() => setActiveTab("inadimplencia")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              activeTab === "inadimplencia"
+                ? "bg-red-600 text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            Inadimplência
+            {summary && summary.receber.vencidas.count > 0 && (
+              <Badge className="bg-red-100 text-red-700 border-red-200 text-[10px] ml-1">
+                {summary.receber.vencidas.count}
+              </Badge>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("recebiveis")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              activeTab === "recebiveis"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <Landmark className="w-4 h-4" />
+            Recebíveis
+          </button>
+        </div>
+
+        {/* Tab: Inadimplência */}
+        {activeTab === "inadimplencia" && <InadimplenciaTab />}
+
+        {/* Tab: Recebíveis */}
+        {activeTab === "recebiveis" && <ReceivablesTab />}
+
+        {/* Tab: Visão Geral */}
+        {activeTab === "visao-geral" && (
+        isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-teal-500 mb-3" />
             <p className="text-sm text-slate-500">Carregando dados financeiros...</p>
@@ -1757,15 +1819,6 @@ export default function Financial() {
           </div>
         ) : (
           <>
-            {/* Título elegante */}
-            <div className="text-center py-2">
-              <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-                <span className="text-slate-700">Dashboard de Análise Financeira</span>
-                <span className="text-teal-600 ml-2">Grupo Fox</span>
-              </h2>
-              <p className="text-sm text-slate-400 mt-1.5 tracking-widest uppercase">Contas a Pagar e Receber</p>
-            </div>
-
             <ConnectionStatusCard />
 
             {/* Resumo Financeiro (Faturamento + Vendas vs Contas Pagas) */}
@@ -1919,6 +1972,7 @@ export default function Financial() {
             />
 
           </>
+        )
         )}
       </main>
     </div>
