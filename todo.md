@@ -1625,3 +1625,9 @@
 - [x] Reorganizar hierarquia: Empresa → Mês → Banco/Conta → Forma de Recebimento
 - [x] Backend: ajustar procedure getReceivablesHierarchical para nova hierarquia
 - [x] Frontend: redesenhar ReceivablesTab com cards empresa mostrando meses, dentro banco, dentro forma
+
+## Melhorias visuais Recebíveis + Seleção para desconto (05/04/2026)
+- [x] Visual: melhorar separações visuais entre meses, bancos (bordas, cores, espaçamento)
+- [x] Simplificar: remover nível "forma de recebimento", ao clicar no banco abrir lista direta por data
+- [x] Checkbox: adicionar seleção à esquerda de cada título para marcar boletos para desconto
+- [x] Barra de resumo: mostrar total selecionado e quantidade de boletos marcados para antecipação
