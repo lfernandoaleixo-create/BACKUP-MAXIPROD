@@ -1049,7 +1049,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         <div style={{ width: showValues ? '70px' : '80px' }} className="flex-shrink-0 text-center">
           <span className="text-xs text-slate-400">{order.itens.length} {order.itens.length === 1 ? "item" : "itens"}</span>
           <div className={`font-bold ${showValues ? 'text-sm' : 'text-base'} text-slate-700`}>
-            {Math.round(order.itens.reduce((sum, i) => sum + i.quantidade, 0))} vol.
+            {Math.round(order.itens.reduce((sum, i) => sum + (i.codigoItem === '00808' ? i.quantidade / 11.6 : i.quantidade), 0))} vol.
           </div>
         </div>
 
@@ -1346,7 +1346,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <span className="text-base font-bold text-slate-800">
-                      {formatNumber(item.quantidade)} un
+                      {formatNumber(item.codigoItem === '00808' ? item.quantidade / 11.6 : item.quantidade)} {item.codigoItem === '00808' ? 'cx' : 'un'}
                     </span>
                     {item.quantidadeFaturada && item.quantidadeFaturada > 0 && (
                       <span className="text-[10px] text-blue-500 block">
@@ -1368,7 +1368,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
                 <div className="text-right">
                   <div className="border-t-2 border-slate-400 pt-1.5 mt-0.5 pl-8">
                     <span className="text-sm font-bold text-slate-800">
-                      Total: {formatNumber(order.itens.reduce((sum, i) => sum + i.quantidade, 0))} un
+                      Total: {formatNumber(order.itens.reduce((sum, i) => sum + (i.codigoItem === '00808' ? i.quantidade / 11.6 : i.quantidade), 0))} un
                     </span>
                     {showValues && (
                       <span className="text-xs text-slate-500 block">

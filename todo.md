@@ -1576,3 +1576,4 @@
 - [x] Corrigir autocomplete definitivamente: ao digitar "A" deve mostrar TODOS os clientes com A, sem limite de 30, com scroll no dropdown
 - [x] BUG: busca de clientes usa LIKE '%X%' (contém) em vez de LIKE 'X%' (começa com) - digitar B deve mostrar clientes que COMEÇAM com B
 - [x] BUG CRÍTICO: busca era case-sensitive - digitar minúsculo não encontrava nomes em UPPERCASE. Corrigido com toUpperCase() no backend
+- [x] Produto 808 (código 00808 - VARETA GLADE REEDS): campo volumes corrigido - divide por 11,6 kg para mostrar número de caixas
