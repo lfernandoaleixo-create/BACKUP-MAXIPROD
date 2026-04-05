@@ -918,7 +918,8 @@ async function fetchAccountsReceivable(): Promise<any[]> {
         bloqueado
         cliente { nomeFantasia razaoSocial }
         centroDeCustos { id }
-        conta { id }
+        conta { id descricao }
+        formaDeCobranca { id banco { descricao } contaNumero agenciaCodigo }
         minhaEmpresaId
       }
     }
@@ -988,6 +989,9 @@ function transformAccountsReceivable(items: any[]): any[] {
     cliente: item.cliente?.razaoSocial || item.cliente?.nomeFantasia || "",
     centroDeCustosId: item.centroDeCustos?.id || null,
     contaId: item.conta?.id || null,
+    bancoNome: item.formaDeCobranca?.banco?.descricao || null,
+    contaNumero: item.formaDeCobranca?.contaNumero || null,
+    agencia: item.formaDeCobranca?.agenciaCodigo || null,
     empresaId: item.minhaEmpresaId || null,
     empresaNome: getCompanyName(item.minhaEmpresaId),
   }));

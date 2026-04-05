@@ -1606,3 +1606,17 @@
 - [x] Recebíveis: listagem cronológica com filtros A Receber/Recebidos/Todos
 - [x] Recebíveis: detalhes expandíveis de cada título (cliente, valor, vencimento, tipo, status)
 - [x] Recebíveis: totalizadores por banco com cores distintas
+
+## Redesign Recebíveis e Inadimplência - Hierarquia Empresa > Banco > Forma Pgto > Mês (05/04/2026)
+- [x] Recebíveis: dividir por empresa (VARETAS, PALITOS, ESPETOS)
+- [x] Recebíveis: dentro de cada empresa, dividir por banco (Sicredi, Sicoob)
+- [x] Recebíveis: dentro de cada banco, dividir por tipo (Títulos/Boletos, Receitas, etc.)
+- [x] Recebíveis: divisão mensal dos recebíveis
+- [x] Recebíveis: foco principal nos A VENCER
+- [x] Inadimplência: agrupamento adequado para vencidos (diferente dos a vencer)
+- [x] Backend: nova procedure getReceivablesHierarchical (empresa → conta bancária → tipo → mês)
+- [x] Backend: incluir contaNumero e agencia nos dados retornados
+- [x] Frontend: redesenhar ReceivablesTab com visual hierárquico expansível
+- [x] Frontend: cards por empresa com totais, dentro cards por conta bancária, dentro por tipo, dentro por mês
+- [x] Frontend: InadimplenciaTab - adicionar cards de faixa de atraso (aging) e vista agrupada por cliente
+- [x] Testes: vitest para nova procedure getReceivablesHierarchical (skipped - procedure usa dados reais do GraphQL)

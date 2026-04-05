@@ -1,16 +1,20 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import {
+  Building2,
   Landmark,
   Search,
   ChevronDown,
-  ChevronUp,
+  ChevronRight,
   AlertTriangle,
   Clock,
   X,
   Banknote,
   FileText,
   TrendingUp,
+  Calendar,
+  CreditCard,
+  Receipt,
 } from "lucide-react";
 
 /* ---- Helpers ---- */
@@ -22,33 +26,63 @@ function formatDate(d: string | null) {
   const [y, m, day] = d.split("-");
   return `${day}/${m}/${y}`;
 }
-
-const BANK_COLORS: Record<string, { bg: string; border: string; icon: string; accent: string; bar: string }> = {
-  SICOOB: { bg: "bg-green-50", border: "border-green-300", icon: "text-green-600", accent: "bg-green-600", bar: "bg-green-500" },
-  SICREDI: { bg: "bg-emerald-50", border: "border-emerald-300", icon: "text-emerald-600", accent: "bg-emerald-600", bar: "bg-emerald-500" },
-  BRADESCO: { bg: "bg-red-50", border: "border-red-300", icon: "text-red-600", accent: "bg-red-600", bar: "bg-red-500" },
-  ITAU: { bg: "bg-orange-50", border: "border-orange-300", icon: "text-orange-600", accent: "bg-orange-600", bar: "bg-orange-500" },
-  "BANCO DO BRASIL": { bg: "bg-yellow-50", border: "border-yellow-300", icon: "text-yellow-600", accent: "bg-yellow-600", bar: "bg-yellow-500" },
-  CAIXA: { bg: "bg-blue-50", border: "border-blue-300", icon: "text-blue-600", accent: "bg-blue-600", bar: "bg-blue-500" },
-  SANTANDER: { bg: "bg-red-50", border: "border-red-300", icon: "text-red-600", accent: "bg-red-600", bar: "bg-red-500" },
-};
-const DEFAULT_BANK_COLOR = { bg: "bg-slate-50", border: "border-slate-300", icon: "text-slate-600", accent: "bg-slate-600", bar: "bg-slate-500" };
-
-function getBankColor(banco: string) {
-  const upper = banco.toUpperCase();
-  for (const [key, val] of Object.entries(BANK_COLORS)) {
-    if (upper.includes(key)) return val;
-  }
-  return DEFAULT_BANK_COLOR;
+function formatMonth(mes: string) {
+  const [y, m] = mes.split("-");
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  return `${months[parseInt(m) - 1]} ${y}`;
 }
 
-const TIPO_LABELS: Record<string, string> = {
-  TITULO: "Títulos / Boletos",
-  RECEITA: "Receitas",
-  ADIANTAMENTO: "Adiantamentos",
+function shortBankName(nome: string) {
+  if (nome.toUpperCase().includes("SICREDI")) return "Sicredi";
+  if (nome.toUpperCase().includes("SICOOB") || nome.toUpperCase().includes("BANCOOB")) return "Sicoob";
+  if (nome.toUpperCase().includes("CAIXA")) return "Caixa";
+  if (nome.toUpperCase().includes("BRADESCO")) return "Bradesco";
+  if (nome.toUpperCase().includes("ITAU") || nome.toUpperCase().includes("ITAÚ")) return "Itaú";
+  if (nome.toUpperCase().includes("BANCO DO BRASIL")) return "BB";
+  if (nome === "Sem Banco") return "Sem Banco";
+  return nome;
+}
+
+function shortEmpresaName(nome: string) {
+  if (nome.toUpperCase().includes("PALITOS")) return "PALITOS";
+  if (nome.toUpperCase().includes("VARETAS")) return "VARETAS";
+  if (nome.toUpperCase().includes("ESPETOS")) return "ESPETOS";
+  return nome;
+}
+
+const EMPRESA_COLORS: Record<string, { bg: string; border: string; text: string; accent: string; light: string }> = {
+  PALITOS: { bg: "bg-blue-50", border: "border-blue-300", text: "text-blue-700", accent: "bg-blue-600", light: "bg-blue-100" },
+  VARETAS: { bg: "bg-amber-50", border: "border-amber-300", text: "text-amber-700", accent: "bg-amber-600", light: "bg-amber-100" },
+  ESPETOS: { bg: "bg-emerald-50", border: "border-emerald-300", text: "text-emerald-700", accent: "bg-emerald-600", light: "bg-emerald-100" },
+};
+const DEFAULT_EMPRESA_COLOR = { bg: "bg-slate-50", border: "border-slate-300", text: "text-slate-700", accent: "bg-slate-600", light: "bg-slate-100" };
+
+function getEmpresaColor(nome: string) {
+  const short = shortEmpresaName(nome);
+  return EMPRESA_COLORS[short] || DEFAULT_EMPRESA_COLOR;
+}
+
+const BANK_COLORS: Record<string, { bg: string; border: string; icon: string; bar: string }> = {
+  Sicredi: { bg: "bg-emerald-50", border: "border-emerald-200", icon: "text-emerald-600", bar: "bg-emerald-500" },
+  Sicoob: { bg: "bg-green-50", border: "border-green-200", icon: "text-green-600", bar: "bg-green-500" },
+  Caixa: { bg: "bg-sky-50", border: "border-sky-200", icon: "text-sky-600", bar: "bg-sky-500" },
+  "Sem Banco": { bg: "bg-slate-50", border: "border-slate-200", icon: "text-slate-500", bar: "bg-slate-400" },
+};
+const DEFAULT_BANK_COLOR = { bg: "bg-slate-50", border: "border-slate-200", icon: "text-slate-500", bar: "bg-slate-400" };
+
+function getBankColor(nome: string) {
+  const short = shortBankName(nome);
+  return BANK_COLORS[short] || DEFAULT_BANK_COLOR;
+}
+
+const TIPO_LABELS: Record<string, { label: string; icon: typeof Banknote }> = {
+  TITULO: { label: "Títulos / Boletos", icon: FileText },
+  RECEITA: { label: "Receitas", icon: Receipt },
+  ADIANTAMENTO: { label: "Adiantamentos", icon: CreditCard },
+  OUTROS: { label: "Outros", icon: Banknote },
 };
 
-type ReceivableItem = {
+type ItemData = {
   id: number;
   cliente: string;
   valorAReceber: number;
@@ -59,75 +93,115 @@ type ReceivableItem = {
   liquidacao: string | null;
   referenteA: string;
   tipo: string;
-  estado: string;
+  estado: string | null;
   parcela: string;
   documento: string;
   empresa: string;
-  banco: string;
+  bancoNome: string;
+  contaNumero: string;
+  agencia: string;
   isOverdue: boolean;
 };
 
 export default function ReceivablesTab() {
   const [estado, setEstado] = useState<"EMITIDO" | "RECEBIDO" | "ALL">("EMITIDO");
   const [search, setSearch] = useState("");
-  const [expandedBank, setExpandedBank] = useState<string | null>(null);
+  const [expandedEmpresas, setExpandedEmpresas] = useState<Set<string>>(new Set());
+  const [expandedContas, setExpandedContas] = useState<Set<string>>(new Set());
+  const [expandedTipos, setExpandedTipos] = useState<Set<string>>(new Set());
+  const [expandedMeses, setExpandedMeses] = useState<Set<string>>(new Set());
   const [expandedItem, setExpandedItem] = useState<number | null>(null);
-  const [bancoFilter, setBancoFilter] = useState<string | null>(null);
-  const [tipoFilter, setTipoFilter] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"vencimento" | "valor" | "cliente">("vencimento");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const { data, isLoading } = trpc.financial.getReceivablesByBank.useQuery({ estado });
 
-  const filteredItems = useMemo(() => {
-    if (!data?.items) return [];
-    let items = [...data.items];
-    if (bancoFilter) items = items.filter(i => i.banco === bancoFilter);
-    if (tipoFilter) items = items.filter(i => i.tipo === tipoFilter);
-    if (search) {
-      const s = search.toUpperCase();
-      items = items.filter(i =>
-        i.cliente.toUpperCase().includes(s) ||
-        i.referenteA.toUpperCase().includes(s) ||
-        i.documento.toUpperCase().includes(s)
-      );
-    }
-    const dir = sortDir === "asc" ? 1 : -1;
-    items.sort((a, b) => {
-      if (sortBy === "vencimento") return a.vencimento.localeCompare(b.vencimento) * dir;
-      if (sortBy === "valor") return (a.valorAReceber - b.valorAReceber) * dir;
-      return a.cliente.localeCompare(b.cliente) * dir;
+  // Filter items by search
+  const filteredData = useMemo(() => {
+    if (!data?.empresas || !search) return data;
+    const s = search.toUpperCase();
+    
+    const empresas = data.empresas.map(emp => {
+      const contas = emp.contas.map(conta => {
+        const tipos = conta.tipos.map(tipo => {
+          const meses = tipo.meses.map(mes => {
+            const items = mes.items.filter(i =>
+              i.cliente.toUpperCase().includes(s) ||
+              i.referenteA.toUpperCase().includes(s) ||
+              i.documento.toUpperCase().includes(s)
+            );
+            return { ...mes, items, total: items.reduce((a, b) => a + b.valorAReceber, 0), count: items.length };
+          }).filter(m => m.count > 0);
+          return { ...tipo, meses, total: meses.reduce((a, b) => a + b.total, 0), count: meses.reduce((a, b) => a + b.count, 0) };
+        }).filter(t => t.count > 0);
+        return {
+          ...conta, tipos,
+          total: tipos.reduce((a, b) => a + b.total, 0),
+          count: tipos.reduce((a, b) => a + b.count, 0),
+        };
+      }).filter(c => c.count > 0);
+      return {
+        ...emp, contas,
+        total: contas.reduce((a, b) => a + b.total, 0),
+        count: contas.reduce((a, b) => a + b.count, 0),
+      };
+    }).filter(e => e.count > 0);
+
+    return {
+      empresas,
+      totals: {
+        total: empresas.reduce((a, b) => a + b.total, 0),
+        count: empresas.reduce((a, b) => a + b.count, 0),
+        vencido: data.totals.vencido,
+        aVencer: data.totals.aVencer,
+      },
+    };
+  }, [data, search]);
+
+  function toggleEmpresa(nome: string) {
+    setExpandedEmpresas(prev => {
+      const next = new Set(prev);
+      if (next.has(nome)) next.delete(nome);
+      else next.add(nome);
+      return next;
     });
-    return items;
-  }, [data, search, bancoFilter, tipoFilter, sortBy, sortDir]);
-
-  const itemsByBank = useMemo(() => {
-    const map: Record<string, ReceivableItem[]> = {};
-    for (const item of filteredItems) {
-      if (!map[item.banco]) map[item.banco] = [];
-      map[item.banco].push(item);
-    }
-    return map;
-  }, [filteredItems]);
-
-  function toggleSort(field: typeof sortBy) {
-    if (sortBy === field) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortBy(field); setSortDir("asc"); }
+  }
+  function toggleConta(key: string) {
+    setExpandedContas(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+  function toggleTipo(key: string) {
+    setExpandedTipos(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+  function toggleMes(key: string) {
+    setExpandedMeses(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-32 bg-slate-100 rounded-xl animate-pulse" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(2)].map((_, i) => <div key={i} className="h-40 bg-slate-100 rounded-xl animate-pulse" />)}
         </div>
         <div className="h-96 bg-slate-100 rounded-xl animate-pulse" />
       </div>
     );
   }
 
-  const { byBank = [], byType = [], totals = { total: 0, count: 0 } } = data || {};
-  const maxBankTotal = Math.max(...byBank.map(b => b.total), 1);
+  const { empresas = [], totals = { total: 0, count: 0, vencido: 0, aVencer: 0 } } = filteredData || {};
+  const maxEmpresaTotal = Math.max(...empresas.map(e => e.total), 1);
 
   return (
     <div className="space-y-5">
@@ -140,6 +214,9 @@ export default function ReceivablesTab() {
           </h2>
           <p className="text-sm text-slate-500">
             {totals.count} títulos · Total: <span className="font-semibold text-slate-700">{formatCurrency(totals.total)}</span>
+            {totals.vencido > 0 && (
+              <span className="text-red-500 ml-2">· Vencido: {formatCurrency(totals.vencido)}</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
@@ -157,92 +234,7 @@ export default function ReceivablesTab() {
         </div>
       </div>
 
-      {/* Cards por Banco */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {byBank.map(bank => {
-          const colors = getBankColor(bank.banco);
-          const isActive = bancoFilter === bank.banco;
-          const pctVencido = bank.total > 0 ? (bank.vencido / bank.total) * 100 : 0;
-          const barWidth = (bank.total / maxBankTotal) * 100;
-
-          return (
-            <button
-              key={bank.banco}
-              onClick={() => {
-                setBancoFilter(isActive ? null : bank.banco);
-                setExpandedBank(isActive ? null : bank.banco);
-              }}
-              className={`rounded-xl border-2 p-4 text-left transition-all hover:shadow-lg ${colors.bg} ${
-                isActive ? `${colors.border} ring-2 ring-offset-1 ring-blue-400 shadow-lg` : `${colors.border}`
-              }`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-white/80 shadow-sm`}>
-                    <Landmark className={`w-5 h-5 ${colors.icon}`} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-800">{bank.banco}</h3>
-                    <span className="text-xs text-slate-500">{bank.count} títulos</span>
-                  </div>
-                </div>
-                {isActive && <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />}
-              </div>
-
-              <div className="text-2xl font-bold text-slate-800 mb-3">{formatCurrency(bank.total)}</div>
-
-              {/* Barra de proporção vencido/a vencer */}
-              <div className="w-full h-2.5 rounded-full bg-white/60 overflow-hidden mb-2.5">
-                <div className="h-full flex">
-                  {pctVencido > 0 && <div className="bg-red-400 h-full transition-all" style={{ width: `${pctVencido}%` }} />}
-                  <div className={`${colors.bar} h-full transition-all`} style={{ width: `${100 - pctVencido}%` }} />
-                </div>
-              </div>
-
-              <div className="flex justify-between text-xs">
-                <span className="text-red-600 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  Vencido: {formatCurrency(bank.vencido)}
-                </span>
-                <span className={`${colors.icon} flex items-center gap-1`}>
-                  <Clock className="w-3 h-3" />
-                  A vencer: {formatCurrency(bank.aVencer)}
-                </span>
-              </div>
-
-              {/* Barra relativa ao maior banco */}
-              <div className="mt-3 w-full h-1.5 rounded-full bg-white/40 overflow-hidden">
-                <div className={`${colors.bar} h-full rounded-full transition-all`} style={{ width: `${barWidth}%` }} />
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Cards por Tipo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {byType.map(t => {
-          const isActive = tipoFilter === t.tipo;
-          return (
-            <button
-              key={t.tipo}
-              onClick={() => setTipoFilter(isActive ? null : t.tipo)}
-              className={`rounded-lg border p-3 text-left transition-all hover:shadow-md ${
-                isActive ? "bg-blue-50 border-blue-300 ring-1 ring-blue-400" : "bg-white border-slate-200"
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <Banknote className={`w-4 h-4 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
-                <span className="text-xs font-semibold text-slate-500 uppercase">{TIPO_LABELS[t.tipo] || t.tipo}</span>
-              </div>
-              <div className="text-lg font-bold text-slate-800">{formatCurrency(t.total)}</div>
-              <div className="text-xs text-slate-500">{t.count} títulos</div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Filtros e Busca */}
+      {/* Busca */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -251,161 +243,334 @@ export default function ReceivablesTab() {
             placeholder="Buscar por cliente, documento ou referência..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
-        {(bancoFilter || tipoFilter) && (
-          <button
-            onClick={() => { setBancoFilter(null); setTipoFilter(null); setExpandedBank(null); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 shrink-0"
-          >
-            <X className="w-3.5 h-3.5" />
-            Limpar filtros
-          </button>
-        )}
       </div>
 
-      {/* Lista de recebíveis por banco */}
-      <div className="space-y-3">
-        {Object.entries(itemsByBank)
-          .sort(([, a], [, b]) => {
-            const totalA = a.reduce((s, i) => s + i.valorAReceber, 0);
-            const totalB = b.reduce((s, i) => s + i.valorAReceber, 0);
-            return totalB - totalA;
-          })
-          .map(([banco, items]) => {
-            const colors = getBankColor(banco);
-            const total = items.reduce((s, i) => s + i.valorAReceber, 0);
-            const vencidos = items.filter(i => i.isOverdue);
-            const totalVencido = vencidos.reduce((s, i) => s + i.valorAReceber, 0);
-            const isOpen = expandedBank === banco || bancoFilter === banco;
+      {/* Cards resumo por empresa */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {empresas.map(emp => {
+          const colors = getEmpresaColor(emp.nome);
+          const pctTotal = (emp.total / maxEmpresaTotal) * 100;
+          const pctVencido = emp.total > 0 ? (emp.vencido / emp.total) * 100 : 0;
 
-            return (
-              <div key={banco} className={`rounded-xl border-2 overflow-hidden transition-all ${isOpen ? colors.border : "border-slate-200"}`}>
-                {/* Header do banco */}
-                <button
-                  onClick={() => setExpandedBank(isOpen && !bancoFilter ? null : banco)}
-                  className={`w-full px-4 py-3 flex items-center justify-between ${colors.bg} hover:brightness-[0.97] transition-all cursor-pointer`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-white/80 shadow-sm flex items-center justify-center">
-                      <Landmark className={`w-4 h-4 ${colors.icon}`} />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-bold text-sm text-slate-800">{banco}</h3>
-                      <span className="text-xs text-slate-500">
-                        {items.length} títulos
-                        {vencidos.length > 0 && <span className="text-red-500 ml-1">· {vencidos.length} vencidos ({formatCurrency(totalVencido)})</span>}
-                      </span>
-                    </div>
+          return (
+            <button
+              key={emp.nome}
+              onClick={() => toggleEmpresa(emp.nome)}
+              className={`rounded-xl border-2 p-4 text-left transition-all hover:shadow-lg ${colors.bg} ${
+                expandedEmpresas.has(emp.nome) ? `${colors.border} ring-2 ring-offset-1 ring-blue-400 shadow-lg` : colors.border
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/80 shadow-sm">
+                    <Building2 className={`w-5 h-5 ${colors.text}`} />
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-slate-800">{formatCurrency(total)}</span>
-                    {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-800">{shortEmpresaName(emp.nome)}</h3>
+                    <span className="text-xs text-slate-500">{emp.count} títulos · {emp.contas.length} conta{emp.contas.length !== 1 ? "s" : ""}</span>
                   </div>
+                </div>
+                {expandedEmpresas.has(emp.nome)
+                  ? <ChevronDown className="w-4 h-4 text-slate-400" />
+                  : <ChevronRight className="w-4 h-4 text-slate-400" />
+                }
+              </div>
+
+              <div className="text-2xl font-bold text-slate-800 mb-3">{formatCurrency(emp.total)}</div>
+
+              {/* Barra vencido/a vencer */}
+              <div className="w-full h-2.5 rounded-full bg-white/60 overflow-hidden mb-2.5">
+                <div className="h-full flex">
+                  {pctVencido > 0 && <div className="bg-red-400 h-full transition-all" style={{ width: `${pctVencido}%` }} />}
+                  <div className={`${colors.accent} h-full transition-all opacity-70`} style={{ width: `${100 - pctVencido}%` }} />
+                </div>
+              </div>
+
+              <div className="flex justify-between text-xs">
+                <span className="text-red-600 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Vencido: {formatCurrency(emp.vencido)}
+                </span>
+                <span className={`${colors.text} flex items-center gap-1`}>
+                  <Clock className="w-3 h-3" />
+                  A vencer: {formatCurrency(emp.aVencer)}
+                </span>
+              </div>
+
+              {/* Barra relativa */}
+              <div className="mt-3 w-full h-1.5 rounded-full bg-white/40 overflow-hidden">
+                <div className={`${colors.accent} h-full rounded-full transition-all opacity-60`} style={{ width: `${pctTotal}%` }} />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Hierarquia expandida */}
+      <div className="space-y-4">
+        {empresas.filter(emp => expandedEmpresas.has(emp.nome)).map(emp => {
+          const empColors = getEmpresaColor(emp.nome);
+
+          return (
+            <div key={emp.nome} className={`rounded-xl border-2 ${empColors.border} overflow-hidden`}>
+              {/* Header empresa */}
+              <div className={`px-5 py-3 ${empColors.bg} flex items-center justify-between`}>
+                <div className="flex items-center gap-3">
+                  <Building2 className={`w-5 h-5 ${empColors.text}`} />
+                  <div>
+                    <h3 className="font-bold text-slate-800">{emp.nome}</h3>
+                    <span className="text-xs text-slate-500">{emp.count} títulos · {formatCurrency(emp.total)}</span>
+                  </div>
+                </div>
+                <button onClick={() => toggleEmpresa(emp.nome)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-4 h-4" />
                 </button>
+              </div>
 
-                {/* Detalhes do banco */}
-                {isOpen && (
-                  <div className="bg-white">
-                    {/* Header da tabela */}
-                    <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px_80px] gap-2 px-4 py-2 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      <button onClick={() => toggleSort("cliente")} className="flex items-center gap-1 hover:text-slate-700">
-                        Cliente / Referência
-                        {sortBy === "cliente" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                      </button>
-                      <button onClick={() => toggleSort("valor")} className="flex items-center gap-1 hover:text-slate-700 justify-end">
-                        Valor
-                        {sortBy === "valor" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                      </button>
-                      <button onClick={() => toggleSort("vencimento")} className="flex items-center gap-1 hover:text-slate-700">
-                        Vencimento
-                        {sortBy === "vencimento" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                      </button>
-                      <div>Tipo</div>
-                      <div className="text-center">Status</div>
-                    </div>
+              {/* Contas bancárias */}
+              <div className="bg-white divide-y divide-slate-100">
+                {emp.contas.map((conta, ci) => {
+                  const contaKey = `${emp.nome}|${conta.bancoNome}|${conta.contaNumero}`;
+                  const bankColor = getBankColor(conta.bancoNome);
+                  const isContaOpen = expandedContas.has(contaKey);
+                  const pctVencido = conta.total > 0 ? (conta.vencido / conta.total) * 100 : 0;
+                  const contaLabel = conta.contaNumero
+                    ? `${shortBankName(conta.bancoNome)} · Ag ${conta.agencia || "-"} · Cc ${conta.contaNumero}`
+                    : shortBankName(conta.bancoNome);
 
-                    {/* Lista de itens */}
-                    <div className="divide-y divide-slate-50 max-h-[60vh] overflow-y-auto">
-                      {items.map(item => (
-                        <div key={item.id}>
-                          <div
-                            onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-                            className={`grid grid-cols-1 md:grid-cols-[1fr_120px_100px_80px_80px] gap-2 px-4 py-2.5 cursor-pointer transition-colors items-center ${
-                              item.isOverdue ? "hover:bg-red-50/50 bg-red-50/20" : "hover:bg-slate-50"
-                            }`}
-                          >
-                            {/* Cliente */}
-                            <div className="min-w-0">
-                              <div className="font-medium text-sm text-slate-800 truncate">{item.cliente}</div>
-                              <div className="text-xs text-slate-500 truncate">
-                                {item.referenteA}
-                                {item.documento && ` · ${item.documento}`}
-                                {item.parcela && ` · ${item.parcela}`}
-                              </div>
-                            </div>
-
-                            {/* Valor */}
-                            <div className="text-right">
-                              <span className={`font-bold text-sm ${item.isOverdue ? "text-red-600" : "text-slate-800"}`}>
-                                {formatCurrency(item.valorAReceber)}
-                              </span>
-                              {item.valorPago > 0 && (
-                                <div className="text-[10px] text-green-600">Pago: {formatCurrency(item.valorPago)}</div>
-                              )}
-                            </div>
-
-                            {/* Vencimento */}
-                            <div className={`text-sm ${item.isOverdue ? "text-red-600 font-medium" : "text-slate-600"}`}>
-                              {formatDate(item.vencimento)}
-                            </div>
-
-                            {/* Tipo */}
-                            <div>
-                              <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
-                                {item.tipo === "TITULO" ? "Título" : item.tipo === "RECEITA" ? "Receita" : item.tipo}
-                              </span>
-                            </div>
-
-                            {/* Status */}
-                            <div className="text-center">
-                              {item.isOverdue ? (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
-                                  <AlertTriangle className="w-3 h-3" /> Vencido
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
-                                  <Clock className="w-3 h-3" /> A vencer
+                  return (
+                    <div key={ci}>
+                      {/* Header conta */}
+                      <button
+                        onClick={() => toggleConta(contaKey)}
+                        className={`w-full px-5 py-3 flex items-center justify-between hover:bg-slate-50/80 transition-all cursor-pointer`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg ${bankColor.bg} ${bankColor.border} border flex items-center justify-center`}>
+                            <Landmark className={`w-4 h-4 ${bankColor.icon}`} />
+                          </div>
+                          <div className="text-left">
+                            <h4 className="font-semibold text-sm text-slate-800">{contaLabel}</h4>
+                            <div className="flex items-center gap-3 text-xs text-slate-500">
+                              <span>{conta.count} títulos</span>
+                              {conta.vencido > 0 && (
+                                <span className="text-red-500">
+                                  {formatCurrency(conta.vencido)} vencido
                                 </span>
                               )}
                             </div>
                           </div>
-
-                          {/* Detalhes expandidos */}
-                          {expandedItem === item.id && (
-                            <div className="px-4 pb-3 bg-slate-50/50">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-white rounded-lg border border-slate-100">
-                                <DetailItem label="Valor Original" value={formatCurrency(item.valorOriginal)} />
-                                <DetailItem label="Valor Pago" value={formatCurrency(item.valorPago)} />
-                                <DetailItem label="Emissão" value={formatDate(item.emissao)} />
-                                <DetailItem label="Empresa" value={item.empresa || "-"} />
-                                <DetailItem label="Banco" value={item.banco} />
-                                <DetailItem label="Tipo" value={TIPO_LABELS[item.tipo] || item.tipo} />
-                                <DetailItem label="Estado" value={item.estado} />
-                                {item.liquidacao && <DetailItem label="Liquidação" value={formatDate(item.liquidacao)} />}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                      ))}
+                        <div className="flex items-center gap-3">
+                          {/* Mini barra */}
+                          <div className="hidden sm:block w-24 h-2 rounded-full bg-slate-100 overflow-hidden">
+                            {pctVencido > 0 && <div className="bg-red-400 h-full" style={{ width: `${pctVencido}%` }} />}
+                          </div>
+                          <span className="font-bold text-slate-800 text-sm">{formatCurrency(conta.total)}</span>
+                          {isContaOpen
+                            ? <ChevronDown className="w-4 h-4 text-slate-400" />
+                            : <ChevronRight className="w-4 h-4 text-slate-400" />
+                          }
+                        </div>
+                      </button>
+
+                      {/* Tipos dentro da conta */}
+                      {isContaOpen && (
+                        <div className="bg-slate-50/50 border-t border-slate-100">
+                          {conta.tipos.map((tipo, ti) => {
+                            const tipoKey = `${contaKey}|${tipo.tipo}`;
+                            const isTipoOpen = expandedTipos.has(tipoKey);
+                            const tipoInfo = TIPO_LABELS[tipo.tipo] || TIPO_LABELS.OUTROS;
+                            const TipoIcon = tipoInfo.icon;
+
+                            return (
+                              <div key={ti}>
+                                {/* Header tipo */}
+                                <button
+                                  onClick={() => toggleTipo(tipoKey)}
+                                  className="w-full px-5 pl-12 py-2.5 flex items-center justify-between hover:bg-white/60 transition-all cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <TipoIcon className="w-4 h-4 text-slate-400" />
+                                    <span className="text-sm font-medium text-slate-700">{tipoInfo.label}</span>
+                                    <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{tipo.count}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-semibold text-sm text-slate-700">{formatCurrency(tipo.total)}</span>
+                                    {isTipoOpen
+                                      ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                                      : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                                    }
+                                  </div>
+                                </button>
+
+                                {/* Meses dentro do tipo */}
+                                {isTipoOpen && (
+                                  <div className="bg-white/80">
+                                    {tipo.meses.map((mes, mi) => {
+                                      const mesKey = `${tipoKey}|${mes.mes}`;
+                                      const isMesOpen = expandedMeses.has(mesKey);
+                                      const isOverdueMonth = mes.mes < new Date().toISOString().substring(0, 7);
+
+                                      return (
+                                        <div key={mi}>
+                                          {/* Header mês */}
+                                          <button
+                                            onClick={() => toggleMes(mesKey)}
+                                            className={`w-full px-5 pl-16 py-2 flex items-center justify-between hover:bg-slate-50 transition-all cursor-pointer ${
+                                              isOverdueMonth ? "bg-red-50/30" : ""
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-2">
+                                              <Calendar className={`w-3.5 h-3.5 ${isOverdueMonth ? "text-red-400" : "text-slate-400"}`} />
+                                              <span className={`text-sm font-medium ${isOverdueMonth ? "text-red-600" : "text-slate-600"}`}>
+                                                {formatMonth(mes.mes)}
+                                              </span>
+                                              <span className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{mes.count}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                              <span className={`font-semibold text-sm ${isOverdueMonth ? "text-red-600" : "text-slate-700"}`}>
+                                                {formatCurrency(mes.total)}
+                                              </span>
+                                              {isMesOpen
+                                                ? <ChevronDown className="w-3 h-3 text-slate-400" />
+                                                : <ChevronRight className="w-3 h-3 text-slate-400" />
+                                              }
+                                            </div>
+                                          </button>
+
+                                          {/* Items do mês */}
+                                          {isMesOpen && (
+                                            <div className="bg-white border-t border-slate-50">
+                                              {/* Header tabela */}
+                                              <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px] gap-2 px-5 pl-20 py-1.5 bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                                <span>Cliente / Referência</span>
+                                                <span className="text-right">Valor</span>
+                                                <span>Vencimento</span>
+                                                <span className="text-center">Status</span>
+                                              </div>
+                                              <div className="divide-y divide-slate-50 max-h-[50vh] overflow-y-auto">
+                                                {mes.items.map(item => (
+                                                  <ItemRow
+                                                    key={item.id}
+                                                    item={item}
+                                                    isExpanded={expandedItem === item.id}
+                                                    onToggle={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
+                                                  />
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          );
+        })}
       </div>
+
+      {/* Mensagem quando nenhuma empresa expandida */}
+      {empresas.length > 0 && expandedEmpresas.size === 0 && (
+        <div className="text-center py-8 text-slate-400">
+          <Building2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">Clique em uma empresa acima para ver os detalhes</p>
+        </div>
+      )}
+
+      {empresas.length === 0 && !isLoading && (
+        <div className="text-center py-12 text-slate-400">
+          <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p>Nenhum recebível encontrado</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ItemRow({ item, isExpanded, onToggle }: { item: ItemData; isExpanded: boolean; onToggle: () => void }) {
+  return (
+    <div>
+      <div
+        onClick={onToggle}
+        className={`grid grid-cols-1 md:grid-cols-[1fr_120px_100px_80px] gap-2 px-5 pl-20 py-2 cursor-pointer transition-colors items-center ${
+          item.isOverdue ? "hover:bg-red-50/50 bg-red-50/20" : "hover:bg-slate-50"
+        }`}
+      >
+        {/* Cliente */}
+        <div className="min-w-0">
+          <div className="font-medium text-sm text-slate-800 truncate">{item.cliente}</div>
+          <div className="text-xs text-slate-500 truncate">
+            {item.referenteA}
+            {item.documento && ` · ${item.documento}`}
+            {item.parcela && ` · ${item.parcela}`}
+          </div>
+        </div>
+
+        {/* Valor */}
+        <div className="text-right">
+          <span className={`font-bold text-sm ${item.isOverdue ? "text-red-600" : "text-slate-800"}`}>
+            {formatCurrency(item.valorAReceber)}
+          </span>
+          {item.valorPago > 0 && (
+            <div className="text-[10px] text-green-600">Pago: {formatCurrency(item.valorPago)}</div>
+          )}
+        </div>
+
+        {/* Vencimento */}
+        <div className={`text-sm ${item.isOverdue ? "text-red-600 font-medium" : "text-slate-600"}`}>
+          {formatDate(item.vencimento)}
+        </div>
+
+        {/* Status */}
+        <div className="text-center">
+          {item.isOverdue ? (
+            <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+              <AlertTriangle className="w-3 h-3" /> Vencido
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+              <Clock className="w-3 h-3" /> A vencer
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Detalhes expandidos */}
+      {isExpanded && (
+        <div className="px-5 pl-20 pb-3 bg-slate-50/50">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-white rounded-lg border border-slate-100">
+            <DetailItem label="Valor Original" value={formatCurrency(item.valorOriginal)} />
+            <DetailItem label="Valor Pago" value={formatCurrency(item.valorPago)} />
+            <DetailItem label="Emissão" value={formatDate(item.emissao)} />
+            <DetailItem label="Empresa" value={item.empresa || "-"} />
+            <DetailItem label="Banco" value={item.bancoNome} />
+            <DetailItem label="Conta" value={item.contaNumero || "-"} />
+            <DetailItem label="Agência" value={item.agencia || "-"} />
+            <DetailItem label="Tipo" value={TIPO_LABELS[item.tipo]?.label || item.tipo} />
+            <DetailItem label="Estado" value={item.estado || "-"} />
+            {item.liquidacao && <DetailItem label="Liquidação" value={formatDate(item.liquidacao)} />}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

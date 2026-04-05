@@ -2567,8 +2567,8 @@ export const financialRouter = router({
     }),
 
   /**
-   * Get receivables grouped by bank and type
-   * Para a sub-aba Recebíveis do Financeiro
+   * Get receivables grouped hierarchically: Empresa → Conta Bancária → Tipo → Mês
+   * Para a sub-aba Recebíveis do Financeiro (redesign)
    */
   getReceivablesByBank: publicProcedure
     .input(z.object({
@@ -2578,7 +2578,7 @@ export const financialRouter = router({
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) return { byBank: [], byType: [], totals: { total: 0, count: 0 }, items: [] };
+      if (!db) return { empresas: [], totals: { total: 0, count: 0, vencido: 0, aVencer: 0 } };
 
       const estado = input?.estado || "EMITIDO";
       const conditions = [
@@ -2594,7 +2594,7 @@ export const financialRouter = router({
         conditions.push(lte(accountsReceivable.vencimentoData, input.dateTo + "T23:59:59"));
       }
 
-      // Buscar todos os recebíveis com JOIN na bankAccounts para obter o nome do banco
+      // Buscar todos os recebíveis com dados bancários diretos da tabela
       const rows = await db
         .select({
           id: accountsReceivable.id,
@@ -2611,52 +2611,60 @@ export const financialRouter = router({
           parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
           documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
           empresaNome: accountsReceivable.empresaNome,
-          contaId: accountsReceivable.contaId,
-          bancoNome: bankAccounts.bancoNome,
-          bancoAgencia: bankAccounts.agencia,
-          bancoConta: bankAccounts.contaNumero,
+          bancoNome: accountsReceivable.bancoNome,
+          contaNumero: accountsReceivable.contaNumero,
+          agencia: accountsReceivable.agencia,
         })
         .from(accountsReceivable)
-        .leftJoin(bankAccounts, eq(accountsReceivable.contaId, bankAccounts.maxiprodId))
         .where(and(...conditions))
         .orderBy(asc(accountsReceivable.vencimentoData));
 
-      // Agrupar por banco
-      const bankMap: Record<string, { banco: string; total: number; count: number; vencido: number; aVencer: number }> = {};
-      // Agrupar por tipo
-      const typeMap: Record<string, { tipo: string; total: number; count: number }> = {};
-
       const todayStr = getTodayBR();
       let grandTotal = 0;
+      let grandCount = 0;
+      let grandVencido = 0;
+      let grandAVencer = 0;
 
-      const items = rows.map(row => {
+      // Hierarquia: empresa → conta → tipo → mês
+      type ItemData = {
+        id: number; cliente: string; valorAReceber: number; valorOriginal: number;
+        valorPago: number; vencimento: string; emissao: string;
+        liquidacao: string | null; referenteA: string; tipo: string;
+        estado: string | null; parcela: string; documento: string;
+        empresa: string; bancoNome: string; contaNumero: string;
+        agencia: string; isOverdue: boolean;
+      };
+
+      // Build hierarchy maps
+      const empresaMap: Record<string, {
+        contas: Record<string, {
+          tipos: Record<string, {
+            meses: Record<string, { items: ItemData[]; total: number; count: number }>;
+            total: number; count: number;
+          }>;
+          bancoNome: string; contaNumero: string; agencia: string;
+          total: number; count: number; vencido: number; aVencer: number;
+        }>;
+        total: number; count: number; vencido: number; aVencer: number;
+      }> = {};
+
+      for (const row of rows) {
         const valorOriginal = Number(row.valorLiquido) || 0;
         const valorPago = Number(row.valorRecebidoLiquido) || 0;
         const valorAReceber = valorOriginal - valorPago;
+        if (valorAReceber <= 0 && estado === "EMITIDO") continue;
+
         const vencDate = (row.vencimentoData || "").split("T")[0];
         const isOverdue = vencDate < todayStr;
+        const mesKey = vencDate.substring(0, 7); // YYYY-MM
+        const empresa = row.empresaNome || "Sem Empresa";
+        const bancoNome = row.bancoNome || "Sem Banco";
+        const contaNumero = row.contaNumero || "";
+        const agencia = row.agencia || "";
+        const contaKey = `${bancoNome}|${contaNumero}|${agencia}`;
+        const tipoKey = row.tipo || "OUTROS";
 
-        // Banco
-        const bancoKey = row.bancoNome || row.empresaNome || "Sem banco";
-        if (!bankMap[bancoKey]) {
-          bankMap[bancoKey] = { banco: bancoKey, total: 0, count: 0, vencido: 0, aVencer: 0 };
-        }
-        bankMap[bancoKey].total += valorAReceber;
-        bankMap[bancoKey].count++;
-        if (isOverdue) bankMap[bancoKey].vencido += valorAReceber;
-        else bankMap[bancoKey].aVencer += valorAReceber;
-
-        // Tipo
-        const tipoKey = row.tipo || "Outros";
-        if (!typeMap[tipoKey]) {
-          typeMap[tipoKey] = { tipo: tipoKey, total: 0, count: 0 };
-        }
-        typeMap[tipoKey].total += valorAReceber;
-        typeMap[tipoKey].count++;
-
-        grandTotal += valorAReceber;
-
-        return {
+        const item: ItemData = {
           id: row.id,
           cliente: row.cliente || "Sem nome",
           valorAReceber,
@@ -2664,24 +2672,103 @@ export const financialRouter = router({
           valorPago,
           vencimento: vencDate,
           emissao: (row.emissaoData || "").split("T")[0],
-          liquidacao: row.liquidacaoData ? (row.liquidacaoData).split("T")[0] : null,
+          liquidacao: row.liquidacaoData ? row.liquidacaoData.split("T")[0] : null,
           referenteA: row.referenteA || "",
           tipo: row.tipo || "",
           estado: row.estado,
           parcela: row.parcela && row.parcelasQuantidadeTotal
             ? `${row.parcela}/${row.parcelasQuantidadeTotal}` : "",
           documento: row.documentoVinculadoNumero || "",
-          empresa: row.empresaNome || "",
-          banco: bancoKey,
+          empresa,
+          bancoNome,
+          contaNumero,
+          agencia,
           isOverdue,
         };
-      });
+
+        // Empresa level
+        if (!empresaMap[empresa]) {
+          empresaMap[empresa] = { contas: {}, total: 0, count: 0, vencido: 0, aVencer: 0 };
+        }
+        empresaMap[empresa].total += valorAReceber;
+        empresaMap[empresa].count++;
+        if (isOverdue) empresaMap[empresa].vencido += valorAReceber;
+        else empresaMap[empresa].aVencer += valorAReceber;
+
+        // Conta level
+        if (!empresaMap[empresa].contas[contaKey]) {
+          empresaMap[empresa].contas[contaKey] = {
+            bancoNome, contaNumero, agencia,
+            tipos: {}, total: 0, count: 0, vencido: 0, aVencer: 0,
+          };
+        }
+        const conta = empresaMap[empresa].contas[contaKey];
+        conta.total += valorAReceber;
+        conta.count++;
+        if (isOverdue) conta.vencido += valorAReceber;
+        else conta.aVencer += valorAReceber;
+
+        // Tipo level
+        if (!conta.tipos[tipoKey]) {
+          conta.tipos[tipoKey] = { meses: {}, total: 0, count: 0 };
+        }
+        conta.tipos[tipoKey].total += valorAReceber;
+        conta.tipos[tipoKey].count++;
+
+        // Mês level
+        if (!conta.tipos[tipoKey].meses[mesKey]) {
+          conta.tipos[tipoKey].meses[mesKey] = { items: [], total: 0, count: 0 };
+        }
+        conta.tipos[tipoKey].meses[mesKey].items.push(item);
+        conta.tipos[tipoKey].meses[mesKey].total += valorAReceber;
+        conta.tipos[tipoKey].meses[mesKey].count++;
+
+        grandTotal += valorAReceber;
+        grandCount++;
+        if (isOverdue) grandVencido += valorAReceber;
+        else grandAVencer += valorAReceber;
+      }
+
+      // Convert to sorted arrays
+      const empresas = Object.entries(empresaMap)
+        .sort(([, a], [, b]) => b.total - a.total)
+        .map(([nome, emp]) => ({
+          nome,
+          total: emp.total,
+          count: emp.count,
+          vencido: emp.vencido,
+          aVencer: emp.aVencer,
+          contas: Object.values(emp.contas)
+            .sort((a, b) => b.total - a.total)
+            .map(conta => ({
+              bancoNome: conta.bancoNome,
+              contaNumero: conta.contaNumero,
+              agencia: conta.agencia,
+              total: conta.total,
+              count: conta.count,
+              vencido: conta.vencido,
+              aVencer: conta.aVencer,
+              tipos: Object.entries(conta.tipos)
+                .sort(([, a], [, b]) => b.total - a.total)
+                .map(([tipo, t]) => ({
+                  tipo,
+                  total: t.total,
+                  count: t.count,
+                  meses: Object.entries(t.meses)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([mes, m]) => ({
+                      mes,
+                      total: m.total,
+                      count: m.count,
+                      items: m.items,
+                    })),
+                })),
+            })),
+        }));
 
       return {
-        byBank: Object.values(bankMap).sort((a, b) => b.total - a.total),
-        byType: Object.values(typeMap).sort((a, b) => b.total - a.total),
-        totals: { total: grandTotal, count: rows.length },
-        items,
+        empresas,
+        totals: { total: grandTotal, count: grandCount, vencido: grandVencido, aVencer: grandAVencer },
       };
     }),
 
