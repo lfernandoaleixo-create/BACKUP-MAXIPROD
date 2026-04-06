@@ -1638,3 +1638,6 @@
 
 ## Contraste visual contas vs meses (05/04/2026)
 - [x] Melhorar contraste entre área expandida das contas bancárias e os headers dos próximos meses
+
+## Remover coluna Rastreio (06/04/2026)
+- [x] Remover coluna "Rastreio" da tabela de faturados nos últimos 30 dias na aba Faturamento

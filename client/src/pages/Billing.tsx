@@ -2467,8 +2467,6 @@ export default function Billing() {
                 pickupSchedules={pickupSchedulesMap}
                 onChangePickupSchedule={hasGranularAccess("fat.agendamentoColeta") ? handleChangePickupSchedule : undefined}
                 onClearPickupSchedule={hasGranularAccess("fat.agendamentoColeta") ? handleClearPickupSchedule : undefined}
-                trackingLinks={(hasGranularAccess("fat.verRastreio") || hasGranularAccess("fat.rastreio")) ? trackingLinksMap : undefined}
-                onSetTrackingLink={hasGranularAccess("fat.rastreio") ? handleSetTrackingLink : undefined}
                 billingObservations={hasGranularAccess("fat.observacaoFaturar") ? billingObservationsMap : undefined}
                 onSetBillingObservation={hasGranularAccess("fat.observacaoFaturar") ? handleSetBillingObservation : undefined}
               />
