@@ -545,29 +545,74 @@ function DayCard({
             {groupedItems.map((group, gi) => {
               const isGroupCollapsed = collapsedGroups.has(group.fornecedor);
               const groupTotal = group.items.reduce((s, i) => s + i.valor, 0);
+              const groupAllAuthorized = group.items.length > 0 && group.items.every(i => i.authorized);
+              const groupPendingIds = group.items.filter(i => !i.authorized).map(i => i.maxiprodId);
+              const groupAllIds = group.items.map(i => i.maxiprodId);
               return (
                 <div key={group.fornecedor || `flat-${gi}`}>
-                  {/* Cabeçalho do fornecedor - colapsável com seta */}
+                  {/* Cabeçalho do fornecedor - colapsável com seta + Selecionar Tudo */}
                   {group.fornecedor && (
-                    <button
-                      onClick={() => toggleGroupCollapse(group.fornecedor)}
-                      className="w-full px-3 py-1.5 bg-amber-50 border-b border-amber-200 border-t border-t-amber-100 flex items-center justify-between cursor-pointer hover:bg-amber-100/70 transition-colors"
+                    <div
+                      className={`border-b border-t transition-colors ${
+                        groupAllAuthorized
+                          ? "bg-emerald-50 border-emerald-200 border-t-emerald-100"
+                          : "bg-amber-50 border-amber-200 border-t-amber-100"
+                      }`}
                     >
-                      <div className="flex items-center gap-1.5">
-                        {isGroupCollapsed ? (
-                          <ChevronRight className="w-3.5 h-3.5 text-amber-600" />
-                        ) : (
-                          <ChevronDown className="w-3.5 h-3.5 text-amber-600" />
-                        )}
-                        <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
-                          {group.fornecedor}
-                        </span>
-                        <span className="text-[9px] text-amber-600">({group.items.length})</span>
+                      <div className="flex items-center justify-between px-3 py-1.5">
+                        {/* Lado esquerdo: seta + nome + contagem */}
+                        <button
+                          onClick={() => toggleGroupCollapse(group.fornecedor)}
+                          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                        >
+                          {isGroupCollapsed ? (
+                            <ChevronRight className={`w-3.5 h-3.5 ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`} />
+                          ) : (
+                            <ChevronDown className={`w-3.5 h-3.5 ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`} />
+                          )}
+                          <span className={`text-xs font-bold uppercase tracking-wide ${
+                            groupAllAuthorized ? "text-emerald-900" : "text-amber-900"
+                          }`}>
+                            {group.fornecedor}
+                          </span>
+                          <span className={`text-[9px] ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`}>({group.items.length})</span>
+                        </button>
+
+                        {/* Lado direito: Selecionar Tudo + valor */}
+                        <div className="flex items-center gap-3">
+                          <label
+                            className="flex items-center gap-1.5 cursor-pointer select-none"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Checkbox
+                              checked={groupAllAuthorized}
+                              onCheckedChange={() => {
+                                if (groupAllAuthorized) {
+                                  handleProtectedToggleAll(groupAllIds, false);
+                                } else {
+                                  handleProtectedToggleAll(groupPendingIds, true);
+                                }
+                              }}
+                              className={`w-4 h-4 ${
+                                groupAllAuthorized
+                                  ? "border-emerald-600 bg-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                                  : "border-amber-400 bg-white"
+                              }`}
+                            />
+                            <span className={`text-[10px] font-semibold whitespace-nowrap ${
+                              groupAllAuthorized ? "text-emerald-700" : "text-amber-700"
+                            }`}>
+                              Selecionar tudo
+                            </span>
+                          </label>
+                          <span className={`text-xs font-bold tabular-nums ${
+                            groupAllAuthorized ? "text-emerald-800" : "text-amber-800"
+                          }`}>
+                            {formatCurrency(groupTotal)}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-xs font-bold text-amber-800 tabular-nums">
-                        {formatCurrency(groupTotal)}
-                      </span>
-                    </button>
+                    </div>
                   )}
                   {!isGroupCollapsed && group.items.map((item) => (
                     <PayableRow

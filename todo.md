@@ -1657,3 +1657,8 @@
 ## Bug: Status "Sem status" nos Pedidos em Aberto (06/04/2026)
 - [x] Investigar por que os status de produção aparecem como "Sem status" (causa: 414 URI Too Large no GET com muitos pedidos)
 - [x] Corrigir: converter getProductionStatuses e getProductionNotes de query (GET) para mutation (POST)
+
+## Selecionar Tudo + Cor verde na Autorização de Pagamentos (06/04/2026)
+- [x] Adicionar checkbox "Selecionar Tudo" ao lado do nome de cada fornecedor no card amarelo
+- [x] Alinhar perfeitamente checkboxes e textos "Selecionar Tudo"
+- [x] Card muda de amarelo para verde quando todas as contas do fornecedor estiverem autorizadas
