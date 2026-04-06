@@ -608,7 +608,7 @@ function BillingObservationSection({ pedido, observation, onSetObservation }: {
 }
 
 /* ---- Order Row ---- */
-function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, onAuthorize, onDeauthorize, isAuthorized, showValues = true, showPrint = false, productionNote, onOpenProductionNote, productionStatusValue, onChangeProductionStatus, collectionStatus, onToggleCollection, transportadora, onChangeTransportadora, pickupSchedule, onChangePickupSchedule, onClearPickupSchedule, billingObservation, onSetBillingObservation, trackingLink, onSetTrackingLink, authorizedTime }: {
+function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, onAuthorize, onDeauthorize, isAuthorized, showValues = true, showPrint = false, productionNote, onOpenProductionNote, productionStatusValue, onChangeProductionStatus, collectionStatus, onToggleCollection, transportadora, onChangeTransportadora, pickupSchedule, onChangePickupSchedule, onClearPickupSchedule, billingObservation, onSetBillingObservation, trackingLink, onSetTrackingLink, authorizedTime, compact = false }: {
   order: BillingOrder;
   nfs?: NfInfo[];
   showNf?: boolean;
@@ -635,6 +635,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
   trackingLink?: { trackingUrl: string; updatedBy: string | null };
   onSetTrackingLink?: (pedido: string, trackingUrl: string) => void;
   authorizedTime?: string;
+  compact?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingTracking, setEditingTracking] = useState(false);
@@ -668,7 +669,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
     }`}>
       <div
         onClick={() => setExpanded(!expanded)}
-        className={`w-full flex items-center gap-0 px-3 py-2.5 transition-colors text-left cursor-pointer group/row ${
+        className={`w-full flex items-center gap-0 px-3 ${compact ? 'py-1.5' : 'py-2.5'} transition-colors text-left cursor-pointer group/row ${
           expanded 
             ? "bg-gradient-to-r from-teal-100/80 via-teal-50 to-white border-b-2 border-teal-400 py-4 rounded-t-xl" 
             : isColetado
@@ -683,19 +684,19 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
       >
         {/* ACTION ZONE - Authorize/Deauthorize button with prominent box */}
         {showAuthorize && (
-          <div className="flex-shrink-0" style={{ width: '120px' }}>
+          <div className="flex-shrink-0" style={{ width: compact ? '90px' : '120px' }}>
             <button
               onClick={(e) => { e.stopPropagation(); onAuthorize?.(order.pedido); }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 hover:bg-amber-100 hover:border-amber-500 hover:border-solid text-amber-700 transition-all shadow-sm hover:shadow-md group"
               title="Autorizar faturamento"
             >
-              <Check className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-bold uppercase tracking-wide hidden sm:inline">Autorizar</span>
+              <Check className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} group-hover:scale-110 transition-transform`} />
+              <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-bold uppercase tracking-wide hidden sm:inline`}>Autorizar</span>
             </button>
           </div>
         )}
         {showDeauthorize && (
-          <div className="flex-shrink-0" style={{ width: '120px' }}>
+          <div className="flex-shrink-0" style={{ width: compact ? '90px' : '120px' }}>
             <button
               onClick={(e) => { e.stopPropagation(); onDeauthorize?.(order.pedido); }}
               className="flex items-center gap-1 px-1.5 py-1 rounded border border-red-200 bg-red-50/50 hover:bg-red-100 hover:border-red-300 text-red-400 hover:text-red-500 transition-all group"
@@ -714,9 +715,9 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         </div>
 
         {/* Pedido number + Grupo badge + Tipo Especial badge */}
-        <div className="flex-shrink-0" style={{ width: showValues ? '170px' : '200px' }}>
+        <div className="flex-shrink-0" style={{ width: compact ? '140px' : (showValues ? '170px' : '200px') }}>
           <div className="flex items-center gap-1.5 flex-nowrap">
-            <span className={`font-bold text-teal-600 ${showValues ? 'text-sm' : 'text-base'}`}>#{order.pedido}</span>
+            <span className={`font-bold text-teal-600 ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')}`}>#{order.pedido}</span>
             {order.grupo && (
               <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold whitespace-nowrap ${
                 order.tipoEspecial === 'AMOSTRA' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
@@ -739,12 +740,12 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
 
         {/* Client name - clean, no icons here */}
         <div className="flex-1 min-w-0 flex items-center gap-1.5">
-          <span className={`text-slate-700 font-medium ${showValues ? 'text-sm' : 'text-base'} truncate`} title={order.cliente}>{displayName}</span>
+          <span className={`text-slate-700 font-medium ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')} truncate`} title={order.cliente}>{displayName}</span>
         </div>
 
         {/* Production note icon + alert icons - fixed width column */}
         {onOpenProductionNote && (
-          <div style={{ width: '80px' }} className="flex-shrink-0 flex items-center justify-center gap-1">
+          <div style={{ width: compact ? '55px' : '80px' }} className="flex-shrink-0 flex items-center justify-center gap-1">
             {productionNote && productionNote.trim() !== "" ? (
               <button
                 onClick={(e) => { e.stopPropagation(); onOpenProductionNote(order.pedido); }}
@@ -815,9 +816,9 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
             if (!order.condicaoPagamento || order.condicaoPagamento.trim() === "") missing.push("Cond. Pagamento");
             if (!order.transportadora || order.transportadora.trim() === "") missing.push("Transportadora");
             const hasAlerts = hasObs || hasBillingObs || missing.length > 0;
-            if (!hasAlerts) return <div style={{ width: '80px' }} className="flex-shrink-0" />;
+            if (!hasAlerts) return <div style={{ width: compact ? '55px' : '80px' }} className="flex-shrink-0" />;
             return (
-              <div style={{ width: '80px' }} className="flex-shrink-0 flex items-center justify-center gap-1">
+              <div style={{ width: compact ? '55px' : '80px' }} className="flex-shrink-0 flex items-center justify-center gap-1">
                 {hasObs && (
                   <span className="inline-flex items-center p-0.5 rounded bg-amber-400 text-white" title={`Obs. Comercial: ${order.observacoes}`}>
                     <MessageSquare className="w-3 h-3" />
@@ -843,16 +844,16 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         )}
 
         {/* Data emissão / Data faturamento */}
-        <div style={{ width: showValues ? '80px' : '90px' }} className="flex-shrink-0 text-center">
+        <div style={{ width: compact ? '70px' : (showValues ? '80px' : '90px') }} className="flex-shrink-0 text-center">
           {order.dataFaturamento ? (
             <div className="flex flex-col">
-              <span className={`text-emerald-600 font-semibold ${showValues ? 'text-xs' : 'text-sm'}`} title="Data de faturamento (NF)">{order.dataFaturamento}</span>
+              <span className={`text-emerald-600 font-semibold ${compact ? 'text-[10px]' : (showValues ? 'text-xs' : 'text-sm')}`} title="Data de faturamento (NF)">{order.dataFaturamento}</span>
               {order.dataFaturamento !== order.dataEmissao && (
                 <span className="text-[10px] text-slate-400 line-through" title="Data de emissão do pedido">{order.dataEmissao}</span>
               )}
             </div>
           ) : (
-            <span className={`text-slate-600 font-medium ${showValues ? 'text-xs' : 'text-sm'}`}>{order.dataEmissao}</span>
+            <span className={`text-slate-600 font-medium ${compact ? 'text-[10px]' : (showValues ? 'text-xs' : 'text-sm')}`}>{order.dataEmissao}</span>
           )}
         </div>
 
@@ -866,13 +867,13 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         )}
 
         {/* Data entrega */}
-        <div style={{ width: showValues ? '90px' : '100px' }} className="flex-shrink-0 text-center">
+        <div style={{ width: compact ? '70px' : (showValues ? '90px' : '100px') }} className="flex-shrink-0 text-center">
           {earliestDelivery ? (
-            <span className={`font-medium ${showValues ? 'text-xs' : 'text-sm'} ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-600'}`}>
+            <span className={`font-medium ${compact ? 'text-[10px]' : (showValues ? 'text-xs' : 'text-sm')} ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-600'}`}>
               {earliestDelivery.toLocaleDateString('pt-BR')}
             </span>
           ) : (
-            <span className={`text-slate-300 ${showValues ? 'text-xs' : 'text-sm'}`}>—</span>
+            <span className={`text-slate-300 ${compact ? 'text-[10px]' : (showValues ? 'text-xs' : 'text-sm')}`}>—</span>
           )}
         </div>
 
@@ -1046,9 +1047,9 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         )}
 
         {/* Items count + total volumes */}
-        <div style={{ width: showValues ? '70px' : '80px' }} className="flex-shrink-0 text-center">
-          <span className="text-xs text-slate-400">{order.itens.length} {order.itens.length === 1 ? "item" : "itens"}</span>
-          <div className={`font-bold ${showValues ? 'text-sm' : 'text-base'} text-slate-700`}>
+        <div style={{ width: compact ? '55px' : (showValues ? '70px' : '80px') }} className="flex-shrink-0 text-center">
+          <span className={`${compact ? 'text-[9px]' : 'text-xs'} text-slate-400`}>{order.itens.length} {order.itens.length === 1 ? "item" : "itens"}</span>
+          <div className={`font-bold ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')} text-slate-700`}>
             {Math.round(order.itens.reduce((sum, i) => sum + (i.codigoItem === '00808' ? i.quantidade / 11.6 : i.quantidade), 0))} vol.
           </div>
         </div>
@@ -1082,7 +1083,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
 
         {/* Production Status Badge/Selector - only in Pedidos em Aberto */}
         {onChangeProductionStatus && (
-          <div className="flex-shrink-0" style={{ width: '140px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="flex-shrink-0" style={{ width: compact ? '115px' : '140px' }} onClick={(e) => e.stopPropagation()}>
             <Select
               value={productionStatusValue || "sem_status"}
               onValueChange={(val) => {
@@ -1387,7 +1388,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
 }
 
 /* ---- Collapsible Orders Card ---- */
-function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverColor, filterBgColor, filterBorderColor, activeFilterColor, invoicesByPedido, showNf, showAuthorize, showDeauthorize, onAuthorize, onDeauthorize, authorizedPedidos, badgeExtra, showValues = true, showPrint = false, productionNotes, onOpenProductionNote, productionStatuses, onChangeProductionStatus, collectionStatuses, onToggleCollection, transportSelections, onChangeTransportadora, pickupSchedules, onChangePickupSchedule, onClearPickupSchedule, billingObservations, onSetBillingObservation, trackingLinks, onSetTrackingLink, authorizedTimes }: {
+function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverColor, filterBgColor, filterBorderColor, activeFilterColor, invoicesByPedido, showNf, showAuthorize, showDeauthorize, onAuthorize, onDeauthorize, authorizedPedidos, badgeExtra, showValues = true, showPrint = false, productionNotes, onOpenProductionNote, productionStatuses, onChangeProductionStatus, collectionStatuses, onToggleCollection, transportSelections, onChangeTransportadora, pickupSchedules, onChangePickupSchedule, onClearPickupSchedule, billingObservations, onSetBillingObservation, trackingLinks, onSetTrackingLink, authorizedTimes, compact = false }: {
   title: string;
   icon: React.ElementType;
   orders: BillingOrder[];
@@ -1423,6 +1424,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
   trackingLinks?: Record<string, { trackingUrl: string; updatedBy: string | null }>;
   onSetTrackingLink?: (pedido: string, trackingUrl: string) => void;
   authorizedTimes?: Record<string, string>;
+  compact?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -1688,22 +1690,22 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
 
           {/* Table header + orders with horizontal scroll */}
           <div className="overflow-x-auto">
-          <div style={{ minWidth: '1200px' }}>
-          <div className="flex items-center gap-0 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+          <div style={{ minWidth: compact ? '900px' : '1200px' }}>
+          <div className={`flex items-center gap-0 px-3 ${compact ? 'py-1.5' : 'py-2'} bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold`}>
             {(showAuthorize || showDeauthorize) && (
-              <div className="flex-shrink-0" style={{ width: '120px' }}>
+              <div className="flex-shrink-0" style={{ width: compact ? '90px' : '120px' }}>
                 <span className="text-[10px]">Ação</span>
               </div>
             )}
-            <div style={{ width: '20px' }} className="flex-shrink-0" />
-            <div style={{ width: showValues ? '170px' : '200px' }} className="flex-shrink-0">
+            <div style={{ width: compact ? '14px' : '20px' }} className="flex-shrink-0" />
+            <div style={{ width: compact ? '140px' : (showValues ? '170px' : '200px') }} className="flex-shrink-0">
               <span className="text-[10px]">Pedido</span>
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[10px]">Cliente</span>
             </div>
             {(showAuthorize || !showNf) && (
-              <div style={{ width: '80px' }} className="flex-shrink-0 text-center">
+              <div style={{ width: compact ? '55px' : '80px' }} className="flex-shrink-0 text-center">
                 <span className="text-[10px]"></span>
               </div>
             )}
@@ -1712,7 +1714,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
                 <span className="text-[10px]">NF</span>
               </div>
             )}
-            <div style={{ width: showValues ? '80px' : '90px' }} className="flex-shrink-0 text-center">
+            <div style={{ width: compact ? '70px' : (showValues ? '80px' : '90px') }} className="flex-shrink-0 text-center">
               <SortableHeader field="data" label="Emissão" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
             </div>
             {authorizedTimes && (
@@ -1720,7 +1722,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
                 <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Horário</span>
               </div>
             )}
-            <div style={{ width: showValues ? '90px' : '100px' }} className="flex-shrink-0 text-center">
+            <div style={{ width: compact ? '70px' : (showValues ? '90px' : '100px') }} className="flex-shrink-0 text-center">
               <SortableHeader field="entrega" label="Entrega" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
             </div>
             {onToggleCollection && (
@@ -1742,7 +1744,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
                 <span className="text-[11px]">Rastreio</span>
               </div>
             )}
-            <div style={{ width: showValues ? '70px' : '80px' }} className="flex-shrink-0 text-center">
+            <div style={{ width: compact ? '55px' : (showValues ? '70px' : '80px') }} className="flex-shrink-0 text-center">
               <span className="text-[10px]">Itens</span>
             </div>
             {showValues && (
@@ -1754,7 +1756,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
               <div style={{ width: '36px' }} className="flex-shrink-0" />
             )}
             {showAuthorize && (
-              <div className="flex-shrink-0" style={{ width: '140px' }}>
+              <div className="flex-shrink-0" style={{ width: compact ? '115px' : '140px' }}>
                 <span className="text-[10px]">Status</span>
               </div>
             )}
@@ -1791,6 +1793,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
                 trackingLink={trackingLinks?.[order.pedido]}
                 onSetTrackingLink={onSetTrackingLink}
                 authorizedTime={authorizedTimes?.[order.pedido]}
+                compact={compact}
               />
             ))}
             {filtered.length === 0 && (
@@ -2418,6 +2421,7 @@ export default function Billing() {
               onChangeProductionStatus={hasGranularAccess("fat.statusProducao") ? handleChangeProductionStatus : undefined}
               billingObservations={hasGranularAccess("fat.observacaoFaturar") ? billingObservationsMap : undefined}
               onSetBillingObservation={hasGranularAccess("fat.observacaoFaturar") ? handleSetBillingObservation : undefined}
+              compact
             />
 
             {/* Card 2: Autorizado a Faturar (entre Em Aberto e Faturados) */}

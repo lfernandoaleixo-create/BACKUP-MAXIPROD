@@ -1641,3 +1641,6 @@
 
 ## Remover coluna Rastreio (06/04/2026)
 - [x] Remover coluna "Rastreio" da tabela de faturados nos últimos 30 dias na aba Faturamento
+
+## Layout Pedidos em Aberto (06/04/2026)
+- [x] Reduzir fontes e layout da seção "Pedidos em Aberto" para caber tudo na tela sem scroll horizontal
