@@ -1143,7 +1143,7 @@ export const billingRouter = router({
     .input(z.object({
       pedidos: z.array(z.string()).max(2000),
     }))
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) return { notes: {} as Record<string, { note: string; updatedAt: Date | null; updatedBy: string | null }> };
 
@@ -1347,7 +1347,7 @@ export const billingRouter = router({
     .input(z.object({
       pedidos: z.array(z.string()).max(2000),
     }))
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) return { statuses: {} as Record<string, { status: string; updatedAt: Date | null }> };
 

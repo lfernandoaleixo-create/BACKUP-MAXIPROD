@@ -4,7 +4,7 @@
  * Com vinculação de Notas Fiscais aos pedidos faturados
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import ConnectionStatusCard from "@/components/ConnectionStatusCard";
 import { Badge } from "@/components/ui/badge";
@@ -1866,10 +1866,14 @@ export default function Billing() {
 
   // Production notes - fetch for all open orders
   const allOpenPedidos = useMemo(() => openOrders.map(o => o.pedido).filter(Boolean), [openOrders]);
-  const { data: prodNotesData } = trpc.billing.getProductionNotes.useQuery(
-    { pedidos: allOpenPedidos },
-    { enabled: allOpenPedidos.length > 0, refetchInterval: 60000 }
-  );
+  const fetchProductionNotesMutation = trpc.billing.getProductionNotes.useMutation();
+  const [prodNotesData, setProdNotesData] = useState<{ notes: Record<string, { note: string; updatedAt: Date | null; updatedBy: string | null }> } | null>(null);
+  const fetchProductionNotes = useCallback(() => {
+    if (allOpenPedidos.length > 0) {
+      fetchProductionNotesMutation.mutateAsync({ pedidos: allOpenPedidos }).then(setProdNotesData).catch(() => {});
+    }
+  }, [allOpenPedidos]);
+  useEffect(() => { fetchProductionNotes(); const iv = setInterval(fetchProductionNotes, 60000); return () => clearInterval(iv); }, [fetchProductionNotes]);
   const productionNotesMap = useMemo(() => {
     const map: Record<string, string> = {};
     if (prodNotesData?.notes) {
@@ -1885,7 +1889,7 @@ export default function Billing() {
     onSuccess: (data) => {
       if (data.success) {
         toast.success("Observação da produção salva");
-        utils.billing.getProductionNotes.invalidate();
+        fetchProductionNotes();
         setProdNoteDialogOpen(false);
         setProdNotePedido("");
       } else {
@@ -1898,10 +1902,14 @@ export default function Billing() {
   });
 
   // Production status - fetch for all open orders
-  const { data: prodStatusData } = trpc.billing.getProductionStatuses.useQuery(
-    { pedidos: allOpenPedidos },
-    { enabled: allOpenPedidos.length > 0, refetchInterval: 60000 }
-  );
+  const fetchProductionStatusesMutation = trpc.billing.getProductionStatuses.useMutation();
+  const [prodStatusData, setProdStatusData] = useState<{ statuses: Record<string, { status: string; updatedAt: Date | null }> } | null>(null);
+  const fetchProductionStatuses = useCallback(() => {
+    if (allOpenPedidos.length > 0) {
+      fetchProductionStatusesMutation.mutateAsync({ pedidos: allOpenPedidos }).then(setProdStatusData).catch(() => {});
+    }
+  }, [allOpenPedidos]);
+  useEffect(() => { fetchProductionStatuses(); const iv = setInterval(fetchProductionStatuses, 60000); return () => clearInterval(iv); }, [fetchProductionStatuses]);
   const productionStatusesMap = useMemo(() => {
     const map: Record<string, string> = {};
     if (prodStatusData?.statuses) {
@@ -1920,7 +1928,7 @@ export default function Billing() {
     onSuccess: (data) => {
       if (data.success) {
         toast.success("Status da produção atualizado");
-        utils.billing.getProductionStatuses.invalidate();
+        fetchProductionStatuses();
         setStatusPasswordDialogOpen(false);
         setPendingStatusChange(null);
       } else {

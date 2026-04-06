@@ -1653,3 +1653,7 @@
 ## Ajustes Pedidos em Aberto (06/04/2026)
 - [x] Verificar que nenhum status de produção foi alterado nos pedidos em aberto (73 status intactos no banco)
 - [x] Mover badge "Fat. Parcial" para abaixo do badge de grupo (não sobrepor nome do cliente)
+
+## Bug: Status "Sem status" nos Pedidos em Aberto (06/04/2026)
+- [x] Investigar por que os status de produção aparecem como "Sem status" (causa: 414 URI Too Large no GET com muitos pedidos)
+- [x] Corrigir: converter getProductionStatuses e getProductionNotes de query (GET) para mutation (POST)
