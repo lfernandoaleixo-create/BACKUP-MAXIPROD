@@ -1668,3 +1668,9 @@
 - [x] Adicionar "Valor Autorizado: R$..." em azul ao lado do checkbox
 - [x] Adicionar "Valor Total: R$..." em castanho amarelado à direita
 - [x] Valores visíveis mesmo com card fechado/colapsado
+
+## Refinamento Alinhamento Cards Fornecedor (06/04/2026)
+- [x] Mover checkbox "Selecionar tudo" mais para esquerda, centralizado no card
+- [x] Alinhar "Autorizado" com "A" em cima do "R$" do valor
+- [x] Alinhar "Total" com "T" em cima do "R$" do valor
+- [x] R$ do Autorizado e R$ do Total perfeitamente alinhados verticalmente (um debaixo do outro)

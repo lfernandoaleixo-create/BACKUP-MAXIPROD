@@ -559,11 +559,11 @@ function DayCard({
                           : "bg-amber-50 border-amber-200 border-t-amber-100"
                       }`}
                     >
-                      <div className="flex items-center justify-between px-3 py-1.5">
+                      <div className="grid py-1.5 px-3" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
                         {/* Lado esquerdo: seta + nome + contagem */}
                         <button
                           onClick={() => toggleGroupCollapse(group.fornecedor)}
-                          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity justify-self-start"
                         >
                           {isGroupCollapsed ? (
                             <ChevronRight className={`w-3.5 h-3.5 ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`} />
@@ -578,40 +578,44 @@ function DayCard({
                           <span className={`text-[9px] ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`}>({group.items.length})</span>
                         </button>
 
-                        {/* Lado direito: Checkbox + Valor Autorizado + Valor Total */}
-                        <div className="flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
-                          {/* Checkbox Selecionar Tudo */}
-                          <label className="flex items-center gap-1.5 cursor-pointer select-none min-w-[120px]">
-                            <Checkbox
-                              checked={groupAllAuthorized}
-                              onCheckedChange={() => {
-                                if (groupAllAuthorized) {
-                                  handleProtectedToggleAll(groupAllIds, false);
-                                } else {
-                                  handleProtectedToggleAll(groupPendingIds, true);
-                                }
-                              }}
-                              className={`w-4 h-4 ${
-                                groupAllAuthorized
-                                  ? "border-emerald-600 bg-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                                  : "border-amber-400 bg-white"
-                              }`}
-                            />
-                            <span className={`text-[10px] font-semibold whitespace-nowrap ${
-                              groupAllAuthorized ? "text-emerald-700" : "text-amber-700"
-                            }`}>
-                              Selecionar tudo
-                            </span>
-                          </label>
+                        {/* Centro: Checkbox Selecionar Tudo */}
+                        <label
+                          className="flex items-center gap-1.5 cursor-pointer select-none justify-self-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Checkbox
+                            checked={groupAllAuthorized}
+                            onCheckedChange={() => {
+                              if (groupAllAuthorized) {
+                                handleProtectedToggleAll(groupAllIds, false);
+                              } else {
+                                handleProtectedToggleAll(groupPendingIds, true);
+                              }
+                            }}
+                            className={`w-4 h-4 ${
+                              groupAllAuthorized
+                                ? "border-emerald-600 bg-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                                : "border-amber-400 bg-white"
+                            }`}
+                          />
+                          <span className={`text-[10px] font-semibold whitespace-nowrap ${
+                            groupAllAuthorized ? "text-emerald-700" : "text-amber-700"
+                          }`}>
+                            Selecionar tudo
+                          </span>
+                        </label>
+
+                        {/* Lado direito: Valor Autorizado + Valor Total */}
+                        <div className="flex items-center gap-4 justify-self-end" onClick={(e) => e.stopPropagation()}>
                           {/* Valor Autorizado (azul) */}
-                          <div className="flex flex-col items-end min-w-[110px]">
+                          <div className="flex flex-col items-start min-w-[120px]">
                             <span className="text-[9px] text-blue-500 font-medium leading-none">Autorizado</span>
                             <span className="text-xs font-bold tabular-nums text-blue-600">
                               {formatCurrency(group.items.filter(i => i.authorized).reduce((s, i) => s + i.valor, 0))}
                             </span>
                           </div>
                           {/* Valor Total (castanho amarelado) */}
-                          <div className="flex flex-col items-end min-w-[110px]">
+                          <div className="flex flex-col items-start min-w-[120px]">
                             <span className={`text-[9px] font-medium leading-none ${
                               groupAllAuthorized ? "text-emerald-500" : "text-amber-500"
                             }`}>Total</span>
