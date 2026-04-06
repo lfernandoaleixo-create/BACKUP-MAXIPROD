@@ -163,7 +163,7 @@ function PayableRow({
           </p>
         )}
       </div>
-      <div className="flex-shrink-0 text-right">
+      <div className="flex-shrink-0 min-w-[120px]">
         <span
           className={`text-base font-bold tabular-nums ${
             item.authorized ? "text-emerald-700" : "text-red-600"

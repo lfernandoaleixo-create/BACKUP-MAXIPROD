@@ -1674,3 +1674,6 @@
 - [x] Alinhar "Autorizado" com "A" em cima do "R$" do valor
 - [x] Alinhar "Total" com "T" em cima do "R$" do valor
 - [x] R$ do Autorizado e R$ do Total perfeitamente alinhados verticalmente (um debaixo do outro)
+
+## Alinhamento R$ linhas expandidas com Total do header (06/04/2026)
+- [x] R$ do valor de cada PayableRow expandida deve ficar exatamente embaixo do R$ do Total no header do card fechado
