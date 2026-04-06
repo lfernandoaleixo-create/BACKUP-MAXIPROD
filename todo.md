@@ -1677,3 +1677,11 @@
 
 ## Alinhamento R$ linhas expandidas com Total do header (06/04/2026)
 - [x] R$ do valor de cada PayableRow expandida deve ficar exatamente embaixo do R$ do Total no header do card fechado
+
+## Calculadora com Checkboxes + Autorização Concluída (06/04/2026)
+- [x] Checkbox ao lado direito de cada valor nos cards de Recebimentos e Pagamentos
+- [x] Soma automática dos valores selecionados exibida ao lado da data no topo do card
+- [x] Mesma calculadora para os cards "Vencidas (até 3 dias)"
+- [x] Checkbox "Autorização Concluída" na seção de Autorização de Pagamentos
+- [x] Proteção por senha "Fernando" para marcar a Autorização Concluída
+- [x] Não mexer em pagamentos já autorizados

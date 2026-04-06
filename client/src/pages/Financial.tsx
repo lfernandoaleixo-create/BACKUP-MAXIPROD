@@ -66,6 +66,8 @@ import ResumoFinanceiroCard from "@/components/ResumoFinanceiroCard";
 import InadimplenciaTab from "@/components/InadimplenciaTab";
 import ReceivablesTab from "@/components/ReceivablesTab";
 import { useOperator } from "@/contexts/OperatorContext";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calculator } from "lucide-react";
 
 /* ---- Helpers ---- */
 function formatCurrency(n: number): string {
@@ -476,9 +478,11 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
   const [sortMode, setSortMode] = useState<BucketSortMode>("data_asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  // Calculator checkbox state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [calcMode, setCalcMode] = useState(false);
 
   const VISIBLE = 5;
-
 
   const processedItems = useMemo(() => {
     let items = [...bucket.items];
@@ -519,6 +523,23 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
     return processedItems.reduce((sum: number, item: any) => sum + item.valor, 0);
   }, [processedItems, searchTerm, bucket.total]);
 
+  // Calculator: sum of selected items
+  const calcTotal = useMemo(() => {
+    if (!calcMode || selectedIds.size === 0) return 0;
+    return processedItems
+      .filter((item: any) => selectedIds.has(String(item.maxiprodId || processedItems.indexOf(item))))
+      .reduce((sum: number, item: any) => sum + item.valor, 0);
+  }, [calcMode, selectedIds, processedItems]);
+
+  const toggleItem = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   const hasMore = processedItems.length > VISIBLE;
   const visibleItems = expanded ? processedItems : processedItems.slice(0, VISIBLE);
   const hasItems = bucket.items.length > 0;
@@ -546,11 +567,19 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
       <div className="flex items-center justify-between mb-2">
         <span className={`text-sm font-semibold ${textColorClass}`}>{bucket.label}</span>
         <div className="flex items-center gap-1.5">
+          {/* Calculator total badge */}
+          {calcMode && selectedIds.size > 0 && (
+            <div className="flex items-center gap-1 bg-violet-100 border border-violet-300 rounded-md px-2 py-0.5">
+              <Calculator className="w-3 h-3 text-violet-600" />
+              <span className="text-xs font-bold text-violet-700 tabular-nums">{formatCurrency(calcTotal)}</span>
+              <span className="text-[9px] text-violet-500">({selectedIds.size})</span>
+            </div>
+          )}
           <div className="text-right">
             <span className={`text-sm font-bold ${textColorClass}`}>{formatCurrency(filteredTotal)}</span>
             <span className="text-xs text-slate-400 ml-1">({searchTerm.trim() ? processedItems.length : bucket.count})</span>
           </div>
-          {/* Sort arrows ↑↓ + Search */}
+          {/* Sort arrows + Search + Calculator toggle */}
           {hasItems && (
             <div className="flex items-end gap-1.5">
               {/* DATA: label + ↑↓ */}
@@ -595,6 +624,14 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
               >
                 <Search className="w-3.5 h-3.5" />
               </button>
+              {/* Calculator toggle */}
+              <button
+                onClick={() => { setCalcMode(!calcMode); if (calcMode) setSelectedIds(new Set()); }}
+                className={`p-1 rounded transition-colors cursor-pointer ${calcMode ? 'bg-violet-100 text-violet-600' : 'text-slate-400 hover:text-slate-600 hover:bg-black/5'}`}
+                title="Calculadora: selecione itens para somar"
+              >
+                <Calculator className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
         </div>
@@ -627,12 +664,21 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
       {visibleItems.length > 0 && (
         <div className="space-y-1">
           {visibleItems.map((item: any, idx: number) => {
+            const itemId = String(item.maxiprodId || idx);
+            const isChecked = selectedIds.has(itemId);
             return (
-              <div key={item.maxiprodId || idx} className="text-xs leading-5">
+              <div key={item.maxiprodId || idx} className={`text-xs leading-5 ${calcMode && isChecked ? 'bg-violet-50 rounded px-1 -mx-1' : ''}`}>
                 <div className="flex items-center gap-x-1.5">
+                  {calcMode && (
+                    <Checkbox
+                      checked={isChecked}
+                      onCheckedChange={() => toggleItem(itemId)}
+                      className="w-3.5 h-3.5 shrink-0 border-violet-400 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
+                    />
+                  )}
                   <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.fornecedor || item.referenteA || "\u2014"}</span>
                   <span className="text-slate-400 whitespace-nowrap text-right shrink-0" style={{ width: '60px', fontVariantNumeric: 'tabular-nums', fontSize: '10px' }}>{formatDate(item.vencimento)}</span>
-                  <span className="font-semibold text-slate-700 whitespace-nowrap text-right shrink-0" style={{ width: '78px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
+                  <span className={`font-semibold whitespace-nowrap text-right shrink-0 ${calcMode && isChecked ? 'text-violet-700' : 'text-slate-700'}`} style={{ width: '78px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
                 </div>
                 {item.referenteA && (
                   <p className="text-[10px] text-slate-400 truncate pl-0.5 mt-0.5">{item.referenteA}</p>
@@ -642,8 +688,6 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
           })}
         </div>
       )}
-
-
 
       {/* No results from search */}
       {searchTerm.trim() && processedItems.length === 0 && (

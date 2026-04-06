@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial } from "./maxiprodGraphQL";
@@ -3009,6 +3009,75 @@ export const financialRouter = router({
       const db = await getDb();
       if (!db) return { success: false };
       await db.delete(collectionActions).where(eq(collectionActions.receivableId, input.receivableId));
+      return { success: true };
+    }),
+
+  /**
+   * Get auth completion status for today.
+   * Returns whether the "Autorização Concluída" checkbox was checked today.
+   */
+  getAuthCompletionStatus: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return { completed: false, completedBy: null };
+
+      const todayBR = getTodayBR();
+      const rows = await db
+        .select()
+        .from(authCompletion)
+        .where(eq(authCompletion.date, todayBR))
+        .limit(1);
+
+      if (rows.length > 0 && rows[0].completed) {
+        return { completed: true, completedBy: rows[0].completedBy || null };
+      }
+      return { completed: false, completedBy: null };
+    }),
+
+  /**
+   * Set auth completion for today.
+   * Requires password "Fernando" to mark as completed.
+   */
+  setAuthCompletion: publicProcedure
+    .input(z.object({
+      password: z.string(),
+      completed: z.boolean(),
+    }))
+    .mutation(async ({ input }) => {
+      // Validate password
+      if (input.password !== "Fernando") {
+        return { success: false, error: "Senha incorreta" };
+      }
+
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const todayBR = getTodayBR();
+
+      const existing = await db
+        .select()
+        .from(authCompletion)
+        .where(eq(authCompletion.date, todayBR))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db
+          .update(authCompletion)
+          .set({
+            completed: input.completed,
+            completedBy: input.completed ? "Fernando" : null,
+            completedAt: input.completed ? new Date() : null,
+          })
+          .where(eq(authCompletion.date, todayBR));
+      } else {
+        await db.insert(authCompletion).values({
+          date: todayBR,
+          completed: input.completed,
+          completedBy: input.completed ? "Fernando" : null,
+          completedAt: input.completed ? new Date() : null,
+        });
+      }
+
       return { success: true };
     }),
 });

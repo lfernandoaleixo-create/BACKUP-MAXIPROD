@@ -662,8 +662,15 @@ function DayCard({
 export default function WeekReconciliationCard() {
   const { data, isLoading } = trpc.financial.getWeekReconciliation.useQuery();
   const { data: bankData } = trpc.financial.getBankBalances.useQuery();
+  const { data: authCompletionData } = trpc.financial.getAuthCompletionStatus.useQuery();
+  const setAuthCompletionMut = trpc.financial.setAuthCompletion.useMutation();
   const utils = trpc.useUtils();
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
+  // Auth completion password dialog
+  const [showAuthCompletionDialog, setShowAuthCompletionDialog] = useState(false);
+  const [authCompletionPassword, setAuthCompletionPassword] = useState("");
+  const [authCompletionError, setAuthCompletionError] = useState(false);
+  const [authCompletionLoading, setAuthCompletionLoading] = useState(false);
 
   const toggleMutation = trpc.financial.togglePaymentAuth.useMutation({
     onMutate: ({ accountPayableId }) => {
@@ -836,6 +843,48 @@ export default function WeekReconciliationCard() {
             </div>
           </div>
 
+          {/* Autorização Concluída checkbox */}
+          <div className="mb-4 flex items-center justify-between bg-indigo-50/50 border border-indigo-200 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={!!authCompletionData?.completed}
+                onCheckedChange={() => {
+                  if (authCompletionData?.completed) {
+                    // Desmarcar também precisa de senha
+                    setAuthCompletionPassword("");
+                    setAuthCompletionError(false);
+                    setShowAuthCompletionDialog(true);
+                  } else {
+                    // Marcar precisa de senha
+                    setAuthCompletionPassword("");
+                    setAuthCompletionError(false);
+                    setShowAuthCompletionDialog(true);
+                  }
+                }}
+                className={`w-5 h-5 ${
+                  authCompletionData?.completed
+                    ? "border-emerald-600 bg-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                    : "border-indigo-400"
+                }`}
+              />
+              <div>
+                <span className={`text-sm font-bold ${
+                  authCompletionData?.completed ? "text-emerald-700" : "text-indigo-700"
+                }`}>
+                  Autorização Concluída
+                </span>
+                {authCompletionData?.completed && authCompletionData.completedBy && (
+                  <p className="text-[10px] text-emerald-600">
+                    Marcado por {authCompletionData.completedBy} hoje
+                  </p>
+                )}
+              </div>
+            </div>
+            {authCompletionData?.completed && (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            )}
+          </div>
+
           {/* Day cards */}
           <div className="space-y-3">
             {/* Vencidas */}
@@ -877,6 +926,66 @@ export default function WeekReconciliationCard() {
           </div>
         </div>
       )}
+
+      {/* Auth Completion Password Dialog */}
+      <Dialog open={showAuthCompletionDialog} onOpenChange={(v) => { if (!v) { setAuthCompletionPassword(""); setAuthCompletionError(false); } setShowAuthCompletionDialog(v); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-indigo-600" />
+              {authCompletionData?.completed ? "Desmarcar Autorização" : "Confirmar Autorização Concluída"}
+            </DialogTitle>
+            <DialogDescription>
+              Digite a senha para {authCompletionData?.completed ? "desmarcar" : "marcar"} a autorização como concluída.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setAuthCompletionLoading(true);
+            try {
+              const result = await setAuthCompletionMut.mutateAsync({
+                password: authCompletionPassword,
+                completed: !authCompletionData?.completed,
+              });
+              if (result.success) {
+                toast.success(authCompletionData?.completed ? "Autorização desmarcada" : "Autorização marcada como concluída!");
+                setShowAuthCompletionDialog(false);
+                utils.financial.getAuthCompletionStatus.invalidate();
+              } else {
+                setAuthCompletionError(true);
+                toast.error(result.error || "Senha incorreta");
+              }
+            } catch {
+              toast.error("Erro ao salvar");
+            } finally {
+              setAuthCompletionLoading(false);
+            }
+          }}>
+            <div className="py-4">
+              <Input
+                type="password"
+                placeholder="Digite a senha..."
+                value={authCompletionPassword}
+                onChange={(e) => { setAuthCompletionPassword(e.target.value); setAuthCompletionError(false); }}
+                autoFocus
+                className={`text-center text-lg tracking-widest ${authCompletionError ? 'border-red-400 ring-1 ring-red-400' : ''}`}
+              />
+              {authCompletionError && (
+                <p className="text-xs text-red-500 text-center mt-2">Senha incorreta. Tente novamente.</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setAuthCompletionPassword(""); setAuthCompletionError(false); setShowAuthCompletionDialog(false); }}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={!authCompletionPassword.trim() || authCompletionLoading} className="bg-indigo-600 hover:bg-indigo-700">
+                {authCompletionLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                Confirmar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={(v) => { if (!v) { setPasswordInput(""); setPasswordError(false); setPendingAction(null); } setShowPasswordDialog(v); }}>

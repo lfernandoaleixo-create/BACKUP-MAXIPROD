@@ -766,6 +766,22 @@ export type BankReconciliation = typeof bankReconciliation.$inferSelect;
 export type InsertBankReconciliation = typeof bankReconciliation.$inferInsert;
 
 /**
+ * Autorização de pagamentos concluída - checkbox diário
+ * Fernando marca quando termina de autorizar todos os pagamentos do dia.
+ * Requer senha "Fernando" para marcar.
+ */
+export const authCompletion = mysqlTable("auth_completion", {
+  id: int("id").autoincrement().primaryKey(),
+  date: varchar("date", { length: 10 }).notNull().unique(), // YYYY-MM-DD
+  completed: boolean("completed").default(false).notNull(),
+  completedBy: varchar("completedBy", { length: 200 }),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AuthCompletion = typeof authCompletion.$inferSelect;
+export type InsertAuthCompletion = typeof authCompletion.$inferInsert;
+
+/**
  * Estoque manual de produtos semi prontos (madeira).
  * Puramente informativo - sem relação com outros dados do sistema.
  * Operadores preenchem manualmente a quantidade em estoque.
