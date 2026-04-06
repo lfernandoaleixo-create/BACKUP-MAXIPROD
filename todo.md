@@ -1644,3 +1644,8 @@
 
 ## Layout Pedidos em Aberto (06/04/2026)
 - [x] Reduzir fontes e layout da seção "Pedidos em Aberto" para caber tudo na tela sem scroll horizontal
+
+## Ajuste larguras Pedidos em Aberto (06/04/2026)
+- [x] Desencavalar textos: aumentar largura coluna Pedido (badge tipo sobrepõe nome cliente)
+- [x] Desencavalar textos: aumentar largura coluna Status (texto cortado)
+- [x] Aproveitar espaço em branco à direita para redistribuir larguras

@@ -715,7 +715,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         </div>
 
         {/* Pedido number + Grupo badge + Tipo Especial badge */}
-        <div className="flex-shrink-0" style={{ width: compact ? '140px' : (showValues ? '170px' : '200px') }}>
+        <div className="flex-shrink-0" style={{ width: compact ? '170px' : (showValues ? '170px' : '200px') }}>
           <div className="flex items-center gap-1.5 flex-nowrap">
             <span className={`font-bold text-teal-600 ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')}`}>#{order.pedido}</span>
             {order.grupo && (
@@ -745,7 +745,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
 
         {/* Production note icon + alert icons - fixed width column */}
         {onOpenProductionNote && (
-          <div style={{ width: compact ? '55px' : '80px' }} className="flex-shrink-0 flex items-center justify-center gap-1">
+          <div style={{ width: compact ? '60px' : '80px' }} className="flex-shrink-0 flex items-center justify-center gap-1">
             {productionNote && productionNote.trim() !== "" ? (
               <button
                 onClick={(e) => { e.stopPropagation(); onOpenProductionNote(order.pedido); }}
@@ -816,9 +816,9 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
             if (!order.condicaoPagamento || order.condicaoPagamento.trim() === "") missing.push("Cond. Pagamento");
             if (!order.transportadora || order.transportadora.trim() === "") missing.push("Transportadora");
             const hasAlerts = hasObs || hasBillingObs || missing.length > 0;
-            if (!hasAlerts) return <div style={{ width: compact ? '55px' : '80px' }} className="flex-shrink-0" />;
+            if (!hasAlerts) return <div style={{ width: compact ? '60px' : '80px' }} className="flex-shrink-0" />;
             return (
-              <div style={{ width: compact ? '55px' : '80px' }} className="flex-shrink-0 flex items-center justify-center gap-1">
+              <div style={{ width: compact ? '60px' : '80px' }} className="flex-shrink-0 flex items-center justify-center gap-1">
                 {hasObs && (
                   <span className="inline-flex items-center p-0.5 rounded bg-amber-400 text-white" title={`Obs. Comercial: ${order.observacoes}`}>
                     <MessageSquare className="w-3 h-3" />
@@ -844,7 +844,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         )}
 
         {/* Data emissão / Data faturamento */}
-        <div style={{ width: compact ? '70px' : (showValues ? '80px' : '90px') }} className="flex-shrink-0 text-center">
+        <div style={{ width: compact ? '75px' : (showValues ? '80px' : '90px') }} className="flex-shrink-0 text-center">
           {order.dataFaturamento ? (
             <div className="flex flex-col">
               <span className={`text-emerald-600 font-semibold ${compact ? 'text-[10px]' : (showValues ? 'text-xs' : 'text-sm')}`} title="Data de faturamento (NF)">{order.dataFaturamento}</span>
@@ -867,7 +867,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         )}
 
         {/* Data entrega */}
-        <div style={{ width: compact ? '70px' : (showValues ? '90px' : '100px') }} className="flex-shrink-0 text-center">
+        <div style={{ width: compact ? '80px' : (showValues ? '90px' : '100px') }} className="flex-shrink-0 text-center">
           {earliestDelivery ? (
             <span className={`font-medium ${compact ? 'text-[10px]' : (showValues ? 'text-xs' : 'text-sm')} ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-600'}`}>
               {earliestDelivery.toLocaleDateString('pt-BR')}
@@ -1047,7 +1047,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
         )}
 
         {/* Items count + total volumes */}
-        <div style={{ width: compact ? '55px' : (showValues ? '70px' : '80px') }} className="flex-shrink-0 text-center">
+        <div style={{ width: compact ? '60px' : (showValues ? '70px' : '80px') }} className="flex-shrink-0 text-center">
           <span className={`${compact ? 'text-[9px]' : 'text-xs'} text-slate-400`}>{order.itens.length} {order.itens.length === 1 ? "item" : "itens"}</span>
           <div className={`font-bold ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')} text-slate-700`}>
             {Math.round(order.itens.reduce((sum, i) => sum + (i.codigoItem === '00808' ? i.quantidade / 11.6 : i.quantidade), 0))} vol.
@@ -1083,7 +1083,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
 
         {/* Production Status Badge/Selector - only in Pedidos em Aberto */}
         {onChangeProductionStatus && (
-          <div className="flex-shrink-0" style={{ width: compact ? '115px' : '140px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="flex-shrink-0" style={{ width: compact ? '140px' : '140px' }} onClick={(e) => e.stopPropagation()}>
             <Select
               value={productionStatusValue || "sem_status"}
               onValueChange={(val) => {
@@ -1690,7 +1690,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
 
           {/* Table header + orders with horizontal scroll */}
           <div className="overflow-x-auto">
-          <div style={{ minWidth: compact ? '900px' : '1200px' }}>
+          <div style={{ minWidth: compact ? '1050px' : '1200px' }}>
           <div className={`flex items-center gap-0 px-3 ${compact ? 'py-1.5' : 'py-2'} bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold`}>
             {(showAuthorize || showDeauthorize) && (
               <div className="flex-shrink-0" style={{ width: compact ? '90px' : '120px' }}>
@@ -1698,14 +1698,14 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
               </div>
             )}
             <div style={{ width: compact ? '14px' : '20px' }} className="flex-shrink-0" />
-            <div style={{ width: compact ? '140px' : (showValues ? '170px' : '200px') }} className="flex-shrink-0">
+            <div style={{ width: compact ? '170px' : (showValues ? '170px' : '200px') }} className="flex-shrink-0">
               <span className="text-[10px]">Pedido</span>
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[10px]">Cliente</span>
             </div>
             {(showAuthorize || !showNf) && (
-              <div style={{ width: compact ? '55px' : '80px' }} className="flex-shrink-0 text-center">
+              <div style={{ width: compact ? '60px' : '80px' }} className="flex-shrink-0 text-center">
                 <span className="text-[10px]"></span>
               </div>
             )}
@@ -1714,7 +1714,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
                 <span className="text-[10px]">NF</span>
               </div>
             )}
-            <div style={{ width: compact ? '70px' : (showValues ? '80px' : '90px') }} className="flex-shrink-0 text-center">
+            <div style={{ width: compact ? '75px' : (showValues ? '80px' : '90px') }} className="flex-shrink-0 text-center">
               <SortableHeader field="data" label="Emissão" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
             </div>
             {authorizedTimes && (
@@ -1722,7 +1722,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
                 <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Horário</span>
               </div>
             )}
-            <div style={{ width: compact ? '70px' : (showValues ? '90px' : '100px') }} className="flex-shrink-0 text-center">
+            <div style={{ width: compact ? '80px' : (showValues ? '90px' : '100px') }} className="flex-shrink-0 text-center">
               <SortableHeader field="entrega" label="Entrega" currentSort={sortField} currentDir={sortDir} onSort={handleSort} className="justify-center" />
             </div>
             {onToggleCollection && (
@@ -1744,7 +1744,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
                 <span className="text-[11px]">Rastreio</span>
               </div>
             )}
-            <div style={{ width: compact ? '55px' : (showValues ? '70px' : '80px') }} className="flex-shrink-0 text-center">
+            <div style={{ width: compact ? '60px' : (showValues ? '70px' : '80px') }} className="flex-shrink-0 text-center">
               <span className="text-[10px]">Itens</span>
             </div>
             {showValues && (
@@ -1756,7 +1756,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
               <div style={{ width: '36px' }} className="flex-shrink-0" />
             )}
             {showAuthorize && (
-              <div className="flex-shrink-0" style={{ width: compact ? '115px' : '140px' }}>
+              <div className="flex-shrink-0" style={{ width: compact ? '140px' : '140px' }}>
                 <span className="text-[10px]">Status</span>
               </div>
             )}
