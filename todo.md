@@ -1649,3 +1649,7 @@
 - [x] Desencavalar textos: aumentar largura coluna Pedido (badge tipo sobrepõe nome cliente)
 - [x] Desencavalar textos: aumentar largura coluna Status (texto cortado)
 - [x] Aproveitar espaço em branco à direita para redistribuir larguras
+
+## Ajustes Pedidos em Aberto (06/04/2026)
+- [x] Verificar que nenhum status de produção foi alterado nos pedidos em aberto (73 status intactos no banco)
+- [x] Mover badge "Fat. Parcial" para abaixo do badge de grupo (não sobrepor nome do cliente)

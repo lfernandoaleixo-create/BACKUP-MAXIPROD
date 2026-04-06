@@ -716,22 +716,24 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
 
         {/* Pedido number + Grupo badge + Tipo Especial badge */}
         <div className="flex-shrink-0" style={{ width: compact ? '170px' : (showValues ? '170px' : '200px') }}>
-          <div className="flex items-center gap-1.5 flex-nowrap">
-            <span className={`font-bold text-teal-600 ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')}`}>#{order.pedido}</span>
-            {order.grupo && (
-              <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold whitespace-nowrap ${
-                order.tipoEspecial === 'AMOSTRA' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
-                order.tipoEspecial === 'BONIFICACAO' ? 'bg-pink-100 text-pink-800 border border-pink-300' :
-                order.grupoKey === 'importacao_revenda' ? 'bg-teal-100 text-teal-700' :
-                order.grupoKey === 'industrializacao' ? 'bg-violet-100 text-violet-700' :
-                order.grupoKey === 'importacao_mp' ? 'bg-blue-100 text-blue-700' :
-                'bg-slate-100 text-slate-600'
-              }`}>
-                {order.grupo}
-              </span>
-            )}
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 flex-nowrap">
+              <span className={`font-bold text-teal-600 ${compact ? 'text-xs' : (showValues ? 'text-sm' : 'text-base')}`}>#{order.pedido}</span>
+              {order.grupo && (
+                <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold whitespace-nowrap ${
+                  order.tipoEspecial === 'AMOSTRA' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
+                  order.tipoEspecial === 'BONIFICACAO' ? 'bg-pink-100 text-pink-800 border border-pink-300' :
+                  order.grupoKey === 'importacao_revenda' ? 'bg-teal-100 text-teal-700' :
+                  order.grupoKey === 'industrializacao' ? 'bg-violet-100 text-violet-700' :
+                  order.grupoKey === 'importacao_mp' ? 'bg-blue-100 text-blue-700' :
+                  'bg-slate-100 text-slate-600'
+                }`}>
+                  {order.grupo}
+                </span>
+              )}
+            </div>
             {order.itens.some(i => i.quantidadeFaturada && i.quantidadeFaturada > 0 && i.quantidade !== i.quantidadeFaturada) && (
-              <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold whitespace-nowrap bg-blue-100 text-blue-700 border border-blue-300 animate-pulse">
+              <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold whitespace-nowrap bg-blue-100 text-blue-700 border border-blue-300 animate-pulse w-fit">
                 Fat. Parcial
               </span>
             )}
