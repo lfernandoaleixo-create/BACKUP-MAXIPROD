@@ -578,12 +578,10 @@ function DayCard({
                           <span className={`text-[9px] ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`}>({group.items.length})</span>
                         </button>
 
-                        {/* Lado direito: Selecionar Tudo + valor */}
-                        <div className="flex items-center gap-3">
-                          <label
-                            className="flex items-center gap-1.5 cursor-pointer select-none"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                        {/* Lado direito: Checkbox + Valor Autorizado + Valor Total */}
+                        <div className="flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
+                          {/* Checkbox Selecionar Tudo */}
+                          <label className="flex items-center gap-1.5 cursor-pointer select-none min-w-[120px]">
                             <Checkbox
                               checked={groupAllAuthorized}
                               onCheckedChange={() => {
@@ -605,11 +603,24 @@ function DayCard({
                               Selecionar tudo
                             </span>
                           </label>
-                          <span className={`text-xs font-bold tabular-nums ${
-                            groupAllAuthorized ? "text-emerald-800" : "text-amber-800"
-                          }`}>
-                            {formatCurrency(groupTotal)}
-                          </span>
+                          {/* Valor Autorizado (azul) */}
+                          <div className="flex flex-col items-end min-w-[110px]">
+                            <span className="text-[9px] text-blue-500 font-medium leading-none">Autorizado</span>
+                            <span className="text-xs font-bold tabular-nums text-blue-600">
+                              {formatCurrency(group.items.filter(i => i.authorized).reduce((s, i) => s + i.valor, 0))}
+                            </span>
+                          </div>
+                          {/* Valor Total (castanho amarelado) */}
+                          <div className="flex flex-col items-end min-w-[110px]">
+                            <span className={`text-[9px] font-medium leading-none ${
+                              groupAllAuthorized ? "text-emerald-500" : "text-amber-500"
+                            }`}>Total</span>
+                            <span className={`text-xs font-bold tabular-nums ${
+                              groupAllAuthorized ? "text-emerald-800" : "text-amber-800"
+                            }`}>
+                              {formatCurrency(groupTotal)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

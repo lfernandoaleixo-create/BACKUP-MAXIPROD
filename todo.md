@@ -1662,3 +1662,9 @@
 - [x] Adicionar checkbox "Selecionar Tudo" ao lado do nome de cada fornecedor no card amarelo
 - [x] Alinhar perfeitamente checkboxes e textos "Selecionar Tudo"
 - [x] Card muda de amarelo para verde quando todas as contas do fornecedor estiverem autorizadas
+
+## Melhorias Selecionar Tudo - Autorização Pagamentos (06/04/2026)
+- [x] Alinhar checkboxes "Selecionar Tudo" perfeitamente um debaixo do outro, centralizados
+- [x] Adicionar "Valor Autorizado: R$..." em azul ao lado do checkbox
+- [x] Adicionar "Valor Total: R$..." em castanho amarelado à direita
+- [x] Valores visíveis mesmo com card fechado/colapsado
