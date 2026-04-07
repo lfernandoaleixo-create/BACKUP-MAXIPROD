@@ -1730,3 +1730,5 @@
 - [x] Criar alertas quando estoque < pedidos dos últimos 30 dias (produzir mais)
 - [x] Alertas consideram apenas pedidos dos últimos 30 dias para evitar falsos positivos
 - [x] Botão "Valorização de Estoque" acima do card Madeira PA (usa R$/CX da config)
+- [x] Painel de alertas de produção oculto por padrão, abre ao clicar no card KPI Alertas
+- [x] Painel de alertas de produção oculto por padrão, abre ao clicar no card KPI Alertas

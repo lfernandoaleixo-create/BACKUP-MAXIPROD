@@ -3001,6 +3001,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   }, [madeiraItems]);
 
   // Alertas: produtos com estoque < pedidos dos últimos 30 dias
+  const [showAlertasPanel, setShowAlertasPanel] = useState(false);
+
   const madeiraAlertas = useMemo(() => {
     return parentOnlyMadeira.filter(i => {
       const estoque = i.estoqueCx ?? 0;
@@ -3411,17 +3413,19 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           icon={Clock}
           theme="indigo"
         />
-        <KPICard
-          label="Alertas"
-          value={madeiraAlertas.length > 0 ? `${madeiraAlertas.length}` : "Nenhum"}
-          sub={madeiraAlertas.length > 0 ? "Produzir mais" : "Tudo em ordem"}
-          icon={madeiraAlertas.length > 0 ? AlertTriangle : CheckCircle2}
-          theme={madeiraAlertas.length > 0 ? "red" : "slate"}
-        />
+        <div onClick={() => madeiraAlertas.length > 0 && setShowAlertasPanel(p => !p)} className={madeiraAlertas.length > 0 ? "cursor-pointer" : ""}>
+          <KPICard
+            label="Alertas"
+            value={madeiraAlertas.length > 0 ? `${madeiraAlertas.length}` : "Nenhum"}
+            sub={madeiraAlertas.length > 0 ? (showAlertasPanel ? "Clique p/ fechar" : "Clique p/ ver") : "Tudo em ordem"}
+            icon={madeiraAlertas.length > 0 ? AlertTriangle : CheckCircle2}
+            theme={madeiraAlertas.length > 0 ? "red" : "slate"}
+          />
+        </div>
       </div>
 
       {/* Painel de Alertas de Produção */}
-      {madeiraAlertas.length > 0 && (
+      {madeiraAlertas.length > 0 && showAlertasPanel && (
         <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-red-600" />
