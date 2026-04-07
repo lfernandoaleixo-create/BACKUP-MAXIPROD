@@ -1685,3 +1685,7 @@
 - [x] Checkbox "Autorização Concluída" na seção de Autorização de Pagamentos
 - [x] Proteção por senha "Fernando" para marcar a Autorização Concluída
 - [x] Não mexer em pagamentos já autorizados
+
+## Cards de fornecedores colapsados por padrão (07/04/2026)
+- [x] Todos os cards de fornecedores na Autorização de Pagamentos iniciam fechados (colapsados) por padrão
+- [x] Não alterar nada em nenhuma outra aba

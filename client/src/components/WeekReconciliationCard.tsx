@@ -4,7 +4,7 @@
  * Fernando marca as contas → Financeiro executa os pagamentos autorizados
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2,
@@ -340,6 +340,7 @@ function DayCard({
   const [expanded, setExpanded] = useState(isVencidas || isToday);
   const allAuthorized = day.count > 0 && day.authorizedCount === day.count;
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [initialCollapseApplied, setInitialCollapseApplied] = useState(false);
 
   // Items na ordem padrão do backend (por fornecedor)
   const sortedItems = day.items;
@@ -357,6 +358,14 @@ function DayCard({
     }
     return groups;
   }, [sortedItems]);
+
+  // Colapsar todos os grupos por padrão quando os dados carregam
+  useEffect(() => {
+    if (!initialCollapseApplied && groupedItems.length > 0) {
+      setCollapsedGroups(new Set(groupedItems.map(g => g.fornecedor)));
+      setInitialCollapseApplied(true);
+    }
+  }, [groupedItems, initialCollapseApplied]);
 
   const toggleGroupCollapse = (fornecedor: string) => {
     setCollapsedGroups(prev => {
