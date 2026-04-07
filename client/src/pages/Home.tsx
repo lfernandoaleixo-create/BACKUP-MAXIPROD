@@ -1912,6 +1912,135 @@ function ClassificationCard({
   );
 }
 
+/* --- Botão de Valorização de Estoque Madeira --- */
+function MadeiraValorizacaoButton({ items, madeiraVisData }: {
+  items: StockItem[];
+  madeiraVisData: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> } | undefined;
+}) {
+  const [showModal, setShowModal] = useState(false);
+  const parentItems = useMemo(() => items.filter(i => !i.isChild), [items]);
+
+  const precosMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (madeiraVisData?.items) {
+      for (const row of madeiraVisData.items) {
+        if (row.card === "madeira" && row.precoCaixa) {
+          const val = parseFloat(row.precoCaixa);
+          if (!isNaN(val) && val > 0) map.set(row.codigoItem, val);
+        }
+      }
+    }
+    return map;
+  }, [madeiraVisData]);
+
+  const valorizacao = useMemo(() => {
+    let total = 0;
+    let itensComPreco = 0;
+    const detalhes: Array<{ codigo: string; descricao: string; estoque: number; preco: number; valor: number }> = [];
+    for (const item of parentItems) {
+      const preco = precosMap.get(item.codigoItem);
+      if (preco && preco > 0) {
+        const estoque = item.estoqueCx ?? 0;
+        const valor = estoque * preco;
+        total += valor;
+        itensComPreco++;
+        if (estoque > 0) detalhes.push({ codigo: item.codigoItem, descricao: item.descricaoItem, estoque, preco, valor });
+      }
+    }
+    detalhes.sort((a, b) => b.valor - a.valor);
+    return { total, itensComPreco, totalItens: parentItems.length, detalhes };
+  }, [parentItems, precosMap]);
+
+  return (
+    <>
+      <div className="mt-4 mb-2 flex justify-end">
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+        >
+          <DollarSign className="w-4 h-4" />
+          Valoriza\u00e7\u00e3o de Estoque
+          {valorizacao.total > 0 && (
+            <span className="ml-1 bg-emerald-500 px-2 py-0.5 rounded-full text-xs">
+              {formatCurrency(valorizacao.total)}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                <span className="font-bold text-lg">Valoriza\u00e7\u00e3o de Estoque - Madeira PA</span>
+              </div>
+              <button onClick={() => setShowModal(false)} className="text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-emerald-50 rounded-xl p-4 text-center">
+                  <p className="text-xs text-emerald-600 font-semibold uppercase">Valor Total</p>
+                  <p className="text-2xl font-bold text-emerald-700">{formatCurrency(valorizacao.total)}</p>
+                </div>
+                <div className="bg-blue-50 rounded-xl p-4 text-center">
+                  <p className="text-xs text-blue-600 font-semibold uppercase">Itens com Pre\u00e7o</p>
+                  <p className="text-2xl font-bold text-blue-700">{valorizacao.itensComPreco}/{valorizacao.totalItens}</p>
+                </div>
+                <div className="bg-amber-50 rounded-xl p-4 text-center">
+                  <p className="text-xs text-amber-600 font-semibold uppercase">Sem Pre\u00e7o</p>
+                  <p className="text-2xl font-bold text-amber-700">{valorizacao.totalItens - valorizacao.itensComPreco}</p>
+                </div>
+              </div>
+              {valorizacao.itensComPreco < valorizacao.totalItens && (
+                <p className="text-xs text-amber-600 mb-3 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> Configure o R$/CX na aba Configura\u00e7\u00f5es {'>'} Madeira - Produto Acabado para incluir todos os itens.
+                </p>
+              )}
+              <div className="overflow-y-auto max-h-[40vh]">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-white">
+                    <tr className="border-b-2 border-slate-200">
+                      <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500">Produto</th>
+                      <th className="text-right py-2 px-2 text-xs font-semibold text-slate-500">Estoque</th>
+                      <th className="text-right py-2 px-2 text-xs font-semibold text-slate-500">R$/CX</th>
+                      <th className="text-right py-2 px-2 text-xs font-semibold text-emerald-600">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {valorizacao.detalhes.map(d => (
+                      <tr key={d.codigo} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-1.5 px-2 text-xs"><span className="text-slate-400 mr-1">{d.codigo}</span> {d.descricao}</td>
+                        <td className="py-1.5 px-2 text-right font-semibold text-xs">{formatNumber(d.estoque)} cx</td>
+                        <td className="py-1.5 px-2 text-right text-xs">{formatCurrency(d.preco)}</td>
+                        <td className="py-1.5 px-2 text-right font-bold text-emerald-600 text-xs">{formatCurrency(d.valor)}</td>
+                      </tr>
+                    ))}
+                    {valorizacao.detalhes.length === 0 && (
+                      <tr><td colSpan={4} className="py-8 text-center text-slate-400 text-xs">Nenhum item com pre\u00e7o e estoque configurados</td></tr>
+                    )}
+                  </tbody>
+                  {valorizacao.detalhes.length > 0 && (
+                    <tfoot>
+                      <tr className="border-t-2 border-emerald-200 bg-emerald-50">
+                        <td className="py-2 px-2 font-bold text-sm text-emerald-700" colSpan={3}>Total</td>
+                        <td className="py-2 px-2 text-right font-bold text-lg text-emerald-700">{formatCurrency(valorizacao.total)}</td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* --- Madeira PA Card (estoque editável com senha e histórico - SOMENTE AUMENTO) --- */
 function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
   items: StockItem[];
@@ -2847,10 +2976,11 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     return aguardandoKPI.items.reduce((sum, sp) => sum + (parseFloat(String(sp.quantidade)) || 0), 0);
   }, [aguardandoKPI]);
 
+  // KPIs: Estoque Total e Pedidos APENAS de Madeira PA (não inclui Semi Pronto nem Aguardando)
+  const ROJAO_CODE = "00129";
   const madeiraEstoqueCx = useMemo(() => {
-    const madeiraCardEstoque = madeiraItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
-    return madeiraCardEstoque + semiProntoTotal + aguardandoTotal;
-  }, [madeiraItems, semiProntoTotal, aguardandoTotal]);
+    return madeiraItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
+  }, [madeiraItems]);
 
   const madeiraPedidosCx = useMemo(() => madeiraItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0), [madeiraItems]);
   const madeiraDisponivelCx = madeiraEstoqueCx - madeiraPedidosCx;
@@ -2858,6 +2988,25 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const madeiraProjetadoCx = madeiraDisponivelCx + madeiraPOCx;
   const madeiraProdutos = parentOnlyMadeira.length;
   const negativos = items.filter((i) => (i.disponivelCx ?? i.disponivelUn) < 0).length;
+
+  // Disponível separado: Caixas (tudo exceto Rojão) e Dúzias (apenas Rojão 00129)
+  const disponivelCaixas = useMemo(() => {
+    return madeiraItems.filter(i => i.codigoItem !== ROJAO_CODE).reduce((sum, i) => sum + ((i.estoqueCx ?? 0) - (i.pedidosCx ?? 0)), 0);
+  }, [madeiraItems]);
+  const disponivelDuzias = useMemo(() => {
+    const rojao = madeiraItems.find(i => i.codigoItem === ROJAO_CODE);
+    if (!rojao) return 0;
+    return (rojao.estoqueCx ?? 0) - (rojao.pedidosCx ?? 0);
+  }, [madeiraItems]);
+
+  // Alertas: produtos com estoque < pedidos dos últimos 30 dias
+  const madeiraAlertas = useMemo(() => {
+    return parentOnlyMadeira.filter(i => {
+      const estoque = i.estoqueCx ?? 0;
+      const pedidos = i.pedidosCx ?? 0;
+      return pedidos > 0 && estoque < pedidos;
+    }).map(i => ({ codigo: i.codigoItem, descricao: i.descricaoItem, estoque: i.estoqueCx ?? 0, pedidos: i.pedidosCx ?? 0, deficit: (i.pedidosCx ?? 0) - (i.estoqueCx ?? 0) }));
+  }, [parentOnlyMadeira]);
 
   // Custo do Estoque Regulador global (apenas itens do card Estoque)
   const custoEstRegGlobal = useMemo(() => {
@@ -3218,27 +3367,34 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         </div>
         <p className="text-center text-xs text-slate-400 mt-2">Madeira + Semi Pronto + Aguardando Escolha</p>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <KPICard
           label="Estoque Total"
           value={`${formatNumber(madeiraEstoqueCx)} cx`}
-          sub={`${madeiraProdutos} produtos`}
+          sub={`${madeiraProdutos} produtos (Madeira PA)`}
           icon={TreePine}
           theme="teal"
         />
         <KPICard
           label="Pedidos (Venda)"
           value={`${formatNumber(madeiraPedidosCx)} cx`}
-          sub="Pedidos de madeira"
+          sub="Apenas Madeira PA"
           icon={ShoppingCart}
           theme="orange"
         />
         <KPICard
-          label="Disponivel"
-          value={`${formatNumber(madeiraDisponivelCx)} cx`}
-          sub="Estoque - Pedidos"
-          icon={CheckCircle2}
+          label="Dispon\u00edvel - Caixas"
+          value={`${formatNumber(disponivelCaixas)} cx`}
+          sub="Estoque - Pedidos (cx)"
+          icon={Boxes}
           theme="emerald"
+        />
+        <KPICard
+          label="Dispon\u00edvel - D\u00fazias"
+          value={`${formatNumber(disponivelDuzias)} dz`}
+          sub="Roj\u00e3o 7x1000"
+          icon={Package}
+          theme="green"
         />
         <KPICard
           label="Semi Pronto"
@@ -3256,12 +3412,49 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         />
         <KPICard
           label="Alertas"
-          value="Nenhum"
-          sub="Tudo em ordem"
-          icon={CheckCircle2}
-          theme="slate"
+          value={madeiraAlertas.length > 0 ? `${madeiraAlertas.length}` : "Nenhum"}
+          sub={madeiraAlertas.length > 0 ? "Produzir mais" : "Tudo em ordem"}
+          icon={madeiraAlertas.length > 0 ? AlertTriangle : CheckCircle2}
+          theme={madeiraAlertas.length > 0 ? "red" : "slate"}
         />
       </div>
+
+      {/* Painel de Alertas de Produ\u00e7\u00e3o */}
+      {madeiraAlertas.length > 0 && (
+        <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-4 h-4 text-red-600" />
+            <span className="text-sm font-bold text-red-700">Alertas de Produ\u00e7\u00e3o - Estoque abaixo dos pedidos (\u00faltimos 30 dias)</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-red-200">
+                  <th className="text-left py-1.5 px-2 text-red-700 font-semibold text-xs">Produto</th>
+                  <th className="text-right py-1.5 px-2 text-red-700 font-semibold text-xs">Estoque</th>
+                  <th className="text-right py-1.5 px-2 text-red-700 font-semibold text-xs">Pedidos</th>
+                  <th className="text-right py-1.5 px-2 text-red-700 font-semibold text-xs">D\u00e9ficit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {madeiraAlertas.map(a => (
+                  <tr key={a.codigo} className="border-b border-red-100 hover:bg-red-100/50">
+                    <td className="py-1.5 px-2 text-slate-700 text-xs">
+                      <span className="text-slate-400 mr-1">{a.codigo}</span> {a.descricao}
+                    </td>
+                    <td className="py-1.5 px-2 text-right font-semibold text-teal-600 text-xs">{formatNumber(a.estoque)} cx</td>
+                    <td className="py-1.5 px-2 text-right font-semibold text-orange-600 text-xs">{formatNumber(a.pedidos)} cx</td>
+                    <td className="py-1.5 px-2 text-right font-bold text-red-600 text-xs">-{formatNumber(a.deficit)} cx</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Bot\u00e3o de Valoriza\u00e7\u00e3o de Estoque */}
+      <MadeiraValorizacaoButton items={madeiraItems} madeiraVisData={madeiraVisData} />
 
       <MadeiraPACard
         items={madeiraItems}

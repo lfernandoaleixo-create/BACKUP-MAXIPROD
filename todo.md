@@ -1721,3 +1721,12 @@
 - [x] Remover placeholder "Ex: Maria, Erica..." do modal de senha (deixar em branco)
 - [x] Adicionar coluna "R$/CX" na tabela de configurações (editável manualmente, média das últimas 5 vendas se disponível)
 - [x] Adicionar coluna "Alerta de Reposição" na tabela de configurações
+
+## KPIs Disponível, Alertas e Filtro Madeira PA (07/04/2026)
+- [x] Substituir KPI "Disponível" por dois cards: "Disponível - Caixas" e "Disponível - Dúzias"
+- [x] Rojão (código 00129 - 7,0 X 1000 MM) contabilizado em dúzias, demais em caixas
+- [x] Disponível = Estoque manual - Pedidos de venda (últimos 30 dias)
+- [x] KPIs Estoque Total e Pedidos (Venda) devem considerar APENAS produtos do card Madeira PA
+- [x] Criar alertas quando estoque < pedidos dos últimos 30 dias (produzir mais)
+- [x] Alertas consideram apenas pedidos dos últimos 30 dias para evitar falsos positivos
+- [x] Botão "Valorização de Estoque" acima do card Madeira PA (usa R$/CX da config)
