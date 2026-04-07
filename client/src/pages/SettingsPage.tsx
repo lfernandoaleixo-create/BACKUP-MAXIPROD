@@ -2303,10 +2303,12 @@ function MadeiraVisibilityPanel() {
 
 // ─── Main Settings Page ────────────────────────────────────────────────────────────
 export default function SettingsPage() {
-  const { hasGranularAccess } = useOperator();
+  const { hasGranularAccess, operator } = useOperator();
   // TEMPORÁRIO: senha desabilitada
   const [adminPassword, setAdminPassword] = useState<string>("bypass");
-  const [activeTab, setActiveTab] = useState<"passwords" | "alerts" | "products" | "data" | "bank" | "variants" | "visibility" | "madeira">("passwords");
+  // Se o operador não tem accessConfiguracoes (entrou via cfg.produtos), iniciar na aba Madeira
+  const defaultTab = operator?.accessConfiguracoes ? "passwords" : "madeira";
+  const [activeTab, setActiveTab] = useState<"passwords" | "alerts" | "products" | "data" | "bank" | "variants" | "visibility" | "madeira">(defaultTab);
 
   // if (!adminPassword) {
   //   return <PasswordGate onUnlock={setAdminPassword} />;
@@ -2322,7 +2324,11 @@ export default function SettingsPage() {
     { id: "data" as const, label: "Dados", icon: Package, color: "text-blue-600", perm: "cfg.dados" },
     { id: "madeira" as const, label: "Madeira", icon: TreePine, color: "text-green-700", perm: "cfg.produtos" },
   ];
-  const tabs = allTabs.filter(t => hasGranularAccess(t.perm));
+  // Se o operador tem accessConfiguracoes, mostra todas as tabs com permissão
+  // Se não tem (entrou via cfg.produtos), mostra apenas a aba Madeira
+  const tabs = operator?.accessConfiguracoes
+    ? allTabs.filter(t => hasGranularAccess(t.perm))
+    : allTabs.filter(t => t.id === "madeira" && hasGranularAccess(t.perm));
 
   return (
     <div className="min-h-screen bg-slate-50">

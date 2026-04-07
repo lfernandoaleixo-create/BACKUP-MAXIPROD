@@ -115,11 +115,11 @@ export function OperatorProvider({ children }: { children: ReactNode }) {
       case "vendas": return operator.accessVendas;
       case "faturamento": return operator.accessFaturamento;
       case "financeiro": return operator.accessFinanceiro;
-      case "configuracoes": return operator.accessConfiguracoes;
+      case "configuracoes": return operator.accessConfiguracoes || (granularPermissions["cfg.produtos"] === true);
       case "valorizacao": return operator.accessValorizacao;
       default: return false;
     }
-  }, [operator]);
+  }, [operator, granularPermissions]);
 
   // Granular permission check: returns true if permission is explicitly enabled or not set (default = authorized),
   // false only if explicitly disabled

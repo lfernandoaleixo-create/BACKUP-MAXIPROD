@@ -1696,3 +1696,7 @@
 - [x] Notificar apenas pedidos novos
 - [x] Remover notificações sem utilidade para a produção
 - [x] Não mexer em nada além do sininho de notificações
+
+## Permissão Configuração Madeira para Maria e Erica (07/04/2026)
+- [x] Habilitar Maria e Erica para mexer nos toggles de Madeira, Semi Pronto e Aguardando Escolha
+- [x] Não mexer em nada além da permissão desta seção
