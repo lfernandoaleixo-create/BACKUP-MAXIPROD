@@ -2188,7 +2188,7 @@ function MadeiraVisibilityPanel() {
             <TreePine className="w-5 h-5 text-green-700" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-slate-800">Visibilidade dos Produtos de Madeira</h3>
+            <h3 className="text-lg font-semibold text-slate-800">Visibilidade dos Produtos de Madeira - Produto Acabado</h3>
             <p className="text-sm text-slate-500">Controle quais produtos aparecem em cada card na aba Estoque</p>
           </div>
         </div>
@@ -2322,7 +2322,7 @@ export default function SettingsPage() {
     { id: "bank" as const, label: "Bancos", icon: Landmark, color: "text-indigo-600", perm: "cfg.bancos" },
     { id: "variants" as const, label: "Variações", icon: GitBranch, color: "text-teal-500", perm: "cfg.variacoes" },
     { id: "data" as const, label: "Dados", icon: Package, color: "text-blue-600", perm: "cfg.dados" },
-    { id: "madeira" as const, label: "Madeira", icon: TreePine, color: "text-green-700", perm: "cfg.produtos" },
+    { id: "madeira" as const, label: "Madeira - PA", icon: TreePine, color: "text-green-700", perm: "cfg.produtos" },
   ];
   // Se o operador tem accessConfiguracoes, mostra todas as tabs com permissão
   // Se não tem (entrou via cfg.produtos), mostra apenas a aba Madeira

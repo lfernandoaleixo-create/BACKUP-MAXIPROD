@@ -858,3 +858,35 @@ export const collectionActions = mysqlTable("collection_actions", {
 });
 export type CollectionAction = typeof collectionActions.$inferSelect;
 export type InsertCollectionAction = typeof collectionActions.$inferInsert;
+
+/**
+ * Estoque manual de Madeira - Produto Acabado.
+ * Operadores preenchem manualmente. Só pode AUMENTAR (redução apenas por venda/sync).
+ */
+export const madeiraStock = mysqlTable("madeira_stock", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull().unique(),
+  quantidade: decimal("quantidade", { precision: 18, scale: 5 }).notNull().default("0"),
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MadeiraStock = typeof madeiraStock.$inferSelect;
+export type InsertMadeiraStock = typeof madeiraStock.$inferInsert;
+
+/**
+ * Histórico de edições manuais de estoque (Madeira PA, Semi Pronto, Aguardando Escolha).
+ * Mantém últimos 15 dias de alterações.
+ */
+export const stockEditHistory = mysqlTable("stock_edit_history", {
+  id: int("id").autoincrement().primaryKey(),
+  card: varchar("card", { length: 30 }).notNull(), // "madeira" | "semiPronto" | "aguardandoEscolha"
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull(),
+  descricaoItem: text("descricaoItem"),
+  valorAnterior: decimal("valorAnterior", { precision: 18, scale: 5 }).notNull(),
+  valorNovo: decimal("valorNovo", { precision: 18, scale: 5 }).notNull(),
+  operador: varchar("operador", { length: 200 }).notNull(),
+  tipo: varchar("tipo", { length: 20 }).notNull().default("alteracao"), // "alteracao" | "tentativa_reducao"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type StockEditHistory = typeof stockEditHistory.$inferSelect;
+export type InsertStockEditHistory = typeof stockEditHistory.$inferInsert;

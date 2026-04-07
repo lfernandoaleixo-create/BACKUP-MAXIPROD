@@ -1700,3 +1700,13 @@
 ## Permissão Configuração Madeira para Maria e Erica (07/04/2026)
 - [x] Habilitar Maria e Erica para mexer nos toggles de Madeira, Semi Pronto e Aguardando Escolha
 - [x] Não mexer em nada além da permissão desta seção
+
+## Estoque Madeira Editável + Histórico (07/04/2026)
+- [x] Renomear "Madeira" para "Madeira - Produto Acabado" em todo o sistema
+- [x] Criar tabela de histórico de alterações manuais de estoque (últimos 15 dias)
+- [x] Estoque dos 3 cards (Madeira PA, Semi Pronto, Ag. Escolha) editável manualmente
+- [x] Pedir senha (nome do operador) antes de cada alteração manual
+- [x] Madeira PA: estoque só pode aumentar manualmente (redução bloqueada, registrar tentativa)
+- [x] Semi Pronto e Ag. Escolha: permitir aumento e redução
+- [x] Botão de histórico ao lado do estoque mostrando últimos 15 dias de alterações
+- [x] Histórico mostra: data, hora, operador, valor anterior, novo valor

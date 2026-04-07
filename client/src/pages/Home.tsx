@@ -6,7 +6,7 @@
  * Sem processamento de nomes, sem filtros manuais de grupo.
  */
 
-import React, { useState, useMemo, useRef, Fragment, useCallback } from "react";
+import React, { useState, useMemo, useRef, Fragment, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Input } from "@/components/ui/input";
@@ -57,7 +57,19 @@ import {
   TreePine,
   Hammer,
   Clock,
+  History,
+  X,
+  KeyRound,
+  Pencil,
+  ShieldAlert,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
@@ -1382,6 +1394,155 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
   );
 }
 
+/* --- Password Modal for Stock Editing --- */
+function PasswordModal({ open, onClose, onConfirm, title }: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: (name: string) => void;
+  title?: string;
+}) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setPassword("");
+      setError("");
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [open]);
+
+  const handleSubmit = () => {
+    const trimmed = password.trim();
+    if (!trimmed) {
+      setError("Digite seu nome");
+      return;
+    }
+    onConfirm(trimmed);
+    setPassword("");
+    setError("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <KeyRound className="w-5 h-5 text-amber-600" />
+            {title || "Identificação"}
+          </DialogTitle>
+          <DialogDescription>Digite seu nome para registrar a alteração</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 pt-2">
+          <Input
+            ref={inputRef}
+            placeholder="Ex: Maria, Erica..."
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setError(""); }}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            className={error ? "border-red-400" : ""}
+          />
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={onClose}>Cancelar</Button>
+            <Button size="sm" onClick={handleSubmit}>Confirmar</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* --- Stock Edit History Modal --- */
+function StockHistoryModal({ open, onClose, card, codigoItem, descricaoItem }: {
+  open: boolean;
+  onClose: () => void;
+  card: "madeira" | "semiPronto" | "aguardandoEscolha";
+  codigoItem?: string;
+  descricaoItem?: string;
+}) {
+  const { data, isLoading } = trpc.dashboard.getStockEditHistory.useQuery(
+    { card, codigoItem },
+    { enabled: open }
+  );
+
+  const cardLabel = card === "madeira" ? "Madeira - Produto Acabado" : card === "semiPronto" ? "Semi Pronto" : "Aguardando Escolha";
+  const cardColor = card === "madeira" ? "text-green-700" : card === "semiPronto" ? "text-amber-700" : "text-purple-700";
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="w-5 h-5 text-slate-600" />
+            Histórico de Alterações
+          </DialogTitle>
+          <DialogDescription>
+            <span className={`font-semibold ${cardColor}`}>{cardLabel}</span>
+            {descricaoItem && <> — {descricaoItem}</>}
+            {" "}(últimos 15 dias)
+          </DialogDescription>
+        </DialogHeader>
+        <div className="overflow-y-auto flex-1 -mx-6 px-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            </div>
+          ) : !data?.history?.length ? (
+            <div className="text-center py-8 text-slate-400">
+              <History className="w-10 h-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">Nenhuma alteração registrada</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-white z-10">
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500">Data/Hora</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500">Operador</th>
+                  {!codigoItem && <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500">Produto</th>}
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-500">Anterior</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-500">Novo</th>
+                  <th className="text-center py-2 px-2 text-xs font-semibold text-slate-500">Tipo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.history.map((h: any, i: number) => {
+                  const isReduction = h.tipo === "tentativa_reducao";
+                  return (
+                    <tr key={i} className={`border-b border-slate-100 ${isReduction ? "bg-red-50" : "hover:bg-slate-50/50"}`}>
+                      <td className="py-2 px-2 text-xs text-slate-600 whitespace-nowrap">
+                        {new Date(h.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      </td>
+                      <td className="py-2 px-2 text-xs font-semibold text-slate-700">{h.operador}</td>
+                      {!codigoItem && (
+                        <td className="py-2 px-2 text-xs text-slate-600 max-w-[150px] truncate" title={h.descricaoItem || h.codigoItem}>
+                          {h.codigoItem}
+                        </td>
+                      )}
+                      <td className="py-2 px-2 text-right text-xs text-slate-500">{parseFloat(h.valorAnterior || "0").toFixed(0)}</td>
+                      <td className={`py-2 px-2 text-right text-xs font-bold ${isReduction ? "text-red-600" : "text-green-600"}`}>
+                        {parseFloat(h.valorNovo || "0").toFixed(0)}
+                      </td>
+                      <td className="py-2 px-2 text-center">
+                        {isReduction ? (
+                          <span className="text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">BLOQUEADO</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">OK</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /* --- Classification Group Card --- */
 type PriceMap = Record<string, { avgPrice: number; salesCount: number }>;
 
@@ -1751,19 +1912,258 @@ function ClassificationCard({
   );
 }
 
-/* --- Semi Pronto Card (informativo, estoque editável manualmente) --- */
-function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
+/* --- Madeira PA Card (estoque editável com senha e histórico - SOMENTE AUMENTO) --- */
+function MadeiraPACard({ items, isOpen, onToggle }: {
   items: StockItem[];
   isOpen: boolean;
   onToggle: () => void;
-  operatorName?: string;
 }) {
   const [search, setSearch] = useState("");
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [pendingEditItem, setPendingEditItem] = useState<string | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentOperator, setCurrentOperator] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyItem, setHistoryItem] = useState<{ codigo: string; descricao: string } | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch semi pronto stock data
+  const { data: madeiraStockData } = trpc.dashboard.getMadeiraStock.useQuery(undefined, {
+    refetchInterval: 30000,
+  });
+  const updateMutation = trpc.dashboard.updateMadeiraStock.useMutation({
+    onSuccess: (result) => {
+      if (result.success === false && result.error === "reduction_blocked") {
+        toast.error(`Redução bloqueada! Operador: ${result.operador}. Madeira PA só pode AUMENTAR.`);
+      } else {
+        toast.success("Estoque atualizado!");
+      }
+      setEditingItem(null);
+    },
+    onError: () => toast.error("Erro ao salvar"),
+  });
+  const utils = trpc.useUtils();
+
+  const madeiraStockMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (madeiraStockData?.items) {
+      for (const ms of madeiraStockData.items) {
+        map.set(ms.codigoItem, parseFloat(String(ms.quantidade)) || 0);
+      }
+    }
+    return map;
+  }, [madeiraStockData]);
+
+  const parentItems = useMemo(() => items.filter(i => !i.isChild), [items]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return parentItems;
+    const s = search.toLowerCase();
+    return parentItems.filter(i =>
+      i.descricaoItem.toLowerCase().includes(s) ||
+      i.codigoItem.toLowerCase().includes(s)
+    );
+  }, [parentItems, search]);
+
+  const totalEstoqueManual = useMemo(() => {
+    let total = 0;
+    for (const item of parentItems) {
+      total += madeiraStockMap.get(item.codigoItem) || 0;
+    }
+    return total;
+  }, [parentItems, madeiraStockMap]);
+
+  const totalEstoqueMaxiprod = useMemo(() => parentItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0), [parentItems]);
+  const totalPedidos = useMemo(() => parentItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0), [parentItems]);
+  const totalPO = useMemo(() => parentItems.reduce((sum, i) => sum + (i.poCx ?? 0), 0), [parentItems]);
+
+  const handleStartEdit = useCallback((codigoItem: string) => {
+    if (!currentOperator) {
+      setPendingEditItem(codigoItem);
+      setShowPasswordModal(true);
+      return;
+    }
+    const current = madeiraStockMap.get(codigoItem) || 0;
+    setEditingItem(codigoItem);
+    setEditValue(String(current));
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [madeiraStockMap, currentOperator]);
+
+  const handlePasswordConfirm = useCallback((name: string) => {
+    setCurrentOperator(name);
+    setShowPasswordModal(false);
+    if (pendingEditItem) {
+      const current = madeiraStockMap.get(pendingEditItem) || 0;
+      setEditingItem(pendingEditItem);
+      setEditValue(String(current));
+      setPendingEditItem(null);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [pendingEditItem, madeiraStockMap]);
+
+  const handleSave = useCallback(() => {
+    if (!editingItem || !currentOperator) return;
+    const val = parseFloat(editValue) || 0;
+    const currentVal = madeiraStockMap.get(editingItem) || 0;
+    // Client-side warning for decrease attempt (backend also blocks)
+    if (val < currentVal) {
+      toast.error(`Redução não permitida! Madeira PA só pode AUMENTAR. (${currentOperator})`);
+    }
+    const item = parentItems.find(i => i.codigoItem === editingItem);
+    updateMutation.mutate(
+      { codigoItem: editingItem, quantidade: val, operatorName: currentOperator, descricaoItem: item?.descricaoItem },
+      { onSuccess: () => utils.dashboard.getMadeiraStock.invalidate() }
+    );
+  }, [editingItem, editValue, updateMutation, currentOperator, utils, parentItems, madeiraStockMap]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSave();
+    if (e.key === "Escape") setEditingItem(null);
+  }, [handleSave]);
+
+  return (
+    <div className="bg-white rounded-xl border-l-4 border-l-green-600 border border-slate-100 shadow-sm transition-all duration-300">
+      <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEditItem(null); }} onConfirm={handlePasswordConfirm} title="Quem está editando?" />
+      <StockHistoryModal open={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(undefined); }} card="madeira" codigoItem={historyItem?.codigo} descricaoItem={historyItem?.descricao} />
+
+      <div onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer" role="button" tabIndex={0}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+              <TreePine className="w-6 h-6 text-green-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-bold text-slate-800">Madeira - Produto Acabado</h3>
+                <span className="text-sm font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{parentItems.length} itens</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque manual (somente aumento)</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); setHistoryItem(undefined); setShowHistory(true); }}
+              className="p-1.5 rounded-lg hover:bg-green-100 transition-colors" title="Histórico de alterações"
+            >
+              <History className="w-4 h-4 text-green-600" />
+            </button>
+            {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
+          </div>
+        </div>
+        <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
+          <div className="bg-teal-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque Manual</p>
+            <p className="text-base font-extrabold text-teal-700">{formatNumber(totalEstoqueManual)} <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-green-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-green-600 font-semibold uppercase tracking-wider">Maxiprod</p>
+            <p className="text-base font-extrabold text-green-700">{formatNumber(totalEstoqueMaxiprod)} <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-orange-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
+            <p className={`text-base font-extrabold ${totalPedidos > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-blue-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">PO (Compra)</p>
+            <p className={`text-base font-extrabold ${totalPO > 0 ? 'text-blue-700' : 'text-slate-400'}`}>{formatNumber(totalPO)} <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-indigo-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Projetado</p>
+            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-slate-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
+            <p className="text-base font-extrabold text-slate-700">{parentItems.length}</p>
+          </div>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="px-5 pb-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input placeholder="Buscar produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 h-9 text-sm" />
+            </div>
+            {currentOperator && (
+              <span className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full whitespace-nowrap">
+                Editando: {currentOperator}
+              </span>
+            )}
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <p className="text-xs text-amber-700"><strong>Regra:</strong> Estoque de Madeira PA só pode ser <strong>aumentado</strong> manualmente. Reduções são bloqueadas e registradas.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Código</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Produto</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-green-600 uppercase">Estoque Manual (cx)</th>
+                  <th className="w-8 py-2 px-1"></th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Maxiprod</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Pedidos</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">PO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((item) => {
+                  const manualQty = madeiraStockMap.get(item.codigoItem) || 0;
+                  const isEditing = editingItem === item.codigoItem;
+                  return (
+                    <tr key={item.codigoItem} className="border-b border-slate-100 hover:bg-slate-50/50">
+                      <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>
+                      <td className="py-2 px-2 text-sm text-slate-700 max-w-[300px] truncate" title={item.descricaoItem}>{item.descricaoItem}</td>
+                      <td className="py-2 px-2 text-right">
+                        {isEditing ? (
+                          <input ref={inputRef} type="number" min="0" value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
+                            className="w-20 text-right text-sm border border-green-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-300 bg-green-50" />
+                        ) : (
+                          <button onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
+                            className="text-sm font-bold text-green-700 hover:bg-green-50 px-2 py-1 rounded cursor-pointer transition-colors min-w-[60px] text-right"
+                            title="Clique para editar (somente aumento)">{formatNumber(manualQty)}</button>
+                        )}
+                      </td>
+                      <td className="py-2 px-1">
+                        <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
+                          className="p-1 rounded hover:bg-green-50 transition-colors" title="Histórico deste item">
+                          <History className="w-3.5 h-3.5 text-slate-400 hover:text-green-600" />
+                        </button>
+                      </td>
+                      <td className="py-2 px-2 text-right text-sm text-slate-400">{formatNumber(item.estoqueCx)}</td>
+                      <td className="py-2 px-2 text-right text-sm text-slate-400">{formatNumber(item.pedidosCx)}</td>
+                      <td className="py-2 px-2 text-right text-sm text-slate-400">{formatNumber(item.poCx)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* --- Semi Pronto Card (estoque editável com senha e histórico) --- */
+function SemiProntoCard({ items, isOpen, onToggle }: {
+  items: StockItem[];
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [pendingEditItem, setPendingEditItem] = useState<string | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentOperator, setCurrentOperator] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyItem, setHistoryItem] = useState<{ codigo: string; descricao: string } | undefined>(undefined);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const { data: semiProntoData } = trpc.dashboard.getSemiProntoStock.useQuery(undefined, {
     refetchInterval: 30000,
   });
@@ -1776,7 +2176,6 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
   });
   const utils = trpc.useUtils();
 
-  // Map of codigoItem -> quantidade from DB
   const semiProntoMap = useMemo(() => {
     const map = new Map<string, number>();
     if (semiProntoData?.items) {
@@ -1787,10 +2186,8 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
     return map;
   }, [semiProntoData]);
 
-  // Only parent items (no children)
   const parentItems = useMemo(() => items.filter(i => !i.isChild), [items]);
 
-  // Filter by search
   const filtered = useMemo(() => {
     if (!search.trim()) return parentItems;
     const s = search.toLowerCase();
@@ -1800,7 +2197,6 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
     );
   }, [parentItems, search]);
 
-  // Total estoque from manual entries
   const totalEstoque = useMemo(() => {
     let total = 0;
     for (const item of parentItems) {
@@ -1810,20 +2206,38 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
   }, [parentItems, semiProntoMap]);
 
   const handleStartEdit = useCallback((codigoItem: string) => {
+    if (!currentOperator) {
+      setPendingEditItem(codigoItem);
+      setShowPasswordModal(true);
+      return;
+    }
     const current = semiProntoMap.get(codigoItem) || 0;
     setEditingItem(codigoItem);
     setEditValue(String(current));
     setTimeout(() => inputRef.current?.focus(), 50);
-  }, [semiProntoMap]);
+  }, [semiProntoMap, currentOperator]);
+
+  const handlePasswordConfirm = useCallback((name: string) => {
+    setCurrentOperator(name);
+    setShowPasswordModal(false);
+    if (pendingEditItem) {
+      const current = semiProntoMap.get(pendingEditItem) || 0;
+      setEditingItem(pendingEditItem);
+      setEditValue(String(current));
+      setPendingEditItem(null);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [pendingEditItem, semiProntoMap]);
 
   const handleSave = useCallback(() => {
-    if (!editingItem) return;
+    if (!editingItem || !currentOperator) return;
     const val = parseFloat(editValue) || 0;
+    const item = parentItems.find(i => i.codigoItem === editingItem);
     updateMutation.mutate(
-      { codigoItem: editingItem, quantidade: val, operatorName: operatorName || undefined },
+      { codigoItem: editingItem, quantidade: val, operatorName: currentOperator, descricaoItem: item?.descricaoItem },
       { onSuccess: () => utils.dashboard.getSemiProntoStock.invalidate() }
     );
-  }, [editingItem, editValue, updateMutation, operatorName, utils]);
+  }, [editingItem, editValue, updateMutation, currentOperator, utils, parentItems]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSave();
@@ -1832,11 +2246,10 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
 
   return (
     <div className="bg-white rounded-xl border-l-4 border-l-amber-600 border border-slate-100 shadow-sm transition-all duration-300">
-      {/* Header */}
-      <button
-        onClick={onToggle}
-        className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer"
-      >
+      <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEditItem(null); }} onConfirm={handlePasswordConfirm} title="Quem está editando?" />
+      <StockHistoryModal open={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(undefined); }} card="semiPronto" codigoItem={historyItem?.codigo} descricaoItem={historyItem?.descricao} />
+
+      <button onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
@@ -1850,14 +2263,16 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
               <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque manual</p>
             </div>
           </div>
-          {isOpen ? (
-            <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); setHistoryItem(undefined); setShowHistory(true); }}
+              className="p-1.5 rounded-lg hover:bg-amber-100 transition-colors" title="Histórico de alterações"
+            >
+              <History className="w-4 h-4 text-amber-600" />
+            </button>
+            {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
+          </div>
         </div>
-
-        {/* Metrics row */}
         <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
           <div className="bg-teal-50/80 rounded-lg px-3 py-2">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
@@ -1886,21 +2301,19 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
         </div>
       </button>
 
-      {/* Expanded content */}
       {isOpen && (
         <div className="px-5 pb-5 space-y-3">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="Buscar produto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 h-9 text-sm"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input placeholder="Buscar produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 h-9 text-sm" />
+            </div>
+            {currentOperator && (
+              <span className="text-xs text-amber-600 font-semibold bg-amber-50 px-2 py-1 rounded-full whitespace-nowrap">
+                Editando: {currentOperator}
+              </span>
+            )}
           </div>
-
-          {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -1908,6 +2321,7 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
                   <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Código</th>
                   <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Produto</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-amber-600 uppercase">Estoque (cx)</th>
+                  <th className="w-8 py-2 px-1"></th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Pedidos</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Disponível</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">PO</th>
@@ -1924,25 +2338,20 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
                       <td className="py-2 px-2 text-sm text-slate-700 max-w-[300px] truncate" title={item.descricaoItem}>{item.descricaoItem}</td>
                       <td className="py-2 px-2 text-right">
                         {isEditing ? (
-                          <input
-                            ref={inputRef}
-                            type="number"
-                            min="0"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onBlur={handleSave}
-                            className="w-20 text-right text-sm border border-amber-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-amber-50"
-                          />
+                          <input ref={inputRef} type="number" min="0" value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
+                            className="w-20 text-right text-sm border border-amber-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-amber-50" />
                         ) : (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
+                          <button onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
                             className="text-sm font-bold text-amber-700 hover:bg-amber-50 px-2 py-1 rounded cursor-pointer transition-colors min-w-[60px] text-right"
-                            title="Clique para editar"
-                          >
-                            {formatNumber(qty)}
-                          </button>
+                            title="Clique para editar">{formatNumber(qty)}</button>
                         )}
+                      </td>
+                      <td className="py-2 px-1">
+                        <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
+                          className="p-1 rounded hover:bg-amber-50 transition-colors" title="Histórico deste item">
+                          <History className="w-3.5 h-3.5 text-slate-400 hover:text-amber-600" />
+                        </button>
                       </td>
                       <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
                       <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
@@ -1960,15 +2369,19 @@ function SemiProntoCard({ items, isOpen, onToggle, operatorName }: {
   );
 }
 
-function AguardandoEscolhaCard({ items, isOpen, onToggle, operatorName }: {
+function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
   items: StockItem[];
   isOpen: boolean;
   onToggle: () => void;
-  operatorName?: string;
 }) {
   const [search, setSearch] = useState("");
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [pendingEditItem, setPendingEditItem] = useState<string | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentOperator, setCurrentOperator] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyItem, setHistoryItem] = useState<{ codigo: string; descricao: string } | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: aguardandoData } = trpc.dashboard.getAguardandoEscolhaStock.useQuery(undefined, {
@@ -2013,20 +2426,38 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, operatorName }: {
   }, [parentItems, aguardandoMap]);
 
   const handleStartEdit = useCallback((codigoItem: string) => {
+    if (!currentOperator) {
+      setPendingEditItem(codigoItem);
+      setShowPasswordModal(true);
+      return;
+    }
     const current = aguardandoMap.get(codigoItem) || 0;
     setEditingItem(codigoItem);
     setEditValue(String(current));
     setTimeout(() => inputRef.current?.focus(), 50);
-  }, [aguardandoMap]);
+  }, [aguardandoMap, currentOperator]);
+
+  const handlePasswordConfirm = useCallback((name: string) => {
+    setCurrentOperator(name);
+    setShowPasswordModal(false);
+    if (pendingEditItem) {
+      const current = aguardandoMap.get(pendingEditItem) || 0;
+      setEditingItem(pendingEditItem);
+      setEditValue(String(current));
+      setPendingEditItem(null);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [pendingEditItem, aguardandoMap]);
 
   const handleSave = useCallback(() => {
-    if (!editingItem) return;
+    if (!editingItem || !currentOperator) return;
     const val = parseFloat(editValue) || 0;
+    const item = parentItems.find(i => i.codigoItem === editingItem);
     updateMutation.mutate(
-      { codigoItem: editingItem, quantidade: val, operatorName: operatorName || undefined },
+      { codigoItem: editingItem, quantidade: val, operatorName: currentOperator, descricaoItem: item?.descricaoItem },
       { onSuccess: () => utils.dashboard.getAguardandoEscolhaStock.invalidate() }
     );
-  }, [editingItem, editValue, updateMutation, operatorName, utils]);
+  }, [editingItem, editValue, updateMutation, currentOperator, utils, parentItems]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleSave();
@@ -2035,10 +2466,10 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, operatorName }: {
 
   return (
     <div className="bg-white rounded-xl border-l-4 border-l-purple-600 border border-slate-100 shadow-sm transition-all duration-300">
-      <button
-        onClick={onToggle}
-        className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer"
-      >
+      <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEditItem(null); }} onConfirm={handlePasswordConfirm} title="Quem está editando?" />
+      <StockHistoryModal open={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(undefined); }} card="aguardandoEscolha" codigoItem={historyItem?.codigo} descricaoItem={historyItem?.descricao} />
+
+      <button onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
@@ -2052,13 +2483,16 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, operatorName }: {
               <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - aguardando escolha</p>
             </div>
           </div>
-          {isOpen ? (
-            <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); setHistoryItem(undefined); setShowHistory(true); }}
+              className="p-1.5 rounded-lg hover:bg-purple-100 transition-colors" title="Histórico de alterações"
+            >
+              <History className="w-4 h-4 text-purple-600" />
+            </button>
+            {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
+          </div>
         </div>
-
         <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
           <div className="bg-teal-50/80 rounded-lg px-3 py-2">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
@@ -2089,16 +2523,17 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, operatorName }: {
 
       {isOpen && (
         <div className="px-5 pb-5 space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="Buscar produto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 h-9 text-sm"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input placeholder="Buscar produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 h-9 text-sm" />
+            </div>
+            {currentOperator && (
+              <span className="text-xs text-purple-600 font-semibold bg-purple-50 px-2 py-1 rounded-full whitespace-nowrap">
+                Editando: {currentOperator}
+              </span>
+            )}
           </div>
-
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -2106,6 +2541,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, operatorName }: {
                   <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Código</th>
                   <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Produto</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-purple-600 uppercase">Estoque (cx)</th>
+                  <th className="w-8 py-2 px-1"></th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Pedidos</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Disponível</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">PO</th>
@@ -2122,25 +2558,20 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, operatorName }: {
                       <td className="py-2 px-2 text-sm text-slate-700 max-w-[300px] truncate" title={item.descricaoItem}>{item.descricaoItem}</td>
                       <td className="py-2 px-2 text-right">
                         {isEditing ? (
-                          <input
-                            ref={inputRef}
-                            type="number"
-                            min="0"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onBlur={handleSave}
-                            className="w-20 text-right text-sm border border-purple-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-300 bg-purple-50"
-                          />
+                          <input ref={inputRef} type="number" min="0" value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
+                            className="w-20 text-right text-sm border border-purple-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-300 bg-purple-50" />
                         ) : (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
+                          <button onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
                             className="text-sm font-bold text-purple-700 hover:bg-purple-50 px-2 py-1 rounded cursor-pointer transition-colors min-w-[60px] text-right"
-                            title="Clique para editar"
-                          >
-                            {formatNumber(qty)}
-                          </button>
+                            title="Clique para editar">{formatNumber(qty)}</button>
                         )}
+                      </td>
+                      <td className="py-2 px-1">
+                        <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
+                          className="p-1 rounded hover:bg-purple-50 transition-colors" title="Histórico deste item">
+                          <History className="w-3.5 h-3.5 text-slate-400 hover:text-purple-600" />
+                        </button>
                       </td>
                       <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
                       <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
@@ -2700,34 +3131,22 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         />
       </div>
 
-      <ClassificationCard
-        title="Madeira"
-        subtitle={`${parentOnlyMadeira.length} produtos industrializados de madeira`}
-        icon={TreePine}
-        iconBg="bg-green-100"
-        iconColor="text-green-700"
-        borderColor="border-l-green-600"
+      <MadeiraPACard
         items={madeiraItems}
         isOpen={openCards.madeira}
         onToggle={() => toggleCard("madeira")}
-        priceMap={priceMap}
-        showFinancial={showFinancial}
-        pricingOverrides={pricingOverrides ?? undefined}
-        hideAlerts={true}
       />
 
       <SemiProntoCard
         items={madeiraItemsSemiPronto}
         isOpen={openCards.semiPronto}
         onToggle={() => toggleCard("semiPronto")}
-        operatorName={operatorCtx.operator?.name}
       />
 
       <AguardandoEscolhaCard
         items={madeiraItemsAguardando}
         isOpen={openCards.aguardandoEscolha}
         onToggle={() => toggleCard("aguardandoEscolha")}
-        operatorName={operatorCtx.operator?.name}
       />
 
     </div>

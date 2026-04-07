@@ -4,8 +4,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock } from "../drizzle/schema";
-import { sql, desc, eq, and } from "drizzle-orm";
+import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory } from "../drizzle/schema";
+import { sql, desc, eq, and, gte } from "drizzle-orm";
 import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
 import { isSchedulerRunning } from "./scheduler";
 import { processStockData } from "./stockProcessor";
@@ -313,29 +313,45 @@ export const appRouter = router({
     }),
 
     /**
-     * Update semi pronto stock quantity for a single item
+     * Update semi pronto stock quantity for a single item (with history)
      */
     updateSemiProntoStock: publicProcedure
       .input(z.object({
         codigoItem: z.string(),
         quantidade: z.number().min(0),
-        operatorName: z.string().optional(),
+        operatorName: z.string(),
+        descricaoItem: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB not available");
+        
+        // Get current value
+        const existing = await db.select().from(semiProntoStock).where(eq(semiProntoStock.codigoItem, input.codigoItem));
+        const valorAnterior = existing.length > 0 ? parseFloat(String(existing[0].quantidade)) : 0;
+        
+        // Record history
+        await db.insert(stockEditHistory).values({
+          card: "semiPronto",
+          codigoItem: input.codigoItem,
+          descricaoItem: input.descricaoItem || null,
+          valorAnterior: String(valorAnterior),
+          valorNovo: String(input.quantidade),
+          operador: input.operatorName,
+          tipo: "alteracao",
+        });
         
         // Upsert: insert or update
         await db.insert(semiProntoStock)
           .values({
             codigoItem: input.codigoItem,
             quantidade: String(input.quantidade),
-            updatedBy: input.operatorName || null,
+            updatedBy: input.operatorName,
           })
           .onDuplicateKeyUpdate({
             set: {
               quantidade: sql`${String(input.quantidade)}`,
-              updatedBy: input.operatorName || null,
+              updatedBy: input.operatorName,
             },
           });
         
@@ -352,32 +368,146 @@ export const appRouter = router({
     }),
 
     /**
-     * Update aguardando escolha stock quantity for a single item
+     * Update aguardando escolha stock quantity for a single item (with history)
      */
     updateAguardandoEscolhaStock: publicProcedure
       .input(z.object({
         codigoItem: z.string(),
         quantidade: z.number().min(0),
-        operatorName: z.string().optional(),
+        operatorName: z.string(),
+        descricaoItem: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("DB not available");
         
+        // Get current value
+        const existing = await db.select().from(aguardandoEscolhaStock).where(eq(aguardandoEscolhaStock.codigoItem, input.codigoItem));
+        const valorAnterior = existing.length > 0 ? parseFloat(String(existing[0].quantidade)) : 0;
+        
+        // Record history
+        await db.insert(stockEditHistory).values({
+          card: "aguardandoEscolha",
+          codigoItem: input.codigoItem,
+          descricaoItem: input.descricaoItem || null,
+          valorAnterior: String(valorAnterior),
+          valorNovo: String(input.quantidade),
+          operador: input.operatorName,
+          tipo: "alteracao",
+        });
+        
         await db.insert(aguardandoEscolhaStock)
           .values({
             codigoItem: input.codigoItem,
             quantidade: String(input.quantidade),
-            updatedBy: input.operatorName || null,
+            updatedBy: input.operatorName,
           })
           .onDuplicateKeyUpdate({
             set: {
               quantidade: sql`${String(input.quantidade)}`,
-              updatedBy: input.operatorName || null,
+              updatedBy: input.operatorName,
             },
           });
         
         return { success: true };
+      }),
+
+    /**
+     * Get madeira (produto acabado) stock
+     */
+    getMadeiraStock: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { items: [] };
+      const rows = await db.select().from(madeiraStock);
+      return { items: rows };
+    }),
+
+    /**
+     * Update madeira stock - ONLY INCREASE allowed (decrease only by sales/sync)
+     */
+    updateMadeiraStock: publicProcedure
+      .input(z.object({
+        codigoItem: z.string(),
+        quantidade: z.number().min(0),
+        operatorName: z.string(),
+        descricaoItem: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB not available");
+        
+        // Get current value
+        const existing = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, input.codigoItem));
+        const valorAnterior = existing.length > 0 ? parseFloat(String(existing[0].quantidade)) : 0;
+        
+        // RULE: Madeira PA stock can only INCREASE manually
+        if (input.quantidade < valorAnterior) {
+          // Record attempted reduction
+          await db.insert(stockEditHistory).values({
+            card: "madeira",
+            codigoItem: input.codigoItem,
+            descricaoItem: input.descricaoItem || null,
+            valorAnterior: String(valorAnterior),
+            valorNovo: String(input.quantidade),
+            operador: input.operatorName,
+            tipo: "tentativa_reducao",
+          });
+          return { success: false, error: "reduction_blocked", operador: input.operatorName };
+        }
+        
+        // Record history
+        await db.insert(stockEditHistory).values({
+          card: "madeira",
+          codigoItem: input.codigoItem,
+          descricaoItem: input.descricaoItem || null,
+          valorAnterior: String(valorAnterior),
+          valorNovo: String(input.quantidade),
+          operador: input.operatorName,
+          tipo: "alteracao",
+        });
+        
+        await db.insert(madeiraStock)
+          .values({
+            codigoItem: input.codigoItem,
+            quantidade: String(input.quantidade),
+            updatedBy: input.operatorName,
+          })
+          .onDuplicateKeyUpdate({
+            set: {
+              quantidade: sql`${String(input.quantidade)}`,
+              updatedBy: input.operatorName,
+            },
+          });
+        
+        return { success: true };
+      }),
+
+    /**
+     * Get stock edit history for a specific card (last 15 days)
+     */
+    getStockEditHistory: publicProcedure
+      .input(z.object({
+        card: z.enum(["madeira", "semiPronto", "aguardandoEscolha"]),
+        codigoItem: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { history: [] };
+        
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+        
+        const conditions = [eq(stockEditHistory.card, input.card), gte(stockEditHistory.createdAt, fifteenDaysAgo)];
+        if (input.codigoItem) {
+          conditions.push(eq(stockEditHistory.codigoItem, input.codigoItem));
+        }
+        
+        const rows = await db.select().from(stockEditHistory)
+          .where(and(...conditions))
+          .orderBy(desc(stockEditHistory.createdAt))
+          .limit(200);
+        
+        return { history: rows };
       }),
   }),
 });
