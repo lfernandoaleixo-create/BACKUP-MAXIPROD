@@ -1520,7 +1520,7 @@ export const billingRouter = router({
           )).limit(1);
         // If permission exists and is disabled, block
         if (permRows.length > 0 && !permRows[0].enabled) {
-          throw new Error(`Operador ${opRows[0].name} n\u00e3o tem permiss\u00e3o para ${input.field === "pedidoColeta" ? "Pedido de Coleta" : "Marcar Coletado"}`);
+          throw new Error(`Operador ${opRows[0].name} não tem permissão para ${input.field === "pedidoColeta" ? "Pedido de Coleta" : "Marcar Coletado"}`);
         }
         // If permission doesn't exist in DB, allow by default (matches frontend hasGranularAccess behavior)
       }
@@ -1650,7 +1650,7 @@ export const billingRouter = router({
             eq(operatorGranularPermissions.enabled, true)
           )).limit(1);
         if (permRows.length === 0) {
-          throw new Error("Sem permiss\u00e3o para gerenciar links de rastreio");
+          throw new Error("Sem permissão para gerenciar links de rastreio");
         }
       }
 
@@ -1816,7 +1816,7 @@ export const billingRouter = router({
       }
 
       if (!operatorName) {
-        return { success: false, error: "Senha incorreta ou sem permiss\u00e3o" };
+        return { success: false, error: "Senha incorreta ou sem permissão" };
       }
 
       if (input.observation.trim() === "") {

@@ -104,7 +104,7 @@ export const salesRouter = router({
         const e = estado.toUpperCase();
         if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
         return "outros";
       };
 
@@ -115,7 +115,7 @@ export const salesRouter = router({
         if (e === "BAMBU") return "bambu";
         if (e === "FIBRA") return "fibra";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
         return "outros";
       };
 
@@ -392,7 +392,7 @@ export const salesRouter = router({
       const grupoLabels: Record<string, string> = {
         importacao_revenda: "Revenda (Bambu/Fibra)",
         industrializacao: "Industrializado",
-        importacao_mp: "Import. Mat\u00e9ria-Prima",
+        importacao_mp: "Import. Matéria-Prima",
       };
       const segBreakdown: Record<string, { value: number; faturado: number; aFaturar: number }> = {};
       for (const item of items) {
@@ -492,7 +492,7 @@ export const salesRouter = router({
       const e = estado.toUpperCase();
       if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
       if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
-      if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+      if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
       return "outros";
     };
 
@@ -502,7 +502,7 @@ export const salesRouter = router({
       if (e === "BAMBU") return "bambu";
       if (e === "FIBRA") return "fibra";
       if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
-      if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+      if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
       return "outros";
     };
 
@@ -524,7 +524,7 @@ export const salesRouter = router({
     const grupoLabels: Record<string, string> = {
       importacao_revenda: "Prod. Importados (Revenda)",
       industrializacao: "Industrializados",
-      importacao_mp: "Import. Mat\u00e9ria-Prima",
+      importacao_mp: "Import. Matéria-Prima",
       outros: "Outros",
     };
 
@@ -581,7 +581,7 @@ export const salesRouter = router({
         const e = estado.toUpperCase();
         if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
         return "outros";
       };
 
@@ -591,7 +591,7 @@ export const salesRouter = router({
         if (e === "BAMBU") return "bambu";
         if (e === "FIBRA") return "fibra";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
         return "outros";
       };
 
@@ -760,7 +760,7 @@ export const salesRouter = router({
         const e = estado.toUpperCase();
         if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
         return "outros";
       };
 
@@ -770,7 +770,7 @@ export const salesRouter = router({
         if (e === "BAMBU") return "bambu";
         if (e === "FIBRA") return "fibra";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
         return "outros";
       };
 
@@ -937,7 +937,7 @@ export const salesRouter = router({
         const e = estado.toUpperCase();
         if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
         return "outros";
       };
 
@@ -947,7 +947,7 @@ export const salesRouter = router({
         if (e === "BAMBU") return "bambu";
         if (e === "FIBRA") return "fibra";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
         return "outros";
       };
 
@@ -1029,7 +1029,7 @@ export const salesRouter = router({
         if (!orderMap.has(key)) {
           orderMap.set(key, {
             pedido,
-            cliente: item.cliente || "\u2014",
+            cliente: item.cliente || "—",
             clienteApelido: item.clienteApelido || "",
             uf: item.uf || "",
             dataEmissao: item.dataEmissao || "",
@@ -1047,7 +1047,7 @@ export const salesRouter = router({
           order.estadoItem = "Misto";
         }
         order.itens.push({
-          descricao: item.descricao || "\u2014",
+          descricao: item.descricao || "—",
           quantidade: Number(item.quantidade || 0),
           valorUnitario: Number(item.valorUnitario || 0),
           valorTotal: val,
@@ -1126,7 +1126,7 @@ export const salesRouter = router({
         if (!orderMap.has(pedido)) {
           orderMap.set(pedido, {
             pedido,
-            cliente: item.cliente || "\u2014",
+            cliente: item.cliente || "—",
             dataEmissao: item.dataEmissao || "",
             valorTotal: 0,
             itens: [],
@@ -1136,7 +1136,7 @@ export const salesRouter = router({
         const val = Number(item.valorTotal || 0);
         order.valorTotal += val;
         order.itens.push({
-          descricao: item.descricao || "\u2014",
+          descricao: item.descricao || "—",
           codigoItem: item.codigoItem || "",
           quantidade: Number(item.quantidade || 0),
           valorUnitario: Number(item.valorUnitario || 0),
@@ -1179,7 +1179,7 @@ export const salesRouter = router({
         const e = estado.toUpperCase();
         if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
         return "outros";
       };
 
@@ -1189,7 +1189,7 @@ export const salesRouter = router({
         if (e === "BAMBU") return "bambu";
         if (e === "FIBRA") return "fibra";
         if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
-        if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
         return "outros";
       };
 
@@ -1283,7 +1283,7 @@ export const salesRouter = router({
           const hasEndereco = item.enderecoLogradouro || item.enderecoCidade;
           orderMap.set(key, {
             pedido,
-            cliente: item.cliente || "\u2014",
+            cliente: item.cliente || "—",
             clienteApelido: item.clienteApelido || "",
             uf: item.uf || "",
             dataEmissao: item.dataEmissao || "",
@@ -1320,7 +1320,7 @@ export const salesRouter = router({
           order.estadoItem = "Misto";
         }
         order.itens.push({
-          descricao: item.descricao || "\u2014",
+          descricao: item.descricao || "—",
           quantidade: Number(item.quantidade || 0),
           valorUnitario: Number(item.valorUnitario || 0),
           valorTotal: val,
@@ -1431,7 +1431,7 @@ export const salesRouter = router({
       const valorFaturado = pedidosFaturados.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
       const pedidosAFaturar = allOrders.filter(o => o.estadoItem === "A faturar" || o.estadoItem === "Aprovado");
       const valorAFaturar = pedidosAFaturar.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
-      const pedidosEmDigitacao = allOrders.filter(o => o.estadoNota === "Digita\u00e7\u00e3o" || o.estadoNota === "A aprovar");
+      const pedidosEmDigitacao = allOrders.filter(o => o.estadoNota === "Digitação" || o.estadoNota === "A aprovar");
       const valorEmDigitacao = pedidosEmDigitacao.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
 
       const titulosEmitidos = allReceivables.filter(r => r.estado === "EMITIDO");

@@ -538,7 +538,7 @@ interface GranularPermDef {
 }
 
 const GRANULAR_ESTOQUE: GranularPermDef[] = [
-  { key: "est.valorizacao", label: "Valoriza\u00e7\u00e3o de Estoque", parentTab: "estoque" },
+  { key: "est.valorizacao", label: "Valorização de Estoque", parentTab: "estoque" },
 ];
 
 const GRANULAR_FATURAMENTO: GranularPermDef[] = [
@@ -563,8 +563,8 @@ const GRANULAR_FINANCEIRO: GranularPermDef[] = [
   { key: "fin.comentarioPagamento", label: "Comentar Pagamento", parentTab: "financeiro" },
   { key: "fin.verContasPagar", label: "Ver Contas a Pagar", parentTab: "financeiro" },
   { key: "fin.verContasReceber", label: "Ver Contas a Receber", parentTab: "financeiro" },
-  { key: "fin.verInadimplencia", label: "Ver Inadimpl\u00eancia", parentTab: "financeiro" },
-  { key: "fin.verSaldoBancario", label: "Ver Saldo Banc\u00e1rio", parentTab: "financeiro" },
+  { key: "fin.verInadimplencia", label: "Ver Inadimplência", parentTab: "financeiro" },
+  { key: "fin.verSaldoBancario", label: "Ver Saldo Bancário", parentTab: "financeiro" },
   { key: "fin.verFluxoCaixa", label: "Ver Fluxo de Caixa", parentTab: "financeiro" },
   { key: "fin.verResumoFinanceiro", label: "Ver Resumo Financeiro", parentTab: "financeiro" },
 ];
@@ -574,7 +574,7 @@ const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
   { key: "cfg.produtos", label: "Produto Importado", parentTab: "configuracoes" },
   { key: "cfg.alertas", label: "Alertas", parentTab: "configuracoes" },
   { key: "cfg.bancos", label: "Bancos", parentTab: "configuracoes" },
-  { key: "cfg.variacoes", label: "Varia\u00e7\u00f5es", parentTab: "configuracoes" },
+  { key: "cfg.variacoes", label: "Variações", parentTab: "configuracoes" },
   { key: "cfg.dados", label: "Dados", parentTab: "configuracoes" },
 ];
 
@@ -584,7 +584,7 @@ const GRANULAR_GROUPS = [
   { parentTab: "estoque", label: "Estoque", color: "bg-teal-500", perms: GRANULAR_ESTOQUE },
   { parentTab: "faturamento", label: "Faturamento", color: "bg-violet-500", perms: GRANULAR_FATURAMENTO },
   { parentTab: "financeiro", label: "Financeiro", color: "bg-emerald-500", perms: GRANULAR_FINANCEIRO },
-  { parentTab: "configuracoes", label: "Configura\u00e7\u00f5es", color: "bg-red-500", perms: GRANULAR_CONFIGURACOES },
+  { parentTab: "configuracoes", label: "Configurações", color: "bg-red-500", perms: GRANULAR_CONFIGURACOES },
 ];
 
 function OperatorManagementPanel() {
@@ -766,7 +766,7 @@ function OperatorManagementPanel() {
                       <button
                         onClick={() => setExpandedOperator(isExpanded ? null : op.id)}
                         className="text-slate-400 hover:text-slate-600 transition-colors"
-                        title="Ver permiss\u00f5es detalhadas"
+                        title="Ver permissões detalhadas"
                       >
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
@@ -841,7 +841,7 @@ function OperatorManagementPanel() {
                   <tr key={`${op.id}-granular`}>
                     <td colSpan={PERMISSION_COLS.length + 3} className="px-4 py-4 bg-slate-50/80">
                       <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                        Permiss\u00f5es Detalhadas de {op.name}
+                        Permissões Detalhadas de {op.name}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {GRANULAR_GROUPS.map(group => {
@@ -2281,17 +2281,17 @@ function MadeiraVisibilityPanel() {
           <div className="bg-emerald-50 rounded-lg p-3 text-center border border-emerald-200">
             <p className="text-xs text-emerald-600 font-medium">Madeira</p>
             <p className="text-lg font-bold text-emerald-700">{countVisible("madeira")}/{madeiraItems.length}</p>
-            <p className="text-xs text-emerald-500">vis\u00edveis</p>
+            <p className="text-xs text-emerald-500">visíveis</p>
           </div>
           <div className="bg-amber-50 rounded-lg p-3 text-center border border-amber-200">
             <p className="text-xs text-amber-600 font-medium">Semi Pronto</p>
             <p className="text-lg font-bold text-amber-700">{countVisible("semiPronto")}/{madeiraItems.length}</p>
-            <p className="text-xs text-amber-500">vis\u00edveis</p>
+            <p className="text-xs text-amber-500">visíveis</p>
           </div>
           <div className="bg-purple-50 rounded-lg p-3 text-center border border-purple-200">
             <p className="text-xs text-purple-600 font-medium">Aguardando Escolha</p>
             <p className="text-lg font-bold text-purple-700">{countVisible("aguardandoEscolha")}/{madeiraItems.length}</p>
-            <p className="text-xs text-purple-500">vis\u00edveis</p>
+            <p className="text-xs text-purple-500">visíveis</p>
           </div>
         </div>
 
@@ -2299,7 +2299,7 @@ function MadeiraVisibilityPanel() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
-            placeholder="Buscar por c\u00f3digo ou descri\u00e7\u00e3o..."
+            placeholder="Buscar por código ou descrição..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"

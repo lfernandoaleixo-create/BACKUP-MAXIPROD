@@ -1960,7 +1960,7 @@ function MadeiraValorizacaoButton({ items, madeiraVisData }: {
           className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
         >
           <DollarSign className="w-4 h-4" />
-          Valoriza\u00e7\u00e3o de Estoque
+          Valorização de Estoque
           {valorizacao.total > 0 && (
             <span className="ml-1 bg-emerald-500 px-2 py-0.5 rounded-full text-xs">
               {formatCurrency(valorizacao.total)}
@@ -1975,7 +1975,7 @@ function MadeiraValorizacaoButton({ items, madeiraVisData }: {
             <div className="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
-                <span className="font-bold text-lg">Valoriza\u00e7\u00e3o de Estoque - Madeira PA</span>
+                <span className="font-bold text-lg">Valorização de Estoque - Madeira PA</span>
               </div>
               <button onClick={() => setShowModal(false)} className="text-white/80 hover:text-white">
                 <X className="w-5 h-5" />
@@ -1988,17 +1988,17 @@ function MadeiraValorizacaoButton({ items, madeiraVisData }: {
                   <p className="text-2xl font-bold text-emerald-700">{formatCurrency(valorizacao.total)}</p>
                 </div>
                 <div className="bg-blue-50 rounded-xl p-4 text-center">
-                  <p className="text-xs text-blue-600 font-semibold uppercase">Itens com Pre\u00e7o</p>
+                  <p className="text-xs text-blue-600 font-semibold uppercase">Itens com Preço</p>
                   <p className="text-2xl font-bold text-blue-700">{valorizacao.itensComPreco}/{valorizacao.totalItens}</p>
                 </div>
                 <div className="bg-amber-50 rounded-xl p-4 text-center">
-                  <p className="text-xs text-amber-600 font-semibold uppercase">Sem Pre\u00e7o</p>
+                  <p className="text-xs text-amber-600 font-semibold uppercase">Sem Preço</p>
                   <p className="text-2xl font-bold text-amber-700">{valorizacao.totalItens - valorizacao.itensComPreco}</p>
                 </div>
               </div>
               {valorizacao.itensComPreco < valorizacao.totalItens && (
                 <p className="text-xs text-amber-600 mb-3 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" /> Configure o R$/CX na aba Configura\u00e7\u00f5es {'>'} Madeira - Produto Acabado para incluir todos os itens.
+                  <AlertTriangle className="w-3 h-3" /> Configure o R$/CX na aba Configurações {'>'} Madeira - Produto Acabado para incluir todos os itens.
                 </p>
               )}
               <div className="overflow-y-auto max-h-[40vh]">
@@ -2021,7 +2021,7 @@ function MadeiraValorizacaoButton({ items, madeiraVisData }: {
                       </tr>
                     ))}
                     {valorizacao.detalhes.length === 0 && (
-                      <tr><td colSpan={4} className="py-8 text-center text-slate-400 text-xs">Nenhum item com pre\u00e7o e estoque configurados</td></tr>
+                      <tr><td colSpan={4} className="py-8 text-center text-slate-400 text-xs">Nenhum item com preço e estoque configurados</td></tr>
                     )}
                   </tbody>
                   {valorizacao.detalhes.length > 0 && (
@@ -2375,7 +2375,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                               else if (projetado <= estReg * 1.2) estRegColor = 'text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded';
                               else if (projetado <= estReg * 1.4) estRegColor = 'text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded';
                             }
-                            return <span className={`text-xs font-semibold ${estRegColor}`} title={`Vd.Mensal: ${vendaMensal} \u00d7 Fator: ${fator.toLocaleString("pt-BR")} = ${estReg} ${unit}`}>{formatNumber(estReg)} {unit}</span>;
+                            return <span className={`text-xs font-semibold ${estRegColor}`} title={`Vd.Mensal: ${vendaMensal} × Fator: ${fator.toLocaleString("pt-BR")} = ${estReg} ${unit}`}>{formatNumber(estReg)} {unit}</span>;
                           })()}
                         </td>
                         {/* Status */}
@@ -3384,16 +3384,16 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           theme="orange"
         />
         <KPICard
-          label="Dispon\u00edvel - Caixas"
+          label="Disponível - Caixas"
           value={`${formatNumber(disponivelCaixas)} cx`}
           sub="Estoque - Pedidos (cx)"
           icon={Boxes}
           theme="emerald"
         />
         <KPICard
-          label="Dispon\u00edvel - D\u00fazias"
+          label="Disponível - Dúzias"
           value={`${formatNumber(disponivelDuzias)} dz`}
-          sub="Roj\u00e3o 7x1000"
+          sub="Rojão 7x1000"
           icon={Package}
           theme="green"
         />
@@ -3420,12 +3420,12 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         />
       </div>
 
-      {/* Painel de Alertas de Produ\u00e7\u00e3o */}
+      {/* Painel de Alertas de Produção */}
       {madeiraAlertas.length > 0 && (
         <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-red-600" />
-            <span className="text-sm font-bold text-red-700">Alertas de Produ\u00e7\u00e3o - Estoque abaixo dos pedidos (\u00faltimos 30 dias)</span>
+            <span className="text-sm font-bold text-red-700">Alertas de Produção - Estoque abaixo dos pedidos (últimos 30 dias)</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -3434,7 +3434,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                   <th className="text-left py-1.5 px-2 text-red-700 font-semibold text-xs">Produto</th>
                   <th className="text-right py-1.5 px-2 text-red-700 font-semibold text-xs">Estoque</th>
                   <th className="text-right py-1.5 px-2 text-red-700 font-semibold text-xs">Pedidos</th>
-                  <th className="text-right py-1.5 px-2 text-red-700 font-semibold text-xs">D\u00e9ficit</th>
+                  <th className="text-right py-1.5 px-2 text-red-700 font-semibold text-xs">Déficit</th>
                 </tr>
               </thead>
               <tbody>
@@ -3454,7 +3454,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         </div>
       )}
 
-      {/* Bot\u00e3o de Valoriza\u00e7\u00e3o de Estoque */}
+      {/* Botão de Valorização de Estoque */}
       <MadeiraValorizacaoButton items={madeiraItems} madeiraVisData={madeiraVisData} />
 
       <MadeiraPACard

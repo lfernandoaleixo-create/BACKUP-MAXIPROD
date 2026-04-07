@@ -180,7 +180,7 @@ export const appRouter = router({
         const u = d.toUpperCase();
         if (u.includes('VARETA') && u.includes('FIBRA')) return 'VARETA_FIBRA';
         if (u.includes('VARETA') && u.includes('AROMATIZADOR')) return 'VARETA_AROMA';
-        if (u.includes('VARETA') && (u.includes('ALGODAO') || u.includes('ALGOD\u00C3O'))) return 'VARETA_ALGODAO';
+        if (u.includes('VARETA') && (u.includes('ALGODAO') || u.includes('ALGODÃO'))) return 'VARETA_ALGODAO';
         if (u.includes('VARETA') && (u.includes('MULTIUSO') || u.includes('MULTI-USO'))) return 'VARETA_MULTI';
         if (u.includes('ESPETO') && u.includes('TEPPO')) return 'TEPPO';
         if (u.includes('ESPETO') && u.includes('QUEIJO')) return 'ESPETO_QUEIJO';

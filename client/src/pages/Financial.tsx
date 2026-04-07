@@ -335,7 +335,7 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
         {isLoading ? (
           <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>
         ) : !sortedItems.length ? (
-          <div className="text-center py-6 text-slate-400 text-xs">Nenhuma conta neste m\u00eas</div>
+          <div className="text-center py-6 text-slate-400 text-xs">Nenhuma conta neste mês</div>
         ) : (
           <table className="w-full text-xs">
             <thead className={`${colors.headerBg} sticky top-0 z-10`}>
@@ -369,8 +369,8 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
                 const temAbatimento = Number(item.valorPagoLiquido || item.valorRecebidoLiquido || 0) > 0;
                 return (
                   <tr key={i} className={colors.hoverBg}>
-                    <td className="px-3 py-2 text-slate-700 truncate max-w-[180px]" title={item[nameField] || ""}>{item[nameField] || (item.referenteA || item.observacoes || "\u2014")}</td>
-                    <td className="px-3 py-2 text-slate-500 text-[11px] truncate max-w-[220px]" title={item.referenteA || ""}>{item.referenteA || "\u2014"}</td>
+                    <td className="px-3 py-2 text-slate-700 truncate max-w-[180px]" title={item[nameField] || ""}>{item[nameField] || (item.referenteA || item.observacoes || "—")}</td>
+                    <td className="px-3 py-2 text-slate-500 text-[11px] truncate max-w-[220px]" title={item.referenteA || ""}>{item.referenteA || "—"}</td>
                     <td className={`px-3 py-2 text-right font-semibold ${colors.valueText}`}>
                       {formatCurrency(saldo)}
                       {temAbatimento && (
@@ -676,7 +676,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                       className="w-3.5 h-3.5 shrink-0 border-violet-400 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
                     />
                   )}
-                  <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.fornecedor || item.referenteA || "\u2014"}</span>
+                  <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.fornecedor || item.referenteA || "—"}</span>
                   <span className="text-slate-400 whitespace-nowrap text-right shrink-0" style={{ width: '60px', fontVariantNumeric: 'tabular-nums', fontSize: '10px' }}>{formatDate(item.vencimento)}</span>
                   <span className={`font-semibold whitespace-nowrap text-right shrink-0 ${calcMode && isChecked ? 'text-violet-700' : 'text-slate-700'}`} style={{ width: '78px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
                 </div>
@@ -849,7 +849,7 @@ function ContasAPagarTable() {
                 return (
                   <tr key={idx} className={`hover:bg-slate-50 transition-colors ${isOverdue ? "bg-red-50/50" : ""}`}>
                     <td className="px-3 py-2.5">
-                    <span className="text-sm font-medium text-slate-800">{item.fornecedor || item.referenteA || item.observacoes || "\u2014"}</span>                  </td>
+                    <span className="text-sm font-medium text-slate-800">{item.fornecedor || item.referenteA || item.observacoes || "—"}</span>                  </td>
                     <td className="px-3 py-2.5">
                       <span className="text-xs text-slate-500 truncate block max-w-[200px]">{item.referenteA || "—"}</span>
                     </td>
@@ -1070,7 +1070,7 @@ function OverviewReceberTable() {
               return (
                 <tr key={idx} className={`hover:bg-slate-50 transition-colors ${isOverdue ? "bg-red-50/50" : ""}`}>
                   <td className="px-2 py-2">
-                    <span className="text-xs font-medium text-slate-800 truncate block max-w-[180px]">{item.cliente || "\u2014"}</span>
+                    <span className="text-xs font-medium text-slate-800 truncate block max-w-[180px]">{item.cliente || "—"}</span>
                   </td>
                   <td className="px-2 py-2 text-right">
                     <span className="text-xs font-semibold text-slate-800">{formatCurrency(Number(item.valorLiquido) || 0)}</span>

@@ -213,12 +213,12 @@ function exportAuthPDF(
     if (item.observacoes && item.observacoes !== item.referenteA) pdfDetailParts.push(item.observacoes);
     if (item.documentoVinculadoNumero) pdfDetailParts.push(`NF ${item.documentoVinculadoNumero}`);
     if (item.parcela) pdfDetailParts.push(`Parcela ${item.parcela}`);
-    const pdfDetail = pdfDetailParts.join(' \u2013 ');
+    const pdfDetail = pdfDetailParts.join(' – ');
     rows += `
       <tr style="border-bottom:1px solid #e2e8f0;">
         <td style="padding:6px 8px;font-size:11px;color:#334155;">${idx}</td>
         <td style="padding:6px 8px;font-size:11px;color:#334155;">
-          ${pdfDetail ? `<span style="font-size:10px;color:#475569;">${pdfDetail}</span>` : '<span style="font-size:10px;color:#94a3b8;">Sem descri\u00e7\u00e3o</span>'}
+          ${pdfDetail ? `<span style="font-size:10px;color:#475569;">${pdfDetail}</span>` : '<span style="font-size:10px;color:#94a3b8;">Sem descrição</span>'}
         </td>
         <td style="padding:6px 8px;font-size:11px;color:#334155;">${item.empresaNome || ''}</td>
         <td style="padding:6px 8px;font-size:11px;color:#334155;text-align:right;">${item.vencimento.split('-').reverse().join('/')}</td>
@@ -230,7 +230,7 @@ function exportAuthPDF(
   const html = `
     <html>
     <head>
-      <title>Autoriza\u00e7\u00e3o de Pagamentos - ${dayLabel}</title>
+      <title>Autorização de Pagamentos - ${dayLabel}</title>
       <style>
         @page { margin: 20mm 15mm; size: A4; }
         body { font-family: Arial, Helvetica, sans-serif; color: #1e293b; margin: 0; padding: 0; }
@@ -251,7 +251,7 @@ function exportAuthPDF(
     </head>
     <body>
       <div class="header">
-        <h1>Autoriza\u00e7\u00e3o de Pagamentos</h1>
+        <h1>Autorização de Pagamentos</h1>
         <p>${dayLabel} &mdash; Emitido em ${hoje}</p>
       </div>
 
@@ -259,7 +259,7 @@ function exportAuthPDF(
         <thead>
           <tr>
             <th style="width:30px;">#</th>
-            <th>Descri\u00e7\u00e3o</th>
+            <th>Descrição</th>
             <th>Empresa</th>
             <th style="text-align:right;">Vencimento</th>
             <th style="text-align:right;">Valor</th>
@@ -284,13 +284,13 @@ function exportAuthPDF(
           <span class="red" style="font-weight:700;">- ${formatCurrency(totalAutorizado)}</span>
         </div>
         <div class="summary-row total">
-          <span>Saldo Ap\u00f3s Pagamento:</span>
+          <span>Saldo Após Pagamento:</span>
           <span class="${saldoRestante >= 0 ? 'blue' : 'red'}">${formatCurrency(saldoRestante)}</span>
         </div>
       </div>
 
       <div class="footer">
-        Grupo Fox &mdash; Dashboard de Gest\u00e3o &mdash; Gerado automaticamente
+        Grupo Fox &mdash; Dashboard de Gestão &mdash; Gerado automaticamente
       </div>
     </body>
     </html>

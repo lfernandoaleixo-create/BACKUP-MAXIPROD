@@ -228,7 +228,7 @@ function SegmentTableBody({ segments, totalValue }: { segments: SegmentRow[]; to
     <tbody className="divide-y divide-slate-50">
       {segments.map((seg) => {
         const pctTotal = totalValue > 0 ? ((seg.value / totalValue) * 100) : 0;
-        const segColor = seg.name.includes("Revenda") ? "bg-teal-500" : seg.name.includes("Industrializado") ? "bg-violet-500" : seg.name.includes("Mat\u00e9ria") ? "bg-blue-500" : "bg-slate-400";
+        const segColor = seg.name.includes("Revenda") ? "bg-teal-500" : seg.name.includes("Industrializado") ? "bg-violet-500" : seg.name.includes("Matéria") ? "bg-blue-500" : "bg-slate-400";
         const isOutros = seg.name === "Outros" && seg.detail && seg.detail.length > 0;
 
         return (
@@ -255,7 +255,7 @@ function SegmentTableBody({ segments, totalValue }: { segments: SegmentRow[]; to
                 <span className="text-sm font-semibold text-emerald-700">{formatCurrencyFull(seg.faturado)}</span>
               </td>
               <td className="px-4 py-3 text-right">
-                <span className="text-sm font-semibold text-orange-700">{seg.aFaturar > 0 ? formatCurrencyFull(seg.aFaturar) : "\u2014"}</span>
+                <span className="text-sm font-semibold text-orange-700">{seg.aFaturar > 0 ? formatCurrencyFull(seg.aFaturar) : "—"}</span>
               </td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2">
@@ -283,7 +283,7 @@ function SegmentTableBody({ segments, totalValue }: { segments: SegmentRow[]; to
                     <span className="text-xs font-medium text-emerald-600">{formatCurrencyFull(d.faturado)}</span>
                   </td>
                   <td className="px-4 py-2 text-right">
-                    <span className="text-xs font-medium text-orange-600">{d.aFaturar > 0 ? formatCurrencyFull(d.aFaturar) : "\u2014"}</span>
+                    <span className="text-xs font-medium text-orange-600">{d.aFaturar > 0 ? formatCurrencyFull(d.aFaturar) : "—"}</span>
                   </td>
                   <td className="px-4 py-2 text-right">
                     <span className="text-xs text-slate-500">{dPct.toFixed(1)}%</span>
@@ -2023,7 +2023,7 @@ function UnifiedUnbilledCard({ months, orders, totalValue }: { months: string[];
 function UnifiedOrderRow({ order }: { order: UnifiedOrderData }) {
   const [expanded, setExpanded] = useState(false);
   const displayName = order.cliente;
-  const dateStr = order.dataEmissao ? formatDateBR(order.dataEmissao) : "\u2014";
+  const dateStr = order.dataEmissao ? formatDateBR(order.dataEmissao) : "—";
 
   // Determine earliest delivery date for the order
   const earliestDelivery = useMemo(() => {
@@ -2109,7 +2109,7 @@ function UnifiedOrderRow({ order }: { order: UnifiedOrderData }) {
               )}
             </div>
           ) : (
-            <span className="text-sm text-slate-300">\u2014</span>
+            <span className="text-sm text-slate-300">—</span>
           )}
         </div>
 
@@ -2212,10 +2212,10 @@ function UnifiedOrderRow({ order }: { order: UnifiedOrderData }) {
                     <span className="text-xs text-slate-700">
                       {order.endereco.logradouro}{order.endereco.numero ? `, ${order.endereco.numero}` : ""}
                       {order.endereco.complemento ? ` - ${order.endereco.complemento}` : ""}
-                      {order.endereco.bairro ? ` \u2014 ${order.endereco.bairro}` : ""}
+                      {order.endereco.bairro ? ` — ${order.endereco.bairro}` : ""}
                       {order.endereco.cidade ? `, ${order.endereco.cidade}` : ""}
                       {order.endereco.uf ? `/${order.endereco.uf}` : ""}
-                      {order.endereco.cep ? ` \u2014 CEP: ${order.endereco.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}` : ""}
+                      {order.endereco.cep ? ` — CEP: ${order.endereco.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}` : ""}
                     </span>
                   </div>
                 </div>
@@ -2275,7 +2275,7 @@ function UnifiedOrderRow({ order }: { order: UnifiedOrderData }) {
                     {item.dataEntregaItem ? (
                       <span className="text-xs text-slate-600">{formatDateBR(item.dataEntregaItem)}</span>
                     ) : (
-                      <span className="text-xs text-slate-300">\u2014</span>
+                      <span className="text-xs text-slate-300">—</span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -2314,7 +2314,7 @@ type DraftOrderData = {
 
 function DraftOrderRow({ order }: { order: DraftOrderData }) {
   const [expanded, setExpanded] = useState(false);
-  const dateStr = order.dataEmissao ? new Date(order.dataEmissao).toLocaleDateString("pt-BR") : "\u2014";
+  const dateStr = order.dataEmissao ? new Date(order.dataEmissao).toLocaleDateString("pt-BR") : "—";
 
   return (
     <div className="border-b border-slate-100 last:border-b-0">

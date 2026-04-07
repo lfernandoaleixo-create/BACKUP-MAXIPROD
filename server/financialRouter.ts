@@ -279,7 +279,7 @@ function estadoToGrupoFinancial(estado: string | null): string {
   const e = estado.toUpperCase();
   if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
   if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
-  if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+  if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
   return "outros";
 }
 
@@ -309,7 +309,7 @@ async function getClientesByGrupoAndCrm(
     })
     .from(salesOrders)
     .where(
-      sql`(${salesOrders.estadoNota} IS NULL OR UPPER(${salesOrders.estadoNota}) NOT IN ('DIGITA\u00c7\u00c3O', 'DIGITACAO'))`
+      sql`(${salesOrders.estadoNota} IS NULL OR UPPER(${salesOrders.estadoNota}) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))`
     );
 
   const clienteSet = new Set<string>();
@@ -1168,7 +1168,7 @@ export const financialRouter = router({
         and(
           sql`${salesOrders.representante} IS NOT NULL`,
           sql`${salesOrders.representante} != ''`,
-          sql`(${salesOrders.estadoNota} IS NULL OR UPPER(${salesOrders.estadoNota}) NOT IN ('DIGITA\u00c7\u00c3O', 'DIGITACAO'))`
+          sql`(${salesOrders.estadoNota} IS NULL OR UPPER(${salesOrders.estadoNota}) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))`
         )
       );
 
@@ -2195,14 +2195,14 @@ export const financialRouter = router({
       const e = estado.toUpperCase();
       if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
       if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
-      if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+      if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
       return "outros";
     };
 
     const isDigitacao = (nota: string | null) => {
       if (!nota) return false;
       const n = nota.toUpperCase();
-      return n === 'DIGITA\u00c7\u00c3O' || n === 'DIGITACAO';
+      return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
     };
 
     const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
@@ -2324,14 +2324,14 @@ export const financialRouter = router({
       const e = estado.toUpperCase();
       if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
       if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
-      if (e === "MADEIRA IMPORTA\u00c7\u00c3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+      if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
       return "outros";
     };
 
     const isDigitacao = (nota: string | null) => {
       if (!nota) return false;
       const n = nota.toUpperCase();
-      return n === 'DIGITA\u00c7\u00c3O' || n === 'DIGITACAO';
+      return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
     };
 
     const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
