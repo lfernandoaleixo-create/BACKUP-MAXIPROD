@@ -2201,15 +2201,12 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid grid-cols-7 gap-3 mt-4 ml-16">
+        <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
           <div className="bg-green-50/80 rounded-lg px-3 py-2 border border-green-200">
-            <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Est. Manual</p>
+            <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Estoque Manual</p>
             <p className="text-base font-extrabold text-green-800">{formatNumber(totalEstoqueManual)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-teal-50/80 rounded-lg px-3 py-2">
-            <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-base font-extrabold text-teal-700">{formatNumber(totalEstoqueMaxiprod)} <span className="text-xs font-semibold">cx</span></p>
-          </div>
+
           <div className="bg-orange-50/80 rounded-lg px-3 py-2">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
             <p className={`text-base font-extrabold ${totalPedidos > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
@@ -2255,34 +2252,31 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
           </div>
           <div className="bg-white rounded-lg">
             <div className="overflow-x-auto">
-              <table className="w-full" style={{ tableLayout: 'fixed' }}>
+              <table className="w-full text-[13px]" style={{ tableLayout: 'auto' }}>
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none" style={{ minWidth: 250, width: 300 }} onClick={() => handleMadeiraSort('descricaoItem')}>
-                      <div className="flex items-center gap-1">Produto (Maxiprod) <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                    <th className="px-2 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('descricaoItem')}>
+                      <div className="flex items-center gap-1">Produto <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ width: 70 }}>Un/Cx</th>
-                    <th className="px-2 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 140, width: 150 }}>Grupo</th>
-                    <th className="px-2 py-3 text-center text-xs font-semibold text-green-700 uppercase tracking-wider bg-green-50/60 border-x border-green-200 whitespace-nowrap" style={{ width: 120 }}>Est. Manual</th>
-                    <th className="w-8 py-3 px-1"></th>
-                    <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none" onClick={() => handleMadeiraSort('estoqueCx')}>
-                      <div className="flex items-center gap-1">Estoque <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'estoqueCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Un/Cx</th>
+                    <th className="px-1.5 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Grupo</th>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-green-700 uppercase tracking-wider bg-green-50/60 border-x border-green-200 whitespace-nowrap">Estoque Manual</th>
+                    <th className="w-7 py-2.5 px-0.5"></th>
+                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('pedidosCx')}>
+                      <div className="flex items-center justify-end gap-1">Pedidos <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'pedidosCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none" onClick={() => handleMadeiraSort('pedidosCx')}>
-                      <div className="flex items-center gap-1">Pedidos <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'pedidosCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider cursor-pointer hover:text-emerald-700 select-none bg-emerald-50/60 border-x border-emerald-100 whitespace-nowrap" onClick={() => handleMadeiraSort('disponivelCx')}>
+                      <div className="flex items-center justify-end gap-1 text-emerald-700">Disponivel <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} /></div>
+                      <span className="text-[8px] font-bold text-emerald-500 tracking-widest block text-right">P/ VENDA</span>
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-emerald-700 select-none bg-emerald-50/60 border-x border-emerald-100" onClick={() => handleMadeiraSort('disponivelCx')}>
-                      <div className="flex items-center gap-1 text-emerald-700"><ShoppingCart className="w-3 h-3" /> Disponivel <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} /></div>
-                      <span className="text-[8px] font-bold text-emerald-500 tracking-widest block">P/ VENDA</span>
+                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('poCx')}>
+                      <div className="flex items-center justify-end gap-1">PO <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'poCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none" onClick={() => handleMadeiraSort('poCx')}>
-                      <div className="flex items-center gap-1"><Ship className="w-3 h-3" /> PO <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'poCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('projetadoCx')}>
+                      <div className="flex items-center justify-end gap-1">Projetado <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'projetadoCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
-                    <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none" onClick={() => handleMadeiraSort('projetadoCx')}>
-                      <div className="flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Projetado <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'projetadoCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
-                    </th>
-                    <th className="px-2 py-3 text-right text-xs font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador">Est. Reg.</th>
-                    <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador">Est. Reg.</th>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -2295,98 +2289,90 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                     return (
                       <tr key={item.codigoItem} className={`hover:bg-slate-50 transition-colors ${isNegative ? 'bg-red-50/50' : isZero ? 'bg-amber-50/30' : ''}`}>
                         {/* Produto */}
-                        <td className="px-2 py-2.5" style={{ minWidth: 250, width: 300 }}>
-                          <div className="flex items-start gap-1">
-                            <span className="font-medium text-slate-800 text-sm">{item.descricaoItem}</span>
-                          </div>
-                          <div className="text-xs text-slate-400 mt-0.5">Cod: {item.codigoItem}{item.descricaoGrupo && <span className="ml-2 text-slate-300">| {item.descricaoGrupo}</span>}</div>
+                        <td className="px-2 py-2 max-w-[260px]">
+                          <div className="truncate font-medium text-slate-800 text-[13px]" title={item.descricaoItem}>{item.descricaoItem}</div>
+                          <div className="text-[11px] text-slate-400 mt-0.5 truncate">Cod: {item.codigoItem}</div>
                         </td>
                         {/* Un/Cx */}
-                        <td className="px-2 py-2.5 text-sm text-slate-600 whitespace-nowrap" style={{ width: 70 }}>
+                        <td className="px-1.5 py-2 text-[13px] text-slate-600 text-center whitespace-nowrap">
                           {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "—")}
                         </td>
                         {/* Grupo */}
-                        <td className="px-2 py-2.5 overflow-hidden" style={{ minWidth: 140, width: 150, maxWidth: 180 }}>
+                        <td className="px-1.5 py-2">
                           <GrupoBadge grupo={item.grupo} subgrupo={item.subgrupo} />
                         </td>
                         {/* Estoque Manual */}
-                        <td className="px-2 py-2.5 text-center bg-green-50/40 border-x border-green-200">
+                        <td className="px-1.5 py-2 text-center bg-green-50/40 border-x border-green-200">
                           {isEditing ? (
                             <input ref={inputRef} type="number" min="0" value={editValue}
                               onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
-                              className="w-20 text-right text-sm border border-green-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-green-300 bg-green-50" />
+                              className="w-16 text-right text-[13px] border border-green-400 rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-green-300 bg-green-50" />
                           ) : (
                             <button onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
-                              className="text-sm font-bold text-green-700 hover:bg-green-100 px-2 py-1 rounded cursor-pointer transition-colors min-w-[60px]"
+                              className="text-[13px] font-bold text-green-700 hover:bg-green-100 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
                               title="Clique para editar (somente aumento)">{formatNumber(manualQty)} cx</button>
                           )}
                         </td>
                         {/* Histórico */}
-                        <td className="py-2 px-1">
+                        <td className="py-2 px-0.5">
                           <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
-                            className="p-1 rounded hover:bg-green-50 transition-colors" title="Histórico deste item">
+                            className="p-0.5 rounded hover:bg-green-50 transition-colors" title="Histórico deste item">
                             <History className="w-3.5 h-3.5 text-slate-400 hover:text-green-600" />
                           </button>
                         </td>
-                        {/* Estoque Maxiprod */}
-                        <td className="px-2 py-2.5 whitespace-nowrap">
-                          <span className="font-semibold text-slate-800 text-sm">
-                            {item.estoqueCx !== null ? `${formatNumber(item.estoqueCx)}` : `${formatNumber(item.estoqueUn)}`} {getUnit(item, item.estoqueCx !== null)}
-                          </span>
-                        </td>
                         {/* Pedidos */}
-                        <td className="px-2 py-2.5">
-                          <span className={`font-semibold text-sm ${(item.pedidosCx ?? item.pedidosUn) > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
+                        <td className="px-1.5 py-2 text-right whitespace-nowrap">
+                          <span className={`font-semibold text-[13px] ${(item.pedidosCx ?? item.pedidosUn) > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
                             {item.pedidosCx !== null ? `${formatNumber(item.pedidosCx)} ${getUnit(item, true)}` : `${formatNumber(item.pedidosUn)} ${getUnit(item, false)}`}
                           </span>
                         </td>
                         {/* Disponível */}
-                        <td className="px-2 py-2.5 bg-emerald-50/40 border-x border-emerald-100">
-                          <span className={`font-bold text-sm ${isNegative ? 'text-red-600' : isZero ? 'text-amber-600' : 'text-emerald-700'}`}>
+                        <td className="px-1.5 py-2 text-right bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap">
+                          <span className={`font-bold text-[13px] ${isNegative ? 'text-red-600' : isZero ? 'text-amber-600' : 'text-emerald-700'}`}>
                             {item.disponivelCx !== null ? `${formatNumber(item.disponivelCx)}` : `${formatNumber(item.disponivelUn)}`} {getUnit(item, item.disponivelCx !== null)}
                           </span>
                         </td>
                         {/* PO */}
-                        <td className="px-2 py-2.5">
+                        <td className="px-1.5 py-2 text-right whitespace-nowrap">
                           <POCell item={item} />
                         </td>
                         {/* Projetado */}
-                        <td className="px-2 py-2.5">
+                        <td className="px-1.5 py-2 text-right whitespace-nowrap">
                           {(item.poCx ?? 0) > 0 || (item.disponivelCx ?? item.disponivelUn) !== 0 ? (
-                            <span className={`font-bold text-sm ${projetado < 0 ? 'text-red-500' : projetado === 0 ? 'text-amber-500' : 'text-indigo-600'}`}>
+                            <span className={`font-bold text-[13px] ${projetado < 0 ? 'text-red-500' : projetado === 0 ? 'text-amber-500' : 'text-indigo-600'}`}>
                               {item.projetadoCx !== null ? `${formatNumber(item.projetadoCx)} ${getUnit(item, true)}` : `${formatNumber(item.projetadoUn)} ${getUnit(item, false)}`}
                             </span>
                           ) : (
-                            <span className="text-slate-300 text-sm">—</span>
+                            <span className="text-slate-300 text-[13px]">—</span>
                           )}
                         </td>
                         {/* Est. Reg. */}
-                        <td className="px-2 py-2.5 text-right">
+                        <td className="px-1.5 py-2 text-right whitespace-nowrap">
                           {(() => {
                             const pricingItem = pricingOverrides?.find(p => p.codigoItem === item.codigoItem);
                             const vendaMensal = pricingItem?.vendaMensal;
-                            if (vendaMensal == null) return <span className="text-xs text-slate-300">—</span>;
+                            if (vendaMensal == null) return <span className="text-[11px] text-slate-300">—</span>;
                             const fator = pricingItem?.fatorMultiplicacao ? parseFloat(pricingItem.fatorMultiplicacao) : 2.3;
                             const estReg = Math.round(vendaMensal * fator);
                             const unit = item.isKgProduct ? "kg" : "cx";
                             let estRegColor = 'text-emerald-600';
                             if (estReg > 0) {
-                              if (projetado <= estReg) estRegColor = 'text-red-600 bg-red-50 px-1.5 py-0.5 rounded';
-                              else if (projetado <= estReg * 1.2) estRegColor = 'text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded';
-                              else if (projetado <= estReg * 1.4) estRegColor = 'text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded';
+                              if (projetado <= estReg) estRegColor = 'text-red-600 bg-red-50 px-1 py-0.5 rounded';
+                              else if (projetado <= estReg * 1.2) estRegColor = 'text-pink-600 bg-pink-50 px-1 py-0.5 rounded';
+                              else if (projetado <= estReg * 1.4) estRegColor = 'text-orange-600 bg-orange-50 px-1 py-0.5 rounded';
                             }
-                            return <span className={`text-xs font-semibold ${estRegColor}`} title={`Vd.Mensal: ${vendaMensal} × Fator: ${fator.toLocaleString("pt-BR")} = ${estReg} ${unit}`}>{formatNumber(estReg)} {unit}</span>;
+                            return <span className={`text-[11px] font-semibold ${estRegColor}`} title={`Vd.Mensal: ${vendaMensal} × Fator: ${fator.toLocaleString("pt-BR")} = ${estReg} ${unit}`}>{formatNumber(estReg)} {unit}</span>;
                           })()}
                         </td>
                         {/* Status */}
-                        <td className="px-2 py-2.5">
+                        <td className="px-1.5 py-2 text-center whitespace-nowrap">
                           {(() => {
                             const estoque = manualQty || (item.estoqueCx ?? 0);
                             const pedidos = item.pedidosCx ?? 0;
                             if (pedidos > 0 && estoque < pedidos) {
-                              return <Badge className="bg-red-100 text-red-700 text-xs border-0 whitespace-nowrap">Alerta de Produção</Badge>;
+                              return <Badge className="bg-red-100 text-red-700 text-[11px] border-0 whitespace-nowrap">Alerta de Produção</Badge>;
                             }
-                            return <Badge className="bg-emerald-100 text-emerald-700 text-xs border-0">OK</Badge>;
+                            return <Badge className="bg-emerald-100 text-emerald-700 text-[11px] border-0">OK</Badge>;
                           })()}
                         </td>
                       </tr>

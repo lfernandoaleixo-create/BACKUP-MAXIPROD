@@ -1734,3 +1734,7 @@
 - [x] Painel de alertas de produção oculto por padrão, abre ao clicar no card KPI Alertas
 - [x] Corrigir \u2014 para traço normal (—) no MadeiraPACard
 - [x] Status do produto: OK quando estoque >= pedidos, "Alerta de Produção" vermelho quando estoque < pedidos
+- [x] Remover coluna "Estoque" (não manual, em preto) do card Madeira - Produto Acabado apenas
+- [x] Renomear "Est. Manual" para "Estoque Manual" no card Madeira PA
+- [x] Alinhar todas as colunas da tabela Madeira PA (Grupo cortado, colunas desalinhadas)
+- [x] Reduzir tamanho da tabela Madeira PA para caber na tela sem cortes, sem encavalar
