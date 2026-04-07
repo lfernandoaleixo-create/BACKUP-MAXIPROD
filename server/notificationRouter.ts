@@ -19,6 +19,9 @@ import { getDb } from "./db";
 import { systemNotifications, notificationReads } from "../drizzle/schema";
 import { desc, eq, sql, and, isNull, isNotNull, lt, inArray } from "drizzle-orm";
 
+// Tipos de notificação relevantes para a produção
+const ALLOWED_NOTIFICATION_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada"];
+
 export const notificationRouter = router({
   /**
    * Listar notificações recentes (últimas 200)
@@ -39,10 +42,11 @@ export const notificationRouter = router({
       const unreadOnly = input?.unreadOnly ?? false;
       const operatorId = input?.operatorId;
 
-      // Fetch all recent notifications
+      // Fetch all recent notifications - apenas tipos relevantes para produção
       const notifications = await db
         .select()
         .from(systemNotifications)
+        .where(inArray(systemNotifications.type, ALLOWED_NOTIFICATION_TYPES))
         .orderBy(desc(systemNotifications.createdAt))
         .limit(limit);
 
@@ -98,10 +102,11 @@ export const notificationRouter = router({
 
       const operatorId = input?.operatorId;
 
-      // Total de notificações
+      // Total de notificações - apenas tipos relevantes para produção
       const totalResult = await db
         .select({ count: sql<number>`count(*)` })
-        .from(systemNotifications);
+        .from(systemNotifications)
+        .where(inArray(systemNotifications.type, ALLOWED_NOTIFICATION_TYPES));
       const total = Number(totalResult[0]?.count ?? 0);
 
       if (!operatorId) {
@@ -109,18 +114,36 @@ export const notificationRouter = router({
         const result = await db
           .select({ count: sql<number>`count(*)` })
           .from(systemNotifications)
-          .where(isNull(systemNotifications.readAt));
+          .where(
+            and(
+              isNull(systemNotifications.readAt),
+              inArray(systemNotifications.type, ALLOWED_NOTIFICATION_TYPES)
+            )
+          );
         return { count: Number(result[0]?.count ?? 0) };
       }
 
-      // Contar quantas este operador já leu
+      // Contar quantas notificações relevantes este operador já leu
+      const relevantNotifs = await db
+        .select({ id: systemNotifications.id })
+        .from(systemNotifications)
+        .where(inArray(systemNotifications.type, ALLOWED_NOTIFICATION_TYPES));
+      const relevantIds = relevantNotifs.map(n => n.id);
+
+      if (relevantIds.length === 0) return { count: 0 };
+
       const readResult = await db
         .select({ count: sql<number>`count(*)` })
         .from(notificationReads)
-        .where(eq(notificationReads.operatorId, operatorId));
+        .where(
+          and(
+            eq(notificationReads.operatorId, operatorId),
+            inArray(notificationReads.notificationId, relevantIds)
+          )
+        );
       const readCount = Number(readResult[0]?.count ?? 0);
 
-      return { count: Math.max(0, total - readCount) };
+      return { count: Math.max(0, relevantIds.length - readCount) };
     }),
 
   /**

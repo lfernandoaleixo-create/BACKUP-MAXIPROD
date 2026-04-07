@@ -719,6 +719,67 @@ export const billingRouter = router({
           await db.update(appSettings).set({ settingValue: JSON.stringify(currentPedidos) }).where(eq(appSettings.settingKey, "last_known_open_pedidos"));
         }
 
+        // ===== DETECÇÃO DE ALTERAÇÃO DE OBSERVAÇÕES =====
+        // Compara observações atuais com as da última sync
+        try {
+          const obsSettingKey = "last_known_obs_pedidos";
+          const obsSetting = await db.select().from(appSettings).where(eq(appSettings.settingKey, obsSettingKey)).limit(1);
+          const lastKnownObs: Record<string, string> = obsSetting.length > 0
+            ? (typeof obsSetting[0].settingValue === 'string' ? JSON.parse(obsSetting[0].settingValue) : (obsSetting[0].settingValue || {}))
+            : {};
+
+          // Construir mapa atual de observações
+          const currentObs: Record<string, string> = {};
+          for (const order of openOrders) {
+            currentObs[order.pedido] = order.observacoes || "";
+          }
+
+          // Detectar alterações (só se já temos dados anteriores)
+          if (Object.keys(lastKnownObs).length > 0) {
+            for (const pedido of Object.keys(currentObs)) {
+              const oldObs = lastKnownObs[pedido] ?? "";
+              const newObs = currentObs[pedido] ?? "";
+              if (oldObs !== newObs && (oldObs !== "" || newObs !== "")) {
+                const order = openOrders.find(o => o.pedido === pedido);
+                const cliente = order?.cliente || "";
+                // Evitar duplicata nas últimas 2h
+                const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+                const { systemNotifications: sysNotifTable } = await import("../drizzle/schema");
+                const existingObs = await db.select({ id: sysNotifTable.id })
+                  .from(sysNotifTable)
+                  .where(and(
+                    eq(sysNotifTable.type, "observacao_alterada"),
+                    sql`JSON_EXTRACT(metadata, '$.pedido') = ${pedido}`,
+                    sql`${sysNotifTable.createdAt} > ${twoHoursAgo}`
+                  ))
+                  .limit(1);
+
+                if (existingObs.length === 0) {
+                  const obsPreview = newObs.length > 80 ? newObs.substring(0, 80) + "..." : newObs;
+                  await createNotification({
+                    type: "observacao_alterada",
+                    title: `Obs. Alterada - Pedido #${pedido}`,
+                    message: oldObs === "" 
+                      ? `Nova observação no pedido #${pedido} (${cliente}): "${obsPreview}"`
+                      : `Observação do pedido #${pedido} (${cliente}) foi alterada: "${obsPreview}"`,
+                    severity: "info",
+                    metadata: { pedido, cliente, oldObs: oldObs.substring(0, 200), newObs: newObs.substring(0, 200) },
+                  });
+                }
+              }
+            }
+          }
+
+          // Salvar observações atuais para próxima comparação
+          if (obsSetting.length === 0) {
+            await db.insert(appSettings).values({ settingKey: obsSettingKey, settingValue: JSON.stringify(currentObs) });
+          } else {
+            await db.update(appSettings).set({ settingValue: JSON.stringify(currentObs) }).where(eq(appSettings.settingKey, obsSettingKey));
+          }
+        } catch (obsErr) {
+          console.error('[Notifications] Erro ao detectar alterações de observações:', obsErr);
+        }
+
         // ===== VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS =====
         // Regra de negócio: É proibido passar venda sem Responsável, Segmento, Cond. Pagamento, Transportadora
         for (const order of openOrders) {
@@ -1764,6 +1825,10 @@ export const billingRouter = router({
         return { success: true };
       }
 
+      // Buscar observação anterior para detectar alteração
+      const existingObs = await db.select().from(billingObservations).where(eq(billingObservations.pedido, input.pedido)).limit(1);
+      const oldObservation = existingObs.length > 0 ? existingObs[0].observation : "";
+
       try {
         await db.insert(billingObservations).values({
           pedido: input.pedido,
@@ -1779,6 +1844,21 @@ export const billingRouter = router({
         } else {
           throw err;
         }
+      }
+
+      // Gerar notificação de alteração de observação
+      if (input.observation.trim() !== oldObservation) {
+        try {
+          const { createNotification } = await import("./notificationRouter");
+          const obsPreview = input.observation.trim().length > 80 ? input.observation.trim().substring(0, 80) + "..." : input.observation.trim();
+          await createNotification({
+            type: "observacao_alterada",
+            title: `Obs. Faturamento - Pedido #${input.pedido}`,
+            message: `${operatorName} alterou a observação de faturamento do pedido #${input.pedido}: "${obsPreview}"`,
+            severity: "info",
+            metadata: { pedido: input.pedido, operador: operatorName, oldObs: oldObservation.substring(0, 200), newObs: input.observation.trim().substring(0, 200) },
+          });
+        } catch (e) { console.error("[Notification] Error:", e); }
       }
 
       return { success: true };

@@ -1689,3 +1689,10 @@
 ## Cards de fornecedores colapsados por padrão (07/04/2026)
 - [x] Todos os cards de fornecedores na Autorização de Pagamentos iniciam fechados (colapsados) por padrão
 - [x] Não alterar nada em nenhuma outra aba
+
+## Sininho de Notificações - Ajustes (07/04/2026)
+- [x] Sininho visível apenas para operadores: Maria, Marcos, Erica e Guilherme
+- [x] Notificar apenas alterações em campos de observação (feitas pela Manus ou lidas do Maxiprod)
+- [x] Notificar apenas pedidos novos
+- [x] Remover notificações sem utilidade para a produção
+- [x] Não mexer em nada além do sininho de notificações

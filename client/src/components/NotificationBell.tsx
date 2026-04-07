@@ -22,6 +22,7 @@ import {
   KeyRound,
   RefreshCw,
   ShoppingCart,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -59,6 +60,7 @@ const SEVERITY_CONFIG = {
 const TYPE_ICONS: Record<string, typeof Bell> = {
   novo_pedido: ShoppingCart,
   pedido_modificado: Package,
+  observacao_alterada: MessageSquare,
   campo_obrigatorio: FileWarning,
   senha_invalida: KeyRound,
   sync_erro: RefreshCw,
@@ -79,11 +81,19 @@ function formatTimeAgo(date: Date): string {
   return new Date(date).toLocaleDateString("pt-BR");
 }
 
+// Operadores que podem ver o sininho de notificações
+const NOTIFICATION_ALLOWED_OPERATORS = ["Maria", "Marcos", "Erica", "Guilherme"];
+
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { operator } = useOperator();
   const operatorId = operator?.id;
+
+  // Sininho visível apenas para operadores permitidos
+  if (!operator || !NOTIFICATION_ALLOWED_OPERATORS.includes(operator.name)) {
+    return null;
+  }
 
   // Poll unread count every 15 seconds - per operator
   const { data: countData } = trpc.notifications.unreadCount.useQuery(
