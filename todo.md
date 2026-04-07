@@ -1710,3 +1710,7 @@
 - [x] Semi Pronto e Ag. Escolha: permitir aumento e redução
 - [x] Botão de histórico ao lado do estoque mostrando últimos 15 dias de alterações
 - [x] Histórico mostra: data, hora, operador, valor anterior, novo valor
+
+## Restaurar colunas no MadeiraPACard (07/04/2026)
+- [x] Restaurar colunas originais (UN/CX, Grupo, Estoque, Pedidos, Disponível, PO, Projetado, Est. Reg., Status) no card Madeira PA
+- [x] Manter coluna de estoque manual editável + botão de histórico
