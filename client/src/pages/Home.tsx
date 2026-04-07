@@ -403,6 +403,7 @@ const kpiStyles: Record<string, { iconBg: string; iconColor: string; bar: string
   red:     { iconBg: "bg-red-50",     iconColor: "text-red-600",     bar: "bg-gradient-to-r from-red-400 to-red-600" },
   pink:    { iconBg: "bg-pink-50",    iconColor: "text-pink-600",    bar: "bg-gradient-to-r from-pink-400 to-pink-600" },
   amber:   { iconBg: "bg-amber-50",   iconColor: "text-amber-600",   bar: "bg-gradient-to-r from-amber-400 to-amber-600" },
+  green:   { iconBg: "bg-green-50",   iconColor: "text-green-600",   bar: "bg-gradient-to-r from-green-400 to-green-600" },
   slate:   { iconBg: "bg-slate-50",   iconColor: "text-slate-500",   bar: "bg-gradient-to-r from-slate-300 to-slate-400" },
 };
 
