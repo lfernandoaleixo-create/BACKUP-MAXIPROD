@@ -2259,23 +2259,23 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                       <div className="flex items-center gap-1">Produto <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Un/Cx</th>
-                    <th className="px-1.5 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Grupo</th>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Grupo</th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-green-700 uppercase tracking-wider bg-green-50/60 border-x border-green-200 whitespace-nowrap">Estoque Manual</th>
                     <th className="w-7 py-2.5 px-0.5"></th>
-                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('pedidosCx')}>
-                      <div className="flex items-center justify-end gap-1">Pedidos <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'pedidosCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('pedidosCx')}>
+                      <div className="flex items-center justify-center gap-1">Pedidos <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'pedidosCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
-                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wider cursor-pointer hover:text-emerald-700 select-none bg-emerald-50/60 border-x border-emerald-100 whitespace-nowrap" onClick={() => handleMadeiraSort('disponivelCx')}>
-                      <div className="flex items-center justify-end gap-1 text-emerald-700">Disponivel <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} /></div>
-                      <span className="text-[8px] font-bold text-emerald-500 tracking-widest block text-right">P/ VENDA</span>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider cursor-pointer hover:text-emerald-700 select-none bg-emerald-50/60 border-x border-emerald-100 whitespace-nowrap" onClick={() => handleMadeiraSort('disponivelCx')}>
+                      <div className="flex items-center justify-center gap-1 text-emerald-700">Disponivel <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} /></div>
+                      <span className="text-[8px] font-bold text-emerald-500 tracking-widest block text-center">P/ VENDA</span>
                     </th>
-                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('poCx')}>
-                      <div className="flex items-center justify-end gap-1">PO <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'poCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('poCx')}>
+                      <div className="flex items-center justify-center gap-1">PO <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'poCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
-                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('projetadoCx')}>
-                      <div className="flex items-center justify-end gap-1">Projetado <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'projetadoCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('projetadoCx')}>
+                      <div className="flex items-center justify-center gap-1">Projetado <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'projetadoCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
-                    <th className="px-1.5 py-2.5 text-right text-[11px] font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador">Est. Reg.</th>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador">Est. Reg.</th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
@@ -2298,7 +2298,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                           {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "—")}
                         </td>
                         {/* Grupo */}
-                        <td className="px-1.5 py-2">
+                        <td className="px-1.5 py-2 text-center">
                           <GrupoBadge grupo={item.grupo} subgrupo={item.subgrupo} />
                         </td>
                         {/* Estoque Manual */}
@@ -2314,30 +2314,30 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                           )}
                         </td>
                         {/* Histórico */}
-                        <td className="py-2 px-0.5">
+                        <td className="py-2 px-0.5 text-center">
                           <button onClick={(e) => { e.stopPropagation(); setHistoryItem({ codigo: item.codigoItem, descricao: item.descricaoItem }); setShowHistory(true); }}
                             className="p-0.5 rounded hover:bg-green-50 transition-colors" title="Histórico deste item">
                             <History className="w-3.5 h-3.5 text-slate-400 hover:text-green-600" />
                           </button>
                         </td>
                         {/* Pedidos */}
-                        <td className="px-1.5 py-2 text-right whitespace-nowrap">
+                        <td className="px-1.5 py-2 text-center whitespace-nowrap">
                           <span className={`font-semibold text-[13px] ${(item.pedidosCx ?? item.pedidosUn) > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
                             {item.pedidosCx !== null ? `${formatNumber(item.pedidosCx)} ${getUnit(item, true)}` : `${formatNumber(item.pedidosUn)} ${getUnit(item, false)}`}
                           </span>
                         </td>
                         {/* Disponível */}
-                        <td className="px-1.5 py-2 text-right bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap">
+                        <td className="px-1.5 py-2 text-center bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap">
                           <span className={`font-bold text-[13px] ${isNegative ? 'text-red-600' : isZero ? 'text-amber-600' : 'text-emerald-700'}`}>
                             {item.disponivelCx !== null ? `${formatNumber(item.disponivelCx)}` : `${formatNumber(item.disponivelUn)}`} {getUnit(item, item.disponivelCx !== null)}
                           </span>
                         </td>
                         {/* PO */}
-                        <td className="px-1.5 py-2 text-right whitespace-nowrap">
+                        <td className="px-1.5 py-2 text-center whitespace-nowrap">
                           <POCell item={item} />
                         </td>
                         {/* Projetado */}
-                        <td className="px-1.5 py-2 text-right whitespace-nowrap">
+                        <td className="px-1.5 py-2 text-center whitespace-nowrap">
                           {(item.poCx ?? 0) > 0 || (item.disponivelCx ?? item.disponivelUn) !== 0 ? (
                             <span className={`font-bold text-[13px] ${projetado < 0 ? 'text-red-500' : projetado === 0 ? 'text-amber-500' : 'text-indigo-600'}`}>
                               {item.projetadoCx !== null ? `${formatNumber(item.projetadoCx)} ${getUnit(item, true)}` : `${formatNumber(item.projetadoUn)} ${getUnit(item, false)}`}
@@ -2347,7 +2347,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                           )}
                         </td>
                         {/* Est. Reg. */}
-                        <td className="px-1.5 py-2 text-right whitespace-nowrap">
+                        <td className="px-1.5 py-2 text-center whitespace-nowrap">
                           {(() => {
                             const pricingItem = pricingOverrides?.find(p => p.codigoItem === item.codigoItem);
                             const vendaMensal = pricingItem?.vendaMensal;

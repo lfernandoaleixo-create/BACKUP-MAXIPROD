@@ -1738,3 +1738,4 @@
 - [x] Renomear "Est. Manual" para "Estoque Manual" no card Madeira PA
 - [x] Alinhar todas as colunas da tabela Madeira PA (Grupo cortado, colunas desalinhadas)
 - [x] Reduzir tamanho da tabela Madeira PA para caber na tela sem cortes, sem encavalar
+- [x] Centralizar todos os dados e headers das colunas da tabela Madeira PA
