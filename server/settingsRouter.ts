@@ -901,4 +901,34 @@ export const settingsRouter = router({
       }
       return { success: true };
     }),
+
+  updateMadeiraItemConfig: publicProcedure
+    .input(z.object({
+      codigoItem: z.string(),
+      card: z.enum(["madeira", "semiPronto", "aguardandoEscolha"]),
+      precoCaixa: z.number().nullable().optional(),
+      alertaReposicao: z.number().nullable().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      const existing = await db.select().from(madeiraVisibility)
+        .where(and(eq(madeiraVisibility.codigoItem, input.codigoItem), eq(madeiraVisibility.card, input.card)));
+      const updates: Record<string, any> = {};
+      if (input.precoCaixa !== undefined) updates.precoCaixa = input.precoCaixa === null ? null : String(input.precoCaixa);
+      if (input.alertaReposicao !== undefined) updates.alertaReposicao = input.alertaReposicao;
+      if (existing.length > 0) {
+        await db.update(madeiraVisibility)
+          .set(updates)
+          .where(and(eq(madeiraVisibility.codigoItem, input.codigoItem), eq(madeiraVisibility.card, input.card)));
+      } else {
+        await db.insert(madeiraVisibility).values({
+          codigoItem: input.codigoItem,
+          card: input.card,
+          visible: true,
+          ...updates,
+        });
+      }
+      return { success: true };
+    }),
 });

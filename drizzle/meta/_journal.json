@@ -414,6 +414,13 @@
       "when": 1775568228279,
       "tag": "0058_secret_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "5",
+      "when": 1775574281174,
+      "tag": "0059_wooden_vertigo",
+      "breakpoints": true
     }
   ]
 }

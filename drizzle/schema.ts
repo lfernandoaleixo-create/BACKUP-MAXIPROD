@@ -821,6 +821,8 @@ export const madeiraVisibility = mysqlTable("madeira_visibility", {
   codigoItem: varchar("codigoItem", { length: 20 }).notNull(),
   card: varchar("card", { length: 30 }).notNull(), // "madeira" | "semiPronto" | "aguardandoEscolha"
   visible: boolean("visible").notNull().default(true),
+  precoCaixa: decimal("preco_caixa", { precision: 10, scale: 2 }), // R$/CX - preço manual ou média das últimas 5 vendas
+  alertaReposicao: int("alerta_reposicao"), // Alerta de reposição (quantidade mínima)
   updatedBy: varchar("updatedBy", { length: 200 }),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

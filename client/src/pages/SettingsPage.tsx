@@ -3,7 +3,7 @@
  * Painéis: Metas de Vendas, Alertas, Alterar Senha
  */
 
-import React, { useState, useMemo, Fragment } from "react";
+import React, { useState, useMemo, Fragment, useRef, useEffect } from "react";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -571,7 +571,7 @@ const GRANULAR_FINANCEIRO: GranularPermDef[] = [
 
 const GRANULAR_CONFIGURACOES: GranularPermDef[] = [
   { key: "cfg.senhas", label: "Senhas", parentTab: "configuracoes" },
-  { key: "cfg.produtos", label: "Produtos", parentTab: "configuracoes" },
+  { key: "cfg.produtos", label: "Produto Importado", parentTab: "configuracoes" },
   { key: "cfg.alertas", label: "Alertas", parentTab: "configuracoes" },
   { key: "cfg.bancos", label: "Bancos", parentTab: "configuracoes" },
   { key: "cfg.variacoes", label: "Varia\u00e7\u00f5es", parentTab: "configuracoes" },
@@ -1298,7 +1298,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
               <ArrowRightLeft className="w-5 h-5 text-violet-600" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-800">Produtos</h2>
+              <h2 className="font-bold text-slate-800">Produto Importado</h2>
               <p className="text-xs text-slate-500">Gerencie grupos, classificações e parâmetros de estoque</p>
             </div>
           </div>
@@ -2108,8 +2108,91 @@ function VariantsPanel() {
     </div>
   );
 }
+// ─── Madeira Config Input (inline editable for R$/CX and Alerta) ───────────────────
+function MadeiraConfigInput({ codigoItem, field, visibilityData, placeholder, prefix, type }: {
+  codigoItem: string;
+  field: "precoCaixa" | "alertaReposicao";
+  visibilityData: any;
+  placeholder: string;
+  prefix?: string;
+  type: "money" | "number";
+}) {
+  const utils = trpc.useUtils();
+  const updateConfig = trpc.settings.updateMadeiraItemConfig.useMutation({
+    onSuccess: () => {
+      utils.settings.getMadeiraVisibility.invalidate();
+      toast.success(field === "precoCaixa" ? "Preço atualizado!" : "Alerta atualizado!");
+    },
+    onError: () => toast.error("Erro ao atualizar"),
+  });
 
-// ─── Madeira Visibility Panel ──────────────────────────────────────────────────────
+  // Get current value from visibility data (use first card entry that has a value)
+  const currentValue = useMemo(() => {
+    if (!visibilityData?.items) return null;
+    for (const row of visibilityData.items) {
+      if (row.codigoItem === codigoItem && row[field] != null) {
+        return Number(row[field]);
+      }
+    }
+    return null;
+  }, [visibilityData, codigoItem, field]);
+
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) inputRef.current.focus();
+  }, [editing]);
+
+  const handleSave = () => {
+    const numVal = type === "money" ? parseFloat(value.replace(",", ".")) : parseInt(value);
+    if (isNaN(numVal) || numVal < 0) {
+      setEditing(false);
+      return;
+    }
+    // Save for all 3 cards at once
+    const cards: Array<"madeira" | "semiPronto" | "aguardandoEscolha"> = ["madeira", "semiPronto", "aguardandoEscolha"];
+    for (const card of cards) {
+      updateConfig.mutate({ codigoItem, card, [field]: numVal });
+    }
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1 justify-center">
+        {prefix && <span className="text-xs text-slate-400">{prefix}</span>}
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setEditing(false); }}
+          className="w-16 text-center text-xs border border-blue-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          placeholder={placeholder}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => { setValue(currentValue != null ? String(currentValue) : ""); setEditing(true); }}
+      className="text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded px-2 py-0.5 transition-colors min-w-[50px]"
+      title="Clique para editar"
+    >
+      {currentValue != null
+        ? (type === "money" ? `R$ ${currentValue.toFixed(2)}` : String(currentValue))
+        : <span className="text-slate-300">—</span>
+      }
+    </button>
+  );
+}
+
+// ─── Madeira Visibility Panel ──────────────────────────────────────────────────────────────────────────────
 function MadeiraVisibilityPanel() {
   const { data: dashData } = trpc.dashboard.getData.useQuery();
   const { data: visibilityData, isLoading: visLoading } = trpc.settings.getMadeiraVisibility.useQuery();
@@ -2226,11 +2309,12 @@ function MadeiraVisibilityPanel() {
 
       {/* Products table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="text-left px-4 py-3 font-medium text-slate-600">C\u00f3digo</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600">Descri\u00e7\u00e3o</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600">Código</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600">Descrição</th>
               <th className="text-center px-4 py-3 font-medium text-emerald-600">
                 <div className="flex items-center justify-center gap-1">
                   <TreePine className="w-3.5 h-3.5" />
@@ -2249,12 +2333,14 @@ function MadeiraVisibilityPanel() {
                   Ag. Escolha
                 </div>
               </th>
+              <th className="text-center px-3 py-3 font-medium text-blue-600 whitespace-nowrap">R$/CX</th>
+              <th className="text-center px-3 py-3 font-medium text-red-600 whitespace-nowrap">Alerta de Reposição</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-8 text-slate-400">
-                {madeiraItems.length === 0 ? "Aguardando sincroniza\u00e7\u00e3o dos dados..." : "Nenhum produto encontrado"}
+              <tr><td colSpan={7} className="text-center py-8 text-slate-400">
+                {madeiraItems.length === 0 ? "Aguardando sincronização dos dados..." : "Nenhum produto encontrado"}
               </td></tr>
             ) : (
               filtered.map((item: any, idx: number) => {
@@ -2290,12 +2376,32 @@ function MadeiraVisibilityPanel() {
                         <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${vis.aguardandoEscolha ? "left-3.5" : "left-0.5"}`} />
                       </button>
                     </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <MadeiraConfigInput
+                        codigoItem={item.codigoItem}
+                        field="precoCaixa"
+                        visibilityData={visibilityData}
+                        placeholder="R$"
+                        prefix="R$ "
+                        type="money"
+                      />
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <MadeiraConfigInput
+                        codigoItem={item.codigoItem}
+                        field="alertaReposicao"
+                        visibilityData={visibilityData}
+                        placeholder="Qtd"
+                        type="number"
+                      />
+                    </td>
                   </tr>
                 );
               })
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
@@ -2316,13 +2422,13 @@ export default function SettingsPage() {
 
   const allTabs = [
     { id: "passwords" as const, label: "Senhas", icon: Lock, color: "text-red-600", perm: "cfg.senhas" },
-    { id: "products" as const, label: "Produtos", icon: ArrowRightLeft, color: "text-violet-600", perm: "cfg.produtos" },
+    { id: "products" as const, label: "Produto Importado", icon: ArrowRightLeft, color: "text-violet-600", perm: "cfg.produtos" },
     { id: "alerts" as const, label: "Alertas", icon: Bell, color: "text-amber-600", perm: "cfg.alertas" },
     { id: "visibility" as const, label: "Visibilidade", icon: Eye, color: "text-cyan-600", perm: "cfg.alertas" },
     { id: "bank" as const, label: "Bancos", icon: Landmark, color: "text-indigo-600", perm: "cfg.bancos" },
     { id: "variants" as const, label: "Variações", icon: GitBranch, color: "text-teal-500", perm: "cfg.variacoes" },
     { id: "data" as const, label: "Dados", icon: Package, color: "text-blue-600", perm: "cfg.dados" },
-    { id: "madeira" as const, label: "Madeira - PA", icon: TreePine, color: "text-green-700", perm: "cfg.produtos" },
+    { id: "madeira" as const, label: "Madeira - Produto Acabado", icon: TreePine, color: "text-green-700", perm: "cfg.produtos" },
   ];
   // Se o operador tem accessConfiguracoes, mostra todas as tabs com permissão
   // Se não tem (entrou via cfg.produtos), mostra apenas a aba Madeira
@@ -2340,7 +2446,7 @@ export default function SettingsPage() {
             <span className="text-slate-700">Configurações</span>
             <span className="text-teal-600 ml-2">Grupo Fox</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1 tracking-widest uppercase">Senhas, Produtos, Alertas e Dados</p>
+          <p className="text-xs text-slate-400 mt-1 tracking-widest uppercase">Senhas, Produto Importado, Alertas e Dados</p>
         </div>
       </div>
 

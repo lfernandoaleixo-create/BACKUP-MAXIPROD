@@ -1714,3 +1714,10 @@
 ## Restaurar colunas no MadeiraPACard (07/04/2026)
 - [x] Restaurar colunas originais (UN/CX, Grupo, Estoque, Pedidos, Disponível, PO, Projetado, Est. Reg., Status) no card Madeira PA
 - [x] Manter coluna de estoque manual editável + botão de histórico
+
+## Ajustes de Configuração e Novas Colunas (07/04/2026)
+- [x] Renomear aba "Produtos" para "Produto Importado" nas configurações
+- [x] Renomear aba "Madeira-PA" para "Madeira - Produto Acabado" nas configurações
+- [x] Remover placeholder "Ex: Maria, Erica..." do modal de senha (deixar em branco)
+- [x] Adicionar coluna "R$/CX" na tabela de configurações (editável manualmente, média das últimas 5 vendas se disponível)
+- [x] Adicionar coluna "Alerta de Reposição" na tabela de configurações

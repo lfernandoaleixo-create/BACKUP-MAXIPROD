@@ -1437,7 +1437,7 @@ function PasswordModal({ open, onClose, onConfirm, title }: {
         <div className="space-y-3 pt-2">
           <Input
             ref={inputRef}
-            placeholder="Ex: Maria, Erica..."
+            placeholder=""
             value={password}
             onChange={(e) => { setPassword(e.target.value); setError(""); }}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
