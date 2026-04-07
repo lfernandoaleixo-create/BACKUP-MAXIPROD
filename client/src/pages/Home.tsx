@@ -160,7 +160,7 @@ function extractComprimento(descricao: string): number {
 }
 
 function formatNumber(n: number | null): string {
-  if (n === null || n === undefined) return "\u2014";
+  if (n === null || n === undefined) return "—";
   // Show decimal places when number is not integer (e.g., 11.6 for product 00808)
   const fractionDigits = Number.isInteger(n) ? 0 : 1;
   return n.toLocaleString("pt-BR", { maximumFractionDigits: fractionDigits });
@@ -435,7 +435,7 @@ function POCell({ item }: { item: StockItem }) {
   const poCx = item.poCx ?? 0;
   
   if (poCx === 0) {
-    return <span className="text-slate-300 text-sm">{"\u2014"}</span>;
+    return <span className="text-slate-300 text-sm">{"—"}</span>;
   }
 
   const lotes = item.poLotes || [];
@@ -780,7 +780,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     <>
                       {/* Un/Cx */}
                       <td className="px-2 py-2.5 text-sm text-slate-600 whitespace-nowrap" style={{ width: 70 }}>
-                        {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "\u2014")}
+                        {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "—")}
                       </td>
                       {/* Grupo/Subgrupo */}
                       <td className="px-2 py-2.5 overflow-hidden" style={{ minWidth: 160, width: 170, maxWidth: 180 }}>
@@ -953,7 +953,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                         </TooltipContent>
                       </Tooltip>
                     ) : (
-                      <span className="text-slate-300 text-sm">{"\u2014"}</span>
+                      <span className="text-slate-300 text-sm">{"—"}</span>
                     )}
                   </td>
                   {/* Estoque Regulador - oculto quando showFinancial */}
@@ -2303,7 +2303,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                         </td>
                         {/* Un/Cx */}
                         <td className="px-2 py-2.5 text-sm text-slate-600 whitespace-nowrap" style={{ width: 70 }}>
-                          {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "\u2014")}
+                          {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "—")}
                         </td>
                         {/* Grupo */}
                         <td className="px-2 py-2.5 overflow-hidden" style={{ minWidth: 140, width: 150, maxWidth: 180 }}>
@@ -2357,7 +2357,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                               {item.projetadoCx !== null ? `${formatNumber(item.projetadoCx)} ${getUnit(item, true)}` : `${formatNumber(item.projetadoUn)} ${getUnit(item, false)}`}
                             </span>
                           ) : (
-                            <span className="text-slate-300 text-sm">\u2014</span>
+                            <span className="text-slate-300 text-sm">—</span>
                           )}
                         </td>
                         {/* Est. Reg. */}
@@ -2365,7 +2365,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                           {(() => {
                             const pricingItem = pricingOverrides?.find(p => p.codigoItem === item.codigoItem);
                             const vendaMensal = pricingItem?.vendaMensal;
-                            if (vendaMensal == null) return <span className="text-xs text-slate-300">\u2014</span>;
+                            if (vendaMensal == null) return <span className="text-xs text-slate-300">—</span>;
                             const fator = pricingItem?.fatorMultiplicacao ? parseFloat(pricingItem.fatorMultiplicacao) : 2.3;
                             const estReg = Math.round(vendaMensal * fator);
                             const unit = item.isKgProduct ? "kg" : "cx";
@@ -2381,14 +2381,12 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                         {/* Status */}
                         <td className="px-2 py-2.5">
                           {(() => {
-                            const pItem = pricingOverrides?.find(p => p.codigoItem === item.codigoItem);
-                            const vm = pItem?.vendaMensal;
-                            let calcEstReg: number | null = null;
-                            if (vm != null) {
-                              const f = pItem?.fatorMultiplicacao ? parseFloat(pItem.fatorMultiplicacao) : 2.3;
-                              calcEstReg = Math.round(vm * f);
+                            const estoque = manualQty || (item.estoqueCx ?? 0);
+                            const pedidos = item.pedidosCx ?? 0;
+                            if (pedidos > 0 && estoque < pedidos) {
+                              return <Badge className="bg-red-100 text-red-700 text-xs border-0 whitespace-nowrap">Alerta de Produção</Badge>;
                             }
-                            return <StatusBadge projetado={projetado} estReg={calcEstReg} />;
+                            return <Badge className="bg-emerald-100 text-emerald-700 text-xs border-0">OK</Badge>;
                           })()}
                         </td>
                       </tr>

@@ -1732,3 +1732,5 @@
 - [x] Botão "Valorização de Estoque" acima do card Madeira PA (usa R$/CX da config)
 - [x] Painel de alertas de produção oculto por padrão, abre ao clicar no card KPI Alertas
 - [x] Painel de alertas de produção oculto por padrão, abre ao clicar no card KPI Alertas
+- [x] Corrigir \u2014 para traço normal (—) no MadeiraPACard
+- [x] Status do produto: OK quando estoque >= pedidos, "Alerta de Produção" vermelho quando estoque < pedidos
