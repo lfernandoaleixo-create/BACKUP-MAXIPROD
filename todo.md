@@ -1746,3 +1746,4 @@
 - [x] Validar valores do card Vendas comparando com Maxiprod (excluindo amostras)
 - [x] Corrigir filtro de faturamento para excluir NFs de AMOSTRA, BONIFICAÇÃO, DEVOLUÇÃO, REMESSA e RECUSA
 - [x] Corrigir divergência: Faturado + A Faturar deve bater com Valor Total do Período na aba Vendas (diferença de ~R$91 causada por meias notas)
+- [x] Corrigir exibição dos bancos nos recebíveis: mostrar descrição completa (Empresa + Banco + Agência + Conta) em vez de apenas Banco + Ag + Cc

@@ -2622,6 +2622,54 @@ export const financialRouter = router({
         conditions.push(lte(accountsReceivable.vencimentoData, input.dateTo + "T23:59:59"));
       }
 
+      // Buscar mapa de conta bancária → empresa dona (da tabela bank_accounts)
+      const bankAccountRows = await db
+        .select({
+          bancoNome: bankAccounts.bancoNome,
+          contaNumero: bankAccounts.contaNumero,
+          agencia: bankAccounts.agencia,
+          empresaNome: bankAccounts.empresaNome,
+        })
+        .from(bankAccounts)
+        .where(sql`${bankAccounts.contaNumero} IS NOT NULL AND ${bankAccounts.contaNumero} != ''`);
+
+      // Mapa contaNumero → empresaNome (empresa dona da conta bancária)
+      // Usa a tabela fornecida pelo usuário como referência definitiva
+      const CONTA_EMPRESA_MAP: Record<string, string> = {
+        '50051': 'PALITOS',
+        '50306': 'VARETAS',
+        '50365': 'ESPETOS',
+        '52061': 'MESA',
+        '80242': 'ESPETOS',
+        '80246': 'VARETAS',
+        '80247': 'PALITOS',
+        '90244': 'MESA',
+        '579071919': 'PALITOS',
+        '579072029': 'ESPETOS',
+        '578245135': 'VARETAS',
+        '19342': 'PALITOS',
+        '19344': 'VARETAS',
+        '19287': 'ESPETOS',
+        '18899': 'MESA',
+      };
+
+      // Também construir mapa dinâmico a partir dos dados do banco
+      const dynamicContaMap: Record<string, string> = {};
+      for (const ba of bankAccountRows) {
+        if (ba.contaNumero && ba.empresaNome) {
+          // Simplificar nome da empresa: "PALITOS INDUSTRIA" → "PALITOS"
+          const shortName = ba.empresaNome.split(' ')[0];
+          dynamicContaMap[ba.contaNumero] = shortName;
+        }
+      }
+
+      // Função para obter empresa dona da conta
+      function getContaEmpresa(contaNumero: string | null): string | null {
+        if (!contaNumero) return null;
+        // Prioridade: mapa estático (confirmado pelo usuário) > mapa dinâmico (do banco)
+        return CONTA_EMPRESA_MAP[contaNumero] || dynamicContaMap[contaNumero] || null;
+      }
+
       // Buscar todos os recebíveis com dados bancários diretos da tabela
       const rows = await db
         .select({
@@ -2668,7 +2716,7 @@ export const financialRouter = router({
         meses: Record<string, {
           contas: Record<string, {
             tipos: Record<string, { items: ItemData[]; total: number; count: number }>;
-            bancoNome: string; contaNumero: string; agencia: string;
+            bancoNome: string; contaNumero: string; agencia: string; contaEmpresa: string | null;
             total: number; count: number;
           }>;
           total: number; count: number; vencido: number; aVencer: number;
@@ -2737,6 +2785,7 @@ export const financialRouter = router({
         if (!mes.contas[contaKey]) {
           mes.contas[contaKey] = {
             bancoNome, contaNumero, agencia,
+            contaEmpresa: getContaEmpresa(contaNumero),
             tipos: {}, total: 0, count: 0,
           };
         }
@@ -2781,6 +2830,7 @@ export const financialRouter = router({
                   bancoNome: conta.bancoNome,
                   contaNumero: conta.contaNumero,
                   agencia: conta.agencia,
+                  contaEmpresa: conta.contaEmpresa,
                   total: conta.total,
                   count: conta.count,
                   tipos: Object.entries(conta.tipos)

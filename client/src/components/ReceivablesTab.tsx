@@ -47,6 +47,7 @@ function shortEmpresaName(nome: string) {
   if (nome.toUpperCase().includes("PALITOS")) return "PALITOS";
   if (nome.toUpperCase().includes("VARETAS")) return "VARETAS";
   if (nome.toUpperCase().includes("ESPETOS")) return "ESPETOS";
+  if (nome.toUpperCase().includes("MESA")) return "MESA";
   return nome;
 }
 
@@ -54,6 +55,7 @@ const EMPRESA_COLORS: Record<string, { bg: string; border: string; text: string;
   PALITOS: { bg: "bg-blue-50/60", border: "border-blue-400", text: "text-blue-700", accent: "bg-blue-600", headerBg: "bg-blue-100" },
   VARETAS: { bg: "bg-amber-50/60", border: "border-amber-400", text: "text-amber-700", accent: "bg-amber-600", headerBg: "bg-amber-100" },
   ESPETOS: { bg: "bg-emerald-50/60", border: "border-emerald-400", text: "text-emerald-700", accent: "bg-emerald-600", headerBg: "bg-emerald-100" },
+  MESA: { bg: "bg-purple-50/60", border: "border-purple-400", text: "text-purple-700", accent: "bg-purple-600", headerBg: "bg-purple-100" },
 };
 const DEFAULT_EMPRESA_COLOR = { bg: "bg-slate-50/60", border: "border-slate-400", text: "text-slate-700", accent: "bg-slate-600", headerBg: "bg-slate-100" };
 
@@ -65,8 +67,25 @@ const BANK_ICONS: Record<string, string> = {
   Sicredi: "text-emerald-600",
   Sicoob: "text-green-600",
   Caixa: "text-sky-600",
+  Bradesco: "text-red-600",
+  BB: "text-amber-600",
+  "Itaú": "text-orange-600",
   "Sem Banco": "text-slate-400",
 };
+
+/** Formata o número da conta com separadores para melhor legibilidade */
+function formatContaNumero(num: string): string {
+  if (!num) return "";
+  // Contas longas (CEF): 579071919 → 579.071.919
+  if (num.length >= 9) {
+    return num.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
+  }
+  // Contas curtas: 50051 → 50.051, 80247 → 80.247, 18899 → 18.899
+  if (num.length === 5) {
+    return num.replace(/(\d{2})(\d{3})/, '$1.$2');
+  }
+  return num;
+}
 
 type ItemData = {
   id: number;
@@ -411,8 +430,9 @@ export default function ReceivablesTab() {
                             const isContaOpen = expandedContas.has(contaKey);
                             const bankShort = shortBankName(conta.bancoNome);
                             const bankIconColor = BANK_ICONS[bankShort] || "text-slate-500";
+                            const contaEmpresa = (conta as any).contaEmpresa as string | null;
                             const contaLabel = conta.contaNumero
-                              ? `${bankShort} · Ag ${conta.agencia || "-"} · Cc ${conta.contaNumero}`
+                              ? `${bankShort}${contaEmpresa ? ` ${contaEmpresa}` : ''} · Ag ${conta.agencia || "-"} · Cc ${formatContaNumero(conta.contaNumero)}`
                               : bankShort;
                             const contaItems = isContaOpen ? getContaItems(emp.nome, mes.mes, conta.bancoNome, conta.contaNumero) : [];
                             const contaItemIds = contaItems.map(i => i.id);
