@@ -2857,6 +2857,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const { data: semiProntoKPI } = trpc.dashboard.getSemiProntoStock.useQuery(undefined, { refetchInterval: 30000 });
   const { data: aguardandoKPI } = trpc.dashboard.getAguardandoEscolhaStock.useQuery(undefined, { refetchInterval: 30000 });
 
+  // Fetch madeira PA manual stock for KPIs (same data as MadeiraPACard)
+  const { data: madeiraStockKPI } = trpc.dashboard.getMadeiraStock.useQuery(undefined, { refetchInterval: 30000 });
+
   // Fetch madeira visibility settings
   const { data: madeiraVisData } = trpc.settings.getMadeiraVisibility.useQuery();
 
@@ -2969,9 +2972,22 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   // KPIs: Estoque Total e Pedidos APENAS de Madeira PA (não inclui Semi Pronto nem Aguardando)
   const ROJAO_CODE = "00129";
   const VARETA_APITO_CODE = "00223";
+
+  // Mapa de estoque manual para KPIs (sincronizado com MadeiraPACard)
+  const madeiraStockMapKPI = useMemo(() => {
+    const map = new Map<string, number>();
+    if (madeiraStockKPI?.items) {
+      for (const ms of madeiraStockKPI.items) {
+        map.set(ms.codigoItem, parseFloat(String(ms.quantidade)) || 0);
+      }
+    }
+    return map;
+  }, [madeiraStockKPI]);
+
+  // Estoque Total = soma do estoque manual de todos os itens Madeira PA
   const madeiraEstoqueCx = useMemo(() => {
-    return madeiraItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
-  }, [madeiraItems]);
+    return parentOnlyMadeira.reduce((sum, i) => sum + (madeiraStockMapKPI.get(i.codigoItem) || 0), 0);
+  }, [parentOnlyMadeira, madeiraStockMapKPI]);
 
   const madeiraPedidosCx = useMemo(() => madeiraItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0), [madeiraItems]);
   const madeiraDisponivelCx = madeiraEstoqueCx - madeiraPedidosCx;
@@ -2981,21 +2997,24 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const negativos = items.filter((i) => (i.disponivelCx ?? i.disponivelUn) < 0).length;
 
   // Disponível separado: Caixas (tudo exceto Rojão e Vareta Apito) e Dúzias (apenas Rojão 00129)
+  // Usa estoque manual em vez de estoqueCx do Maxiprod
   const disponivelCaixas = useMemo(() => {
-    return madeiraItems.filter(i => i.codigoItem !== ROJAO_CODE && i.codigoItem !== VARETA_APITO_CODE && !i.isKgProduct).reduce((sum, i) => sum + ((i.estoqueCx ?? 0) - (i.pedidosCx ?? 0)), 0);
-  }, [madeiraItems]);
+    return parentOnlyMadeira
+      .filter(i => i.codigoItem !== ROJAO_CODE && i.codigoItem !== VARETA_APITO_CODE && !i.isKgProduct)
+      .reduce((sum, i) => sum + ((madeiraStockMapKPI.get(i.codigoItem) || 0) - (i.pedidosCx ?? 0)), 0);
+  }, [parentOnlyMadeira, madeiraStockMapKPI]);
   const disponivelDuzias = useMemo(() => {
     const rojao = madeiraItems.find(i => i.codigoItem === ROJAO_CODE);
     if (!rojao) return 0;
-    return (rojao.estoqueCx ?? 0) - (rojao.pedidosCx ?? 0);
-  }, [madeiraItems]);
+    return (madeiraStockMapKPI.get(ROJAO_CODE) || 0) - (rojao.pedidosCx ?? 0);
+  }, [madeiraItems, madeiraStockMapKPI]);
 
   // Disponível em Kg: Vareta de Apito (00223)
   const disponivelKg = useMemo(() => {
     const vareta = madeiraItems.find(i => i.codigoItem === VARETA_APITO_CODE);
     if (!vareta) return 0;
-    return (vareta.estoqueCx ?? 0) - (vareta.pedidosCx ?? 0);
-  }, [madeiraItems]);
+    return (madeiraStockMapKPI.get(VARETA_APITO_CODE) || 0) - (vareta.pedidosCx ?? 0);
+  }, [madeiraItems, madeiraStockMapKPI]);
 
   // Alertas: produtos com estoque < pedidos dos últimos 30 dias
   const [showAlertasPanel, setShowAlertasPanel] = useState(false);
