@@ -183,6 +183,7 @@ function formatCurrencyCompact(n: number): string {
  */
 function getUnit(item: StockItem, hasCx: boolean): string {
   if (item.isKgProduct) return "kg";
+  if (item.codigoItem === "00129") return "dz"; // Rojão: unidade = dúzia
   return hasCx ? "cx" : "un";
 }
 
@@ -192,6 +193,7 @@ function getUnit(item: StockItem, hasCx: boolean): string {
  */
 function getPOUnit(item: StockItem): string {
   if (item.isKgProduct) return "kg";
+  if (item.codigoItem === "00129") return "dz"; // Rojão: unidade = dúzia
   return "cx";
 }
 
@@ -2310,7 +2312,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                           ) : (
                             <button onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
                               className="text-[13px] font-bold text-green-700 hover:bg-green-100 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                              title="Clique para editar (somente aumento)">{formatNumber(manualQty)} cx</button>
+                              title="Clique para editar (somente aumento)">{formatNumber(manualQty)} {item.codigoItem === "00129" ? "dz" : "cx"}</button>
                           )}
                         </td>
                         {/* Histórico */}
@@ -2354,7 +2356,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                             if (vendaMensal == null) return <span className="text-[11px] text-slate-300">—</span>;
                             const fator = pricingItem?.fatorMultiplicacao ? parseFloat(pricingItem.fatorMultiplicacao) : 2.3;
                             const estReg = Math.round(vendaMensal * fator);
-                            const unit = item.isKgProduct ? "kg" : "cx";
+                            const unit = item.isKgProduct ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
                             let estRegColor = 'text-emerald-600';
                             if (estReg > 0) {
                               if (projetado <= estReg) estRegColor = 'text-red-600 bg-red-50 px-1 py-0.5 rounded';

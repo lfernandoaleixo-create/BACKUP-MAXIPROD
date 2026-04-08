@@ -1742,3 +1742,6 @@
 - [x] Corrigir card Vendas na aba Financeiro: considerar descontos, frete embutido e outros ajustes dos pedidos de venda do Maxiprod (diferença de R$ 210 era desconto do pedido 837)
 - [x] Adicionar campos descontoValor, descontoPercentual, freteValor, seguroValor, outrasDespesasValor na tabela sales_orders e na query GraphQL do Maxiprod
 - [x] Corrigir cálculo de vendas no salesRouter (KPI total) para usar valorTotalPedido
+- [x] Trocar unidade do Rojão (Cod: 00129) de "cx" para "dz" (dúzia) no card Madeira PA
+- [x] Validar valores do card Vendas comparando com Maxiprod (excluindo amostras)
+- [x] Corrigir filtro de faturamento para excluir NFs de AMOSTRA, BONIFICAÇÃO, DEVOLUÇÃO, REMESSA e RECUSA
