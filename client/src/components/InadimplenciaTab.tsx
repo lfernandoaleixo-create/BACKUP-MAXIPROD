@@ -1,7 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign } from "lucide-react";
+import { useOperator } from "@/contexts/OperatorContext";
+import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente", color: "bg-slate-100 text-slate-700 border-slate-300" },
@@ -18,6 +20,15 @@ const CONTATO_TIPOS = [
   { value: "email", label: "E-mail", icon: Mail },
   { value: "presencial", label: "Presencial", icon: User },
 ];
+
+const ACTION_TYPE_LABELS: Record<string, string> = {
+  ligacao: "Ligação",
+  whatsapp: "WhatsApp",
+  email: "E-mail",
+  visita: "Visita",
+  outro: "Outro",
+  sem_contato: "Sem contato",
+};
 
 const AGING_RANGES = [
   { key: "1-15", label: "1-15 dias", min: 1, max: 15, color: "bg-amber-50 border-amber-200 text-amber-700" },
@@ -85,6 +96,7 @@ type Title = {
 };
 
 export default function InadimplenciaTab() {
+  const { operator } = useOperator();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [agingFilter, setAgingFilter] = useState<string | null>(null);
@@ -95,6 +107,8 @@ export default function InadimplenciaTab() {
   const [expandedCliente, setExpandedCliente] = useState<string | null>(null);
   const [actionDialogId, setActionDialogId] = useState<number | null>(null);
   const [contatoDialogId, setContatoDialogId] = useState<number | null>(null);
+  const [historyDialogId, setHistoryDialogId] = useState<number | null>(null);
+  const [actionPlanDialogId, setActionPlanDialogId] = useState<number | null>(null);
 
   const { data, isLoading, refetch } = trpc.financial.getOverdueTitles.useQuery({
     search: search || undefined,
@@ -109,6 +123,47 @@ export default function InadimplenciaTab() {
 
   const titles = data?.titles || [];
   const stats = data?.stats || { total: 0, count: 0, byStatus: {} };
+
+  // IDs dos títulos para buscar ações de hoje e configs de protesto
+  const receivableIds = useMemo(() => titles.map(t => t.id), [titles]);
+
+  // Buscar ações de hoje (batch) para saber quais telefones piscam
+  const { data: todayActionsMap, refetch: refetchTodayActions } = trpc.financial.getTodayActions.useQuery(
+    { receivableIds },
+    { enabled: receivableIds.length > 0, refetchInterval: 30000 }
+  );
+
+  // Buscar configs de protesto (batch)
+  const { data: protestConfigsMap, refetch: refetchProtestConfigs } = trpc.financial.getProtestConfigs.useQuery(
+    { receivableIds },
+    { enabled: receivableIds.length > 0 }
+  );
+
+  // Mutation para registrar ação de cobrança diária
+  const registerAction = trpc.financial.registerCollectionAction.useMutation({
+    onSuccess: () => {
+      refetchTodayActions();
+      refetch();
+      toast.success("Ação de cobrança registrada!");
+    },
+  });
+
+  // Mutation para config de protesto
+  const setProtestConfig = trpc.financial.setProtestConfig.useMutation({
+    onSuccess: () => {
+      refetchProtestConfigs();
+      toast.success("Configuração de protesto salva!");
+    },
+  });
+
+  // Mutation para plano de ação
+  const saveActionPlan = trpc.financial.saveActionPlan.useMutation({
+    onSuccess: () => {
+      refetchProtestConfigs();
+      refetchTodayActions();
+      toast.success("Plano de ação salvo!");
+    },
+  });
 
   // Filtro por faixa de atraso
   const filteredTitles = useMemo(() => {
@@ -171,6 +226,48 @@ export default function InadimplenciaTab() {
       setSortBy(field);
       setSortDir("desc");
     }
+  }
+
+  // Determinar se o telefone deve piscar para um título
+  function shouldPhoneBlink(title: Title): boolean {
+    if (title.diasAtraso < 1) return false;
+    const hasActionToday = todayActionsMap?.[title.id] || false;
+    if (hasActionToday) return false;
+    return true; // Pisca se vencido e sem ação hoje
+  }
+
+  // Determinar se precisa de plano de ação (dia 7+ e não protestar)
+  function needsActionPlan(title: Title): boolean {
+    if (title.diasAtraso < 7) return false;
+    const config = protestConfigsMap?.[title.id];
+    if (!config || config.protestType === "automatico") return false;
+    // Não protestar e sem plano de ação
+    if (!config.actionPlan) return true;
+    return false;
+  }
+
+  // Cor do telefone baseada no estado
+  function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" {
+    if (title.diasAtraso < 1) return "idle";
+    if (needsActionPlan(title)) return "urgent"; // Vermelho piscando - precisa plano
+    if (todayActionsMap?.[title.id]) return "done"; // Azul fixo - já agiu hoje
+    return "blink"; // Azul piscando - precisa agir
+  }
+
+  // Badge Dia X/7
+  function getDayBadge(title: Title): string | null {
+    if (title.diasAtraso < 1 || title.diasAtraso > 7) return null;
+    return `Dia ${title.diasAtraso}/7`;
+  }
+
+  // Protesto type label
+  function getProtestLabel(title: Title): { label: string; color: string } | null {
+    const config = protestConfigsMap?.[title.id];
+    if (!config) return null;
+    if (config.protestType === "automatico") {
+      return { label: "Protesto Auto", color: "bg-orange-100 text-orange-700 border-orange-300" };
+    }
+    return { label: "Não Protestar", color: "bg-blue-100 text-blue-700 border-blue-300" };
   }
 
   if (isLoading) {
@@ -342,7 +439,7 @@ export default function InadimplenciaTab() {
 
                 {isOpen && (
                   <div className="bg-white/80 border-t border-slate-100">
-                    <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_130px_90px] gap-2 px-4 py-2 bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_130px_120px] gap-2 px-4 py-2 bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                       <span>Referência / Documento</span>
                       <span className="text-right">Valor</span>
                       <span>Venc.</span>
@@ -359,7 +456,13 @@ export default function InadimplenciaTab() {
                           onToggle={() => setExpandedId(expandedId === title.id ? null : title.id)}
                           onOpenAction={() => setActionDialogId(title.id)}
                           onOpenContato={() => setContatoDialogId(title.id)}
+                          onOpenHistory={() => setHistoryDialogId(title.id)}
+                          onOpenActionPlan={() => setActionPlanDialogId(title.id)}
                           onStatusChange={(status) => upsertAction.mutate({ receivableId: title.id, status })}
+                          phoneState={getPhoneState(title)}
+                          dayBadge={getDayBadge(title)}
+                          protestLabel={getProtestLabel(title)}
+                          needsActionPlan={needsActionPlan(title)}
                         />
                       ))}
                     </div>
@@ -374,7 +477,7 @@ export default function InadimplenciaTab() {
       {/* Vista por Título */}
       {viewMode === "titulos" && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px_140px_110px] gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+          <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px_140px_140px] gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
             <button onClick={() => toggleSort("cliente")} className="flex items-center gap-1 hover:text-slate-700">
               Cliente {sortBy === "cliente" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
             </button>
@@ -406,16 +509,22 @@ export default function InadimplenciaTab() {
                 onToggle={() => setExpandedId(expandedId === title.id ? null : title.id)}
                 onOpenAction={() => setActionDialogId(title.id)}
                 onOpenContato={() => setContatoDialogId(title.id)}
+                onOpenHistory={() => setHistoryDialogId(title.id)}
+                onOpenActionPlan={() => setActionPlanDialogId(title.id)}
                 onStatusChange={(status) => {
                   upsertAction.mutate({ receivableId: title.id, status });
                 }}
+                phoneState={getPhoneState(title)}
+                dayBadge={getDayBadge(title)}
+                protestLabel={getProtestLabel(title)}
+                needsActionPlan={needsActionPlan(title)}
               />
             ))}
           </div>
         </div>
       )}
 
-      {/* Dialog de Ação */}
+      {/* Dialog de Ação (gerenciar cobrança) */}
       {actionDialogId && (filteredTitles.find(t => t.id === actionDialogId) || titles.find(t => t.id === actionDialogId)) && (
         <ActionDialog
           title={(filteredTitles.find(t => t.id === actionDialogId) || titles.find(t => t.id === actionDialogId))!}
@@ -426,55 +535,134 @@ export default function InadimplenciaTab() {
             });
           }}
           isSaving={upsertAction.isPending}
+          protestConfig={protestConfigsMap?.[actionDialogId]}
+          onSetProtest={(type) => {
+            if (operator) {
+              setProtestConfig.mutate({ receivableId: actionDialogId, protestType: type, operatorName: operator.name });
+            }
+          }}
         />
       )}
 
-      {/* Dialog de Contato */}
+      {/* Dialog de Contato (registrar ação diária) */}
       {contatoDialogId && (filteredTitles.find(t => t.id === contatoDialogId) || titles.find(t => t.id === contatoDialogId)) && (
-        <ContatoDialog
+        <CollectionActionDialog
           title={(filteredTitles.find(t => t.id === contatoDialogId) || titles.find(t => t.id === contatoDialogId))!}
+          operatorName={operator?.name || ""}
           onClose={() => setContatoDialogId(null)}
           onSave={(data) => {
-            upsertAction.mutate({ receivableId: contatoDialogId, novoContato: data }, {
+            registerAction.mutate(data, {
               onSuccess: () => setContatoDialogId(null),
             });
           }}
-          isSaving={upsertAction.isPending}
+          isSaving={registerAction.isPending}
+        />
+      )}
+
+      {/* Dialog de Histórico */}
+      {historyDialogId && (filteredTitles.find(t => t.id === historyDialogId) || titles.find(t => t.id === historyDialogId)) && (
+        <HistoryDialog
+          title={(filteredTitles.find(t => t.id === historyDialogId) || titles.find(t => t.id === historyDialogId))!}
+          onClose={() => setHistoryDialogId(null)}
+        />
+      )}
+
+      {/* Dialog de Plano de Ação (dia 7+ não protestar) */}
+      {actionPlanDialogId && (filteredTitles.find(t => t.id === actionPlanDialogId) || titles.find(t => t.id === actionPlanDialogId)) && (
+        <ActionPlanDialog
+          title={(filteredTitles.find(t => t.id === actionPlanDialogId) || titles.find(t => t.id === actionPlanDialogId))!}
+          operatorName={operator?.name || ""}
+          onClose={() => setActionPlanDialogId(null)}
+          onSave={(data) => {
+            saveActionPlan.mutate(data, {
+              onSuccess: () => setActionPlanDialogId(null),
+            });
+          }}
+          isSaving={saveActionPlan.isPending}
+          existingPlan={protestConfigsMap?.[actionPlanDialogId]}
         />
       )}
     </div>
   );
 }
 
+/* ---- Componente PhoneIcon com animação ---- */
+function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "idle"; onClick: () => void }) {
+  const baseClasses = "p-1.5 rounded-md transition-colors cursor-pointer";
+
+  if (state === "idle") {
+    return (
+      <button onClick={onClick} title="Sem ação necessária" className={`${baseClasses} text-slate-300`}>
+        <Phone className="w-4 h-4" />
+      </button>
+    );
+  }
+
+  if (state === "done") {
+    return (
+      <button onClick={onClick} title="Ação registrada hoje" className={`${baseClasses} text-blue-600 bg-blue-50 hover:bg-blue-100`}>
+        <Phone className="w-4 h-4" />
+      </button>
+    );
+  }
+
+  if (state === "urgent") {
+    return (
+      <button onClick={onClick} title="URGENTE: Plano de ação obrigatório!" className={`${baseClasses} text-red-600 bg-red-50 hover:bg-red-100 animate-pulse`}>
+        <Phone className="w-4 h-4" />
+      </button>
+    );
+  }
+
+  // blink
+  return (
+    <button onClick={onClick} title="Ação de cobrança necessária hoje!" className={`${baseClasses} text-blue-600 hover:bg-blue-100 animate-pulse`}>
+      <Phone className="w-4 h-4" />
+    </button>
+  );
+}
+
 /* ---- Componente TitleRow (vista por título) ---- */
-function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onStatusChange }: {
+function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
   onOpenAction: () => void;
   onOpenContato: () => void;
+  onOpenHistory: () => void;
+  onOpenActionPlan: () => void;
   onStatusChange: (status: string) => void;
+  phoneState: "blink" | "done" | "urgent" | "idle";
+  dayBadge: string | null;
+  protestLabel: { label: string; color: string } | null;
+  needsActionPlan: boolean;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
-  const hasLembrete = title.cobranca?.lembreteData;
-  const lembreteVencido = hasLembrete && title.cobranca!.lembreteData! <= new Date().toISOString().split("T")[0];
   const hasHistorico = title.cobranca?.contatoHistorico && title.cobranca.contatoHistorico.length > 0;
 
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
-      {/* Linha principal */}
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_120px_100px_80px_140px_110px] gap-2 px-4 py-3 cursor-pointer hover:bg-white/50 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_120px_100px_80px_140px_140px] gap-2 px-4 py-3 cursor-pointer hover:bg-white/50 items-center"
         onClick={onToggle}
       >
-        {/* Cliente + Referência */}
+        {/* Cliente + Referência + Badges */}
         <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm text-slate-800 truncate">{title.cliente}</span>
-            {hasLembrete && (
-              <span className={`flex items-center gap-0.5 text-[10px] shrink-0 ${lembreteVencido ? "text-red-600 font-bold" : "text-blue-600"}`}>
-                <Clock className="w-3 h-3" />
-                {formatDate(title.cobranca!.lembreteData!)}
+            {dayBadge && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-800 border border-amber-300 shrink-0">
+                {dayBadge}
+              </span>
+            )}
+            {protestLabel && (
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${protestLabel.color}`}>
+                {protestLabel.label}
+              </span>
+            )}
+            {needsPlan && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-200 text-red-800 border border-red-300 animate-pulse shrink-0">
+                Plano Obrigatório
               </span>
             )}
             {hasHistorico && (
@@ -523,9 +711,16 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Ações */}
-        <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
-          <button onClick={onOpenContato} title="Registrar contato" className="p-1.5 rounded-md hover:bg-white/80 text-blue-600 hover:text-blue-800 transition-colors">
-            <Phone className="w-4 h-4" />
+        <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
+          <PhoneIcon state={phoneState} onClick={() => {
+            if (needsPlan) {
+              onOpenActionPlan();
+            } else {
+              onOpenContato();
+            }
+          }} />
+          <button onClick={onOpenHistory} title="Histórico de cobrança" className="p-1.5 rounded-md hover:bg-white/80 text-emerald-600 hover:text-emerald-800 transition-colors">
+            <History className="w-4 h-4" />
           </button>
           <button onClick={onOpenAction} title="Gerenciar cobrança" className="p-1.5 rounded-md hover:bg-white/80 text-slate-600 hover:text-slate-800 transition-colors">
             <FileText className="w-4 h-4" />
@@ -536,34 +731,56 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
       </div>
 
-      {/* Detalhes expandidos */}
       {isExpanded && <TitleDetails title={title} />}
     </div>
   );
 }
 
 /* ---- Componente ClienteTitleRow (vista por cliente) ---- */
-function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onStatusChange }: {
+function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
   onOpenAction: () => void;
   onOpenContato: () => void;
+  onOpenHistory: () => void;
+  onOpenActionPlan: () => void;
   onStatusChange: (status: string) => void;
+  phoneState: "blink" | "done" | "urgent" | "idle";
+  dayBadge: string | null;
+  protestLabel: { label: string; color: string } | null;
+  needsActionPlan: boolean;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
 
   return (
     <div className="transition-all">
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_100px_80px_60px_130px_90px] gap-2 px-4 py-2.5 cursor-pointer hover:bg-slate-50/80 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_100px_80px_60px_130px_120px] gap-2 px-4 py-2.5 cursor-pointer hover:bg-slate-50/80 items-center"
         onClick={onToggle}
       >
         <div className="min-w-0">
-          <div className="text-sm text-slate-700 truncate">
-            {title.referenteA}
-            {title.documento && ` · ${title.documento}`}
-            {title.parcela && ` · ${title.parcela}`}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-sm text-slate-700 truncate">
+              {title.referenteA}
+              {title.documento && ` · ${title.documento}`}
+              {title.parcela && ` · ${title.parcela}`}
+            </span>
+            {dayBadge && (
+              <span className="text-[8px] font-bold px-1 py-0.5 rounded-full bg-amber-200 text-amber-800 border border-amber-300 shrink-0">
+                {dayBadge}
+              </span>
+            )}
+            {protestLabel && (
+              <span className={`text-[8px] font-bold px-1 py-0.5 rounded-full border shrink-0 ${protestLabel.color}`}>
+                {protestLabel.label}
+              </span>
+            )}
+            {needsPlan && (
+              <span className="text-[8px] font-bold px-1 py-0.5 rounded-full bg-red-200 text-red-800 border border-red-300 animate-pulse shrink-0">
+                Plano!
+              </span>
+            )}
           </div>
         </div>
         <div className="text-right">
@@ -588,9 +805,16 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             ))}
           </select>
         </div>
-        <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
-          <button onClick={onOpenContato} title="Registrar contato" className="p-1 rounded-md hover:bg-white/80 text-blue-600">
-            <Phone className="w-3.5 h-3.5" />
+        <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
+          <PhoneIcon state={phoneState} onClick={() => {
+            if (needsPlan) {
+              onOpenActionPlan();
+            } else {
+              onOpenContato();
+            }
+          }} />
+          <button onClick={onOpenHistory} title="Histórico" className="p-1 rounded-md hover:bg-white/80 text-emerald-600">
+            <History className="w-3.5 h-3.5" />
           </button>
           <button onClick={onOpenAction} title="Gerenciar cobrança" className="p-1 rounded-md hover:bg-white/80 text-slate-600">
             <FileText className="w-3.5 h-3.5" />
@@ -636,7 +860,7 @@ function TitleDetails({ title }: { title: Title }) {
 
       {title.cobranca?.contatoHistorico && title.cobranca.contatoHistorico.length > 0 && (
         <div className="bg-slate-50 rounded-lg p-3">
-          <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Histórico de Contatos</div>
+          <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Histórico de Contatos (Antigo)</div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {title.cobranca.contatoHistorico.map((c, i) => {
               const tipoInfo = CONTATO_TIPOS.find(t => t.value === c.tipo);
@@ -649,6 +873,7 @@ function TitleDetails({ title }: { title: Title }) {
                       {new Date(c.data).toLocaleDateString("pt-BR")} {new Date(c.data).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span className="text-xs text-slate-500 ml-1">({tipoInfo?.label || c.tipo})</span>
+                    {c.usuario && <span className="text-xs text-blue-500 ml-1">· {c.usuario}</span>}
                     <p className="text-slate-700">{c.resumo}</p>
                   </div>
                 </div>
@@ -670,17 +895,295 @@ function DetailItem({ label, value, highlight }: { label: string; value: string;
   );
 }
 
-function ActionDialog({ title, onClose, onSave, isSaving }: {
+/* ---- Dialog de Ação de Cobrança Diária (telefone) ---- */
+function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving }: {
+  title: Title;
+  operatorName: string;
+  onClose: () => void;
+  onSave: (data: { receivableId: number; actionType: "ligacao" | "whatsapp" | "email" | "visita" | "outro"; operatorName: string; notes?: string }) => void;
+  isSaving: boolean;
+}) {
+  const [actionType, setActionType] = useState<"ligacao" | "whatsapp" | "email" | "visita" | "outro">("ligacao");
+  const [notes, setNotes] = useState("");
+
+  const ACTION_TYPES = [
+    { value: "ligacao" as const, label: "Ligação", icon: Phone },
+    { value: "whatsapp" as const, label: "WhatsApp", icon: MessageCircle },
+    { value: "email" as const, label: "E-mail", icon: Mail },
+    { value: "visita" as const, label: "Visita", icon: User },
+    { value: "outro" as const, label: "Outro", icon: Send },
+  ];
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Phone className="w-5 h-5 text-blue-600" />
+            Registrar Ação de Cobrança
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="font-semibold text-sm text-slate-800">{title.cliente}</div>
+            <div className="text-xs text-slate-500 mt-0.5">{title.referenteA} · {formatCurrency(title.valorAReceber)} · {title.diasAtraso}d atraso</div>
+            {title.diasAtraso >= 1 && title.diasAtraso <= 7 && (
+              <div className="mt-1.5 text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded inline-block">
+                Dia {title.diasAtraso}/7 — {7 - title.diasAtraso} dia(s) para protesto
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase">Tipo de Contato</label>
+            <div className="grid grid-cols-5 gap-2 mt-1">
+              {ACTION_TYPES.map(t => {
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.value}
+                    onClick={() => setActionType(t.value)}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all ${
+                      actionType === t.value ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase">Observações da Ação</label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={4}
+              placeholder="Descreva o que foi feito, resultado da conversa, próximos passos..."
+              className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm resize-none"
+              autoFocus
+            />
+          </div>
+
+          <div className="text-xs text-slate-400">
+            Registrando como: <span className="font-semibold text-slate-600">{operatorName}</span>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancelar</button>
+            <button
+              onClick={() => {
+                if (!notes.trim()) {
+                  toast.error("Preencha as observações da ação!");
+                  return;
+                }
+                onSave({
+                  receivableId: title.id,
+                  actionType,
+                  operatorName,
+                  notes: notes.trim(),
+                });
+              }}
+              disabled={isSaving || !notes.trim()}
+              className="px-4 py-2 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isSaving ? "Registrando..." : "Registrar Ação"}
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ---- Dialog de Histórico de Cobrança ---- */
+function HistoryDialog({ title, onClose }: {
+  title: Title;
+  onClose: () => void;
+}) {
+  const { data: history, isLoading } = trpc.financial.getCollectionHistory.useQuery({ receivableId: title.id });
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="w-5 h-5 text-emerald-600" />
+            Histórico de Cobrança
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 flex-1 overflow-hidden">
+          <div className="bg-slate-50 rounded-lg p-3">
+            <div className="font-semibold text-sm">{title.cliente}</div>
+            <div className="text-xs text-slate-500">{title.referenteA} · {formatCurrency(title.valorAReceber)} · {title.diasAtraso}d atraso</div>
+          </div>
+
+          <div className="overflow-y-auto max-h-[50vh] space-y-2 pr-1">
+            {isLoading && (
+              <div className="py-8 text-center text-slate-400">
+                <div className="animate-spin w-6 h-6 border-2 border-slate-300 border-t-blue-600 rounded-full mx-auto mb-2" />
+                Carregando...
+              </div>
+            )}
+
+            {!isLoading && (!history || history.length === 0) && (
+              <div className="py-8 text-center text-slate-400">
+                <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Nenhuma ação registrada ainda</p>
+              </div>
+            )}
+
+            {history && history.map((action: any, i: number) => {
+              const isAutomatic = action.isAutomatic;
+              const isSemContato = action.actionType === "sem_contato";
+              return (
+                <div
+                  key={action.id || i}
+                  className={`rounded-lg border p-3 ${
+                    isSemContato
+                      ? "bg-red-50 border-red-200"
+                      : isAutomatic
+                      ? "bg-slate-50 border-slate-200"
+                      : "bg-green-50 border-green-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        isSemContato
+                          ? "bg-red-100 text-red-700"
+                          : "bg-green-100 text-green-700"
+                      }`}>
+                        {ACTION_TYPE_LABELS[action.actionType] || action.actionType}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {formatDate(action.actionDate)}
+                      </span>
+                    </div>
+                    <span className={`text-xs font-medium ${isAutomatic ? "text-slate-400" : "text-blue-600"}`}>
+                      {action.operatorName}
+                    </span>
+                  </div>
+                  {action.notes && (
+                    <p className="text-sm text-slate-700 mt-1.5">{action.notes}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ---- Dialog de Plano de Ação (dia 7+ não protestar) ---- */
+function ActionPlanDialog({ title, operatorName, onClose, onSave, isSaving, existingPlan }: {
+  title: Title;
+  operatorName: string;
+  onClose: () => void;
+  onSave: (data: { receivableId: number; actionPlan: string; deadlineDate: string; operatorName: string }) => void;
+  isSaving: boolean;
+  existingPlan?: any;
+}) {
+  const [actionPlan, setActionPlan] = useState(existingPlan?.actionPlan || "");
+  const [deadlineDate, setDeadlineDate] = useState(existingPlan?.deadlineDate || "");
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-red-700">
+            <ShieldAlert className="w-5 h-5" />
+            Plano de Ação Obrigatório
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="font-semibold text-sm text-slate-800">{title.cliente}</div>
+            <div className="text-xs text-slate-500 mt-0.5">{title.referenteA} · {formatCurrency(title.valorAReceber)} · {title.diasAtraso}d atraso</div>
+            <div className="mt-2 text-xs font-bold text-red-700 bg-red-100 px-2 py-1.5 rounded">
+              Este cliente está marcado como "Não Protestar". O protesto automático NÃO será feito.
+              Você é responsável por definir um plano de ação e um prazo para resolução.
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase">O que será feito? *</label>
+            <textarea
+              value={actionPlan}
+              onChange={e => setActionPlan(e.target.value)}
+              rows={4}
+              placeholder="Descreva o plano: negociação, parcelamento, visita, acordo..."
+              className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm resize-none"
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase">Prazo máximo para o cliente *</label>
+            <input
+              type="date"
+              value={deadlineDate}
+              onChange={e => setDeadlineDate(e.target.value)}
+              className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm"
+              min={new Date().toISOString().split("T")[0]}
+            />
+          </div>
+
+          <div className="text-xs text-slate-400">
+            Responsável: <span className="font-semibold text-slate-600">{operatorName}</span>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancelar</button>
+            <button
+              onClick={() => {
+                if (!actionPlan.trim()) {
+                  toast.error("Preencha o plano de ação!");
+                  return;
+                }
+                if (!deadlineDate) {
+                  toast.error("Defina o prazo máximo!");
+                  return;
+                }
+                onSave({
+                  receivableId: title.id,
+                  actionPlan: actionPlan.trim(),
+                  deadlineDate,
+                  operatorName,
+                });
+              }}
+              disabled={isSaving || !actionPlan.trim() || !deadlineDate}
+              className="px-4 py-2 rounded-lg text-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              {isSaving ? "Salvando..." : "Salvar Plano de Ação"}
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ---- Dialog de Gerenciar Cobrança (existente, com protesto) ---- */
+function ActionDialog({ title, onClose, onSave, isSaving, protestConfig, onSetProtest }: {
   title: Title;
   onClose: () => void;
   onSave: (data: { status?: string; promessaData?: string | null; promessaValor?: number | null; lembreteData?: string | null; observacoes?: string | null }) => void;
   isSaving: boolean;
+  protestConfig?: any;
+  onSetProtest: (type: "automatico" | "nao_protestar") => void;
 }) {
   const [status, setStatus] = useState(title.cobranca?.status || "pendente");
   const [promessaData, setPromessaData] = useState(title.cobranca?.promessaData || "");
   const [promessaValor, setPromessaValor] = useState(title.cobranca?.promessaValor?.toString() || "");
   const [lembreteData, setLembreteData] = useState(title.cobranca?.lembreteData || "");
   const [observacoes, setObservacoes] = useState(title.cobranca?.observacoes || "");
+
+  const currentProtestType = protestConfig?.protestType || "automatico";
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
@@ -692,6 +1195,40 @@ function ActionDialog({ title, onClose, onSave, isSaving }: {
           <div className="bg-slate-50 rounded-lg p-3 space-y-1">
             <div className="font-semibold text-sm">{title.cliente}</div>
             <div className="text-xs text-slate-500">{title.referenteA} · {formatCurrency(title.valorAReceber)} · Venc: {formatDate(title.vencimento)} · {title.diasAtraso}d atraso</div>
+          </div>
+
+          {/* Configuração de Protesto */}
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1">
+              <Shield className="w-3.5 h-3.5" />
+              Configuração de Protesto
+            </label>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <button
+                onClick={() => onSetProtest("automatico")}
+                className={`p-2.5 rounded-lg border text-xs font-medium transition-all ${
+                  currentProtestType === "automatico"
+                    ? "bg-orange-50 border-orange-300 text-orange-700 ring-2 ring-orange-400"
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                }`}
+              >
+                <ShieldAlert className="w-4 h-4 mx-auto mb-1" />
+                Protesto Automático
+                <div className="text-[10px] mt-0.5 opacity-70">Vai p/ cartório no dia 7</div>
+              </button>
+              <button
+                onClick={() => onSetProtest("nao_protestar")}
+                className={`p-2.5 rounded-lg border text-xs font-medium transition-all ${
+                  currentProtestType === "nao_protestar"
+                    ? "bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-400"
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 mx-auto mb-1" />
+                Não Protestar
+                <div className="text-[10px] mt-0.5 opacity-70">Cliente especial</div>
+              </button>
+            </div>
           </div>
 
           <div>
@@ -736,69 +1273,6 @@ function ActionDialog({ title, onClose, onSave, isSaving }: {
               className="px-4 py-2 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {isSaving ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ContatoDialog({ title, onClose, onSave, isSaving }: {
-  title: Title;
-  onClose: () => void;
-  onSave: (data: { tipo: string; resumo: string }) => void;
-  isSaving: boolean;
-}) {
-  const [tipo, setTipo] = useState("ligacao");
-  const [resumo, setResumo] = useState("");
-
-  return (
-    <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Registrar Contato</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="bg-slate-50 rounded-lg p-3">
-            <div className="font-semibold text-sm">{title.cliente}</div>
-            <div className="text-xs text-slate-500">{title.referenteA} · {formatCurrency(title.valorAReceber)} · {title.diasAtraso}d atraso</div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase">Tipo de Contato</label>
-            <div className="grid grid-cols-4 gap-2 mt-1">
-              {CONTATO_TIPOS.map(t => {
-                const Icon = t.icon;
-                return (
-                  <button
-                    key={t.value}
-                    onClick={() => setTipo(t.value)}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all ${
-                      tipo === t.value ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {t.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase">Resumo do Contato</label>
-            <textarea value={resumo} onChange={e => setResumo(e.target.value)} rows={4} placeholder="Descreva o que foi conversado..." className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm resize-none" autoFocus />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancelar</button>
-            <button
-              onClick={() => { if (!resumo.trim()) return; onSave({ tipo, resumo: resumo.trim() }); }}
-              disabled={isSaving || !resumo.trim()}
-              className="px-4 py-2 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isSaving ? "Salvando..." : "Registrar"}
             </button>
           </div>
         </div>

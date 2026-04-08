@@ -868,6 +868,48 @@ export type CollectionAction = typeof collectionActions.$inferSelect;
 export type InsertCollectionAction = typeof collectionActions.$inferInsert;
 
 /**
+ * Ações diárias de cobrança preventiva.
+ * Cada registro = 1 ação de 1 vendedor em 1 dia para 1 título.
+ * O telefone pisca do dia 1 ao dia 6 após vencimento se não houver ação no dia.
+ * Quando o vendedor registra ação, o telefone para de piscar naquele dia.
+ * No dia seguinte, volta a piscar até nova ação.
+ */
+export const collectionDailyActions = mysqlTable("collection_daily_actions", {
+  id: int("id").autoincrement().primaryKey(),
+  receivableId: int("receivableId").notNull(), // FK para accounts_receivable.id
+  actionDate: varchar("actionDate", { length: 10 }).notNull(), // YYYY-MM-DD
+  actionType: varchar("actionType", { length: 30 }).notNull(), // ligacao | whatsapp | email | visita | sem_contato
+  operatorName: varchar("operatorName", { length: 200 }).notNull(), // Vendedor que registrou
+  notes: text("notes"), // Observações do vendedor
+  isAutomatic: boolean("isAutomatic").default(false).notNull(), // true = registrado automaticamente como "sem_contato"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CollectionDailyAction = typeof collectionDailyActions.$inferSelect;
+export type InsertCollectionDailyAction = typeof collectionDailyActions.$inferInsert;
+
+/**
+ * Configuração de protesto por título.
+ * Define se o título vai para protesto automático no dia 7 ou se é cliente especial (não protestar).
+ * Para clientes "não protestar", o vendedor é obrigado a preencher um plano de ação no dia 7+.
+ * Campo provisório até integração com campo do Maxiprod.
+ */
+export const receivableProtestConfig = mysqlTable("receivable_protest_config", {
+  id: int("id").autoincrement().primaryKey(),
+  receivableId: int("receivableId").notNull().unique(), // FK para accounts_receivable.id
+  protestType: mysqlEnum("protestType", ["automatico", "nao_protestar"]).notNull().default("automatico"),
+  // Plano de ação obrigatório para "nao_protestar" no dia 7+
+  actionPlan: text("actionPlan"), // O que será feito
+  deadlineDate: varchar("deadlineDate", { length: 10 }), // YYYY-MM-DD - até quando o vendedor deu prazo
+  actionPlanBy: varchar("actionPlanBy", { length: 200 }), // Vendedor que preencheu o plano
+  actionPlanAt: timestamp("actionPlanAt"), // Quando o plano foi preenchido
+  updatedBy: varchar("updatedBy", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ReceivableProtestConfig = typeof receivableProtestConfig.$inferSelect;
+export type InsertReceivableProtestConfig = typeof receivableProtestConfig.$inferInsert;
+
+/**
  * Estoque manual de Madeira - Produto Acabado.
  * Operadores preenchem manualmente. Só pode AUMENTAR (redução apenas por venda/sync).
  */

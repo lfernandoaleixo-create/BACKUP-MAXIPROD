@@ -1758,3 +1758,17 @@
 - [x] Expandir card KPI "Disponível - Kg" para mostrar Estoque Manual, Pedidos e Disponível dentro do mesmo card
 - [x] Replicar separação Caixas/Dúzias/Kg no card "Madeira - Produto Acabado" com Estoque Manual, Pedidos e Disponível para cada tipo
 - [x] Destacar número de produtos em negrito nos cards Madeira PA, Semi Pronto e Aguardando Escolha
+- [x] Criar tabela collection_daily_actions (ações diárias de cobrança por título)
+- [x] Criar tabela receivable_protest_config (protesto automático vs não protestar por título)
+- [x] Criar procedures tRPC: registrar ação de cobrança, buscar histórico, salvar plano de ação dia 7
+- [x] Implementar job automático diário para registrar "Sem contato" em títulos sem ação no dia anterior
+- [x] Frontend: telefone piscando (pulse) para títulos vencidos 1-6 dias sem ação hoje
+- [x] Frontend: modal de registro de ação (tipo + observações) ao clicar no telefone
+- [x] Frontend: modal de histórico completo com timeline de ações e dias sem contato
+- [x] Frontend: badge "Dia X/7" mostrando contagem regressiva para protesto
+- [x] Frontend: bifurcação dia 7 — protesto automático registra automaticamente, não protestar exige plano de ação obrigatório
+- [x] Frontend: para clientes "não protestar" dia 7+, vendedor obrigado a informar ação planejada + data limite
+- [x] Telefone para de piscar no dia quando vendedor registra ação, volta a piscar no dia seguinte
+- [x] Alerta visível apenas para o vendedor responsável pelo título
+- [x] No dia 7+, se protesto automático: mudar status automaticamente para "Protestado" e registrar no histórico
+- [x] No dia 7+, se não protestar: vendedor obrigado a preencher plano de ação e pode mudar status manualmente

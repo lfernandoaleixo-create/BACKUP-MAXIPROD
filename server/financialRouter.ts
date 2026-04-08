@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial } from "./maxiprodGraphQL";
@@ -3157,5 +3157,293 @@ export const financialRouter = router({
       }
 
       return { success: true };
+    }),
+
+  // ========== COBRANÇA PREVENTIVA ==========
+
+  /**
+   * Buscar ações diárias de cobrança para um título
+   */
+  getCollectionHistory: publicProcedure
+    .input(z.object({ receivableId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const actions = await db
+        .select()
+        .from(collectionDailyActions)
+        .where(eq(collectionDailyActions.receivableId, input.receivableId))
+        .orderBy(desc(collectionDailyActions.createdAt));
+      return actions;
+    }),
+
+  /**
+   * Buscar ações diárias de hoje para múltiplos títulos (batch)
+   * Usado para determinar quais telefones devem piscar
+   */
+  getTodayActions: publicProcedure
+    .input(z.object({ receivableIds: z.array(z.number()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db || input.receivableIds.length === 0) return {};
+      const now = new Date();
+      // Usar horário de Brasília
+      const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const todayStr = brDate.toISOString().split('T')[0];
+      const actions = await db
+        .select()
+        .from(collectionDailyActions)
+        .where(
+          and(
+            inArray(collectionDailyActions.receivableId, input.receivableIds),
+            eq(collectionDailyActions.actionDate, todayStr),
+            eq(collectionDailyActions.isAutomatic, false)
+          )
+        );
+      // Retornar mapa receivableId -> true (tem ação hoje)
+      const map: Record<number, boolean> = {};
+      for (const a of actions) {
+        map[a.receivableId] = true;
+      }
+      return map;
+    }),
+
+  /**
+   * Registrar ação de cobrança do vendedor
+   */
+  registerCollectionAction: publicProcedure
+    .input(z.object({
+      receivableId: z.number(),
+      actionType: z.enum(["ligacao", "whatsapp", "email", "visita", "outro"]),
+      operatorName: z.string(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const now = new Date();
+      const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const todayStr = brDate.toISOString().split('T')[0];
+      await db.insert(collectionDailyActions).values({
+        receivableId: input.receivableId,
+        actionDate: todayStr,
+        actionType: input.actionType,
+        operatorName: input.operatorName,
+        notes: input.notes || null,
+        isAutomatic: false,
+      });
+      // Atualizar status na collectionActions para "contatado" se estava "pendente"
+      const existing = await db
+        .select()
+        .from(collectionActions)
+        .where(eq(collectionActions.receivableId, input.receivableId));
+      if (existing.length > 0 && existing[0].status === "pendente") {
+        await db
+          .update(collectionActions)
+          .set({ status: "contatado", updatedBy: input.operatorName })
+          .where(eq(collectionActions.receivableId, input.receivableId));
+      }
+      return { success: true };
+    }),
+
+  /**
+   * Buscar configuração de protesto para múltiplos títulos (batch)
+   */
+  getProtestConfigs: publicProcedure
+    .input(z.object({ receivableIds: z.array(z.number()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db || input.receivableIds.length === 0) return {};
+      const configs = await db
+        .select()
+        .from(receivableProtestConfig)
+        .where(inArray(receivableProtestConfig.receivableId, input.receivableIds));
+      const map: Record<number, typeof configs[0]> = {};
+      for (const c of configs) {
+        map[c.receivableId] = c;
+      }
+      return map;
+    }),
+
+  /**
+   * Salvar configuração de protesto para um título
+   */
+  setProtestConfig: publicProcedure
+    .input(z.object({
+      receivableId: z.number(),
+      protestType: z.enum(["automatico", "nao_protestar"]),
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const existing = await db
+        .select()
+        .from(receivableProtestConfig)
+        .where(eq(receivableProtestConfig.receivableId, input.receivableId));
+      if (existing.length > 0) {
+        await db
+          .update(receivableProtestConfig)
+          .set({ protestType: input.protestType, updatedBy: input.operatorName })
+          .where(eq(receivableProtestConfig.receivableId, input.receivableId));
+      } else {
+        await db.insert(receivableProtestConfig).values({
+          receivableId: input.receivableId,
+          protestType: input.protestType,
+          updatedBy: input.operatorName,
+        });
+      }
+      return { success: true };
+    }),
+
+  /**
+   * Salvar plano de ação obrigatório (dia 7+ para clientes "não protestar")
+   */
+  saveActionPlan: publicProcedure
+    .input(z.object({
+      receivableId: z.number(),
+      actionPlan: z.string().min(1),
+      deadlineDate: z.string(), // YYYY-MM-DD
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const existing = await db
+        .select()
+        .from(receivableProtestConfig)
+        .where(eq(receivableProtestConfig.receivableId, input.receivableId));
+      if (existing.length > 0) {
+        await db
+          .update(receivableProtestConfig)
+          .set({
+            actionPlan: input.actionPlan,
+            deadlineDate: input.deadlineDate,
+            actionPlanBy: input.operatorName,
+            actionPlanAt: new Date(),
+            updatedBy: input.operatorName,
+          })
+          .where(eq(receivableProtestConfig.receivableId, input.receivableId));
+      } else {
+        await db.insert(receivableProtestConfig).values({
+          receivableId: input.receivableId,
+          protestType: "nao_protestar",
+          actionPlan: input.actionPlan,
+          deadlineDate: input.deadlineDate,
+          actionPlanBy: input.operatorName,
+          actionPlanAt: new Date(),
+          updatedBy: input.operatorName,
+        });
+      }
+      // Registrar no histórico diário
+      const now = new Date();
+      const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const todayStr = brDate.toISOString().split('T')[0];
+      await db.insert(collectionDailyActions).values({
+        receivableId: input.receivableId,
+        actionDate: todayStr,
+        actionType: "outro",
+        operatorName: input.operatorName,
+        notes: `Plano de ação: ${input.actionPlan} | Prazo: ${input.deadlineDate}`,
+        isAutomatic: false,
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Job: registrar "sem_contato" para títulos vencidos 1-6 dias sem ação ontem.
+   * E mudar status para "protestado" para títulos com protesto automático após 7 dias.
+   * Chamado via cron ou manualmente.
+   */
+  runDailyCollectionJob: publicProcedure
+    .mutation(async () => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const now = new Date();
+      const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const yesterdayDate = new Date(brDate);
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+      const todayStr = brDate.toISOString().split('T')[0];
+
+      // Buscar todos os títulos vencidos (EMITIDO)
+      const overdueReceivables = await db
+        .select()
+        .from(accountsReceivable)
+        .where(
+          and(
+            eq(accountsReceivable.estado, "EMITIDO"),
+            inArray(accountsReceivable.tipo as any, RECEIVABLE_VALID_TYPES)
+          )
+        );
+
+      let semContatoCount = 0;
+      let protestadoCount = 0;
+
+      for (const rec of overdueReceivables) {
+        if (!rec.vencimentoData) continue;
+        // Calcular dias de atraso
+        const vencDate = new Date(rec.vencimentoData);
+        const diffMs = brDate.getTime() - vencDate.getTime();
+        const diasAtraso = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        if (diasAtraso < 1) continue; // Não vencido ainda
+
+        // Verificar se teve ação ontem
+        const yesterdayActions = await db
+          .select()
+          .from(collectionDailyActions)
+          .where(
+            and(
+              eq(collectionDailyActions.receivableId, rec.id),
+              eq(collectionDailyActions.actionDate, yesterdayStr),
+              eq(collectionDailyActions.isAutomatic, false)
+            )
+          );
+
+        // Se não teve ação ontem e está entre 1-6 dias, registrar "sem_contato"
+        if (yesterdayActions.length === 0 && diasAtraso >= 1 && diasAtraso <= 7) {
+          await db.insert(collectionDailyActions).values({
+            receivableId: rec.id,
+            actionDate: yesterdayStr,
+            actionType: "sem_contato",
+            operatorName: "Sistema",
+            notes: `Nenhum contato registrado no dia ${yesterdayStr}`,
+            isAutomatic: true,
+          });
+          semContatoCount++;
+        }
+
+        // Se passou 7 dias e é protesto automático, mudar status para "protestado"
+        if (diasAtraso >= 7) {
+          const config = await db
+            .select()
+            .from(receivableProtestConfig)
+            .where(eq(receivableProtestConfig.receivableId, rec.id));
+          const isAutoProtest = config.length === 0 || config[0].protestType === "automatico";
+          if (isAutoProtest) {
+            // Verificar se já não está protestado
+            const existingAction = await db
+              .select()
+              .from(collectionActions)
+              .where(eq(collectionActions.receivableId, rec.id));
+            if (existingAction.length > 0 && existingAction[0].status !== "protestado") {
+              await db
+                .update(collectionActions)
+                .set({ status: "protestado", updatedBy: "Sistema" })
+                .where(eq(collectionActions.receivableId, rec.id));
+              protestadoCount++;
+            } else if (existingAction.length === 0) {
+              await db.insert(collectionActions).values({
+                receivableId: rec.id,
+                status: "protestado",
+                updatedBy: "Sistema",
+              });
+              protestadoCount++;
+            }
+          }
+        }
+      }
+
+      return { success: true, semContatoCount, protestadoCount };
     }),
 });
