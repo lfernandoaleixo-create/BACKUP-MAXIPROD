@@ -196,25 +196,54 @@ export const salesRouter = router({
       const uniqueOrders = new Set(items.map((i) => i.pedido).filter(Boolean));
       const uniqueClients = new Set(items.map((i) => i.cliente).filter(Boolean));
       // Total por pedido único usando valorTotalPedido quando disponível
-      const pedidoTotalMap = new Map<string, { total: number; faturado: number; aFaturar: number; hasVTP: boolean }>();
+      // Também calcula Faturado e A Faturar proporcionalmente para que a soma bata com o total
+      const pedidoMap = new Map<string, { valorTotalPedido: number; somaItensBruto: number; somaFaturadoBruto: number; somaAFaturarBruto: number }>();
       for (const item of items) {
         const pedido = item.pedido || 'sem-pedido';
-        if (!pedidoTotalMap.has(pedido)) {
-          const hasVTP = !!item.valorTotalPedido;
-          const val = hasVTP ? Number(item.valorTotalPedido) : Number(item.valorTotal || 0);
-          pedidoTotalMap.set(pedido, { total: val, faturado: 0, aFaturar: 0, hasVTP });
-        } else if (!pedidoTotalMap.get(pedido)!.hasVTP) {
-          pedidoTotalMap.get(pedido)!.total += Number(item.valorTotal || 0);
+        const itemVal = Number(item.valorTotal || 0);
+        if (!pedidoMap.has(pedido)) {
+          pedidoMap.set(pedido, {
+            valorTotalPedido: item.valorTotalPedido ? Number(item.valorTotalPedido) : 0,
+            somaItensBruto: itemVal,
+            somaFaturadoBruto: item.estadoItem === "Faturado" ? itemVal : 0,
+            somaAFaturarBruto: item.estadoItem === "A faturar" ? itemVal : 0,
+          });
+        } else {
+          const p = pedidoMap.get(pedido)!;
+          if (!p.valorTotalPedido && item.valorTotalPedido) {
+            p.valorTotalPedido = Number(item.valorTotalPedido);
+          }
+          p.somaItensBruto += itemVal;
+          if (item.estadoItem === "Faturado") p.somaFaturadoBruto += itemVal;
+          if (item.estadoItem === "A faturar") p.somaAFaturarBruto += itemVal;
         }
       }
-      const totalValue = Array.from(pedidoTotalMap.values()).reduce((sum, p) => sum + p.total, 0);
-      const totalFaturado = items
-        .filter((i) => i.estadoItem === "Faturado")
-        .reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
-      // A Faturar within the selected period
-      const totalAFaturar = items
-        .filter((i) => i.estadoItem === "A faturar")
-        .reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
+
+      let totalValue = 0;
+      let totalFaturado = 0;
+      let totalAFaturar = 0;
+      Array.from(pedidoMap.values()).forEach(p => {
+        // Usar valorTotalPedido se disponível, senão soma bruta dos itens
+        const pedidoTotal = p.valorTotalPedido || p.somaItensBruto;
+        totalValue += pedidoTotal;
+
+        if (p.somaItensBruto > 0 && p.valorTotalPedido) {
+          // Distribuir proporcionalmente o valor do pedido entre faturado e a faturar
+          const faturadoProporcional = (p.somaFaturadoBruto / p.somaItensBruto) * pedidoTotal;
+          const aFaturarProporcional = (p.somaAFaturarBruto / p.somaItensBruto) * pedidoTotal;
+          totalFaturado += faturadoProporcional;
+          totalAFaturar += aFaturarProporcional;
+        } else {
+          // Sem valorTotalPedido, usar valores brutos
+          totalFaturado += p.somaFaturadoBruto;
+          totalAFaturar += p.somaAFaturarBruto;
+        }
+      });
+      // Arredondar para evitar imprecisão de ponto flutuante
+      totalValue = Math.round(totalValue * 100) / 100;
+      totalFaturado = Math.round(totalFaturado * 100) / 100;
+      // Garantir que A Faturar = Total - Faturado (elimina qualquer centavo de diferença)
+      totalAFaturar = Math.round((totalValue - totalFaturado) * 100) / 100;
 
       // Amostra/Bonificação: itens excluídos do total mas mostrados em card separado
       const isAmostraBonif = (estado: string | null) => {

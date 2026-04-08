@@ -1745,3 +1745,4 @@
 - [x] Trocar unidade do Rojão (Cod: 00129) de "cx" para "dz" (dúzia) no card Madeira PA
 - [x] Validar valores do card Vendas comparando com Maxiprod (excluindo amostras)
 - [x] Corrigir filtro de faturamento para excluir NFs de AMOSTRA, BONIFICAÇÃO, DEVOLUÇÃO, REMESSA e RECUSA
+- [x] Corrigir divergência: Faturado + A Faturar deve bater com Valor Total do Período na aba Vendas (diferença de ~R$91 causada por meias notas)
