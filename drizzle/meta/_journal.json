@@ -421,6 +421,13 @@
       "when": 1775574281174,
       "tag": "0059_wooden_vertigo",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "5",
+      "when": 1775643685993,
+      "tag": "0060_tricky_blue_marvel",
+      "breakpoints": true
     }
   ]
 }

@@ -2210,9 +2210,30 @@ export const financialRouter = router({
     // Filtrar: exclui Digitação e "outros" (CANCELADO, AMOSTRA, GILSON, NULL)
     const items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
 
-    // Calcular totais (mesma fórmula do getAnalytics)
+    // Calcular totais usando valorTotalPedido (inclui descontos e frete)
+    // Agrupa por pedido único e usa valorTotalPedido quando disponível
     const uniqueOrders = new Set(items.map((i) => i.pedido).filter(Boolean));
-    const totalValue = items.reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
+    const pedidoValueMap = new Map<string, number>();
+    for (const item of items) {
+      const pedido = item.pedido || 'sem-pedido';
+      if (!pedidoValueMap.has(pedido)) {
+        // Primeiro item deste pedido: usar valorTotalPedido se disponível
+        if (item.valorTotalPedido) {
+          pedidoValueMap.set(pedido, Number(item.valorTotalPedido));
+        } else {
+          pedidoValueMap.set(pedido, Number(item.valorTotal || 0));
+        }
+      } else {
+        // Itens adicionais do mesmo pedido: só somar se NÃO temos valorTotalPedido
+        // (se temos valorTotalPedido, ele já inclui todos os itens + desconto/frete)
+        const firstItemHasVTP = items.find(i => i.pedido === pedido && i.valorTotalPedido);
+        if (!firstItemHasVTP) {
+          pedidoValueMap.set(pedido, (pedidoValueMap.get(pedido) || 0) + Number(item.valorTotal || 0));
+        }
+        // Se já tem valorTotalPedido, não soma (já está o total correto)
+      }
+    }
+    const totalValue = Array.from(pedidoValueMap.values()).reduce((sum, v) => sum + v, 0);
     const vendasTotal = Math.round(totalValue * 100) / 100;
 
     // Contas Pagas: busca diretamente da API GraphQL do Maxiprod
@@ -2338,25 +2359,32 @@ export const financialRouter = router({
 
     const items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
 
-    // Agrupar por pedido
-    const pedidoMap = new Map<string, { pedido: string; cliente: string; total: number; data: string; itens: number; estado: string; grupo: string; observacoes: string; descricoes: string[] }>();
+    // Agrupar por pedido - usar valorTotalPedido (com desconto/frete) quando disponível
+    const pedidoMap = new Map<string, { pedido: string; cliente: string; total: number; data: string; itens: number; estado: string; grupo: string; observacoes: string; descricoes: string[]; hasVTP: boolean }>();
     for (const item of items) {
       const key = item.pedido || 'sem-pedido';
       if (!pedidoMap.has(key)) {
+        const hasVTP = !!item.valorTotalPedido;
         pedidoMap.set(key, {
           pedido: item.pedido || '-',
           cliente: item.cliente || '-',
-          total: 0,
+          total: hasVTP ? Number(item.valorTotalPedido) : Number(item.valorTotal || 0),
           data: item.dataEmissao?.slice(0, 10) || '-',
           itens: 0,
           estado: item.estadoNota || '-',
           grupo: estadoToGrupo(item.estadoConfiguravel),
           observacoes: item.observacoes || '',
           descricoes: [],
+          hasVTP,
         });
+      } else {
+        const entry = pedidoMap.get(key)!;
+        // Só somar item.valorTotal se não temos valorTotalPedido
+        if (!entry.hasVTP) {
+          entry.total += Number(item.valorTotal || 0);
+        }
       }
       const entry = pedidoMap.get(key)!;
-      entry.total += Number(item.valorTotal || 0);
       entry.itens += 1;
       // Coletar descrições únicas dos itens
       if (item.descricao && !entry.descricoes.includes(item.descricao)) {

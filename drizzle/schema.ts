@@ -222,6 +222,12 @@ export const salesOrders = mysqlTable("sales_orders", {
   grupoDescricao: varchar("grupoDescricao", { length: 100 }), // Descrição do grupo do item (VARETA, ESPETO, etc.)
   observacoes: text("observacoes"), // Observações do pedido de venda (campo livre do comercial para a produção)
   quantidadeFaturada: decimal("quantidadeFaturada", { precision: 18, scale: 5 }), // Quantidade já faturada (entregaFuturaQuantidadeEntregue do Maxiprod)
+  // Campos financeiros do pedido (desconto, frete, seguro, outras despesas)
+  descontoValor: decimal("descontoValor", { precision: 18, scale: 2 }), // Desconto em valor do pedido
+  descontoPercentual: decimal("descontoPercentual", { precision: 18, scale: 5 }), // Desconto percentual do pedido
+  freteValor: decimal("freteValor", { precision: 18, scale: 2 }), // Frete do pedido
+  seguroValor: decimal("seguroValor", { precision: 18, scale: 2 }), // Seguro do pedido
+  outrasDespesasValor: decimal("outrasDespesasValor", { precision: 18, scale: 2 }), // Outras despesas do pedido
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 

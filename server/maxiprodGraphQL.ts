@@ -316,6 +316,11 @@ async function fetchOpenSalesOrderItems(): Promise<any[]> {
           estadoConfiguravel { id descricao }
           emissaoData
           valorTotal
+          descontoValor
+          descontoPercentual
+          freteValor
+          seguroValor
+          outrasDespesasValor
           condicaoDePagamento
           minhaEmpresaId
           transportadora { nomeFantasia razaoSocial }
@@ -385,6 +390,11 @@ async function fetchAllSalesOrderItems(): Promise<any[]> {
           estadoConfiguravel { id descricao }
           emissaoData
           valorTotal
+          descontoValor
+          descontoPercentual
+          freteValor
+          seguroValor
+          outrasDespesasValor
           condicaoDePagamento
           minhaEmpresaId
           transportadora { nomeFantasia razaoSocial }
@@ -757,6 +767,11 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       enderecoCep: cliente.endereco?.cep || null,
       enderecoCidade: cliente.endereco?.municipio?.descricao || null,
       valorTotalPedido: pv.valorTotal ? String(pv.valorTotal) : null,
+      descontoValor: pv.descontoValor ? String(pv.descontoValor) : null,
+      descontoPercentual: pv.descontoPercentual ? String(pv.descontoPercentual) : null,
+      freteValor: pv.freteValor ? String(pv.freteValor) : null,
+      seguroValor: pv.seguroValor ? String(pv.seguroValor) : null,
+      outrasDespesasValor: pv.outrasDespesasValor ? String(pv.outrasDespesasValor) : null,
       estadoNota: ({DIGITACAO:"Digitação",AAPROVAR:"A aprovar",APROVADO:"Aprovado",FATURADO:"Faturado",FATURADO_ENTREGA_FUTURA:"Faturado c/ entrega futura",CANCELADO:"Cancelado"} as Record<string,string>)[pv.estado] || pv.estado || null,
       estadoConfiguravel: pv.estadoConfiguravel?.descricao || null,
       crmSegmento: cliente.crmSegmento?.descricao || null,

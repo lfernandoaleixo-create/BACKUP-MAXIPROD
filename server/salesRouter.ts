@@ -192,10 +192,22 @@ export const salesRouter = router({
         };
       }
 
-      // Compute analytics
+      // Compute analytics usando valorTotalPedido (inclui descontos e frete)
       const uniqueOrders = new Set(items.map((i) => i.pedido).filter(Boolean));
       const uniqueClients = new Set(items.map((i) => i.cliente).filter(Boolean));
-      const totalValue = items.reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);
+      // Total por pedido único usando valorTotalPedido quando disponível
+      const pedidoTotalMap = new Map<string, { total: number; faturado: number; aFaturar: number; hasVTP: boolean }>();
+      for (const item of items) {
+        const pedido = item.pedido || 'sem-pedido';
+        if (!pedidoTotalMap.has(pedido)) {
+          const hasVTP = !!item.valorTotalPedido;
+          const val = hasVTP ? Number(item.valorTotalPedido) : Number(item.valorTotal || 0);
+          pedidoTotalMap.set(pedido, { total: val, faturado: 0, aFaturar: 0, hasVTP });
+        } else if (!pedidoTotalMap.get(pedido)!.hasVTP) {
+          pedidoTotalMap.get(pedido)!.total += Number(item.valorTotal || 0);
+        }
+      }
+      const totalValue = Array.from(pedidoTotalMap.values()).reduce((sum, p) => sum + p.total, 0);
       const totalFaturado = items
         .filter((i) => i.estadoItem === "Faturado")
         .reduce((sum, i) => sum + Number(i.valorTotal || 0), 0);

@@ -1739,3 +1739,6 @@
 - [x] Alinhar todas as colunas da tabela Madeira PA (Grupo cortado, colunas desalinhadas)
 - [x] Reduzir tamanho da tabela Madeira PA para caber na tela sem cortes, sem encavalar
 - [x] Centralizar todos os dados e headers das colunas da tabela Madeira PA
+- [x] Corrigir card Vendas na aba Financeiro: considerar descontos, frete embutido e outros ajustes dos pedidos de venda do Maxiprod (diferença de R$ 210 era desconto do pedido 837)
+- [x] Adicionar campos descontoValor, descontoPercentual, freteValor, seguroValor, outrasDespesasValor na tabela sales_orders e na query GraphQL do Maxiprod
+- [x] Corrigir cálculo de vendas no salesRouter (KPI total) para usar valorTotalPedido
