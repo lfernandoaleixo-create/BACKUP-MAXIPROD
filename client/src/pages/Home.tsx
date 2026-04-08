@@ -2350,9 +2350,12 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                   {filtered.map((item) => {
                     const manualQty = madeiraStockMap.get(item.codigoItem) || 0;
                     const isEditing = editingItem === item.codigoItem;
-                    const isNegative = (item.disponivelCx ?? item.disponivelUn) < 0;
-                    const isZero = (item.disponivelCx ?? item.disponivelUn) === 0;
-                    const projetado = item.projetadoCx ?? item.projetadoUn ?? 0;
+                    // Disponível p/ Venda = Estoque Manual - Pedidos de Venda
+                    const pedidosVal = item.pedidosCx ?? item.pedidosUn;
+                    const disponivelManual = manualQty - pedidosVal;
+                    const isNegative = disponivelManual < 0;
+                    const isZero = disponivelManual === 0;
+                    const projetadoManual = disponivelManual + (item.isKgProduct ? item.poUn : (item.poCx ?? 0));
                     return (
                       <tr key={item.codigoItem} className={`hover:bg-slate-50 transition-colors ${isNegative ? 'bg-red-50/50' : isZero ? 'bg-amber-50/30' : ''}`}>
                         {/* Produto */}
@@ -2393,21 +2396,21 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                             {item.pedidosCx !== null ? `${formatNumber(item.pedidosCx)} ${getUnit(item, true)}` : `${formatNumber(item.pedidosUn)} ${getUnit(item, false)}`}
                           </span>
                         </td>
-                        {/* Disponível */}
+                        {/* Disponível = Estoque Manual - Pedidos */}
                         <td className="px-1.5 py-2 text-center bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap">
                           <span className={`font-bold text-[13px] ${isNegative ? 'text-red-600' : isZero ? 'text-amber-600' : 'text-emerald-700'}`}>
-                            {item.disponivelCx !== null ? `${formatNumber(item.disponivelCx)}` : `${formatNumber(item.disponivelUn)}`} {getUnit(item, item.disponivelCx !== null)}
+                            {formatNumber(disponivelManual)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}
                           </span>
                         </td>
                         {/* PO */}
                         <td className="px-1.5 py-2 text-center whitespace-nowrap">
                           <POCell item={item} />
                         </td>
-                        {/* Projetado */}
+                        {/* Projetado = Disponível Manual + PO */}
                         <td className="px-1.5 py-2 text-center whitespace-nowrap">
-                          {(item.poCx ?? 0) > 0 || (item.disponivelCx ?? item.disponivelUn) !== 0 ? (
-                            <span className={`font-bold text-[13px] ${projetado < 0 ? 'text-red-500' : projetado === 0 ? 'text-amber-500' : 'text-indigo-600'}`}>
-                              {item.projetadoCx !== null ? `${formatNumber(item.projetadoCx)} ${getUnit(item, true)}` : `${formatNumber(item.projetadoUn)} ${getUnit(item, false)}`}
+                          {(item.poCx ?? 0) > 0 || disponivelManual !== 0 ? (
+                            <span className={`font-bold text-[13px] ${projetadoManual < 0 ? 'text-red-500' : projetadoManual === 0 ? 'text-amber-500' : 'text-indigo-600'}`}>
+                              {formatNumber(projetadoManual)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}
                             </span>
                           ) : (
                             <span className="text-slate-300 text-[13px]">—</span>
@@ -2424,9 +2427,9 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                             const unit = item.isKgProduct || item.codigoItem === "00223" ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
                             let estRegColor = 'text-emerald-600';
                             if (estReg > 0) {
-                              if (projetado <= estReg) estRegColor = 'text-red-600 bg-red-50 px-1 py-0.5 rounded';
-                              else if (projetado <= estReg * 1.2) estRegColor = 'text-pink-600 bg-pink-50 px-1 py-0.5 rounded';
-                              else if (projetado <= estReg * 1.4) estRegColor = 'text-orange-600 bg-orange-50 px-1 py-0.5 rounded';
+                              if (projetadoManual <= estReg) estRegColor = 'text-red-600 bg-red-50 px-1 py-0.5 rounded';
+                              else if (projetadoManual <= estReg * 1.2) estRegColor = 'text-pink-600 bg-pink-50 px-1 py-0.5 rounded';
+                              else if (projetadoManual <= estReg * 1.4) estRegColor = 'text-orange-600 bg-orange-50 px-1 py-0.5 rounded';
                             }
                             return <span className={`text-[11px] font-semibold ${estRegColor}`} title={`Vd.Mensal: ${vendaMensal} × Fator: ${fator.toLocaleString("pt-BR")} = ${estReg} ${unit}`}>{formatNumber(estReg)} {unit}</span>;
                           })()}

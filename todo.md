@@ -1772,3 +1772,4 @@
 - [x] Alerta visível apenas para o vendedor responsável pelo título
 - [x] No dia 7+, se protesto automático: mudar status automaticamente para "Protestado" e registrar no histórico
 - [x] No dia 7+, se não protestar: vendedor obrigado a preencher plano de ação e pode mudar status manualmente
+- [x] Corrigir cálculo "Disponível p/ Venda" na tabela Madeira PA: deve ser Estoque Manual - Pedidos de Venda
