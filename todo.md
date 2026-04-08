@@ -1754,3 +1754,6 @@
 - [x] Criar card KPI "Disponível - Kg" na seção Madeira PA para Vareta de Apito (00223) mostrando estoque disponível em kg
 - [x] Corrigir KPI "Estoque Total" para usar estoque manual do card Madeira PA (sincronizado com o valor editável)
 - [x] Corrigir KPI "Disponível - Caixas" = Estoque Manual - Pedidos (em vez de estoqueCx - pedidosCx)
+- [x] Expandir card KPI "Disponível - Dúzias" para mostrar Estoque Manual, Pedidos e Disponível dentro do mesmo card
+- [x] Expandir card KPI "Disponível - Kg" para mostrar Estoque Manual, Pedidos e Disponível dentro do mesmo card
+- [x] Replicar separação Caixas/Dúzias/Kg no card "Madeira - Produto Acabado" com Estoque Manual, Pedidos e Disponível para cada tipo

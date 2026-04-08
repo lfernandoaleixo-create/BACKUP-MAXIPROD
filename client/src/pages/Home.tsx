@@ -2127,11 +2127,41 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
     return total;
   }, [parentItems, madeiraStockMap]);
 
+  const ROJAO_CODE_PA = "00129";
+  const VARETA_APITO_CODE_PA = "00223";
+
   const totalEstoqueMaxiprod = useMemo(() => parentItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0), [parentItems]);
   const totalPedidos = useMemo(() => parentItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0), [parentItems]);
-  const totalDisponivel = useMemo(() => parentItems.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0), [parentItems]);
+  const totalDisponivel = totalEstoqueManual - totalPedidos;
   const totalPO = useMemo(() => parentItems.reduce((sum, i) => sum + (i.poCx ?? 0), 0), [parentItems]);
-  const totalProjetado = useMemo(() => parentItems.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0), [parentItems]);
+  const totalProjetado = totalDisponivel + totalPO;
+
+  // Separação Caixas / Dúzias / Kg dentro do card Madeira PA
+  const paEstoqueCx = useMemo(() => {
+    return parentItems
+      .filter(i => i.codigoItem !== ROJAO_CODE_PA && i.codigoItem !== VARETA_APITO_CODE_PA && !i.isKgProduct)
+      .reduce((sum, i) => sum + (madeiraStockMap.get(i.codigoItem) || 0), 0);
+  }, [parentItems, madeiraStockMap]);
+  const paPedidosCx = useMemo(() => {
+    return parentItems
+      .filter(i => i.codigoItem !== ROJAO_CODE_PA && i.codigoItem !== VARETA_APITO_CODE_PA && !i.isKgProduct)
+      .reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
+  }, [parentItems]);
+  const paDisponivelCx = paEstoqueCx - paPedidosCx;
+
+  const paEstoqueDz = useMemo(() => madeiraStockMap.get(ROJAO_CODE_PA) || 0, [madeiraStockMap]);
+  const paPedidosDz = useMemo(() => {
+    const rojao = parentItems.find(i => i.codigoItem === ROJAO_CODE_PA);
+    return rojao?.pedidosCx ?? 0;
+  }, [parentItems]);
+  const paDisponivelDz = paEstoqueDz - paPedidosDz;
+
+  const paEstoqueKg = useMemo(() => madeiraStockMap.get(VARETA_APITO_CODE_PA) || 0, [madeiraStockMap]);
+  const paPedidosKg = useMemo(() => {
+    const vareta = parentItems.find(i => i.codigoItem === VARETA_APITO_CODE_PA);
+    return vareta?.pedidosCx ?? 0;
+  }, [parentItems]);
+  const paDisponivelKg = paEstoqueKg - paPedidosKg;
 
   const handleStartEdit = useCallback((codigoItem: string) => {
     if (!currentOperator) {
@@ -2206,31 +2236,63 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
-          <div className="bg-green-50/80 rounded-lg px-3 py-2 border border-green-200">
-            <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Estoque Manual</p>
-            <p className="text-base font-extrabold text-green-800">{formatNumber(totalEstoqueManual)} <span className="text-xs font-semibold">cx</span></p>
+        <div className="hidden sm:grid grid-cols-3 gap-3 mt-4 ml-16">
+          {/* CAIXAS */}
+          <div className="bg-emerald-50/80 rounded-lg px-3 py-2.5 border border-emerald-200">
+            <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider mb-1.5">Caixas (cx)</p>
+            <div className="space-y-1">
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
+                <span className="text-sm font-extrabold text-green-700">{formatNumber(paEstoqueCx)} cx</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
+                <span className={`text-sm font-extrabold ${paPedidosCx > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosCx)} cx</span>
+              </div>
+              <div className="h-px bg-emerald-200/60" />
+              <div className="flex justify-between items-baseline">
+                <span className={`text-[10px] font-bold ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
+                <span className={`text-base font-extrabold ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx)} cx</span>
+              </div>
+            </div>
           </div>
-
-          <div className="bg-orange-50/80 rounded-lg px-3 py-2">
-            <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className={`text-base font-extrabold ${totalPedidos > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
+          {/* DÚCIAS */}
+          <div className="bg-green-50/80 rounded-lg px-3 py-2.5 border border-green-200">
+            <p className="text-[10px] text-green-700 font-bold uppercase tracking-wider mb-1.5">Rojão 7x1000 (dz)</p>
+            <div className="space-y-1">
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
+                <span className="text-sm font-extrabold text-green-700">{formatNumber(paEstoqueDz)} dz</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
+                <span className={`text-sm font-extrabold ${paPedidosDz > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosDz)} dz</span>
+              </div>
+              <div className="h-px bg-green-200/60" />
+              <div className="flex justify-between items-baseline">
+                <span className={`text-[10px] font-bold ${paDisponivelDz < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
+                <span className={`text-base font-extrabold ${paDisponivelDz < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelDz)} dz</span>
+              </div>
+            </div>
           </div>
-          <div className={`rounded-lg px-3 py-2 ${totalDisponivel < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
-            <p className={`text-[10px] font-semibold uppercase tracking-wider ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
-            <p className={`text-base font-extrabold ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel)} <span className="text-xs font-semibold">cx</span></p>
-          </div>
-          <div className="bg-blue-50/80 rounded-lg px-3 py-2">
-            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">PO (Compra)</p>
-            <p className={`text-base font-extrabold ${totalPO > 0 ? 'text-blue-700' : 'text-slate-400'}`}>{formatNumber(totalPO)} <span className="text-xs font-semibold">cx</span></p>
-          </div>
-          <div className="bg-indigo-50/80 rounded-lg px-3 py-2">
-            <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Projetado</p>
-            <p className={`text-base font-extrabold ${totalProjetado < 0 ? 'text-red-700' : 'text-indigo-700'}`}>{formatNumber(totalProjetado)} <span className="text-xs font-semibold">cx</span></p>
-          </div>
-          <div className="bg-slate-50/80 rounded-lg px-3 py-2">
-            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
-            <p className="text-base font-extrabold text-slate-700">{parentItems.length}</p>
+          {/* KG */}
+          <div className="bg-indigo-50/80 rounded-lg px-3 py-2.5 border border-indigo-200">
+            <p className="text-[10px] text-indigo-700 font-bold uppercase tracking-wider mb-1.5">Vareta Apito 3,0x350 (kg)</p>
+            <div className="space-y-1">
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
+                <span className="text-sm font-extrabold text-indigo-700">{formatNumber(paEstoqueKg)} kg</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
+                <span className={`text-sm font-extrabold ${paPedidosKg > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosKg)} kg</span>
+              </div>
+              <div className="h-px bg-indigo-200/60" />
+              <div className="flex justify-between items-baseline">
+                <span className={`text-[10px] font-bold ${paDisponivelKg < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
+                <span className={`text-base font-extrabold ${paDisponivelKg < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelKg)} kg</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -3003,18 +3065,33 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       .filter(i => i.codigoItem !== ROJAO_CODE && i.codigoItem !== VARETA_APITO_CODE && !i.isKgProduct)
       .reduce((sum, i) => sum + ((madeiraStockMapKPI.get(i.codigoItem) || 0) - (i.pedidosCx ?? 0)), 0);
   }, [parentOnlyMadeira, madeiraStockMapKPI]);
-  const disponivelDuzias = useMemo(() => {
+  // Dúzias: Rojão (00129) - Estoque, Pedidos, Disponível
+  const estoqueDuzias = useMemo(() => madeiraStockMapKPI.get(ROJAO_CODE) || 0, [madeiraStockMapKPI]);
+  const pedidosDuzias = useMemo(() => {
     const rojao = madeiraItems.find(i => i.codigoItem === ROJAO_CODE);
-    if (!rojao) return 0;
-    return (madeiraStockMapKPI.get(ROJAO_CODE) || 0) - (rojao.pedidosCx ?? 0);
-  }, [madeiraItems, madeiraStockMapKPI]);
+    return rojao?.pedidosCx ?? 0;
+  }, [madeiraItems]);
+  const disponivelDuzias = estoqueDuzias - pedidosDuzias;
 
-  // Disponível em Kg: Vareta de Apito (00223)
-  const disponivelKg = useMemo(() => {
+  // Kg: Vareta de Apito (00223) - Estoque, Pedidos, Disponível
+  const estoqueKg = useMemo(() => madeiraStockMapKPI.get(VARETA_APITO_CODE) || 0, [madeiraStockMapKPI]);
+  const pedidosKg = useMemo(() => {
     const vareta = madeiraItems.find(i => i.codigoItem === VARETA_APITO_CODE);
-    if (!vareta) return 0;
-    return (madeiraStockMapKPI.get(VARETA_APITO_CODE) || 0) - (vareta.pedidosCx ?? 0);
-  }, [madeiraItems, madeiraStockMapKPI]);
+    return vareta?.pedidosCx ?? 0;
+  }, [madeiraItems]);
+  const disponivelKg = estoqueKg - pedidosKg;
+
+  // Caixas separado: Estoque e Pedidos (excluindo Rojão e Vareta Apito)
+  const estoqueCaixas = useMemo(() => {
+    return parentOnlyMadeira
+      .filter(i => i.codigoItem !== ROJAO_CODE && i.codigoItem !== VARETA_APITO_CODE && !i.isKgProduct)
+      .reduce((sum, i) => sum + (madeiraStockMapKPI.get(i.codigoItem) || 0), 0);
+  }, [parentOnlyMadeira, madeiraStockMapKPI]);
+  const pedidosCaixas = useMemo(() => {
+    return madeiraItems
+      .filter(i => i.codigoItem !== ROJAO_CODE && i.codigoItem !== VARETA_APITO_CODE && !i.isKgProduct)
+      .reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
+  }, [madeiraItems]);
 
   // Alertas: produtos com estoque < pedidos dos últimos 30 dias
   const [showAlertasPanel, setShowAlertasPanel] = useState(false);
@@ -3408,20 +3485,54 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           icon={Boxes}
           theme="emerald"
         />
-        <KPICard
-          label="Disponível - Dúzias"
-          value={`${formatNumber(disponivelDuzias)} dz`}
-          sub="Rojão 7x1000"
-          icon={Package}
-          theme="green"
-        />
-        <KPICard
-          label="Disponível - Kg"
-          value={`${formatNumber(disponivelKg)} kg`}
-          sub="Vareta Apito 3,0x350"
-          icon={Scale}
-          theme="indigo"
-        />
+        {/* Card Dúzias expandido: Estoque, Pedidos, Disponível */}
+        <div className="rounded-xl border bg-white p-3 shadow-sm" style={{ borderTop: '3px solid #22c55e' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Rojão 7x1000 (dz)</span>
+            <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center">
+              <Package className="w-4 h-4 text-green-600" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-baseline">
+              <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
+              <span className="text-sm font-extrabold text-green-700">{formatNumber(estoqueDuzias)} dz</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
+              <span className={`text-sm font-extrabold ${pedidosDuzias > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(pedidosDuzias)} dz</span>
+            </div>
+            <div className="h-px bg-slate-100" />
+            <div className="flex justify-between items-baseline">
+              <span className={`text-[10px] font-bold ${disponivelDuzias < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
+              <span className={`text-base font-extrabold ${disponivelDuzias < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(disponivelDuzias)} dz</span>
+            </div>
+          </div>
+        </div>
+        {/* Card Kg expandido: Estoque, Pedidos, Disponível */}
+        <div className="rounded-xl border bg-white p-3 shadow-sm" style={{ borderTop: '3px solid #6366f1' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Vareta Apito 3,0x350 (kg)</span>
+            <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
+              <Scale className="w-4 h-4 text-indigo-600" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-baseline">
+              <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
+              <span className="text-sm font-extrabold text-indigo-700">{formatNumber(estoqueKg)} kg</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
+              <span className={`text-sm font-extrabold ${pedidosKg > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(pedidosKg)} kg</span>
+            </div>
+            <div className="h-px bg-slate-100" />
+            <div className="flex justify-between items-baseline">
+              <span className={`text-[10px] font-bold ${disponivelKg < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
+              <span className={`text-base font-extrabold ${disponivelKg < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(disponivelKg)} kg</span>
+            </div>
+          </div>
+        </div>
         <KPICard
           label="Semi Pronto"
           value={`${formatNumber(semiProntoTotal)} cx`}
