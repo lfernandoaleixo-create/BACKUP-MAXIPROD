@@ -1751,3 +1751,4 @@
 - [x] Trocar unidade das VARAS PARA ROJÃO (Cod: 00129) de "1" para "dz" no card Madeira PA
 - [x] Destacar header "Gestão de Inadimplência" com caixa chamativa para valores (títulos vencidos, total R$, clientes)
 - [x] Adicionar palavra "Títulos" ao lado dos números nos cards de aging e status da inadimplência (ex: "32 Títulos")
+- [x] Criar card KPI "Disponível - Kg" na seção Madeira PA para Vareta de Apito (00223) mostrando estoque disponível em kg

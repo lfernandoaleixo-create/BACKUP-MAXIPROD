@@ -62,6 +62,7 @@ import {
   KeyRound,
   Pencil,
   ShieldAlert,
+  Scale,
 } from "lucide-react";
 import {
   Dialog,
@@ -2989,6 +2990,13 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     return (rojao.estoqueCx ?? 0) - (rojao.pedidosCx ?? 0);
   }, [madeiraItems]);
 
+  // Disponível em Kg: Vareta de Apito (00223)
+  const disponivelKg = useMemo(() => {
+    const vareta = madeiraItems.find(i => i.codigoItem === VARETA_APITO_CODE);
+    if (!vareta) return 0;
+    return (vareta.estoqueCx ?? 0) - (vareta.pedidosCx ?? 0);
+  }, [madeiraItems]);
+
   // Alertas: produtos com estoque < pedidos dos últimos 30 dias
   const [showAlertasPanel, setShowAlertasPanel] = useState(false);
 
@@ -3387,6 +3395,13 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           sub="Rojão 7x1000"
           icon={Package}
           theme="green"
+        />
+        <KPICard
+          label="Disponível - Kg"
+          value={`${formatNumber(disponivelKg)} kg`}
+          sub="Vareta Apito 3,0x350"
+          icon={Scale}
+          theme="indigo"
         />
         <KPICard
           label="Semi Pronto"
