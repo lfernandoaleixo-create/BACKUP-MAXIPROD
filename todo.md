@@ -1775,3 +1775,16 @@
 - [x] Corrigir cálculo "Disponível p/ Venda" na tabela Madeira PA: deve ser Estoque Manual - Pedidos de Venda
 - [ ] Auditar Consulta de Cliente: cruzar dados do dashboard com Maxiprod para todos os clientes (pedidos, faturado, em aberto, inadimplência)
 - [x] Redesenhar 3 cards Madeira PA (Caixas, Dúzias, Kg): fundo branco, letras grandes, Disponível em negrito/maior, cores diferentes para cada título
+
+## Reestruturação do Sistema de Cobrança Preventiva
+- [x] Corrigir fluxo: cobrança nos dias 1, 3 e 5 após vencimento (não mais 1-6 diário)
+- [x] Responsável pela cobrança: pessoa definida pela empresa (não vendedor) - campo configurável
+- [x] Alerta persistente ("telefone vibra") no 1º, 3º e 5º dia - não para até ação ser tomada
+- [x] Histórico de cobrança registra TODAS as atividades (feitas e não feitas)
+- [x] Dia 7 - Protesto automático: muda status para "Protestado" automaticamente
+- [x] Dia 7 - Sem protesto: gerar documento profissional notificando vendedor responsável pelo cliente
+- [x] Documento profissional visível na aba Financeiro > Inadimplência para todos verem
+- [x] Alerta na Manus para o vendedor responsável quando documento for criado
+- [ ] Campo Maxiprod para protesto automático vs sem protesto (AGUARDANDO INFO DO USUÁRIO)
+- [ ] Pessoa responsável pela cobrança (AGUARDANDO INFO DO USUÁRIO)
+- [x] Documento profissional formal: informar vendedor que optou por não protestar, todas as medidas foram tomadas, cliente não pagou, responsabilidade agora é do vendedor

@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial } from "./maxiprodGraphQL";
@@ -3160,6 +3160,18 @@ export const financialRouter = router({
     }),
 
   // ========== COBRANÇA PREVENTIVA ==========
+  // REGRAS:
+  // - Cobrança nos dias 1, 3 e 5 após vencimento (NÃO todos os dias)
+  // - Responsável pela cobrança: pessoa designada (não o vendedor)
+  // - Telefone vibra nos dias 1/3/5 e NÃO PARA até que ação seja registrada
+  // - Histórico registra tudo: ações feitas E não feitas
+  // - Dia 7: protesto automático → cartório | não protestar → documento profissional para vendedor
+  // - Documento fica visível no card de inadimplência para todos
+
+  /**
+   * Dias de cobrança obrigatória após vencimento
+   */
+  // COLLECTION_DAYS = [1, 3, 5]
 
   /**
    * Buscar ações diárias de cobrança para um título
@@ -3178,8 +3190,10 @@ export const financialRouter = router({
     }),
 
   /**
-   * Buscar ações diárias de hoje para múltiplos títulos (batch)
+   * Buscar ações de hoje para múltiplos títulos (batch)
    * Usado para determinar quais telefones devem piscar
+   * REGRA: telefone vibra APENAS nos dias 1, 3 e 5 após vencimento
+   * e NÃO PARA até que ação seja registrada
    */
   getTodayActions: publicProcedure
     .input(z.object({ receivableIds: z.array(z.number()) }))
@@ -3187,7 +3201,6 @@ export const financialRouter = router({
       const db = await getDb();
       if (!db || input.receivableIds.length === 0) return {};
       const now = new Date();
-      // Usar horário de Brasília
       const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
       const todayStr = brDate.toISOString().split('T')[0];
       const actions = await db
@@ -3200,7 +3213,6 @@ export const financialRouter = router({
             eq(collectionDailyActions.isAutomatic, false)
           )
         );
-      // Retornar mapa receivableId -> true (tem ação hoje)
       const map: Record<number, boolean> = {};
       for (const a of actions) {
         map[a.receivableId] = true;
@@ -3209,7 +3221,88 @@ export const financialRouter = router({
     }),
 
   /**
-   * Registrar ação de cobrança do vendedor
+   * Buscar ações pendentes de dias anteriores (1, 3, 5) que não foram realizadas
+   * O telefone continua vibrando até que TODAS as ações pendentes sejam resolvidas
+   */
+  getPendingCollectionActions: publicProcedure
+    .input(z.object({ receivableIds: z.array(z.number()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db || input.receivableIds.length === 0) return {};
+      const now = new Date();
+      const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const todayStr = brDate.toISOString().split('T')[0];
+
+      // Para cada receivableId, verificar se há dias de cobrança (1,3,5) pendentes
+      const COLLECTION_DAYS = [1, 3, 5];
+      const result: Record<number, { pendingDays: number[]; hasPendingAction: boolean }> = {};
+
+      // Buscar todos os receivables para calcular dias de atraso
+      const receivables = await db
+        .select({ id: accountsReceivable.id, vencimentoData: accountsReceivable.vencimentoData })
+        .from(accountsReceivable)
+        .where(inArray(accountsReceivable.id, input.receivableIds));
+
+      // Buscar todas as ações manuais desses receivables
+      const allActions = await db
+        .select()
+        .from(collectionDailyActions)
+        .where(
+          and(
+            inArray(collectionDailyActions.receivableId, input.receivableIds),
+            eq(collectionDailyActions.isAutomatic, false)
+          )
+        );
+
+      // Agrupar ações por receivableId e data
+      const actionsByRecId: Record<number, Set<string>> = {};
+      for (const a of allActions) {
+        if (!actionsByRecId[a.receivableId]) actionsByRecId[a.receivableId] = new Set();
+        actionsByRecId[a.receivableId].add(a.actionDate);
+      }
+
+      for (const rec of receivables) {
+        if (!rec.vencimentoData) continue;
+        const vencStr = (rec.vencimentoData as string).split('T')[0];
+        const vencDate = new Date(vencStr + 'T12:00:00');
+        const diffMs = brDate.getTime() - vencDate.getTime();
+        const diasAtraso = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        if (diasAtraso < 1) continue;
+
+        const pendingDays: number[] = [];
+        const actionDates = actionsByRecId[rec.id] || new Set();
+
+        for (const day of COLLECTION_DAYS) {
+          if (diasAtraso >= day) {
+            // Calcular a data exata do dia de cobrança
+            const collectionDate = new Date(vencDate);
+            collectionDate.setDate(collectionDate.getDate() + day);
+            const collDateStr = collectionDate.toISOString().split('T')[0];
+            // Verificar se teve ação nesse dia OU em qualquer dia posterior até hoje
+            let hasAction = false;
+            const actionDatesArr = Array.from(actionDates);
+            for (let ai = 0; ai < actionDatesArr.length; ai++) {
+              if (actionDatesArr[ai] >= collDateStr) {
+                hasAction = true;
+                break;
+              }
+            }
+            if (!hasAction) {
+              pendingDays.push(day);
+            }
+          }
+        }
+
+        if (pendingDays.length > 0) {
+          result[rec.id] = { pendingDays, hasPendingAction: true };
+        }
+      }
+
+      return result;
+    }),
+
+  /**
+   * Registrar ação de cobrança (pela pessoa responsável pela cobrança)
    */
   registerCollectionAction: publicProcedure
     .input(z.object({
@@ -3303,7 +3396,7 @@ export const financialRouter = router({
     .input(z.object({
       receivableId: z.number(),
       actionPlan: z.string().min(1),
-      deadlineDate: z.string(), // YYYY-MM-DD
+      deadlineDate: z.string(),
       operatorName: z.string(),
     }))
     .mutation(async ({ input }) => {
@@ -3335,7 +3428,6 @@ export const financialRouter = router({
           updatedBy: input.operatorName,
         });
       }
-      // Registrar no histórico diário
       const now = new Date();
       const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
       const todayStr = brDate.toISOString().split('T')[0];
@@ -3351,8 +3443,296 @@ export const financialRouter = router({
     }),
 
   /**
-   * Job: registrar "sem_contato" para títulos vencidos 1-6 dias sem ação ontem.
-   * E mudar status para "protestado" para títulos com protesto automático após 7 dias.
+   * Buscar documentos de cobrança gerados (para exibir no card de inadimplência)
+   */
+  getCollectionDocuments: publicProcedure
+    .input(z.object({ receivableIds: z.array(z.number()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db || input.receivableIds.length === 0) return {};
+      const docs = await db
+        .select()
+        .from(collectionDocuments)
+        .where(inArray(collectionDocuments.receivableId, input.receivableIds))
+        .orderBy(desc(collectionDocuments.createdAt));
+      const map: Record<number, typeof docs[0]> = {};
+      for (const d of docs) {
+        if (!map[d.receivableId]) map[d.receivableId] = d;
+      }
+      return map;
+    }),
+
+  /**
+   * Buscar documento de cobrança individual (para visualização detalhada)
+   */
+  getCollectionDocument: publicProcedure
+    .input(z.object({ receivableId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const docs = await db
+        .select()
+        .from(collectionDocuments)
+        .where(eq(collectionDocuments.receivableId, input.receivableId))
+        .orderBy(desc(collectionDocuments.createdAt))
+        .limit(1);
+      return docs[0] || null;
+    }),
+
+  /**
+   * Marcar documento como visualizado pelo vendedor
+   */
+  markDocumentViewed: publicProcedure
+    .input(z.object({ documentId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db
+        .update(collectionDocuments)
+        .set({ visualizadoPorVendedor: true, visualizadoEm: new Date() })
+        .where(eq(collectionDocuments.id, input.documentId));
+      return { success: true };
+    }),
+
+  /**
+   * Gerar documento profissional de cobrança para vendedor
+   * Chamado automaticamente no dia 7 para títulos "não protestar"
+   * Também pode ser chamado manualmente
+   */
+  generateCollectionDocument: publicProcedure
+    .input(z.object({ receivableId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Buscar dados do título
+      const recRows = await db
+        .select()
+        .from(accountsReceivable)
+        .where(eq(accountsReceivable.id, input.receivableId))
+        .limit(1);
+      if (recRows.length === 0) throw new Error("Título não encontrado");
+      const rec = recRows[0];
+
+      // Buscar vendedor
+      const vendedorMap = await fetchVendedorMapFromGraphQL();
+      const vendedor = vendedorMap[rec.cliente || ""] || "Não identificado";
+
+      // Calcular dias de atraso
+      const now = new Date();
+      const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const vencStr = (rec.vencimentoData || "").split('T')[0];
+      const vencDate = new Date(vencStr + 'T12:00:00');
+      const diasAtraso = Math.floor((brDate.getTime() - vencDate.getTime()) / 86400000);
+
+      // Buscar histórico de ações de cobrança
+      const history = await db
+        .select()
+        .from(collectionDailyActions)
+        .where(eq(collectionDailyActions.receivableId, input.receivableId))
+        .orderBy(asc(collectionDailyActions.actionDate));
+
+      // Montar resumo das ações realizadas nos dias 1, 3, 5
+      const COLLECTION_DAYS = [1, 3, 5];
+      const acoesSumario: Array<{ dia: number; data: string; tipo: string; realizada: boolean; notas?: string }> = [];
+
+      for (const day of COLLECTION_DAYS) {
+        const collDate = new Date(vencDate);
+        collDate.setDate(collDate.getDate() + day);
+        const collDateStr = collDate.toISOString().split('T')[0];
+
+        // Buscar ação manual nesse dia
+        const action = history.find(h => h.actionDate === collDateStr && !h.isAutomatic);
+        if (action) {
+          acoesSumario.push({
+            dia: day,
+            data: collDateStr,
+            tipo: action.actionType,
+            realizada: true,
+            notas: action.notes || undefined,
+          });
+        } else {
+          acoesSumario.push({
+            dia: day,
+            data: collDateStr,
+            tipo: "sem_contato",
+            realizada: false,
+          });
+        }
+      }
+
+      const valorAReceber = (Number(rec.valorLiquido) || 0) - (Number(rec.valorRecebidoLiquido) || 0);
+      const todayFormatted = brDate.toLocaleDateString('pt-BR');
+      const vencFormatted = vencDate.toLocaleDateString('pt-BR');
+      const valorFormatted = valorAReceber.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      // Gerar texto do documento profissional
+      const tipoAcaoMap: Record<string, string> = {
+        ligacao: "Ligação telefônica",
+        whatsapp: "Mensagem via WhatsApp",
+        email: "E-mail de cobrança",
+        visita: "Visita presencial",
+        outro: "Outra forma de contato",
+        sem_contato: "NENHUMA AÇÃO REALIZADA",
+      };
+
+      let acoesTexto = "";
+      for (const acao of acoesSumario) {
+        const dataFormatted = new Date(acao.data + 'T12:00:00').toLocaleDateString('pt-BR');
+        const statusIcon = acao.realizada ? "✅" : "❌";
+        acoesTexto += `   ${statusIcon} Dia ${acao.dia} (${dataFormatted}): ${tipoAcaoMap[acao.tipo] || acao.tipo}`;
+        if (acao.notas) acoesTexto += ` — ${acao.notas}`;
+        acoesTexto += "\n";
+      }
+
+      const documentoTexto = `
+══════════════════════════════════════════════════════════
+           DOCUMENTO DE TRANSFERÊNCIA DE RESPONSABILIDADE
+                    COBRANÇA DE INADIMPLÊNCIA
+══════════════════════════════════════════════════════════
+
+Data de emissão: ${todayFormatted}
+Documento gerado automaticamente pelo Sistema Grupo Fox
+
+──────────────────────────────────────────────────────────
+                      DADOS DO TÍTULO
+──────────────────────────────────────────────────────────
+
+  Cliente:           ${rec.cliente || "Não identificado"}
+  Referência:        ${rec.referenteA || "—"}
+  Documento:         ${rec.documentoVinculadoNumero || "—"}
+  Valor em aberto:   ${valorFormatted}
+  Data de vencimento: ${vencFormatted}
+  Dias em atraso:    ${diasAtraso} dias
+
+──────────────────────────────────────────────────────────
+               VENDEDOR(A) RESPONSÁVEL
+──────────────────────────────────────────────────────────
+
+  Sr(a). ${vendedor}
+
+──────────────────────────────────────────────────────────
+          HISTÓRICO DE AÇÕES DE COBRANÇA REALIZADAS
+──────────────────────────────────────────────────────────
+
+${acoesTexto}
+──────────────────────────────────────────────────────────
+                    COMUNICADO FORMAL
+──────────────────────────────────────────────────────────
+
+  Prezado(a) Sr(a). ${vendedor},
+
+  Por meio deste documento, informamos que o cliente acima
+  mencionado, que está sob sua responsabilidade comercial,
+  encontra-se INADIMPLENTE há ${diasAtraso} dias.
+
+  Conforme o protocolo interno de cobrança da empresa, a
+  opção selecionada para este cliente foi "NÃO PROTESTAR
+  AUTOMATICAMENTE", o que significa que o título NÃO será
+  encaminhado a cartório para protesto.
+
+  Informamos que TODAS as medidas cabíveis e protocolares
+  de cobrança já foram devidamente executadas pelo setor
+  responsável, conforme detalhado no histórico acima.
+
+  Apesar de todos os esforços realizados, o cliente não
+  efetuou o pagamento do valor em aberto de ${valorFormatted}.
+
+  A PARTIR DESTA DATA, A RESPONSABILIDADE PELA RESOLUÇÃO
+  DESTA INADIMPLÊNCIA É INTEIRAMENTE SUA, cabendo ao(à)
+  senhor(a) tomar as medidas que julgar necessárias para
+  a regularização do débito.
+
+  Este documento ficará registrado no sistema e visível
+  para toda a equipe como comprovante de que o processo
+  de cobrança foi conduzido corretamente e que a
+  responsabilidade foi formalmente transferida.
+
+──────────────────────────────────────────────────────────
+              ASSINATURA DIGITAL DO SISTEMA
+──────────────────────────────────────────────────────────
+
+  Gerado automaticamente em: ${todayFormatted}
+  Sistema: Grupo Fox - Dashboard de Gestão
+  Protocolo: DOC-COB-${input.receivableId}-${brDate.toISOString().split('T')[0].replace(/-/g, '')}
+
+══════════════════════════════════════════════════════════
+`.trim();
+
+      // Verificar se já existe documento para este título
+      const existingDoc = await db
+        .select()
+        .from(collectionDocuments)
+        .where(eq(collectionDocuments.receivableId, input.receivableId))
+        .limit(1);
+
+      if (existingDoc.length > 0) {
+        // Atualizar documento existente
+        await db
+          .update(collectionDocuments)
+          .set({
+            documentoTexto,
+            diasAtraso,
+            acoesCobanca: acoesSumario,
+            visualizadoPorVendedor: false,
+            visualizadoEm: null,
+          })
+          .where(eq(collectionDocuments.id, existingDoc[0].id));
+      } else {
+        // Criar novo documento
+        await db.insert(collectionDocuments).values({
+          receivableId: input.receivableId,
+          cliente: rec.cliente || "Não identificado",
+          vendedor,
+          valorTitulo: String(valorAReceber),
+          vencimentoData: vencStr,
+          diasAtraso,
+          documento: rec.documentoVinculadoNumero || null,
+          acoesCobanca: acoesSumario,
+          documentoTexto,
+          geradoPor: "Sistema",
+        });
+      }
+
+      // Criar notificação para o vendedor (visível no sistema)
+      try {
+        const { createNotification } = await import("./notificationRouter");
+        await createNotification({
+          type: "cobranca_documento",
+          title: `⚠️ Documento de Cobrança - ${rec.cliente}`,
+          message: `Sr(a). ${vendedor}, um documento de transferência de responsabilidade foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso. Todas as medidas de cobrança foram realizadas. A responsabilidade agora é sua.`,
+          severity: "warning",
+          metadata: {
+            receivableId: input.receivableId,
+            cliente: rec.cliente,
+            vendedor,
+            valor: valorAReceber,
+            diasAtraso,
+            documentoProtocolo: `DOC-COB-${input.receivableId}-${brDate.toISOString().split('T')[0].replace(/-/g, '')}`,
+          },
+        });
+      } catch (err) {
+        console.error("[Collection] Failed to create notification:", err);
+      }
+
+      // Registrar no histórico
+      const todayStr = brDate.toISOString().split('T')[0];
+      await db.insert(collectionDailyActions).values({
+        receivableId: input.receivableId,
+        actionDate: todayStr,
+        actionType: "outro",
+        operatorName: "Sistema",
+        notes: `Documento de transferência de responsabilidade gerado para vendedor ${vendedor}`,
+        isAutomatic: true,
+      });
+
+      return { success: true, vendedor, documentoTexto };
+    }),
+
+  /**
+   * Job diário de cobrança:
+   * 1. Registrar "sem_contato" para dias de cobrança (1, 3, 5) sem ação
+   * 2. Dia 7+: protesto automático → status "protestado" | não protestar → gerar documento
    * Chamado via cron ou manualmente.
    */
   runDailyCollectionJob: publicProcedure
@@ -3361,10 +3741,8 @@ export const financialRouter = router({
       if (!db) throw new Error("Database not available");
       const now = new Date();
       const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-      const yesterdayDate = new Date(brDate);
-      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-      const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
       const todayStr = brDate.toISOString().split('T')[0];
+      const COLLECTION_DAYS = [1, 3, 5];
 
       // Buscar todos os títulos vencidos (EMITIDO)
       const overdueReceivables = await db
@@ -3379,49 +3757,76 @@ export const financialRouter = router({
 
       let semContatoCount = 0;
       let protestadoCount = 0;
+      let documentoCount = 0;
+
+      // Buscar vendedor map uma vez
+      const vendedorMap = await fetchVendedorMapFromGraphQL();
 
       for (const rec of overdueReceivables) {
         if (!rec.vencimentoData) continue;
-        // Calcular dias de atraso
-        const vencDate = new Date(rec.vencimentoData);
+        const vencStr = (rec.vencimentoData as string).split('T')[0];
+        const vencDate = new Date(vencStr + 'T12:00:00');
         const diffMs = brDate.getTime() - vencDate.getTime();
         const diasAtraso = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        if (diasAtraso < 1) continue; // Não vencido ainda
+        if (diasAtraso < 1) continue;
 
-        // Verificar se teve ação ontem
-        const yesterdayActions = await db
-          .select()
-          .from(collectionDailyActions)
-          .where(
-            and(
-              eq(collectionDailyActions.receivableId, rec.id),
-              eq(collectionDailyActions.actionDate, yesterdayStr),
-              eq(collectionDailyActions.isAutomatic, false)
-            )
-          );
+        // Verificar dias de cobrança que já passaram e registrar sem_contato se necessário
+        for (const day of COLLECTION_DAYS) {
+          if (diasAtraso >= day) {
+            const collDate = new Date(vencDate);
+            collDate.setDate(collDate.getDate() + day);
+            const collDateStr = collDate.toISOString().split('T')[0];
 
-        // Se não teve ação ontem e está entre 1-6 dias, registrar "sem_contato"
-        if (yesterdayActions.length === 0 && diasAtraso >= 1 && diasAtraso <= 7) {
-          await db.insert(collectionDailyActions).values({
-            receivableId: rec.id,
-            actionDate: yesterdayStr,
-            actionType: "sem_contato",
-            operatorName: "Sistema",
-            notes: `Nenhum contato registrado no dia ${yesterdayStr}`,
-            isAutomatic: true,
-          });
-          semContatoCount++;
+            // Verificar se teve ação manual nesse dia
+            const manualActions = await db
+              .select()
+              .from(collectionDailyActions)
+              .where(
+                and(
+                  eq(collectionDailyActions.receivableId, rec.id),
+                  eq(collectionDailyActions.actionDate, collDateStr),
+                  eq(collectionDailyActions.isAutomatic, false)
+                )
+              );
+
+            // Verificar se já tem registro automático
+            const autoActions = await db
+              .select()
+              .from(collectionDailyActions)
+              .where(
+                and(
+                  eq(collectionDailyActions.receivableId, rec.id),
+                  eq(collectionDailyActions.actionDate, collDateStr),
+                  eq(collectionDailyActions.isAutomatic, true)
+                )
+              );
+
+            // Se não teve ação manual E não tem registro automático, registrar sem_contato
+            if (manualActions.length === 0 && autoActions.length === 0 && collDateStr < todayStr) {
+              await db.insert(collectionDailyActions).values({
+                receivableId: rec.id,
+                actionDate: collDateStr,
+                actionType: "sem_contato",
+                operatorName: "Sistema",
+                notes: `Dia ${day} de cobrança: nenhuma ação registrada`,
+                isAutomatic: true,
+              });
+              semContatoCount++;
+            }
+          }
         }
 
-        // Se passou 7 dias e é protesto automático, mudar status para "protestado"
+        // Dia 7+: verificar protesto
         if (diasAtraso >= 7) {
           const config = await db
             .select()
             .from(receivableProtestConfig)
             .where(eq(receivableProtestConfig.receivableId, rec.id));
+
           const isAutoProtest = config.length === 0 || config[0].protestType === "automatico";
+
           if (isAutoProtest) {
-            // Verificar se já não está protestado
+            // PROTESTO AUTOMÁTICO → cartório
             const existingAction = await db
               .select()
               .from(collectionActions)
@@ -3440,10 +3845,176 @@ export const financialRouter = router({
               });
               protestadoCount++;
             }
+          } else {
+            // NÃO PROTESTAR → verificar se já tem documento gerado
+            const existingDoc = await db
+              .select()
+              .from(collectionDocuments)
+              .where(eq(collectionDocuments.receivableId, rec.id))
+              .limit(1);
+
+            if (existingDoc.length === 0) {
+              // Gerar documento profissional
+              const vendedor = vendedorMap[rec.cliente || ""] || "Não identificado";
+              const valorAReceber = (Number(rec.valorLiquido) || 0) - (Number(rec.valorRecebidoLiquido) || 0);
+
+              // Buscar histórico
+              const history = await db
+                .select()
+                .from(collectionDailyActions)
+                .where(eq(collectionDailyActions.receivableId, rec.id))
+                .orderBy(asc(collectionDailyActions.actionDate));
+
+              const acoesSumario: Array<{ dia: number; data: string; tipo: string; realizada: boolean; notas?: string }> = [];
+              for (const day of COLLECTION_DAYS) {
+                const collDate = new Date(vencDate);
+                collDate.setDate(collDate.getDate() + day);
+                const collDateStr = collDate.toISOString().split('T')[0];
+                const action = history.find(h => h.actionDate === collDateStr && !h.isAutomatic);
+                acoesSumario.push({
+                  dia: day,
+                  data: collDateStr,
+                  tipo: action ? action.actionType : "sem_contato",
+                  realizada: !!action,
+                  notas: action?.notes || undefined,
+                });
+              }
+
+              const todayFormatted = brDate.toLocaleDateString('pt-BR');
+              const vencFormatted = vencDate.toLocaleDateString('pt-BR');
+              const valorFormatted = valorAReceber.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+              const tipoAcaoMap: Record<string, string> = {
+                ligacao: "Ligação telefônica",
+                whatsapp: "Mensagem via WhatsApp",
+                email: "E-mail de cobrança",
+                visita: "Visita presencial",
+                outro: "Outra forma de contato",
+                sem_contato: "NENHUMA AÇÃO REALIZADA",
+              };
+
+              let acoesTexto = "";
+              for (const acao of acoesSumario) {
+                const dataFormatted = new Date(acao.data + 'T12:00:00').toLocaleDateString('pt-BR');
+                const statusIcon = acao.realizada ? "✅" : "❌";
+                acoesTexto += `   ${statusIcon} Dia ${acao.dia} (${dataFormatted}): ${tipoAcaoMap[acao.tipo] || acao.tipo}`;
+                if (acao.notas) acoesTexto += ` — ${acao.notas}`;
+                acoesTexto += "\n";
+              }
+
+              const documentoTexto = `
+══════════════════════════════════════════════════════════
+           DOCUMENTO DE TRANSFERÊNCIA DE RESPONSABILIDADE
+                    COBRANÇA DE INADIMPLÊNCIA
+══════════════════════════════════════════════════════════
+
+Data de emissão: ${todayFormatted}
+Documento gerado automaticamente pelo Sistema Grupo Fox
+
+──────────────────────────────────────────────────────────
+                      DADOS DO TÍTULO
+──────────────────────────────────────────────────────────
+
+  Cliente:           ${rec.cliente || "Não identificado"}
+  Referência:        ${rec.referenteA || "—"}
+  Documento:         ${rec.documentoVinculadoNumero || "—"}
+  Valor em aberto:   ${valorFormatted}
+  Data de vencimento: ${vencFormatted}
+  Dias em atraso:    ${diasAtraso} dias
+
+──────────────────────────────────────────────────────────
+               VENDEDOR(A) RESPONSÁVEL
+──────────────────────────────────────────────────────────
+
+  Sr(a). ${vendedor}
+
+──────────────────────────────────────────────────────────
+          HISTÓRICO DE AÇÕES DE COBRANÇA REALIZADAS
+──────────────────────────────────────────────────────────
+
+${acoesTexto}
+──────────────────────────────────────────────────────────
+                    COMUNICADO FORMAL
+──────────────────────────────────────────────────────────
+
+  Prezado(a) Sr(a). ${vendedor},
+
+  Por meio deste documento, informamos que o cliente acima
+  mencionado, que está sob sua responsabilidade comercial,
+  encontra-se INADIMPLENTE há ${diasAtraso} dias.
+
+  Conforme o protocolo interno de cobrança da empresa, a
+  opção selecionada para este cliente foi "NÃO PROTESTAR
+  AUTOMATICAMENTE", o que significa que o título NÃO será
+  encaminhado a cartório para protesto.
+
+  Informamos que TODAS as medidas cabíveis e protocolares
+  de cobrança já foram devidamente executadas pelo setor
+  responsável, conforme detalhado no histórico acima.
+
+  Apesar de todos os esforços realizados, o cliente não
+  efetuou o pagamento do valor em aberto de ${valorFormatted}.
+
+  A PARTIR DESTA DATA, A RESPONSABILIDADE PELA RESOLUÇÃO
+  DESTA INADIMPLÊNCIA É INTEIRAMENTE SUA, cabendo ao(à)
+  senhor(a) tomar as medidas que julgar necessárias para
+  a regularização do débito.
+
+  Este documento ficará registrado no sistema e visível
+  para toda a equipe como comprovante de que o processo
+  de cobrança foi conduzido corretamente e que a
+  responsabilidade foi formalmente transferida.
+
+──────────────────────────────────────────────────────────
+              ASSINATURA DIGITAL DO SISTEMA
+──────────────────────────────────────────────────────────
+
+  Gerado automaticamente em: ${todayFormatted}
+  Sistema: Grupo Fox - Dashboard de Gestão
+  Protocolo: DOC-COB-${rec.id}-${brDate.toISOString().split('T')[0].replace(/-/g, '')}
+
+══════════════════════════════════════════════════════════
+`.trim();
+
+              await db.insert(collectionDocuments).values({
+                receivableId: rec.id,
+                cliente: rec.cliente || "Não identificado",
+                vendedor,
+                valorTitulo: String(valorAReceber),
+                vencimentoData: vencStr,
+                diasAtraso,
+                documento: rec.documentoVinculadoNumero || null,
+                acoesCobanca: acoesSumario,
+                documentoTexto,
+                geradoPor: "Sistema",
+              });
+
+              // Criar notificação para o vendedor
+              try {
+                const { createNotification } = await import("./notificationRouter");
+                await createNotification({
+                  type: "cobranca_documento",
+                  title: `⚠️ Documento de Cobrança - ${rec.cliente}`,
+                  message: `Sr(a). ${vendedor}, um documento de transferência de responsabilidade foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso.`,
+                  severity: "warning",
+                  metadata: {
+                    receivableId: rec.id,
+                    cliente: rec.cliente,
+                    vendedor,
+                    valor: valorAReceber,
+                    diasAtraso,
+                  },
+                });
+              } catch (err) {
+                console.error("[Collection Job] Failed to create notification:", err);
+              }
+
+              documentoCount++;
+            }
           }
         }
       }
 
-      return { success: true, semContatoCount, protestadoCount };
+      return { success: true, semContatoCount, protestadoCount, documentoCount };
     }),
 });

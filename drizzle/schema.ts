@@ -940,3 +940,39 @@ export const stockEditHistory = mysqlTable("stock_edit_history", {
 });
 export type StockEditHistory = typeof stockEditHistory.$inferSelect;
 export type InsertStockEditHistory = typeof stockEditHistory.$inferInsert;
+
+
+/**
+ * Documentos de cobrança gerados automaticamente no dia 7+.
+ * Para clientes com "não protestar", gera documento profissional
+ * notificando o vendedor responsável que todas as medidas foram tomadas
+ * e a responsabilidade agora é dele.
+ * O documento fica visível no card de inadimplência para todos.
+ */
+export const collectionDocuments = mysqlTable("collection_documents", {
+  id: int("id").autoincrement().primaryKey(),
+  receivableId: int("receivableId").notNull(), // FK para accounts_receivable.id
+  cliente: varchar("cliente", { length: 300 }).notNull(),
+  vendedor: varchar("vendedor", { length: 200 }).notNull(),
+  valorTitulo: decimal("valorTitulo", { precision: 18, scale: 2 }).notNull(),
+  vencimentoData: varchar("vencimentoData", { length: 10 }).notNull(), // YYYY-MM-DD
+  diasAtraso: int("diasAtraso").notNull(),
+  documento: varchar("documento", { length: 100 }), // NF/referência
+  // Resumo das ações de cobrança realizadas (JSON array)
+  acoesCobanca: json("acoesCobanca").$type<Array<{
+    dia: number; // dia após vencimento (1, 3, 5)
+    data: string; // YYYY-MM-DD
+    tipo: string; // ligacao | whatsapp | email | visita | sem_contato
+    realizada: boolean; // true = ação feita, false = não feita
+    notas?: string;
+  }>>().default([]),
+  // Texto completo do documento gerado
+  documentoTexto: text("documentoTexto").notNull(),
+  // Controle
+  geradoPor: varchar("geradoPor", { length: 200 }).notNull().default("Sistema"),
+  visualizadoPorVendedor: boolean("visualizadoPorVendedor").default(false).notNull(),
+  visualizadoEm: timestamp("visualizadoEm"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CollectionDocument = typeof collectionDocuments.$inferSelect;
+export type InsertCollectionDocument = typeof collectionDocuments.$inferInsert;

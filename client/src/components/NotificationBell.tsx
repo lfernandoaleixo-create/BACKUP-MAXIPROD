@@ -23,6 +23,7 @@ import {
   RefreshCw,
   ShoppingCart,
   MessageSquare,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -65,6 +66,7 @@ const TYPE_ICONS: Record<string, typeof Bell> = {
   senha_invalida: KeyRound,
   sync_erro: RefreshCw,
   alerta_estoque: Package,
+  cobranca_documento: FileText,
 };
 
 function formatTimeAgo(date: Date): string {

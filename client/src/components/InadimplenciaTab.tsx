@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send } from "lucide-react";
@@ -109,6 +110,7 @@ export default function InadimplenciaTab() {
   const [contatoDialogId, setContatoDialogId] = useState<number | null>(null);
   const [historyDialogId, setHistoryDialogId] = useState<number | null>(null);
   const [actionPlanDialogId, setActionPlanDialogId] = useState<number | null>(null);
+  const [documentDialogId, setDocumentDialogId] = useState<number | null>(null);
 
   const { data, isLoading, refetch } = trpc.financial.getOverdueTitles.useQuery({
     search: search || undefined,
@@ -139,10 +141,23 @@ export default function InadimplenciaTab() {
     { enabled: receivableIds.length > 0 }
   );
 
+  // Buscar ações pendentes de dias anteriores (1, 3, 5) - telefone não para até resolver
+  const { data: pendingActionsMap, refetch: refetchPendingActions } = trpc.financial.getPendingCollectionActions.useQuery(
+    { receivableIds },
+    { enabled: receivableIds.length > 0, refetchInterval: 30000 }
+  );
+
+  // Buscar documentos de cobrança gerados (dia 7+ para "não protestar")
+  const { data: collectionDocsMap } = trpc.financial.getCollectionDocuments.useQuery(
+    { receivableIds },
+    { enabled: receivableIds.length > 0 }
+  );
+
   // Mutation para registrar ação de cobrança diária
   const registerAction = trpc.financial.registerCollectionAction.useMutation({
     onSuccess: () => {
       refetchTodayActions();
+      refetchPendingActions();
       refetch();
       toast.success("Ação de cobrança registrada!");
     },
@@ -228,12 +243,18 @@ export default function InadimplenciaTab() {
     }
   }
 
-  // Determinar se o telefone deve piscar para um título
-  function shouldPhoneBlink(title: Title): boolean {
-    if (title.diasAtraso < 1) return false;
-    const hasActionToday = todayActionsMap?.[title.id] || false;
-    if (hasActionToday) return false;
-    return true; // Pisca se vencido e sem ação hoje
+  // DIAS DE COBRANÇA OBRIGATÓRIA: 1, 3 e 5 após vencimento
+  const COLLECTION_DAYS = [1, 3, 5];
+
+  // Verificar se hoje é dia de cobrança (1, 3 ou 5 após vencimento)
+  function isCollectionDay(title: Title): boolean {
+    return COLLECTION_DAYS.includes(title.diasAtraso);
+  }
+
+  // Verificar se tem ações pendentes de dias anteriores
+  function hasPendingActions(title: Title): boolean {
+    const pending = pendingActionsMap?.[title.id];
+    return !!pending?.hasPendingAction;
   }
 
   // Determinar se precisa de plano de ação (dia 7+ e não protestar)
@@ -241,23 +262,51 @@ export default function InadimplenciaTab() {
     if (title.diasAtraso < 7) return false;
     const config = protestConfigsMap?.[title.id];
     if (!config || config.protestType === "automatico") return false;
-    // Não protestar e sem plano de ação
     if (!config.actionPlan) return true;
     return false;
   }
 
-  // Cor do telefone baseada no estado
-  function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" {
-    if (title.diasAtraso < 1) return "idle";
-    if (needsActionPlan(title)) return "urgent"; // Vermelho piscando - precisa plano
-    if (todayActionsMap?.[title.id]) return "done"; // Azul fixo - já agiu hoje
-    return "blink"; // Azul piscando - precisa agir
+  // Verificar se tem documento de cobrança gerado
+  function hasCollectionDocument(title: Title): boolean {
+    return !!collectionDocsMap?.[title.id];
   }
 
-  // Badge Dia X/7
+  // Cor do telefone baseada no estado
+  // REGRA: vibra nos dias 1/3/5 e NÃO PARA até que ação seja registrada
+  function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" | "document" {
+    if (title.diasAtraso < 1) return "idle";
+    // Se tem documento gerado (dia 7+ não protestar) - mostrar documento
+    if (hasCollectionDocument(title)) return "document";
+    // Se precisa plano de ação urgente
+    if (needsActionPlan(title)) return "urgent";
+    // Se tem ações pendentes de dias anteriores - continua vibrando!
+    if (hasPendingActions(title)) return "blink";
+    // Se hoje é dia de cobrança (1, 3 ou 5)
+    if (isCollectionDay(title)) {
+      const hasActionToday = todayActionsMap?.[title.id] || false;
+      if (hasActionToday) return "done";
+      return "blink"; // Dia de cobrança sem ação - vibra!
+    }
+    // Dia que não é de cobrança e sem pendentes
+    if (todayActionsMap?.[title.id]) return "done";
+    return "idle";
+  }
+
+  // Badge Dia X/5 (mostra qual dia de cobrança)
   function getDayBadge(title: Title): string | null {
-    if (title.diasAtraso < 1 || title.diasAtraso > 7) return null;
-    return `Dia ${title.diasAtraso}/7`;
+    if (title.diasAtraso < 1) return null;
+    if (title.diasAtraso <= 5) {
+      // Mostrar próximo dia de cobrança
+      if (COLLECTION_DAYS.includes(title.diasAtraso)) {
+        return `Dia ${title.diasAtraso} • Cobrança`;
+      }
+      const nextDay = COLLECTION_DAYS.find(d => d > title.diasAtraso);
+      if (nextDay) return `Dia ${title.diasAtraso} • Próx: dia ${nextDay}`;
+      return `Dia ${title.diasAtraso}`;
+    }
+    if (title.diasAtraso === 6) return "Dia 6 • Próx: dia 7";
+    if (title.diasAtraso >= 7) return `Dia ${title.diasAtraso} • Prazo esgotado`;
+    return null;
   }
 
   // Protesto type label
@@ -458,11 +507,13 @@ export default function InadimplenciaTab() {
                           onOpenContato={() => setContatoDialogId(title.id)}
                           onOpenHistory={() => setHistoryDialogId(title.id)}
                           onOpenActionPlan={() => setActionPlanDialogId(title.id)}
+                          onOpenDocument={() => setDocumentDialogId(title.id)}
                           onStatusChange={(status) => upsertAction.mutate({ receivableId: title.id, status })}
                           phoneState={getPhoneState(title)}
                           dayBadge={getDayBadge(title)}
                           protestLabel={getProtestLabel(title)}
                           needsActionPlan={needsActionPlan(title)}
+                          hasDocument={hasCollectionDocument(title)}
                         />
                       ))}
                     </div>
@@ -511,6 +562,7 @@ export default function InadimplenciaTab() {
                 onOpenContato={() => setContatoDialogId(title.id)}
                 onOpenHistory={() => setHistoryDialogId(title.id)}
                 onOpenActionPlan={() => setActionPlanDialogId(title.id)}
+                onOpenDocument={() => setDocumentDialogId(title.id)}
                 onStatusChange={(status) => {
                   upsertAction.mutate({ receivableId: title.id, status });
                 }}
@@ -518,6 +570,7 @@ export default function InadimplenciaTab() {
                 dayBadge={getDayBadge(title)}
                 protestLabel={getProtestLabel(title)}
                 needsActionPlan={needsActionPlan(title)}
+                hasDocument={hasCollectionDocument(title)}
               />
             ))}
           </div>
@@ -582,12 +635,20 @@ export default function InadimplenciaTab() {
           existingPlan={protestConfigsMap?.[actionPlanDialogId]}
         />
       )}
+
+      {/* Dialog de Documento de Cobrança (gerado no dia 7 para "não protestar") */}
+      {documentDialogId && (
+        <CollectionDocumentDialog
+          receivableId={documentDialogId}
+          onClose={() => setDocumentDialogId(null)}
+        />
+      )}
     </div>
   );
 }
 
 /* ---- Componente PhoneIcon com animação ---- */
-function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "idle"; onClick: () => void }) {
+function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "idle" | "document"; onClick: () => void }) {
   const baseClasses = "p-1.5 rounded-md transition-colors cursor-pointer";
 
   if (state === "idle") {
@@ -614,16 +675,24 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
     );
   }
 
+  if (state === "document") {
+    return (
+      <button onClick={onClick} title="Documento de cobrança gerado - Clique para ver" className={`${baseClasses} text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300 animate-pulse`}>
+        <FileText className="w-4 h-4" />
+      </button>
+    );
+  }
+
   // blink
   return (
-    <button onClick={onClick} title="Ação de cobrança necessária hoje!" className={`${baseClasses} text-blue-600 hover:bg-blue-100 animate-pulse`}>
+    <button onClick={onClick} title="Ação de cobrança necessária! Não para até registrar ação." className={`${baseClasses} text-blue-600 hover:bg-blue-100 animate-pulse`}>
       <Phone className="w-4 h-4" />
     </button>
   );
 }
 
 /* ---- Componente TitleRow (vista por título) ---- */
-function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan }: {
+function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -631,11 +700,13 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   onOpenContato: () => void;
   onOpenHistory: () => void;
   onOpenActionPlan: () => void;
+  onOpenDocument: () => void;
   onStatusChange: (status: string) => void;
-  phoneState: "blink" | "done" | "urgent" | "idle";
+  phoneState: "blink" | "done" | "urgent" | "idle" | "document";
   dayBadge: string | null;
   protestLabel: { label: string; color: string } | null;
   needsActionPlan: boolean;
+  hasDocument: boolean;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
   const hasHistorico = title.cobranca?.contatoHistorico && title.cobranca.contatoHistorico.length > 0;
@@ -713,12 +784,19 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         {/* Ações */}
         <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
           <PhoneIcon state={phoneState} onClick={() => {
-            if (needsPlan) {
+            if (phoneState === "document" || hasDocument) {
+              onOpenDocument();
+            } else if (needsPlan) {
               onOpenActionPlan();
             } else {
               onOpenContato();
             }
           }} />
+          {hasDocument && (
+            <button onClick={onOpenDocument} title="Ver documento de cobrança" className="p-1.5 rounded-md hover:bg-amber-100 text-amber-700 hover:text-amber-900 transition-colors border border-amber-200">
+              <FileText className="w-4 h-4" />
+            </button>
+          )}
           <button onClick={onOpenHistory} title="Histórico de cobrança" className="p-1.5 rounded-md hover:bg-white/80 text-emerald-600 hover:text-emerald-800 transition-colors">
             <History className="w-4 h-4" />
           </button>
@@ -737,7 +815,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
 }
 
 /* ---- Componente ClienteTitleRow (vista por cliente) ---- */
-function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan }: {
+function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -745,11 +823,13 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   onOpenContato: () => void;
   onOpenHistory: () => void;
   onOpenActionPlan: () => void;
+  onOpenDocument: () => void;
   onStatusChange: (status: string) => void;
-  phoneState: "blink" | "done" | "urgent" | "idle";
+  phoneState: "blink" | "done" | "urgent" | "idle" | "document";
   dayBadge: string | null;
   protestLabel: { label: string; color: string } | null;
   needsActionPlan: boolean;
+  hasDocument: boolean;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
 
@@ -807,12 +887,19 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
         </div>
         <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
           <PhoneIcon state={phoneState} onClick={() => {
-            if (needsPlan) {
+            if (phoneState === "document" || hasDocument) {
+              onOpenDocument();
+            } else if (needsPlan) {
               onOpenActionPlan();
             } else {
               onOpenContato();
             }
           }} />
+          {hasDocument && (
+            <button onClick={onOpenDocument} title="Ver documento" className="p-1 rounded-md hover:bg-amber-100 text-amber-700 border border-amber-200">
+              <FileText className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button onClick={onOpenHistory} title="Histórico" className="p-1 rounded-md hover:bg-white/80 text-emerald-600">
             <History className="w-3.5 h-3.5" />
           </button>
@@ -1276,6 +1363,136 @@ function ActionDialog({ title, onClose, onSave, isSaving, protestConfig, onSetPr
             </button>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ---- Componente CollectionDocumentDialog (exibe documento profissional de cobrança) ---- */
+function CollectionDocumentDialog({ receivableId, onClose }: {
+  receivableId: number;
+  onClose: () => void;
+}) {
+  const { data: doc, isLoading } = trpc.financial.getCollectionDocument.useQuery({ receivableId });
+  const markViewed = trpc.financial.markDocumentViewed.useMutation();
+
+  // Marcar como visualizado ao abrir
+  React.useEffect(() => {
+    if (doc && !doc.visualizadoPorVendedor) {
+      markViewed.mutate({ documentId: doc.id });
+    }
+  }, [doc?.id]);
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-amber-800">
+            <FileText className="w-5 h-5" />
+            Documento de Transferência de Responsabilidade
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading && (
+          <div className="py-12 text-center text-slate-400">
+            <Clock className="w-8 h-8 mx-auto mb-2 animate-spin opacity-50" />
+            <p>Carregando documento...</p>
+          </div>
+        )}
+
+        {!isLoading && !doc && (
+          <div className="py-12 text-center text-slate-400">
+            <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>Nenhum documento de cobrança encontrado para este título.</p>
+            <p className="text-xs mt-1">O documento é gerado automaticamente no 7º dia de atraso para títulos com opção "não protestar".</p>
+          </div>
+        )}
+
+        {doc && (
+          <div className="space-y-4">
+            {/* Badge de status */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                {doc.diasAtraso} dias em atraso
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-300">
+                NÃO PROTESTAR
+              </span>
+              {doc.visualizadoPorVendedor && (
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-300">
+                  Visualizado pelo vendedor
+                </span>
+              )}
+              {!doc.visualizadoPorVendedor && (
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-300 animate-pulse">
+                  Pendente de visualização
+                </span>
+              )}
+            </div>
+
+            {/* Info resumida */}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-slate-50 rounded-lg p-3">
+                <span className="text-xs text-slate-500 uppercase font-semibold">Cliente</span>
+                <p className="font-bold text-slate-800 mt-0.5">{doc.cliente}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-3">
+                <span className="text-xs text-slate-500 uppercase font-semibold">Vendedor Responsável</span>
+                <p className="font-bold text-slate-800 mt-0.5">{doc.vendedor}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-3">
+                <span className="text-xs text-slate-500 uppercase font-semibold">Valor em Aberto</span>
+                <p className="font-bold text-red-700 mt-0.5">{formatCurrency(Number(doc.valorTitulo))}</p>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-3">
+                <span className="text-xs text-slate-500 uppercase font-semibold">Protocolo</span>
+                <p className="font-mono text-xs text-slate-600 mt-0.5">DOC-COB-{doc.receivableId}-{String(doc.createdAt)?.split('T')[0]?.replace(/-/g, '') || ''}</p>
+              </div>
+            </div>
+
+            {/* Histórico de ações resumido */}
+            {doc.acoesCobanca && Array.isArray(doc.acoesCobanca) && (
+              <div className="border border-slate-200 rounded-lg p-3">
+                <h4 className="text-xs font-bold text-slate-600 uppercase mb-2">Ações de Cobrança Realizadas</h4>
+                <div className="space-y-1">
+                  {(doc.acoesCobanca as Array<{dia: number; data: string; tipo: string; realizada: boolean; notas?: string}>).map((acao, idx) => (
+                    <div key={idx} className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded ${acao.realizada ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                      <span className="font-bold">{acao.realizada ? '✅' : '❌'}</span>
+                      <span className="font-semibold">Dia {acao.dia}</span>
+                      <span className="text-slate-500">({formatDate(acao.data)})</span>
+                      <span className="font-medium">
+                        {acao.tipo === 'ligacao' ? 'Ligação' :
+                         acao.tipo === 'whatsapp' ? 'WhatsApp' :
+                         acao.tipo === 'email' ? 'E-mail' :
+                         acao.tipo === 'visita' ? 'Visita' :
+                         acao.tipo === 'sem_contato' ? 'NENHUMA AÇÃO' :
+                         acao.tipo}
+                      </span>
+                      {acao.notas && <span className="text-slate-500 truncate">— {acao.notas}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Documento completo */}
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
+              <h4 className="text-xs font-bold text-amber-800 uppercase mb-3 flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Documento Oficial
+              </h4>
+              <pre className="text-xs text-slate-800 whitespace-pre-wrap font-mono leading-relaxed bg-white rounded-lg p-4 border border-amber-200 max-h-[40vh] overflow-y-auto">
+                {doc.documentoTexto}
+              </pre>
+            </div>
+
+            {/* Data de geração */}
+            <div className="text-xs text-slate-400 text-center pt-2">
+              Documento gerado em: {doc.createdAt ? new Date(String(doc.createdAt)).toLocaleString('pt-BR') : '-'}
+              {doc.visualizadoEm && ` | Visualizado em: ${new Date(String(doc.visualizadoEm)).toLocaleString('pt-BR')}`}
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

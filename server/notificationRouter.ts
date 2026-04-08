@@ -20,7 +20,7 @@ import { systemNotifications, notificationReads } from "../drizzle/schema";
 import { desc, eq, sql, and, isNull, isNotNull, lt, inArray } from "drizzle-orm";
 
 // Tipos de notificação relevantes para a produção
-const ALLOWED_NOTIFICATION_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada"];
+const ALLOWED_NOTIFICATION_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada", "cobranca_documento"];
 
 export const notificationRouter = router({
   /**
