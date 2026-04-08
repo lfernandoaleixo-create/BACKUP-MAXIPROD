@@ -1773,3 +1773,5 @@
 - [x] No dia 7+, se protesto automático: mudar status automaticamente para "Protestado" e registrar no histórico
 - [x] No dia 7+, se não protestar: vendedor obrigado a preencher plano de ação e pode mudar status manualmente
 - [x] Corrigir cálculo "Disponível p/ Venda" na tabela Madeira PA: deve ser Estoque Manual - Pedidos de Venda
+- [ ] Auditar Consulta de Cliente: cruzar dados do dashboard com Maxiprod para todos os clientes (pedidos, faturado, em aberto, inadimplência)
+- [x] Redesenhar 3 cards Madeira PA (Caixas, Dúzias, Kg): fundo branco, letras grandes, Disponível em negrito/maior, cores diferentes para cada título

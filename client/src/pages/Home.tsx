@@ -2236,61 +2236,61 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid grid-cols-3 gap-3 mt-4 ml-16">
+        <div className="hidden sm:grid grid-cols-3 gap-4 mt-4 ml-16">
           {/* CAIXAS */}
-          <div className="bg-emerald-50/80 rounded-lg px-3 py-2.5 border border-emerald-200">
-            <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider mb-1.5">Caixas (cx)</p>
-            <div className="space-y-1">
+          <div className="bg-white rounded-xl px-5 py-4 border border-slate-200 shadow-sm">
+            <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider mb-3">CAIXAS (CX)</p>
+            <div className="space-y-2">
               <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
-                <span className="text-sm font-extrabold text-green-700">{formatNumber(paEstoqueCx)} cx</span>
+                <span className="text-sm text-slate-500 font-semibold">Estoque</span>
+                <span className="text-lg font-extrabold text-emerald-600">{formatNumber(paEstoqueCx)} cx</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
-                <span className={`text-sm font-extrabold ${paPedidosCx > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosCx)} cx</span>
+                <span className="text-sm text-orange-500 font-bold">Pedidos</span>
+                <span className={`text-lg font-extrabold ${paPedidosCx > 0 ? 'text-orange-500' : 'text-slate-400'}`}>{formatNumber(paPedidosCx)} cx</span>
               </div>
-              <div className="h-px bg-emerald-200/60" />
+              <div className="h-px bg-slate-200" />
               <div className="flex justify-between items-baseline">
-                <span className={`text-[10px] font-bold ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
-                <span className={`text-base font-extrabold ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx)} cx</span>
+                <span className={`text-sm font-extrabold ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
+                <span className={`text-2xl font-black ${paDisponivelCx < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelCx)} cx</span>
               </div>
             </div>
           </div>
-          {/* DÚCIAS */}
-          <div className="bg-green-50/80 rounded-lg px-3 py-2.5 border border-green-200">
-            <p className="text-[10px] text-green-700 font-bold uppercase tracking-wider mb-1.5">Rojão 7x1000 (dz)</p>
-            <div className="space-y-1">
+          {/* DÚZIAS */}
+          <div className="bg-white rounded-xl px-5 py-4 border border-slate-200 shadow-sm">
+            <p className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-3">ROJÃO 7X1000 (DZ)</p>
+            <div className="space-y-2">
               <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
-                <span className="text-sm font-extrabold text-green-700">{formatNumber(paEstoqueDz)} dz</span>
+                <span className="text-sm text-slate-500 font-semibold">Estoque</span>
+                <span className="text-lg font-extrabold text-emerald-600">{formatNumber(paEstoqueDz)} dz</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
-                <span className={`text-sm font-extrabold ${paPedidosDz > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosDz)} dz</span>
+                <span className="text-sm text-orange-500 font-bold">Pedidos</span>
+                <span className={`text-lg font-extrabold ${paPedidosDz > 0 ? 'text-orange-500' : 'text-slate-400'}`}>{formatNumber(paPedidosDz)} dz</span>
               </div>
-              <div className="h-px bg-green-200/60" />
+              <div className="h-px bg-slate-200" />
               <div className="flex justify-between items-baseline">
-                <span className={`text-[10px] font-bold ${paDisponivelDz < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
-                <span className={`text-base font-extrabold ${paDisponivelDz < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelDz)} dz</span>
+                <span className={`text-sm font-extrabold ${paDisponivelDz < 0 ? 'text-red-600' : 'text-blue-600'}`}>Disponível</span>
+                <span className={`text-2xl font-black ${paDisponivelDz < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelDz)} dz</span>
               </div>
             </div>
           </div>
           {/* KG */}
-          <div className="bg-indigo-50/80 rounded-lg px-3 py-2.5 border border-indigo-200">
-            <p className="text-[10px] text-indigo-700 font-bold uppercase tracking-wider mb-1.5">Vareta Apito 3,0x350 (kg)</p>
-            <div className="space-y-1">
+          <div className="bg-white rounded-xl px-5 py-4 border border-slate-200 shadow-sm">
+            <p className="text-xs text-purple-600 font-bold uppercase tracking-wider mb-3">VARETA APITO 3,0X350 (KG)</p>
+            <div className="space-y-2">
               <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
-                <span className="text-sm font-extrabold text-indigo-700">{formatNumber(paEstoqueKg)} kg</span>
+                <span className="text-sm text-slate-500 font-semibold">Estoque</span>
+                <span className="text-lg font-extrabold text-emerald-600">{formatNumber(paEstoqueKg)} kg</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
-                <span className={`text-sm font-extrabold ${paPedidosKg > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosKg)} kg</span>
+                <span className="text-sm text-orange-500 font-bold">Pedidos</span>
+                <span className={`text-lg font-extrabold ${paPedidosKg > 0 ? 'text-orange-500' : 'text-slate-400'}`}>{formatNumber(paPedidosKg)} kg</span>
               </div>
-              <div className="h-px bg-indigo-200/60" />
+              <div className="h-px bg-slate-200" />
               <div className="flex justify-between items-baseline">
-                <span className={`text-[10px] font-bold ${paDisponivelKg < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
-                <span className={`text-base font-extrabold ${paDisponivelKg < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelKg)} kg</span>
+                <span className={`text-sm font-extrabold ${paDisponivelKg < 0 ? 'text-red-600' : 'text-purple-600'}`}>Disponível</span>
+                <span className={`text-2xl font-black ${paDisponivelKg < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelKg)} kg</span>
               </div>
             </div>
           </div>
