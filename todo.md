@@ -1757,3 +1757,4 @@
 - [x] Expandir card KPI "Disponível - Dúzias" para mostrar Estoque Manual, Pedidos e Disponível dentro do mesmo card
 - [x] Expandir card KPI "Disponível - Kg" para mostrar Estoque Manual, Pedidos e Disponível dentro do mesmo card
 - [x] Replicar separação Caixas/Dúzias/Kg no card "Madeira - Produto Acabado" com Estoque Manual, Pedidos e Disponível para cada tipo
+- [x] Destacar número de produtos em negrito nos cards Madeira PA, Semi Pronto e Aguardando Escolha

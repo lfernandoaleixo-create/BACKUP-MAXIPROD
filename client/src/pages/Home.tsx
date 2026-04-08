@@ -2221,7 +2221,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
             <div>
               <div className="flex items-center gap-3">
                 <h3 className="text-lg font-bold text-slate-800">Madeira - Produto Acabado</h3>
-                <span className="text-sm font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{parentItems.length} itens</span>
+                <span className="text-sm font-extrabold text-green-700 bg-green-100 border border-green-300 px-3 py-1 rounded-full">{parentItems.length} itens</span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque manual (somente aumento)</p>
             </div>
@@ -2571,7 +2571,7 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
             <div>
               <div className="flex items-center gap-3">
                 <h3 className="text-lg font-bold text-slate-800">Madeira Semi Pronto</h3>
-                <span className="text-sm font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{parentItems.length} itens</span>
+                <span className="text-sm font-extrabold text-blue-700 bg-blue-100 border border-blue-300 px-3 py-1 rounded-full">{parentItems.length} itens</span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque manual</p>
             </div>
@@ -2791,7 +2791,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
             <div>
               <div className="flex items-center gap-3">
                 <h3 className="text-lg font-bold text-slate-800">Madeira Aguardando Escolha</h3>
-                <span className="text-sm font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{parentItems.length} itens</span>
+                <span className="text-sm font-extrabold text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1 rounded-full">{parentItems.length} itens</span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - aguardando escolha</p>
             </div>
