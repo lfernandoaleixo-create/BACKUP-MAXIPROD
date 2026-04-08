@@ -195,10 +195,24 @@ export default function InadimplenciaTab() {
             <AlertTriangle className="w-5 h-5 text-red-500" />
             Gestão de Inadimplência
           </h2>
-          <p className="text-sm text-slate-500">
-            {stats.count} títulos vencidos · Total: <span className="font-semibold text-red-600">{formatCurrency(stats.total)}</span>
-            {clienteGroups.length > 0 && <span className="ml-2">· {clienteGroups.length} clientes</span>}
-          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5 text-red-500" />
+              <span className="text-sm font-bold text-red-700">{stats.count}</span>
+              <span className="text-xs text-red-600">títulos vencidos</span>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-red-500" />
+              <span className="text-sm font-bold text-red-700">{formatCurrency(stats.total)}</span>
+            </div>
+            {clienteGroups.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-red-500" />
+                <span className="text-sm font-bold text-red-700">{clienteGroups.length}</span>
+                <span className="text-xs text-red-600">clientes</span>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
           <button
@@ -234,7 +248,7 @@ export default function InadimplenciaTab() {
               }`}
             >
               <div className="text-xs font-medium uppercase tracking-wide opacity-70">{r.label}</div>
-              <div className="text-xl font-bold mt-1">{c.count}</div>
+              <div className="text-xl font-bold mt-1">{c.count} <span className="text-xs font-semibold">Títulos</span></div>
               <div className="text-xs mt-0.5 opacity-80">{formatCurrency(c.total)}</div>
             </button>
           );
@@ -255,7 +269,7 @@ export default function InadimplenciaTab() {
               } ${s.color}`}
             >
               <div className="text-[10px] font-medium uppercase tracking-wide opacity-70">{s.label}</div>
-              <div className="text-lg font-bold mt-0.5">{c.count}</div>
+              <div className="text-lg font-bold mt-0.5">{c.count} <span className="text-[10px] font-semibold">Títulos</span></div>
               <div className="text-[10px] mt-0.5 opacity-80">{formatCurrency(c.total)}</div>
             </button>
           );

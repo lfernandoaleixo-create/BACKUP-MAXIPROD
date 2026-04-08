@@ -183,6 +183,7 @@ function formatCurrencyCompact(n: number): string {
  */
 function getUnit(item: StockItem, hasCx: boolean): string {
   if (item.isKgProduct) return "kg";
+  if (item.codigoItem === "00223") return "kg"; // Vareta de Apito: unidade = kg
   if (item.codigoItem === "00129") return "dz"; // Rojão: unidade = dúzia
   return hasCx ? "cx" : "un";
 }
@@ -193,6 +194,7 @@ function getUnit(item: StockItem, hasCx: boolean): string {
  */
 function getPOUnit(item: StockItem): string {
   if (item.isKgProduct) return "kg";
+  if (item.codigoItem === "00223") return "kg"; // Vareta de Apito: unidade = kg
   if (item.codigoItem === "00129") return "dz"; // Rojão: unidade = dúzia
   return "cx";
 }
@@ -2312,7 +2314,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                           ) : (
                             <button onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
                               className="text-[13px] font-bold text-green-700 hover:bg-green-100 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                              title="Clique para editar (somente aumento)">{formatNumber(manualQty)} {item.codigoItem === "00129" ? "dz" : "cx"}</button>
+                              title="Clique para editar (somente aumento)">{formatNumber(manualQty)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}</button>
                           )}
                         </td>
                         {/* Histórico */}
@@ -2356,7 +2358,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                             if (vendaMensal == null) return <span className="text-[11px] text-slate-300">—</span>;
                             const fator = pricingItem?.fatorMultiplicacao ? parseFloat(pricingItem.fatorMultiplicacao) : 2.3;
                             const estReg = Math.round(vendaMensal * fator);
-                            const unit = item.isKgProduct ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
+                            const unit = item.isKgProduct || item.codigoItem === "00223" ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
                             let estRegColor = 'text-emerald-600';
                             if (estReg > 0) {
                               if (projetado <= estReg) estRegColor = 'text-red-600 bg-red-50 px-1 py-0.5 rounded';
@@ -2965,6 +2967,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
 
   // KPIs: Estoque Total e Pedidos APENAS de Madeira PA (não inclui Semi Pronto nem Aguardando)
   const ROJAO_CODE = "00129";
+  const VARETA_APITO_CODE = "00223";
   const madeiraEstoqueCx = useMemo(() => {
     return madeiraItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
   }, [madeiraItems]);
@@ -2976,9 +2979,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const madeiraProdutos = parentOnlyMadeira.length;
   const negativos = items.filter((i) => (i.disponivelCx ?? i.disponivelUn) < 0).length;
 
-  // Disponível separado: Caixas (tudo exceto Rojão) e Dúzias (apenas Rojão 00129)
+  // Disponível separado: Caixas (tudo exceto Rojão e Vareta Apito) e Dúzias (apenas Rojão 00129)
   const disponivelCaixas = useMemo(() => {
-    return madeiraItems.filter(i => i.codigoItem !== ROJAO_CODE).reduce((sum, i) => sum + ((i.estoqueCx ?? 0) - (i.pedidosCx ?? 0)), 0);
+    return madeiraItems.filter(i => i.codigoItem !== ROJAO_CODE && i.codigoItem !== VARETA_APITO_CODE && !i.isKgProduct).reduce((sum, i) => sum + ((i.estoqueCx ?? 0) - (i.pedidosCx ?? 0)), 0);
   }, [madeiraItems]);
   const disponivelDuzias = useMemo(() => {
     const rojao = madeiraItems.find(i => i.codigoItem === ROJAO_CODE);

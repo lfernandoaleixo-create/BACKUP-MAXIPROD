@@ -1747,3 +1747,7 @@
 - [x] Corrigir filtro de faturamento para excluir NFs de AMOSTRA, BONIFICAÇÃO, DEVOLUÇÃO, REMESSA e RECUSA
 - [x] Corrigir divergência: Faturado + A Faturar deve bater com Valor Total do Período na aba Vendas (diferença de ~R$91 causada por meias notas)
 - [x] Corrigir exibição dos bancos nos recebíveis: mostrar descrição completa (Empresa + Banco + Agência + Conta) em vez de apenas Banco + Ag + Cc
+- [x] Trocar unidade da VARETA DE APITO (Cod: 00223) de "cx" para "kg" no card Madeira PA
+- [x] Trocar unidade das VARAS PARA ROJÃO (Cod: 00129) de "1" para "dz" no card Madeira PA
+- [x] Destacar header "Gestão de Inadimplência" com caixa chamativa para valores (títulos vencidos, total R$, clientes)
+- [x] Adicionar palavra "Títulos" ao lado dos números nos cards de aging e status da inadimplência (ex: "32 Títulos")
