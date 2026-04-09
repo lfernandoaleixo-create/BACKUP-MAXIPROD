@@ -98,23 +98,25 @@ function PayableRow({
 }) {
   const badge = item.authStatus ? AUTH_STATUS_BADGE[item.authStatus] : null;
 
-  // Montar linha de detalhes: referenteA, observacoes, NF, parcela
-  const detailParts: string[] = [];
-  if (item.referenteA) detailParts.push(item.referenteA);
-  if (item.observacoes && item.observacoes !== item.referenteA) detailParts.push(item.observacoes);
-  if (item.documentoVinculadoNumero) detailParts.push(`NF ${item.documentoVinculadoNumero}`);
-  if (item.parcela) detailParts.push(`Parcela ${item.parcela}`);
-  const detailText = detailParts.join(" – ");
+  // Montar metadados secundários: NF, parcela, empresa
+  const metaParts: string[] = [];
+  if (item.documentoVinculadoNumero) metaParts.push(`NF ${item.documentoVinculadoNumero}`);
+  if (item.parcela) metaParts.push(`Parcela ${item.parcela}`);
+  if (item.empresaNome) metaParts.push(item.empresaNome);
+  const metaText = metaParts.join(" · ");
+
+  // Descrição principal: referenteA é o campo "Anotações - Descrição" do Maxiprod
+  const descricao = item.referenteA || item.observacoes || "";
 
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-2 border-b border-slate-100 last:border-b-0 transition-colors ${
+      className={`flex items-start gap-2 px-3 py-2.5 border-b border-slate-100 last:border-b-0 transition-colors ${
         item.authorized
           ? "bg-emerald-100 hover:bg-emerald-200/80"
           : "hover:bg-slate-50/50"
       }`}
     >
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 pt-0.5">
         {isToggling ? (
           <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
         ) : (
@@ -130,9 +132,10 @@ function PayableRow({
         )}
       </div>
       <div className="flex-1 min-w-0">
+        {/* Linha 1: Fornecedor + Badge */}
         <div className="flex items-center gap-1.5">
           {item.authorized && (
-            <ShieldCheck className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+            <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
           )}
           <span
             className={`text-sm font-semibold ${
@@ -148,22 +151,35 @@ function PayableRow({
             </span>
           )}
         </div>
-        {detailText && (
+        {/* Linha 2: Descrição/Anotação (referenteA) - DESTAQUE */}
+        {descricao && (
           <p
-            className={`text-[11px] whitespace-normal break-words ${
-              item.authorized ? "text-emerald-600/70" : "text-slate-500"
+            className={`text-xs mt-0.5 whitespace-normal break-words font-medium ${
+              item.authorized ? "text-emerald-700/80" : "text-indigo-700"
             }`}
+            style={{ wordBreak: "break-word" }}
           >
-            {detailText}
+            {descricao}
           </p>
         )}
+        {/* Linha 3: Metadados (NF, Parcela, Empresa) */}
+        {metaText && (
+          <p
+            className={`text-[10px] mt-0.5 whitespace-normal break-words ${
+              item.authorized ? "text-emerald-500/70" : "text-slate-400"
+            }`}
+          >
+            {metaText}
+          </p>
+        )}
+        {/* Linha 4: Notas de autorização */}
         {item.authNotes && (
           <p className="text-[9px] text-slate-500 italic mt-0.5" style={{ wordBreak: "break-word" }}>
             {item.authNotes}
           </p>
         )}
       </div>
-      <div className="flex-shrink-0 min-w-[120px]">
+      <div className="flex-shrink-0 min-w-[120px] text-right">
         <span
           className={`text-base font-bold tabular-nums ${
             item.authorized ? "text-emerald-700" : "text-red-600"
@@ -176,7 +192,7 @@ function PayableRow({
             item.authorized ? "text-emerald-400" : "text-slate-400"
           }`}
         >
-          {item.vencimento.split("-").reverse().join("/")}
+          Venc. {item.vencimento.split("-").reverse().join("/")}
         </div>
       </div>
     </div>

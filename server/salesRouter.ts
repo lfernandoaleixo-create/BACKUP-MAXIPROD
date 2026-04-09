@@ -1563,6 +1563,61 @@ export const salesRouter = router({
         .slice(-12)
         .map(([month, valor]) => ({ month, valor: Math.round(valor * 100) / 100 }));
 
+      // Deduplicar títulos (mesmo doc + mesma parcela + mesmo valor + mesma data = duplicata)
+      const deduplicatedReceivables: typeof allReceivables = [];
+      const seenKeys = new Set<string>();
+      for (const r of allReceivables) {
+        const dedupKey = `${r.documentoVinculadoNumero}_${r.parcela}_${r.valorOriginal}_${r.vencimentoData}`;
+        if (!seenKeys.has(dedupKey)) {
+          seenKeys.add(dedupKey);
+          deduplicatedReceivables.push(r);
+        }
+      }
+
+      // Vincular NF ao pedido faturado via títulos (contas a receber)
+      // Para pedidos faturados, o documentoVinculadoNumero do título é o número da NF
+      // Se o documentoVinculadoNumero NÃO coincide com nenhum número de pedido do cliente, é uma NF
+      const allPedidoNumbers = new Set(pedidoGroups.map(p => p.pedido));
+      const pedidoToNf = new Map<string, string[]>();
+      // Coletar todos os documentoVinculadoNumero que NÃO são números de pedido = são NFs
+      const nfDocs = new Set<string>();
+      for (const r of deduplicatedReceivables) {
+        const doc = r.documentoVinculadoNumero;
+        if (doc && !allPedidoNumbers.has(doc)) {
+          nfDocs.add(doc);
+        }
+      }
+      // Para cada pedido faturado, tentar encontrar a NF correspondente
+      // Estratégia: se o documentoVinculadoNumero do título coincide com o número do pedido,
+      // então o próprio número do pedido é a NF (coincidência)
+      // Se não, procurar NFs que não batem com nenhum pedido
+      for (const pg of pedidoGroups) {
+        if (pg.estadoNotaPedido === "Faturado") {
+          // Verificar se existe título com documentoVinculadoNumero == pedido (NF = pedido)
+          const titulosComPedido = deduplicatedReceivables.filter(
+            r => r.documentoVinculadoNumero === pg.pedido
+          );
+          if (titulosComPedido.length > 0) {
+            // NF tem o mesmo número do pedido
+            pedidoToNf.set(pg.pedido, [pg.pedido]);
+          } else {
+            // Procurar NFs que não batem com nenhum pedido - vincular por proximidade de valor
+            for (const nfDoc of Array.from(nfDocs)) {
+              const nfTitulos = deduplicatedReceivables.filter(
+                r => r.documentoVinculadoNumero === nfDoc
+              );
+              const nfValor = nfTitulos.reduce((s, r) => s + parseFloat(r.valorOriginal || "0"), 0);
+              // Se o valor da NF é próximo ao valor do pedido (tolerância 10%)
+              if (Math.abs(nfValor - pg.valorTotal) / Math.max(pg.valorTotal, 1) < 0.1) {
+                const existing = pedidoToNf.get(pg.pedido) || [];
+                existing.push(nfDoc);
+                pedidoToNf.set(pg.pedido, existing);
+              }
+            }
+          }
+        }
+      }
+
       // Usar pedidoGroups já agrupados para recentOrders
       const recentOrders = pedidoGroups
         .sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao))
@@ -1574,18 +1629,8 @@ export const salesRouter = router({
           status: p.estadoNotaPedido,
           itens: p.itens.length,
           condicaoPagamento: p.condicaoPagamento,
+          notasFiscais: pedidoToNf.get(p.pedido) || [],
         }));
-
-      // Deduplicar títulos (mesmo doc + mesma parcela + mesmo valor + mesma data = duplicata)
-      const deduplicatedReceivables: typeof allReceivables = [];
-      const seenKeys = new Set<string>();
-      for (const r of allReceivables) {
-        const dedupKey = `${r.documentoVinculadoNumero}_${r.parcela}_${r.valorOriginal}_${r.vencimentoData}`;
-        if (!seenKeys.has(dedupKey)) {
-          seenKeys.add(dedupKey);
-          deduplicatedReceivables.push(r);
-        }
-      }
 
       // Agrupar títulos por documento vinculado (mesmo pedido)
       const tituloGroupMap = new Map<string, Array<typeof allReceivables[number]>>();

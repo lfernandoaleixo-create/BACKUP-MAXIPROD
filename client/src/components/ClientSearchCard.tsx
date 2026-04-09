@@ -1,12 +1,13 @@
 /**
  * Card: Consulta de Cliente
  * Busca por nome com autocomplete e exibe resumo completo do cliente
- * Padrão visual idêntico aos outros cards da aba Vendas (Evolução Diária, Pedidos Faturados)
+ * 4 cards de status: Em Digitação, A Aprovar, Aprovado (A Faturar), Faturado
+ * Cores: Faturado=verde, Aprovado(A Faturar)=amarelo alaranjado, A Aprovar=laranja, Em Digitação=cinza
+ * Títulos: EMITIDO = em aberto (aguardando pagamento), RECEBIDO = já pago
  */
 
 import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { Badge } from "@/components/ui/badge";
 import {
   Search,
   User,
@@ -27,6 +28,11 @@ import {
   Loader2,
   Landmark,
   CreditCard,
+  CheckCircle2,
+  Clock,
+  Edit3,
+  ClipboardCheck,
+  Receipt,
 } from "lucide-react";
 
 function formatCurrency(value: number): string {
@@ -35,7 +41,6 @@ function formatCurrency(value: number): string {
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
-  // Handle ISO datetime strings like "2026-01-23T12:00:00.000-03:00"
   const clean = dateStr.includes("T") ? dateStr.split("T")[0] : dateStr;
   const parts = clean.split("-");
   if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -91,20 +96,19 @@ export function ClientSearchCard() {
 
   const handleSelectClient = (clientName: string) => {
     setSelectedClient(clientName);
-    setSearchQuery(""); // Limpa o campo de busca após selecionar
+    setSearchQuery("");
     setShowDropdown(false);
     setExpanded(true);
     inputRef.current?.blur();
   };
 
-  // Summary line for header
   const summaryText = clientSummary
     ? `${clientSummary.orders.totalPedidos} pedidos | ${formatCurrency(clientSummary.orders.valorTotalPedidos)}`
     : "";
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm relative" style={{ zIndex: showDropdown ? 100 : 'auto' }}>
-      {/* Header - same pattern as Evolução Diária */}
+      {/* Header */}
       <div className="w-full flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <User className="w-6 h-6 text-blue-600 shrink-0" />
@@ -112,7 +116,6 @@ export function ClientSearchCard() {
             Consulta de Cliente
           </h3>
 
-          {/* Search Input inline in header */}
           <div className="relative flex-1 max-w-md ml-4" ref={dropdownRef}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
@@ -149,7 +152,6 @@ export function ClientSearchCard() {
               )}
             </div>
 
-            {/* Dropdown Results */}
             {showDropdown && searchResults && searchResults.length > 0 && (
               <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-[70vh] overflow-y-auto">
                 <div className="sticky top-0 bg-slate-50 px-4 py-1.5 border-b border-slate-200 text-[10px] text-slate-500 font-medium">
@@ -276,59 +278,107 @@ export function ClientSearchCard() {
                 </div>
               </div>
 
-              {/* KPI Cards Row - Painel Unificado */}
+              {/* 4 KPI Cards: Em Digitação, A Aprovar, Aprovado (A Faturar), Faturado */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {/* Pedidos */}
+                {/* Em Digitação - Cinza */}
+                <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                    <Edit3 className="h-3.5 w-3.5 text-slate-500" />
+                    Em Digitação
+                  </div>
+                  <div className="text-xl font-bold text-slate-700">{clientSummary.orders.pedidosEmDigitacao}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.orders.valorEmDigitacao)}</div>
+                </div>
+                {/* A Aprovar - Laranja */}
+                <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                    <ClipboardCheck className="h-3.5 w-3.5 text-orange-600" />
+                    A Aprovar
+                  </div>
+                  <div className="text-xl font-bold text-orange-700">{clientSummary.orders.pedidosAprovar || 0}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.orders.valorAprovar || 0)}</div>
+                </div>
+                {/* Aprovado (A Faturar) - Amarelo Alaranjado */}
+                <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                    <Clock className="h-3.5 w-3.5 text-amber-600" />
+                    Aprovado (A Faturar)
+                  </div>
+                  <div className="text-xl font-bold text-amber-700">{clientSummary.orders.pedidosAFaturar}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.orders.valorAFaturar)}</div>
+                </div>
+                {/* Faturado - Verde */}
+                <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    Faturado
+                  </div>
+                  <div className="text-xl font-bold text-emerald-700">{clientSummary.orders.pedidosFaturados}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.orders.valorFaturado)}</div>
+                </div>
+              </div>
+
+              {/* Resumo Financeiro: Títulos + Inadimplência */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Títulos Em Aberto (EMITIDO) */}
+                <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                    <Receipt className="h-3.5 w-3.5 text-amber-600" />
+                    Títulos Em Aberto
+                  </div>
+                  <div className="text-xl font-bold text-amber-700">{clientSummary.receivables.parcelasEmAberto || clientSummary.receivables.titulosEmAberto}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.receivables.valorEmAberto)}</div>
+                  <div className="text-[10px] text-amber-500 mt-1">
+                    Aguardando pagamento
+                  </div>
+                </div>
+                {/* Títulos Recebidos (RECEBIDO) */}
+                <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    Títulos Recebidos
+                  </div>
+                  <div className="text-xl font-bold text-emerald-700">{clientSummary.receivables.parcelasRecebidas || clientSummary.receivables.titulosRecebidos}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.receivables.valorRecebido)}</div>
+                  <div className="text-[10px] text-emerald-500 mt-1">
+                    Pagamento confirmado
+                  </div>
+                </div>
+                {/* Inadimplência */}
+                {clientSummary.overdue.titulosVencidos > 0 ? (
+                  <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                      <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
+                      Inadimplência
+                    </div>
+                    <div className="text-xl font-bold text-red-700">{formatCurrency(clientSummary.overdue.valorVencido)}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {clientSummary.overdue.titulosVencidos} título{clientSummary.overdue.titulosVencidos !== 1 ? 's' : ''} vencido{clientSummary.overdue.titulosVencidos !== 1 ? 's' : ''}
+                    </div>
+                    {clientSummary.overdue.diasAtrasoMedio > 0 && (
+                      <div className="text-[10px] text-red-500 mt-1">
+                        Atraso médio: {clientSummary.overdue.diasAtrasoMedio}d | Máx: {clientSummary.overdue.diasAtrasoMax}d
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-emerald-50/50 rounded-lg p-3 border border-emerald-100">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                      Inadimplência
+                    </div>
+                    <div className="text-xl font-bold text-emerald-600">Nenhuma</div>
+                    <div className="text-xs text-slate-500 mt-0.5">Cliente em dia</div>
+                  </div>
+                )}
+                {/* Total Pedidos */}
                 <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
                     <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
-                    Pedidos
+                    Total Pedidos
                   </div>
-                  <div className="text-xl font-bold text-slate-800">{clientSummary.orders.totalPedidos}</div>
-                  <div className="text-xs text-slate-500">{formatCurrency(clientSummary.orders.valorTotalPedidos)}</div>
-                  <div className="text-[10px] text-blue-600 mt-1">
-                    {clientSummary.orders.pedidosFaturados} faturado{clientSummary.orders.pedidosFaturados !== 1 ? 's' : ''}
-                    {(clientSummary.orders.pedidosAFaturar + (clientSummary.orders.pedidosAprovar || 0) + clientSummary.orders.pedidosEmDigitacao) > 0 && (
-                      <> | {clientSummary.orders.pedidosAFaturar + (clientSummary.orders.pedidosAprovar || 0) + clientSummary.orders.pedidosEmDigitacao} pendente{(clientSummary.orders.pedidosAFaturar + (clientSummary.orders.pedidosAprovar || 0) + clientSummary.orders.pedidosEmDigitacao) !== 1 ? 's' : ''}</>
-                    )}
-                  </div>
-                </div>
-                {/* Títulos (Documentos) */}
-                <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                    <FileText className="h-3.5 w-3.5 text-emerald-600" />
-                    Títulos
-                  </div>
-                  <div className="text-xl font-bold text-emerald-700">{clientSummary.receivables.totalDocumentos || clientSummary.groupedReceivables?.length || 0}</div>
-                  <div className="text-xs text-slate-500">{clientSummary.receivables.totalParcelas || clientSummary.receivables.totalTitulos} parcelas no total</div>
-                  <div className="text-[10px] text-emerald-600 mt-1">
-                    {clientSummary.receivables.documentosEmAberto || 0} em aberto | {clientSummary.receivables.documentosRecebidos || 0} recebido{(clientSummary.receivables.documentosRecebidos || 0) !== 1 ? 's' : ''}
-                  </div>
-                </div>
-                {/* Em Aberto */}
-                <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                    <DollarSign className="h-3.5 w-3.5 text-amber-600" />
-                    Em Aberto
-                  </div>
-                  <div className="text-xl font-bold text-amber-700">{formatCurrency(clientSummary.receivables.valorEmAberto)}</div>
-                  <div className="text-xs text-slate-500">{clientSummary.receivables.parcelasEmAberto || clientSummary.receivables.titulosEmAberto} parcelas</div>
-                </div>
-                {/* Inadimplência */}
-                <div className="bg-red-50 rounded-lg p-3 border border-red-100">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                    <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
-                    Inadimplência
-                  </div>
-                  <div className="text-xl font-bold text-red-700">{formatCurrency(clientSummary.overdue.valorVencido)}</div>
-                  <div className="text-xs text-slate-500">
-                    {clientSummary.overdue.titulosVencidos} parcela{clientSummary.overdue.titulosVencidos !== 1 ? 's' : ''} vencida{clientSummary.overdue.titulosVencidos !== 1 ? 's' : ''}
-                  </div>
-                  {clientSummary.overdue.diasAtrasoMedio > 0 && (
-                    <div className="text-[10px] text-red-600 mt-1">
-                      Atraso médio: {clientSummary.overdue.diasAtrasoMedio}d | Máx: {clientSummary.overdue.diasAtrasoMax}d
-                    </div>
-                  )}
+                  <div className="text-xl font-bold text-blue-700">{clientSummary.orders.totalPedidos}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.orders.valorTotalPedidos)}</div>
                 </div>
               </div>
 
@@ -342,28 +392,6 @@ export function ClientSearchCard() {
                 expanded={expandedSections.orders}
                 onToggle={() => toggleSection("orders")}
               >
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                  <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
-                    <div className="text-xs text-slate-500">Faturados</div>
-                    <div className="font-semibold text-emerald-600">{clientSummary.orders.pedidosFaturados}</div>
-                    <div className="text-xs text-slate-400">{formatCurrency(clientSummary.orders.valorFaturado)}</div>
-                  </div>
-                  <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
-                    <div className="text-xs text-slate-500">A Faturar</div>
-                    <div className="font-semibold text-amber-600">{clientSummary.orders.pedidosAFaturar}</div>
-                    <div className="text-xs text-slate-400">{formatCurrency(clientSummary.orders.valorAFaturar)}</div>
-                  </div>
-                  <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
-                    <div className="text-xs text-slate-500">A Aprovar</div>
-                    <div className="font-semibold text-orange-600">{clientSummary.orders.pedidosAprovar || 0}</div>
-                    <div className="text-xs text-slate-400">{formatCurrency(clientSummary.orders.valorAprovar || 0)}</div>
-                  </div>
-                  <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
-                    <div className="text-xs text-slate-500">Em Digitação</div>
-                    <div className="font-semibold text-slate-600">{clientSummary.orders.pedidosEmDigitacao}</div>
-                    <div className="text-xs text-slate-400">{formatCurrency(clientSummary.orders.valorEmDigitacao)}</div>
-                  </div>
-                </div>
                 {clientSummary.recentOrders.length > 0 && (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -373,15 +401,20 @@ export function ClientSearchCard() {
                           <th className="text-left py-2 px-2">Data</th>
                           <th className="text-right py-2 px-2">Valor</th>
                           <th className="text-left py-2 px-2">Status</th>
+                          <th className="text-left py-2 px-2">NF</th>
                           <th className="text-right py-2 px-2">Itens</th>
                         </tr>
                       </thead>
                       <tbody>
                         {clientSummary.recentOrders.map((order, idx) => (
-                          <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                            <td className="py-1.5 px-2 font-mono text-xs text-slate-700">{order.pedido}</td>
+                          <tr key={idx} className={`border-b border-slate-100 hover:bg-slate-50 ${
+                            order.status === "Faturado" ? "bg-emerald-50/30" :
+                            order.status === "A faturar" || order.status === "Aprovado" ? "bg-amber-50/30" :
+                            ""
+                          }`}>
+                            <td className="py-1.5 px-2 font-mono text-xs text-slate-700 font-semibold">{order.pedido}</td>
                             <td className="py-1.5 px-2 text-xs text-slate-600">{formatDate(order.data)}</td>
-                            <td className="py-1.5 px-2 text-right text-xs text-slate-700">{formatCurrency(order.valor)}</td>
+                            <td className="py-1.5 px-2 text-right text-xs text-slate-700 font-medium">{formatCurrency(order.valor)}</td>
                             <td className="py-1.5 px-2">
                               <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                                 order.status === "Faturado" ? "bg-emerald-100 text-emerald-700" :
@@ -390,8 +423,20 @@ export function ClientSearchCard() {
                                 order.status === "Digitação" || order.status === "Em digitação" ? "bg-slate-100 text-slate-600" :
                                 "bg-slate-100 text-slate-600"
                               }`}>
-                                {order.status}
+                                {order.status === "A faturar" || order.status === "Aprovado" ? "Aprovado (A Faturar)" :
+                                 order.status === "Digitação" ? "Em Digitação" : order.status}
                               </span>
+                            </td>
+                            <td className="py-1.5 px-2 text-xs">
+                              {order.status === "Faturado" && (order as any).notasFiscais?.length > 0 ? (
+                                <span className="font-mono text-emerald-700 font-medium">
+                                  NF {(order as any).notasFiscais.join(", ")}
+                                </span>
+                              ) : order.status === "Faturado" ? (
+                                <span className="text-slate-400">-</span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
                             </td>
                             <td className="py-1.5 px-2 text-right text-xs text-slate-600">{order.itens}</td>
                           </tr>
@@ -402,42 +447,44 @@ export function ClientSearchCard() {
                 )}
               </SectionCard>
 
-              {/* Receivables Section - Resumo Financeiro Unificado */}
+              {/* Títulos (Contas a Receber) */}
               <SectionCard
-                title="Resumo Financeiro"
-                icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
-                badge={`${clientSummary.receivables.totalDocumentos || clientSummary.groupedReceivables?.length || 0} documentos | ${clientSummary.receivables.totalParcelas || clientSummary.receivables.totalTitulos} parcelas`}
-                expanded={expandedSections.receivables}
-                onToggle={() => toggleSection("receivables")}
+                title="Títulos (Contas a Receber)"
+                icon={<FileText className="h-4 w-4 text-amber-600" />}
+                badge={`${clientSummary.groupedReceivables?.length || 0} documentos`}
+                expanded={expandedSections.titles}
+                onToggle={() => toggleSection("titles")}
               >
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                  <div className="text-center p-2.5 bg-amber-50 rounded-lg border border-amber-100">
-                    <div className="text-xs text-slate-500 mb-0.5">Docs Em Aberto</div>
-                    <div className="text-lg font-bold text-amber-600">{clientSummary.receivables.documentosEmAberto || 0}</div>
-                    <div className="text-[10px] text-slate-400">{clientSummary.receivables.parcelasEmAberto || clientSummary.receivables.titulosEmAberto} parcelas</div>
-                    <div className="text-xs font-semibold text-amber-700 mt-1">{formatCurrency(clientSummary.receivables.valorEmAberto)}</div>
-                  </div>
-                  <div className="text-center p-2.5 bg-emerald-50 rounded-lg border border-emerald-100">
-                    <div className="text-xs text-slate-500 mb-0.5">Docs Recebidos</div>
-                    <div className="text-lg font-bold text-emerald-600">{clientSummary.receivables.documentosRecebidos || 0}</div>
-                    <div className="text-[10px] text-slate-400">{clientSummary.receivables.parcelasRecebidas || clientSummary.receivables.titulosRecebidos} parcelas</div>
-                    <div className="text-xs font-semibold text-emerald-700 mt-1">{formatCurrency(clientSummary.receivables.valorRecebido)}</div>
-                  </div>
-                  <div className="text-center p-2.5 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="text-xs text-slate-500 mb-0.5">Total Documentos</div>
-                    <div className="text-lg font-bold text-blue-700">{clientSummary.receivables.totalDocumentos || clientSummary.groupedReceivables?.length || 0}</div>
-                    <div className="text-[10px] text-slate-400">{clientSummary.receivables.totalParcelas || clientSummary.receivables.totalTitulos} parcelas</div>
-                  </div>
-                  <div className="text-center p-2.5 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="text-xs text-slate-500 mb-0.5">Faturado (Pedidos)</div>
-                    <div className="text-lg font-bold text-slate-700">{clientSummary.orders.pedidosFaturados}/{clientSummary.orders.totalPedidos}</div>
-                    <div className="text-[10px] text-slate-400">pedidos faturados</div>
-                    <div className="text-xs font-semibold text-emerald-700 mt-1">{formatCurrency(clientSummary.orders.valorFaturado)}</div>
+                {/* Legenda explicativa */}
+                <div className="mb-3 p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-[11px] text-slate-500">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                      <strong className="text-amber-700">EMITIDO</strong> = Título em aberto, aguardando pagamento
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                      <strong className="text-emerald-700">RECEBIDO</strong> = Título pago/recebido
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Receipt className="h-3 w-3 text-slate-400" />
+                      Cada boleto = 1 título (parcela)
+                    </div>
                   </div>
                 </div>
+
+                {clientSummary.groupedReceivables && clientSummary.groupedReceivables.length > 0 ? (
+                  <div className="space-y-2">
+                    {clientSummary.groupedReceivables.map((group, gIdx) => (
+                      <TituloGroupCard key={gIdx} group={group} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 text-center py-4">Nenhum título encontrado para este cliente.</p>
+                )}
               </SectionCard>
 
-              {/* Overdue Section */}
+              {/* Overdue Section - only if there are overdue items */}
               {clientSummary.overdue.titulosVencidos > 0 && (
                 <SectionCard
                   title="Inadimplência"
@@ -532,58 +579,6 @@ export function ClientSearchCard() {
                   </div>
                 </SectionCard>
               )}
-
-              {/* Grouped Titles by Document */}
-              <SectionCard
-                title="Títulos"
-                icon={<FileText className="h-4 w-4 text-amber-600" />}
-                badge={`${clientSummary.groupedReceivables?.length || 0} documentos`}
-                expanded={expandedSections.titles}
-                onToggle={() => toggleSection("titles")}
-              >
-                {clientSummary.groupedReceivables && clientSummary.groupedReceivables.length > 0 ? (
-                  <div className="space-y-2">
-                    {clientSummary.groupedReceivables.map((group, gIdx) => (
-                      <TituloGroupCard key={gIdx} group={group} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 text-slate-500 text-xs">
-                          <th className="text-left py-2 px-2">Documento</th>
-                          <th className="text-left py-2 px-2">Vencimento</th>
-                          <th className="text-right py-2 px-2">Valor</th>
-                          <th className="text-right py-2 px-2">Recebido</th>
-                          <th className="text-left py-2 px-2">Estado</th>
-                          <th className="text-left py-2 px-2">Parcela</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {clientSummary.recentReceivables.map((r, idx) => (
-                          <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                            <td className="py-1.5 px-2 font-mono text-xs text-slate-700">{r.documento}</td>
-                            <td className="py-1.5 px-2 text-xs text-slate-600">{formatDate(r.vencimento)}</td>
-                            <td className="py-1.5 px-2 text-right text-xs text-slate-700">{formatCurrency(r.valorOriginal)}</td>
-                            <td className="py-1.5 px-2 text-right text-xs text-slate-700">{formatCurrency(r.valorRecebido)}</td>
-                            <td className="py-1.5 px-2">
-                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                                r.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700" :
-                                r.estado === "EM ABERTO" ? "bg-amber-100 text-amber-700" :
-                                "bg-red-100 text-red-700"
-                              }`}>
-                                {r.estado}
-                              </span>
-                            </td>
-                            <td className="py-1.5 px-2 text-xs text-slate-600">{r.parcela}/{r.totalParcelas}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </SectionCard>
 
               {/* Pending Items */}
               {clientSummary.pendingItems.length > 0 && (
@@ -710,9 +705,9 @@ function TituloGroupCard({ group }: {
   // Get banco info from first titulo that has it
   const bancoInfo = group.titulos.find(t => t.bancoNome)?.bancoNome || "";
 
-  // Determine forma de pagamento
   const formaPagamento = bancoInfo ? "Boleto Bancário" : "Outros";
 
+  // Colors based on status
   const statusColor = groupStatus === "RECEBIDO"
     ? "border-emerald-200 bg-emerald-50/50"
     : groupStatus === "EMITIDO"
@@ -725,6 +720,12 @@ function TituloGroupCard({ group }: {
     ? "bg-amber-100 text-amber-700"
     : "bg-slate-100 text-slate-600";
 
+  const statusLabel = groupStatus === "RECEBIDO"
+    ? "Pago"
+    : groupStatus === "EMITIDO"
+    ? "Em Aberto"
+    : "Parcial";
+
   return (
     <div className={`rounded-lg border ${statusColor} overflow-hidden transition-all`}>
       {/* Header - clickable to expand */}
@@ -734,17 +735,22 @@ function TituloGroupCard({ group }: {
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex items-center gap-2 shrink-0">
-            <FileText className="h-4 w-4 text-amber-600" />
+            <FileText className={`h-4 w-4 ${groupStatus === "RECEBIDO" ? "text-emerald-600" : "text-amber-600"}`} />
             <span className="font-mono text-sm font-semibold text-slate-700">
               Doc {group.documento || "S/N"}
             </span>
           </div>
           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusBadgeColor}`}>
-            {groupStatus}
+            {statusLabel}
           </span>
           {group.parcelas > 1 && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
-              {group.parcelas} parcelas
+              {group.parcelas} título{group.parcelas > 1 ? 's' : ''} (boletos)
+            </span>
+          )}
+          {group.parcelas === 1 && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
+              1 título
             </span>
           )}
           {bancoInfo && (
@@ -768,10 +774,9 @@ function TituloGroupCard({ group }: {
         </div>
       </button>
 
-      {/* Expanded content - individual parcelas */}
+      {/* Expanded content - individual parcelas/títulos */}
       {expanded && (
         <div className="border-t border-slate-200 bg-white">
-          {/* Forma de pagamento info */}
           <div className="px-3 pt-2 pb-1 flex items-center gap-2 text-xs text-slate-500">
             <CreditCard className="h-3 w-3" />
             <span>Forma: <strong className="text-slate-700">{formaPagamento}</strong></span>
@@ -787,7 +792,7 @@ function TituloGroupCard({ group }: {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 text-[11px]">
-                  <th className="text-left py-1.5 px-3">Parcela</th>
+                  <th className="text-left py-1.5 px-3">Título</th>
                   <th className="text-left py-1.5 px-3">Emissão</th>
                   <th className="text-left py-1.5 px-3">Vencimento</th>
                   <th className="text-left py-1.5 px-3">Liquidação</th>
@@ -798,7 +803,9 @@ function TituloGroupCard({ group }: {
               </thead>
               <tbody>
                 {group.titulos.map((t, tIdx) => (
-                  <tr key={tIdx} className="border-b border-slate-100 hover:bg-slate-50 last:border-0">
+                  <tr key={tIdx} className={`border-b border-slate-100 last:border-0 ${
+                    t.estado === "RECEBIDO" ? "bg-emerald-50/30 hover:bg-emerald-50" : "hover:bg-slate-50"
+                  }`}>
                     <td className="py-1.5 px-3 text-xs text-slate-600">
                       {t.parcela && t.totalParcelas ? `${t.parcela}/${t.totalParcelas}` : t.parcela || "Única"}
                     </td>
@@ -813,7 +820,7 @@ function TituloGroupCard({ group }: {
                         t.estado === "EMITIDO" ? "bg-amber-100 text-amber-700" :
                         "bg-red-100 text-red-700"
                       }`}>
-                        {t.estado}
+                        {t.estado === "RECEBIDO" ? "Pago" : t.estado === "EMITIDO" ? "Em Aberto" : t.estado}
                       </span>
                     </td>
                   </tr>

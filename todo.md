@@ -1805,3 +1805,18 @@
 - [x] Redesenhar layout: painel unificado pedidos/títulos/faturamento claro e consistente
 - [x] Cards expansíveis: agrupar parcelas do mesmo documento com visual impecável
 - [x] Aplicar correções para TODOS os clientes
+
+## Redesenho Consulta de Cliente v3 - Cards de Status e Títulos
+- [x] Remover "3 pedidos" do card Faturado (mostrar só valor)
+- [x] 4 cards de status de pedidos: Em Digitação, A Aprovar, Aprovado (A Faturar), Faturado
+- [x] Card Faturado = verde, Card Aprovado/A Faturar = amarelo/alaranjado
+- [x] Cada boleto = 1 título (não agrupar por documento)
+- [x] Explicar EMITIDO (em aberto) e RECEBIDO (pago) claramente na interface
+- [x] Corrigir contagem de pedidos faturados (pedido 775 = 1 faturado, não 3)
+- [x] Aplicar para TODOS os clientes
+- [x] Pedido não faturado: mostrar apenas número do pedido
+- [x] Pedido faturado: mostrar número do pedido + número da nota fiscal correspondente
+
+## Autorização de Pagamentos - Campo Anotações
+- [x] Puxar campo "Anotações/Descrição" do Maxiprod nas contas a pagar
+- [x] Exibir anotações detalhadas na tela de Autorização de Pagamentos para facilitar aprovação
