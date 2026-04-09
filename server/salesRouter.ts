@@ -1643,8 +1643,15 @@ export const salesRouter = router({
       const groupedReceivables = Array.from(tituloGroupMap.entries()).map(([docNum, titulos]) => {
         const valorTotalGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorOriginal || "0"), 0);
         const valorRecebidoGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
+        const docNumClean = docNum.startsWith("solo_") ? "" : docNum;
+        // Determinar se o documento é um número de pedido ou uma NF
+        const isPedido = allPedidoNumbers.has(docNumClean);
+        // Se é um pedido, verificar se tem NF vinculada
+        const nfVinculada = isPedido ? (pedidoToNf.get(docNumClean) || []) : [];
         return {
-          documento: docNum.startsWith("solo_") ? "" : docNum,
+          documento: docNumClean,
+          isPedido,
+          nfVinculada,
           valorTotalGrupo: Math.round(valorTotalGrupo * 100) / 100,
           valorRecebidoGrupo: Math.round(valorRecebidoGrupo * 100) / 100,
           parcelas: titulos.length,

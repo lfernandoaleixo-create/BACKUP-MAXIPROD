@@ -1824,3 +1824,10 @@
 ## Correções v3.1
 - [x] Corrigir contagem de pedidos faturados: contar PEDIDOS (não itens/linhas) - pedido 775 = 1 faturado, não 3
 - [x] Card Inadimplência deve ser VERMELHO
+
+## Correções v3.2
+- [x] Remover coluna "Recebido" da tabela de títulos expandida (TituloGroupCard)
+- [x] Trocar "Doc 860" por "Pedido 860" nos títulos agrupados
+- [x] Quando tiver NF vinculada, mostrar "Pedido 775 → NF 195" no título agrupado
+- [x] Card Inadimplência "Nenhuma" deve ter visual neutro (não verde confuso)
+- [x] NÃO mexer na Autorização de Pagamentos (ticagens já feitas devem ser preservadas)

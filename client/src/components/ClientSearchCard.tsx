@@ -319,7 +319,7 @@ export function ClientSearchCard() {
               </div>
 
               {/* Resumo Financeiro: Títulos + Inadimplência */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {/* Títulos Em Aberto (EMITIDO) */}
                 <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
@@ -332,18 +332,7 @@ export function ClientSearchCard() {
                     Aguardando pagamento
                   </div>
                 </div>
-                {/* Títulos Recebidos (RECEBIDO) */}
-                <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                    Títulos Recebidos
-                  </div>
-                  <div className="text-xl font-bold text-emerald-700">{clientSummary.receivables.parcelasRecebidas || clientSummary.receivables.titulosRecebidos}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.receivables.valorRecebido)}</div>
-                  <div className="text-[10px] text-emerald-500 mt-1">
-                    Pagamento confirmado
-                  </div>
-                </div>
+
                 {/* Inadimplência */}
                 {clientSummary.overdue.titulosVencidos > 0 ? (
                   <div className="bg-red-100 rounded-lg p-3 border-2 border-red-400 shadow-sm">
@@ -362,13 +351,13 @@ export function ClientSearchCard() {
                     )}
                   </div>
                 ) : (
-                  <div className="bg-emerald-50/50 rounded-lg p-3 border border-emerald-100">
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-slate-400" />
                       Inadimplência
                     </div>
-                    <div className="text-xl font-bold text-emerald-600">Nenhuma</div>
-                    <div className="text-xs text-slate-500 mt-0.5">Cliente em dia</div>
+                    <div className="text-xl font-bold text-slate-500">Nenhuma</div>
+                    <div className="text-xs text-slate-400 mt-0.5">Cliente em dia</div>
                   </div>
                 )}
                 {/* Total Pedidos */}
@@ -676,6 +665,8 @@ function SectionCard({
 function TituloGroupCard({ group }: {
   group: {
     documento: string;
+    isPedido?: boolean;
+    nfVinculada?: string[];
     valorTotalGrupo: number;
     valorRecebidoGrupo: number;
     parcelas: number;
@@ -737,7 +728,11 @@ function TituloGroupCard({ group }: {
           <div className="flex items-center gap-2 shrink-0">
             <FileText className={`h-4 w-4 ${groupStatus === "RECEBIDO" ? "text-emerald-600" : "text-amber-600"}`} />
             <span className="font-mono text-sm font-semibold text-slate-700">
-              Doc {group.documento || "S/N"}
+              {group.documento ? (
+                group.isPedido
+                  ? <>Pedido {group.documento}{group.nfVinculada && group.nfVinculada.length > 0 && <span className="text-emerald-600 font-normal"> → NF {group.nfVinculada.join(", ")}</span>}</>
+                  : <>NF {group.documento}</>
+              ) : "S/N"}
             </span>
           </div>
           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusBadgeColor}`}>
@@ -763,9 +758,7 @@ function TituloGroupCard({ group }: {
         <div className="flex items-center gap-4 shrink-0">
           <div className="text-right">
             <div className="text-sm font-bold text-slate-800">{formatCurrency(group.valorTotalGrupo)}</div>
-            {group.valorRecebidoGrupo > 0 && (
-              <div className="text-[10px] text-emerald-600">Recebido: {formatCurrency(group.valorRecebidoGrupo)}</div>
-            )}
+
           </div>
           {expanded
             ? <ChevronUp className="h-4 w-4 text-slate-400" />
@@ -797,7 +790,6 @@ function TituloGroupCard({ group }: {
                   <th className="text-left py-1.5 px-3">Vencimento</th>
                   <th className="text-left py-1.5 px-3">Liquidação</th>
                   <th className="text-right py-1.5 px-3">Valor</th>
-                  <th className="text-right py-1.5 px-3">Recebido</th>
                   <th className="text-left py-1.5 px-3">Estado</th>
                 </tr>
               </thead>
@@ -813,7 +805,6 @@ function TituloGroupCard({ group }: {
                     <td className="py-1.5 px-3 text-xs text-slate-600 font-medium">{formatDate(t.vencimento)}</td>
                     <td className="py-1.5 px-3 text-xs text-slate-600">{t.liquidacao ? formatDate(t.liquidacao) : "-"}</td>
                     <td className="py-1.5 px-3 text-right text-xs font-medium text-slate-700">{formatCurrency(t.valorOriginal)}</td>
-                    <td className="py-1.5 px-3 text-right text-xs text-slate-600">{formatCurrency(t.valorRecebido)}</td>
                     <td className="py-1.5 px-3">
                       <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                         t.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700" :
