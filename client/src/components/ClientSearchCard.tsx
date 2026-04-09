@@ -23,7 +23,10 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Loader2,
+  Landmark,
+  CreditCard,
 } from "lucide-react";
 
 function formatCurrency(value: number): string {
@@ -321,16 +324,21 @@ export function ClientSearchCard() {
                 expanded={expandedSections.orders}
                 onToggle={() => toggleSection("orders")}
               >
-                <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
+                    <div className="text-xs text-slate-500">Faturados</div>
+                    <div className="font-semibold text-emerald-600">{clientSummary.orders.pedidosFaturados}</div>
+                    <div className="text-xs text-slate-400">{formatCurrency(clientSummary.orders.valorFaturado)}</div>
+                  </div>
                   <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
                     <div className="text-xs text-slate-500">A Faturar</div>
                     <div className="font-semibold text-amber-600">{clientSummary.orders.pedidosAFaturar}</div>
                     <div className="text-xs text-slate-400">{formatCurrency(clientSummary.orders.valorAFaturar)}</div>
                   </div>
                   <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
-                    <div className="text-xs text-slate-500">Faturados</div>
-                    <div className="font-semibold text-emerald-600">{clientSummary.orders.pedidosFaturados}</div>
-                    <div className="text-xs text-slate-400">{formatCurrency(clientSummary.orders.valorFaturado)}</div>
+                    <div className="text-xs text-slate-500">A Aprovar</div>
+                    <div className="font-semibold text-orange-600">{clientSummary.orders.pedidosAprovar || 0}</div>
+                    <div className="text-xs text-slate-400">{formatCurrency(clientSummary.orders.valorAprovar || 0)}</div>
                   </div>
                   <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
                     <div className="text-xs text-slate-500">Em Digitação</div>
@@ -358,8 +366,10 @@ export function ClientSearchCard() {
                             <td className="py-1.5 px-2 text-right text-xs text-slate-700">{formatCurrency(order.valor)}</td>
                             <td className="py-1.5 px-2">
                               <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                                order.status === "Aprovado" ? "bg-emerald-100 text-emerald-700" :
-                                order.status === "Faturado" ? "bg-blue-100 text-blue-700" :
+                                order.status === "Faturado" ? "bg-emerald-100 text-emerald-700" :
+                                order.status === "A faturar" || order.status === "Aprovado" ? "bg-amber-100 text-amber-700" :
+                                order.status === "A aprovar" ? "bg-orange-100 text-orange-700" :
+                                order.status === "Digitação" || order.status === "Em digitação" ? "bg-slate-100 text-slate-600" :
                                 "bg-slate-100 text-slate-600"
                               }`}>
                                 {order.status}
@@ -496,48 +506,56 @@ export function ClientSearchCard() {
                 </SectionCard>
               )}
 
-              {/* Recent Titles */}
+              {/* Grouped Titles by Document */}
               <SectionCard
-                title="Últimos Títulos"
+                title="Títulos"
                 icon={<FileText className="h-4 w-4 text-amber-600" />}
-                badge={`${clientSummary.recentReceivables.length}`}
+                badge={`${clientSummary.groupedReceivables?.length || clientSummary.recentReceivables.length}`}
                 expanded={expandedSections.titles}
                 onToggle={() => toggleSection("titles")}
               >
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-500 text-xs">
-                        <th className="text-left py-2 px-2">Documento</th>
-                        <th className="text-left py-2 px-2">Vencimento</th>
-                        <th className="text-right py-2 px-2">Valor</th>
-                        <th className="text-right py-2 px-2">Recebido</th>
-                        <th className="text-left py-2 px-2">Estado</th>
-                        <th className="text-left py-2 px-2">Parcela</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {clientSummary.recentReceivables.map((r, idx) => (
-                        <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                          <td className="py-1.5 px-2 font-mono text-xs text-slate-700">{r.documento}</td>
-                          <td className="py-1.5 px-2 text-xs text-slate-600">{formatDate(r.vencimento)}</td>
-                          <td className="py-1.5 px-2 text-right text-xs text-slate-700">{formatCurrency(r.valorOriginal)}</td>
-                          <td className="py-1.5 px-2 text-right text-xs text-slate-700">{formatCurrency(r.valorRecebido)}</td>
-                          <td className="py-1.5 px-2">
-                            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                              r.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700" :
-                              r.estado === "EM ABERTO" ? "bg-amber-100 text-amber-700" :
-                              "bg-red-100 text-red-700"
-                            }`}>
-                              {r.estado}
-                            </span>
-                          </td>
-                          <td className="py-1.5 px-2 text-xs text-slate-600">{r.parcela}/{r.totalParcelas}</td>
+                {clientSummary.groupedReceivables && clientSummary.groupedReceivables.length > 0 ? (
+                  <div className="space-y-2">
+                    {clientSummary.groupedReceivables.map((group, gIdx) => (
+                      <TituloGroupCard key={gIdx} group={group} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-slate-500 text-xs">
+                          <th className="text-left py-2 px-2">Documento</th>
+                          <th className="text-left py-2 px-2">Vencimento</th>
+                          <th className="text-right py-2 px-2">Valor</th>
+                          <th className="text-right py-2 px-2">Recebido</th>
+                          <th className="text-left py-2 px-2">Estado</th>
+                          <th className="text-left py-2 px-2">Parcela</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {clientSummary.recentReceivables.map((r, idx) => (
+                          <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+                            <td className="py-1.5 px-2 font-mono text-xs text-slate-700">{r.documento}</td>
+                            <td className="py-1.5 px-2 text-xs text-slate-600">{formatDate(r.vencimento)}</td>
+                            <td className="py-1.5 px-2 text-right text-xs text-slate-700">{formatCurrency(r.valorOriginal)}</td>
+                            <td className="py-1.5 px-2 text-right text-xs text-slate-700">{formatCurrency(r.valorRecebido)}</td>
+                            <td className="py-1.5 px-2">
+                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                                r.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700" :
+                                r.estado === "EM ABERTO" ? "bg-amber-100 text-amber-700" :
+                                "bg-red-100 text-red-700"
+                              }`}>
+                                {r.estado}
+                              </span>
+                            </td>
+                            <td className="py-1.5 px-2 text-xs text-slate-600">{r.parcela}/{r.totalParcelas}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </SectionCard>
 
               {/* Pending Items */}
@@ -625,6 +643,156 @@ function SectionCard({
         <div className="px-3 pb-3 border-t border-slate-200">
           <div className="pt-3">
             {children}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Card expansível que agrupa títulos do mesmo documento/pedido */
+function TituloGroupCard({ group }: {
+  group: {
+    documento: string;
+    valorTotalGrupo: number;
+    valorRecebidoGrupo: number;
+    parcelas: number;
+    titulos: Array<{
+      id: number;
+      documento: string;
+      emissao: string;
+      vencimento: string;
+      liquidacao: string;
+      valorOriginal: number;
+      valorRecebido: number;
+      estado: string;
+      parcela: number | null;
+      totalParcelas: number | null;
+      referente: string;
+      bancoNome: string;
+    }>;
+  };
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Determine overall status of the group
+  const allRecebido = group.titulos.every(t => t.estado === "RECEBIDO");
+  const someEmitido = group.titulos.some(t => t.estado === "EMITIDO");
+  const groupStatus = allRecebido ? "RECEBIDO" : someEmitido ? "EMITIDO" : "MISTO";
+
+  // Get banco info from first titulo that has it
+  const bancoInfo = group.titulos.find(t => t.bancoNome)?.bancoNome || "";
+
+  // Determine forma de pagamento
+  const formaPagamento = bancoInfo ? "Boleto Bancário" : "Outros";
+
+  const statusColor = groupStatus === "RECEBIDO"
+    ? "border-emerald-200 bg-emerald-50/50"
+    : groupStatus === "EMITIDO"
+    ? "border-amber-200 bg-amber-50/50"
+    : "border-slate-200 bg-slate-50/50";
+
+  const statusBadgeColor = groupStatus === "RECEBIDO"
+    ? "bg-emerald-100 text-emerald-700"
+    : groupStatus === "EMITIDO"
+    ? "bg-amber-100 text-amber-700"
+    : "bg-slate-100 text-slate-600";
+
+  return (
+    <div className={`rounded-lg border ${statusColor} overflow-hidden transition-all`}>
+      {/* Header - clickable to expand */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between p-3 hover:bg-white/50 transition-colors"
+      >
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex items-center gap-2 shrink-0">
+            <FileText className="h-4 w-4 text-amber-600" />
+            <span className="font-mono text-sm font-semibold text-slate-700">
+              Doc {group.documento || "S/N"}
+            </span>
+          </div>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusBadgeColor}`}>
+            {groupStatus}
+          </span>
+          {group.parcelas > 1 && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
+              {group.parcelas} parcelas
+            </span>
+          )}
+          {bancoInfo && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium flex items-center gap-1">
+              <Landmark className="h-2.5 w-2.5" />
+              {bancoInfo.replace("Banco ", "").replace(" S.A.", "").substring(0, 20)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="text-right">
+            <div className="text-sm font-bold text-slate-800">{formatCurrency(group.valorTotalGrupo)}</div>
+            {group.valorRecebidoGrupo > 0 && (
+              <div className="text-[10px] text-emerald-600">Recebido: {formatCurrency(group.valorRecebidoGrupo)}</div>
+            )}
+          </div>
+          {expanded
+            ? <ChevronUp className="h-4 w-4 text-slate-400" />
+            : <ChevronDown className="h-4 w-4 text-slate-400" />
+          }
+        </div>
+      </button>
+
+      {/* Expanded content - individual parcelas */}
+      {expanded && (
+        <div className="border-t border-slate-200 bg-white">
+          {/* Forma de pagamento info */}
+          <div className="px-3 pt-2 pb-1 flex items-center gap-2 text-xs text-slate-500">
+            <CreditCard className="h-3 w-3" />
+            <span>Forma: <strong className="text-slate-700">{formaPagamento}</strong></span>
+            {bancoInfo && (
+              <>
+                <span className="text-slate-300">|</span>
+                <Landmark className="h-3 w-3" />
+                <span>{bancoInfo}</span>
+              </>
+            )}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500 text-[11px]">
+                  <th className="text-left py-1.5 px-3">Parcela</th>
+                  <th className="text-left py-1.5 px-3">Emissão</th>
+                  <th className="text-left py-1.5 px-3">Vencimento</th>
+                  <th className="text-left py-1.5 px-3">Liquidação</th>
+                  <th className="text-right py-1.5 px-3">Valor</th>
+                  <th className="text-right py-1.5 px-3">Recebido</th>
+                  <th className="text-left py-1.5 px-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {group.titulos.map((t, tIdx) => (
+                  <tr key={tIdx} className="border-b border-slate-100 hover:bg-slate-50 last:border-0">
+                    <td className="py-1.5 px-3 text-xs text-slate-600">
+                      {t.parcela && t.totalParcelas ? `${t.parcela}/${t.totalParcelas}` : t.parcela || "Única"}
+                    </td>
+                    <td className="py-1.5 px-3 text-xs text-slate-600">{formatDate(t.emissao)}</td>
+                    <td className="py-1.5 px-3 text-xs text-slate-600 font-medium">{formatDate(t.vencimento)}</td>
+                    <td className="py-1.5 px-3 text-xs text-slate-600">{t.liquidacao ? formatDate(t.liquidacao) : "-"}</td>
+                    <td className="py-1.5 px-3 text-right text-xs font-medium text-slate-700">{formatCurrency(t.valorOriginal)}</td>
+                    <td className="py-1.5 px-3 text-right text-xs text-slate-600">{formatCurrency(t.valorRecebido)}</td>
+                    <td className="py-1.5 px-3">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                        t.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700" :
+                        t.estado === "EMITIDO" ? "bg-amber-100 text-amber-700" :
+                        "bg-red-100 text-red-700"
+                      }`}>
+                        {t.estado}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

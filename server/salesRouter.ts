@@ -1466,14 +1466,37 @@ export const salesRouter = router({
         clienteDesde: firstOrder?.dataEmissao || "",
       };
 
-      const totalPedidos = new Set(allOrders.map(o => o.pedido)).size;
-      const valorTotalPedidos = allOrders.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
-      const pedidosFaturados = allOrders.filter(o => o.estadoItem === "Faturado" || o.estadoItem === "Entrega futura");
-      const valorFaturado = pedidosFaturados.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
-      const pedidosAFaturar = allOrders.filter(o => o.estadoItem === "A faturar" || o.estadoItem === "Aprovado");
-      const valorAFaturar = pedidosAFaturar.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
-      const pedidosEmDigitacao = allOrders.filter(o => o.estadoNota === "Digitação" || o.estadoNota === "A aprovar");
-      const valorEmDigitacao = pedidosEmDigitacao.reduce((s, o) => s + parseFloat(o.valorTotal || "0"), 0);
+      // Agrupar itens por número de pedido para contagem correta
+      const pedidoGroupMap = new Map<string, { pedido: string; itens: typeof allOrders; valorTotal: number; estadoNotaPedido: string; dataEmissao: string }>();
+      for (const o of allOrders) {
+        if (!o.pedido) continue;
+        const existing = pedidoGroupMap.get(o.pedido);
+        if (existing) {
+          existing.itens.push(o);
+          existing.valorTotal += parseFloat(o.valorTotal || "0");
+        } else {
+          pedidoGroupMap.set(o.pedido, {
+            pedido: o.pedido,
+            itens: [o],
+            valorTotal: parseFloat(o.valorTotal || "0"),
+            estadoNotaPedido: o.estadoNota || o.estadoItem || "",
+            dataEmissao: o.dataEmissao || "",
+          });
+        }
+      }
+      const pedidoGroups = Array.from(pedidoGroupMap.values());
+      const totalPedidos = pedidoGroups.length;
+      const valorTotalPedidos = pedidoGroups.reduce((s, p) => s + p.valorTotal, 0);
+
+      // Contar pedidos ÚNICOS por status (usando estadoNotaPedido do pedido)
+      const pedidosFaturadosArr = pedidoGroups.filter(p => p.estadoNotaPedido === "Faturado");
+      const valorFaturado = pedidosFaturadosArr.reduce((s, p) => s + p.valorTotal, 0);
+      const pedidosAFaturarArr = pedidoGroups.filter(p => p.estadoNotaPedido === "A faturar" || p.estadoNotaPedido === "Aprovado");
+      const valorAFaturar = pedidosAFaturarArr.reduce((s, p) => s + p.valorTotal, 0);
+      const pedidosAprovarArr = pedidoGroups.filter(p => p.estadoNotaPedido === "A aprovar");
+      const valorAprovar = pedidosAprovarArr.reduce((s, p) => s + p.valorTotal, 0);
+      const pedidosEmDigitacaoArr = pedidoGroups.filter(p => p.estadoNotaPedido === "Digitação" || p.estadoNotaPedido === "Em digitação");
+      const valorEmDigitacao = pedidosEmDigitacaoArr.reduce((s, p) => s + p.valorTotal, 0);
 
       const titulosEmitidos = allReceivables.filter(r => r.estado === "EMITIDO");
       const titulosRecebidos = allReceivables.filter(r => r.estado === "RECEBIDO");
@@ -1524,24 +1547,53 @@ export const salesRouter = router({
         .slice(-12)
         .map(([month, valor]) => ({ month, valor: Math.round(valor * 100) / 100 }));
 
-      const seenPedidos = new Set<string>();
-      const recentOrders: Array<{ pedido: string; data: string; valor: number; status: string; itens: number }> = [];
-      for (const o of allOrders) {
-        if (!o.pedido || seenPedidos.has(o.pedido)) continue;
-        seenPedidos.add(o.pedido);
-        const ois = allOrders.filter((x: typeof allOrders[number]) => x.pedido === o.pedido);
-        const valorPedido = ois.reduce((s, x) => s + parseFloat(x.valorTotal || "0"), 0);
-        recentOrders.push({
-          pedido: o.pedido,
-          data: o.dataEmissao || "",
-          valor: Math.round(valorPedido * 100) / 100,
-          status: o.estadoNota || o.estadoItem || "",
-          itens: ois.length,
-        });
-        if (recentOrders.length >= 20) break;
-      }
+      // Usar pedidoGroups já agrupados para recentOrders
+      const recentOrders = pedidoGroups
+        .sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao))
+        .slice(0, 20)
+        .map(p => ({
+          pedido: p.pedido,
+          data: p.dataEmissao,
+          valor: Math.round(p.valorTotal * 100) / 100,
+          status: p.estadoNotaPedido,
+          itens: p.itens.length,
+        }));
 
-      const recentReceivables = allReceivables.slice(0, 20).map((r: typeof allReceivables[number]) => ({
+      // Agrupar títulos por documento vinculado (mesmo pedido)
+      const tituloGroupMap = new Map<string, Array<typeof allReceivables[number]>>();
+      for (const r of allReceivables) {
+        const key = r.documentoVinculadoNumero || `solo_${r.id}`;
+        const existing = tituloGroupMap.get(key) || [];
+        existing.push(r);
+        tituloGroupMap.set(key, existing);
+      }
+      const groupedReceivables = Array.from(tituloGroupMap.entries()).map(([docNum, titulos]) => {
+        const valorTotalGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorOriginal || "0"), 0);
+        const valorRecebidoGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
+        return {
+          documento: docNum.startsWith("solo_") ? "" : docNum,
+          valorTotalGrupo: Math.round(valorTotalGrupo * 100) / 100,
+          valorRecebidoGrupo: Math.round(valorRecebidoGrupo * 100) / 100,
+          parcelas: titulos.length,
+          titulos: titulos.map(r => ({
+            id: r.id,
+            documento: r.documentoVinculadoNumero || "",
+            emissao: r.emissaoData || "",
+            vencimento: r.vencimentoData || "",
+            liquidacao: r.liquidacaoData || "",
+            valorOriginal: Math.round(parseFloat(r.valorOriginal || "0") * 100) / 100,
+            valorRecebido: Math.round(parseFloat(r.valorRecebidoLiquido || "0") * 100) / 100,
+            estado: r.estado,
+            parcela: r.parcela,
+            totalParcelas: r.parcelasQuantidadeTotal,
+            referente: r.referenteA || "",
+            bancoNome: r.bancoNome || "",
+          })),
+        };
+      });
+      // Also keep flat list for backward compat
+      const recentReceivables = allReceivables.slice(0, 30).map((r: typeof allReceivables[number]) => ({
+        id: r.id,
         documento: r.documentoVinculadoNumero || "",
         emissao: r.emissaoData || "",
         vencimento: r.vencimentoData || "",
@@ -1552,6 +1604,7 @@ export const salesRouter = router({
         parcela: r.parcela,
         totalParcelas: r.parcelasQuantidadeTotal,
         referente: r.referenteA || "",
+        bancoNome: r.bancoNome || "",
       }));
 
       const pendingItems = clientOrderItems.filter((oi: typeof clientOrderItems[number]) => {
@@ -1572,9 +1625,11 @@ export const salesRouter = router({
           valorFaturado: Math.round(valorFaturado * 100) / 100,
           valorAFaturar: Math.round(valorAFaturar * 100) / 100,
           valorEmDigitacao: Math.round(valorEmDigitacao * 100) / 100,
-          pedidosFaturados: pedidosFaturados.length,
-          pedidosAFaturar: pedidosAFaturar.length,
-          pedidosEmDigitacao: pedidosEmDigitacao.length,
+          valorAprovar: Math.round(valorAprovar * 100) / 100,
+          pedidosFaturados: pedidosFaturadosArr.length,
+          pedidosAFaturar: pedidosAFaturarArr.length,
+          pedidosEmDigitacao: pedidosEmDigitacaoArr.length,
+          pedidosAprovar: pedidosAprovarArr.length,
         },
         receivables: {
           totalTitulos: allReceivables.length,
@@ -1593,6 +1648,7 @@ export const salesRouter = router({
         monthlyEvolution,
         recentOrders,
         recentReceivables,
+        groupedReceivables,
         pendingItems,
       };
     }),

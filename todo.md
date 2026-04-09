@@ -1791,3 +1791,10 @@
 - [x] Gerar documento de transferência de responsabilidade em PDF profissional (não texto puro)
 - [x] Armazenar PDF no S3 e salvar URL no banco
 - [x] Frontend: botão para visualizar/baixar PDF na aba Inadimplência
+
+## Correções Consulta de Cliente - Pedidos e Títulos
+- [x] Agrupar pedidos por número (mesma numeração = mesmo pedido, mesmo que dividido em parcelas)
+- [x] Corrigir contagem de pedidos nos cards (Total, Faturados, A Faturar, Em Digitação)
+- [x] Corrigir status dos pedidos: usar status correto do pedido (A aprovar, Faturado, etc.)
+- [x] Agrupar títulos por pedido em cards expansíveis (expandir/reduzir)
+- [x] Puxar forma de pagamento do Maxiprod (boleto, PIX, etc.) e exibir nos títulos
