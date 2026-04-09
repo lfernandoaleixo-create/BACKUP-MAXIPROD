@@ -1500,17 +1500,18 @@ export const salesRouter = router({
       const pedidosEmDigitacaoArr = pedidoGroups.filter(p => p.estadoNotaPedido === "Digitação" || p.estadoNotaPedido === "Em digitação");
       const valorEmDigitacao = pedidosEmDigitacaoArr.reduce((s, p) => s + p.valorTotal, 0);
 
-      // Deduplicar para contagens corretas também (usando maxiprodId)
-      // NOTA: a filtragem de títulos antigos de pedidos com NF será feita após buscar NFs
-      // Por enquanto, deduplicar por maxiprodId
-      const dedupForCountsRaw: typeof allReceivables = [];
-      const seenCountIds = new Set<number>();
+      // Deduplicar títulos: o Maxiprod cria múltiplos registros para o mesmo título
+      // (mesmo doc + parcela + valor + vencimento) com maxiprodIds diferentes.
+      // Manter apenas o registro com MAIOR maxiprodId (mais recente = estado atual).
+      const dedupCountMap = new Map<string, typeof allReceivables[number]>();
       for (const r of allReceivables) {
-        if (!seenCountIds.has(r.maxiprodId)) {
-          seenCountIds.add(r.maxiprodId);
-          dedupForCountsRaw.push(r);
+        const key = `${r.documentoVinculadoNumero || ''}|${r.parcela || 'null'}|${r.valorOriginal || ''}|${r.vencimentoData || ''}`;
+        const existing = dedupCountMap.get(key);
+        if (!existing || r.maxiprodId > existing.maxiprodId) {
+          dedupCountMap.set(key, r);
         }
       }
+      const dedupForCountsRaw = Array.from(dedupCountMap.values());
       // KPIs de títulos serão calculados após buscar NFs (para excluir títulos duplicados)
       // Placeholder - serão preenchidos abaixo
       let titulosEmitidos: typeof allReceivables = [];
@@ -1549,15 +1550,16 @@ export const salesRouter = router({
         .slice(-12)
         .map(([month, valor]) => ({ month, valor: Math.round(valor * 100) / 100 }));
 
-      // Deduplicar títulos por maxiprodId (cada registro do Maxiprod tem ID único)
-      const deduplicatedReceivables: typeof allReceivables = [];
-      const seenMaxiprodIds = new Set<number>();
+      // Deduplicar títulos por (doc + parcela + valor + vencimento), mantendo maior maxiprodId
+      const dedupMap = new Map<string, typeof allReceivables[number]>();
       for (const r of allReceivables) {
-        if (!seenMaxiprodIds.has(r.maxiprodId)) {
-          seenMaxiprodIds.add(r.maxiprodId);
-          deduplicatedReceivables.push(r);
+        const key = `${r.documentoVinculadoNumero || ''}|${r.parcela || 'null'}|${r.valorOriginal || ''}|${r.vencimentoData || ''}`;
+        const existing = dedupMap.get(key);
+        if (!existing || r.maxiprodId > existing.maxiprodId) {
+          dedupMap.set(key, r);
         }
       }
+      const deduplicatedReceivables = Array.from(dedupMap.values());
 
       // ===== VINCULAR NF AO PEDIDO VIA GRAPHQL DO MAXIPROD =====
       // Buscar TODAS as NFs de saída e mapear NF→Pedido via itensDasNotasFiscais

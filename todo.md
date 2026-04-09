@@ -1841,3 +1841,7 @@
 
 ## Correções v3.4
 - [x] Bug: Pedido 860 mostra R$ 21.000 em vez de R$ 10.500 - títulos duplicados no agrupamento NF↔Pedido
+
+## Correções v3.5
+- [x] Bug: Pedido 850 mostra 4 títulos (R$ 5.812) quando deveria ter 2 (R$ 2.906) - duplicação de títulos pagos
+- [x] Corrigir deduplicação de títulos para TODOS os clientes genericamente
