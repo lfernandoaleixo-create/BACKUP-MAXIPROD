@@ -8,6 +8,8 @@ import { getDb } from "./db";
 import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments } from "../drizzle/schema";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
+import { generateCollectionPdf } from "./generateCollectionPdf";
+import { storagePut } from "./storage";
 import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial } from "./maxiprodGraphQL";
 
 /**
@@ -3659,6 +3661,30 @@ ${acoesTexto}
 ══════════════════════════════════════════════════════════
 `.trim();
 
+      // Gerar PDF profissional
+      const protocolo = `DOC-COB-${input.receivableId}-${brDate.toISOString().split('T')[0].replace(/-/g, '')}`;
+      let pdfUrl: string | null = null;
+      try {
+        const pdfBuffer = await generateCollectionPdf({
+          cliente: rec.cliente || "Não identificado",
+          vendedor,
+          valorTitulo: valorAReceber,
+          vencimentoData: vencStr,
+          diasAtraso,
+          documento: rec.documentoVinculadoNumero || null,
+          referenteA: rec.referenteA || null,
+          acoesCobanca: acoesSumario,
+          protocolo,
+          dataEmissao: todayFormatted,
+        });
+        const fileKey = `collection-docs/${protocolo}-${Date.now()}.pdf`;
+        const uploaded = await storagePut(fileKey, pdfBuffer, "application/pdf");
+        pdfUrl = uploaded.url;
+        console.log(`[Collection] PDF generated and uploaded: ${pdfUrl}`);
+      } catch (pdfErr) {
+        console.error("[Collection] Failed to generate PDF:", pdfErr);
+      }
+
       // Verificar se já existe documento para este título
       const existingDoc = await db
         .select()
@@ -3674,6 +3700,7 @@ ${acoesTexto}
             documentoTexto,
             diasAtraso,
             acoesCobanca: acoesSumario,
+            pdfUrl: pdfUrl || existingDoc[0].pdfUrl,
             visualizadoPorVendedor: false,
             visualizadoEm: null,
           })
@@ -3690,6 +3717,7 @@ ${acoesTexto}
           documento: rec.documentoVinculadoNumero || null,
           acoesCobanca: acoesSumario,
           documentoTexto,
+          pdfUrl,
           geradoPor: "Sistema",
         });
       }
@@ -3726,7 +3754,7 @@ ${acoesTexto}
         isAutomatic: true,
       });
 
-      return { success: true, vendedor, documentoTexto };
+      return { success: true, vendedor, documentoTexto, pdfUrl };
     }),
 
   /**
@@ -3976,6 +4004,30 @@ ${acoesTexto}
 ══════════════════════════════════════════════════════════
 `.trim();
 
+              // Gerar PDF profissional
+              const protocolo = `DOC-COB-${rec.id}-${brDate.toISOString().split('T')[0].replace(/-/g, '')}`;
+              let pdfUrl: string | null = null;
+              try {
+                const pdfBuffer = await generateCollectionPdf({
+                  cliente: rec.cliente || "Não identificado",
+                  vendedor,
+                  valorTitulo: valorAReceber,
+                  vencimentoData: vencStr,
+                  diasAtraso,
+                  documento: rec.documentoVinculadoNumero || null,
+                  referenteA: rec.referenteA || null,
+                  acoesCobanca: acoesSumario,
+                  protocolo,
+                  dataEmissao: todayFormatted,
+                });
+                const fileKey = `collection-docs/${protocolo}-${Date.now()}.pdf`;
+                const uploaded = await storagePut(fileKey, pdfBuffer, "application/pdf");
+                pdfUrl = uploaded.url;
+                console.log(`[DailyJob] PDF generated: ${pdfUrl}`);
+              } catch (pdfErr) {
+                console.error("[DailyJob] Failed to generate PDF:", pdfErr);
+              }
+
               await db.insert(collectionDocuments).values({
                 receivableId: rec.id,
                 cliente: rec.cliente || "Não identificado",
@@ -3986,6 +4038,7 @@ ${acoesTexto}
                 documento: rec.documentoVinculadoNumero || null,
                 acoesCobanca: acoesSumario,
                 documentoTexto,
+                pdfUrl,
                 geradoPor: "Sistema",
               });
 

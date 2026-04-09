@@ -968,6 +968,8 @@ export const collectionDocuments = mysqlTable("collection_documents", {
   }>>().default([]),
   // Texto completo do documento gerado
   documentoTexto: text("documentoTexto").notNull(),
+  // PDF
+  pdfUrl: text("pdfUrl"), // URL do PDF no S3
   // Controle
   geradoPor: varchar("geradoPor", { length: 200 }).notNull().default("Sistema"),
   visualizadoPorVendedor: boolean("visualizadoPorVendedor").default(false).notNull(),

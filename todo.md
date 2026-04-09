@@ -1788,3 +1788,6 @@
 - [ ] Campo Maxiprod para protesto automático vs sem protesto (AGUARDANDO INFO DO USUÁRIO)
 - [ ] Pessoa responsável pela cobrança (AGUARDANDO INFO DO USUÁRIO)
 - [x] Documento profissional formal: informar vendedor que optou por não protestar, todas as medidas foram tomadas, cliente não pagou, responsabilidade agora é do vendedor
+- [x] Gerar documento de transferência de responsabilidade em PDF profissional (não texto puro)
+- [x] Armazenar PDF no S3 e salvar URL no banco
+- [x] Frontend: botão para visualizar/baixar PDF na aba Inadimplência

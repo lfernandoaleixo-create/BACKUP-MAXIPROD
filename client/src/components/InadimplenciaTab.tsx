@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
-import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send } from "lucide-react";
+import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -1475,16 +1475,51 @@ function CollectionDocumentDialog({ receivableId, onClose }: {
               </div>
             )}
 
-            {/* Documento completo */}
-            <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
-              <h4 className="text-xs font-bold text-amber-800 uppercase mb-3 flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                Documento Oficial
-              </h4>
-              <pre className="text-xs text-slate-800 whitespace-pre-wrap font-mono leading-relaxed bg-white rounded-lg p-4 border border-amber-200 max-h-[40vh] overflow-y-auto">
-                {doc.documentoTexto}
-              </pre>
-            </div>
+            {/* PDF do documento */}
+            {(doc as any).pdfUrl ? (
+              <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
+                <h4 className="text-xs font-bold text-amber-800 uppercase mb-3 flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Documento Oficial (PDF)
+                </h4>
+                <div className="bg-white rounded-lg border border-amber-200 overflow-hidden">
+                  <iframe
+                    src={(doc as any).pdfUrl}
+                    className="w-full h-[50vh] border-0"
+                    title="Documento de Transferência de Responsabilidade"
+                  />
+                </div>
+                <div className="flex gap-3 mt-3">
+                  <a
+                    href={(doc as any).pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Abrir PDF em nova aba
+                  </a>
+                  <a
+                    href={(doc as any).pdfUrl}
+                    download={`DOC-COB-${doc.receivableId}.pdf`}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-amber-700 border border-amber-300 rounded-lg text-sm font-semibold hover:bg-amber-50 transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Baixar PDF
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
+                <h4 className="text-xs font-bold text-amber-800 uppercase mb-3 flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Documento Oficial
+                </h4>
+                <pre className="text-xs text-slate-800 whitespace-pre-wrap font-mono leading-relaxed bg-white rounded-lg p-4 border border-amber-200 max-h-[40vh] overflow-y-auto">
+                  {doc.documentoTexto}
+                </pre>
+              </div>
+            )}
 
             {/* Data de geração */}
             <div className="text-xs text-slate-400 text-center pt-2">
