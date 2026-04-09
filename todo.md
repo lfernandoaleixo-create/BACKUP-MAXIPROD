@@ -1820,3 +1820,7 @@
 ## Autorização de Pagamentos - Campo Anotações
 - [x] Puxar campo "Anotações/Descrição" do Maxiprod nas contas a pagar
 - [x] Exibir anotações detalhadas na tela de Autorização de Pagamentos para facilitar aprovação
+
+## Correções v3.1
+- [x] Corrigir contagem de pedidos faturados: contar PEDIDOS (não itens/linhas) - pedido 775 = 1 faturado, não 3
+- [x] Card Inadimplência deve ser VERMELHO

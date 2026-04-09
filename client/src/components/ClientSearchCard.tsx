@@ -346,13 +346,13 @@ export function ClientSearchCard() {
                 </div>
                 {/* Inadimplência */}
                 {clientSummary.overdue.titulosVencidos > 0 ? (
-                  <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                  <div className="bg-red-100 rounded-lg p-3 border-2 border-red-400 shadow-sm">
+                    <div className="flex items-center gap-1.5 text-xs text-red-700 font-semibold mb-1">
                       <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
                       Inadimplência
                     </div>
-                    <div className="text-xl font-bold text-red-700">{formatCurrency(clientSummary.overdue.valorVencido)}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">
+                    <div className="text-xl font-bold text-red-800">{formatCurrency(clientSummary.overdue.valorVencido)}</div>
+                    <div className="text-xs text-red-600 mt-0.5">
                       {clientSummary.overdue.titulosVencidos} título{clientSummary.overdue.titulosVencidos !== 1 ? 's' : ''} vencido{clientSummary.overdue.titulosVencidos !== 1 ? 's' : ''}
                     </div>
                     {clientSummary.overdue.diasAtrasoMedio > 0 && (
@@ -402,7 +402,7 @@ export function ClientSearchCard() {
                           <th className="text-right py-2 px-2">Valor</th>
                           <th className="text-left py-2 px-2">Status</th>
                           <th className="text-left py-2 px-2">NF</th>
-                          <th className="text-right py-2 px-2">Itens</th>
+                          <th className="text-left py-2 px-2">Cond. Pgto</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -438,7 +438,7 @@ export function ClientSearchCard() {
                                 <span className="text-slate-300">-</span>
                               )}
                             </td>
-                            <td className="py-1.5 px-2 text-right text-xs text-slate-600">{order.itens}</td>
+                            <td className="py-1.5 px-2 text-xs text-slate-500">{(order as any).condicaoPagamento || "-"}</td>
                           </tr>
                         ))}
                       </tbody>
