@@ -2,8 +2,10 @@ import { useState, useMemo, useEffect } from "react";
 import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
-import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download, Lock, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const STATUS_OPTIONS = [
@@ -111,6 +113,65 @@ export default function InadimplenciaTab() {
   const [historyDialogId, setHistoryDialogId] = useState<number | null>(null);
   const [actionPlanDialogId, setActionPlanDialogId] = useState<number | null>(null);
   const [documentDialogId, setDocumentDialogId] = useState<number | null>(null);
+
+  // Senha para acessar o telefone azul (cobrança)
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [pendingPhoneAction, setPendingPhoneAction] = useState<{ titleId: number; action: "contato" | "actionPlan" | "document" } | null>(null);
+  const [collectionUnlocked, setCollectionUnlocked] = useState(false);
+
+  const COLLECTION_PASSWORD = "Thiago";
+
+  function handlePhoneClick(titleId: number, phoneState: string, hasDocument: boolean, needsPlan: boolean) {
+    if (!collectionUnlocked) {
+      // Determinar qual ação será executada após a senha
+      let action: "contato" | "actionPlan" | "document" = "contato";
+      if (phoneState === "document" || hasDocument) {
+        action = "document";
+      } else if (needsPlan) {
+        action = "actionPlan";
+      }
+      setPendingPhoneAction({ titleId, action });
+      setPasswordDialogOpen(true);
+      return;
+    }
+    // Já desbloqueado - executar ação diretamente
+    executePhoneAction(titleId, phoneState, hasDocument, needsPlan);
+  }
+
+  function executePhoneAction(titleId: number, phoneState: string, hasDocument: boolean, needsPlan: boolean) {
+    if (phoneState === "document" || hasDocument) {
+      setDocumentDialogId(titleId);
+    } else if (needsPlan) {
+      setActionPlanDialogId(titleId);
+    } else {
+      setContatoDialogId(titleId);
+    }
+  }
+
+  function handlePasswordConfirm() {
+    if (passwordInput === COLLECTION_PASSWORD) {
+      setCollectionUnlocked(true);
+      setPasswordDialogOpen(false);
+      setPasswordInput("");
+      toast.success("Acesso liberado! Bem-vindo, Thiago.");
+      // Executar a ação pendente
+      if (pendingPhoneAction) {
+        const { titleId, action } = pendingPhoneAction;
+        if (action === "document") {
+          setDocumentDialogId(titleId);
+        } else if (action === "actionPlan") {
+          setActionPlanDialogId(titleId);
+        } else {
+          setContatoDialogId(titleId);
+        }
+        setPendingPhoneAction(null);
+      }
+    } else {
+      toast.error("Senha incorreta!");
+      setPasswordInput("");
+    }
+  }
 
   const { data, isLoading, refetch } = trpc.financial.getOverdueTitles.useQuery({
     search: search || undefined,
@@ -508,6 +569,7 @@ export default function InadimplenciaTab() {
                           onOpenHistory={() => setHistoryDialogId(title.id)}
                           onOpenActionPlan={() => setActionPlanDialogId(title.id)}
                           onOpenDocument={() => setDocumentDialogId(title.id)}
+                          onPhoneClick={(ps: string, hd: boolean, np: boolean) => handlePhoneClick(title.id, ps, hd, np)}
                           onStatusChange={(status) => upsertAction.mutate({ receivableId: title.id, status })}
                           phoneState={getPhoneState(title)}
                           dayBadge={getDayBadge(title)}
@@ -563,6 +625,7 @@ export default function InadimplenciaTab() {
                 onOpenHistory={() => setHistoryDialogId(title.id)}
                 onOpenActionPlan={() => setActionPlanDialogId(title.id)}
                 onOpenDocument={() => setDocumentDialogId(title.id)}
+                onPhoneClick={(ps, hd, np) => handlePhoneClick(title.id, ps, hd, np)}
                 onStatusChange={(status) => {
                   upsertAction.mutate({ receivableId: title.id, status });
                 }}
@@ -643,6 +706,40 @@ export default function InadimplenciaTab() {
           onClose={() => setDocumentDialogId(null)}
         />
       )}
+
+      {/* Dialog de Senha para Cobrança */}
+      <Dialog open={passwordDialogOpen} onOpenChange={(v) => { if (!v) { setPasswordInput(""); setPendingPhoneAction(null); } setPasswordDialogOpen(v); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-blue-600" />
+              Acesso à Cobrança
+            </DialogTitle>
+            <DialogDescription>Digite a senha do responsável para registrar a cobrança.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); handlePasswordConfirm(); }}>
+            <div className="py-4">
+              <Input
+                type="password"
+                placeholder="Digite a senha..."
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                autoFocus
+                className="text-center text-lg tracking-widest"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setPasswordInput(""); setPendingPhoneAction(null); setPasswordDialogOpen(false); }}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={!passwordInput.trim()} className="bg-blue-600 hover:bg-blue-700">
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Confirmar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -692,7 +789,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
 }
 
 /* ---- Componente TitleRow (vista por título) ---- */
-function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument }: {
+function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -701,6 +798,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   onOpenHistory: () => void;
   onOpenActionPlan: () => void;
   onOpenDocument: () => void;
+  onPhoneClick: (phoneState: string, hasDocument: boolean, needsPlan: boolean) => void;
   onStatusChange: (status: string) => void;
   phoneState: "blink" | "done" | "urgent" | "idle" | "document";
   dayBadge: string | null;
@@ -783,15 +881,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
 
         {/* Ações */}
         <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
-          <PhoneIcon state={phoneState} onClick={() => {
-            if (phoneState === "document" || hasDocument) {
-              onOpenDocument();
-            } else if (needsPlan) {
-              onOpenActionPlan();
-            } else {
-              onOpenContato();
-            }
-          }} />
+          <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />
           {hasDocument && (
             <button onClick={onOpenDocument} title="Ver documento de cobrança" className="p-1.5 rounded-md hover:bg-amber-100 text-amber-700 hover:text-amber-900 transition-colors border border-amber-200">
               <FileText className="w-4 h-4" />
@@ -815,7 +905,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
 }
 
 /* ---- Componente ClienteTitleRow (vista por cliente) ---- */
-function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument }: {
+function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -824,6 +914,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   onOpenHistory: () => void;
   onOpenActionPlan: () => void;
   onOpenDocument: () => void;
+  onPhoneClick: (phoneState: string, hasDocument: boolean, needsPlan: boolean) => void;
   onStatusChange: (status: string) => void;
   phoneState: "blink" | "done" | "urgent" | "idle" | "document";
   dayBadge: string | null;
@@ -886,15 +977,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
           </select>
         </div>
         <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
-          <PhoneIcon state={phoneState} onClick={() => {
-            if (phoneState === "document" || hasDocument) {
-              onOpenDocument();
-            } else if (needsPlan) {
-              onOpenActionPlan();
-            } else {
-              onOpenContato();
-            }
-          }} />
+          <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />
           {hasDocument && (
             <button onClick={onOpenDocument} title="Ver documento" className="p-1 rounded-md hover:bg-amber-100 text-amber-700 border border-amber-200">
               <FileText className="w-3.5 h-3.5" />

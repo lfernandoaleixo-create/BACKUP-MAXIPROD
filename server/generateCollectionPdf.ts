@@ -5,6 +5,7 @@ const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM
 interface CollectionDocData {
   cliente: string;
   vendedor: string;
+  responsavelCobranca?: string; // Responsável pelas cobranças (ex: Thiago)
   valorTitulo: string | number;
   vencimentoData: string; // YYYY-MM-DD
   diasAtraso: number;
@@ -146,6 +147,20 @@ export async function generateCollectionPdf(data: CollectionDocData): Promise<Bu
       doc.text(`Sr(a). ${data.vendedor}`, leftMargin + 10, y);
       y += 25;
 
+      // ── RESPONSÁVEL PELA COBRANÇA ──
+      if (data.responsavelCobranca) {
+        doc.rect(leftMargin, y, contentWidth, 22).fill("#1e40af");
+        doc.fontSize(10).fillColor("#ffffff").font("Helvetica-Bold");
+        doc.text("RESPONSÁVEL PELA COBRANÇA", leftMargin + 10, y + 6, { width: contentWidth - 20 });
+        y += 30;
+
+        doc.fontSize(12).font("Helvetica-Bold").fillColor(darkGray);
+        doc.text(`${data.responsavelCobranca}`, leftMargin + 10, y);
+        doc.fontSize(9).font("Helvetica").fillColor(mediumGray);
+        doc.text("Responsável pelas ações de cobrança nos dias 1, 3 e 5 após vencimento", leftMargin + 10, doc.y + 3);
+        y = doc.y + 15;
+      }
+
       // ── HISTÓRICO DE AÇÕES ──
       doc.rect(leftMargin, y, contentWidth, 22).fill(darkGreen);
       doc.fontSize(10).fillColor("#ffffff").font("Helvetica-Bold");
@@ -221,7 +236,7 @@ export async function generateCollectionPdf(data: CollectionDocData): Promise<Bu
         `Prezado(a) Sr(a). ${data.vendedor},`,
         `Por meio deste documento, informamos que o cliente ${data.cliente}, que está sob sua responsabilidade comercial, encontra-se INADIMPLENTE há ${data.diasAtraso} dias.`,
         `Conforme o protocolo interno de cobrança da empresa, a opção selecionada para este cliente foi "NÃO PROTESTAR AUTOMATICAMENTE", o que significa que o título NÃO será encaminhado a cartório para protesto.`,
-        `Informamos que TODAS as medidas cabíveis e protocolares de cobrança já foram devidamente executadas pelo setor responsável, conforme detalhado no histórico acima.`,
+        `Informamos que TODAS as medidas cabíveis e protocolares de cobrança já foram devidamente executadas${data.responsavelCobranca ? ` pelo responsável ${data.responsavelCobranca}` : " pelo setor responsável"}, conforme detalhado no histórico acima.`,
         `Apesar de todos os esforços realizados, o cliente não efetuou o pagamento do valor em aberto de ${valorFormatted}.`,
       ];
 

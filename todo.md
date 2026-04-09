@@ -1849,3 +1849,12 @@
 ## Correções v3.6
 - [x] Bug: Pedido 840 mostra "Pago" mas não foi faturado - estado do grupo de títulos deve refletir o estado real do pedido
 - [x] Corrigir lógica de estado para TODOS os pedidos/clientes
+
+## Sistema de Cobrança - Responsável Thiago
+- [ ] Configurar senha do Thiago como secret do projeto (COLLECTION_PASSWORD)
+- [x] Implementar modal de senha ao clicar no telefone azul (aba Inadimplência) - pedir senha antes de registrar cobrança
+- [ ] Registrar no histórico quem fez a cobrança (responsável: Thiago)
+- [ ] Registrar no histórico quando cobrança NÃO foi feita nos dias 1, 3 e 5 (esquecimento)
+- [x] Atualizar documento PDF de transferência de responsabilidade: incluir responsável pelas cobranças (Thiago)
+- [x] Atualizar documento PDF: mostrar cobranças feitas e não feitas com datas
+- [x] Gerar prévia do documento PDF para o usuário revisar

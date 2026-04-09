@@ -3668,6 +3668,7 @@ ${acoesTexto}
         const pdfBuffer = await generateCollectionPdf({
           cliente: rec.cliente || "Não identificado",
           vendedor,
+          responsavelCobranca: "Thiago",
           valorTitulo: valorAReceber,
           vencimentoData: vencStr,
           diasAtraso,
@@ -4011,6 +4012,7 @@ ${acoesTexto}
                 const pdfBuffer = await generateCollectionPdf({
                   cliente: rec.cliente || "Não identificado",
                   vendedor,
+                  responsavelCobranca: "Thiago",
                   valorTitulo: valorAReceber,
                   vencimentoData: vencStr,
                   diasAtraso,
