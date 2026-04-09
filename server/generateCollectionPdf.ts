@@ -167,9 +167,20 @@ export async function generateCollectionPdf(data: CollectionDocData): Promise<Bu
           const rowBg = acao.realizada ? "#f0fdf4" : "#fef2f2";
           doc.rect(leftMargin + 5, y - 2, contentWidth - 10, 16).fill(rowBg);
 
-          // Icon
-          doc.fontSize(11).font("Helvetica-Bold").fillColor(iconColor);
-          doc.text(icon, leftMargin + 10, y);
+          // Icon - draw circle instead of Unicode character
+          const circleX = leftMargin + 16;
+          const circleY = y + 5;
+          if (acao.realizada) {
+            // Green filled circle with checkmark text
+            doc.circle(circleX, circleY, 5).fill(greenOk);
+            doc.fontSize(7).font("Helvetica-Bold").fillColor("#ffffff");
+            doc.text("OK", circleX - 5, circleY - 3.5, { width: 10, align: "center" });
+          } else {
+            // Red filled circle with X text
+            doc.circle(circleX, circleY, 5).fill(redAlert);
+            doc.fontSize(7).font("Helvetica-Bold").fillColor("#ffffff");
+            doc.text("X", circleX - 5, circleY - 3.5, { width: 10, align: "center" });
+          }
 
           // Day
           doc.fontSize(9).font("Helvetica-Bold").fillColor(darkGray);
@@ -188,7 +199,7 @@ export async function generateCollectionPdf(data: CollectionDocData): Promise<Bu
           // Notes
           if (acao.notas) {
             doc.fontSize(8).font("Helvetica").fillColor(lightGray);
-            doc.text(`   → ${acao.notas}`, leftMargin + 28, y, { width: contentWidth - 40 });
+            doc.text(`   > ${acao.notas}`, leftMargin + 28, y, { width: contentWidth - 40 });
             y += 14;
           }
         }
