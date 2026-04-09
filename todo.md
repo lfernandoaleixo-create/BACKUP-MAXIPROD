@@ -1838,3 +1838,6 @@
 - [x] Bug: NF 227 pertence ao pedido 860 mas aparece como item separado - vincular NF ao pedido original
 - [x] Corrigir vinculação NF↔Pedido para TODOS os clientes automaticamente
 - [x] Quando pedido é faturado: trazer informações da NF (não do pedido)
+
+## Correções v3.4
+- [x] Bug: Pedido 860 mostra R$ 21.000 em vez de R$ 10.500 - títulos duplicados no agrupamento NF↔Pedido

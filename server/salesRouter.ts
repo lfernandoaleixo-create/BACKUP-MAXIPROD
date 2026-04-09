@@ -1500,45 +1500,30 @@ export const salesRouter = router({
       const pedidosEmDigitacaoArr = pedidoGroups.filter(p => p.estadoNotaPedido === "Digitação" || p.estadoNotaPedido === "Em digitação");
       const valorEmDigitacao = pedidosEmDigitacaoArr.reduce((s, p) => s + p.valorTotal, 0);
 
-      // Deduplicar para contagens corretas também
-      const dedupForCounts: typeof allReceivables = [];
-      const seenCountKeys = new Set<string>();
+      // Deduplicar para contagens corretas também (usando maxiprodId)
+      // NOTA: a filtragem de títulos antigos de pedidos com NF será feita após buscar NFs
+      // Por enquanto, deduplicar por maxiprodId
+      const dedupForCountsRaw: typeof allReceivables = [];
+      const seenCountIds = new Set<number>();
       for (const r of allReceivables) {
-        const ck = `${r.documentoVinculadoNumero}_${r.parcela}_${r.valorOriginal}_${r.vencimentoData}`;
-        if (!seenCountKeys.has(ck)) {
-          seenCountKeys.add(ck);
-          dedupForCounts.push(r);
+        if (!seenCountIds.has(r.maxiprodId)) {
+          seenCountIds.add(r.maxiprodId);
+          dedupForCountsRaw.push(r);
         }
       }
-      const titulosEmitidos = dedupForCounts.filter(r => r.estado === "EMITIDO");
-      const titulosRecebidos = dedupForCounts.filter(r => r.estado === "RECEBIDO");
-      const valorEmAberto = titulosEmitidos.reduce((s, r) => {
-        const original = parseFloat(r.valorOriginal || "0");
-        const recebido = parseFloat(r.valorRecebidoLiquido || "0");
-        return s + (original - recebido);
-      }, 0);
-      const valorRecebido = titulosRecebidos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
-
-      // Contagem por documentos (não parcelas)
-      const docsEmitidos = new Set(titulosEmitidos.map(r => r.documentoVinculadoNumero || `solo_${r.id}`));
-      const docsRecebidos = new Set(titulosRecebidos.map(r => r.documentoVinculadoNumero || `solo_${r.id}`));
-      const docsTotal = new Set(dedupForCounts.map(r => r.documentoVinculadoNumero || `solo_${r.id}`));
-
-      const titulosVencidos = titulosEmitidos.filter(r => {
-        if (!r.vencimentoData) return false;
-        return r.vencimentoData < nowStr;
-      });
-      const valorVencido = titulosVencidos.reduce((s, r) => {
-        const original = parseFloat(r.valorOriginal || "0");
-        const recebido = parseFloat(r.valorRecebidoLiquido || "0");
-        return s + (original - recebido);
-      }, 0);
-      const diasAtrasoList = titulosVencidos.map(r => {
-        const venc = new Date(r.vencimentoData!);
-        return Math.floor((now.getTime() - venc.getTime()) / (1000 * 60 * 60 * 24));
-      });
-      const diasAtrasoMedio = diasAtrasoList.length > 0 ? Math.round(diasAtrasoList.reduce((a, b) => a + b, 0) / diasAtrasoList.length) : 0;
-      const diasAtrasoMax = diasAtrasoList.length > 0 ? Math.max(...diasAtrasoList) : 0;
+      // KPIs de títulos serão calculados após buscar NFs (para excluir títulos duplicados)
+      // Placeholder - serão preenchidos abaixo
+      let titulosEmitidos: typeof allReceivables = [];
+      let titulosRecebidos: typeof allReceivables = [];
+      let valorEmAberto = 0;
+      let valorRecebido = 0;
+      let docsEmitidos = new Set<string>();
+      let docsRecebidos = new Set<string>();
+      let docsTotal = new Set<string>();
+      let titulosVencidos: typeof allReceivables = [];
+      let valorVencido = 0;
+      let diasAtrasoMedio = 0;
+      let diasAtrasoMax = 0;
 
       const productMap = new Map<string, { descricao: string; codigo: string; qtd: number; valor: number; count: number }>();
       for (const o of allOrders) {
@@ -1564,13 +1549,12 @@ export const salesRouter = router({
         .slice(-12)
         .map(([month, valor]) => ({ month, valor: Math.round(valor * 100) / 100 }));
 
-      // Deduplicar títulos (mesmo doc + mesma parcela + mesmo valor + mesma data = duplicata)
+      // Deduplicar títulos por maxiprodId (cada registro do Maxiprod tem ID único)
       const deduplicatedReceivables: typeof allReceivables = [];
-      const seenKeys = new Set<string>();
+      const seenMaxiprodIds = new Set<number>();
       for (const r of allReceivables) {
-        const dedupKey = `${r.documentoVinculadoNumero}_${r.parcela}_${r.valorOriginal}_${r.vencimentoData}`;
-        if (!seenKeys.has(dedupKey)) {
-          seenKeys.add(dedupKey);
+        if (!seenMaxiprodIds.has(r.maxiprodId)) {
+          seenMaxiprodIds.add(r.maxiprodId);
           deduplicatedReceivables.push(r);
         }
       }
@@ -1685,9 +1669,25 @@ export const salesRouter = router({
 
       // Agrupar títulos por PEDIDO (não por NF)
       // Se o documentoVinculadoNumero é uma NF que pertence a um pedido, agrupar sob o pedido
+      // REGRA: quando um pedido tem NF vinculada, os títulos do pedido (doc=numero_pedido)
+      // são substituídos pelos títulos da NF (doc=numero_nf). Excluir títulos antigos do pedido.
+      
+      // Primeiro, identificar quais números de pedido têm NF vinculada
+      const pedidosComNf = new Set<string>();
+      for (const [nfNum, pedNum] of Array.from(nfNumToPedidoNum.entries())) {
+        pedidosComNf.add(pedNum);
+      }
+      
       const tituloGroupMap = new Map<string, Array<typeof allReceivables[number]>>();
       for (const r of deduplicatedReceivables) {
         const doc = r.documentoVinculadoNumero || `solo_${r.id}`;
+        
+        // Se este doc é um número de pedido que já tem NF vinculada,
+        // PULAR estes títulos (serão substituídos pelos da NF)
+        if (pedidosComNf.has(doc)) {
+          continue; // Ignorar títulos antigos do pedido, usar apenas os da NF
+        }
+        
         // Verificar se este doc é uma NF vinculada a um pedido
         const pedidoOrigem = nfNumToPedidoNum.get(doc);
         // Se tem pedido de origem, agrupar sob o pedido; senão, agrupar pelo próprio doc
@@ -1731,6 +1731,40 @@ export const salesRouter = router({
           })),
         };
       });
+      // Calcular KPIs de títulos APÓS filtrar títulos antigos de pedidos com NF
+      // Usar dedupForCountsRaw filtrado (excluir títulos de pedidos que já têm NF)
+      const dedupForCounts = dedupForCountsRaw.filter(r => {
+        const doc = r.documentoVinculadoNumero || '';
+        // Excluir títulos cujo doc é um número de pedido que já tem NF vinculada
+        return !pedidosComNf.has(doc);
+      });
+      titulosEmitidos = dedupForCounts.filter(r => r.estado === "EMITIDO");
+      titulosRecebidos = dedupForCounts.filter(r => r.estado === "RECEBIDO");
+      valorEmAberto = titulosEmitidos.reduce((s, r) => {
+        const original = parseFloat(r.valorOriginal || "0");
+        const recebido = parseFloat(r.valorRecebidoLiquido || "0");
+        return s + (original - recebido);
+      }, 0);
+      valorRecebido = titulosRecebidos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
+      docsEmitidos = new Set(titulosEmitidos.map(r => r.documentoVinculadoNumero || `solo_${r.id}`));
+      docsRecebidos = new Set(titulosRecebidos.map(r => r.documentoVinculadoNumero || `solo_${r.id}`));
+      docsTotal = new Set(dedupForCounts.map(r => r.documentoVinculadoNumero || `solo_${r.id}`));
+      titulosVencidos = titulosEmitidos.filter(r => {
+        if (!r.vencimentoData) return false;
+        return r.vencimentoData < nowStr;
+      });
+      valorVencido = titulosVencidos.reduce((s, r) => {
+        const original = parseFloat(r.valorOriginal || "0");
+        const recebido = parseFloat(r.valorRecebidoLiquido || "0");
+        return s + (original - recebido);
+      }, 0);
+      const diasAtrasoList = titulosVencidos.map(r => {
+        const venc = new Date(r.vencimentoData!);
+        return Math.floor((now.getTime() - venc.getTime()) / (1000 * 60 * 60 * 24));
+      });
+      diasAtrasoMedio = diasAtrasoList.length > 0 ? Math.round(diasAtrasoList.reduce((a, b) => a + b, 0) / diasAtrasoList.length) : 0;
+      diasAtrasoMax = diasAtrasoList.length > 0 ? Math.max(...diasAtrasoList) : 0;
+
       // Also keep flat list for backward compat (deduplicado)
       const recentReceivables = deduplicatedReceivables.slice(0, 30).map((r: typeof allReceivables[number]) => ({
         id: r.id,
