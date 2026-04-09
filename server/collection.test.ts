@@ -278,7 +278,7 @@ describe("collection (cobrança preventiva) procedures", () => {
         const result = await caller.financial.generateCollectionDocument({ receivableId: testReceivableId });
         expect(result.success).toBe(true);
         expect(result.documentoTexto).toBeDefined();
-        expect(result.documentoTexto).toContain("TRANSFER\u00caNCIA DE RESPONSABILIDADE");
+        expect(result.documentoTexto).toContain("DOCUMENTO PARA TOMADA DE DECIS\u00c3O");
         expect(result.documentoTexto).toContain("CLIENTE TESTE COBRANCA");
       } catch (err: any) {
         // May fail if GraphQL is unavailable, that's ok
@@ -291,7 +291,7 @@ describe("collection (cobrança preventiva) procedures", () => {
       // May be null if generation failed above
       if (doc) {
         expect(doc.cliente).toBe("CLIENTE TESTE COBRANCA");
-        expect(doc.documentoTexto).toContain("TRANSFER\u00caNCIA DE RESPONSABILIDADE");
+        expect(doc.documentoTexto).toContain("DOCUMENTO PARA TOMADA DE DECIS\u00c3O");
         expect(doc.visualizadoPorVendedor).toBe(false);
       }
     });
@@ -345,6 +345,71 @@ describe("collection (cobrança preventiva) procedures", () => {
         promessaValor: 500,
       });
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe("granular permission fin.cobranca", () => {
+    it("fin.cobranca permission key exists in settings", async () => {
+      // Verify that the granular permission system supports fin.cobranca
+      const allPerms = await caller.settings.getAllGranularPermissions();
+      expect(allPerms).toBeDefined();
+      // The permission system should be able to handle fin.cobranca key
+      // (it's stored per operator, so an empty result is valid)
+    });
+
+    it("can set fin.cobranca permission for an operator", async () => {
+      const db = await getDb();
+      if (!db) return;
+      // Get first operator
+      const ops = await caller.settings.getOperators();
+      if (!ops || ops.length === 0) return;
+      const op = ops[0];
+      // Set fin.cobranca to false (disable collection access)
+      const result = await caller.settings.setGranularPermission({
+        operatorId: op.id,
+        permissionKey: "fin.cobranca",
+        enabled: false,
+      });
+      expect(result.success).toBe(true);
+
+      // Verify it was set - getAllGranularPermissions returns array of rows
+      const perms = await caller.settings.getAllGranularPermissions();
+      const found = (perms as any[]).find(
+        (p: any) => p.operatorId === op.id && p.permissionKey === "fin.cobranca"
+      );
+      expect(found).toBeDefined();
+      expect(!!found.enabled).toBe(false);
+
+      // Re-enable for cleanup
+      await caller.settings.setGranularPermission({
+        operatorId: op.id,
+        permissionKey: "fin.cobranca",
+        enabled: true,
+      });
+    });
+  });
+
+  describe("generateCollectionDocument (notification)", () => {
+    it("generates document with notification for seller", async () => {
+      // Set protest config to 'nao_protestar' first
+      const db = await getDb();
+      if (!db) return;
+
+      // Ensure protest config exists
+      await caller.financial.setProtestConfig({
+        receivableId: testReceivableId,
+        protestType: "nao_protestar",
+        operatorName: "Thiago",
+      });
+
+      // Generate document
+      const result = await caller.financial.generateCollectionDocument({
+        receivableId: testReceivableId,
+      });
+      expect(result.success).toBe(true);
+      expect(result.documentoTexto).toContain("DOCUMENTO PARA TOMADA DE DECIS\u00c3O");
+      expect(result.documentoTexto).toContain("Thiago");
+      expect(result.documentoTexto).toContain("SOLICITA");
     });
   });
 });

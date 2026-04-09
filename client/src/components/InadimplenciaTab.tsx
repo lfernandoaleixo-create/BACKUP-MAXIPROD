@@ -99,7 +99,8 @@ type Title = {
 };
 
 export default function InadimplenciaTab() {
-  const { operator } = useOperator();
+  const { operator, hasGranularAccess } = useOperator();
+  const canCobranca = hasGranularAccess("fin.cobranca");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [agingFilter, setAgingFilter] = useState<string | null>(null);
@@ -576,6 +577,7 @@ export default function InadimplenciaTab() {
                           protestLabel={getProtestLabel(title)}
                           needsActionPlan={needsActionPlan(title)}
                           hasDocument={hasCollectionDocument(title)}
+                          canCobranca={canCobranca}
                         />
                       ))}
                     </div>
@@ -634,6 +636,7 @@ export default function InadimplenciaTab() {
                 protestLabel={getProtestLabel(title)}
                 needsActionPlan={needsActionPlan(title)}
                 hasDocument={hasCollectionDocument(title)}
+                canCobranca={canCobranca}
               />
             ))}
           </div>
@@ -789,7 +792,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
 }
 
 /* ---- Componente TitleRow (vista por título) ---- */
-function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument }: {
+function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -805,6 +808,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   protestLabel: { label: string; color: string } | null;
   needsActionPlan: boolean;
   hasDocument: boolean;
+  canCobranca?: boolean;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
   const hasHistorico = title.cobranca?.contatoHistorico && title.cobranca.contatoHistorico.length > 0;
@@ -819,22 +823,22 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm text-slate-800 truncate">{title.cliente}</span>
-            {dayBadge && (
+            {canCobranca && dayBadge && (
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-800 border border-amber-300 shrink-0">
                 {dayBadge}
               </span>
             )}
-            {protestLabel && (
+            {canCobranca && protestLabel && (
               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${protestLabel.color}`}>
                 {protestLabel.label}
               </span>
             )}
-            {needsPlan && (
+            {canCobranca && needsPlan && (
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-200 text-red-800 border border-red-300 animate-pulse shrink-0">
                 Plano Obrigatório
               </span>
             )}
-            {hasHistorico && (
+            {canCobranca && hasHistorico && (
               <span className="flex items-center gap-0.5 text-[10px] text-green-600 shrink-0">
                 <MessageCircle className="w-3 h-3" />
                 {title.cobranca!.contatoHistorico.length}
@@ -868,31 +872,41 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
 
         {/* Status */}
         <div onClick={e => e.stopPropagation()}>
-          <select
-            value={title.cobranca?.status || "pendente"}
-            onChange={e => onStatusChange(e.target.value)}
-            className={`text-xs font-medium px-2 py-1 rounded-md border cursor-pointer w-full ${statusBadge.color}`}
-          >
-            {STATUS_OPTIONS.map(s => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
+          {canCobranca ? (
+            <select
+              value={title.cobranca?.status || "pendente"}
+              onChange={e => onStatusChange(e.target.value)}
+              className={`text-xs font-medium px-2 py-1 rounded-md border cursor-pointer w-full ${statusBadge.color}`}
+            >
+              {STATUS_OPTIONS.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          ) : (
+            <span className={`text-xs font-medium px-2 py-1 rounded-md border inline-block ${statusBadge.color}`}>
+              {statusBadge.label}
+            </span>
+          )}
         </div>
 
         {/* Ações */}
         <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
-          <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />
+          {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
           {hasDocument && (
             <button onClick={onOpenDocument} title="Ver documento de cobrança" className="p-1.5 rounded-md hover:bg-amber-100 text-amber-700 hover:text-amber-900 transition-colors border border-amber-200">
               <FileText className="w-4 h-4" />
             </button>
           )}
-          <button onClick={onOpenHistory} title="Histórico de cobrança" className="p-1.5 rounded-md hover:bg-white/80 text-emerald-600 hover:text-emerald-800 transition-colors">
-            <History className="w-4 h-4" />
-          </button>
-          <button onClick={onOpenAction} title="Gerenciar cobrança" className="p-1.5 rounded-md hover:bg-white/80 text-slate-600 hover:text-slate-800 transition-colors">
-            <FileText className="w-4 h-4" />
-          </button>
+          {canCobranca && (
+            <button onClick={onOpenHistory} title="Histórico de cobrança" className="p-1.5 rounded-md hover:bg-white/80 text-emerald-600 hover:text-emerald-800 transition-colors">
+              <History className="w-4 h-4" />
+            </button>
+          )}
+          {canCobranca && (
+            <button onClick={onOpenAction} title="Gerenciar cobrança" className="p-1.5 rounded-md hover:bg-white/80 text-slate-600 hover:text-slate-800 transition-colors">
+              <FileText className="w-4 h-4" />
+            </button>
+          )}
           <button onClick={onToggle} className="p-1.5 rounded-md hover:bg-white/80 text-slate-400">
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
@@ -905,7 +919,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
 }
 
 /* ---- Componente ClienteTitleRow (vista por cliente) ---- */
-function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument }: {
+function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -921,6 +935,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   protestLabel: { label: string; color: string } | null;
   needsActionPlan: boolean;
   hasDocument: boolean;
+  canCobranca?: boolean;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
 
@@ -937,17 +952,17 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
               {title.documento && ` · ${title.documento}`}
               {title.parcela && ` · ${title.parcela}`}
             </span>
-            {dayBadge && (
+            {canCobranca && dayBadge && (
               <span className="text-[8px] font-bold px-1 py-0.5 rounded-full bg-amber-200 text-amber-800 border border-amber-300 shrink-0">
                 {dayBadge}
               </span>
             )}
-            {protestLabel && (
+            {canCobranca && protestLabel && (
               <span className={`text-[8px] font-bold px-1 py-0.5 rounded-full border shrink-0 ${protestLabel.color}`}>
                 {protestLabel.label}
               </span>
             )}
-            {needsPlan && (
+            {canCobranca && needsPlan && (
               <span className="text-[8px] font-bold px-1 py-0.5 rounded-full bg-red-200 text-red-800 border border-red-300 animate-pulse shrink-0">
                 Plano!
               </span>
@@ -966,29 +981,39 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
           </span>
         </div>
         <div onClick={e => e.stopPropagation()}>
-          <select
-            value={title.cobranca?.status || "pendente"}
-            onChange={e => onStatusChange(e.target.value)}
-            className={`text-[10px] font-medium px-1.5 py-1 rounded-md border cursor-pointer w-full ${statusBadge.color}`}
-          >
-            {STATUS_OPTIONS.map(s => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
+          {canCobranca ? (
+            <select
+              value={title.cobranca?.status || "pendente"}
+              onChange={e => onStatusChange(e.target.value)}
+              className={`text-[10px] font-medium px-1.5 py-1 rounded-md border cursor-pointer w-full ${statusBadge.color}`}
+            >
+              {STATUS_OPTIONS.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          ) : (
+            <span className={`text-[10px] font-medium px-1.5 py-1 rounded-md border inline-block ${statusBadge.color}`}>
+              {statusBadge.label}
+            </span>
+          )}
         </div>
         <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
-          <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />
+          {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
           {hasDocument && (
             <button onClick={onOpenDocument} title="Ver documento" className="p-1 rounded-md hover:bg-amber-100 text-amber-700 border border-amber-200">
               <FileText className="w-3.5 h-3.5" />
             </button>
           )}
-          <button onClick={onOpenHistory} title="Histórico" className="p-1 rounded-md hover:bg-white/80 text-emerald-600">
-            <History className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={onOpenAction} title="Gerenciar cobrança" className="p-1 rounded-md hover:bg-white/80 text-slate-600">
-            <FileText className="w-3.5 h-3.5" />
-          </button>
+          {canCobranca && (
+            <button onClick={onOpenHistory} title="Histórico" className="p-1 rounded-md hover:bg-white/80 text-emerald-600">
+              <History className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {canCobranca && (
+            <button onClick={onOpenAction} title="Gerenciar cobrança" className="p-1 rounded-md hover:bg-white/80 text-slate-600">
+              <FileText className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button onClick={onToggle} className="p-1 rounded-md hover:bg-white/80 text-slate-400">
             {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>

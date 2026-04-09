@@ -1864,3 +1864,8 @@
 - [x] Trocar título do documento para "DOCUMENTO PARA TOMADA DE DECISÃO" com subtítulo "Acompanhamento de Inadimplência e Próximos Passos"
 - [x] Reformular comunicado: vendedor decide próximo passo, cobrança é responsabilidade do Thiago (não transferência de responsabilidade)
 - [x] Gerar prévia do PDF corrigido
+
+## Restrições de Acesso e Alertas de Cobrança
+- [x] Ocultar informações de cobrança (telefone azul, histórico, ações) para Maria, Erica e Marcos
+- [x] Alerta ao vendedor no 7º dia quando decisão de tomada de atitude é transferida
+- [x] Documento fixado na aba Inadimplência visível para todos que tenham acesso

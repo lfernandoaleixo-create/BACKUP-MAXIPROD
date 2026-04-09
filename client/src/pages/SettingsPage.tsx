@@ -567,6 +567,7 @@ const GRANULAR_FINANCEIRO: GranularPermDef[] = [
   { key: "fin.verSaldoBancario", label: "Ver Saldo Bancário", parentTab: "financeiro" },
   { key: "fin.verFluxoCaixa", label: "Ver Fluxo de Caixa", parentTab: "financeiro" },
   { key: "fin.verResumoFinanceiro", label: "Ver Resumo Financeiro", parentTab: "financeiro" },
+  { key: "fin.cobranca", label: "Ações de Cobrança", parentTab: "financeiro" },
 ];
 
 const GRANULAR_CONFIGURACOES: GranularPermDef[] = [

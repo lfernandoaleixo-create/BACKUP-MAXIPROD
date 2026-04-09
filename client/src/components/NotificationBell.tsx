@@ -83,17 +83,14 @@ function formatTimeAgo(date: Date): string {
   return new Date(date).toLocaleDateString("pt-BR");
 }
 
-// Operadores que podem ver o sininho de notificações
-const NOTIFICATION_ALLOWED_OPERATORS = ["Maria", "Marcos", "Erica", "Guilherme"];
-
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { operator } = useOperator();
   const operatorId = operator?.id;
 
-  // Sininho visível apenas para operadores permitidos
-  if (!operator || !NOTIFICATION_ALLOWED_OPERATORS.includes(operator.name)) {
+  // Sininho visível para todos os operadores logados
+  if (!operator) {
     return null;
   }
 
