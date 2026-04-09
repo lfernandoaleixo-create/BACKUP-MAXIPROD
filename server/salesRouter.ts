@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { salesOrders, orderItems, accountsReceivable } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
+import { gql } from "./maxiprodGraphQL";
 
 /**
  * Sales analytics router
@@ -1574,48 +1575,98 @@ export const salesRouter = router({
         }
       }
 
-      // Vincular NF ao pedido faturado via títulos (contas a receber)
-      // Para pedidos faturados, o documentoVinculadoNumero do título é o número da NF
-      // Se o documentoVinculadoNumero NÃO coincide com nenhum número de pedido do cliente, é uma NF
+      // ===== VINCULAR NF AO PEDIDO VIA GRAPHQL DO MAXIPROD =====
+      // Buscar TODAS as NFs de saída e mapear NF→Pedido via itensDasNotasFiscais
       const allPedidoNumbers = new Set(pedidoGroups.map(p => p.pedido));
+      // nfNumToPedidoNum: mapa de número da NF → número do pedido de origem
+      const nfNumToPedidoNum = new Map<string, string>();
+      // pedidoToNfNums: mapa de número do pedido → números das NFs vinculadas
       const pedidoToNf = new Map<string, string[]>();
-      // Coletar todos os documentoVinculadoNumero que NÃO são números de pedido = são NFs
-      const nfDocs = new Set<string>();
-      for (const r of deduplicatedReceivables) {
-        const doc = r.documentoVinculadoNumero;
-        if (doc && !allPedidoNumbers.has(doc)) {
-          nfDocs.add(doc);
+      
+      try {
+        // Coletar todos os documentoVinculadoNumero dos títulos deste cliente
+        const allDocNums = Array.from(new Set(deduplicatedReceivables.map(r => r.documentoVinculadoNumero).filter(Boolean))) as string[];
+        
+        // Buscar NFs de saída do Maxiprod (paginado)
+        let allNfs: any[] = [];
+        let nfSkip = 0;
+        while (true) {
+          const nfData = await gql<any>(`{
+            notasFiscais(skip: ${nfSkip}, take: 200, where: { entradaOuSaida: { eq: SAIDA }, estado: { eq: EMITIDA } }) {
+              totalCount
+              items { id numero }
+            }
+          }`);
+          if (!nfData?.notasFiscais?.items?.length) break;
+          allNfs.push(...nfData.notasFiscais.items);
+          nfSkip += 200;
+          if (nfSkip >= nfData.notasFiscais.totalCount) break;
         }
-      }
-      // Para cada pedido faturado, tentar encontrar a NF correspondente
-      // Estratégia: se o documentoVinculadoNumero do título coincide com o número do pedido,
-      // então o próprio número do pedido é a NF (coincidência)
-      // Se não, procurar NFs que não batem com nenhum pedido
-      for (const pg of pedidoGroups) {
-        if (pg.estadoNotaPedido === "Faturado") {
-          // Verificar se existe título com documentoVinculadoNumero == pedido (NF = pedido)
-          const titulosComPedido = deduplicatedReceivables.filter(
-            r => r.documentoVinculadoNumero === pg.pedido
-          );
-          if (titulosComPedido.length > 0) {
-            // NF tem o mesmo número do pedido
-            pedidoToNf.set(pg.pedido, [pg.pedido]);
-          } else {
-            // Procurar NFs que não batem com nenhum pedido - vincular por proximidade de valor
-            for (const nfDoc of Array.from(nfDocs)) {
-              const nfTitulos = deduplicatedReceivables.filter(
-                r => r.documentoVinculadoNumero === nfDoc
-              );
-              const nfValor = nfTitulos.reduce((s, r) => s + parseFloat(r.valorOriginal || "0"), 0);
-              // Se o valor da NF é próximo ao valor do pedido (tolerância 10%)
-              if (Math.abs(nfValor - pg.valorTotal) / Math.max(pg.valorTotal, 1) < 0.1) {
-                const existing = pedidoToNf.get(pg.pedido) || [];
-                existing.push(nfDoc);
-                pedidoToNf.set(pg.pedido, existing);
+        
+        // Filtrar NFs cujo número bate com algum documentoVinculadoNumero dos títulos do cliente
+        const relevantNfs = allNfs.filter(nf => allDocNums.includes(String(nf.numero)));
+        
+        if (relevantNfs.length > 0) {
+          // Buscar itens de cada NF para encontrar o pedido vinculado
+          const nfIds = relevantNfs.map(nf => nf.id);
+          for (let i = 0; i < nfIds.length; i += 100) {
+            const batch = nfIds.slice(i, i + 100);
+            const idsStr = batch.join(',');
+            const nfItemsData = await gql<any>(`{
+              itensDasNotasFiscais(skip: 0, take: 500, where: { notaFiscalId: { in: [${idsStr}] } }) {
+                totalCount
+                items { notaFiscalId itemDoPedidoDeVendaId }
+              }
+            }`);
+            
+            if (nfItemsData?.itensDasNotasFiscais?.items) {
+              const nfToItemIds = new Map<number, number[]>();
+              for (const nfItem of nfItemsData.itensDasNotasFiscais.items) {
+                if (nfItem.itemDoPedidoDeVendaId) {
+                  if (!nfToItemIds.has(nfItem.notaFiscalId)) nfToItemIds.set(nfItem.notaFiscalId, []);
+                  nfToItemIds.get(nfItem.notaFiscalId)!.push(nfItem.itemDoPedidoDeVendaId);
+                }
+              }
+              
+              const allItemIds = Array.from(new Set(Array.from(nfToItemIds.values()).flat()));
+              if (allItemIds.length > 0) {
+                const itemIdsStr = allItemIds.join(',');
+                const pedidoItemsData = await gql<any>(`{
+                  itensDosPedidosDeVendas(skip: 0, take: 500, where: { id: { in: [${itemIdsStr}] } }) {
+                    items { id pedidoDeVenda { numero } }
+                  }
+                }`);
+                
+                if (pedidoItemsData?.itensDosPedidosDeVendas?.items) {
+                  const itemToPedido = new Map<number, string>();
+                  for (const pi of pedidoItemsData.itensDosPedidosDeVendas.items) {
+                    if (pi.pedidoDeVenda?.numero) itemToPedido.set(pi.id, String(pi.pedidoDeVenda.numero));
+                  }
+                  
+                  // Mapear NF ID → pedido número
+                  for (const [nfId, itemIds] of Array.from(nfToItemIds.entries())) {
+                    for (const itemId of itemIds) {
+                      const pedNum = itemToPedido.get(itemId);
+                      if (pedNum) {
+                        const nfObj = relevantNfs.find(nf => nf.id === nfId);
+                        if (nfObj) {
+                          nfNumToPedidoNum.set(String(nfObj.numero), pedNum);
+                          const existing = pedidoToNf.get(pedNum) || [];
+                          if (!existing.includes(String(nfObj.numero))) existing.push(String(nfObj.numero));
+                          pedidoToNf.set(pedNum, existing);
+                        }
+                        break;
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         }
+      } catch (err: any) {
+        console.error('[getClientSummary] Error fetching NF-Pedido links:', err.message);
+        // Fallback: sem vincular NF ao pedido, continua normalmente
       }
 
       // Usar pedidoGroups já agrupados para recentOrders
@@ -1632,25 +1683,33 @@ export const salesRouter = router({
           notasFiscais: pedidoToNf.get(p.pedido) || [],
         }));
 
-      // Agrupar títulos por documento vinculado (mesmo pedido)
+      // Agrupar títulos por PEDIDO (não por NF)
+      // Se o documentoVinculadoNumero é uma NF que pertence a um pedido, agrupar sob o pedido
       const tituloGroupMap = new Map<string, Array<typeof allReceivables[number]>>();
       for (const r of deduplicatedReceivables) {
-        const key = r.documentoVinculadoNumero || `solo_${r.id}`;
+        const doc = r.documentoVinculadoNumero || `solo_${r.id}`;
+        // Verificar se este doc é uma NF vinculada a um pedido
+        const pedidoOrigem = nfNumToPedidoNum.get(doc);
+        // Se tem pedido de origem, agrupar sob o pedido; senão, agrupar pelo próprio doc
+        const key = pedidoOrigem || doc;
         const existing = tituloGroupMap.get(key) || [];
         existing.push(r);
         tituloGroupMap.set(key, existing);
       }
-      const groupedReceivables = Array.from(tituloGroupMap.entries()).map(([docNum, titulos]) => {
+      const groupedReceivables = Array.from(tituloGroupMap.entries()).map(([groupKey, titulos]) => {
         const valorTotalGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorOriginal || "0"), 0);
         const valorRecebidoGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
-        const docNumClean = docNum.startsWith("solo_") ? "" : docNum;
-        // Determinar se o documento é um número de pedido ou uma NF
+        const docNumClean = groupKey.startsWith("solo_") ? "" : groupKey;
+        // Verificar se o groupKey é um número de pedido
         const isPedido = allPedidoNumbers.has(docNumClean);
-        // Se é um pedido, verificar se tem NF vinculada
+        // Coletar todas as NFs vinculadas a este pedido
         const nfVinculada = isPedido ? (pedidoToNf.get(docNumClean) || []) : [];
+        // Se não é pedido mas é uma NF que tem pedido de origem, marcar como pedido
+        const pedidoOrigem = nfNumToPedidoNum.get(docNumClean);
         return {
           documento: docNumClean,
-          isPedido,
+          isPedido: isPedido || !!pedidoOrigem,
+          pedidoNumero: isPedido ? docNumClean : (pedidoOrigem || ""),
           nfVinculada,
           valorTotalGrupo: Math.round(valorTotalGrupo * 100) / 100,
           valorRecebidoGrupo: Math.round(valorRecebidoGrupo * 100) / 100,
@@ -1658,6 +1717,7 @@ export const salesRouter = router({
           titulos: titulos.map(r => ({
             id: r.id,
             documento: r.documentoVinculadoNumero || "",
+            nfNumero: r.documentoVinculadoNumero || "",
             emissao: r.emissaoData || "",
             vencimento: r.vencimentoData || "",
             liquidacao: r.liquidacaoData || "",

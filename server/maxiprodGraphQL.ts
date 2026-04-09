@@ -81,7 +81,7 @@ function sleep(ms: number): Promise<void> {
  * SOMENTE LEITURA - only queries, never mutations
  * Includes retry with exponential backoff for transient network errors
  */
-async function gql<T = any>(query: string, variables?: Record<string, any>): Promise<T> {
+export async function gql<T = any>(query: string, variables?: Record<string, any>): Promise<T> {
   const token = ENV.maxiprodGraphqlToken;
   if (!token) {
     throw new Error("MAXIPROD_GRAPHQL_TOKEN não configurado");

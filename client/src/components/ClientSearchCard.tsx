@@ -278,8 +278,17 @@ export function ClientSearchCard() {
                 </div>
               </div>
 
-              {/* 4 KPI Cards: Em Digitação, A Aprovar, Aprovado (A Faturar), Faturado */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* KPI Cards: Total Pedidos, Em Digitação, A Aprovar, Aprovado (A Faturar), Faturado */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {/* Total Pedidos - Azul */}
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <div className="flex items-center gap-1.5 text-xs text-blue-600 mb-1">
+                    <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
+                    Total Pedidos
+                  </div>
+                  <div className="text-xl font-bold text-blue-700">{clientSummary.orders.totalPedidos}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.orders.valorTotalPedidos)}</div>
+                </div>
                 {/* Em Digitação - Cinza */}
                 <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
@@ -291,7 +300,7 @@ export function ClientSearchCard() {
                 </div>
                 {/* A Aprovar - Laranja */}
                 <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                  <div className="flex items-center gap-1.5 text-xs text-orange-600 mb-1">
                     <ClipboardCheck className="h-3.5 w-3.5 text-orange-600" />
                     A Aprovar
                   </div>
@@ -300,7 +309,7 @@ export function ClientSearchCard() {
                 </div>
                 {/* Aprovado (A Faturar) - Amarelo Alaranjado */}
                 <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                  <div className="flex items-center gap-1.5 text-xs text-amber-600 mb-1">
                     <Clock className="h-3.5 w-3.5 text-amber-600" />
                     Aprovado (A Faturar)
                   </div>
@@ -309,7 +318,7 @@ export function ClientSearchCard() {
                 </div>
                 {/* Faturado - Verde */}
                 <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 mb-1">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                     Faturado
                   </div>
@@ -318,11 +327,11 @@ export function ClientSearchCard() {
                 </div>
               </div>
 
-              {/* Resumo Financeiro: Títulos + Inadimplência */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {/* Resumo Financeiro: Títulos Em Aberto + Inadimplência */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Títulos Em Aberto (EMITIDO) */}
-                <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
+                <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                  <div className="flex items-center gap-1.5 text-xs text-amber-600 mb-1">
                     <Receipt className="h-3.5 w-3.5 text-amber-600" />
                     Títulos Em Aberto
                   </div>
@@ -333,7 +342,7 @@ export function ClientSearchCard() {
                   </div>
                 </div>
 
-                {/* Inadimplência */}
+                {/* Inadimplência - SEMPRE VERMELHO */}
                 {clientSummary.overdue.titulosVencidos > 0 ? (
                   <div className="bg-red-100 rounded-lg p-3 border-2 border-red-400 shadow-sm">
                     <div className="flex items-center gap-1.5 text-xs text-red-700 font-semibold mb-1">
@@ -351,24 +360,15 @@ export function ClientSearchCard() {
                     )}
                   </div>
                 ) : (
-                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-slate-400" />
+                  <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                    <div className="flex items-center gap-1.5 text-xs text-red-600 mb-1">
+                      <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
                       Inadimplência
                     </div>
-                    <div className="text-xl font-bold text-slate-500">Nenhuma</div>
-                    <div className="text-xs text-slate-400 mt-0.5">Cliente em dia</div>
+                    <div className="text-xl font-bold text-red-700">Nenhuma</div>
+                    <div className="text-xs text-red-400 mt-0.5">Cliente em dia</div>
                   </div>
                 )}
-                {/* Total Pedidos */}
-                <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                    <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
-                    Total Pedidos
-                  </div>
-                  <div className="text-xl font-bold text-blue-700">{clientSummary.orders.totalPedidos}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{formatCurrency(clientSummary.orders.valorTotalPedidos)}</div>
-                </div>
               </div>
 
               {/* Collapsible Sections */}
@@ -666,6 +666,7 @@ function TituloGroupCard({ group }: {
   group: {
     documento: string;
     isPedido?: boolean;
+    pedidoNumero?: string;
     nfVinculada?: string[];
     valorTotalGrupo: number;
     valorRecebidoGrupo: number;
@@ -673,6 +674,7 @@ function TituloGroupCard({ group }: {
     titulos: Array<{
       id: number;
       documento: string;
+      nfNumero?: string;
       emissao: string;
       vencimento: string;
       liquidacao: string;
@@ -729,9 +731,11 @@ function TituloGroupCard({ group }: {
             <FileText className={`h-4 w-4 ${groupStatus === "RECEBIDO" ? "text-emerald-600" : "text-amber-600"}`} />
             <span className="font-mono text-sm font-semibold text-slate-700">
               {group.documento ? (
-                group.isPedido
+                group.isPedido && group.pedidoNumero
+                  ? <>Pedido {group.pedidoNumero}{group.nfVinculada && group.nfVinculada.length > 0 && <span className="text-emerald-600 font-normal"> → NF {group.nfVinculada.join(", ")}</span>}</>
+                  : group.isPedido
                   ? <>Pedido {group.documento}{group.nfVinculada && group.nfVinculada.length > 0 && <span className="text-emerald-600 font-normal"> → NF {group.nfVinculada.join(", ")}</span>}</>
-                  : <>NF {group.documento}</>
+                  : <>Doc {group.documento}</>
               ) : "S/N"}
             </span>
           </div>

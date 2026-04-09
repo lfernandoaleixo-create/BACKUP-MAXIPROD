@@ -1831,3 +1831,10 @@
 - [x] Quando tiver NF vinculada, mostrar "Pedido 775 → NF 195" no título agrupado
 - [x] Card Inadimplência "Nenhuma" deve ter visual neutro (não verde confuso)
 - [x] NÃO mexer na Autorização de Pagamentos (ticagens já feitas devem ser preservadas)
+
+## Correções v3.3
+- [x] Card Inadimplência "Nenhuma" deve ser VERMELHO (não cinza)
+- [x] Reordenar cards: Total Pedidos → Em Digitação → A Aprovar → Aprovado (A Faturar) → Faturado → Títulos Em Aberto → Inadimplência
+- [x] Bug: NF 227 pertence ao pedido 860 mas aparece como item separado - vincular NF ao pedido original
+- [x] Corrigir vinculação NF↔Pedido para TODOS os clientes automaticamente
+- [x] Quando pedido é faturado: trazer informações da NF (não do pedido)
