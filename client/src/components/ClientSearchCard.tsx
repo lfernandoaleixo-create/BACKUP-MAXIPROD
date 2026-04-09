@@ -276,32 +276,45 @@ export function ClientSearchCard() {
                 </div>
               </div>
 
-              {/* KPI Cards Row */}
+              {/* KPI Cards Row - Painel Unificado */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Pedidos */}
                 <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
                     <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
-                    Total Pedidos
+                    Pedidos
                   </div>
                   <div className="text-xl font-bold text-slate-800">{clientSummary.orders.totalPedidos}</div>
                   <div className="text-xs text-slate-500">{formatCurrency(clientSummary.orders.valorTotalPedidos)}</div>
+                  <div className="text-[10px] text-blue-600 mt-1">
+                    {clientSummary.orders.pedidosFaturados} faturado{clientSummary.orders.pedidosFaturados !== 1 ? 's' : ''}
+                    {(clientSummary.orders.pedidosAFaturar + (clientSummary.orders.pedidosAprovar || 0) + clientSummary.orders.pedidosEmDigitacao) > 0 && (
+                      <> | {clientSummary.orders.pedidosAFaturar + (clientSummary.orders.pedidosAprovar || 0) + clientSummary.orders.pedidosEmDigitacao} pendente{(clientSummary.orders.pedidosAFaturar + (clientSummary.orders.pedidosAprovar || 0) + clientSummary.orders.pedidosEmDigitacao) !== 1 ? 's' : ''}</>
+                    )}
+                  </div>
                 </div>
+                {/* Títulos (Documentos) */}
                 <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                    <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
-                    Faturado
+                    <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                    Títulos
                   </div>
-                  <div className="text-xl font-bold text-emerald-700">{formatCurrency(clientSummary.orders.valorFaturado)}</div>
-                  <div className="text-xs text-slate-500">{clientSummary.orders.pedidosFaturados} pedidos</div>
+                  <div className="text-xl font-bold text-emerald-700">{clientSummary.receivables.totalDocumentos || clientSummary.groupedReceivables?.length || 0}</div>
+                  <div className="text-xs text-slate-500">{clientSummary.receivables.totalParcelas || clientSummary.receivables.totalTitulos} parcelas no total</div>
+                  <div className="text-[10px] text-emerald-600 mt-1">
+                    {clientSummary.receivables.documentosEmAberto || 0} em aberto | {clientSummary.receivables.documentosRecebidos || 0} recebido{(clientSummary.receivables.documentosRecebidos || 0) !== 1 ? 's' : ''}
+                  </div>
                 </div>
+                {/* Em Aberto */}
                 <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                    <FileText className="h-3.5 w-3.5 text-amber-600" />
+                    <DollarSign className="h-3.5 w-3.5 text-amber-600" />
                     Em Aberto
                   </div>
                   <div className="text-xl font-bold text-amber-700">{formatCurrency(clientSummary.receivables.valorEmAberto)}</div>
-                  <div className="text-xs text-slate-500">{clientSummary.receivables.titulosEmAberto} títulos</div>
+                  <div className="text-xs text-slate-500">{clientSummary.receivables.parcelasEmAberto || clientSummary.receivables.titulosEmAberto} parcelas</div>
                 </div>
+                {/* Inadimplência */}
                 <div className="bg-red-50 rounded-lg p-3 border border-red-100">
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
                     <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
@@ -309,8 +322,13 @@ export function ClientSearchCard() {
                   </div>
                   <div className="text-xl font-bold text-red-700">{formatCurrency(clientSummary.overdue.valorVencido)}</div>
                   <div className="text-xs text-slate-500">
-                    {clientSummary.overdue.titulosVencidos} títulos | {clientSummary.overdue.diasAtrasoMedio}d médio
+                    {clientSummary.overdue.titulosVencidos} parcela{clientSummary.overdue.titulosVencidos !== 1 ? 's' : ''} vencida{clientSummary.overdue.titulosVencidos !== 1 ? 's' : ''}
                   </div>
+                  {clientSummary.overdue.diasAtrasoMedio > 0 && (
+                    <div className="text-[10px] text-red-600 mt-1">
+                      Atraso médio: {clientSummary.overdue.diasAtrasoMedio}d | Máx: {clientSummary.overdue.diasAtrasoMax}d
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -384,28 +402,37 @@ export function ClientSearchCard() {
                 )}
               </SectionCard>
 
-              {/* Receivables Section */}
+              {/* Receivables Section - Resumo Financeiro Unificado */}
               <SectionCard
-                title="Financeiro"
+                title="Resumo Financeiro"
                 icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
-                badge={`${clientSummary.receivables.totalTitulos} títulos`}
+                badge={`${clientSummary.receivables.totalDocumentos || clientSummary.groupedReceivables?.length || 0} documentos | ${clientSummary.receivables.totalParcelas || clientSummary.receivables.totalTitulos} parcelas`}
                 expanded={expandedSections.receivables}
                 onToggle={() => toggleSection("receivables")}
               >
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
-                    <div className="text-xs text-slate-500">Em Aberto</div>
-                    <div className="font-semibold text-amber-600">{formatCurrency(clientSummary.receivables.valorEmAberto)}</div>
-                    <div className="text-xs text-slate-400">{clientSummary.receivables.titulosEmAberto} títulos</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div className="text-center p-2.5 bg-amber-50 rounded-lg border border-amber-100">
+                    <div className="text-xs text-slate-500 mb-0.5">Docs Em Aberto</div>
+                    <div className="text-lg font-bold text-amber-600">{clientSummary.receivables.documentosEmAberto || 0}</div>
+                    <div className="text-[10px] text-slate-400">{clientSummary.receivables.parcelasEmAberto || clientSummary.receivables.titulosEmAberto} parcelas</div>
+                    <div className="text-xs font-semibold text-amber-700 mt-1">{formatCurrency(clientSummary.receivables.valorEmAberto)}</div>
                   </div>
-                  <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
-                    <div className="text-xs text-slate-500">Recebido</div>
-                    <div className="font-semibold text-emerald-600">{formatCurrency(clientSummary.receivables.valorRecebido)}</div>
-                    <div className="text-xs text-slate-400">{clientSummary.receivables.titulosRecebidos} títulos</div>
+                  <div className="text-center p-2.5 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <div className="text-xs text-slate-500 mb-0.5">Docs Recebidos</div>
+                    <div className="text-lg font-bold text-emerald-600">{clientSummary.receivables.documentosRecebidos || 0}</div>
+                    <div className="text-[10px] text-slate-400">{clientSummary.receivables.parcelasRecebidas || clientSummary.receivables.titulosRecebidos} parcelas</div>
+                    <div className="text-xs font-semibold text-emerald-700 mt-1">{formatCurrency(clientSummary.receivables.valorRecebido)}</div>
                   </div>
-                  <div className="text-center p-2 bg-slate-50 rounded border border-slate-100">
-                    <div className="text-xs text-slate-500">Total Títulos</div>
-                    <div className="font-semibold text-slate-700">{clientSummary.receivables.totalTitulos}</div>
+                  <div className="text-center p-2.5 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="text-xs text-slate-500 mb-0.5">Total Documentos</div>
+                    <div className="text-lg font-bold text-blue-700">{clientSummary.receivables.totalDocumentos || clientSummary.groupedReceivables?.length || 0}</div>
+                    <div className="text-[10px] text-slate-400">{clientSummary.receivables.totalParcelas || clientSummary.receivables.totalTitulos} parcelas</div>
+                  </div>
+                  <div className="text-center p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="text-xs text-slate-500 mb-0.5">Faturado (Pedidos)</div>
+                    <div className="text-lg font-bold text-slate-700">{clientSummary.orders.pedidosFaturados}/{clientSummary.orders.totalPedidos}</div>
+                    <div className="text-[10px] text-slate-400">pedidos faturados</div>
+                    <div className="text-xs font-semibold text-emerald-700 mt-1">{formatCurrency(clientSummary.orders.valorFaturado)}</div>
                   </div>
                 </div>
               </SectionCard>
@@ -510,7 +537,7 @@ export function ClientSearchCard() {
               <SectionCard
                 title="Títulos"
                 icon={<FileText className="h-4 w-4 text-amber-600" />}
-                badge={`${clientSummary.groupedReceivables?.length || clientSummary.recentReceivables.length}`}
+                badge={`${clientSummary.groupedReceivables?.length || 0} documentos`}
                 expanded={expandedSections.titles}
                 onToggle={() => toggleSection("titles")}
               >

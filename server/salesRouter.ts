@@ -1467,20 +1467,21 @@ export const salesRouter = router({
       };
 
       // Agrupar itens por número de pedido para contagem correta
-      const pedidoGroupMap = new Map<string, { pedido: string; itens: typeof allOrders; valorTotal: number; estadoNotaPedido: string; dataEmissao: string }>();
+      const pedidoGroupMap = new Map<string, { pedido: string; itens: typeof allOrders; valorTotal: number; estadoNotaPedido: string; dataEmissao: string; condicaoPagamento: string }>();
       for (const o of allOrders) {
         if (!o.pedido) continue;
         const existing = pedidoGroupMap.get(o.pedido);
         if (existing) {
           existing.itens.push(o);
-          existing.valorTotal += parseFloat(o.valorTotal || "0");
+          // NÃO somar valorTotal dos itens - usar valorTotalPedido que é o valor real do pedido
         } else {
           pedidoGroupMap.set(o.pedido, {
             pedido: o.pedido,
             itens: [o],
-            valorTotal: parseFloat(o.valorTotal || "0"),
+            valorTotal: parseFloat(o.valorTotalPedido || o.valorTotal || "0"),
             estadoNotaPedido: o.estadoNota || o.estadoItem || "",
             dataEmissao: o.dataEmissao || "",
+            condicaoPagamento: o.condicaoPagamento || "",
           });
         }
       }
@@ -1498,14 +1499,29 @@ export const salesRouter = router({
       const pedidosEmDigitacaoArr = pedidoGroups.filter(p => p.estadoNotaPedido === "Digitação" || p.estadoNotaPedido === "Em digitação");
       const valorEmDigitacao = pedidosEmDigitacaoArr.reduce((s, p) => s + p.valorTotal, 0);
 
-      const titulosEmitidos = allReceivables.filter(r => r.estado === "EMITIDO");
-      const titulosRecebidos = allReceivables.filter(r => r.estado === "RECEBIDO");
+      // Deduplicar para contagens corretas também
+      const dedupForCounts: typeof allReceivables = [];
+      const seenCountKeys = new Set<string>();
+      for (const r of allReceivables) {
+        const ck = `${r.documentoVinculadoNumero}_${r.parcela}_${r.valorOriginal}_${r.vencimentoData}`;
+        if (!seenCountKeys.has(ck)) {
+          seenCountKeys.add(ck);
+          dedupForCounts.push(r);
+        }
+      }
+      const titulosEmitidos = dedupForCounts.filter(r => r.estado === "EMITIDO");
+      const titulosRecebidos = dedupForCounts.filter(r => r.estado === "RECEBIDO");
       const valorEmAberto = titulosEmitidos.reduce((s, r) => {
         const original = parseFloat(r.valorOriginal || "0");
         const recebido = parseFloat(r.valorRecebidoLiquido || "0");
         return s + (original - recebido);
       }, 0);
       const valorRecebido = titulosRecebidos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
+
+      // Contagem por documentos (não parcelas)
+      const docsEmitidos = new Set(titulosEmitidos.map(r => r.documentoVinculadoNumero || `solo_${r.id}`));
+      const docsRecebidos = new Set(titulosRecebidos.map(r => r.documentoVinculadoNumero || `solo_${r.id}`));
+      const docsTotal = new Set(dedupForCounts.map(r => r.documentoVinculadoNumero || `solo_${r.id}`));
 
       const titulosVencidos = titulosEmitidos.filter(r => {
         if (!r.vencimentoData) return false;
@@ -1557,11 +1573,23 @@ export const salesRouter = router({
           valor: Math.round(p.valorTotal * 100) / 100,
           status: p.estadoNotaPedido,
           itens: p.itens.length,
+          condicaoPagamento: p.condicaoPagamento,
         }));
+
+      // Deduplicar títulos (mesmo doc + mesma parcela + mesmo valor + mesma data = duplicata)
+      const deduplicatedReceivables: typeof allReceivables = [];
+      const seenKeys = new Set<string>();
+      for (const r of allReceivables) {
+        const dedupKey = `${r.documentoVinculadoNumero}_${r.parcela}_${r.valorOriginal}_${r.vencimentoData}`;
+        if (!seenKeys.has(dedupKey)) {
+          seenKeys.add(dedupKey);
+          deduplicatedReceivables.push(r);
+        }
+      }
 
       // Agrupar títulos por documento vinculado (mesmo pedido)
       const tituloGroupMap = new Map<string, Array<typeof allReceivables[number]>>();
-      for (const r of allReceivables) {
+      for (const r of deduplicatedReceivables) {
         const key = r.documentoVinculadoNumero || `solo_${r.id}`;
         const existing = tituloGroupMap.get(key) || [];
         existing.push(r);
@@ -1591,8 +1619,8 @@ export const salesRouter = router({
           })),
         };
       });
-      // Also keep flat list for backward compat
-      const recentReceivables = allReceivables.slice(0, 30).map((r: typeof allReceivables[number]) => ({
+      // Also keep flat list for backward compat (deduplicado)
+      const recentReceivables = deduplicatedReceivables.slice(0, 30).map((r: typeof allReceivables[number]) => ({
         id: r.id,
         documento: r.documentoVinculadoNumero || "",
         emissao: r.emissaoData || "",
@@ -1632,11 +1660,21 @@ export const salesRouter = router({
           pedidosAprovar: pedidosAprovarArr.length,
         },
         receivables: {
-          totalTitulos: allReceivables.length,
-          titulosEmAberto: titulosEmitidos.length,
-          titulosRecebidos: titulosRecebidos.length,
+          // Parcelas (individuais)
+          totalParcelas: dedupForCounts.length,
+          parcelasEmAberto: titulosEmitidos.length,
+          parcelasRecebidas: titulosRecebidos.length,
+          // Documentos (agrupados)
+          totalDocumentos: docsTotal.size,
+          documentosEmAberto: docsEmitidos.size,
+          documentosRecebidos: docsRecebidos.size,
+          // Valores
           valorEmAberto: Math.round(valorEmAberto * 100) / 100,
           valorRecebido: Math.round(valorRecebido * 100) / 100,
+          // Compat
+          totalTitulos: dedupForCounts.length,
+          titulosEmAberto: titulosEmitidos.length,
+          titulosRecebidos: titulosRecebidos.length,
         },
         overdue: {
           titulosVencidos: titulosVencidos.length,

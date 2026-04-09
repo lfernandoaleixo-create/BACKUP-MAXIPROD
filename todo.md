@@ -1798,3 +1798,10 @@
 - [x] Corrigir status dos pedidos: usar status correto do pedido (A aprovar, Faturado, etc.)
 - [x] Agrupar títulos por pedido em cards expansíveis (expandir/reduzir)
 - [x] Puxar forma de pagamento do Maxiprod (boleto, PIX, etc.) e exibir nos títulos
+
+## Correções Consulta de Cliente v2 - Inconsistências e Layout
+- [x] Corrigir inconsistência: card "Em Aberto" mostra 9 títulos mas seção Títulos mostra 4 documentos
+- [x] Unificar contagem: títulos = documentos agrupados (não parcelas individuais)
+- [x] Redesenhar layout: painel unificado pedidos/títulos/faturamento claro e consistente
+- [x] Cards expansíveis: agrupar parcelas do mesmo documento com visual impecável
+- [x] Aplicar correções para TODOS os clientes
