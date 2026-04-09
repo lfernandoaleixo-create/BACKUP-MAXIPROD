@@ -1858,3 +1858,9 @@
 - [x] Atualizar documento PDF de transferência de responsabilidade: incluir responsável pelas cobranças (Thiago)
 - [x] Atualizar documento PDF: mostrar cobranças feitas e não feitas com datas
 - [x] Gerar prévia do documento PDF para o usuário revisar
+
+## Correções PDF de Cobrança
+- [x] Corrigir texto vermelho que ficou fora do quadro (highlight box)
+- [x] Trocar título do documento para "DOCUMENTO PARA TOMADA DE DECISÃO" com subtítulo "Acompanhamento de Inadimplência e Próximos Passos"
+- [x] Reformular comunicado: vendedor decide próximo passo, cobrança é responsabilidade do Thiago (não transferência de responsabilidade)
+- [x] Gerar prévia do PDF corrigido

@@ -3589,8 +3589,8 @@ export const financialRouter = router({
 
       const documentoTexto = `
 ══════════════════════════════════════════════════════════
-           DOCUMENTO DE TRANSFERÊNCIA DE RESPONSABILIDADE
-                    COBRANÇA DE INADIMPLÊNCIA
+              DOCUMENTO PARA TOMADA DE DECISÃO
+     Acompanhamento de Inadimplência e Próximos Passos
 ══════════════════════════════════════════════════════════
 
 Data de emissão: ${todayFormatted}
@@ -3614,12 +3614,17 @@ Documento gerado automaticamente pelo Sistema Grupo Fox
   Sr(a). ${vendedor}
 
 ──────────────────────────────────────────────────────────
+            RESPONSÁVEL PELA COBRANÇA: Thiago
+──────────────────────────────────────────────────────────
+  Responsável pelas ações de cobrança nos dias 1, 3 e 5
+
+──────────────────────────────────────────────────────────
           HISTÓRICO DE AÇÕES DE COBRANÇA REALIZADAS
 ──────────────────────────────────────────────────────────
 
 ${acoesTexto}
 ──────────────────────────────────────────────────────────
-                    COMUNICADO FORMAL
+    COMUNICADO AO VENDEDOR — DEFINIÇÃO DE PRÓXIMOS PASSOS
 ──────────────────────────────────────────────────────────
 
   Prezado(a) Sr(a). ${vendedor},
@@ -3633,22 +3638,23 @@ ${acoesTexto}
   AUTOMATICAMENTE", o que significa que o título NÃO será
   encaminhado a cartório para protesto.
 
-  Informamos que TODAS as medidas cabíveis e protocolares
-  de cobrança já foram devidamente executadas pelo setor
-  responsável, conforme detalhado no histórico acima.
+  Informamos que todas as ações de cobrança previstas no
+  protocolo (dias 1, 3 e 5 após o vencimento) já foram
+  executadas por Thiago, conforme detalhado no histórico.
 
-  Apesar de todos os esforços realizados, o cliente não
-  efetuou o pagamento do valor em aberto de ${valorFormatted}.
+  Apesar dos esforços realizados, o cliente não efetuou o
+  pagamento do valor em aberto de ${valorFormatted}.
 
-  A PARTIR DESTA DATA, A RESPONSABILIDADE PELA RESOLUÇÃO
-  DESTA INADIMPLÊNCIA É INTEIRAMENTE SUA, cabendo ao(à)
-  senhor(a) tomar as medidas que julgar necessárias para
-  a regularização do débito.
+  SOLICITAMOS QUE DEFINA O PRÓXIMO PASSO PARA ESTE CLIENTE:
+  • Manter a cobrança ativa (Thiago continuará as tentativas)
+  • Negociar diretamente com o cliente
+  • Encaminhar para protesto manual
+  • Outra ação que julgar necessária
 
   Este documento ficará registrado no sistema e visível
   para toda a equipe como comprovante de que o processo
-  de cobrança foi conduzido corretamente e que a
-  responsabilidade foi formalmente transferida.
+  de cobrança foi conduzido corretamente e que a definição
+  dos próximos passos cabe ao vendedor responsável.
 
 ──────────────────────────────────────────────────────────
               ASSINATURA DIGITAL DO SISTEMA
@@ -3729,7 +3735,7 @@ ${acoesTexto}
         await createNotification({
           type: "cobranca_documento",
           title: `⚠️ Documento de Cobrança - ${rec.cliente}`,
-          message: `Sr(a). ${vendedor}, um documento de transferência de responsabilidade foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso. Todas as medidas de cobrança foram realizadas. A responsabilidade agora é sua.`,
+          message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso. Todas as ações de cobrança foram realizadas por Thiago. Solicitamos que defina o próximo passo.`,
           severity: "warning",
           metadata: {
             receivableId: input.receivableId,
@@ -3751,7 +3757,7 @@ ${acoesTexto}
         actionDate: todayStr,
         actionType: "outro",
         operatorName: "Sistema",
-        notes: `Documento de transferência de responsabilidade gerado para vendedor ${vendedor}`,
+        notes: `Documento para tomada de decisão gerado para vendedor ${vendedor} - cobranças realizadas por Thiago`,
         isAutomatic: true,
       });
 
@@ -3933,8 +3939,8 @@ ${acoesTexto}
 
               const documentoTexto = `
 ══════════════════════════════════════════════════════════
-           DOCUMENTO DE TRANSFERÊNCIA DE RESPONSABILIDADE
-                    COBRANÇA DE INADIMPLÊNCIA
+              DOCUMENTO PARA TOMADA DE DECISÃO
+     Acompanhamento de Inadimplência e Próximos Passos
 ══════════════════════════════════════════════════════════
 
 Data de emissão: ${todayFormatted}
@@ -3958,12 +3964,17 @@ Documento gerado automaticamente pelo Sistema Grupo Fox
   Sr(a). ${vendedor}
 
 ──────────────────────────────────────────────────────────
+            RESPONSÁVEL PELA COBRANÇA: Thiago
+──────────────────────────────────────────────────────────
+  Responsável pelas ações de cobrança nos dias 1, 3 e 5
+
+──────────────────────────────────────────────────────────
           HISTÓRICO DE AÇÕES DE COBRANÇA REALIZADAS
 ──────────────────────────────────────────────────────────
 
 ${acoesTexto}
 ──────────────────────────────────────────────────────────
-                    COMUNICADO FORMAL
+    COMUNICADO AO VENDEDOR — DEFINIÇÃO DE PRÓXIMOS PASSOS
 ──────────────────────────────────────────────────────────
 
   Prezado(a) Sr(a). ${vendedor},
@@ -3977,22 +3988,23 @@ ${acoesTexto}
   AUTOMATICAMENTE", o que significa que o título NÃO será
   encaminhado a cartório para protesto.
 
-  Informamos que TODAS as medidas cabíveis e protocolares
-  de cobrança já foram devidamente executadas pelo setor
-  responsável, conforme detalhado no histórico acima.
+  Informamos que todas as ações de cobrança previstas no
+  protocolo (dias 1, 3 e 5 após o vencimento) já foram
+  executadas por Thiago, conforme detalhado no histórico.
 
-  Apesar de todos os esforços realizados, o cliente não
-  efetuou o pagamento do valor em aberto de ${valorFormatted}.
+  Apesar dos esforços realizados, o cliente não efetuou o
+  pagamento do valor em aberto de ${valorFormatted}.
 
-  A PARTIR DESTA DATA, A RESPONSABILIDADE PELA RESOLUÇÃO
-  DESTA INADIMPLÊNCIA É INTEIRAMENTE SUA, cabendo ao(à)
-  senhor(a) tomar as medidas que julgar necessárias para
-  a regularização do débito.
+  SOLICITAMOS QUE DEFINA O PRÓXIMO PASSO PARA ESTE CLIENTE:
+  • Manter a cobrança ativa (Thiago continuará as tentativas)
+  • Negociar diretamente com o cliente
+  • Encaminhar para protesto manual
+  • Outra ação que julgar necessária
 
   Este documento ficará registrado no sistema e visível
   para toda a equipe como comprovante de que o processo
-  de cobrança foi conduzido corretamente e que a
-  responsabilidade foi formalmente transferida.
+  de cobrança foi conduzido corretamente e que a definição
+  dos próximos passos cabe ao vendedor responsável.
 
 ──────────────────────────────────────────────────────────
               ASSINATURA DIGITAL DO SISTEMA
@@ -4050,7 +4062,7 @@ ${acoesTexto}
                 await createNotification({
                   type: "cobranca_documento",
                   title: `⚠️ Documento de Cobrança - ${rec.cliente}`,
-                  message: `Sr(a). ${vendedor}, um documento de transferência de responsabilidade foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso.`,
+                  message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso. Cobranças realizadas por Thiago. Solicitamos que defina o próximo passo.`,
                   severity: "warning",
                   metadata: {
                     receivableId: rec.id,

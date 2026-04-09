@@ -1472,8 +1472,8 @@ function CollectionDocumentDialog({ receivableId, onClose }: {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-amber-800">
             <FileText className="w-5 h-5" />
-            Documento de Transferência de Responsabilidade
-          </DialogTitle>
+Documento para Tomada de Decisão
+           </DialogTitle>
         </DialogHeader>
 
         {isLoading && (
@@ -1569,7 +1569,7 @@ function CollectionDocumentDialog({ receivableId, onClose }: {
                   <iframe
                     src={(doc as any).pdfUrl}
                     className="w-full h-[50vh] border-0"
-                    title="Documento de Transferência de Responsabilidade"
+                    title="Documento para Tomada de Decisão"
                   />
                 </div>
                 <div className="flex gap-3 mt-3">
