@@ -1845,3 +1845,7 @@
 ## Correções v3.5
 - [x] Bug: Pedido 850 mostra 4 títulos (R$ 5.812) quando deveria ter 2 (R$ 2.906) - duplicação de títulos pagos
 - [x] Corrigir deduplicação de títulos para TODOS os clientes genericamente
+
+## Correções v3.6
+- [x] Bug: Pedido 840 mostra "Pago" mas não foi faturado - estado do grupo de títulos deve refletir o estado real do pedido
+- [x] Corrigir lógica de estado para TODOS os pedidos/clientes

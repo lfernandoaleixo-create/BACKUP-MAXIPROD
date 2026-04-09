@@ -1698,6 +1698,12 @@ export const salesRouter = router({
         existing.push(r);
         tituloGroupMap.set(key, existing);
       }
+      // Criar mapa de número do pedido → estado do pedido para lookup rápido
+      const pedidoEstadoMap = new Map<string, string>();
+      for (const p of pedidoGroups) {
+        pedidoEstadoMap.set(p.pedido, p.estadoNotaPedido);
+      }
+
       const groupedReceivables = Array.from(tituloGroupMap.entries()).map(([groupKey, titulos]) => {
         const valorTotalGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorOriginal || "0"), 0);
         const valorRecebidoGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
@@ -1708,10 +1714,18 @@ export const salesRouter = router({
         const nfVinculada = isPedido ? (pedidoToNf.get(docNumClean) || []) : [];
         // Se não é pedido mas é uma NF que tem pedido de origem, marcar como pedido
         const pedidoOrigem = nfNumToPedidoNum.get(docNumClean);
+        // Determinar o número do pedido real
+        const pedidoNum = isPedido ? docNumClean : (pedidoOrigem || "");
+        // Buscar o estado real do pedido de venda
+        const estadoPedido = pedidoNum ? (pedidoEstadoMap.get(pedidoNum) || "") : "";
+        // O pedido só é considerado faturado se o estado do pedido de venda é "Faturado"
+        const isFaturado = estadoPedido === "Faturado";
         return {
           documento: docNumClean,
           isPedido: isPedido || !!pedidoOrigem,
-          pedidoNumero: isPedido ? docNumClean : (pedidoOrigem || ""),
+          pedidoNumero: pedidoNum,
+          estadoPedido,
+          isFaturado,
           nfVinculada,
           valorTotalGrupo: Math.round(valorTotalGrupo * 100) / 100,
           valorRecebidoGrupo: Math.round(valorRecebidoGrupo * 100) / 100,

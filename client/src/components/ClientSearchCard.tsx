@@ -667,6 +667,8 @@ function TituloGroupCard({ group }: {
     documento: string;
     isPedido?: boolean;
     pedidoNumero?: string;
+    estadoPedido?: string;
+    isFaturado?: boolean;
     nfVinculada?: string[];
     valorTotalGrupo: number;
     valorRecebidoGrupo: number;
@@ -691,9 +693,20 @@ function TituloGroupCard({ group }: {
   const [expanded, setExpanded] = useState(false);
 
   // Determine overall status of the group
+  // Regra: se o pedido NÃO foi faturado, o estado é sempre "Em Aberto"
+  // Só pode mostrar "Pago" se o pedido foi faturado E todos os títulos foram recebidos
   const allRecebido = group.titulos.every(t => t.estado === "RECEBIDO");
   const someEmitido = group.titulos.some(t => t.estado === "EMITIDO");
-  const groupStatus = allRecebido ? "RECEBIDO" : someEmitido ? "EMITIDO" : "MISTO";
+  const pedidoFaturado = group.isFaturado === true;
+  
+  let groupStatus: "RECEBIDO" | "EMITIDO" | "MISTO";
+  if (!pedidoFaturado) {
+    // Pedido não faturado: sempre "Em Aberto" independente do estado dos títulos
+    groupStatus = "EMITIDO";
+  } else {
+    // Pedido faturado: usar estado real dos títulos
+    groupStatus = allRecebido ? "RECEBIDO" : someEmitido ? "EMITIDO" : "MISTO";
+  }
 
   // Get banco info from first titulo that has it
   const bancoInfo = group.titulos.find(t => t.bancoNome)?.bancoNome || "";
@@ -811,11 +824,15 @@ function TituloGroupCard({ group }: {
                     <td className="py-1.5 px-3 text-right text-xs font-medium text-slate-700">{formatCurrency(t.valorOriginal)}</td>
                     <td className="py-1.5 px-3">
                       <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                        t.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700" :
-                        t.estado === "EMITIDO" ? "bg-amber-100 text-amber-700" :
-                        "bg-red-100 text-red-700"
+                        (!pedidoFaturado)
+                          ? "bg-amber-100 text-amber-700"
+                          : t.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700"
+                          : t.estado === "EMITIDO" ? "bg-amber-100 text-amber-700"
+                          : "bg-red-100 text-red-700"
                       }`}>
-                        {t.estado === "RECEBIDO" ? "Pago" : t.estado === "EMITIDO" ? "Em Aberto" : t.estado}
+                        {(!pedidoFaturado)
+                          ? "Em Aberto"
+                          : t.estado === "RECEBIDO" ? "Pago" : t.estado === "EMITIDO" ? "Em Aberto" : t.estado}
                       </span>
                     </td>
                   </tr>
