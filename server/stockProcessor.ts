@@ -790,7 +790,12 @@ export async function processStockData(): Promise<void> {
         parent.pedidosCx = Math.ceil(parent.pedidosUn / parent.unidadesPorCaixa);
         parent.disponivelCx = Math.floor(parent.disponivelUn / parent.unidadesPorCaixa);
         parent.projetadoUn = parent.disponivelUn + parent.poUn;
-        parent.projetadoCx = Math.floor(parent.projetadoUn / parent.unidadesPorCaixa);
+        // Para isKgProduct, projetadoCx = disponivelCx + poUn (tudo em kg)
+        if (parent.isKgProduct) {
+          parent.projetadoCx = parent.disponivelCx !== null ? parent.disponivelCx + parent.poUn : null;
+        } else {
+          parent.projetadoCx = Math.floor(parent.projetadoUn / parent.unidadesPorCaixa);
+        }
       }
       
       // Agregar pedidos das variações no pedidosPorCliente do pai
