@@ -1881,3 +1881,6 @@
 ## Ajustes Estoque Madeira Acabada
 - [x] Remover colunas PO e Projetado do estoque de madeira acabada (Industrialização)
 - [x] Ampliar nome dos produtos para exibir completo nos cards e tabela (sem cortar com "...")
+
+## Bug: Duplicação Contas a Receber e Inadimplência
+- [x] Investigar e corrigir duplicação nos dados de Contas a Receber e Inadimplência (671 duplicatas receber + 48 pagar removidas, prevenção implementada)

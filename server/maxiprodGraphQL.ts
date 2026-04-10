@@ -1088,6 +1088,16 @@ async function saveFinancialData(
       // Deletar contas EMITIDO existentes (serão substituídas pelos dados frescos)
       await tx.delete(accountsPayable).where(eq(accountsPayable.estado, 'EMITIDO'));
       
+      // Deletar PAGO que voltaram na API como EMITIDO (conciliação bancária revertida)
+      if (newPayableIds.size > 0) {
+        const newIdsArray = Array.from(newPayableIds);
+        for (let i = 0; i < newIdsArray.length; i += 200) {
+          const batch = newIdsArray.slice(i, i + 200);
+          await tx.delete(accountsPayable)
+            .where(inArray(accountsPayable.maxiprodId, batch));
+        }
+      }
+      
       // Inserir dados frescos da API (todas EMITIDO)
       if (uniquePayable.length > 0) {
         for (let i = 0; i < uniquePayable.length; i += 200) {
@@ -1120,6 +1130,17 @@ async function saveFinancialData(
       
       // Deletar contas EMITIDO existentes (serão substituídas)
       await tx.delete(accountsReceivable).where(eq(accountsReceivable.estado, 'EMITIDO'));
+      
+      // Deletar RECEBIDO que voltaram na API como EMITIDO (conciliação bancária revertida)
+      // Isso evita duplicatas quando um título marcado como RECEBIDO reaparece na API
+      if (newReceivableIds.size > 0) {
+        const newIdsArray = Array.from(newReceivableIds);
+        for (let i = 0; i < newIdsArray.length; i += 200) {
+          const batch = newIdsArray.slice(i, i + 200);
+          await tx.delete(accountsReceivable)
+            .where(inArray(accountsReceivable.maxiprodId, batch));
+        }
+      }
       
       if (uniqueReceivable.length > 0) {
         for (let i = 0; i < uniqueReceivable.length; i += 200) {
