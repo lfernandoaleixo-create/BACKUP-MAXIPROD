@@ -1931,3 +1931,8 @@
 - [x] Implementar busca dos dados de cobrança no backend (fetchCobrancaDecisionMap no financialRouter.ts)
 - [x] Adicionar coluna "Decisão de Cobrança" na tabela de inadimplência no frontend (vista por título e por cliente)
 - [x] Testar exibição da coluna com dados reais (ELIAN CARRILHO = SEM PROTESTO)
+
+## Correções Decisão de Cobrança + Autorização de Pagamentos
+- [x] BUG: Decisão de Cobrança não puxou modificação teste do Maxiprod (COM PROTESTO) - corrigido: normalização uppercase/trim + busca parcial
+- [x] Alinhar colunas da tabela de inadimplência e escrever "Decisão de Cobrança" completo (grid reformatado)
+- [x] Aumentar tamanho das letras cinzas (NF, Parcela, empresa) e laranja (Venc. Orig.) na Autorização de Pagamentos (text-xs/11px → text-sm/14px)

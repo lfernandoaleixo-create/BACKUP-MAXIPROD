@@ -129,12 +129,15 @@ async function fetchCobrancaDecisionMap(): Promise<Record<string, string>> {
       totalCount = data.empresas.totalCount;
 
       for (const emp of data.empresas.items) {
-        const situacao = emp.campoAdicionalEspecifico?.find((c: any) => c.descricao === 'SITUAÇÃO');
+        const situacao = emp.campoAdicionalEspecifico?.find((c: any) => 
+          c.descricao === 'SITUA\u00c7\u00c3O' || c.descricao?.toUpperCase() === 'SITUACAO' || c.descricao?.toUpperCase() === 'SITUA\u00c7\u00c3O'
+        );
         if (situacao?.valor) {
-          // Map all name variants to the decision
+          // Map all name variants to the decision (both original and normalized)
           const names = [emp.razaoSocial, emp.nomeFantasia, emp.apelido].filter(Boolean);
           for (const name of names) {
             map[name] = situacao.valor;
+            map[name.toUpperCase().trim()] = situacao.valor;
           }
         }
       }
@@ -144,9 +147,9 @@ async function fetchCobrancaDecisionMap(): Promise<Record<string, string>> {
 
     cobrancaDecisionCacheMap = map;
     cobrancaDecisionCacheTimestamp = now;
-    console.log(`[Cobrança Cache] Refreshed: ${Object.keys(map).length} mappings from ${totalCount} clientes`);
+    console.log(`[Cobran\u00e7a Cache] Refreshed: ${Object.keys(map).length} mappings from ${totalCount} clientes`);
   } catch (err) {
-    console.error("[Cobrança Cache] Error fetching from GraphQL:", err);
+    console.error("[Cobran\u00e7a Cache] Error fetching from GraphQL:", err);
   }
 
   return cobrancaDecisionCacheMap;
@@ -2994,7 +2997,8 @@ export const financialRouter = router({
         const diasAtraso = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
         const action = actionsMap[row.id];
         const vendedor = graphqlMap[row.cliente || ""] || "";
-        const decisaoCobranca = cobrancaMap[row.cliente || ""] || "";
+        const clienteName = (row.cliente || "").trim();
+        const decisaoCobranca = cobrancaMap[clienteName] || cobrancaMap[clienteName.toUpperCase()] || "";
 
         return {
           id: row.id,

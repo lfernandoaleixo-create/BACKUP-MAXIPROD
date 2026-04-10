@@ -166,8 +166,8 @@ function PayableRow({
         {/* Linha 3: Metadados (NF, Parcela, Empresa) */}
         {metaText && (
           <p
-            className={`text-[10px] mt-0.5 whitespace-normal break-words ${
-              item.authorized ? "text-emerald-500/70" : "text-slate-400"
+            className={`text-sm mt-0.5 whitespace-normal break-words ${
+              item.authorized ? "text-emerald-500/70" : "text-slate-500"
             }`}
           >
             {metaText}
@@ -189,15 +189,15 @@ function PayableRow({
           {formatCurrency(item.valor)}
         </span>
         <div
-          className={`text-[9px] ${
-            item.authorized ? "text-emerald-400" : "text-slate-400"
+          className={`text-sm ${
+            item.authorized ? "text-emerald-400" : "text-slate-500"
           }`}
         >
           Venc. {item.vencimento.split("-").reverse().join("/")}
         </div>
         {item.vencimentoOriginal && (
           <div
-            className={`text-[8px] font-medium ${
+            className={`text-sm font-medium ${
               item.vencimentoOriginal !== item.vencimento
                 ? "text-orange-500"
                 : item.authorized ? "text-emerald-400/70" : "text-slate-300"
