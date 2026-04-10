@@ -1917,132 +1917,196 @@ function ClassificationCard({
   );
 }
 
-/* --- Botão de Valorização de Estoque Madeira --- */
-function MadeiraValorizacaoButton({ items, madeiraVisData }: {
-  items: StockItem[];
+/* --- Valorização de Estoque Madeira (igual ao bambu: VLR ESTOQUE, VLR PO, VLR PROJETADO, CUSTO EST. REGULADOR) --- */
+function MadeiraValorizacaoCard({
+  madeiraItems,
+  madeiraItemsSemiPronto,
+  madeiraItemsAguardando,
+  madeiraVisData,
+  madeiraStockMap,
+  semiProntoMap,
+  aguardandoMap,
+  pricingOverrides,
+  showMadeiraFinancial,
+  setShowMadeiraFinancial,
+  operatorCtx,
+}: {
+  madeiraItems: StockItem[];
+  madeiraItemsSemiPronto: StockItem[];
+  madeiraItemsAguardando: StockItem[];
   madeiraVisData: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> } | undefined;
+  madeiraStockMap: Map<string, number>;
+  semiProntoMap: Map<string, number>;
+  aguardandoMap: Map<string, number>;
+  pricingOverrides?: Array<{ codigoItem: string; vendaMensal: number | null; fatorMultiplicacao: string | null; prazoCompraDias: number | null }>;
+  showMadeiraFinancial: boolean;
+  setShowMadeiraFinancial: (v: boolean) => void;
+  operatorCtx: ReturnType<typeof useOperator>;
 }) {
-  const [showModal, setShowModal] = useState(false);
-  const parentItems = useMemo(() => items.filter(i => !i.isChild), [items]);
-
+  // Build price map from madeira_visibility for ALL cards
   const precosMap = useMemo(() => {
     const map = new Map<string, number>();
     if (madeiraVisData?.items) {
       for (const row of madeiraVisData.items) {
-        if (row.card === "madeira" && row.precoCaixa) {
+        if (row.precoCaixa) {
           const val = parseFloat(row.precoCaixa);
-          if (!isNaN(val) && val > 0) map.set(row.codigoItem, val);
+          if (!isNaN(val) && val > 0) {
+            // Use the highest price if same product appears in multiple cards
+            const existing = map.get(row.codigoItem);
+            if (!existing || val > existing) map.set(row.codigoItem, val);
+          }
         }
       }
     }
     return map;
   }, [madeiraVisData]);
 
-  const valorizacao = useMemo(() => {
-    let total = 0;
-    let itensComPreco = 0;
-    const detalhes: Array<{ codigo: string; descricao: string; estoque: number; preco: number; valor: number }> = [];
-    for (const item of parentItems) {
+  // Calculate valuation across all 3 cards
+  const valuation = useMemo(() => {
+    let valorEstoque = 0;
+    let valorPO = 0;
+    let valorProjetado = 0;
+    let comPreco = 0;
+    let semPreco = 0;
+    const allItems = new Map<string, boolean>(); // track unique items
+
+    // Madeira PA items
+    for (const item of madeiraItems) {
+      if (item.isChild) continue;
+      if (allItems.has(item.codigoItem)) continue;
+      allItems.set(item.codigoItem, true);
       const preco = precosMap.get(item.codigoItem);
       if (preco && preco > 0) {
-        const estoque = item.estoqueCx ?? 0;
-        const valor = estoque * preco;
-        total += valor;
-        itensComPreco++;
-        if (estoque > 0) detalhes.push({ codigo: item.codigoItem, descricao: item.descricaoItem, estoque, preco, valor });
+        comPreco++;
+        const estoque = madeiraStockMap.get(item.codigoItem) || 0;
+        const pedidos = item.pedidosCx ?? 0;
+        const disponivel = estoque - pedidos;
+        const po = item.poCx ?? 0;
+        const projetado = disponivel + po;
+        valorEstoque += estoque * preco;
+        valorPO += po * preco;
+        valorProjetado += projetado * preco;
+      } else {
+        semPreco++;
       }
     }
-    detalhes.sort((a, b) => b.valor - a.valor);
-    return { total, itensComPreco, totalItens: parentItems.length, detalhes };
-  }, [parentItems, precosMap]);
+
+    // Semi Pronto items (only estoque, no PO/pedidos)
+    for (const item of madeiraItemsSemiPronto) {
+      if (item.isChild) continue;
+      if (allItems.has(item.codigoItem + '_sp')) continue;
+      allItems.set(item.codigoItem + '_sp', true);
+      const preco = precosMap.get(item.codigoItem);
+      if (preco && preco > 0) {
+        // Don't double-count comPreco if already counted in madeira
+        if (!allItems.has(item.codigoItem)) comPreco++;
+        const estoque = semiProntoMap.get(item.codigoItem) || 0;
+        valorEstoque += estoque * preco;
+        valorProjetado += estoque * preco; // semi pronto has no PO/pedidos, projetado = estoque
+      } else {
+        if (!allItems.has(item.codigoItem)) semPreco++;
+      }
+    }
+
+    // Aguardando Escolha items (only estoque, no PO/pedidos)
+    for (const item of madeiraItemsAguardando) {
+      if (item.isChild) continue;
+      if (allItems.has(item.codigoItem + '_ag')) continue;
+      allItems.set(item.codigoItem + '_ag', true);
+      const preco = precosMap.get(item.codigoItem);
+      if (preco && preco > 0) {
+        if (!allItems.has(item.codigoItem) && !allItems.has(item.codigoItem + '_sp')) comPreco++;
+        const estoque = aguardandoMap.get(item.codigoItem) || 0;
+        valorEstoque += estoque * preco;
+        valorProjetado += estoque * preco;
+      } else {
+        if (!allItems.has(item.codigoItem) && !allItems.has(item.codigoItem + '_sp')) semPreco++;
+      }
+    }
+
+    const totalItens = comPreco + semPreco;
+    return { valorEstoque, valorPO, valorProjetado, comPreco, semPreco, totalItens };
+  }, [madeiraItems, madeiraItemsSemiPronto, madeiraItemsAguardando, precosMap, madeiraStockMap, semiProntoMap, aguardandoMap]);
+
+  // Custo do Estoque Regulador (madeira PA only, same logic as bambu)
+  const custoEstRegMadeira = useMemo(() => {
+    if (!pricingOverrides) return null;
+    let total = 0;
+    let itensComCalculo = 0;
+    for (const item of madeiraItems) {
+      if (item.isChild) continue;
+      const pItem = pricingOverrides.find(p => p.codigoItem === item.codigoItem);
+      const vm = pItem?.vendaMensal;
+      if (vm == null) continue;
+      const f = pItem?.fatorMultiplicacao ? parseFloat(pItem.fatorMultiplicacao) : 2.3;
+      const estReg = Math.round(vm * f);
+      const preco = precosMap.get(item.codigoItem);
+      if (preco && preco > 0) {
+        total += estReg * preco;
+        itensComCalculo++;
+      }
+    }
+    return { total, itensComCalculo };
+  }, [madeiraItems, pricingOverrides, precosMap]);
 
   return (
-    <>
-      <div className="mt-4 mb-2 flex justify-end">
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
-        >
-          <DollarSign className="w-4 h-4" />
-          Valorização de Estoque
-          {valorizacao.total > 0 && (
-            <span className="ml-1 bg-emerald-500 px-2 py-0.5 rounded-full text-xs">
-              {formatCurrency(valorizacao.total)}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                <span className="font-bold text-lg">Valorização de Estoque - Madeira PA</span>
-              </div>
-              <button onClick={() => setShowModal(false)} className="text-white/80 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
+    <div className="flex items-stretch gap-4">
+      {/* Valuation Card - same layout as bambu */}
+      {showMadeiraFinancial && (
+        <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3 transition-all">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-4 h-4 text-emerald-600" />
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
+            <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+              <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
+              <p className="text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-emerald-50 rounded-xl p-4 text-center">
-                  <p className="text-xs text-emerald-600 font-semibold uppercase">Valor Total</p>
-                  <p className="text-2xl font-bold text-emerald-700">{formatCurrency(valorizacao.total)}</p>
-                </div>
-                <div className="bg-blue-50 rounded-xl p-4 text-center">
-                  <p className="text-xs text-blue-600 font-semibold uppercase">Itens com Preço</p>
-                  <p className="text-2xl font-bold text-blue-700">{valorizacao.itensComPreco}/{valorizacao.totalItens}</p>
-                </div>
-                <div className="bg-amber-50 rounded-xl p-4 text-center">
-                  <p className="text-xs text-amber-600 font-semibold uppercase">Sem Preço</p>
-                  <p className="text-2xl font-bold text-amber-700">{valorizacao.totalItens - valorizacao.itensComPreco}</p>
-                </div>
-              </div>
-              {valorizacao.itensComPreco < valorizacao.totalItens && (
-                <p className="text-xs text-amber-600 mb-3 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" /> Configure o R$/CX na aba Configurações {'>'} Madeira - Produto Acabado para incluir todos os itens.
-                </p>
-              )}
-              <div className="overflow-y-auto max-h-[40vh]">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white">
-                    <tr className="border-b-2 border-slate-200">
-                      <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500">Produto</th>
-                      <th className="text-right py-2 px-2 text-xs font-semibold text-slate-500">Estoque</th>
-                      <th className="text-right py-2 px-2 text-xs font-semibold text-slate-500">R$/CX</th>
-                      <th className="text-right py-2 px-2 text-xs font-semibold text-emerald-600">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {valorizacao.detalhes.map(d => (
-                      <tr key={d.codigo} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-1.5 px-2 text-xs"><span className="text-slate-400 mr-1">{d.codigo}</span> {d.descricao}</td>
-                        <td className="py-1.5 px-2 text-right font-semibold text-xs">{formatNumber(d.estoque)} cx</td>
-                        <td className="py-1.5 px-2 text-right text-xs">{formatCurrency(d.preco)}</td>
-                        <td className="py-1.5 px-2 text-right font-bold text-emerald-600 text-xs">{formatCurrency(d.valor)}</td>
-                      </tr>
-                    ))}
-                    {valorizacao.detalhes.length === 0 && (
-                      <tr><td colSpan={4} className="py-8 text-center text-slate-400 text-xs">Nenhum item com preço e estoque configurados</td></tr>
-                    )}
-                  </tbody>
-                  {valorizacao.detalhes.length > 0 && (
-                    <tfoot>
-                      <tr className="border-t-2 border-emerald-200 bg-emerald-50">
-                        <td className="py-2 px-2 font-bold text-sm text-emerald-700" colSpan={3}>Total</td>
-                        <td className="py-2 px-2 text-right font-bold text-lg text-emerald-700">{formatCurrency(valorizacao.total)}</td>
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
-              </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
+              <p className="text-[10px] text-blue-700 font-semibold uppercase tracking-wider">Vlr PO</p>
+              <p className="text-lg font-extrabold text-blue-800">{formatCurrency(valuation.valorPO)}</p>
+            </div>
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5">
+              <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
+              <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
             </div>
           </div>
+          {custoEstRegMadeira && custoEstRegMadeira.total > 0 && (
+            <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-purple-700 font-semibold uppercase tracking-wider flex items-center gap-1">
+                    <Package className="w-3 h-3" />Custo do Estoque Regulador
+                  </p>
+                  <p className="text-[9px] text-purple-500 mt-0.5">Valor para manter estoque regulador ({custoEstRegMadeira.itensComCalculo} itens)</p>
+                </div>
+                <p className="text-lg font-extrabold text-purple-800">{formatCurrency(custoEstRegMadeira.total)}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
-    </>
+
+      {/* Toggle button - restricted by est.valorizacao granular permission */}
+      {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+        <div className={`flex items-center ${!showMadeiraFinancial ? 'ml-auto' : ''}`}>
+          <button
+            onClick={() => setShowMadeiraFinancial(!showMadeiraFinancial)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              showMadeiraFinancial
+                ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
+            }`}
+          >
+            <DollarSign className="w-4 h-4" />
+            {showMadeiraFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
+            {showMadeiraFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -2895,6 +2959,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false, madeira: false, semiPronto: false, aguardandoEscolha: false });
   const [showFinancial, setShowFinancial] = useState(false);
+  const [showMadeiraFinancial, setShowMadeiraFinancial] = useState(false);
 
   // Fetch classifications
   const { data: classifications } = trpc.settings.getProductClassifications.useQuery();
@@ -3013,6 +3078,27 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const aguardandoTotal = useMemo(() => {
     if (!aguardandoKPI?.items) return 0;
     return aguardandoKPI.items.reduce((sum, sp) => sum + (parseFloat(String(sp.quantidade)) || 0), 0);
+  }, [aguardandoKPI]);
+
+  // Mapas de estoque manual para Semi Pronto e Aguardando (para valorização)
+  const semiProntoMapKPI = useMemo(() => {
+    const map = new Map<string, number>();
+    if (semiProntoKPI?.items) {
+      for (const sp of semiProntoKPI.items) {
+        map.set(sp.codigoItem, parseFloat(String(sp.quantidade)) || 0);
+      }
+    }
+    return map;
+  }, [semiProntoKPI]);
+
+  const aguardandoMapKPI = useMemo(() => {
+    const map = new Map<string, number>();
+    if (aguardandoKPI?.items) {
+      for (const sp of aguardandoKPI.items) {
+        map.set(sp.codigoItem, parseFloat(String(sp.quantidade)) || 0);
+      }
+    }
+    return map;
   }, [aguardandoKPI]);
 
   // KPIs: Estoque Total e Pedidos APENAS de Madeira PA (não inclui Semi Pronto nem Aguardando)
@@ -3576,8 +3662,20 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         </div>
       )}
 
-      {/* Botão de Valorização de Estoque */}
-      <MadeiraValorizacaoButton items={madeiraItems} madeiraVisData={madeiraVisData} />
+      {/* Valorização de Estoque Madeira (igual ao bambu) */}
+      <MadeiraValorizacaoCard
+        madeiraItems={madeiraItems}
+        madeiraItemsSemiPronto={madeiraItemsSemiPronto}
+        madeiraItemsAguardando={madeiraItemsAguardando}
+        madeiraVisData={madeiraVisData}
+        madeiraStockMap={madeiraStockMapKPI}
+        semiProntoMap={semiProntoMapKPI}
+        aguardandoMap={aguardandoMapKPI}
+        pricingOverrides={pricingOverrides ?? undefined}
+        showMadeiraFinancial={showMadeiraFinancial}
+        setShowMadeiraFinancial={setShowMadeiraFinancial}
+        operatorCtx={operatorCtx}
+      />
 
       <MadeiraPACard
         items={madeiraItems}

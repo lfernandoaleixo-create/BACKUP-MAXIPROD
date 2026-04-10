@@ -1889,3 +1889,12 @@
 - [x] Corrigir cálculo de estoque para produtos com variações (exceto ZECA): ler estoque atualizado das variações do Maxiprod e debitar pedidos da variação (não do pai), evitando baixa dupla
 - [x] Cadastrar variações do produto 00110 (fibra): 00160, 00420, 00431 como filhos (fatores: 0.5, 0.25, 0.25)
 - [x] IMPORTANTE: NÃO alterar nada nos outros estoques/produtos além do solicitado
+
+## Valorização do Estoque de Madeira PA
+- [x] Ajustar card de valorização da Madeira PA para ficar igual ao bambu (VLR ESTOQUE, VLR PO, VLR PROJETADO, CUSTO ESTOQUE REGULADOR)
+- [x] Buscar no Maxiprod histórico das últimas 5 vendas dos produtos de madeira com vendas
+- [x] Calcular média R$/CX automaticamente e preencher no banco para produtos com 5+ vendas
+- [x] Produtos sem vendas ficam para preenchimento manual pelo usuário
+- [x] Buscar vendas e preencher preços dos produtos Semi Pronto e Aguardando Escolha
+- [x] Valorização deve considerar os 3 cards: Madeira PA, Semi Pronto, Aguardando Escolha
+- [x] NÃO alterar nada nos outros estoques/produtos (bambu, fibra, etc.)
