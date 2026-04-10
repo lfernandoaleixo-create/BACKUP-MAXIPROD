@@ -4117,9 +4117,10 @@ ${acoesTexto}
       tipo: z.enum(["pagar", "receber"]),
       fromDate: z.string().optional(),
       toDate: z.string().optional(),
+      semanaLabel: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      return getFinancialChanges(input.tipo, input.fromDate, input.toDate);
+      return getFinancialChanges(input.tipo, input.fromDate, input.toDate, input.semanaLabel);
     }),
 
   /**

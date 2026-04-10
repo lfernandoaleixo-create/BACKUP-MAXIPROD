@@ -298,7 +298,7 @@ export async function detectFinancialChanges(previousDate: string, currentDate: 
  * @param fromDate - Data inicial (YYYY-MM-DD), default: início do mês
  * @param toDate - Data final (YYYY-MM-DD), default: hoje
  */
-export async function getFinancialChanges(tipo: "pagar" | "receber", fromDate?: string, toDate?: string) {
+export async function getFinancialChanges(tipo: "pagar" | "receber", fromDate?: string, toDate?: string, semanaLabel?: string) {
   const db = await getDb();
   if (!db) return [];
 
@@ -306,14 +306,19 @@ export async function getFinancialChanges(tipo: "pagar" | "receber", fromDate?: 
   const from = fromDate || `${todayStr.slice(0, 7)}-01`; // início do mês
   const to = toDate || todayStr;
 
+  const conditions = [
+    eq(financialChanges.tipo, tipo),
+    sql`${financialChanges.changeDate} >= ${from}`,
+    sql`${financialChanges.changeDate} <= ${to}`,
+  ];
+  if (semanaLabel) {
+    conditions.push(eq(financialChanges.semanaLabel, semanaLabel));
+  }
+
   const changes = await db
     .select()
     .from(financialChanges)
-    .where(and(
-      eq(financialChanges.tipo, tipo),
-      sql`${financialChanges.changeDate} >= ${from}`,
-      sql`${financialChanges.changeDate} <= ${to}`,
-    ))
+    .where(and(...conditions))
     .orderBy(sql`${financialChanges.changeDate} DESC, ${financialChanges.changeType} ASC`);
 
   // Agrupar por dia

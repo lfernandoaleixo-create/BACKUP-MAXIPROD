@@ -206,4 +206,111 @@ describe("Financial History - Logic Tests", () => {
       expect(result[1].items).toHaveLength(1);
     });
   });
+
+  describe("Filtering by semanaLabel", () => {
+    it("should filter changes by specific week label", () => {
+      const allChanges = [
+        { changeDate: "2026-04-10", changeType: "adicionado", valor: "5000", semanaLabel: "06/04 - 12/04" },
+        { changeDate: "2026-04-10", changeType: "removido", valor: "2000", semanaLabel: "13/04 - 19/04" },
+        { changeDate: "2026-04-09", changeType: "adicionado", valor: "3000", semanaLabel: "06/04 - 12/04" },
+        { changeDate: "2026-04-08", changeType: "adicionado", valor: "1000", semanaLabel: "Vencidas (at\u00e9 3 dias)" },
+      ];
+
+      const targetWeek = "06/04 - 12/04";
+      const filtered = allChanges.filter(c => c.semanaLabel === targetWeek);
+
+      expect(filtered).toHaveLength(2);
+      expect(filtered.every(c => c.semanaLabel === targetWeek)).toBe(true);
+      expect(filtered.reduce((s, c) => s + Number(c.valor), 0)).toBe(8000);
+    });
+
+    it("should return all changes when no semanaLabel filter", () => {
+      const allChanges = [
+        { changeDate: "2026-04-10", changeType: "adicionado", valor: "5000", semanaLabel: "06/04 - 12/04" },
+        { changeDate: "2026-04-10", changeType: "removido", valor: "2000", semanaLabel: "13/04 - 19/04" },
+      ];
+
+      const filtered = allChanges; // no filter
+      expect(filtered).toHaveLength(2);
+    });
+  });
+
+  describe("Grouping by semana for full history", () => {
+    it("should group items by semanaLabel and then by day", () => {
+      const items = [
+        { changeDate: "2026-04-10", changeType: "adicionado", valor: "5000", semanaLabel: "06/04 - 12/04", nome: "Fornecedor A" },
+        { changeDate: "2026-04-10", changeType: "adicionado", valor: "3000", semanaLabel: "06/04 - 12/04", nome: "Fornecedor B" },
+        { changeDate: "2026-04-09", changeType: "adicionado", valor: "2000", semanaLabel: "06/04 - 12/04", nome: "Fornecedor C" },
+        { changeDate: "2026-04-10", changeType: "adicionado", valor: "8000", semanaLabel: "13/04 - 19/04", nome: "Fornecedor D" },
+        { changeDate: "2026-04-10", changeType: "removido", valor: "1500", semanaLabel: "06/04 - 12/04", nome: "Fornecedor E" },
+      ];
+
+      // Group by semana
+      const bySemana = new Map<string, any[]>();
+      for (const item of items) {
+        const semana = item.semanaLabel || "Sem semana";
+        if (!bySemana.has(semana)) bySemana.set(semana, []);
+        bySemana.get(semana)!.push(item);
+      }
+
+      expect(bySemana.size).toBe(2);
+      expect(bySemana.get("06/04 - 12/04")!.length).toBe(4);
+      expect(bySemana.get("13/04 - 19/04")!.length).toBe(1);
+
+      // Group by day within semana
+      const semana1Items = bySemana.get("06/04 - 12/04")!;
+      const byDay: Record<string, any[]> = {};
+      for (const item of semana1Items) {
+        if (!byDay[item.changeDate]) byDay[item.changeDate] = [];
+        byDay[item.changeDate].push(item);
+      }
+
+      expect(Object.keys(byDay)).toHaveLength(2); // 2 days
+      expect(byDay["2026-04-10"]).toHaveLength(3);
+      expect(byDay["2026-04-09"]).toHaveLength(1);
+    });
+
+    it("should separate adicionados from removidos correctly", () => {
+      const items = [
+        { changeType: "adicionado", valor: "5000", semanaLabel: "06/04 - 12/04" },
+        { changeType: "removido", valor: "2000", semanaLabel: "06/04 - 12/04" },
+        { changeType: "adicionado", valor: "3000", semanaLabel: "06/04 - 12/04" },
+        { changeType: "alterado", valor: "7500", valorAnterior: "5000", semanaLabel: "06/04 - 12/04" },
+      ];
+
+      const adicionados = items.filter(i => i.changeType === "adicionado");
+      const removidos = items.filter(i => i.changeType === "removido" || i.changeType === "alterado");
+
+      expect(adicionados).toHaveLength(2);
+      expect(removidos).toHaveLength(2);
+
+      const totalAdicionado = adicionados.reduce((s, i) => s + Number(i.valor), 0);
+      const totalRemovido = removidos.filter(i => i.changeType === "removido").reduce((s, i) => s + Number(i.valor), 0);
+
+      expect(totalAdicionado).toBe(8000);
+      expect(totalRemovido).toBe(2000);
+    });
+  });
+
+  describe("Week history panel tab logic", () => {
+    it("should show adicionados tab with correct count and total", () => {
+      const items = [
+        { changeType: "adicionado", valor: "5000", nome: "A" },
+        { changeType: "adicionado", valor: "3000", nome: "B" },
+        { changeType: "removido", valor: "2000", nome: "C" },
+      ];
+
+      const adicionados = items.filter(i => i.changeType === "adicionado");
+      const removidos = items.filter(i => i.changeType !== "adicionado");
+
+      expect(adicionados.length).toBe(2);
+      expect(removidos.length).toBe(1);
+
+      const totalAcrescentado = adicionados.reduce((s, i) => s + Number(i.valor), 0);
+      const totalRetirado = removidos.reduce((s, i) => s + Number(i.valor), 0);
+
+      expect(totalAcrescentado).toBe(8000);
+      expect(totalRetirado).toBe(2000);
+    });
+  });
 });

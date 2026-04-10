@@ -1908,3 +1908,11 @@
 - [x] Mostrar detalhes: data/hora da alteração, nome fornecedor/cliente, valor, tipo (acrescentado/retirado)
 - [x] Agendar snapshot diário automático
 - [x] NÃO alterar nada nos outros módulos (estoque, bambu, madeira, etc.)
+
+## Reorganização Histórico Financeiro (por semana)
+- [x] Mover botão de histórico para dentro de cada BucketCard (por semana)
+- [x] Painel com abas: Acrescentados (verde) e Retirados (vermelho) por semana
+- [x] Informações precisas: nome, valor, vencimento, descrição, data da mudança
+- [x] Botão "Histórico Completo" no header principal para ver todas as semanas (inclusive passadas)
+- [x] Botão "Histórico Completo" mantido no header Recebimentos/Pagamentos (complementar ao por-semana)
+- [x] NÃO alterar nada nos outros módulos

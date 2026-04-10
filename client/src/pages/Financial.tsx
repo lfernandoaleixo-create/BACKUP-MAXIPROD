@@ -68,7 +68,7 @@ import ReceivablesTab from "@/components/ReceivablesTab";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calculator, History } from "lucide-react";
-import FinancialHistoryPanel from "@/components/FinancialHistoryPanel";
+import FinancialHistoryPanel, { WeekHistoryPanel } from "@/components/FinancialHistoryPanel";
 
 /* ---- Helpers ---- */
 function formatCurrency(n: number): string {
@@ -478,6 +478,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
   const [expanded, setExpanded] = useState(false);
   const [sortMode, setSortMode] = useState<BucketSortMode>("data_asc");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showWeekHistory, setShowWeekHistory] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   // Calculator checkbox state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -709,6 +710,28 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
             <><ChevronDown className="w-4 h-4" />+{processedItems.length - VISIBLE} mais</>
           )}
         </button>
+      )}
+
+      {/* Botão Histórico da Semana */}
+      <button
+        onClick={() => setShowWeekHistory(!showWeekHistory)}
+        className={`w-full mt-2 flex items-center justify-center gap-1.5 text-[10px] font-semibold py-1.5 rounded-md transition-colors cursor-pointer ${
+          showWeekHistory
+            ? isPagar ? "bg-red-200 text-red-800" : "bg-emerald-200 text-emerald-800"
+            : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+        }`}
+      >
+        <History className="w-3 h-3" />
+        {showWeekHistory ? "Ocultar Histórico" : "Histórico"}
+      </button>
+
+      {/* Week History Panel */}
+      {showWeekHistory && (
+        <WeekHistoryPanel
+          tipo={isPagar ? "pagar" : "receber"}
+          semanaLabel={bucket.label}
+          onClose={() => setShowWeekHistory(false)}
+        />
       )}
     </div>
   );
@@ -1161,7 +1184,7 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
               }`}
             >
               <History className="w-3.5 h-3.5" />
-              Histórico de Mudanças
+              Histórico Completo
             </button>
           </div>
         </div>
@@ -1180,7 +1203,7 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
               }`}
             >
               <History className="w-3.5 h-3.5" />
-              Histórico de Mudanças
+              Histórico Completo
             </button>
           </div>
         </div>
