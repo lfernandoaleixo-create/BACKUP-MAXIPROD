@@ -755,18 +755,24 @@ export async function processStockData(): Promise<void> {
       const childItem = processedByCode.get(child.childCode);
       if (!childItem) continue;
       
-      // Pedidos da variação convertidos para unidades do pai
-      // Ex: 1 cx de 00002 (5000 un) = 0.5 cx do pai (10000 un)
-      // childItem.pedidosUn já está em unidades do filho
-      // Converter: pedidosUn_filho * (un_filho/un_pai) = pedidosUn_equivalente_pai
-      // Mas conversionFactor já é un_filho/un_pai, então:
-      // pedidosCx_filho * conversionFactor = pedidosCx_equivalente_pai
       const childPedidosCx = childItem.pedidosCx || 0;
       const childPedidosUn = childItem.pedidosUn;
       const parentUnitsPerBox = parent.unidadesPorCaixa || 1;
       
-      // Converter pedidos do filho para unidades do pai
-      extraPedidosUn += childPedidosUn * child.conversionFactor;
+      // REGRA DE BAIXA DUPLA (10/04/2026):
+      // Produtos ZECA (código termina em "Z"): comportamento original - sempre debitar do pai
+      // Outros produtos: se a variação TEM estoque próprio (estoqueUn > 0), a fiscal já
+      // deu baixa no Maxiprod, então NÃO debitar do pai (evita baixa dupla).
+      // Se a variação NÃO tem estoque próprio (estoqueUn === 0), debitar do pai normalmente.
+      const isZecaChild = child.childCode.toUpperCase().endsWith('Z');
+      const childHasOwnStock = childItem.estoqueUn > 0;
+      
+      if (isZecaChild || !childHasOwnStock) {
+        // ZECA ou variação sem estoque próprio: debitar pedidos do pai (comportamento original)
+        extraPedidosUn += childPedidosUn * child.conversionFactor;
+      }
+      // Se variação NÃO-ZECA tem estoque próprio: NÃO somar ao pai
+      // Os pedidos já foram debitados do estoque da variação pela fiscal
       
       // Agregar pedidos por cliente do filho
       const childPedidosPorCliente = childItem.pedidosPorCliente || [];
@@ -782,7 +788,7 @@ export async function processStockData(): Promise<void> {
       });
     }
     
-    // Ajustar disponível do pai: descontar pedidos das variações
+    // Ajustar disponível do pai: descontar apenas pedidos de variações que devem ser debitadas
     if (extraPedidosUn > 0) {
       parent.pedidosUn += extraPedidosUn;
       parent.disponivelUn = parent.estoqueUn - parent.pedidosUn;
@@ -797,19 +803,19 @@ export async function processStockData(): Promise<void> {
           parent.projetadoCx = Math.floor(parent.projetadoUn / parent.unidadesPorCaixa);
         }
       }
-      
-      // Agregar pedidos das variações no pedidosPorCliente do pai
-      // para que o tooltip mostre todos os pedidos (próprios + variações)
-      for (const variant of parent.variants) {
-        for (const vpc of variant.pedidosPorCliente) {
-          // Converter quantidade para unidades do pai
-          const convertedQtdCx = vpc.quantidadeCx * variant.conversionFactor;
-          parent.pedidosPorCliente.push({
-            ...vpc,
-            quantidadeCx: convertedQtdCx,
-            cliente: `[${variant.codigoItem}] ${vpc.cliente}`,
-          });
-        }
+    }
+    
+    // Agregar pedidos das variações no pedidosPorCliente do pai
+    // para que o tooltip mostre todos os pedidos (próprios + variações)
+    for (const variant of parent.variants) {
+      for (const vpc of variant.pedidosPorCliente) {
+        // Converter quantidade para unidades do pai
+        const convertedQtdCx = vpc.quantidadeCx * variant.conversionFactor;
+        parent.pedidosPorCliente.push({
+          ...vpc,
+          quantidadeCx: convertedQtdCx,
+          cliente: `[${variant.codigoItem}] ${vpc.cliente}`,
+        });
       }
     }
   }

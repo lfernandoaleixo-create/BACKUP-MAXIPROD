@@ -1884,3 +1884,8 @@
 
 ## Bug: Duplicação Contas a Receber e Inadimplência
 - [x] Investigar e corrigir duplicação nos dados de Contas a Receber e Inadimplência (671 duplicatas receber + 48 pagar removidas, prevenção implementada)
+
+## Bug: Baixa dupla em produtos com variações
+- [x] Corrigir cálculo de estoque para produtos com variações (exceto ZECA): ler estoque atualizado das variações do Maxiprod e debitar pedidos da variação (não do pai), evitando baixa dupla
+- [x] Cadastrar variações do produto 00110 (fibra): 00160, 00420, 00431 como filhos (fatores: 0.5, 0.25, 0.25)
+- [x] IMPORTANTE: NÃO alterar nada nos outros estoques/produtos além do solicitado
