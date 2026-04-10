@@ -682,9 +682,21 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                   <span className="text-slate-400 whitespace-nowrap text-right shrink-0" style={{ width: '60px', fontVariantNumeric: 'tabular-nums', fontSize: '10px' }}>{formatDate(item.vencimento)}</span>
                   <span className={`font-semibold whitespace-nowrap text-right shrink-0 ${calcMode && isChecked ? 'text-violet-700' : 'text-slate-700'}`} style={{ width: '78px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
                 </div>
-                {item.referenteA && (
-                  <p className="text-[10px] text-slate-400 truncate pl-0.5 mt-0.5">{item.referenteA}</p>
-                )}
+                <div className="flex items-center gap-x-1.5 pl-0.5 mt-0.5">
+                  {item.referenteA && (
+                    <span className="text-[10px] text-slate-400 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.referenteA}</span>
+                  )}
+                  {item.vencimentoOriginal && item.vencimentoOriginal !== item.vencimento && (
+                    <span className="text-[9px] text-orange-500 font-medium whitespace-nowrap shrink-0" title="Vencimento Original do boleto">
+                      Venc. Orig. {formatDate(item.vencimentoOriginal)}
+                    </span>
+                  )}
+                  {item.vencimentoOriginal && item.vencimentoOriginal === item.vencimento && (
+                    <span className="text-[9px] text-slate-300 whitespace-nowrap shrink-0" title="Vencimento Original do boleto">
+                      Orig. {formatDate(item.vencimentoOriginal)}
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}

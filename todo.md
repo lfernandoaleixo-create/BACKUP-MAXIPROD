@@ -1916,3 +1916,10 @@
 - [x] Botão "Histórico Completo" no header principal para ver todas as semanas (inclusive passadas)
 - [x] Botão "Histórico Completo" mantido no header Recebimentos/Pagamentos (complementar ao por-semana)
 - [x] NÃO alterar nada nos outros módulos
+
+## Vencimento Original na Autorização de Pagamentos
+- [x] Identificar campo "Vencimento Original" na API GraphQL do Maxiprod (já existia: vencimentoOriginalData)
+- [x] Coluna vencimentoOriginalData já existia no schema do banco (accounts_payable)
+- [x] Sincronização já salvava vencimento original
+- [x] Exibir vencimento original na seção Autorização de Pagamentos no frontend
+- [x] NÃO alterar nada nos outros módulos
