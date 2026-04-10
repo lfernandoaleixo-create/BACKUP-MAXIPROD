@@ -3783,7 +3783,7 @@ ${acoesTexto}
         .limit(1);
 
       if (existingDoc.length > 0) {
-        // Atualizar documento existente
+        // Atualizar documento existente (sem criar nova notificação)
         await db
           .update(collectionDocuments)
           .set({
@@ -3810,27 +3810,27 @@ ${acoesTexto}
           pdfUrl,
           geradoPor: "Sistema",
         });
-      }
 
-      // Criar notificação para o vendedor (visível no sistema)
-      try {
-        const { createNotification } = await import("./notificationRouter");
-        await createNotification({
-          type: "cobranca_documento",
-          title: `⚠️ Documento de Cobrança - ${rec.cliente}`,
-          message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso. Todas as ações de cobrança foram realizadas por Thiago. Solicitamos que defina o próximo passo.`,
-          severity: "warning",
-          metadata: {
-            receivableId: input.receivableId,
-            cliente: rec.cliente,
-            vendedor,
-            valor: valorAReceber,
-            diasAtraso,
-            documentoProtocolo: `DOC-COB-${input.receivableId}-${brDate.toISOString().split('T')[0].replace(/-/g, '')}`,
-          },
-        });
-      } catch (err) {
-        console.error("[Collection] Failed to create notification:", err);
+        // Criar notificação APENAS para documentos novos (não quando atualiza)
+        try {
+          const { createNotification } = await import("./notificationRouter");
+          await createNotification({
+            type: "cobranca_documento",
+            title: `⚠️ Documento de Cobrança - ${rec.cliente}`,
+            message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso. Todas as ações de cobrança foram realizadas por Thiago. Solicitamos que defina o próximo passo.`,
+            severity: "warning",
+            metadata: {
+              receivableId: input.receivableId,
+              cliente: rec.cliente,
+              vendedor,
+              valor: valorAReceber,
+              diasAtraso,
+              documentoProtocolo: `DOC-COB-${input.receivableId}-${brDate.toISOString().split('T')[0].replace(/-/g, '')}`,
+            },
+          });
+        } catch (err) {
+          console.error("[Collection] Failed to create notification:", err);
+        }
       }
 
       // Registrar no histórico

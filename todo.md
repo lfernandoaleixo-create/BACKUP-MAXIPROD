@@ -1954,3 +1954,15 @@
 - [x] Contas transferidas para o dia seguinte devem iniciar desmarcadas
 - [x] Fernando deve marcar manualmente cada conta que deseja pagar no dia
 - [x] Testes automatizados para paymentAuthReset (6 testes passando)
+
+## Notificação Documento de Cobrança
+- [x] Desativar notificação automática repetitiva do Documento de Cobrança (corrigido: notificação só é criada para documentos novos, não ao atualizar existentes)
+- [x] Limpeza de 55 notificações duplicadas do CLIENTE TESTE COBRANCA
+
+## Discrepância Contas a Pagar / Receber
+- [x] Investigar diferença entre valores de Contas a Pagar no Manus vs Maxiprod
+- [x] Investigar diferença entre valores de Contas a Receber no Manus vs Maxiprod
+- [x] Corrigir lógica de cálculo: safety check contava EMITIDO+RECEBIDO, agora conta só EMITIDO
+
+## Login Guilherme
+- [ ] Resolver problema de senha incorreta do usuário Guilherme

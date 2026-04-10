@@ -1088,8 +1088,9 @@ async function saveFinancialData(
 
   // Validação: não salvar se os dados parecem incompletos (proteção contra falha parcial da API)
   // Se já temos dados no banco, exigir pelo menos 50% do volume anterior
-  const [existingPayableCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(accountsPayable);
-  const [existingReceivableCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(accountsReceivable);
+  // IMPORTANTE: contar apenas EMITIDO, pois a API só retorna EMITIDO (PAGO/RECEBIDO são histórico local)
+  const [existingPayableCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(accountsPayable).where(eq(accountsPayable.estado, 'EMITIDO'));
+  const [existingReceivableCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(accountsReceivable).where(eq(accountsReceivable.estado, 'EMITIDO'));
   const prevPayable = Number(existingPayableCount?.count || 0);
   const prevReceivable = Number(existingReceivableCount?.count || 0);
 
