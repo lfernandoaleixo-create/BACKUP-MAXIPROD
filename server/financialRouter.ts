@@ -5,7 +5,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges } from "../drizzle/schema";
+import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { generateCollectionPdf } from "./generateCollectionPdf";
@@ -4084,4 +4085,47 @@ ${acoesTexto}
 
       return { success: true, semContatoCount, protestadoCount, documentoCount };
     }),
+
+  /**
+   * Salvar snapshot financeiro do dia atual
+   */
+  saveSnapshot: publicProcedure
+    .input(z.object({ date: z.string().optional() }).optional())
+    .mutation(async ({ input }) => {
+      const result = await saveFinancialSnapshot(input?.date);
+      return result;
+    }),
+
+  /**
+   * Detectar mudanças entre dois snapshots
+   */
+  detectChanges: publicProcedure
+    .input(z.object({
+      previousDate: z.string(),
+      currentDate: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await detectFinancialChanges(input.previousDate, input.currentDate);
+      return result;
+    }),
+
+  /**
+   * Buscar histórico de mudanças financeiras
+   */
+  getChanges: publicProcedure
+    .input(z.object({
+      tipo: z.enum(["pagar", "receber"]),
+      fromDate: z.string().optional(),
+      toDate: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      return getFinancialChanges(input.tipo, input.fromDate, input.toDate);
+    }),
+
+  /**
+   * Listar datas de snapshots disponíveis
+   */
+  getSnapshotDates: publicProcedure.query(async () => {
+    return getSnapshotDates();
+  }),
 });

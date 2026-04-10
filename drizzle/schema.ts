@@ -978,3 +978,51 @@ export const collectionDocuments = mysqlTable("collection_documents", {
 });
 export type CollectionDocument = typeof collectionDocuments.$inferSelect;
 export type InsertCollectionDocument = typeof collectionDocuments.$inferInsert;
+
+/**
+ * Snapshots diários dos títulos financeiros (a pagar e a receber).
+ * Cada registro = 1 título em 1 dia, com valor e vencimento.
+ * Usado para detectar mudanças dia a dia (novos títulos, removidos, alterações).
+ * Rastreia todas as 8 semanas do calendário financeiro.
+ */
+export const financialSnapshots = mysqlTable("financial_snapshots", {
+  id: int("id").autoincrement().primaryKey(),
+  snapshotDate: varchar("snapshotDate", { length: 10 }).notNull(), // YYYY-MM-DD (dia do snapshot)
+  tipo: varchar("tipo", { length: 10 }).notNull(), // "pagar" | "receber"
+  maxiprodId: bigint("maxiprodId", { mode: "number" }).notNull(),
+  nome: varchar("nome", { length: 300 }).notNull(), // fornecedor (pagar) ou cliente (receber)
+  valor: decimal("valor", { precision: 18, scale: 2 }).notNull(), // valor líquido - valor pago
+  vencimentoData: varchar("vencimentoData", { length: 50 }), // data de vencimento
+  referenteA: text("referenteA"), // descrição/referência
+  observacoes: text("observacoes"),
+  parcela: varchar("parcela", { length: 20 }), // "1/3", "2/3", etc.
+  empresaNome: varchar("empresaNome", { length: 100 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type FinancialSnapshot = typeof financialSnapshots.$inferSelect;
+export type InsertFinancialSnapshot = typeof financialSnapshots.$inferInsert;
+
+/**
+ * Registro de mudanças financeiras detectadas entre snapshots.
+ * Cada registro = 1 alteração (novo título, título removido, valor alterado).
+ * Usado para exibir no "Histórico de Mudanças" dos cards financeiros.
+ */
+export const financialChanges = mysqlTable("financial_changes", {
+  id: int("id").autoincrement().primaryKey(),
+  changeDate: varchar("changeDate", { length: 10 }).notNull(), // YYYY-MM-DD (dia que a mudança foi detectada)
+  tipo: varchar("tipo", { length: 10 }).notNull(), // "pagar" | "receber"
+  changeType: varchar("changeType", { length: 20 }).notNull(), // "adicionado" | "removido" | "alterado"
+  maxiprodId: bigint("maxiprodId", { mode: "number" }).notNull(),
+  nome: varchar("nome", { length: 300 }).notNull(), // fornecedor ou cliente
+  valor: decimal("valor", { precision: 18, scale: 2 }).notNull(), // valor atual (ou valor no momento da remoção)
+  valorAnterior: decimal("valorAnterior", { precision: 18, scale: 2 }), // valor anterior (para alterações)
+  vencimentoData: varchar("vencimentoData", { length: 50 }),
+  referenteA: text("referenteA"),
+  observacoes: text("observacoes"),
+  parcela: varchar("parcela", { length: 20 }),
+  empresaNome: varchar("empresaNome", { length: 100 }),
+  semanaLabel: varchar("semanaLabel", { length: 30 }), // "Vencidas" | "07/04 - 13/04" etc.
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type FinancialChange = typeof financialChanges.$inferSelect;
+export type InsertFinancialChange = typeof financialChanges.$inferInsert;

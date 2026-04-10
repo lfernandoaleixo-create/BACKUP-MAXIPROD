@@ -1898,3 +1898,13 @@
 - [x] Buscar vendas e preencher preços dos produtos Semi Pronto e Aguardando Escolha
 - [x] Valorização deve considerar os 3 cards: Madeira PA, Semi Pronto, Aguardando Escolha
 - [x] NÃO alterar nada nos outros estoques/produtos (bambu, fibra, etc.)
+
+## Histórico de Mudanças Financeiras
+- [x] Analisar código financeiro existente (routers, queries Maxiprod, frontend)
+- [x] Criar tabela de snapshots financeiros no banco (migration SQL)
+- [x] Implementar backend: snapshot diário + comparação entre snapshots
+- [x] Puxar histórico desde 01/04/2026 do Maxiprod (títulos criados/alterados com data, hora, nome, valor)
+- [x] Implementar frontend: botão "Histórico de Mudanças" no topo de cada card financeiro (A Pagar e A Receber)
+- [x] Mostrar detalhes: data/hora da alteração, nome fornecedor/cliente, valor, tipo (acrescentado/retirado)
+- [x] Agendar snapshot diário automático
+- [x] NÃO alterar nada nos outros módulos (estoque, bambu, madeira, etc.)

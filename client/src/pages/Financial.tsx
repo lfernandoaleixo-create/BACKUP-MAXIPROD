@@ -67,7 +67,8 @@ import InadimplenciaTab from "@/components/InadimplenciaTab";
 import ReceivablesTab from "@/components/ReceivablesTab";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calculator } from "lucide-react";
+import { Calculator, History } from "lucide-react";
+import FinancialHistoryPanel from "@/components/FinancialHistoryPanel";
 
 /* ---- Helpers ---- */
 function formatCurrency(n: number): string {
@@ -1108,6 +1109,8 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
   canViewReceber?: boolean;
 }) {
   const { data: calendarReceber, isLoading: loadingReceber } = trpc.financial.getReceivableCalendar.useQuery();
+  const [showHistoryPagar, setShowHistoryPagar] = useState(false);
+  const [showHistoryReceber, setShowHistoryReceber] = useState(false);
 
   const isLoading = loadingPagar || loadingReceber;
 
@@ -1143,19 +1146,57 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
     <div className="space-y-6">
       {/* Calendar comparison header */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
-          <h3 className="text-sm font-bold text-emerald-700 flex items-center justify-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Recebimentos
-          </h3>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-emerald-700 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Recebimentos
+            </h3>
+            <button
+              onClick={() => setShowHistoryReceber(!showHistoryReceber)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                showHistoryReceber
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-100"
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              Histórico de Mudanças
+            </button>
+          </div>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
-          <h3 className="text-sm font-bold text-red-700 flex items-center justify-center gap-2">
-            <TrendingDown className="w-4 h-4" />
-            Pagamentos
-          </h3>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-red-700 flex items-center gap-2">
+              <TrendingDown className="w-4 h-4" />
+              Pagamentos
+            </h3>
+            <button
+              onClick={() => setShowHistoryPagar(!showHistoryPagar)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                showHistoryPagar
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "bg-white text-red-700 border border-red-300 hover:bg-red-100"
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              Histórico de Mudanças
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* History panels */}
+      {(showHistoryReceber || showHistoryPagar) && (
+        <div className="grid grid-cols-2 gap-4">
+          {showHistoryReceber ? (
+            <FinancialHistoryPanel tipo="receber" onClose={() => setShowHistoryReceber(false)} />
+          ) : <div />}
+          {showHistoryPagar ? (
+            <FinancialHistoryPanel tipo="pagar" onClose={() => setShowHistoryPagar(false)} />
+          ) : <div />}
+        </div>
+      )}
 
       {/* Paired rows */}
       {rows.map((row, idx) => {

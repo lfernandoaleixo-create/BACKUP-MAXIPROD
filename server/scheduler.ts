@@ -9,6 +9,7 @@
  */
 import { schedule, type ScheduledTask } from "node-cron";
 import { runGraphQLSync, syncBankBalances, syncPaidAccountsSnapshots } from "./maxiprodGraphQL";
+import { saveFinancialSnapshot, detectFinancialChanges } from "./financialHistory";
 
 let scheduledTask: ScheduledTask | null = null;
 
@@ -43,6 +44,24 @@ export function startScheduler(): void {
             console.log(`[Scheduler] Paid accounts snapshots synced`);
           } catch (paidErr: any) {
             console.error(`[Scheduler] Paid accounts sync failed: ${paidErr.message}`);
+          }
+        }
+
+        // Financial history snapshot + change detection (once per hour)
+        if (now.getMinutes() < 5) {
+          try {
+            const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+            const snap = await saveFinancialSnapshot(todayStr);
+            console.log(`[Scheduler] Financial snapshot saved: ${snap.payableCount} pagar, ${snap.receivableCount} receber`);
+
+            // Detectar mudanças comparando com o dia anterior
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+            const changes = await detectFinancialChanges(yesterdayStr, todayStr);
+            console.log(`[Scheduler] Financial changes detected: ${changes.pagarChanges} pagar, ${changes.receberChanges} receber`);
+          } catch (histErr: any) {
+            console.error(`[Scheduler] Financial history sync failed: ${histErr.message}`);
           }
         }
       } else {
