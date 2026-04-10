@@ -2765,6 +2765,8 @@ export const financialRouter = router({
           bancoNome: accountsReceivable.bancoNome,
           contaNumero: accountsReceivable.contaNumero,
           agencia: accountsReceivable.agencia,
+          formaCobranca: accountsReceivable.formaCobranca,
+          formaCobrancaId: accountsReceivable.formaCobrancaId,
         })
         .from(accountsReceivable)
         .where(and(...conditions))
@@ -2783,7 +2785,7 @@ export const financialRouter = router({
         liquidacao: string | null; referenteA: string; tipo: string;
         estado: string | null; parcela: string; documento: string;
         empresa: string; bancoNome: string; contaNumero: string;
-        agencia: string; isOverdue: boolean;
+        agencia: string; isOverdue: boolean; formaCobranca: string;
       };
 
       // Build hierarchy maps: empresa → mês → conta → tipo → items
@@ -2835,6 +2837,7 @@ export const financialRouter = router({
           contaNumero,
           agencia,
           isOverdue,
+          formaCobranca: row.formaCobranca || "",
         };
 
         // Empresa level

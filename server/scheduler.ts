@@ -10,8 +10,10 @@
 import { schedule, type ScheduledTask } from "node-cron";
 import { runGraphQLSync, syncBankBalances, syncPaidAccountsSnapshots } from "./maxiprodGraphQL";
 import { saveFinancialSnapshot, detectFinancialChanges } from "./financialHistory";
+import { resetDailyPaymentAuthorizations } from "./paymentAuthReset";
 
 let scheduledTask: ScheduledTask | null = null;
+let dailyResetTask: ScheduledTask | null = null;
 
 // Start the business-hours sync scheduler
 // Runs every 5 minutes, Monday-Friday, 7:00-17:55 (Brasilia time)
@@ -75,6 +77,22 @@ export function startScheduler(): void {
   });
 
   console.log("[Scheduler] Auto-sync: a cada 5 min, seg-sex 7h-18h (America/Sao_Paulo)");
+
+  // Daily reset of payment authorizations at midnight (00:00) Brasilia time, every day
+  if (!dailyResetTask) {
+    dailyResetTask = schedule("0 0 * * *", async () => {
+      console.log(`[Scheduler] Starting daily payment authorization reset at ${new Date().toISOString()}`);
+      try {
+        const result = await resetDailyPaymentAuthorizations();
+        console.log(`[Scheduler] Payment auth reset: ${result.deleted} autorizações removidas`);
+      } catch (error: any) {
+        console.error(`[Scheduler] Payment auth reset failed: ${error.message}`);
+      }
+    }, {
+      timezone: "America/Sao_Paulo",
+    });
+    console.log("[Scheduler] Daily payment auth reset: meia-noite (America/Sao_Paulo)");
+  }
 }
 
 /**
@@ -85,6 +103,11 @@ export function stopScheduler(): void {
     scheduledTask.stop();
     scheduledTask = null;
     console.log("[Scheduler] Scheduler stopped");
+  }
+  if (dailyResetTask) {
+    dailyResetTask.stop();
+    dailyResetTask = null;
+    console.log("[Scheduler] Daily reset task stopped");
   }
 }
 

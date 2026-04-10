@@ -934,7 +934,7 @@ async function fetchAccountsReceivable(): Promise<any[]> {
         cliente { nomeFantasia razaoSocial }
         centroDeCustos { id }
         conta { id descricao }
-        formaDeCobranca { id banco { descricao } contaNumero agenciaCodigo }
+        formaDeCobranca { id meioDePagamento banco { descricao } contaNumero agenciaCodigo pixChave carteira }
         minhaEmpresaId
       }
     }
@@ -977,6 +977,47 @@ function transformAccountsPayable(items: any[]): any[] {
   }));
 }
 
+/** Build a human-readable description of the payment method */
+function buildFormaCobrancaDesc(fc: any): string | null {
+  if (!fc) return null;
+  const meio = fc.meioDePagamento as string | null;
+  if (!meio) return null;
+
+  const banco = fc.banco?.descricao || "";
+  // Shorten bank name: "Banco Cooperativo Sicredi S.A." -> "Sicredi"
+  const shortBank = banco
+    .replace(/^Banco\s+(Cooperativo\s+)?(do\s+Brasil\s+)?/i, "")
+    .replace(/\s+S\.?A\.?.*$/i, "")
+    .replace(/^-\s*/, "")
+    .trim() || banco;
+
+  const parts: string[] = [];
+
+  // Meio de pagamento label
+  const meioLabels: Record<string, string> = {
+    PIX: "PIX",
+    BOLETO_COM_REGISTRO: "Boleto",
+    BOLETO_SEM_REGISTRO: "Boleto (s/ reg)",
+    CHEQUE: "Cheque",
+    DINHEIRO: "Dinheiro",
+    DEPOSITO: "Dep\u00f3sito",
+    DEBITO: "D\u00e9bito",
+    CARTAO_DE_DEBITO: "Cart\u00e3o D\u00e9bito",
+    CARTAO_DE_CREDITO: "Cart\u00e3o Cr\u00e9dito",
+    CARTEIRA: "Carteira",
+    CIELO_SUPER_LINK: "Cielo Link",
+  };
+  parts.push(meioLabels[meio] || meio);
+
+  if (shortBank) parts.push(shortBank);
+  if (fc.agenciaCodigo) parts.push(`ag ${fc.agenciaCodigo}`);
+  if (fc.contaNumero) parts.push(`conta ${fc.contaNumero}`);
+  if (fc.pixChave) parts.push(`chave ${fc.pixChave}`);
+  if (fc.carteira) parts.push(`carteira ${fc.carteira}`);
+
+  return parts.join(" ");
+}
+
 /**
  * Transform contas a receber data
  */
@@ -1007,6 +1048,8 @@ function transformAccountsReceivable(items: any[]): any[] {
     bancoNome: item.formaDeCobranca?.banco?.descricao || null,
     contaNumero: item.formaDeCobranca?.contaNumero || null,
     agencia: item.formaDeCobranca?.agenciaCodigo || null,
+    formaCobranca: buildFormaCobrancaDesc(item.formaDeCobranca),
+    formaCobrancaId: item.formaDeCobranca?.id || null,
     empresaId: item.minhaEmpresaId || null,
     empresaNome: getCompanyName(item.minhaEmpresaId),
   }));
@@ -1314,6 +1357,11 @@ export async function runGraphQLSync(): Promise<{
     const poData = transformPurchaseOrderItems(rawPOs);
     const payableData = transformAccountsPayable(rawPayable);
     const receivableData = transformAccountsReceivable(rawReceivable);
+    // DEBUG: log formaCobranca values
+    const withForma = receivableData.filter((r: any) => r.formaCobranca);
+    console.log(`[DEBUG] receivableData: ${receivableData.length} total, ${withForma.length} with formaCobranca`);
+    if (withForma.length > 0) console.log(`[DEBUG] Sample formaCobranca: ${withForma[0].formaCobranca}`);
+    if (receivableData.length > 0) console.log(`[DEBUG] First item formaDeCobranca raw:`, JSON.stringify(rawReceivable[0]?.formaDeCobranca));
 
     console.log(`[GraphQL Sync] Fetched: ${stockData.length}est ${orderData.length}ped ${salesData.length}vnd ${poData.length}po ${payableData.length}pg ${receivableData.length}rc`);
 

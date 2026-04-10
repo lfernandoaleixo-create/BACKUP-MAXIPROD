@@ -106,7 +106,22 @@ type ItemData = {
   contaNumero: string;
   agencia: string;
   isOverdue: boolean;
+  formaCobranca: string;
 };
+
+/** Extrai o tipo principal da forma de cobrança (PIX, Boleto, Cheque, Depósito, Dinheiro) */
+function shortFormaCobranca(desc: string): { label: string; color: string } {
+  if (!desc) return { label: "", color: "text-slate-400" };
+  const d = desc.toUpperCase();
+  if (d.startsWith("PIX")) return { label: "PIX", color: "text-emerald-600" };
+  if (d.startsWith("BOLETO")) return { label: "Boleto", color: "text-blue-600" };
+  if (d.startsWith("CHEQUE")) return { label: "Cheque", color: "text-amber-600" };
+  if (d.startsWith("DEP\u00D3SITO") || d.startsWith("DEPOSITO")) return { label: "Depósito", color: "text-purple-600" };
+  if (d.startsWith("DINHEIRO")) return { label: "Dinheiro", color: "text-green-700" };
+  // Fallback: pegar a primeira palavra
+  const first = desc.split(" ")[0];
+  return { label: first.charAt(0).toUpperCase() + first.slice(1).toLowerCase(), color: "text-slate-600" };
+}
 
 export default function ReceivablesTab() {
   const [estado, setEstado] = useState<"EMITIDO" | "RECEBIDO" | "ALL">("EMITIDO");
@@ -146,7 +161,8 @@ export default function ReceivablesTab() {
             const items = tipo.items.filter(i =>
               i.cliente.toUpperCase().includes(s) ||
               i.referenteA.toUpperCase().includes(s) ||
-              i.documento.toUpperCase().includes(s)
+              i.documento.toUpperCase().includes(s) ||
+              (i.formaCobranca || "").toUpperCase().includes(s)
             );
             return { ...tipo, items, total: items.reduce((a, b) => a + b.valorAReceber, 0), count: items.length };
           }).filter(t => t.count > 0);
@@ -463,7 +479,7 @@ export default function ReceivablesTab() {
                                 {isContaOpen && contaItems.length > 0 && (
                                   <div className="border-t border-slate-200">
                                     {/* Header tabela */}
-                                    <div className="grid grid-cols-[36px_1fr_110px_90px_80px] gap-1 px-4 py-2 bg-slate-100 border-b border-slate-200">
+                                    <div className="grid grid-cols-[36px_1fr_120px_100px_90px_80px] gap-2 px-4 py-2 bg-slate-100 border-b border-slate-200">
                                       <div className="flex items-center justify-center">
                                         <button onClick={(e) => { e.stopPropagation(); toggleSelectAll(contaItems); }}
                                           className="text-slate-500 hover:text-teal-600 transition-colors" title="Selecionar todos">
@@ -473,6 +489,7 @@ export default function ReceivablesTab() {
                                         </button>
                                       </div>
                                       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider self-center">Cliente / Documento</div>
+                                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Forma de Pagamento</div>
                                       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right self-center">Valor</div>
                                       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider self-center">Vencimento</div>
                                       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Status</div>
@@ -486,7 +503,7 @@ export default function ReceivablesTab() {
 
                                         return (
                                           <div key={item.id}>
-                                            <div className={`grid grid-cols-[36px_1fr_110px_90px_80px] gap-1 px-4 py-2.5 items-center transition-all cursor-pointer ${
+                                            <div className={`grid grid-cols-[36px_1fr_120px_100px_90px_80px] gap-2 px-4 py-2.5 items-center transition-all cursor-pointer ${
                                               isSelected ? "bg-teal-50/70 hover:bg-teal-50" : item.isOverdue ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-slate-50"
                                             }`}>
                                               {/* Checkbox */}
@@ -502,10 +519,24 @@ export default function ReceivablesTab() {
                                                 <div className="font-medium text-sm text-slate-800 truncate">{item.cliente}</div>
                                                 <div className="text-xs text-slate-400 truncate">
                                                   {item.documento && `Doc ${item.documento}`}
-                                                  {item.parcela && ` · ${item.parcela}`}
-                                                  {item.referenteA && ` · ${item.referenteA}`}
+                                                  {item.parcela && ` \u00b7 ${item.parcela}`}
+                                                  {item.referenteA && ` \u00b7 ${item.referenteA}`}
                                                 </div>
                                               </div>
+
+                                              {/* Forma de Pagamento */}
+                                              {(() => {
+                                                const fc = shortFormaCobranca(item.formaCobranca);
+                                                return (
+                                                  <div className="text-center" onClick={() => setExpandedItem(isExp ? null : item.id)} title={item.formaCobranca || "N\u00e3o informado"}>
+                                                    {fc.label ? (
+                                                      <span className={`text-xs font-semibold ${fc.color}`}>{fc.label}</span>
+                                                    ) : (
+                                                      <span className="text-xs text-slate-300">\u2014</span>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })()}
 
                                               {/* Valor */}
                                               <div className="text-right" onClick={() => setExpandedItem(isExp ? null : item.id)}>

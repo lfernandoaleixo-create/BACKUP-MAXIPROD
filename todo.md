@@ -1936,3 +1936,21 @@
 - [x] BUG: Decisão de Cobrança não puxou modificação teste do Maxiprod (COM PROTESTO) - corrigido: normalização uppercase/trim + busca parcial
 - [x] Alinhar colunas da tabela de inadimplência e escrever "Decisão de Cobrança" completo (grid reformatado)
 - [x] Aumentar tamanho das letras cinzas (NF, Parcela, empresa) e laranja (Venc. Orig.) na Autorização de Pagamentos (text-xs/11px → text-sm/14px)
+
+## Recebíveis - Correções e Forma de Pagamento
+- [ ] Investigar e corrigir valor "A Vencer" nos Recebíveis (não bate com Visão Geral A Receber)
+- [ ] Conferir valor "Vencido" nos Recebíveis cruzando com aba Inadimplência
+- [ ] Buscar campo "Forma de cobrança" do Maxiprod via GraphQL para cada título a receber
+- [ ] Adicionar coluna "Forma de Pagamento" na tabela de recebíveis (entre Cliente/Doc e Valor/Venc)
+- [ ] Garantir layout alinhado e profissional em toda a aba Recebíveis
+
+## Formatação Tabela Inadimplência
+- [x] Adicionar divisões (bordas) entre as colunas da tabela de inadimplência
+- [x] Centralizar conteúdo em todas as colunas da tabela
+- [x] Aplicar formatação tanto na vista "Por Título" quanto "Por Cliente"
+
+## Reset Diário Autorizações de Pagamento
+- [x] Implementar reset automático diário das autorizações de pagamento na virada do dia
+- [x] Contas transferidas para o dia seguinte devem iniciar desmarcadas
+- [x] Fernando deve marcar manualmente cada conta que deseja pagar no dia
+- [x] Testes automatizados para paymentAuthReset (6 testes passando)

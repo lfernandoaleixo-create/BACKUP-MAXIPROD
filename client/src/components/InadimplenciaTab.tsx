@@ -551,14 +551,14 @@ export default function InadimplenciaTab() {
 
                 {isOpen && (
                   <div className="bg-white/80 border-t border-slate-100">
-                    <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_140px_110px_100px] gap-2 px-4 py-2 bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                      <span>Referência / Documento</span>
-                      <span className="text-right">Valor</span>
-                      <span>Venc.</span>
-                      <span className="text-center">Atraso</span>
-                      <span className="text-center">Decisão de Cobrança</span>
-                      <span>Status</span>
-                      <span className="text-center">Ações</span>
+                    <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_140px_110px_100px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-200/60">
+                      <span className="flex items-center justify-center px-3 py-2 border-r border-slate-200/60">Referência / Documento</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Valor</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Venc.</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Atraso</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Decisão de Cobrança</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Status</span>
+                      <span className="flex items-center justify-center px-2 py-2">Ações</span>
                     </div>
                     <div className="divide-y divide-slate-50">
                       {group.titulos.map(title => (
@@ -594,22 +594,22 @@ export default function InadimplenciaTab() {
       {/* Vista por Título */}
       {viewMode === "titulos" && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="hidden md:grid grid-cols-[1fr_110px_95px_65px_150px_130px_110px] gap-3 px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            <button onClick={() => toggleSort("cliente")} className="flex items-center gap-1 hover:text-slate-700">
+          <div className="hidden md:grid grid-cols-[1fr_110px_95px_65px_150px_130px_110px] bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            <button onClick={() => toggleSort("cliente")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
               Cliente {sortBy === "cliente" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
             </button>
-            <button onClick={() => toggleSort("valor")} className="flex items-center gap-1 hover:text-slate-700 justify-end">
+            <button onClick={() => toggleSort("valor")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
               Valor {sortBy === "valor" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
             </button>
-            <button onClick={() => toggleSort("vencimento")} className="flex items-center gap-1 hover:text-slate-700">
+            <button onClick={() => toggleSort("vencimento")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
               Venc. {sortBy === "vencimento" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
             </button>
-            <button onClick={() => toggleSort("dias")} className="flex items-center gap-1 hover:text-slate-700 justify-center">
+            <button onClick={() => toggleSort("dias")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
               Atraso {sortBy === "dias" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
             </button>
-            <div className="text-center">Decisão de Cobrança</div>
-            <div>Status</div>
-            <div className="text-center">Ações</div>
+            <div className="flex items-center justify-center px-3 py-2.5 border-r border-slate-200">Decisão de Cobrança</div>
+            <div className="flex items-center justify-center px-3 py-2.5 border-r border-slate-200">Status</div>
+            <div className="flex items-center justify-center px-3 py-2.5">Ações</div>
           </div>
 
           <div className="divide-y divide-slate-100 max-h-[70vh] overflow-y-auto">
@@ -819,12 +819,12 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_110px_95px_65px_150px_130px_110px] gap-3 px-4 py-3 cursor-pointer hover:bg-white/50 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_110px_95px_65px_150px_130px_110px] cursor-pointer hover:bg-white/50 items-center"
         onClick={onToggle}
       >
         {/* Cliente + Referência + Badges */}
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col min-w-0 px-3 py-3 border-r border-slate-200/60">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             <span className="font-semibold text-sm text-slate-800 truncate">{title.cliente}</span>
             {canCobranca && dayBadge && (
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-800 border border-amber-300 shrink-0">
@@ -848,7 +848,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5 truncate">
+          <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 mt-0.5 truncate">
             <span className="truncate">{title.referenteA}</span>
             {title.documento && <span className="shrink-0">· {title.documento}</span>}
             {title.parcela && <span className="shrink-0">· {title.parcela}</span>}
@@ -857,24 +857,24 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Valor */}
-        <div className="text-right">
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60">
           <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
             {formatCurrency(title.valorAReceber)}
           </span>
         </div>
 
         {/* Vencimento */}
-        <div className="text-sm text-slate-600">{formatDate(title.vencimento)}</div>
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
 
         {/* Dias atraso */}
-        <div className="text-center">
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60">
           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${getAgingColor(title.diasAtraso)}`}>
             {title.diasAtraso}d
           </span>
         </div>
 
         {/* Decisão de Cobrança */}
-        <div className="text-center">
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60">
           {title.decisaoCobranca ? (
             <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${
               title.decisaoCobranca.toUpperCase().includes('COM PROTESTO')
@@ -889,7 +889,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Status */}
-        <div onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60" onClick={e => e.stopPropagation()}>
           {canCobranca ? (
             <select
               value={title.cobranca?.status || "pendente"}
@@ -908,7 +908,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Ações */}
-        <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-center gap-0.5 px-2 py-3" onClick={e => e.stopPropagation()}>
           {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
           {hasDocument && (
             <button onClick={onOpenDocument} title="Ver documento de cobrança" className="p-1.5 rounded-md hover:bg-amber-100 text-amber-700 hover:text-amber-900 transition-colors border border-amber-200">
@@ -960,11 +960,11 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   return (
     <div className="transition-all">
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_100px_80px_60px_140px_110px_100px] gap-2 px-4 py-2.5 cursor-pointer hover:bg-slate-50/80 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_100px_80px_60px_140px_110px_100px] cursor-pointer hover:bg-slate-50/80 items-center"
         onClick={onToggle}
       >
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="min-w-0 px-3 py-2.5 border-r border-slate-200/60">
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <span className="text-sm text-slate-700 truncate">
               {title.referenteA}
               {title.documento && ` · ${title.documento}`}
@@ -987,19 +987,19 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             )}
           </div>
         </div>
-        <div className="text-right">
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60">
           <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
             {formatCurrency(title.valorAReceber)}
           </span>
         </div>
-        <div className="text-sm text-slate-600">{formatDate(title.vencimento)}</div>
-        <div className="text-center">
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60">
           <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold ${getAgingColor(title.diasAtraso)}`}>
             {title.diasAtraso}d
           </span>
         </div>
         {/* Decisão de Cobrança */}
-        <div className="text-center">
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60">
           {title.decisaoCobranca ? (
             <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
               title.decisaoCobranca.toUpperCase().includes('COM PROTESTO')
@@ -1012,7 +1012,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             <span className="text-[10px] text-slate-300">—</span>
           )}
         </div>
-        <div onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60" onClick={e => e.stopPropagation()}>
           {canCobranca ? (
             <select
               value={title.cobranca?.status || "pendente"}
@@ -1029,7 +1029,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             </span>
           )}
         </div>
-        <div className="flex items-center justify-center gap-0.5" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-center gap-0.5 px-2 py-2.5" onClick={e => e.stopPropagation()}>
           {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
           {hasDocument && (
             <button onClick={onOpenDocument} title="Ver documento" className="p-1 rounded-md hover:bg-amber-100 text-amber-700 border border-amber-200">

@@ -365,6 +365,8 @@ export const accountsReceivable = mysqlTable("accounts_receivable", {
   agencia: varchar("agencia", { length: 20 }),
   empresaId: bigint("empresaId", { mode: "number" }),
   empresaNome: varchar("empresaNome", { length: 100 }),
+  formaCobranca: varchar("formaCobranca", { length: 500 }), // Descrição completa da forma de cobrança (ex: "PIX Banco Cooperativo Sicredi...")
+  formaCobrancaId: bigint("formaCobrancaId", { mode: "number" }), // ID da FormaDeCobranca no Maxiprod
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 
