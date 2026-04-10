@@ -1966,3 +1966,8 @@
 
 ## Login Guilherme
 - [ ] Resolver problema de senha incorreta do usuário Guilherme
+
+## Formatação Tabela Inadimplência v2
+- [x] Bordas verticais completas descendo até o final em todas as colunas (border-slate-200 sólido)
+- [x] Nomes dos clientes alinhados à esquerda (colados na margem)
+- [x] Formatação geral limpa e profissional (ambas as vistas)

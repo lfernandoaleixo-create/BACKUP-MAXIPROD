@@ -551,13 +551,13 @@ export default function InadimplenciaTab() {
 
                 {isOpen && (
                   <div className="bg-white/80 border-t border-slate-100">
-                    <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_140px_110px_100px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-200/60">
-                      <span className="flex items-center justify-center px-3 py-2 border-r border-slate-200/60">Referência / Documento</span>
-                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Valor</span>
-                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Venc.</span>
-                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Atraso</span>
-                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Decisão de Cobrança</span>
-                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200/60">Status</span>
+                    <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_140px_110px_100px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-200">
+                      <span className="flex items-center justify-start px-3 py-2 border-r border-slate-200">Referência / Documento</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Valor</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Venc.</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Atraso</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Decisão de Cobrança</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Status</span>
                       <span className="flex items-center justify-center px-2 py-2">Ações</span>
                     </div>
                     <div className="divide-y divide-slate-50">
@@ -595,7 +595,7 @@ export default function InadimplenciaTab() {
       {viewMode === "titulos" && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="hidden md:grid grid-cols-[1fr_110px_95px_65px_150px_130px_110px] bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-            <button onClick={() => toggleSort("cliente")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
+            <button onClick={() => toggleSort("cliente")} className="flex items-center justify-start gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
               Cliente {sortBy === "cliente" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
             </button>
             <button onClick={() => toggleSort("valor")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
@@ -823,8 +823,8 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         onClick={onToggle}
       >
         {/* Cliente + Referência + Badges */}
-        <div className="flex flex-col min-w-0 px-3 py-3 border-r border-slate-200/60">
-          <div className="flex items-center gap-2 flex-wrap justify-center">
+        <div className="flex flex-col min-w-0 px-3 py-3 border-r border-slate-200">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm text-slate-800 truncate">{title.cliente}</span>
             {canCobranca && dayBadge && (
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-800 border border-amber-300 shrink-0">
@@ -848,7 +848,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               </span>
             )}
           </div>
-          <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 mt-0.5 truncate">
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5 truncate">
             <span className="truncate">{title.referenteA}</span>
             {title.documento && <span className="shrink-0">· {title.documento}</span>}
             {title.parcela && <span className="shrink-0">· {title.parcela}</span>}
@@ -857,24 +857,24 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Valor */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60">
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200">
           <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
             {formatCurrency(title.valorAReceber)}
           </span>
         </div>
 
         {/* Vencimento */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
 
         {/* Dias atraso */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60">
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200">
           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${getAgingColor(title.diasAtraso)}`}>
             {title.diasAtraso}d
           </span>
         </div>
 
         {/* Decisão de Cobrança */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60">
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200">
           {title.decisaoCobranca ? (
             <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${
               title.decisaoCobranca.toUpperCase().includes('COM PROTESTO')
@@ -889,7 +889,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Status */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200/60" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200" onClick={e => e.stopPropagation()}>
           {canCobranca ? (
             <select
               value={title.cobranca?.status || "pendente"}
@@ -963,8 +963,8 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
         className="grid grid-cols-1 md:grid-cols-[1fr_100px_80px_60px_140px_110px_100px] cursor-pointer hover:bg-slate-50/80 items-center"
         onClick={onToggle}
       >
-        <div className="min-w-0 px-3 py-2.5 border-r border-slate-200/60">
-          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+        <div className="min-w-0 px-3 py-2.5 border-r border-slate-200">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-sm text-slate-700 truncate">
               {title.referenteA}
               {title.documento && ` · ${title.documento}`}
@@ -987,19 +987,19 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             )}
           </div>
         </div>
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60">
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">
           <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
             {formatCurrency(title.valorAReceber)}
           </span>
         </div>
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60">
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">
           <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold ${getAgingColor(title.diasAtraso)}`}>
             {title.diasAtraso}d
           </span>
         </div>
         {/* Decisão de Cobrança */}
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60">
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">
           {title.decisaoCobranca ? (
             <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
               title.decisaoCobranca.toUpperCase().includes('COM PROTESTO')
@@ -1012,7 +1012,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             <span className="text-[10px] text-slate-300">—</span>
           )}
         </div>
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200/60" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200" onClick={e => e.stopPropagation()}>
           {canCobranca ? (
             <select
               value={title.cobranca?.status || "pendente"}
