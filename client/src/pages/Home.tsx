@@ -2335,12 +2335,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                       <div className="flex items-center justify-center gap-1 text-emerald-700">Disponivel <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} /></div>
                       <span className="text-[8px] font-bold text-emerald-500 tracking-widest block text-center">P/ VENDA</span>
                     </th>
-                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('poCx')}>
-                      <div className="flex items-center justify-center gap-1">PO <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'poCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
-                    </th>
-                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('projetadoCx')}>
-                      <div className="flex items-center justify-center gap-1">Projetado <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'projetadoCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
-                    </th>
+
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador">Est. Reg.</th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                   </tr>
@@ -2358,9 +2353,9 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                     return (
                       <tr key={item.codigoItem} className={`hover:bg-slate-50 transition-colors ${isNegative ? 'bg-red-50/50' : isZero ? 'bg-amber-50/30' : ''}`}>
                         {/* Produto */}
-                        <td className="px-2 py-2 max-w-[260px]">
-                          <div className="truncate font-medium text-slate-800 text-[13px]" title={item.descricaoItem}>{item.descricaoItem}</div>
-                          <div className="text-[11px] text-slate-400 mt-0.5 truncate">Cod: {item.codigoItem}</div>
+                        <td className="px-2 py-2">
+                          <div className="font-medium text-slate-800 text-[13px] break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</div>
+                          <div className="text-[11px] text-slate-400 mt-0.5">Cod: {item.codigoItem}</div>
                         </td>
                         {/* Un/Cx */}
                         <td className="px-1.5 py-2 text-[13px] text-slate-600 text-center whitespace-nowrap">
@@ -2401,20 +2396,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                             {formatNumber(disponivelManual)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}
                           </span>
                         </td>
-                        {/* PO */}
-                        <td className="px-1.5 py-2 text-center whitespace-nowrap">
-                          <POCell item={item} />
-                        </td>
-                        {/* Projetado = Disponível Manual + PO */}
-                        <td className="px-1.5 py-2 text-center whitespace-nowrap">
-                          {(item.poCx ?? 0) > 0 || disponivelManual !== 0 ? (
-                            <span className={`font-bold text-[13px] ${projetadoManual < 0 ? 'text-red-500' : projetadoManual === 0 ? 'text-amber-500' : 'text-indigo-600'}`}>
-                              {formatNumber(projetadoManual)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}
-                            </span>
-                          ) : (
-                            <span className="text-slate-300 text-[13px]">—</span>
-                          )}
-                        </td>
+
                         {/* Est. Reg. */}
                         <td className="px-1.5 py-2 text-center whitespace-nowrap">
                           {(() => {
@@ -2426,9 +2408,9 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                             const unit = item.isKgProduct || item.codigoItem === "00223" ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
                             let estRegColor = 'text-emerald-600';
                             if (estReg > 0) {
-                              if (projetadoManual <= estReg) estRegColor = 'text-red-600 bg-red-50 px-1 py-0.5 rounded';
-                              else if (projetadoManual <= estReg * 1.2) estRegColor = 'text-pink-600 bg-pink-50 px-1 py-0.5 rounded';
-                              else if (projetadoManual <= estReg * 1.4) estRegColor = 'text-orange-600 bg-orange-50 px-1 py-0.5 rounded';
+                              if (disponivelManual <= estReg) estRegColor = 'text-red-600 bg-red-50 px-1 py-0.5 rounded';
+                              else if (disponivelManual <= estReg * 1.2) estRegColor = 'text-pink-600 bg-pink-50 px-1 py-0.5 rounded';
+                              else if (disponivelManual <= estReg * 1.4) estRegColor = 'text-orange-600 bg-orange-50 px-1 py-0.5 rounded';
                             }
                             return <span className={`text-[11px] font-semibold ${estRegColor}`} title={`Vd.Mensal: ${vendaMensal} × Fator: ${fator.toLocaleString("pt-BR")} = ${estReg} ${unit}`}>{formatNumber(estReg)} {unit}</span>;
                           })()}
@@ -2650,8 +2632,8 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
                   return (
                     <tr key={item.codigoItem} className="border-b border-slate-100 hover:bg-slate-50/50">
                       <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>
-                      <td className="py-2 px-2 text-sm text-slate-700 max-w-[300px] truncate" title={item.descricaoItem}>{item.descricaoItem}</td>
-                      <td className="py-2 px-2 text-right">
+<td className="py-2 px-2 text-sm text-slate-700 break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</td>
+                       <td className="py-2 px-2 text-right">
                         {isEditing ? (
                           <input ref={inputRef} type="number" min="0" value={editValue}
                             onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
@@ -2870,7 +2852,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
                   return (
                     <tr key={item.codigoItem} className="border-b border-slate-100 hover:bg-slate-50/50">
                       <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>
-                      <td className="py-2 px-2 text-sm text-slate-700 max-w-[300px] truncate" title={item.descricaoItem}>{item.descricaoItem}</td>
+                      <td className="py-2 px-2 text-sm text-slate-700 break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</td>
                       <td className="py-2 px-2 text-right">
                         {isEditing ? (
                           <input ref={inputRef} type="number" min="0" value={editValue}
@@ -3308,7 +3290,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                     {list.map(({ item, estReg, projetado }) => (
                       <div key={item.codigoItem} className={`${colors.bg} rounded-lg border ${colors.border} p-3 flex items-center justify-between gap-4`}>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{item.descricaoItem}</p>
+                          <p className="text-sm font-semibold text-slate-800 break-words leading-snug">{item.descricaoItem}</p>
                           <p className="text-xs text-slate-500 mt-0.5">Cód: {item.codigoItem}</p>
                         </div>
                         <div className="flex items-center gap-4 flex-shrink-0">

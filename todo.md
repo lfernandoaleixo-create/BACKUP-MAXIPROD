@@ -1877,3 +1877,7 @@
 - [x] Corrigir stockProcessor: para isKgProduct, poCx = poUn e projetadoCx = disponivelCx + poUn (tudo em kg)
 - [x] Corrigir frontend: para isKgProduct, PO e projetado usam poCx (já em kg pelo backend)
 - [x] Verificar que projetado da Vareta de Apito = 720 + 4500 = 5220 kg (não 945)
+
+## Ajustes Estoque Madeira Acabada
+- [x] Remover colunas PO e Projetado do estoque de madeira acabada (Industrialização)
+- [x] Ampliar nome dos produtos para exibir completo nos cards e tabela (sem cortar com "...")
