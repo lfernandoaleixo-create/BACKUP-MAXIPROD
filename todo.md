@@ -1869,3 +1869,11 @@
 - [x] Ocultar informações de cobrança (telefone azul, histórico, ações) para Maria, Erica e Marcos
 - [x] Alerta ao vendedor no 7º dia quando decisão de tomada de atitude é transferida
 - [x] Documento fixado na aba Inadimplência visível para todos que tenham acesso
+
+## Correção Cálculo Comando KG
+- [x] Corrigir cálculo do comando de compra para itens em KG (Vareta de Apito Bambu) - sobra + a chegar deve ser comparado com regulador
+
+## Correção Cálculo KG - Vareta de Apito (isKgProduct)
+- [x] Corrigir stockProcessor: para isKgProduct, poCx = poUn e projetadoCx = disponivelCx + poUn (tudo em kg)
+- [x] Corrigir frontend: para isKgProduct, PO e projetado usam poCx (já em kg pelo backend)
+- [x] Verificar que projetado da Vareta de Apito = 720 + 4500 = 5220 kg (não 945)

@@ -600,6 +600,11 @@ export async function processStockData(): Promise<void> {
       }
     }
     
+    // Para isKgProduct: estoqueCx/pedidosCx/disponivelCx já estão em kg (dividido por fator).
+    // PO já vem em kg via fator de importação (poUn). Então poCx = poUn e projetadoCx = disponivelCx + poUn.
+    const isKg = item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem);
+    const disponivelCxVal = unitsPerBox ? Math.floor(disponivelUn / unitsPerBox) : null;
+    
     processed.push({
       codigoItem: item.codigoItem,
       descricaoItem: item.descricaoItem,
@@ -615,14 +620,14 @@ export async function processStockData(): Promise<void> {
       pedidosCx: unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null,
       pedidosPorCliente,
       disponivelUn,
-      disponivelCx: unitsPerBox ? Math.floor(disponivelUn / unitsPerBox) : null,
-      poCx: poCx || null,
+      disponivelCx: disponivelCxVal,
+      poCx: isKg ? poUn : (poCx || null),
       poUn,
       poEntregas: poData ? Array.from(poData.entregas) : [],
       poFornecedores: poData ? Array.from(poData.fornecedores) : [],
       poLotes: poData ? aggregateLotes(poData.lotes) : [],
       projetadoUn,
-      projetadoCx: unitsPerBox ? Math.floor(projetadoUn / unitsPerBox) : null,
+      projetadoCx: isKg ? (disponivelCxVal !== null ? disponivelCxVal + poUn : null) : (unitsPerBox ? Math.floor(projetadoUn / unitsPerBox) : null),
       segmento: classifySegment(item.descricaoItem),
       grupo: baseClassification.grupo,
       subgrupo: finalSubgrupo,

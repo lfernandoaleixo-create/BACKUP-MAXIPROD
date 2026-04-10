@@ -201,11 +201,10 @@ function getPOUnit(item: StockItem): string {
 }
 
 /**
- * For kg products, get the PO quantity in kg instead of sacos.
- * poUn already has the kg value from the backend.
+ * For kg products, poCx is already in kg (set by backend).
+ * For other products, poCx is in boxes.
  */
 function getPODisplayQty(item: StockItem): number {
-  if (item.isKgProduct) return item.poUn;
   return item.poCx ?? 0;
 }
 
@@ -953,7 +952,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="text-xs">
-                            Disponivel ({formatNumber(item.disponivelCx ?? item.disponivelUn)} {getUnit(item, item.disponivelCx !== null)}) + PO ({formatNumber(item.isKgProduct ? item.poUn : (item.poCx ?? 0))} {getPOUnit(item)}) = <strong>{formatNumber(projetado)} {getUnit(item, item.projetadoCx !== null)}</strong>
+                            Disponivel ({formatNumber(item.disponivelCx ?? item.disponivelUn)} {getUnit(item, item.disponivelCx !== null)}) + PO ({formatNumber(item.poCx ?? 0)} {getPOUnit(item)}) = <strong>{formatNumber(projetado)} {getUnit(item, item.projetadoCx !== null)}</strong>
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -2355,7 +2354,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                     const disponivelManual = manualQty - pedidosVal;
                     const isNegative = disponivelManual < 0;
                     const isZero = disponivelManual === 0;
-                    const projetadoManual = disponivelManual + (item.isKgProduct ? item.poUn : (item.poCx ?? 0));
+                    const projetadoManual = disponivelManual + (item.poCx ?? 0);
                     return (
                       <tr key={item.codigoItem} className={`hover:bg-slate-50 transition-colors ${isNegative ? 'bg-red-50/50' : isZero ? 'bg-amber-50/30' : ''}`}>
                         {/* Produto */}
