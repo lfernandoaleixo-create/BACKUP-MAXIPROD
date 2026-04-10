@@ -1924,3 +1924,10 @@
 - [x] Exibir vencimento original na seção Autorização de Pagamentos no frontend
 - [x] NÃO alterar nada nos outros módulos
 - [x] Exibir Venc. Orig. em TODOS os títulos da Autorização de Pagamentos (não só quando diferente)
+- [ ] Adicionar Venc. Orig. na visão expandida por fornecedor da Autorização de Pagamentos
+
+## Decisão de Cobrança (Protesto) na Inadimplência
+- [x] Investigar API GraphQL Maxiprod para dados da aba COBRANÇA do cliente (campo SITUAÇÃO: COM PROTESTO / SEM PROTESTO)
+- [x] Implementar busca dos dados de cobrança no backend (fetchCobrancaDecisionMap no financialRouter.ts)
+- [x] Adicionar coluna "Decisão de Cobrança" na tabela de inadimplência no frontend (vista por título e por cliente)
+- [x] Testar exibição da coluna com dados reais (ELIAN CARRILHO = SEM PROTESTO)

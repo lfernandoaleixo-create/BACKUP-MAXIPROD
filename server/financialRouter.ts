@@ -11,7 +11,7 @@ import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { generateCollectionPdf } from "./generateCollectionPdf";
 import { storagePut } from "./storage";
-import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial } from "./maxiprodGraphQL";
+import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial, gql } from "./maxiprodGraphQL";
 
 /**
  * Tipos válidos de contas a receber (conforme filtro do Maxiprod):
@@ -47,6 +47,11 @@ const VENDEDOR_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 // Cache para mapeamento cliente → categoria de produto (madeira vs bambu)
 let clienteProductCacheMap: Record<string, 'madeira' | 'bambu' | 'ambos' | 'outro'> = {};
 let clienteProductCacheTimestamp = 0;
+
+// Cache para mapeamento cliente → decisão de cobrança (COM PROTESTO / SEM PROTESTO)
+let cobrancaDecisionCacheMap: Record<string, string> = {};
+let cobrancaDecisionCacheTimestamp = 0;
+const COBRANCA_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 // Editoras que NÃO são vendedoras (apenas editam pedidos no Maxiprod)
 const EDITORES_NAO_VENDEDORES = ["BRENDA", "LARISSA"];
@@ -84,6 +89,67 @@ function categorizeProduct(descricao: string, grupoDesc: string): 'madeira' | 'b
   if (desc.includes('VARETA AROMATIZADOR')) return 'madeira';
   
   return null;
+}
+
+/**
+ * Busca a decisão de cobrança (COM PROTESTO / SEM PROTESTO) de cada cliente
+ * da aba COBRANÇA do Maxiprod via campo adicional "SITUAÇÃO".
+ * Retorna mapa: nome do cliente (razaoSocial/nomeFantasia/apelido) -> decisão
+ * Cache de 10 minutos para não sobrecarregar a API.
+ */
+async function fetchCobrancaDecisionMap(): Promise<Record<string, string>> {
+  const now = Date.now();
+  if (now - cobrancaDecisionCacheTimestamp < COBRANCA_CACHE_TTL && Object.keys(cobrancaDecisionCacheMap).length > 0) {
+    return cobrancaDecisionCacheMap;
+  }
+
+  try {
+    const map: Record<string, string> = {};
+    const PAGE_SIZE = 200;
+    let skip = 0;
+    let totalCount = 0;
+
+    do {
+      const data = await gql<any>(`{
+        empresas(skip: ${skip}, take: ${PAGE_SIZE}, where: { cliente: { eq: true } }) {
+          totalCount
+          items {
+            razaoSocial
+            nomeFantasia
+            apelido
+            campoAdicionalEspecifico {
+              descricao
+              valor
+            }
+          }
+        }
+      }`);
+
+      if (!data?.empresas) break;
+      totalCount = data.empresas.totalCount;
+
+      for (const emp of data.empresas.items) {
+        const situacao = emp.campoAdicionalEspecifico?.find((c: any) => c.descricao === 'SITUAÇÃO');
+        if (situacao?.valor) {
+          // Map all name variants to the decision
+          const names = [emp.razaoSocial, emp.nomeFantasia, emp.apelido].filter(Boolean);
+          for (const name of names) {
+            map[name] = situacao.valor;
+          }
+        }
+      }
+
+      skip += PAGE_SIZE;
+    } while (skip < totalCount);
+
+    cobrancaDecisionCacheMap = map;
+    cobrancaDecisionCacheTimestamp = now;
+    console.log(`[Cobrança Cache] Refreshed: ${Object.keys(map).length} mappings from ${totalCount} clientes`);
+  } catch (err) {
+    console.error("[Cobrança Cache] Error fetching from GraphQL:", err);
+  }
+
+  return cobrancaDecisionCacheMap;
 }
 
 async function fetchVendedorMapFromGraphQL(): Promise<Record<string, string>> {
@@ -2913,8 +2979,11 @@ export const financialRouter = router({
         actionsMap[a.receivableId] = a;
       }
 
-      // Buscar vendedor map
-      const graphqlMap = await fetchVendedorMapFromGraphQL();
+      // Buscar vendedor map e decisão de cobrança (protesto)
+      const [graphqlMap, cobrancaMap] = await Promise.all([
+        fetchVendedorMapFromGraphQL(),
+        fetchCobrancaDecisionMap(),
+      ]);
 
       // Filtrar e mapear
       let titles = rows.map(row => {
@@ -2925,6 +2994,7 @@ export const financialRouter = router({
         const diasAtraso = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
         const action = actionsMap[row.id];
         const vendedor = graphqlMap[row.cliente || ""] || "";
+        const decisaoCobranca = cobrancaMap[row.cliente || ""] || "";
 
         return {
           id: row.id,
@@ -2944,6 +3014,7 @@ export const financialRouter = router({
           banco: row.bancoNome || "",
           diasAtraso,
           vendedor,
+          decisaoCobranca,
           observacoesMaxiprod: row.observacoes || "",
           // Dados de cobrança
           cobranca: action ? {
@@ -2965,7 +3036,8 @@ export const financialRouter = router({
           t.cliente.toUpperCase().includes(s) ||
           t.referenteA.toUpperCase().includes(s) ||
           t.documento.toUpperCase().includes(s) ||
-          t.vendedor.toUpperCase().includes(s)
+          t.vendedor.toUpperCase().includes(s) ||
+          t.decisaoCobranca.toUpperCase().includes(s)
         );
       }
 

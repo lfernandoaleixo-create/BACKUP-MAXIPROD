@@ -55,6 +55,7 @@ type PayableItem = {
   fornecedor: string;
   valor: number;
   vencimento: string;
+  vencimentoOriginal?: string;
   emissaoData?: string;
   referenteA: string;
   observacoes?: string;
@@ -194,6 +195,17 @@ function PayableRow({
         >
           Venc. {item.vencimento.split("-").reverse().join("/")}
         </div>
+        {item.vencimentoOriginal && (
+          <div
+            className={`text-[8px] font-medium ${
+              item.vencimentoOriginal !== item.vencimento
+                ? "text-orange-500"
+                : item.authorized ? "text-emerald-400/70" : "text-slate-300"
+            }`}
+          >
+            Venc. Orig. {item.vencimentoOriginal.split("-").reverse().join("/")}
+          </div>
+        )}
       </div>
     </div>
   );

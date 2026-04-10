@@ -86,6 +86,7 @@ type Title = {
   banco: string;
   diasAtraso: number;
   vendedor: string;
+  decisaoCobranca: string;
   observacoesMaxiprod: string;
   cobranca: {
     status: string;
@@ -550,11 +551,12 @@ export default function InadimplenciaTab() {
 
                 {isOpen && (
                   <div className="bg-white/80 border-t border-slate-100">
-                    <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_130px_120px] gap-2 px-4 py-2 bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_110px_110px_110px] gap-2 px-4 py-2 bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                       <span>Referência / Documento</span>
                       <span className="text-right">Valor</span>
                       <span>Venc.</span>
                       <span className="text-center">Atraso</span>
+                      <span className="text-center">Decisão Cobr.</span>
                       <span>Status</span>
                       <span className="text-center">Ações</span>
                     </div>
@@ -592,7 +594,7 @@ export default function InadimplenciaTab() {
       {/* Vista por Título */}
       {viewMode === "titulos" && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px_140px_140px] gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+          <div className="hidden md:grid grid-cols-[1fr_120px_100px_80px_130px_130px_130px] gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
             <button onClick={() => toggleSort("cliente")} className="flex items-center gap-1 hover:text-slate-700">
               Cliente {sortBy === "cliente" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
             </button>
@@ -605,6 +607,7 @@ export default function InadimplenciaTab() {
             <button onClick={() => toggleSort("dias")} className="flex items-center gap-1 hover:text-slate-700 justify-center">
               Atraso {sortBy === "dias" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
             </button>
+            <div className="text-center">Decisão Cobr.</div>
             <div>Status</div>
             <div className="text-center">Ações</div>
           </div>
@@ -816,7 +819,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_120px_100px_80px_140px_140px] gap-2 px-4 py-3 cursor-pointer hover:bg-white/50 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_120px_100px_80px_130px_130px_130px] gap-2 px-4 py-3 cursor-pointer hover:bg-white/50 items-center"
         onClick={onToggle}
       >
         {/* Cliente + Referência + Badges */}
@@ -868,6 +871,21 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${getAgingColor(title.diasAtraso)}`}>
             {title.diasAtraso}d
           </span>
+        </div>
+
+        {/* Decisão de Cobrança */}
+        <div className="text-center">
+          {title.decisaoCobranca ? (
+            <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              title.decisaoCobranca.toUpperCase().includes('COM PROTESTO')
+                ? 'bg-orange-100 text-orange-700 border-orange-300'
+                : 'bg-blue-100 text-blue-700 border-blue-300'
+            }`}>
+              {title.decisaoCobranca}
+            </span>
+          ) : (
+            <span className="text-xs text-slate-300">—</span>
+          )}
         </div>
 
         {/* Status */}
@@ -942,7 +960,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   return (
     <div className="transition-all">
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_100px_80px_60px_130px_120px] gap-2 px-4 py-2.5 cursor-pointer hover:bg-slate-50/80 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_100px_80px_60px_110px_110px_110px] gap-2 px-4 py-2.5 cursor-pointer hover:bg-slate-50/80 items-center"
         onClick={onToggle}
       >
         <div className="min-w-0">
@@ -979,6 +997,20 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
           <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold ${getAgingColor(title.diasAtraso)}`}>
             {title.diasAtraso}d
           </span>
+        </div>
+        {/* Decisão de Cobrança */}
+        <div className="text-center">
+          {title.decisaoCobranca ? (
+            <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
+              title.decisaoCobranca.toUpperCase().includes('COM PROTESTO')
+                ? 'bg-orange-100 text-orange-700 border-orange-300'
+                : 'bg-blue-100 text-blue-700 border-blue-300'
+            }`}>
+              {title.decisaoCobranca}
+            </span>
+          ) : (
+            <span className="text-[10px] text-slate-300">—</span>
+          )}
         </div>
         <div onClick={e => e.stopPropagation()}>
           {canCobranca ? (
