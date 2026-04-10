@@ -1971,3 +1971,6 @@
 - [x] Bordas verticais completas descendo até o final em todas as colunas (border-slate-200 sólido)
 - [x] Nomes dos clientes alinhados à esquerda (colados na margem)
 - [x] Formatação geral limpa e profissional (ambas as vistas)
+
+## Estoque Total - Correção
+- [x] Card "Estoque Total" e todos os KPIs agora mostram apenas estoque de Madeira Acabada (não todos os itens)

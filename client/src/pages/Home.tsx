@@ -3252,35 +3252,35 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KPICard
           label="Estoque Total"
-          value={`${formatNumber(totalEstoqueCx)} cx`}
-          sub={`${parentOnlyItems.length} produtos`}
+          value={`${formatNumber(madeiraEstoqueCx)} cx`}
+          sub={`${madeiraProdutos} produtos (Madeira Acabada)`}
           icon={Package}
           theme="teal"
         />
         <KPICard
           label="Pedidos (Venda)"
-          value={`${formatNumber(totalPedidosCx)} cx`}
+          value={`${formatNumber(madeiraPedidosCx)} cx`}
           sub="Aprovados + A aprovar"
           icon={ShoppingCart}
           theme="orange"
         />
         <KPICard
           label="Disponivel"
-          value={`${formatNumber(totalDisponivelCx)} cx`}
+          value={`${formatNumber(madeiraDisponivelCx)} cx`}
           sub="Estoque - Pedidos"
           icon={CheckCircle2}
           theme="emerald"
         />
         <KPICard
           label="PO (A Receber)"
-          value={`${formatNumber(totalPOCx)} cx`}
+          value={`${formatNumber(madeiraPOCx)} cx`}
           sub="Pedidos de compra"
           icon={Ship}
           theme="blue"
         />
         <KPICard
           label="Projetado"
-          value={`${formatNumber(totalProjetadoCx)} cx`}
+          value={`${formatNumber(madeiraProjetadoCx)} cx`}
           sub="Disponivel + PO"
           icon={TrendingUp}
           theme="indigo"
