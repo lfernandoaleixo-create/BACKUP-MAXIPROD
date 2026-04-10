@@ -686,14 +686,9 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                   {item.referenteA && (
                     <span className="text-[10px] text-slate-400 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.referenteA}</span>
                   )}
-                  {item.vencimentoOriginal && item.vencimentoOriginal !== item.vencimento && (
-                    <span className="text-[9px] text-orange-500 font-medium whitespace-nowrap shrink-0" title="Vencimento Original do boleto">
+                  {item.vencimentoOriginal && (
+                    <span className={`text-[9px] font-medium whitespace-nowrap shrink-0 ${item.vencimentoOriginal !== item.vencimento ? 'text-orange-500' : 'text-slate-400'}`} title="Vencimento Original do boleto">
                       Venc. Orig. {formatDate(item.vencimentoOriginal)}
-                    </span>
-                  )}
-                  {item.vencimentoOriginal && item.vencimentoOriginal === item.vencimento && (
-                    <span className="text-[9px] text-slate-300 whitespace-nowrap shrink-0" title="Vencimento Original do boleto">
-                      Orig. {formatDate(item.vencimentoOriginal)}
                     </span>
                   )}
                 </div>

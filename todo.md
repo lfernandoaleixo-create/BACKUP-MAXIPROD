@@ -1923,3 +1923,4 @@
 - [x] Sincronização já salvava vencimento original
 - [x] Exibir vencimento original na seção Autorização de Pagamentos no frontend
 - [x] NÃO alterar nada nos outros módulos
+- [x] Exibir Venc. Orig. em TODOS os títulos da Autorização de Pagamentos (não só quando diferente)
