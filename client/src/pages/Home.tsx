@@ -3116,10 +3116,10 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     return map;
   }, [madeiraStockKPI]);
 
-  // Estoque Total = soma do estoque manual de todos os itens Madeira PA
+  // Estoque Total = soma do estoque do Maxiprod (estoqueCx) de todos os itens Madeira PA
   const madeiraEstoqueCx = useMemo(() => {
-    return parentOnlyMadeira.reduce((sum, i) => sum + (madeiraStockMapKPI.get(i.codigoItem) || 0), 0);
-  }, [parentOnlyMadeira, madeiraStockMapKPI]);
+    return parentOnlyMadeira.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
+  }, [parentOnlyMadeira]);
 
   const madeiraPedidosCx = useMemo(() => madeiraItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0), [madeiraItems]);
   const madeiraDisponivelCx = madeiraEstoqueCx - madeiraPedidosCx;
@@ -3252,35 +3252,35 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KPICard
           label="Estoque Total"
-          value={`${formatNumber(madeiraEstoqueCx)} cx`}
-          sub={`${madeiraProdutos} produtos (Madeira Acabada)`}
+          value={`${formatNumber(totalEstoqueCx)} cx`}
+          sub={`${parentOnlyItems.length} produtos`}
           icon={Package}
           theme="teal"
         />
         <KPICard
           label="Pedidos (Venda)"
-          value={`${formatNumber(madeiraPedidosCx)} cx`}
+          value={`${formatNumber(totalPedidosCx)} cx`}
           sub="Aprovados + A aprovar"
           icon={ShoppingCart}
           theme="orange"
         />
         <KPICard
           label="Disponivel"
-          value={`${formatNumber(madeiraDisponivelCx)} cx`}
+          value={`${formatNumber(totalDisponivelCx)} cx`}
           sub="Estoque - Pedidos"
           icon={CheckCircle2}
           theme="emerald"
         />
         <KPICard
           label="PO (A Receber)"
-          value={`${formatNumber(madeiraPOCx)} cx`}
+          value={`${formatNumber(totalPOCx)} cx`}
           sub="Pedidos de compra"
           icon={Ship}
           theme="blue"
         />
         <KPICard
           label="Projetado"
-          value={`${formatNumber(madeiraProjetadoCx)} cx`}
+          value={`${formatNumber(totalProjetadoCx)} cx`}
           sub="Disponivel + PO"
           icon={TrendingUp}
           theme="indigo"

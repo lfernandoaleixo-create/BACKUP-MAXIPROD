@@ -1974,3 +1974,7 @@
 
 ## Estoque Total - Correção
 - [x] Card "Estoque Total" e todos os KPIs agora mostram apenas estoque de Madeira Acabada (não todos os itens)
+
+## Estoque Total - Correção v2
+- [x] Card "Estoque Total" da seção Madeira agora usa estoqueCx do Maxiprod (não estoque manual)
+- [x] KPIs do topo revertidos para usar valores gerais (todos os itens)
