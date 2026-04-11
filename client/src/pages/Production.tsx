@@ -84,21 +84,22 @@ function getSectorIcon(ordem: number) {
 
 const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-// Sector 1 = Multilamina (tipo de madeira), Sector 2 = Vareteira (medida de madeira)
+// Sector 1 = Multilamina (tipo de madeira)
+// Sector 2 = Vareteira, 3 = Seletoras Toco, 4 = Seleção Automática (medida de madeira)
 function isMultilamina(ordem: number) { return ordem === 1; }
-function isVareteira(ordem: number) { return ordem === 2; }
-function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2; }
+function hasMeasureFeatures(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4; }
+function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2 || ordem === 3 || ordem === 4; }
 
 // Get the FIXED variant options for a sector (always all shown)
 function getVariantOptions(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem)) return WOOD_TYPE_OPTIONS;
-  if (isVareteira(sectorOrdem)) return WOOD_MEASURE_OPTIONS;
+  if (hasMeasureFeatures(sectorOrdem)) return WOOD_MEASURE_OPTIONS;
   return [];
 }
 
 function getVariantLabel(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem)) return "Tipo de Madeira";
-  if (isVareteira(sectorOrdem)) return "Medida de Madeira";
+  if (hasMeasureFeatures(sectorOrdem)) return "Medida de Madeira";
   return "";
 }
 
@@ -496,7 +497,7 @@ export default function Production() {
                           <span className="text-sm font-bold text-slate-800">{sector.ordem}. {sector.nome}</span>
                           {sector.isSequencial && <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold">Sequencial</span>}
                           {isMultilamina(sector.ordem) && <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">Tipo Madeira</span>}
-                          {isVareteira(sector.ordem) && <span className="text-[9px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded-full font-semibold">Medida Madeira</span>}
+                          {hasMeasureFeatures(sector.ordem) && <span className="text-[9px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded-full font-semibold">Medida Madeira</span>}
                         </div>
                         <div className="text-xs text-slate-400 mt-0.5">
                           {hasMachines ? `${sector.quantidadeEquipamentos} ${sector.tipoEquipamento === "mesa" ? "mesas" : "máquinas"}` : "Sem equipamento"}

@@ -2056,3 +2056,8 @@
 
 ## Bug URGENTE: Total mostra produção mesmo após zerar e salvar
 - [x] Investigar e corrigir: total não zera após salvar produção zerada (causa: getSectorTotal e getMachineLiveTotal usavam `> 0` em vez de `>= 0`, ignorando zeros editados; handleVariantSave não tratava campo editado vazio como 0)
+
+## Medidas de madeira nos setores Seletoras Toco e Seleção Automática
+- [x] Seletoras Toco (setor 3): implantar medidas de madeira idênticas à Vareteira (150mm-350mm)
+- [x] Seleção Automática (setor 4): implantar medidas de madeira idênticas à Vareteira (150mm-350mm)
+- [x] Ambos setores devem ter campos fixos por medida, produção separada por medida por máquina
