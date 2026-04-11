@@ -527,6 +527,7 @@ const PERMISSION_COLS = [
   { key: "accessVendas" as const, label: "Vendas", color: "bg-blue-500" },
   { key: "accessFaturamento" as const, label: "Faturamento", color: "bg-violet-500" },
   { key: "accessFinanceiro" as const, label: "Financeiro", color: "bg-emerald-500" },
+  { key: "accessProducao" as const, label: "Produção", color: "bg-orange-500" },
   { key: "accessConfiguracoes" as const, label: "Config.", color: "bg-red-500" },
 ];
 

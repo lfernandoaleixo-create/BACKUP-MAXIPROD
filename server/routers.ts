@@ -14,6 +14,7 @@ import { settingsRouter } from "./settingsRouter";
 import { financialRouter } from "./financialRouter";
 import { billingRouter } from "./billingRouter";
 import { notificationRouter } from "./notificationRouter";
+import { productionRouter } from "./productionRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -22,6 +23,7 @@ export const appRouter = router({
   financial: financialRouter,
   billing: billingRouter,
   notifications: notificationRouter,
+  production: productionRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

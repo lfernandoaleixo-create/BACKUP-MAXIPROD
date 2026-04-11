@@ -1,0 +1,1 @@
+ALTER TABLE `operators` ADD `accessProducao` boolean DEFAULT false NOT NULL;

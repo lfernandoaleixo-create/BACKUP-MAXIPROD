@@ -687,6 +687,7 @@ export const operators = mysqlTable("operators", {
   accessFinanceiro: boolean("accessFinanceiro").notNull().default(false),
   accessConfiguracoes: boolean("accessConfiguracoes").notNull().default(false),
   accessValorizacao: boolean("accessValorizacao").notNull().default(false),
+  accessProducao: boolean("accessProducao").notNull().default(false),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -1028,3 +1029,54 @@ export const financialChanges = mysqlTable("financial_changes", {
 });
 export type FinancialChange = typeof financialChanges.$inferSelect;
 export type InsertFinancialChange = typeof financialChanges.$inferInsert;
+
+/**
+ * Setores de produção da indústria.
+ * Cada setor representa uma etapa do processo produtivo.
+ */
+export const productionSectors = mysqlTable("production_sectors", {
+  id: int("id").autoincrement().primaryKey(),
+  ordem: int("ordem").notNull(), // Ordem do setor na linha de produção (1-9)
+  nome: varchar("nome", { length: 100 }).notNull(), // Ex: "Multilamina", "Vareteira"
+  unidadeMedida: varchar("unidadeMedida", { length: 50 }).notNull(), // Ex: "m³", "saco", "forma", "caixa"
+  unidadeLabel: varchar("unidadeLabel", { length: 50 }).notNull(), // Ex: "metro cúbico", "sacos", "formas", "caixas"
+  tipoEquipamento: varchar("tipoEquipamento", { length: 20 }).notNull(), // "maquina" | "mesa" | "nenhum"
+  quantidadeEquipamentos: int("quantidadeEquipamentos").notNull().default(0),
+  isSequencial: boolean("isSequencial").default(false).notNull(), // Setores 1,2,3 são sequenciais
+  cor: varchar("cor", { length: 20 }), // Cor do card do setor
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProductionSector = typeof productionSectors.$inferSelect;
+export type InsertProductionSector = typeof productionSectors.$inferInsert;
+
+/**
+ * Máquinas/mesas de cada setor de produção.
+ */
+export const productionMachines = mysqlTable("production_machines", {
+  id: int("id").autoincrement().primaryKey(),
+  sectorId: int("sectorId").notNull(), // FK para production_sectors
+  nome: varchar("nome", { length: 100 }).notNull(), // Ex: "Máquina 1", "Mesa 3"
+  ordem: int("ordem").notNull(), // Ordem dentro do setor
+  ativa: boolean("ativa").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProductionMachine = typeof productionMachines.$inferSelect;
+export type InsertProductionMachine = typeof productionMachines.$inferInsert;
+
+/**
+ * Lançamentos diários de produção por setor e máquina.
+ * Cada registro = produção de 1 máquina/mesa em 1 dia.
+ */
+export const productionEntries = mysqlTable("production_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  sectorId: int("sectorId").notNull(), // FK para production_sectors
+  machineId: int("machineId"), // FK para production_machines (null para setor sem máquina)
+  data: varchar("data", { length: 10 }).notNull(), // YYYY-MM-DD (dia do lançamento)
+  quantidade: decimal("quantidade", { precision: 18, scale: 5 }).notNull(), // Quantidade produzida
+  observacoes: text("observacoes"),
+  lancadoPor: varchar("lancadoPor", { length: 200 }), // Nome do usuário que lançou
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProductionEntry = typeof productionEntries.$inferSelect;
+export type InsertProductionEntry = typeof productionEntries.$inferInsert;

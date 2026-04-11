@@ -10,6 +10,7 @@ import {
   BarChart3,
   FileCheck,
   DollarSign,
+  Factory,
   Settings,
   LogOut,
   ShieldAlert,
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/vendas", label: "Vendas", icon: BarChart3, section: "vendas" },
   { href: "/faturamento", label: "Faturamento", icon: FileCheck, section: "faturamento" },
   { href: "/financeiro", label: "Financeiro", icon: DollarSign, section: "financeiro" },
+  { href: "/producao", label: "Produção", icon: Factory, section: "producao" },
   { href: "/configuracoes", label: "Configurações", icon: Settings, section: "configuracoes" },
 ];
 

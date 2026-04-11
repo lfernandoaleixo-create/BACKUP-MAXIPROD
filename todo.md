@@ -1983,3 +1983,14 @@
 - [x] KPI "Estoque Total" da seção Madeira agora usa estoqueCaixas (estoque manual, excluindo Rojão e Vareta Apito)
 - [x] KPI "Pedidos" da seção Madeira agora usa pedidosCaixas (apenas caixas de Madeira PA)
 - [x] KPI "Disponível" recalculado como estoqueCaixas - pedidosCaixas
+
+## Aba Produção - Controle de Produção Industrial
+- [x] Schema: tabelas production_sectors, production_machines, production_entries
+- [x] Seed dos 9 setores e suas máquinas/mesas
+- [x] Procedures tRPC: listar setores, lançar produção, buscar histórico
+- [x] Página frontend: visão geral dos 9 setores com cards
+- [x] Formulário de lançamento diário por setor/máquina
+- [x] Histórico/relatório de produção com gráficos
+- [x] Pipeline visual dos setores 1→2→3 (sequenciais) e depois ramificação
+- [x] Integrar aba Produção na navegação (entre Financeiro e Configurações)
+- [x] Testes automatizados (11 testes passando)
