@@ -2042,3 +2042,11 @@
 
 ## Bug: Produção fantasma - total mostra valor sem produção marcada (4 sacos)
 - [x] Investigar e resolver definitivamente o bug de total fantasma (getSectorTotal agora calcula localmente para setores expandíveis, respeitando variantes selecionadas pelo usuário)
+
+## Simplificar Multilamina e Vareteira - campos fixos sem toggle
+- [x] Remover seleção/toggle de tipos e medidas de madeira
+- [x] Multilamina: sempre mostrar campos Benazzi e Madeira Dura para preenchimento direto
+- [x] Vareteira: sempre mostrar campos 150mm a 350mm para preenchimento direto
+- [x] Total soma automaticamente todos os campos preenchidos
+- [x] Atualizar lógica de save para salvar todos os tipos/medidas com valor
+- [x] Atualizar getSectorTotal para nova lógica simplificada

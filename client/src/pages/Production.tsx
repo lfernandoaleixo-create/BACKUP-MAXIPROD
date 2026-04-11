@@ -1,8 +1,8 @@
 /**
  * Produção - Controle de produção industrial
  * 9 setores com lançamento diário por máquina/mesa
- * Multilamina (setor 1): status + tipo de madeira (Benazzi/Madeira Dura) com produção por tipo
- * Vareteira (setor 2): status + medida de madeira (150-350mm) com produção por medida
+ * Multilamina (setor 1): status + campos fixos Benazzi/Madeira Dura (sempre visíveis)
+ * Vareteira (setor 2): status + campos fixos 150mm-350mm (sempre visíveis)
  * Todos os setores: caixa de comentários opcional
  */
 
@@ -26,13 +26,13 @@ const MACHINE_STATUS_OPTIONS = [
   { value: "manutencao_pontual", label: "Manutenção Pontual", color: "#8b5cf6", icon: Clock, bgClass: "bg-violet-50", textClass: "text-violet-700", borderClass: "border-violet-200" },
 ];
 
-// ─── Wood type options (Multilamina) ───
+// ─── Wood type options (Multilamina) - always shown ───
 const WOOD_TYPE_OPTIONS = [
   { value: "benazzi", label: "Benazzi", color: "#d97706", bgClass: "bg-amber-50", textClass: "text-amber-800", borderClass: "border-amber-300" },
   { value: "madeira_dura", label: "Madeira Dura", color: "#059669", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
 ];
 
-// ─── Wood measure options (Vareteira) ───
+// ─── Wood measure options (Vareteira) - always shown ───
 const WOOD_MEASURE_OPTIONS = [
   { value: "150mm", label: "150mm", color: "#0ea5e9", bgClass: "bg-sky-50", textClass: "text-sky-800", borderClass: "border-sky-300" },
   { value: "180mm", label: "180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
@@ -89,7 +89,7 @@ function isMultilamina(ordem: number) { return ordem === 1; }
 function isVareteira(ordem: number) { return ordem === 2; }
 function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2; }
 
-// Get the variant options for a sector
+// Get the FIXED variant options for a sector (always all shown)
 function getVariantOptions(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem)) return WOOD_TYPE_OPTIONS;
   if (isVareteira(sectorOrdem)) return WOOD_MEASURE_OPTIONS;
@@ -117,7 +117,6 @@ export default function Production() {
   // For expandable sectors: value per machine per variant (key: "sectorId-machineId-variant")
   const [variantEditValues, setVariantEditValues] = useState<Record<string, string>>({});
   const [statusValues, setStatusValues] = useState<Record<string, string>>({});
-  const [selectedVariants, setSelectedVariants] = useState<Record<string, Set<string>>>({});
   const [commentValues, setCommentValues] = useState<Record<string, string>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"lancamento" | "historico">("lancamento");
@@ -157,6 +156,7 @@ export default function Production() {
       utils.production.getEntries.invalidate({ data: selectedDate });
       utils.production.getDailySummary.invalidate({ data: selectedDate });
       utils.production.getWeeklySummary.invalidate();
+      // Reset edit state for this machine after successful save
       toast.success("Produção salva!");
     },
     onError: (err) => {
@@ -180,7 +180,6 @@ export default function Production() {
     setEditValues({});
     setVariantEditValues({});
     setStatusValues({});
-    setSelectedVariants({});
     setCommentValues({});
   };
 
@@ -192,7 +191,6 @@ export default function Production() {
   };
 
   // ─── Entry helpers ───
-  // Get all entries for a machine (may be multiple if different tipoMadeira)
   const getEntriesForMachine = (sectorId: number, machineId: number | null) => {
     if (!entries) return [];
     return entries.filter(e =>
@@ -201,7 +199,6 @@ export default function Production() {
     );
   };
 
-  // Get entry for a specific machine + variant
   const getEntryForVariant = (sectorId: number, machineId: number | null, variant: string | null) => {
     if (!entries) return null;
     return entries.find(e =>
@@ -211,27 +208,10 @@ export default function Production() {
     ) || null;
   };
 
-  // Get total for a machine across all variants
-  const getMachineTotal = (sectorId: number, machineId: number | null): number => {
-    const machineEntries = getEntriesForMachine(sectorId, machineId);
-    return machineEntries.reduce((sum, e) => sum + Number(e.quantidade), 0);
-  };
-
-  // Get status from first entry of machine (status is per machine, not per variant)
   const getEntryStatus = (sectorId: number, machineId: number | null): string => {
     const machineEntries = getEntriesForMachine(sectorId, machineId);
     if (machineEntries.length > 0) return machineEntries[0].status || "producao_normal";
     return "producao_normal";
-  };
-
-  // Get selected variants from existing entries
-  const getExistingVariants = (sectorId: number, machineId: number | null): Set<string> => {
-    const machineEntries = getEntriesForMachine(sectorId, machineId);
-    const variants = new Set<string>();
-    for (const e of machineEntries) {
-      if (e.tipoMadeira) variants.add(e.tipoMadeira);
-    }
-    return variants;
   };
 
   const getEntryComment = (sectorId: number, machineId: number | null): string => {
@@ -242,12 +222,11 @@ export default function Production() {
 
   /**
    * Calcula o total do setor.
-   * Para setores expandíveis (Multilamina/Vareteira), calcula a partir dos entries individuais,
-   * respeitando as variantes atualmente selecionadas pelo usuário (não as do banco).
-   * Para setores simples, usa o dailySummary do backend.
+   * Para setores expandíveis (Multilamina/Vareteira): soma os valores de TODOS os campos fixos
+   * usando valores editados (se existirem) ou valores do banco.
+   * Para setores simples: usa o dailySummary do backend.
    */
   const getSectorTotal = (sectorId: number): number => {
-    // Find the sector to check if it's expandable
     const sector = sectors?.find(s => s.id === sectorId);
     if (!sector) {
       if (!dailySummary) return 0;
@@ -256,33 +235,17 @@ export default function Production() {
     }
 
     if (hasExpandableFeatures(sector.ordem)) {
-      // For expandable sectors: sum per-machine considering selected variants
       if (!sector.machines || sector.machines.length === 0) return 0;
+      const variantOpts = getVariantOptions(sector.ordem);
       let sectorTotal = 0;
       for (const machine of sector.machines) {
-        const machineKey = `${sectorId}-${machine.id}`;
-        const activeVariants = getSelectedVariants(sectorId, machine.id);
-
-        if (activeVariants.size > 0) {
-          // Sum only the selected variants (using edited values if available, else DB values)
-          for (const v of Array.from(activeVariants)) {
-            const varKey = `${machineKey}-${v}`;
-            if (variantEditValues[varKey] !== undefined && variantEditValues[varKey] !== "") {
-              const num = parseFloat(variantEditValues[varKey].replace(",", "."));
-              if (!isNaN(num)) sectorTotal += num;
-            } else {
-              const entry = getEntryForVariant(sectorId, machine.id, v);
-              if (entry) sectorTotal += Number(entry.quantidade);
-            }
-          }
-        } else {
-          // No variants selected: use the non-variant entry or edited value
-          if (editValues[machineKey] !== undefined && editValues[machineKey] !== "") {
-            const num = parseFloat(editValues[machineKey].replace(",", "."));
-            if (!isNaN(num)) sectorTotal += num;
+        for (const opt of variantOpts) {
+          const varKey = `${sectorId}-${machine.id}-${opt.value}`;
+          if (variantEditValues[varKey] !== undefined && variantEditValues[varKey] !== "") {
+            const num = parseFloat(variantEditValues[varKey].replace(",", "."));
+            if (!isNaN(num) && num > 0) sectorTotal += num;
           } else {
-            // Only count entries without tipoMadeira (non-variant entries)
-            const entry = getEntryForVariant(sectorId, machine.id, null);
+            const entry = getEntryForVariant(sectorId, machine.id, opt.value);
             if (entry) sectorTotal += Number(entry.quantidade);
           }
         }
@@ -313,45 +276,32 @@ export default function Production() {
     });
   };
 
-  // Save for expandable sectors (with variants)
+  // Save for expandable sectors - always sends ALL variant options
   const handleVariantSave = (sectorId: number, machineId: number | null, sectorOrdem: number) => {
     const machineKey = `${sectorId}-${machineId || "null"}`;
     const status = statusValues[machineKey] || getEntryStatus(sectorId, machineId);
     const comment = commentValues[machineKey] !== undefined ? commentValues[machineKey] : getEntryComment(sectorId, machineId);
 
-    // Get selected variants
-    const variants = selectedVariants[machineKey] || getExistingVariants(sectorId, machineId);
-
-    // Build batch entries - one per selected variant (or single entry if no variants)
+    const variantOpts = getVariantOptions(sectorOrdem);
     const batchEntries: any[] = [];
 
-    if (variants.size === 0) {
-      // No variants selected: save as single entry without tipoMadeira
-      const val = variantEditValues[`${machineKey}-_none`] || editValues[machineKey];
-      const quantidade = val !== undefined && val !== "" ? parseFloat(val.replace(",", ".")) : 0;
-      if (isNaN(quantidade) || quantidade < 0) { toast.error("Valor inválido"); return; }
-      batchEntries.push({
-        sectorId, machineId, data: selectedDate, quantidade, status, observacoes: comment,
-      });
-    } else {
-      for (const variant of Array.from(variants)) {
-        const varKey = `${machineKey}-${variant}`;
-        const existingEntry = getEntryForVariant(sectorId, machineId, variant);
-        const val = variantEditValues[varKey];
-        let quantidade: number;
-        if (val !== undefined && val !== "") {
-          quantidade = parseFloat(val.replace(",", "."));
-        } else if (existingEntry) {
-          quantidade = Number(existingEntry.quantidade);
-        } else {
-          quantidade = 0;
-        }
-        if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${variant}`); return; }
-        batchEntries.push({
-          sectorId, machineId, data: selectedDate, quantidade, status,
-          tipoMadeira: variant, observacoes: comment,
-        });
+    for (const opt of variantOpts) {
+      const varKey = `${machineKey}-${opt.value}`;
+      const existingEntry = getEntryForVariant(sectorId, machineId, opt.value);
+      const val = variantEditValues[varKey];
+      let quantidade: number;
+      if (val !== undefined && val !== "") {
+        quantidade = parseFloat(val.replace(",", "."));
+      } else if (existingEntry) {
+        quantidade = Number(existingEntry.quantidade);
+      } else {
+        quantidade = 0;
       }
+      if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${opt.label}`); return; }
+      batchEntries.push({
+        sectorId, machineId, data: selectedDate, quantidade, status,
+        tipoMadeira: opt.value, observacoes: comment,
+      });
     }
 
     setSavingKeys(prev => new Set(prev).add(machineKey));
@@ -362,7 +312,8 @@ export default function Production() {
   const getEditValue = (sectorId: number, machineId: number | null): string => {
     const key = `${sectorId}-${machineId || "null"}`;
     if (editValues[key] !== undefined) return editValues[key];
-    const total = getMachineTotal(sectorId, machineId);
+    const machineEntries = getEntriesForMachine(sectorId, machineId);
+    const total = machineEntries.reduce((sum, e) => sum + Number(e.quantidade), 0);
     return total > 0 ? String(total) : "";
   };
 
@@ -375,7 +326,7 @@ export default function Production() {
     const key = `${sectorId}-${machineId || "null"}-${variant}`;
     if (variantEditValues[key] !== undefined) return variantEditValues[key];
     const entry = getEntryForVariant(sectorId, machineId, variant);
-    if (entry) return String(Number(entry.quantidade));
+    if (entry && Number(entry.quantidade) > 0) return String(Number(entry.quantidade));
     return "";
   };
 
@@ -394,32 +345,6 @@ export default function Production() {
     setStatusValues(prev => ({ ...prev, [key]: value }));
   };
 
-  const getSelectedVariants = (sectorId: number, machineId: number | null): Set<string> => {
-    const key = `${sectorId}-${machineId || "null"}`;
-    if (selectedVariants[key]) return selectedVariants[key];
-    return getExistingVariants(sectorId, machineId);
-  };
-
-  const toggleVariant = (sectorId: number, machineId: number | null, variant: string) => {
-    const key = `${sectorId}-${machineId || "null"}`;
-    setSelectedVariants(prev => {
-      const current = prev[key] ? new Set(prev[key]) : new Set(getExistingVariants(sectorId, machineId));
-      if (current.has(variant)) {
-        current.delete(variant);
-        // Clear the edit value for this variant so it doesn't affect totals
-        const varKey = `${key}-${variant}`;
-        setVariantEditValues(prev2 => {
-          const next = { ...prev2 };
-          delete next[varKey];
-          return next;
-        });
-      } else {
-        current.add(variant);
-      }
-      return { ...prev, [key]: current };
-    });
-  };
-
   const getCommentValue = (sectorId: number, machineId: number | null): string => {
     const key = `${sectorId}-${machineId || "null"}`;
     if (commentValues[key] !== undefined) return commentValues[key];
@@ -433,12 +358,25 @@ export default function Production() {
 
   const hasChanges = (sectorId: number, machineId: number | null): boolean => {
     const key = `${sectorId}-${machineId || "null"}`;
-    if (editValues[key] !== undefined || statusValues[key] !== undefined || selectedVariants[key] !== undefined || commentValues[key] !== undefined) return true;
-    // Check variant edit values
+    if (editValues[key] !== undefined || statusValues[key] !== undefined || commentValues[key] !== undefined) return true;
     for (const k of Object.keys(variantEditValues)) {
       if (k.startsWith(key + "-")) return true;
     }
     return false;
+  };
+
+  // Compute live total for a machine from all fixed variant fields
+  const getMachineLiveTotal = (sectorId: number, machineId: number | null, sectorOrdem: number): number => {
+    const variantOpts = getVariantOptions(sectorOrdem);
+    let total = 0;
+    for (const opt of variantOpts) {
+      const val = getVariantEditValue(sectorId, machineId, opt.value);
+      if (val !== "") {
+        const num = parseFloat(val.replace(",", "."));
+        if (!isNaN(num) && num > 0) total += num;
+      }
+    }
+    return total;
   };
 
   const dayOfWeek = useMemo(() => {
@@ -580,28 +518,13 @@ export default function Production() {
                                     commentIsOpen={commentOpen.has(`${sector.id}-${machine.id}`)}
                                     isSaving={savingKeys.has(`${sector.id}-${machine.id}`)}
                                     currentStatus={getStatusValue(sector.id, machine.id)}
-                                    currentVariants={getSelectedVariants(sector.id, machine.id)}
                                     currentComment={getCommentValue(sector.id, machine.id)}
-                                    machineTotal={getMachineTotal(sector.id, machine.id)}
+                                    liveTotal={getMachineLiveTotal(sector.id, machine.id, sector.ordem)}
                                     changed={hasChanges(sector.id, machine.id)}
-                                    getVariantValue={(v) => {
-                                      const vk = `${sector.id}-${machine.id}-${v}`;
-                                      if (variantEditValues[vk] !== undefined) return variantEditValues[vk];
-                                      const entry = getEntryForVariant(sector.id, machine.id, v);
-                                      return entry ? String(Number(entry.quantidade)) : "";
-                                    }}
-                                    savedVariantQuantities={(() => {
-                                      const map = new Map<string, number>();
-                                      const machineEntries = getEntriesForMachine(sector.id, machine.id);
-                                      for (const e of machineEntries) {
-                                        if (e.tipoMadeira) map.set(e.tipoMadeira, Number(e.quantidade));
-                                      }
-                                      return map;
-                                    })()}
+                                    getVariantValue={(v) => getVariantEditValue(sector.id, machine.id, v)}
                                     onToggleMachine={() => toggleMachine(sector.id, machine.id)}
                                     onToggleComment={() => toggleComment(`${sector.id}-${machine.id}`)}
                                     onSetStatus={(v) => setStatusValue(sector.id, machine.id, v)}
-                                    onToggleVariant={(v) => toggleVariant(sector.id, machine.id, v)}
                                     onSetVariantValue={(v, val) => setVariantEditValue(`${sector.id}-${machine.id}-${v}`, val)}
                                     onSetComment={(v) => setCommentValue(sector.id, machine.id, v)}
                                     onSave={() => handleVariantSave(sector.id, machine.id, sector.ordem)}
@@ -658,8 +581,8 @@ export default function Production() {
 
 /* ═══════════════════════════════════════════════════════════
    EXPANDABLE MACHINE ROW (Multilamina & Vareteira)
-   Shows status selector + variant selector (type/measure)
-   When variants selected, shows individual quantity inputs per variant
+   Shows status selector + ALL variant fields always visible
+   No toggle/selection needed - just fill in the values
    ═══════════════════════════════════════════════════════════ */
 interface ExpandableMachineRowProps {
   sector: any;
@@ -668,17 +591,13 @@ interface ExpandableMachineRowProps {
   commentIsOpen: boolean;
   isSaving: boolean;
   currentStatus: string;
-  currentVariants: Set<string>;
   currentComment: string;
-  machineTotal: number;
+  liveTotal: number;
   changed: boolean;
   getVariantValue: (variant: string) => string;
-  /** Map of variant -> saved quantity from DB entries */
-  savedVariantQuantities: Map<string, number>;
   onToggleMachine: () => void;
   onToggleComment: () => void;
   onSetStatus: (v: string) => void;
-  onToggleVariant: (v: string) => void;
   onSetVariantValue: (variant: string, value: string) => void;
   onSetComment: (v: string) => void;
   onSave: () => void;
@@ -686,8 +605,8 @@ interface ExpandableMachineRowProps {
 
 function ExpandableMachineRow({
   sector, machine, machineExpanded, commentIsOpen, isSaving,
-  currentStatus, currentVariants, currentComment, machineTotal, changed,
-  getVariantValue, savedVariantQuantities, onToggleMachine, onToggleComment, onSetStatus, onToggleVariant,
+  currentStatus, currentComment, liveTotal, changed,
+  getVariantValue, onToggleMachine, onToggleComment, onSetStatus,
   onSetVariantValue, onSetComment, onSave,
 }: ExpandableMachineRowProps) {
   const statusOpt = getStatusOption(currentStatus);
@@ -697,26 +616,14 @@ function ExpandableMachineRow({
   const VariantIcon = getVariantIcon(sector.ordem);
   const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
 
-  // Compute live total from variant inputs (edited or saved)
-  let liveTotal = 0;
-  if (currentVariants.size > 0) {
-    for (const v of Array.from(currentVariants)) {
-      const val = getVariantValue(v);
-      const num = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
-      if (!isNaN(num)) liveTotal += num;
+  // Build per-variant display for badges (only show variants with value > 0)
+  const variantDisplay: { label: string; value: number; bgClass: string; textClass: string; borderClass: string }[] = [];
+  for (const opt of variantOptions) {
+    const val = getVariantValue(opt.value);
+    const num = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+    if (!isNaN(num) && num > 0) {
+      variantDisplay.push({ label: opt.label, value: num, bgClass: opt.bgClass, textClass: opt.textClass, borderClass: opt.borderClass });
     }
-  } else {
-    liveTotal = machineTotal;
-  }
-
-  // Build per-variant display: use edited values if available, else saved
-  const variantDisplay: { label: string; value: number; color: string; bgClass: string; textClass: string; borderClass: string }[] = [];
-  for (const v of Array.from(currentVariants)) {
-    const opt = variantOptions.find(o => o.value === v);
-    if (!opt) continue;
-    const editVal = getVariantValue(v);
-    const num = editVal !== "" ? parseFloat(editVal.replace(",", ".")) : 0;
-    variantDisplay.push({ label: opt.label, value: isNaN(num) ? 0 : num, color: opt.color, bgClass: opt.bgClass, textClass: opt.textClass, borderClass: opt.borderClass });
   }
 
   return (
@@ -740,7 +647,7 @@ function ExpandableMachineRow({
           <span className="hidden sm:inline">{statusOpt.label}</span>
         </div>
 
-        {/* Variant badges with quantities */}
+        {/* Variant badges with quantities (only non-zero) */}
         {variantDisplay.length > 0 && (
           <div className="flex items-center gap-1 flex-wrap">
             {variantDisplay.map(vd => (
@@ -756,7 +663,7 @@ function ExpandableMachineRow({
           <MessageSquare className="w-3.5 h-3.5" />
         </button>
 
-        {/* Total display (live from inputs) */}
+        {/* Total display */}
         <div className="text-right shrink-0 w-20">
           <div className="text-sm font-bold tabular-nums text-slate-700">{fmtNum(liveTotal, decimals)}</div>
           <div className="text-[9px] text-slate-400">{sector.unidadeMedida}</div>
@@ -800,59 +707,35 @@ function ExpandableMachineRow({
             </div>
           </div>
 
-          {/* Variant selector */}
+          {/* Fixed variant inputs - ALL always visible */}
           <div className="bg-white rounded-lg border border-slate-200 p-3">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <VariantIcon className="w-3.5 h-3.5 text-slate-500" />
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{variantLabel}</p>
-              <span className="text-[10px] text-slate-400 ml-1">(selecione um ou mais)</span>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Produção por {variantLabel}</p>
             </div>
-            <div className={`grid gap-2 ${variantOptions.length <= 3 ? "grid-cols-2" : "grid-cols-3 sm:grid-cols-4 lg:grid-cols-7"}`}>
+            <div className={`grid gap-2 ${variantOptions.length <= 3 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"}`}>
               {variantOptions.map(opt => {
-                const isSelected = currentVariants.has(opt.value);
+                const val = getVariantValue(opt.value);
                 return (
-                  <button key={opt.value} onClick={() => onToggleVariant(opt.value)}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${isSelected ? `${opt.bgClass} ${opt.textClass} ${opt.borderClass} ring-2 ring-offset-1` : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}
-                    style={isSelected ? { '--tw-ring-color': opt.color } as React.CSSProperties : {}}
-                  >
-                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
-                    <span>{opt.label}</span>
-                  </button>
+                  <div key={opt.value} className="flex items-center gap-2">
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold shrink-0 ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`} style={{ minWidth: variantOptions.length <= 3 ? "110px" : "80px" }}>
+                      <VariantIcon className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{opt.label}</span>
+                    </div>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={val}
+                      onChange={(e) => onSetVariantValue(opt.value, e.target.value)}
+                      placeholder="0"
+                      className="flex-1 min-w-0 w-20 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
+                    />
+                    <span className="text-[10px] text-slate-400 shrink-0 w-8">{sector.unidadeMedida}</span>
+                  </div>
                 );
               })}
             </div>
           </div>
-
-          {/* Quantity inputs per selected variant */}
-          {currentVariants.size > 0 && (
-            <div className="bg-white rounded-lg border border-slate-200 p-3">
-              <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Produção por {variantLabel}</p>
-              <div className="space-y-2">
-                {Array.from(currentVariants).sort().map(variant => {
-                  const opt = variantOptions.find(o => o.value === variant);
-                  if (!opt) return null;
-                  const val = getVariantValue(variant);
-                  return (
-                    <div key={variant} className="flex items-center gap-3">
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold min-w-[100px] ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
-                        <VariantIcon className="w-3.5 h-3.5 shrink-0" />
-                        {opt.label}
-                      </div>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={val}
-                        onChange={(e) => onSetVariantValue(variant, e.target.value)}
-                        placeholder="0"
-                        className="w-28 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
-                      />
-                      <span className="text-xs text-slate-400">{sector.unidadeMedida}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
