@@ -3536,21 +3536,21 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <KPICard
           label="Estoque Total"
-          value={`${formatNumber(madeiraEstoqueCx)} cx`}
+          value={`${formatNumber(estoqueCaixas)} cx`}
           sub={`${madeiraProdutos} produtos (Madeira PA)`}
           icon={TreePine}
           theme="teal"
         />
         <KPICard
           label="Pedidos (Venda)"
-          value={`${formatNumber(madeiraPedidosCx)} cx`}
+          value={`${formatNumber(pedidosCaixas)} cx`}
           sub="Apenas Madeira PA"
           icon={ShoppingCart}
           theme="orange"
         />
         <KPICard
           label="Disponível - Caixas"
-          value={`${formatNumber(disponivelCaixas)} cx`}
+          value={`${formatNumber(estoqueCaixas - pedidosCaixas)} cx`}
           sub="Estoque - Pedidos (cx)"
           icon={Boxes}
           theme="emerald"

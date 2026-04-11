@@ -1978,3 +1978,8 @@
 ## Estoque Total - Correção v2
 - [x] Card "Estoque Total" da seção Madeira agora usa estoqueCx do Maxiprod (não estoque manual)
 - [x] KPIs do topo revertidos para usar valores gerais (todos os itens)
+
+## Estoque Total Madeira - Correção v3
+- [x] KPI "Estoque Total" da seção Madeira agora usa estoqueCaixas (estoque manual, excluindo Rojão e Vareta Apito)
+- [x] KPI "Pedidos" da seção Madeira agora usa pedidosCaixas (apenas caixas de Madeira PA)
+- [x] KPI "Disponível" recalculado como estoqueCaixas - pedidosCaixas
