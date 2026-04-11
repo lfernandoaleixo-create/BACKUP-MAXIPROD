@@ -2067,3 +2067,7 @@
 - [x] Nenhum status marcado por padrão ao abrir o card (campo vazio)
 - [x] Permitir múltiplos status por máquina em todos os setores (ex: Produção Normal + Manutenção Pontual no mesmo dia)
 - [x] Atualizar backend para aceitar múltiplos status (armazenar como lista separada por vírgula)
+
+## Correção badges: restaurar badges de máquina, remover badges da tela inicial
+- [x] Restaurar badges de status e quantidades por variante no header de cada máquina (ExpandableMachineRow)
+- [x] Remover badges "Sequencial", "Tipo de Madeira", "Medida Madeira" dos cards de resumo na tela inicial

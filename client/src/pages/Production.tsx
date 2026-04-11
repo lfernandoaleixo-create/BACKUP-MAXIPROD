@@ -509,9 +509,7 @@ export default function Production() {
                       <div className="flex-1 text-left">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold text-slate-800">{sector.ordem}. {sector.nome}</span>
-                          {sector.isSequencial && <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold">Sequencial</span>}
-                          {isMultilamina(sector.ordem) && <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">Tipo Madeira</span>}
-                          {hasMeasureFeatures(sector.ordem) && <span className="text-[9px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded-full font-semibold">Medida Madeira</span>}
+
                         </div>
                         <div className="text-xs text-slate-400 mt-0.5">
                           {hasMachines ? `${sector.quantidadeEquipamentos} ${sector.tipoEquipamento === "mesa" ? "mesas" : "máquinas"}` : "Sem equipamento"}
@@ -639,9 +637,22 @@ function ExpandableMachineRow({
   const VariantIcon = getVariantIcon(sector.ordem);
   const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
 
+  // Build per-variant display for badges (only show variants with value > 0)
+  const variantDisplay: { label: string; value: number; bgClass: string; textClass: string; borderClass: string }[] = [];
+  for (const opt of variantOptions) {
+    const val = getVariantValue(opt.value);
+    const num = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+    if (!isNaN(num) && num > 0) {
+      variantDisplay.push({ label: opt.label, value: num, bgClass: opt.bgClass, textClass: opt.textClass, borderClass: opt.borderClass });
+    }
+  }
+
+  // Build status display badges
+  const statusDisplay = MACHINE_STATUS_OPTIONS.filter(opt => selectedStatuses.has(opt.value));
+
   return (
     <div className="bg-white/50">
-      {/* Machine header - limpo, sem micro badges */}
+      {/* Machine header */}
       <div className="flex items-center gap-3 px-4 py-2.5">
         <div
           className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-50 transition-colors"
@@ -653,6 +664,29 @@ function ExpandableMachineRow({
         <span className="text-sm text-slate-600 font-medium flex-1 min-w-0 truncate cursor-pointer" onClick={onToggleMachine}>
           {machine.nome}
         </span>
+
+        {/* Status badges (only selected) */}
+        {statusDisplay.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {statusDisplay.map(opt => (
+              <div key={opt.value} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
+                <opt.icon className="w-3 h-3" />
+                <span className="hidden sm:inline">{opt.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Variant badges with quantities (only non-zero) */}
+        {variantDisplay.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {variantDisplay.map(vd => (
+              <span key={vd.label} className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${vd.bgClass} ${vd.textClass} ${vd.borderClass}`}>
+                {vd.label}: {fmtNum(vd.value, decimals)}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Comment button */}
         <button onClick={onToggleComment} className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${hasComment || commentIsOpen ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-white text-slate-400 border border-slate-200 hover:bg-slate-50"}`} title="Comentário">
