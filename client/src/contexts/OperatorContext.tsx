@@ -116,7 +116,7 @@ export function OperatorProvider({ children }: { children: ReactNode }) {
       case "vendas": return operator.accessVendas;
       case "faturamento": return operator.accessFaturamento;
       case "financeiro": return operator.accessFinanceiro;
-      case "producao": return operator.accessProducao;
+      case "producao": return true; // Aberta a todos os operadores
       case "configuracoes": return operator.accessConfiguracoes || (granularPermissions["cfg.produtos"] === true);
       case "valorizacao": return operator.accessValorizacao;
       default: return false;

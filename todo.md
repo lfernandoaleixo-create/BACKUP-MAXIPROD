@@ -1994,3 +1994,6 @@
 - [x] Pipeline visual dos setores 1→2→3 (sequenciais) e depois ramificação
 - [x] Integrar aba Produção na navegação (entre Financeiro e Configurações)
 - [x] Testes automatizados (11 testes passando)
+
+## Aba Produção - Acesso Aberto
+- [x] Remover restrição de acesso da aba Produção (aberta a todos os operadores)
