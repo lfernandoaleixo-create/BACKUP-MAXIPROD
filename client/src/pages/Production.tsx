@@ -354,7 +354,18 @@ export default function Production() {
     const key = `${sectorId}-${machineId || "null"}`;
     setSelectedVariants(prev => {
       const current = prev[key] ? new Set(prev[key]) : new Set(getExistingVariants(sectorId, machineId));
-      if (current.has(variant)) current.delete(variant); else current.add(variant);
+      if (current.has(variant)) {
+        current.delete(variant);
+        // Clear the edit value for this variant so it doesn't affect totals
+        const varKey = `${key}-${variant}`;
+        setVariantEditValues(prev2 => {
+          const next = { ...prev2 };
+          delete next[varKey];
+          return next;
+        });
+      } else {
+        current.add(variant);
+      }
       return { ...prev, [key]: current };
     });
   };

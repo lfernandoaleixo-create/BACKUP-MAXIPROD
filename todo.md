@@ -2035,3 +2035,7 @@
 
 ## Bug: Vareteira mostra 14 sacos mesmo com produção zerada
 - [x] Diagnosticar e corrigir bug no card Vareteira que mostra 14 sacos mesmo após zerar todas as produções (causa: registros antigos de medidas desmarcadas não eram deletados; fix: batchUpsert agora limpa variantes removidas)
+
+## Bug: Não permite desmarcar medida/tipo com valor preenchido
+- [x] Permitir desmarcar medida/tipo mesmo com valor preenchido (limpar valor ao desmarcar)
+- [x] Recalcular total sem a medida desmarcada
