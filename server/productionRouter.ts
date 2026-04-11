@@ -73,7 +73,7 @@ export const productionRouter = router({
       machineId: z.number().nullable(),
       data: z.string(),
       quantidade: z.number().min(0),
-      status: z.string().optional().default("producao_normal"),
+      status: z.string().optional().default(""),
       tipoMadeira: z.string().optional(), // valor único: "benazzi", "madeira_dura", "150mm", etc.
       observacoes: z.string().optional(),
       lancadoPor: z.string().optional(),
@@ -109,7 +109,7 @@ export const productionRouter = router({
           .update(productionEntries)
           .set({
             quantidade: String(input.quantidade),
-            status: input.status || "producao_normal",
+            status: input.status || "",
             observacoes: input.observacoes || null,
             lancadoPor: input.lancadoPor || null,
           })
@@ -121,7 +121,7 @@ export const productionRouter = router({
           machineId: input.machineId,
           data: input.data,
           quantidade: String(input.quantidade),
-          status: input.status || "producao_normal",
+          status: input.status || "",
           tipoMadeira: input.tipoMadeira || null,
           observacoes: input.observacoes || null,
           lancadoPor: input.lancadoPor || null,
@@ -144,7 +144,7 @@ export const productionRouter = router({
         machineId: z.number().nullable(),
         data: z.string(),
         quantidade: z.number().min(0),
-        status: z.string().optional().default("producao_normal"),
+        status: z.string().optional().default(""),
         tipoMadeira: z.string().optional(),
         observacoes: z.string().optional(),
         lancadoPor: z.string().optional(),
@@ -211,11 +211,11 @@ export const productionRouter = router({
             .update(productionEntries)
             .set({
               quantidade: String(entry.quantidade),
-              status: entry.status || "producao_normal",
-              observacoes: entry.observacoes || null,
-              lancadoPor: entry.lancadoPor || null,
-            })
-            .where(eq(productionEntries.id, existing[0].id));
+            status: entry.status || "",
+            observacoes: entry.observacoes || null,
+            lancadoPor: entry.lancadoPor || null,
+          })
+          .where(eq(productionEntries.id, existing[0].id));
           results.push({ tipoMadeira: entry.tipoMadeira || null, action: "updated" });
         } else {
           await db.insert(productionEntries).values({
@@ -223,7 +223,7 @@ export const productionRouter = router({
             machineId: entry.machineId,
             data: entry.data,
             quantidade: String(entry.quantidade),
-            status: entry.status || "producao_normal",
+            status: entry.status || "",
             tipoMadeira: entry.tipoMadeira || null,
             observacoes: entry.observacoes || null,
             lancadoPor: entry.lancadoPor || null,

@@ -2061,3 +2061,9 @@
 - [x] Seletoras Toco (setor 3): implantar medidas de madeira idênticas à Vareteira (150mm-350mm)
 - [x] Seleção Automática (setor 4): implantar medidas de madeira idênticas à Vareteira (150mm-350mm)
 - [x] Ambos setores devem ter campos fixos por medida, produção separada por medida por máquina
+
+## Ajustes cards Produção - badges, status padrão, múltiplos status
+- [x] Remover micro cards/badges coloridos dentro dos cards de máquina
+- [x] Nenhum status marcado por padrão ao abrir o card (campo vazio)
+- [x] Permitir múltiplos status por máquina em todos os setores (ex: Produção Normal + Manutenção Pontual no mesmo dia)
+- [x] Atualizar backend para aceitar múltiplos status (armazenar como lista separada por vírgula)

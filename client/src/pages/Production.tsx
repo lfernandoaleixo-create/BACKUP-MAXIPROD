@@ -211,8 +211,8 @@ export default function Production() {
 
   const getEntryStatus = (sectorId: number, machineId: number | null): string => {
     const machineEntries = getEntriesForMachine(sectorId, machineId);
-    if (machineEntries.length > 0) return machineEntries[0].status || "producao_normal";
-    return "producao_normal";
+    if (machineEntries.length > 0) return machineEntries[0].status || "";
+    return "";
   };
 
   const getEntryComment = (sectorId: number, machineId: number | null): string => {
@@ -342,15 +342,29 @@ export default function Production() {
     setVariantEditValues(prev => ({ ...prev, [key]: value }));
   };
 
+  // Status é multi-select: armazenado como string separada por vírgula (ex: "producao_normal,manutencao_pontual")
   const getStatusValue = (sectorId: number, machineId: number | null): string => {
     const key = `${sectorId}-${machineId || "null"}`;
     if (statusValues[key] !== undefined) return statusValues[key];
     return getEntryStatus(sectorId, machineId);
   };
 
-  const setStatusValue = (sectorId: number, machineId: number | null, value: string) => {
+  const getSelectedStatuses = (sectorId: number, machineId: number | null): Set<string> => {
+    const val = getStatusValue(sectorId, machineId);
+    if (!val) return new Set();
+    return new Set(val.split(",").filter(Boolean));
+  };
+
+  const toggleStatusValue = (sectorId: number, machineId: number | null, statusVal: string) => {
     const key = `${sectorId}-${machineId || "null"}`;
-    setStatusValues(prev => ({ ...prev, [key]: value }));
+    const current = getSelectedStatuses(sectorId, machineId);
+    if (current.has(statusVal)) {
+      current.delete(statusVal);
+    } else {
+      current.add(statusVal);
+    }
+    const newVal = Array.from(current).join(",");
+    setStatusValues(prev => ({ ...prev, [key]: newVal }));
   };
 
   const getCommentValue = (sectorId: number, machineId: number | null): string => {
@@ -532,7 +546,8 @@ export default function Production() {
                                     getVariantValue={(v) => getVariantEditValue(sector.id, machine.id, v)}
                                     onToggleMachine={() => toggleMachine(sector.id, machine.id)}
                                     onToggleComment={() => toggleComment(`${sector.id}-${machine.id}`)}
-                                    onSetStatus={(v) => setStatusValue(sector.id, machine.id, v)}
+                                    onToggleStatus={(v) => toggleStatusValue(sector.id, machine.id, v)}
+                                    selectedStatuses={getSelectedStatuses(sector.id, machine.id)}
                                     onSetVariantValue={(v, val) => setVariantEditValue(`${sector.id}-${machine.id}-${v}`, val)}
                                     onSetComment={(v) => setCommentValue(sector.id, machine.id, v)}
                                     onSave={() => handleVariantSave(sector.id, machine.id, sector.ordem)}
@@ -605,7 +620,8 @@ interface ExpandableMachineRowProps {
   getVariantValue: (variant: string) => string;
   onToggleMachine: () => void;
   onToggleComment: () => void;
-  onSetStatus: (v: string) => void;
+  onToggleStatus: (v: string) => void;
+  selectedStatuses: Set<string>;
   onSetVariantValue: (variant: string, value: string) => void;
   onSetComment: (v: string) => void;
   onSave: () => void;
@@ -614,29 +630,18 @@ interface ExpandableMachineRowProps {
 function ExpandableMachineRow({
   sector, machine, machineExpanded, commentIsOpen, isSaving,
   currentStatus, currentComment, liveTotal, changed,
-  getVariantValue, onToggleMachine, onToggleComment, onSetStatus,
-  onSetVariantValue, onSetComment, onSave,
+  getVariantValue, onToggleMachine, onToggleComment, onToggleStatus,
+  selectedStatuses, onSetVariantValue, onSetComment, onSave,
 }: ExpandableMachineRowProps) {
-  const statusOpt = getStatusOption(currentStatus);
   const hasComment = currentComment.trim().length > 0;
   const variantOptions = getVariantOptions(sector.ordem);
   const variantLabel = getVariantLabel(sector.ordem);
   const VariantIcon = getVariantIcon(sector.ordem);
   const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
 
-  // Build per-variant display for badges (only show variants with value > 0)
-  const variantDisplay: { label: string; value: number; bgClass: string; textClass: string; borderClass: string }[] = [];
-  for (const opt of variantOptions) {
-    const val = getVariantValue(opt.value);
-    const num = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
-    if (!isNaN(num) && num > 0) {
-      variantDisplay.push({ label: opt.label, value: num, bgClass: opt.bgClass, textClass: opt.textClass, borderClass: opt.borderClass });
-    }
-  }
-
   return (
     <div className="bg-white/50">
-      {/* Machine header */}
+      {/* Machine header - limpo, sem micro badges */}
       <div className="flex items-center gap-3 px-4 py-2.5">
         <div
           className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-50 transition-colors"
@@ -648,23 +653,6 @@ function ExpandableMachineRow({
         <span className="text-sm text-slate-600 font-medium flex-1 min-w-0 truncate cursor-pointer" onClick={onToggleMachine}>
           {machine.nome}
         </span>
-
-        {/* Status badge */}
-        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusOpt.bgClass} ${statusOpt.textClass} ${statusOpt.borderClass}`}>
-          <statusOpt.icon className="w-3 h-3" />
-          <span className="hidden sm:inline">{statusOpt.label}</span>
-        </div>
-
-        {/* Variant badges with quantities (only non-zero) */}
-        {variantDisplay.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap">
-            {variantDisplay.map(vd => (
-              <span key={vd.label} className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${vd.bgClass} ${vd.textClass} ${vd.borderClass}`}>
-                {vd.label}: {fmtNum(vd.value, decimals)}
-              </span>
-            ))}
-          </div>
-        )}
 
         {/* Comment button */}
         <button onClick={onToggleComment} className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${hasComment || commentIsOpen ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-white text-slate-400 border border-slate-200 hover:bg-slate-50"}`} title="Comentário">
@@ -695,15 +683,15 @@ function ExpandableMachineRow({
       {/* Expanded panel */}
       {machineExpanded && (
         <div className="px-4 pb-3 pl-16 space-y-2">
-          {/* Status selector */}
+          {/* Status selector - MULTI-SELECT: pode marcar vários */}
           <div className="bg-white rounded-lg border border-slate-200 p-3">
-            <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Status da Máquina</p>
+            <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Status da Máquina <span className="text-slate-400 font-normal">(pode marcar vários)</span></p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               {MACHINE_STATUS_OPTIONS.map(opt => {
-                const isSelected = currentStatus === opt.value;
+                const isSelected = selectedStatuses.has(opt.value);
                 const OptIcon = opt.icon;
                 return (
-                  <button key={opt.value} onClick={() => onSetStatus(opt.value)}
+                  <button key={opt.value} onClick={() => onToggleStatus(opt.value)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${isSelected ? `${opt.bgClass} ${opt.textClass} ${opt.borderClass} ring-2 ring-offset-1` : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}
                     style={isSelected ? { '--tw-ring-color': opt.color } as React.CSSProperties : {}}
                   >
