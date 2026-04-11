@@ -241,10 +241,15 @@ export default function Production() {
       for (const machine of sector.machines) {
         for (const opt of variantOpts) {
           const varKey = `${sectorId}-${machine.id}-${opt.value}`;
-          if (variantEditValues[varKey] !== undefined && variantEditValues[varKey] !== "") {
-            const num = parseFloat(variantEditValues[varKey].replace(",", "."));
-            if (!isNaN(num) && num > 0) sectorTotal += num;
+          // Se o usuário editou o campo, usar o valor editado (mesmo que seja 0)
+          if (variantEditValues[varKey] !== undefined) {
+            if (variantEditValues[varKey] !== "") {
+              const num = parseFloat(variantEditValues[varKey].replace(",", "."));
+              if (!isNaN(num) && num >= 0) sectorTotal += num;
+            }
+            // Se editou e está vazio, conta como 0 (não busca do banco)
           } else {
+            // Não editou: buscar do banco
             const entry = getEntryForVariant(sectorId, machine.id, opt.value);
             if (entry) sectorTotal += Number(entry.quantidade);
           }
@@ -290,9 +295,11 @@ export default function Production() {
       const existingEntry = getEntryForVariant(sectorId, machineId, opt.value);
       const val = variantEditValues[varKey];
       let quantidade: number;
-      if (val !== undefined && val !== "") {
-        quantidade = parseFloat(val.replace(",", "."));
+      if (val !== undefined) {
+        // Usuário editou o campo: usar valor editado (0 se vazio)
+        quantidade = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
       } else if (existingEntry) {
+        // Não editou: manter valor do banco
         quantidade = Number(existingEntry.quantidade);
       } else {
         quantidade = 0;
@@ -373,7 +380,7 @@ export default function Production() {
       const val = getVariantEditValue(sectorId, machineId, opt.value);
       if (val !== "") {
         const num = parseFloat(val.replace(",", "."));
-        if (!isNaN(num) && num > 0) total += num;
+        if (!isNaN(num) && num >= 0) total += num;
       }
     }
     return total;

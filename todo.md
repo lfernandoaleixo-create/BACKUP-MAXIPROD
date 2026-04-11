@@ -2050,3 +2050,9 @@
 - [x] Total soma automaticamente todos os campos preenchidos
 - [x] Atualizar lógica de save para salvar todos os tipos/medidas com valor
 - [x] Atualizar getSectorTotal para nova lógica simplificada
+
+## Bug: Tela em branco na aba Produção
+- [x] Diagnosticar e corrigir tela em branco (era problema temporário de carregamento, não reproduzível)
+
+## Bug URGENTE: Total mostra produção mesmo após zerar e salvar
+- [x] Investigar e corrigir: total não zera após salvar produção zerada (causa: getSectorTotal e getMachineLiveTotal usavam `> 0` em vez de `>= 0`, ignorando zeros editados; handleVariantSave não tratava campo editado vazio como 0)
