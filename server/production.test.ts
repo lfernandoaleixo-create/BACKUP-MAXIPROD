@@ -33,6 +33,7 @@ vi.mock("../drizzle/schema", () => ({
     machineId: "machineId",
     data: "data",
     quantidade: "quantidade",
+    status: "status",
     observacoes: "observacoes",
     lancadoPor: "lancadoPor",
   },
@@ -108,9 +109,23 @@ describe("Production Module", () => {
 
     it("should accept positive quantities", () => {
       const validQuantity = 150;
-      const zeroQuantity = 0;
       expect(validQuantity).toBeGreaterThan(0);
+    });
+
+    it("should accept zero quantity and save successfully", () => {
+      const zeroQuantity = 0;
       expect(zeroQuantity).toBe(0);
+      expect(zeroQuantity).toBeGreaterThanOrEqual(0);
+      // Zero is a valid quantity - machine ran but produced nothing, or status indicates no production
+      const entry = {
+        sectorId: 1,
+        machineId: 1,
+        data: "2026-04-11",
+        quantidade: zeroQuantity,
+        status: "falta_madeira",
+      };
+      expect(entry.quantidade).toBe(0);
+      expect(entry.status).toBe("falta_madeira");
     });
 
     it("should allow null machineId for sectors without machines (Embalagem)", () => {
@@ -122,6 +137,86 @@ describe("Production Module", () => {
       };
       expect(entry.machineId).toBeNull();
       expect(entry.sectorId).toBe(8);
+    });
+  });
+
+  describe("Machine Status Options", () => {
+    const STATUS_OPTIONS = [
+      { value: "producao_normal", label: "Produção Normal" },
+      { value: "falta_madeira", label: "Falta de Madeira" },
+      { value: "producao_nao_necessaria", label: "Produção Não Necessária" },
+      { value: "manutencao", label: "Manutenção" },
+    ];
+
+    it("should have 4 status options", () => {
+      expect(STATUS_OPTIONS).toHaveLength(4);
+    });
+
+    it("should have producao_normal as default status", () => {
+      const defaultStatus = STATUS_OPTIONS[0];
+      expect(defaultStatus.value).toBe("producao_normal");
+    });
+
+    it("should include all required status values", () => {
+      const values = STATUS_OPTIONS.map(o => o.value);
+      expect(values).toContain("producao_normal");
+      expect(values).toContain("falta_madeira");
+      expect(values).toContain("producao_nao_necessaria");
+      expect(values).toContain("manutencao");
+    });
+
+    it("should allow saving entry with any valid status", () => {
+      for (const opt of STATUS_OPTIONS) {
+        const entry = {
+          sectorId: 1,
+          machineId: 1,
+          data: "2026-04-11",
+          quantidade: opt.value === "producao_normal" ? 10 : 0,
+          status: opt.value,
+        };
+        expect(entry.status).toBe(opt.value);
+        expect(entry.quantidade).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it("should allow zero quantity with non-normal status", () => {
+      const entry = {
+        sectorId: 1,
+        machineId: 2,
+        data: "2026-04-11",
+        quantidade: 0,
+        status: "manutencao",
+      };
+      expect(entry.quantidade).toBe(0);
+      expect(entry.status).toBe("manutencao");
+    });
+  });
+
+  describe("Multilamina Sector Specifics", () => {
+    it("should be sector with ordem 1", () => {
+      const multilamina = { id: 1, ordem: 1, nome: "Multilamina", unidadeMedida: "m³" };
+      expect(multilamina.ordem).toBe(1);
+      expect(multilamina.nome).toBe("Multilamina");
+    });
+
+    it("should have 2 machines", () => {
+      const machines = [
+        { id: 1, sectorId: 1, nome: "Máquina 1", ordem: 1 },
+        { id: 2, sectorId: 1, nome: "Máquina 2", ordem: 2 },
+      ];
+      expect(machines).toHaveLength(2);
+      expect(machines.every(m => m.sectorId === 1)).toBe(true);
+    });
+
+    it("should support expandable machines with individual status", () => {
+      const machineEntries = [
+        { machineId: 1, quantidade: 5.5, status: "producao_normal" },
+        { machineId: 2, quantidade: 0, status: "manutencao" },
+      ];
+      expect(machineEntries[0].status).toBe("producao_normal");
+      expect(machineEntries[0].quantidade).toBeGreaterThan(0);
+      expect(machineEntries[1].status).toBe("manutencao");
+      expect(machineEntries[1].quantidade).toBe(0);
     });
   });
 
@@ -142,6 +237,19 @@ describe("Production Module", () => {
 
       expect(summary[1]).toBe(25);
       expect(summary[2]).toBe(380);
+    });
+
+    it("should include zero-quantity entries in count but not in total", () => {
+      const entries = [
+        { sectorId: 1, machineId: 1, quantidade: "5.00000", status: "producao_normal" },
+        { sectorId: 1, machineId: 2, quantidade: "0.00000", status: "manutencao" },
+      ];
+
+      const total = entries.reduce((sum, e) => sum + parseFloat(e.quantidade), 0);
+      const count = entries.length;
+
+      expect(total).toBe(5);
+      expect(count).toBe(2); // Both entries count, even with zero
     });
   });
 

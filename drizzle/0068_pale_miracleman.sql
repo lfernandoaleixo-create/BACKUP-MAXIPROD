@@ -1,0 +1,1 @@
+ALTER TABLE `production_entries` ADD `status` varchar(50) DEFAULT 'producao_normal';

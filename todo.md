@@ -2000,3 +2000,10 @@
 
 ## Bug: Erro no canto inferior esquerdo
 - [x] Diagnosticar e corrigir erro que aparece no canto inferior esquerdo do dashboard (button aninhado em button nos cards SemiPronto e AguardandoEscolha)
+
+## Melhorias Produção - Status de Máquina e Valor Zero
+- [x] Permitir salvar produção com valor zero em todos os setores
+- [x] Adicionar campo status na tabela production_entries (producao_normal, falta_madeira, producao_nao_necessaria, manutencao)
+- [x] Card Multilamina: expandir cada máquina individualmente com seletor de status
+- [x] Atualizar backend (router) para aceitar status e valor zero
+- [x] Atualizar frontend Production.tsx com as novas funcionalidades

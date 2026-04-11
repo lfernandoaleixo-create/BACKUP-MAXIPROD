@@ -1073,6 +1073,7 @@ export const productionEntries = mysqlTable("production_entries", {
   machineId: int("machineId"), // FK para production_machines (null para setor sem máquina)
   data: varchar("data", { length: 10 }).notNull(), // YYYY-MM-DD (dia do lançamento)
   quantidade: decimal("quantidade", { precision: 18, scale: 5 }).notNull(), // Quantidade produzida
+  status: varchar("status", { length: 50 }).default("producao_normal"), // Status da máquina: producao_normal, falta_madeira, producao_nao_necessaria, manutencao
   observacoes: text("observacoes"),
   lancadoPor: varchar("lancadoPor", { length: 200 }), // Nome do usuário que lançou
   createdAt: timestamp("createdAt").defaultNow().notNull(),

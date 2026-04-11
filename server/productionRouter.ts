@@ -4,6 +4,14 @@ import { getDb } from "./db";
 import { productionSectors, productionMachines, productionEntries } from "../drizzle/schema";
 import { eq, and, sql, desc, gte, lte, between } from "drizzle-orm";
 
+/** Status válidos para máquinas de produção */
+export const MACHINE_STATUS_OPTIONS = [
+  { value: "producao_normal", label: "Produção Normal", color: "#10b981" },
+  { value: "falta_madeira", label: "Falta de Madeira", color: "#ef4444" },
+  { value: "producao_nao_necessaria", label: "Produção Não Necessária", color: "#f59e0b" },
+  { value: "manutencao", label: "Manutenção", color: "#6366f1" },
+] as const;
+
 export const productionRouter = router({
   /**
    * Listar todos os setores com suas máquinas
@@ -51,13 +59,15 @@ export const productionRouter = router({
 
   /**
    * Lançar ou atualizar produção de uma máquina/setor em um dia
+   * Agora aceita quantidade zero e campo status
    */
   upsertEntry: publicProcedure
     .input(z.object({
       sectorId: z.number(),
       machineId: z.number().nullable(),
       data: z.string(), // YYYY-MM-DD
-      quantidade: z.number(),
+      quantidade: z.number().min(0), // Aceita zero
+      status: z.string().optional().default("producao_normal"),
       observacoes: z.string().optional(),
       lancadoPor: z.string().optional(),
     }))
@@ -88,6 +98,7 @@ export const productionRouter = router({
           .update(productionEntries)
           .set({
             quantidade: String(input.quantidade),
+            status: input.status || "producao_normal",
             observacoes: input.observacoes || null,
             lancadoPor: input.lancadoPor || null,
           })
@@ -100,6 +111,7 @@ export const productionRouter = router({
           machineId: input.machineId,
           data: input.data,
           quantidade: String(input.quantidade),
+          status: input.status || "producao_normal",
           observacoes: input.observacoes || null,
           lancadoPor: input.lancadoPor || null,
         });
@@ -205,4 +217,11 @@ export const productionRouter = router({
 
       return result;
     }),
+
+  /**
+   * Retornar opções de status disponíveis para o frontend
+   */
+  getStatusOptions: publicProcedure.query(() => {
+    return MACHINE_STATUS_OPTIONS;
+  }),
 });

@@ -477,6 +477,13 @@
       "when": 1775932049230,
       "tag": "0067_broad_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "5",
+      "when": 1775934470087,
+      "tag": "0068_pale_miracleman",
+      "breakpoints": true
     }
   ]
 }

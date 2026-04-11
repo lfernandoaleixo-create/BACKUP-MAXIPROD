@@ -1,9 +1,10 @@
 /**
  * Produção - Controle de produção industrial
  * 9 setores com lançamento diário por máquina/mesa
+ * Multilamina (setor 1) com status expandível por máquina
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ import {
   Factory,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Save,
   Calendar,
   BarChart3,
@@ -26,7 +28,23 @@ import {
   Layers,
   Printer,
   History,
+  AlertTriangle,
+  Wrench,
+  Ban,
+  CheckCircle2,
 } from "lucide-react";
+
+// Status options for machines (especially Multilamina)
+const MACHINE_STATUS_OPTIONS = [
+  { value: "producao_normal", label: "Produção Normal", color: "#10b981", icon: CheckCircle2, bgClass: "bg-emerald-50", textClass: "text-emerald-700", borderClass: "border-emerald-200" },
+  { value: "falta_madeira", label: "Falta de Madeira", color: "#ef4444", icon: AlertTriangle, bgClass: "bg-red-50", textClass: "text-red-700", borderClass: "border-red-200" },
+  { value: "producao_nao_necessaria", label: "Produção Não Necessária", color: "#f59e0b", icon: Ban, bgClass: "bg-amber-50", textClass: "text-amber-700", borderClass: "border-amber-200" },
+  { value: "manutencao", label: "Manutenção", color: "#6366f1", icon: Wrench, bgClass: "bg-indigo-50", textClass: "text-indigo-700", borderClass: "border-indigo-200" },
+] as const;
+
+function getStatusOption(value: string) {
+  return MACHINE_STATUS_OPTIONS.find(o => o.value === value) || MACHINE_STATUS_OPTIONS[0];
+}
 
 // Format number with locale
 function fmtNum(n: number, decimals = 0): string {
@@ -50,7 +68,7 @@ function fmtDate(dateStr: string): string {
 function getWeekRange(dateStr: string): { start: string; end: string } {
   const d = new Date(dateStr + "T12:00:00");
   const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day; // Monday
+  const diff = day === 0 ? -6 : 1 - day;
   const monday = new Date(d);
   monday.setDate(d.getDate() + diff);
   const sunday = new Date(monday);
@@ -83,7 +101,9 @@ const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 export default function Production() {
   const [selectedDate, setSelectedDate] = useState(getTodayBR);
   const [expandedSectors, setExpandedSectors] = useState<Set<number>>(new Set());
+  const [expandedMachines, setExpandedMachines] = useState<Set<string>>(new Set()); // "sectorId-machineId"
   const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [statusValues, setStatusValues] = useState<Record<string, string>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"lancamento" | "historico">("lancamento");
 
@@ -135,21 +155,45 @@ export default function Production() {
     });
   };
 
+  // Toggle machine expansion (for Multilamina)
+  const toggleMachine = (sectorId: number, machineId: number) => {
+    const key = `${sectorId}-${machineId}`;
+    setExpandedMachines(prev => {
+      const n = new Set(prev);
+      if (n.has(key)) n.delete(key); else n.add(key);
+      return n;
+    });
+  };
+
   // Navigate date
   const changeDate = (delta: number) => {
     const d = new Date(selectedDate + "T12:00:00");
     d.setDate(d.getDate() + delta);
     setSelectedDate(d.toISOString().slice(0, 10));
+    // Reset edit values when changing date
+    setEditValues({});
+    setStatusValues({});
+  };
+
+  // Get entry for a sector/machine
+  const getEntry = (sectorId: number, machineId: number | null) => {
+    if (!entries) return null;
+    return entries.find(e =>
+      e.sectorId === sectorId &&
+      (machineId ? e.machineId === machineId : e.machineId === null)
+    ) || null;
   };
 
   // Get entry value for a sector/machine
   const getEntryValue = (sectorId: number, machineId: number | null): number => {
-    if (!entries) return 0;
-    const entry = entries.find(e =>
-      e.sectorId === sectorId &&
-      (machineId ? e.machineId === machineId : e.machineId === null)
-    );
+    const entry = getEntry(sectorId, machineId);
     return entry ? Number(entry.quantidade) : 0;
+  };
+
+  // Get entry status for a sector/machine
+  const getEntryStatus = (sectorId: number, machineId: number | null): string => {
+    const entry = getEntry(sectorId, machineId);
+    return entry?.status || "producao_normal";
   };
 
   // Get sector total for a day
@@ -159,13 +203,14 @@ export default function Production() {
     return s ? Number(s.total) : 0;
   };
 
-  // Handle save
+  // Handle save - now accepts zero values
   const handleSave = (sectorId: number, machineId: number | null, unidade: string) => {
     const key = `${sectorId}-${machineId || "null"}`;
     const val = editValues[key];
-    if (val === undefined || val === "") return;
+    const status = statusValues[key];
 
-    const quantidade = parseFloat(val.replace(",", "."));
+    // Allow saving even if val is "0" or empty (defaults to 0)
+    const quantidade = val !== undefined && val !== "" ? parseFloat(val.replace(",", ".")) : 0;
     if (isNaN(quantidade) || quantidade < 0) {
       toast.error("Valor inválido");
       return;
@@ -177,6 +222,7 @@ export default function Production() {
       machineId,
       data: selectedDate,
       quantidade,
+      status: status || getEntryStatus(sectorId, machineId),
     });
   };
 
@@ -184,13 +230,35 @@ export default function Production() {
   const getEditValue = (sectorId: number, machineId: number | null): string => {
     const key = `${sectorId}-${machineId || "null"}`;
     if (editValues[key] !== undefined) return editValues[key];
-    const val = getEntryValue(sectorId, machineId);
-    return val > 0 ? String(val) : "";
+    const entry = getEntry(sectorId, machineId);
+    if (entry) return String(Number(entry.quantidade));
+    return "";
   };
 
   const setEditValue = (sectorId: number, machineId: number | null, value: string) => {
     const key = `${sectorId}-${machineId || "null"}`;
     setEditValues(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Get/set status value
+  const getStatusValue = (sectorId: number, machineId: number | null): string => {
+    const key = `${sectorId}-${machineId || "null"}`;
+    if (statusValues[key] !== undefined) return statusValues[key];
+    return getEntryStatus(sectorId, machineId);
+  };
+
+  const setStatusValue = (sectorId: number, machineId: number | null, value: string) => {
+    const key = `${sectorId}-${machineId || "null"}`;
+    setStatusValues(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Check if a value has been modified (for enabling save button)
+  const hasChanges = (sectorId: number, machineId: number | null): boolean => {
+    const key = `${sectorId}-${machineId || "null"}`;
+    const editVal = editValues[key];
+    const statusVal = statusValues[key];
+    // Has changes if either value or status was explicitly set
+    return editVal !== undefined || statusVal !== undefined;
   };
 
   // Get day of week name
@@ -200,6 +268,9 @@ export default function Production() {
   }, [selectedDate]);
 
   const isToday = selectedDate === getTodayBR();
+
+  // Check if sector is Multilamina (ordem === 1)
+  const isMultilamina = (sectorOrdem: number) => sectorOrdem === 1;
 
   if (loadingSectors) {
     return (
@@ -269,7 +340,7 @@ export default function Production() {
             <input
               type="date"
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={(e) => { setSelectedDate(e.target.value); setEditValues({}); setStatusValues({}); }}
               className="text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
             <span className="text-sm text-slate-500 font-medium">
@@ -288,7 +359,7 @@ export default function Production() {
             <ArrowRight className="w-4 h-4 text-slate-600" />
           </button>
           <button
-            onClick={() => setSelectedDate(getTodayBR())}
+            onClick={() => { setSelectedDate(getTodayBR()); setEditValues({}); setStatusValues({}); }}
             className="ml-auto text-xs text-teal-600 hover:text-teal-700 font-medium px-2 py-1 rounded hover:bg-teal-50 transition-colors"
           >
             Ir para Hoje
@@ -337,6 +408,7 @@ export default function Production() {
                 const Icon = getSectorIcon(sector.ordem);
                 const hasMachines = sector.machines && sector.machines.length > 0;
                 const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
+                const isMulti = isMultilamina(sector.ordem);
 
                 return (
                   <div
@@ -344,9 +416,12 @@ export default function Production() {
                     className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
                   >
                     {/* Sector header */}
-                    <button
+                    <div
                       onClick={() => toggleSector(sector.id)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleSector(sector.id); }}
                     >
                       <div
                         className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
@@ -362,6 +437,11 @@ export default function Production() {
                           {sector.isSequencial && (
                             <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold">
                               Sequencial
+                            </span>
+                          )}
+                          {isMulti && (
+                            <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-semibold">
+                              Status por máquina
                             </span>
                           )}
                         </div>
@@ -384,7 +464,7 @@ export default function Production() {
                       ) : (
                         <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
                       )}
-                    </button>
+                    </div>
 
                     {/* Expanded content */}
                     {isExpanded && (
@@ -395,7 +475,103 @@ export default function Production() {
                               const key = `${sector.id}-${machine.id}`;
                               const isSaving = savingKeys.has(key);
                               const currentVal = getEditValue(sector.id, machine.id);
+                              const currentStatus = getStatusValue(sector.id, machine.id);
+                              const statusOpt = getStatusOption(currentStatus);
+                              const machineExpanded = expandedMachines.has(key);
+                              const changed = hasChanges(sector.id, machine.id);
 
+                              if (isMulti) {
+                                // Multilamina: expandable machine with status selector
+                                return (
+                                  <div key={machine.id} className="bg-white/50">
+                                    {/* Machine header row */}
+                                    <div className="flex items-center gap-3 px-4 py-2.5">
+                                      <div
+                                        className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-50"
+                                        onClick={() => toggleMachine(sector.id, machine.id)}
+                                      >
+                                        {machineExpanded ? (
+                                          <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                                        ) : (
+                                          <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                                        )}
+                                      </div>
+                                      <span
+                                        className="text-sm text-slate-600 font-medium flex-1 min-w-0 truncate cursor-pointer"
+                                        onClick={() => toggleMachine(sector.id, machine.id)}
+                                      >
+                                        {machine.nome}
+                                      </span>
+                                      {/* Status badge */}
+                                      <div
+                                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusOpt.bgClass} ${statusOpt.textClass} ${statusOpt.borderClass}`}
+                                      >
+                                        <statusOpt.icon className="w-3 h-3" />
+                                        <span className="hidden sm:inline">{statusOpt.label}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <input
+                                          type="text"
+                                          inputMode="decimal"
+                                          value={currentVal}
+                                          onChange={(e) => setEditValue(sector.id, machine.id, e.target.value)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") handleSave(sector.id, machine.id, sector.unidadeMedida);
+                                          }}
+                                          placeholder="0"
+                                          className="w-24 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
+                                        />
+                                        <span className="text-xs text-slate-400 w-10">{sector.unidadeMedida}</span>
+                                        <button
+                                          onClick={() => handleSave(sector.id, machine.id, sector.unidadeMedida)}
+                                          disabled={isSaving || !changed}
+                                          className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                                        >
+                                          {isSaving ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                          ) : (
+                                            <Save className="w-4 h-4" />
+                                          )}
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Expanded: status selector */}
+                                    {machineExpanded && (
+                                      <div className="px-4 pb-3 pl-16">
+                                        <div className="bg-white rounded-lg border border-slate-200 p-3">
+                                          <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">
+                                            Status da Máquina
+                                          </p>
+                                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                            {MACHINE_STATUS_OPTIONS.map(opt => {
+                                              const isSelected = currentStatus === opt.value;
+                                              const OptIcon = opt.icon;
+                                              return (
+                                                <button
+                                                  key={opt.value}
+                                                  onClick={() => setStatusValue(sector.id, machine.id, opt.value)}
+                                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                                                    isSelected
+                                                      ? `${opt.bgClass} ${opt.textClass} ${opt.borderClass} ring-2 ring-offset-1`
+                                                      : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                                                  }`}
+                                                  style={isSelected ? { '--tw-ring-color': opt.color } as React.CSSProperties : {}}
+                                                >
+                                                  <OptIcon className="w-4 h-4 shrink-0" />
+                                                  <span className="truncate">{opt.label}</span>
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              }
+
+                              // Normal machine row (non-Multilamina)
                               return (
                                 <div
                                   key={machine.id}
@@ -424,7 +600,7 @@ export default function Production() {
                                     <span className="text-xs text-slate-400 w-10">{sector.unidadeMedida}</span>
                                     <button
                                       onClick={() => handleSave(sector.id, machine.id, sector.unidadeMedida)}
-                                      disabled={isSaving || !currentVal}
+                                      disabled={isSaving || !changed}
                                       className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
                                     >
                                       {isSaving ? (
@@ -462,7 +638,7 @@ export default function Production() {
                               <span className="text-xs text-slate-400 w-10">{sector.unidadeMedida}</span>
                               <button
                                 onClick={() => handleSave(sector.id, null, sector.unidadeMedida)}
-                                disabled={savingKeys.has(`${sector.id}-null`) || !getEditValue(sector.id, null)}
+                                disabled={savingKeys.has(`${sector.id}-null`) || !hasChanges(sector.id, null)}
                                 className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
                               >
                                 {savingKeys.has(`${sector.id}-null`) ? (
