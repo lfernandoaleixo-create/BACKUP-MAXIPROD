@@ -1,0 +1,1 @@
+ALTER TABLE `production_entries` ADD `tipoMadeira` varchar(100);

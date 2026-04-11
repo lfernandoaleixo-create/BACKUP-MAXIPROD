@@ -2,7 +2,7 @@ import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { productionSectors, productionMachines, productionEntries } from "../drizzle/schema";
-import { eq, and, sql, desc, gte, lte, between } from "drizzle-orm";
+import { eq, and, sql, desc, gte, lte } from "drizzle-orm";
 
 /** Status válidos para máquinas de produção */
 export const MACHINE_STATUS_OPTIONS = [
@@ -10,6 +10,13 @@ export const MACHINE_STATUS_OPTIONS = [
   { value: "falta_madeira", label: "Falta de Madeira", color: "#ef4444" },
   { value: "producao_nao_necessaria", label: "Produção Não Necessária", color: "#f59e0b" },
   { value: "manutencao", label: "Manutenção", color: "#6366f1" },
+  { value: "manutencao_pontual", label: "Manutenção Pontual", color: "#8b5cf6" },
+] as const;
+
+/** Tipos de madeira disponíveis */
+export const WOOD_TYPE_OPTIONS = [
+  { value: "benazzi", label: "Benazzi", color: "#d97706" },
+  { value: "madeira_dura", label: "Madeira Dura", color: "#059669" },
 ] as const;
 
 export const productionRouter = router({
@@ -34,8 +41,8 @@ export const productionRouter = router({
    */
   getEntries: publicProcedure
     .input(z.object({
-      data: z.string().optional(), // YYYY-MM-DD, default = hoje
-      sectorId: z.number().optional(), // filtrar por setor
+      data: z.string().optional(),
+      sectorId: z.number().optional(),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -59,15 +66,16 @@ export const productionRouter = router({
 
   /**
    * Lançar ou atualizar produção de uma máquina/setor em um dia
-   * Agora aceita quantidade zero e campo status
+   * Aceita quantidade zero, campo status, tipoMadeira e observações
    */
   upsertEntry: publicProcedure
     .input(z.object({
       sectorId: z.number(),
       machineId: z.number().nullable(),
-      data: z.string(), // YYYY-MM-DD
-      quantidade: z.number().min(0), // Aceita zero
+      data: z.string(),
+      quantidade: z.number().min(0),
       status: z.string().optional().default("producao_normal"),
+      tipoMadeira: z.string().optional(), // "benazzi", "madeira_dura", "benazzi,madeira_dura"
       observacoes: z.string().optional(),
       lancadoPor: z.string().optional(),
     }))
@@ -93,25 +101,25 @@ export const productionRouter = router({
         .limit(1);
 
       if (existing.length > 0) {
-        // Update
         await db
           .update(productionEntries)
           .set({
             quantidade: String(input.quantidade),
             status: input.status || "producao_normal",
+            tipoMadeira: input.tipoMadeira || null,
             observacoes: input.observacoes || null,
             lancadoPor: input.lancadoPor || null,
           })
           .where(eq(productionEntries.id, existing[0].id));
         return { id: existing[0].id, action: "updated" };
       } else {
-        // Insert
         const result = await db.insert(productionEntries).values({
           sectorId: input.sectorId,
           machineId: input.machineId,
           data: input.data,
           quantidade: String(input.quantidade),
           status: input.status || "producao_normal",
+          tipoMadeira: input.tipoMadeira || null,
           observacoes: input.observacoes || null,
           lancadoPor: input.lancadoPor || null,
         });
@@ -133,12 +141,12 @@ export const productionRouter = router({
     }),
 
   /**
-   * Histórico de produção por período (para relatórios/gráficos)
+   * Histórico de produção por período
    */
   getHistory: publicProcedure
     .input(z.object({
-      dataInicio: z.string(), // YYYY-MM-DD
-      dataFim: z.string(), // YYYY-MM-DD
+      dataInicio: z.string(),
+      dataFim: z.string(),
       sectorId: z.number().optional(),
     }))
     .query(async ({ input }) => {
@@ -167,7 +175,7 @@ export const productionRouter = router({
    */
   getDailySummary: publicProcedure
     .input(z.object({
-      data: z.string().optional(), // YYYY-MM-DD, default = hoje
+      data: z.string().optional(),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -193,8 +201,8 @@ export const productionRouter = router({
    */
   getWeeklySummary: publicProcedure
     .input(z.object({
-      dataInicio: z.string(), // YYYY-MM-DD (segunda)
-      dataFim: z.string(), // YYYY-MM-DD (domingo)
+      dataInicio: z.string(),
+      dataFim: z.string(),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -219,9 +227,9 @@ export const productionRouter = router({
     }),
 
   /**
-   * Retornar opções de status disponíveis para o frontend
+   * Retornar opções de status e tipo de madeira
    */
   getStatusOptions: publicProcedure.query(() => {
-    return MACHINE_STATUS_OPTIONS;
+    return { statusOptions: MACHINE_STATUS_OPTIONS, woodTypeOptions: WOOD_TYPE_OPTIONS };
   }),
 });

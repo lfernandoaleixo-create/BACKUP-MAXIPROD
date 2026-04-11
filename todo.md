@@ -2007,3 +2007,14 @@
 - [x] Card Multilamina: expandir cada máquina individualmente com seletor de status
 - [x] Atualizar backend (router) para aceitar status e valor zero
 - [x] Atualizar frontend Production.tsx com as novas funcionalidades
+
+## Melhorias Produção - Manutenção Pontual, Comentários e Tipo de Madeira
+- [x] Multilamina: adicionar "Manutenção Pontual" como nova opção de status
+- [x] Todos os setores: caixa de comentários/observações ao expandir cada máquina
+- [x] Novo seletor de Tipo de Madeira (Benazzi / Madeira Dura) no Multilamina e Vareteira
+- [x] Permitir selecionar ambos tipos de madeira no mesmo dia (troca durante expediente)
+- [x] Atualizar schema com campo tipoMadeira na production_entries
+- [x] Atualizar backend para aceitar tipoMadeira e manutenção pontual
+- [x] Atualizar frontend com todas as novas funcionalidades
+- [x] Aplicar mesma implantação (status + tipo madeira) na Vareteira por máquina
+- [x] Testes automatizados atualizados (31 testes passando)

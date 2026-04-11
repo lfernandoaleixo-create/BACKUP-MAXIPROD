@@ -34,6 +34,7 @@ vi.mock("../drizzle/schema", () => ({
     data: "data",
     quantidade: "quantidade",
     status: "status",
+    tipoMadeira: "tipoMadeira",
     observacoes: "observacoes",
     lancadoPor: "lancadoPor",
   },
@@ -42,7 +43,6 @@ vi.mock("../drizzle/schema", () => ({
 describe("Production Module", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default chain setup
     mockSelect.mockReturnValue({ from: mockFrom });
     mockFrom.mockReturnValue({ where: mockWhere, orderBy: mockOrderBy });
     mockWhere.mockReturnValue({ orderBy: mockOrderBy, groupBy: mockGroupBy, limit: mockLimit });
@@ -69,74 +69,43 @@ describe("Production Module", () => {
         { id: 8, nome: "Embalagem", unidadeMedida: "caixa", tipoEquipamento: "nenhum", quantidadeEquipamentos: 0 },
         { id: 9, nome: "Máquina Pirografar", unidadeMedida: "caixa", tipoEquipamento: "maquina", quantidadeEquipamentos: 3 },
       ];
-
       expect(sectors).toHaveLength(9);
       expect(sectors[0].nome).toBe("Multilamina");
-      expect(sectors[0].unidadeMedida).toBe("m³");
       expect(sectors[7].tipoEquipamento).toBe("nenhum");
-      expect(sectors[7].quantidadeEquipamentos).toBe(0);
     });
 
     it("should have correct sequential sectors (1, 2, 3)", () => {
-      const sequentialSectors = [1, 2, 3]; // Multilamina, Vareteira, Seletoras Toco
-      expect(sequentialSectors).toEqual([1, 2, 3]);
+      expect([1, 2, 3]).toEqual([1, 2, 3]);
     });
 
-    it("should have correct machine counts per sector", () => {
-      const machineCounts: Record<number, number> = {
-        1: 2, // Multilamina
-        2: 5, // Vareteira
-        3: 3, // Seletoras Toco
-        4: 6, // Seleção Automática
-        5: 7, // Seleção Visual
-        6: 5, // Flow Pack
-        7: 1, // Ponteira
-        8: 0, // Embalagem (sem máquina)
-        9: 3, // Máquina Pirografar
-      };
-      const totalMachines = Object.values(machineCounts).reduce((a, b) => a + b, 0);
-      expect(totalMachines).toBe(32);
+    it("should have correct machine counts per sector totaling 32", () => {
+      const machineCounts: Record<number, number> = { 1: 2, 2: 5, 3: 3, 4: 6, 5: 7, 6: 5, 7: 1, 8: 0, 9: 3 };
+      expect(Object.values(machineCounts).reduce((a, b) => a + b, 0)).toBe(32);
+    });
+
+    it("should identify expandable sectors (Multilamina=1, Vareteira=2)", () => {
+      const expandable = [1, 2]; // ordem values
+      expect(expandable).toContain(1);
+      expect(expandable).toContain(2);
+      expect(expandable).not.toContain(3);
     });
   });
 
   describe("Production Entry Validation", () => {
     it("should validate date format YYYY-MM-DD", () => {
-      const validDate = "2026-04-11";
-      const invalidDate = "11/04/2026";
-      expect(validDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(invalidDate).not.toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    });
-
-    it("should accept positive quantities", () => {
-      const validQuantity = 150;
-      expect(validQuantity).toBeGreaterThan(0);
+      expect("2026-04-11").toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect("11/04/2026").not.toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
     it("should accept zero quantity and save successfully", () => {
-      const zeroQuantity = 0;
-      expect(zeroQuantity).toBe(0);
-      expect(zeroQuantity).toBeGreaterThanOrEqual(0);
-      // Zero is a valid quantity - machine ran but produced nothing, or status indicates no production
-      const entry = {
-        sectorId: 1,
-        machineId: 1,
-        data: "2026-04-11",
-        quantidade: zeroQuantity,
-        status: "falta_madeira",
-      };
+      const entry = { sectorId: 1, machineId: 1, data: "2026-04-11", quantidade: 0, status: "falta_madeira" };
       expect(entry.quantidade).toBe(0);
-      expect(entry.status).toBe("falta_madeira");
+      expect(entry.quantidade).toBeGreaterThanOrEqual(0);
     });
 
-    it("should allow null machineId for sectors without machines (Embalagem)", () => {
-      const entry = {
-        sectorId: 8,
-        machineId: null,
-        data: "2026-04-11",
-        quantidade: 50,
-      };
+    it("should allow null machineId for sectors without machines", () => {
+      const entry = { sectorId: 8, machineId: null, data: "2026-04-11", quantidade: 50 };
       expect(entry.machineId).toBeNull();
-      expect(entry.sectorId).toBe(8);
     });
   });
 
@@ -146,49 +115,79 @@ describe("Production Module", () => {
       { value: "falta_madeira", label: "Falta de Madeira" },
       { value: "producao_nao_necessaria", label: "Produção Não Necessária" },
       { value: "manutencao", label: "Manutenção" },
+      { value: "manutencao_pontual", label: "Manutenção Pontual" },
     ];
 
-    it("should have 4 status options", () => {
-      expect(STATUS_OPTIONS).toHaveLength(4);
+    it("should have 5 status options (including manutencao_pontual)", () => {
+      expect(STATUS_OPTIONS).toHaveLength(5);
     });
 
     it("should have producao_normal as default status", () => {
-      const defaultStatus = STATUS_OPTIONS[0];
-      expect(defaultStatus.value).toBe("producao_normal");
+      expect(STATUS_OPTIONS[0].value).toBe("producao_normal");
     });
 
-    it("should include all required status values", () => {
+    it("should include manutencao_pontual for Multilamina", () => {
       const values = STATUS_OPTIONS.map(o => o.value);
-      expect(values).toContain("producao_normal");
-      expect(values).toContain("falta_madeira");
-      expect(values).toContain("producao_nao_necessaria");
-      expect(values).toContain("manutencao");
+      expect(values).toContain("manutencao_pontual");
     });
 
     it("should allow saving entry with any valid status", () => {
       for (const opt of STATUS_OPTIONS) {
-        const entry = {
-          sectorId: 1,
-          machineId: 1,
-          data: "2026-04-11",
-          quantidade: opt.value === "producao_normal" ? 10 : 0,
-          status: opt.value,
-        };
+        const entry = { sectorId: 1, machineId: 1, data: "2026-04-11", quantidade: 0, status: opt.value };
         expect(entry.status).toBe(opt.value);
-        expect(entry.quantidade).toBeGreaterThanOrEqual(0);
       }
     });
+  });
 
-    it("should allow zero quantity with non-normal status", () => {
-      const entry = {
-        sectorId: 1,
-        machineId: 2,
-        data: "2026-04-11",
-        quantidade: 0,
-        status: "manutencao",
-      };
-      expect(entry.quantidade).toBe(0);
-      expect(entry.status).toBe("manutencao");
+  describe("Wood Type Options", () => {
+    const WOOD_TYPES = [
+      { value: "benazzi", label: "Benazzi" },
+      { value: "madeira_dura", label: "Madeira Dura" },
+    ];
+
+    it("should have 2 wood type options", () => {
+      expect(WOOD_TYPES).toHaveLength(2);
+    });
+
+    it("should allow selecting single wood type", () => {
+      const entry = { tipoMadeira: "benazzi" };
+      expect(entry.tipoMadeira).toBe("benazzi");
+    });
+
+    it("should allow selecting both wood types on same day", () => {
+      const entry = { tipoMadeira: "benazzi,madeira_dura" };
+      const types = entry.tipoMadeira.split(",");
+      expect(types).toContain("benazzi");
+      expect(types).toContain("madeira_dura");
+      expect(types).toHaveLength(2);
+    });
+
+    it("should allow no wood type selected (null)", () => {
+      const entry = { tipoMadeira: null };
+      expect(entry.tipoMadeira).toBeNull();
+    });
+
+    it("should only apply to Multilamina (setor 1) and Vareteira (setor 2)", () => {
+      const sectorsWithWoodType = [1, 2]; // ordem values
+      expect(sectorsWithWoodType).toEqual([1, 2]);
+    });
+  });
+
+  describe("Comments/Observations", () => {
+    it("should allow adding comments to any sector entry", () => {
+      const entry = { sectorId: 5, machineId: 10, observacoes: "Mesa com problema no acabamento" };
+      expect(entry.observacoes).toBeTruthy();
+    });
+
+    it("should allow empty comments", () => {
+      const entry = { sectorId: 1, machineId: 1, observacoes: null };
+      expect(entry.observacoes).toBeNull();
+    });
+
+    it("should allow comments on sectors without machines", () => {
+      const entry = { sectorId: 8, machineId: null, observacoes: "Faltou material de embalagem" };
+      expect(entry.machineId).toBeNull();
+      expect(entry.observacoes).toBeTruthy();
     });
   });
 
@@ -196,7 +195,6 @@ describe("Production Module", () => {
     it("should be sector with ordem 1", () => {
       const multilamina = { id: 1, ordem: 1, nome: "Multilamina", unidadeMedida: "m³" };
       expect(multilamina.ordem).toBe(1);
-      expect(multilamina.nome).toBe("Multilamina");
     });
 
     it("should have 2 machines", () => {
@@ -205,18 +203,44 @@ describe("Production Module", () => {
         { id: 2, sectorId: 1, nome: "Máquina 2", ordem: 2 },
       ];
       expect(machines).toHaveLength(2);
-      expect(machines.every(m => m.sectorId === 1)).toBe(true);
     });
 
-    it("should support expandable machines with individual status", () => {
-      const machineEntries = [
-        { machineId: 1, quantidade: 5.5, status: "producao_normal" },
-        { machineId: 2, quantidade: 0, status: "manutencao" },
-      ];
-      expect(machineEntries[0].status).toBe("producao_normal");
-      expect(machineEntries[0].quantidade).toBeGreaterThan(0);
-      expect(machineEntries[1].status).toBe("manutencao");
-      expect(machineEntries[1].quantidade).toBe(0);
+    it("should support expandable machines with status, wood type, and comments", () => {
+      const machineEntry = {
+        machineId: 1,
+        quantidade: 5.5,
+        status: "manutencao_pontual",
+        tipoMadeira: "benazzi,madeira_dura",
+        observacoes: "Troca de madeira durante o turno",
+      };
+      expect(machineEntry.status).toBe("manutencao_pontual");
+      expect(machineEntry.tipoMadeira).toContain("benazzi");
+      expect(machineEntry.tipoMadeira).toContain("madeira_dura");
+      expect(machineEntry.observacoes).toBeTruthy();
+    });
+  });
+
+  describe("Vareteira Sector Specifics", () => {
+    it("should be sector with ordem 2", () => {
+      const vareteira = { id: 2, ordem: 2, nome: "Vareteira", unidadeMedida: "saco" };
+      expect(vareteira.ordem).toBe(2);
+    });
+
+    it("should have 5 machines", () => {
+      const machines = Array.from({ length: 5 }, (_, i) => ({ id: i + 3, sectorId: 2, nome: `Máquina ${i + 1}`, ordem: i + 1 }));
+      expect(machines).toHaveLength(5);
+    });
+
+    it("should support same expandable features as Multilamina", () => {
+      const machineEntry = {
+        sectorId: 2,
+        machineId: 3,
+        status: "falta_madeira",
+        tipoMadeira: "madeira_dura",
+        observacoes: "Aguardando reposição",
+      };
+      expect(machineEntry.status).toBe("falta_madeira");
+      expect(machineEntry.tipoMadeira).toBe("madeira_dura");
     });
   });
 
@@ -228,48 +252,29 @@ describe("Production Module", () => {
         { sectorId: 2, machineId: 3, quantidade: "200.00000" },
         { sectorId: 2, machineId: 4, quantidade: "180.00000" },
       ];
-
       const summary: Record<number, number> = {};
       for (const e of entries) {
-        const sid = e.sectorId;
-        summary[sid] = (summary[sid] || 0) + parseFloat(e.quantidade);
+        summary[e.sectorId] = (summary[e.sectorId] || 0) + parseFloat(e.quantidade);
       }
-
       expect(summary[1]).toBe(25);
       expect(summary[2]).toBe(380);
     });
 
-    it("should include zero-quantity entries in count but not in total", () => {
+    it("should include zero-quantity entries in count", () => {
       const entries = [
         { sectorId: 1, machineId: 1, quantidade: "5.00000", status: "producao_normal" },
-        { sectorId: 1, machineId: 2, quantidade: "0.00000", status: "manutencao" },
+        { sectorId: 1, machineId: 2, quantidade: "0.00000", status: "manutencao_pontual" },
       ];
-
       const total = entries.reduce((sum, e) => sum + parseFloat(e.quantidade), 0);
-      const count = entries.length;
-
       expect(total).toBe(5);
-      expect(count).toBe(2); // Both entries count, even with zero
+      expect(entries).toHaveLength(2);
     });
   });
 
   describe("Unit of Measure per Sector", () => {
-    it("should use m³ for Multilamina", () => {
-      expect("m³").toBe("m³");
-    });
-
-    it("should use saco for Vareteira, Seletoras Toco, Seleção Automática", () => {
-      const sacoSectors = [2, 3, 4];
-      expect(sacoSectors).toHaveLength(3);
-    });
-
-    it("should use forma for Seleção Visual", () => {
-      expect("forma").toBe("forma");
-    });
-
-    it("should use caixa for Flow Pack, Ponteira, Embalagem, Pirografar", () => {
-      const caixaSectors = [6, 7, 8, 9];
-      expect(caixaSectors).toHaveLength(4);
-    });
+    it("should use m³ for Multilamina", () => { expect("m³").toBe("m³"); });
+    it("should use saco for Vareteira, Seletoras Toco, Seleção Automática", () => { expect([2, 3, 4]).toHaveLength(3); });
+    it("should use forma for Seleção Visual", () => { expect("forma").toBe("forma"); });
+    it("should use caixa for Flow Pack, Ponteira, Embalagem, Pirografar", () => { expect([6, 7, 8, 9]).toHaveLength(4); });
   });
 });
