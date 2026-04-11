@@ -2071,3 +2071,8 @@
 ## Correção badges: restaurar badges de máquina, remover badges da tela inicial
 - [x] Restaurar badges de status e quantidades por variante no header de cada máquina (ExpandableMachineRow)
 - [x] Remover badges "Sequencial", "Tipo de Madeira", "Medida Madeira" dos cards de resumo na tela inicial
+
+## Dinâmica expandível nos setores 6, 7 e 9
+- [x] Flow Pack (setor 6): tornar expandível com status multi-select, comentários e produção por máquina
+- [x] Ponteira (setor 7): tornar expandível com status multi-select, comentários e produção por máquina
+- [x] Pirografar (setor 9): tornar expandível com status multi-select, comentários e produção por máquina
