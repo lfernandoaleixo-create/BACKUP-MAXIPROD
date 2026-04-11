@@ -2018,3 +2018,12 @@
 - [x] Atualizar frontend com todas as novas funcionalidades
 - [x] Aplicar mesma implantação (status + tipo madeira) na Vareteira por máquina
 - [x] Testes automatizados atualizados (31 testes passando)
+
+## Melhorias Produção - Medida de Madeira na Vareteira + Produção por tipo/medida
+- [x] Vareteira: trocar "Tipo de Madeira" por "Medida de Madeira" (150mm, 180mm, 200mm, 218mm, 250mm, 300mm, 350mm)
+- [x] Quando múltiplos tipos/medidas selecionados: registrar produção separada por tipo/medida por máquina
+- [x] Multilamina: manter tipo de madeira (Benazzi/Madeira Dura) mas com produção separada por tipo
+- [x] Atualizar schema para suportar campo tipoMadeira como chave de registro (1 entry por máquina/dia/tipo)
+- [x] Atualizar backend (upsert por sectorId+machineId+data+tipoMadeira)
+- [x] Atualizar frontend com inputs separados por tipo/medida selecionado
+- [x] Testes atualizados (34 testes passando)

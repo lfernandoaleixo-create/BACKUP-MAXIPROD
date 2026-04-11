@@ -1,7 +1,8 @@
 /**
  * Produção - Controle de produção industrial
  * 9 setores com lançamento diário por máquina/mesa
- * Multilamina e Vareteira: status expandível + tipo de madeira por máquina
+ * Multilamina (setor 1): status + tipo de madeira (Benazzi/Madeira Dura) com produção por tipo
+ * Vareteira (setor 2): status + medida de madeira (150-350mm) com produção por medida
  * Todos os setores: caixa de comentários opcional
  */
 
@@ -10,32 +11,10 @@ import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
-  Factory,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Save,
-  Calendar,
-  BarChart3,
-  ArrowLeft,
-  ArrowRight,
-  Loader2,
-  Cog,
-  Eye,
-  Package,
-  Box,
-  Zap,
-  Scissors,
-  Layers,
-  Printer,
-  History,
-  AlertTriangle,
-  Wrench,
-  Ban,
-  CheckCircle2,
-  Clock,
-  MessageSquare,
-  TreePine,
+  Factory, ChevronDown, ChevronRight, ChevronUp, Save, Calendar, BarChart3,
+  ArrowLeft, ArrowRight, Loader2, Cog, Eye, Package, Box, Zap, Scissors,
+  Layers, Printer, History, AlertTriangle, Wrench, Ban, CheckCircle2, Clock,
+  MessageSquare, TreePine, Ruler,
 } from "lucide-react";
 
 // ─── Status options ───
@@ -47,10 +26,21 @@ const MACHINE_STATUS_OPTIONS = [
   { value: "manutencao_pontual", label: "Manutenção Pontual", color: "#8b5cf6", icon: Clock, bgClass: "bg-violet-50", textClass: "text-violet-700", borderClass: "border-violet-200" },
 ];
 
-// ─── Wood type options ───
+// ─── Wood type options (Multilamina) ───
 const WOOD_TYPE_OPTIONS = [
   { value: "benazzi", label: "Benazzi", color: "#d97706", bgClass: "bg-amber-50", textClass: "text-amber-800", borderClass: "border-amber-300" },
   { value: "madeira_dura", label: "Madeira Dura", color: "#059669", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
+];
+
+// ─── Wood measure options (Vareteira) ───
+const WOOD_MEASURE_OPTIONS = [
+  { value: "150mm", label: "150mm", color: "#0ea5e9", bgClass: "bg-sky-50", textClass: "text-sky-800", borderClass: "border-sky-300" },
+  { value: "180mm", label: "180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
+  { value: "200mm", label: "200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
+  { value: "218mm", label: "218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
+  { value: "250mm", label: "250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+  { value: "300mm", label: "300mm", color: "#84cc16", bgClass: "bg-lime-50", textClass: "text-lime-800", borderClass: "border-lime-300" },
+  { value: "350mm", label: "350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
 ];
 
 function getStatusOption(value: string) {
@@ -85,34 +75,49 @@ function getWeekRange(dateStr: string): { start: string; end: string } {
 
 function getSectorIcon(ordem: number) {
   switch (ordem) {
-    case 1: return Layers;
-    case 2: return Cog;
-    case 3: return Eye;
-    case 4: return Zap;
-    case 5: return Eye;
-    case 6: return Package;
-    case 7: return Scissors;
-    case 8: return Box;
-    case 9: return Printer;
+    case 1: return Layers; case 2: return Cog; case 3: return Eye;
+    case 4: return Zap; case 5: return Eye; case 6: return Package;
+    case 7: return Scissors; case 8: return Box; case 9: return Printer;
     default: return Factory;
   }
 }
 
 const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-// Check if sector has expandable features (status + wood type)
-function hasExpandableFeatures(sectorOrdem: number) {
-  return sectorOrdem === 1 || sectorOrdem === 2; // Multilamina e Vareteira
+// Sector 1 = Multilamina (tipo de madeira), Sector 2 = Vareteira (medida de madeira)
+function isMultilamina(ordem: number) { return ordem === 1; }
+function isVareteira(ordem: number) { return ordem === 2; }
+function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2; }
+
+// Get the variant options for a sector
+function getVariantOptions(sectorOrdem: number) {
+  if (isMultilamina(sectorOrdem)) return WOOD_TYPE_OPTIONS;
+  if (isVareteira(sectorOrdem)) return WOOD_MEASURE_OPTIONS;
+  return [];
+}
+
+function getVariantLabel(sectorOrdem: number) {
+  if (isMultilamina(sectorOrdem)) return "Tipo de Madeira";
+  if (isVareteira(sectorOrdem)) return "Medida de Madeira";
+  return "";
+}
+
+function getVariantIcon(sectorOrdem: number) {
+  if (isMultilamina(sectorOrdem)) return TreePine;
+  return Ruler;
 }
 
 export default function Production() {
   const [selectedDate, setSelectedDate] = useState(getTodayBR);
   const [expandedSectors, setExpandedSectors] = useState<Set<number>>(new Set());
   const [expandedMachines, setExpandedMachines] = useState<Set<string>>(new Set());
-  const [commentOpen, setCommentOpen] = useState<Set<string>>(new Set()); // keys for open comment boxes
+  const [commentOpen, setCommentOpen] = useState<Set<string>>(new Set());
+  // For non-expandable sectors: simple value per machine
   const [editValues, setEditValues] = useState<Record<string, string>>({});
+  // For expandable sectors: value per machine per variant (key: "sectorId-machineId-variant")
+  const [variantEditValues, setVariantEditValues] = useState<Record<string, string>>({});
   const [statusValues, setStatusValues] = useState<Record<string, string>>({});
-  const [woodTypeValues, setWoodTypeValues] = useState<Record<string, Set<string>>>({});
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, Set<string>>>({});
   const [commentValues, setCommentValues] = useState<Record<string, string>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"lancamento" | "historico">("lancamento");
@@ -125,55 +130,57 @@ export default function Production() {
 
   const weekRange = useMemo(() => getWeekRange(selectedDate), [selectedDate]);
   const { data: weeklySummary } = trpc.production.getWeeklySummary.useQuery({
-    dataInicio: weekRange.start,
-    dataFim: weekRange.end,
+    dataInicio: weekRange.start, dataFim: weekRange.end,
   }, { enabled: viewMode === "historico" });
 
+  // Single entry upsert (for non-expandable sectors)
   const upsertEntry = trpc.production.upsertEntry.useMutation({
-    onSuccess: (_result, variables) => {
-      const key = `${variables.sectorId}-${variables.machineId || "null"}`;
+    onSuccess: (_r, v) => {
+      const key = `${v.sectorId}-${v.machineId || "null"}`;
       setSavingKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
       utils.production.getEntries.invalidate({ data: selectedDate });
       utils.production.getDailySummary.invalidate({ data: selectedDate });
       utils.production.getWeeklySummary.invalidate();
       toast.success("Produção salva!");
     },
-    onError: (err, variables) => {
-      const key = `${variables.sectorId}-${variables.machineId || "null"}`;
+    onError: (err, v) => {
+      const key = `${v.sectorId}-${v.machineId || "null"}`;
       setSavingKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
       toast.error("Erro ao salvar: " + err.message);
     },
   });
 
-  const toggleSector = (id: number) => {
-    setExpandedSectors(prev => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
-      return n;
-    });
-  };
+  // Batch upsert (for expandable sectors with multiple variants)
+  const batchUpsert = trpc.production.batchUpsertEntries.useMutation({
+    onSuccess: (_r) => {
+      setSavingKeys(new Set());
+      utils.production.getEntries.invalidate({ data: selectedDate });
+      utils.production.getDailySummary.invalidate({ data: selectedDate });
+      utils.production.getWeeklySummary.invalidate();
+      toast.success("Produção salva!");
+    },
+    onError: (err) => {
+      setSavingKeys(new Set());
+      toast.error("Erro ao salvar: " + err.message);
+    },
+  });
 
+  const toggleSector = (id: number) => {
+    setExpandedSectors(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  };
   const toggleMachine = (sectorId: number, machineId: number) => {
     const key = `${sectorId}-${machineId}`;
-    setExpandedMachines(prev => {
-      const n = new Set(prev);
-      if (n.has(key)) n.delete(key); else n.add(key);
-      return n;
-    });
+    setExpandedMachines(prev => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
   };
-
   const toggleComment = (key: string) => {
-    setCommentOpen(prev => {
-      const n = new Set(prev);
-      if (n.has(key)) n.delete(key); else n.add(key);
-      return n;
-    });
+    setCommentOpen(prev => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
   };
 
   const resetEditState = () => {
     setEditValues({});
+    setVariantEditValues({});
     setStatusValues({});
-    setWoodTypeValues({});
+    setSelectedVariants({});
     setCommentValues({});
   };
 
@@ -185,28 +192,52 @@ export default function Production() {
   };
 
   // ─── Entry helpers ───
-  const getEntry = (sectorId: number, machineId: number | null) => {
+  // Get all entries for a machine (may be multiple if different tipoMadeira)
+  const getEntriesForMachine = (sectorId: number, machineId: number | null) => {
+    if (!entries) return [];
+    return entries.filter(e =>
+      e.sectorId === sectorId &&
+      (machineId ? e.machineId === machineId : e.machineId === null)
+    );
+  };
+
+  // Get entry for a specific machine + variant
+  const getEntryForVariant = (sectorId: number, machineId: number | null, variant: string | null) => {
     if (!entries) return null;
     return entries.find(e =>
       e.sectorId === sectorId &&
-      (machineId ? e.machineId === machineId : e.machineId === null)
+      (machineId ? e.machineId === machineId : e.machineId === null) &&
+      (variant ? e.tipoMadeira === variant : !e.tipoMadeira)
     ) || null;
   };
 
-  const getEntryStatus = (sectorId: number, machineId: number | null): string => {
-    const entry = getEntry(sectorId, machineId);
-    return entry?.status || "producao_normal";
+  // Get total for a machine across all variants
+  const getMachineTotal = (sectorId: number, machineId: number | null): number => {
+    const machineEntries = getEntriesForMachine(sectorId, machineId);
+    return machineEntries.reduce((sum, e) => sum + Number(e.quantidade), 0);
   };
 
-  const getEntryWoodTypes = (sectorId: number, machineId: number | null): Set<string> => {
-    const entry = getEntry(sectorId, machineId);
-    if (!entry?.tipoMadeira) return new Set();
-    return new Set(entry.tipoMadeira.split(",").filter(Boolean));
+  // Get status from first entry of machine (status is per machine, not per variant)
+  const getEntryStatus = (sectorId: number, machineId: number | null): string => {
+    const machineEntries = getEntriesForMachine(sectorId, machineId);
+    if (machineEntries.length > 0) return machineEntries[0].status || "producao_normal";
+    return "producao_normal";
+  };
+
+  // Get selected variants from existing entries
+  const getExistingVariants = (sectorId: number, machineId: number | null): Set<string> => {
+    const machineEntries = getEntriesForMachine(sectorId, machineId);
+    const variants = new Set<string>();
+    for (const e of machineEntries) {
+      if (e.tipoMadeira) variants.add(e.tipoMadeira);
+    }
+    return variants;
   };
 
   const getEntryComment = (sectorId: number, machineId: number | null): string => {
-    const entry = getEntry(sectorId, machineId);
-    return entry?.observacoes || "";
+    const machineEntries = getEntriesForMachine(sectorId, machineId);
+    if (machineEntries.length > 0) return machineEntries[0].observacoes || "";
+    return "";
   };
 
   const getSectorTotal = (sectorId: number): number => {
@@ -215,56 +246,94 @@ export default function Production() {
     return s ? Number(s.total) : 0;
   };
 
-  // ─── Save handler ───
-  const handleSave = (sectorId: number, machineId: number | null, _unidade: string) => {
+  // ─── Save handlers ───
+  // Simple save for non-expandable sectors
+  const handleSimpleSave = (sectorId: number, machineId: number | null) => {
     const key = `${sectorId}-${machineId || "null"}`;
     const val = editValues[key];
-    const status = statusValues[key];
-    const woodTypes = woodTypeValues[key];
     const comment = commentValues[key];
 
     const quantidade = val !== undefined && val !== "" ? parseFloat(val.replace(",", ".")) : 0;
-    if (isNaN(quantidade) || quantidade < 0) {
-      toast.error("Valor inválido");
-      return;
-    }
-
-    // Build tipoMadeira string from set
-    let tipoMadeira: string | undefined;
-    if (woodTypes && woodTypes.size > 0) {
-      tipoMadeira = Array.from(woodTypes).sort().join(",");
-    } else {
-      // Use existing value if not changed
-      const existingWood = getEntryWoodTypes(sectorId, machineId);
-      if (existingWood.size > 0) {
-        tipoMadeira = Array.from(existingWood).sort().join(",");
-      }
-    }
+    if (isNaN(quantidade) || quantidade < 0) { toast.error("Valor inválido"); return; }
 
     setSavingKeys(prev => new Set(prev).add(key));
     upsertEntry.mutate({
-      sectorId,
-      machineId,
-      data: selectedDate,
-      quantidade,
-      status: status || getEntryStatus(sectorId, machineId),
-      tipoMadeira,
+      sectorId, machineId, data: selectedDate, quantidade,
       observacoes: comment !== undefined ? comment : getEntryComment(sectorId, machineId),
     });
+  };
+
+  // Save for expandable sectors (with variants)
+  const handleVariantSave = (sectorId: number, machineId: number | null, sectorOrdem: number) => {
+    const machineKey = `${sectorId}-${machineId || "null"}`;
+    const status = statusValues[machineKey] || getEntryStatus(sectorId, machineId);
+    const comment = commentValues[machineKey] !== undefined ? commentValues[machineKey] : getEntryComment(sectorId, machineId);
+
+    // Get selected variants
+    const variants = selectedVariants[machineKey] || getExistingVariants(sectorId, machineId);
+
+    if (variants.size === 0) {
+      // No variants selected: save as single entry without tipoMadeira
+      const val = variantEditValues[`${machineKey}-_none`] || editValues[machineKey];
+      const quantidade = val !== undefined && val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+      if (isNaN(quantidade) || quantidade < 0) { toast.error("Valor inválido"); return; }
+
+      setSavingKeys(prev => new Set(prev).add(machineKey));
+      upsertEntry.mutate({
+        sectorId, machineId, data: selectedDate, quantidade, status, observacoes: comment,
+      });
+      return;
+    }
+
+    // Build batch entries - one per selected variant
+    const batchEntries: any[] = [];
+    for (const variant of Array.from(variants)) {
+      const varKey = `${machineKey}-${variant}`;
+      const existingEntry = getEntryForVariant(sectorId, machineId, variant);
+      const val = variantEditValues[varKey];
+      let quantidade: number;
+      if (val !== undefined && val !== "") {
+        quantidade = parseFloat(val.replace(",", "."));
+      } else if (existingEntry) {
+        quantidade = Number(existingEntry.quantidade);
+      } else {
+        quantidade = 0;
+      }
+      if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${variant}`); return; }
+
+      batchEntries.push({
+        sectorId, machineId, data: selectedDate, quantidade, status,
+        tipoMadeira: variant, observacoes: comment,
+      });
+    }
+
+    setSavingKeys(prev => new Set(prev).add(machineKey));
+    batchUpsert.mutate({ entries: batchEntries });
   };
 
   // ─── Edit value helpers ───
   const getEditValue = (sectorId: number, machineId: number | null): string => {
     const key = `${sectorId}-${machineId || "null"}`;
     if (editValues[key] !== undefined) return editValues[key];
-    const entry = getEntry(sectorId, machineId);
-    if (entry) return String(Number(entry.quantidade));
-    return "";
+    const total = getMachineTotal(sectorId, machineId);
+    return total > 0 ? String(total) : "";
   };
 
   const setEditValue = (sectorId: number, machineId: number | null, value: string) => {
     const key = `${sectorId}-${machineId || "null"}`;
     setEditValues(prev => ({ ...prev, [key]: value }));
+  };
+
+  const getVariantEditValue = (sectorId: number, machineId: number | null, variant: string): string => {
+    const key = `${sectorId}-${machineId || "null"}-${variant}`;
+    if (variantEditValues[key] !== undefined) return variantEditValues[key];
+    const entry = getEntryForVariant(sectorId, machineId, variant);
+    if (entry) return String(Number(entry.quantidade));
+    return "";
+  };
+
+  const setVariantEditValue = (key: string, value: string) => {
+    setVariantEditValues(prev => ({ ...prev, [key]: value }));
   };
 
   const getStatusValue = (sectorId: number, machineId: number | null): string => {
@@ -278,21 +347,17 @@ export default function Production() {
     setStatusValues(prev => ({ ...prev, [key]: value }));
   };
 
-  const getWoodTypeValue = (sectorId: number, machineId: number | null): Set<string> => {
+  const getSelectedVariants = (sectorId: number, machineId: number | null): Set<string> => {
     const key = `${sectorId}-${machineId || "null"}`;
-    if (woodTypeValues[key]) return woodTypeValues[key];
-    return getEntryWoodTypes(sectorId, machineId);
+    if (selectedVariants[key]) return selectedVariants[key];
+    return getExistingVariants(sectorId, machineId);
   };
 
-  const toggleWoodType = (sectorId: number, machineId: number | null, woodType: string) => {
+  const toggleVariant = (sectorId: number, machineId: number | null, variant: string) => {
     const key = `${sectorId}-${machineId || "null"}`;
-    setWoodTypeValues(prev => {
-      const current = prev[key] ? new Set(prev[key]) : new Set(getEntryWoodTypes(sectorId, machineId));
-      if (current.has(woodType)) {
-        current.delete(woodType);
-      } else {
-        current.add(woodType);
-      }
+    setSelectedVariants(prev => {
+      const current = prev[key] ? new Set(prev[key]) : new Set(getExistingVariants(sectorId, machineId));
+      if (current.has(variant)) current.delete(variant); else current.add(variant);
       return { ...prev, [key]: current };
     });
   };
@@ -310,7 +375,12 @@ export default function Production() {
 
   const hasChanges = (sectorId: number, machineId: number | null): boolean => {
     const key = `${sectorId}-${machineId || "null"}`;
-    return editValues[key] !== undefined || statusValues[key] !== undefined || woodTypeValues[key] !== undefined || commentValues[key] !== undefined;
+    if (editValues[key] !== undefined || statusValues[key] !== undefined || selectedVariants[key] !== undefined || commentValues[key] !== undefined) return true;
+    // Check variant edit values
+    for (const k of Object.keys(variantEditValues)) {
+      if (k.startsWith(key + "-")) return true;
+    }
+    return false;
   };
 
   const dayOfWeek = useMemo(() => {
@@ -345,19 +415,11 @@ export default function Production() {
             <p className="text-sm text-slate-500 mt-1">Lançamento diário de produção por setor e máquina</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode("lancamento")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "lancamento" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}
-            >
-              <Save className="w-4 h-4" />
-              Lançamento
+            <button onClick={() => setViewMode("lancamento")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "lancamento" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
+              <Save className="w-4 h-4" /> Lançamento
             </button>
-            <button
-              onClick={() => setViewMode("historico")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "historico" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}
-            >
-              <History className="w-4 h-4" />
-              Histórico
+            <button onClick={() => setViewMode("historico")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "historico" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
+              <History className="w-4 h-4" /> Histórico
             </button>
           </div>
         </div>
@@ -369,12 +431,7 @@ export default function Production() {
             <ArrowLeft className="w-4 h-4 text-slate-600" />
           </button>
           <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => { setSelectedDate(e.target.value); resetEditState(); }}
-              className="text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
+            <input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); resetEditState(); }} className="text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
             <span className="text-sm text-slate-500 font-medium">
               {dayOfWeek}
               {isToday && <span className="ml-1.5 text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full font-semibold">Hoje</span>}
@@ -418,16 +475,14 @@ export default function Production() {
                 const Icon = getSectorIcon(sector.ordem);
                 const hasMachines = sector.machines && sector.machines.length > 0;
                 const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
-                const isExpandable = hasExpandableFeatures(sector.ordem);
+                const expandable = hasExpandableFeatures(sector.ordem);
 
                 return (
                   <div key={sector.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    {/* Sector header */}
                     <div
                       onClick={() => toggleSector(sector.id)}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
-                      role="button"
-                      tabIndex={0}
+                      role="button" tabIndex={0}
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleSector(sector.id); }}
                     >
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: (sector.cor || "#6b7280") + "15" }}>
@@ -437,7 +492,8 @@ export default function Production() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold text-slate-800">{sector.ordem}. {sector.nome}</span>
                           {sector.isSequencial && <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold">Sequencial</span>}
-                          {isExpandable && <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-semibold">Status + Madeira</span>}
+                          {isMultilamina(sector.ordem) && <span className="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">Tipo Madeira</span>}
+                          {isVareteira(sector.ordem) && <span className="text-[9px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded-full font-semibold">Medida Madeira</span>}
                         </div>
                         <div className="text-xs text-slate-400 mt-0.5">
                           {hasMachines ? `${sector.quantidadeEquipamentos} ${sector.tipoEquipamento === "mesa" ? "mesas" : "máquinas"}` : "Sem equipamento"}
@@ -451,37 +507,61 @@ export default function Production() {
                       {isExpanded ? <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" /> : <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />}
                     </div>
 
-                    {/* Expanded content */}
                     {isExpanded && (
                       <div className="border-t border-slate-100 bg-slate-50/50">
                         {hasMachines ? (
                           <div className="divide-y divide-slate-100">
-                            {sector.machines.map((machine: any) => (
-                              <MachineRow
-                                key={machine.id}
-                                sector={sector}
-                                machine={machine}
-                                isExpandable={isExpandable}
-                                machineExpanded={expandedMachines.has(`${sector.id}-${machine.id}`)}
-                                commentIsOpen={commentOpen.has(`${sector.id}-${machine.id}`)}
-                                isSaving={savingKeys.has(`${sector.id}-${machine.id}`)}
-                                currentVal={getEditValue(sector.id, machine.id)}
-                                currentStatus={getStatusValue(sector.id, machine.id)}
-                                currentWoodTypes={getWoodTypeValue(sector.id, machine.id)}
-                                currentComment={getCommentValue(sector.id, machine.id)}
-                                changed={hasChanges(sector.id, machine.id)}
-                                onToggleMachine={() => toggleMachine(sector.id, machine.id)}
-                                onToggleComment={() => toggleComment(`${sector.id}-${machine.id}`)}
-                                onSetValue={(v) => setEditValue(sector.id, machine.id, v)}
-                                onSetStatus={(v) => setStatusValue(sector.id, machine.id, v)}
-                                onToggleWoodType={(v) => toggleWoodType(sector.id, machine.id, v)}
-                                onSetComment={(v) => setCommentValue(sector.id, machine.id, v)}
-                                onSave={() => handleSave(sector.id, machine.id, sector.unidadeMedida)}
-                              />
-                            ))}
+                            {sector.machines.map((machine: any) => {
+                              if (expandable) {
+                                return (
+                                  <ExpandableMachineRow
+                                    key={machine.id}
+                                    sector={sector}
+                                    machine={machine}
+                                    machineExpanded={expandedMachines.has(`${sector.id}-${machine.id}`)}
+                                    commentIsOpen={commentOpen.has(`${sector.id}-${machine.id}`)}
+                                    isSaving={savingKeys.has(`${sector.id}-${machine.id}`)}
+                                    currentStatus={getStatusValue(sector.id, machine.id)}
+                                    currentVariants={getSelectedVariants(sector.id, machine.id)}
+                                    currentComment={getCommentValue(sector.id, machine.id)}
+                                    machineTotal={getMachineTotal(sector.id, machine.id)}
+                                    changed={hasChanges(sector.id, machine.id)}
+                                    getVariantValue={(v) => {
+                                      const vk = `${sector.id}-${machine.id}-${v}`;
+                                      if (variantEditValues[vk] !== undefined) return variantEditValues[vk];
+                                      const entry = getEntryForVariant(sector.id, machine.id, v);
+                                      return entry ? String(Number(entry.quantidade)) : "";
+                                    }}
+                                    onToggleMachine={() => toggleMachine(sector.id, machine.id)}
+                                    onToggleComment={() => toggleComment(`${sector.id}-${machine.id}`)}
+                                    onSetStatus={(v) => setStatusValue(sector.id, machine.id, v)}
+                                    onToggleVariant={(v) => toggleVariant(sector.id, machine.id, v)}
+                                    onSetVariantValue={(v, val) => setVariantEditValue(`${sector.id}-${machine.id}-${v}`, val)}
+                                    onSetComment={(v) => setCommentValue(sector.id, machine.id, v)}
+                                    onSave={() => handleVariantSave(sector.id, machine.id, sector.ordem)}
+                                  />
+                                );
+                              }
+                              // Simple machine row
+                              return (
+                                <SimpleMachineRow
+                                  key={machine.id}
+                                  sector={sector}
+                                  machine={machine}
+                                  commentIsOpen={commentOpen.has(`${sector.id}-${machine.id}`)}
+                                  isSaving={savingKeys.has(`${sector.id}-${machine.id}`)}
+                                  currentVal={getEditValue(sector.id, machine.id)}
+                                  currentComment={getCommentValue(sector.id, machine.id)}
+                                  changed={hasChanges(sector.id, machine.id)}
+                                  onToggleComment={() => toggleComment(`${sector.id}-${machine.id}`)}
+                                  onSetValue={(v) => setEditValue(sector.id, machine.id, v)}
+                                  onSetComment={(v) => setCommentValue(sector.id, machine.id, v)}
+                                  onSave={() => handleSimpleSave(sector.id, machine.id)}
+                                />
+                              );
+                            })}
                           </div>
                         ) : (
-                          /* Sector without machines (Embalagem) */
                           <SectorWithoutMachines
                             sector={sector}
                             currentVal={getEditValue(sector.id, null)}
@@ -492,7 +572,7 @@ export default function Production() {
                             onSetValue={(v) => setEditValue(sector.id, null, v)}
                             onSetComment={(v) => setCommentValue(sector.id, null, v)}
                             onToggleComment={() => toggleComment(`${sector.id}-null`)}
-                            onSave={() => handleSave(sector.id, null, sector.unidadeMedida)}
+                            onSave={() => handleSimpleSave(sector.id, null)}
                           />
                         )}
                       </div>
@@ -511,77 +591,73 @@ export default function Production() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MACHINE ROW COMPONENT
+   EXPANDABLE MACHINE ROW (Multilamina & Vareteira)
+   Shows status selector + variant selector (type/measure)
+   When variants selected, shows individual quantity inputs per variant
    ═══════════════════════════════════════════════════════════ */
-interface MachineRowProps {
+interface ExpandableMachineRowProps {
   sector: any;
   machine: any;
-  isExpandable: boolean;
   machineExpanded: boolean;
   commentIsOpen: boolean;
   isSaving: boolean;
-  currentVal: string;
   currentStatus: string;
-  currentWoodTypes: Set<string>;
+  currentVariants: Set<string>;
   currentComment: string;
+  machineTotal: number;
   changed: boolean;
+  getVariantValue: (variant: string) => string;
   onToggleMachine: () => void;
   onToggleComment: () => void;
-  onSetValue: (v: string) => void;
   onSetStatus: (v: string) => void;
-  onToggleWoodType: (v: string) => void;
+  onToggleVariant: (v: string) => void;
+  onSetVariantValue: (variant: string, value: string) => void;
   onSetComment: (v: string) => void;
   onSave: () => void;
 }
 
-function MachineRow({
-  sector, machine, isExpandable, machineExpanded, commentIsOpen, isSaving,
-  currentVal, currentStatus, currentWoodTypes, currentComment, changed,
-  onToggleMachine, onToggleComment, onSetValue, onSetStatus, onToggleWoodType, onSetComment, onSave,
-}: MachineRowProps) {
+function ExpandableMachineRow({
+  sector, machine, machineExpanded, commentIsOpen, isSaving,
+  currentStatus, currentVariants, currentComment, machineTotal, changed,
+  getVariantValue, onToggleMachine, onToggleComment, onSetStatus, onToggleVariant,
+  onSetVariantValue, onSetComment, onSave,
+}: ExpandableMachineRowProps) {
   const statusOpt = getStatusOption(currentStatus);
   const hasComment = currentComment.trim().length > 0;
+  const variantOptions = getVariantOptions(sector.ordem);
+  const variantLabel = getVariantLabel(sector.ordem);
+  const VariantIcon = getVariantIcon(sector.ordem);
+  const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
 
   return (
     <div className="bg-white/50">
-      {/* Machine header row */}
+      {/* Machine header */}
       <div className="flex items-center gap-3 px-4 py-2.5">
-        {isExpandable ? (
-          <div
-            className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-50 transition-colors"
-            onClick={onToggleMachine}
-          >
-            {machineExpanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
-          </div>
-        ) : (
-          <div className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center shrink-0">
-            <span className="text-xs font-bold text-slate-500">{machine.ordem}</span>
-          </div>
-        )}
-
-        <span
-          className={`text-sm text-slate-600 font-medium flex-1 min-w-0 truncate ${isExpandable ? "cursor-pointer" : ""}`}
-          onClick={isExpandable ? onToggleMachine : undefined}
+        <div
+          className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-50 transition-colors"
+          onClick={onToggleMachine}
         >
+          {machineExpanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+        </div>
+
+        <span className="text-sm text-slate-600 font-medium flex-1 min-w-0 truncate cursor-pointer" onClick={onToggleMachine}>
           {machine.nome}
         </span>
 
-        {/* Status badge (only for expandable sectors) */}
-        {isExpandable && (
-          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusOpt.bgClass} ${statusOpt.textClass} ${statusOpt.borderClass}`}>
-            <statusOpt.icon className="w-3 h-3" />
-            <span className="hidden sm:inline">{statusOpt.label}</span>
-          </div>
-        )}
+        {/* Status badge */}
+        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusOpt.bgClass} ${statusOpt.textClass} ${statusOpt.borderClass}`}>
+          <statusOpt.icon className="w-3 h-3" />
+          <span className="hidden sm:inline">{statusOpt.label}</span>
+        </div>
 
-        {/* Wood type badges (only for expandable sectors) */}
-        {isExpandable && currentWoodTypes.size > 0 && (
-          <div className="flex items-center gap-1">
-            {Array.from(currentWoodTypes).map(wt => {
-              const opt = WOOD_TYPE_OPTIONS.find(o => o.value === wt);
+        {/* Variant badges */}
+        {currentVariants.size > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {Array.from(currentVariants).map(v => {
+              const opt = variantOptions.find(o => o.value === v);
               if (!opt) return null;
               return (
-                <span key={wt} className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
+                <span key={v} className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
                   {opt.label}
                 </span>
               );
@@ -589,55 +665,34 @@ function MachineRow({
           </div>
         )}
 
-        {/* Comment indicator */}
-        <button
-          onClick={onToggleComment}
-          className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-            hasComment || commentIsOpen ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-white text-slate-400 border border-slate-200 hover:bg-slate-50"
-          }`}
-          title="Comentário"
-        >
+        {/* Comment button */}
+        <button onClick={onToggleComment} className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${hasComment || commentIsOpen ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-white text-slate-400 border border-slate-200 hover:bg-slate-50"}`} title="Comentário">
           <MessageSquare className="w-3.5 h-3.5" />
         </button>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <input
-            type="text"
-            inputMode="decimal"
-            value={currentVal}
-            onChange={(e) => onSetValue(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") onSave(); }}
-            placeholder="0"
-            className="w-24 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
-          />
-          <span className="text-xs text-slate-400 w-10">{sector.unidadeMedida}</span>
-          <button
-            onClick={onSave}
-            disabled={isSaving || !changed}
-            className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-          >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          </button>
+        {/* Total display */}
+        <div className="text-right shrink-0 w-20">
+          <div className="text-sm font-bold tabular-nums text-slate-700">{fmtNum(machineTotal, decimals)}</div>
+          <div className="text-[9px] text-slate-400">{sector.unidadeMedida}</div>
         </div>
+
+        {/* Save button */}
+        <button onClick={onSave} disabled={isSaving || !changed} className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
+          {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+        </button>
       </div>
 
-      {/* Comment box (all sectors) */}
+      {/* Comment box */}
       {commentIsOpen && (
         <div className="px-4 pb-2 pl-16">
           <div className="bg-white rounded-lg border border-slate-200 p-2">
-            <textarea
-              value={currentComment}
-              onChange={(e) => onSetComment(e.target.value)}
-              placeholder="Adicionar comentário ou observação..."
-              rows={2}
-              className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400"
-            />
+            <textarea value={currentComment} onChange={(e) => onSetComment(e.target.value)} placeholder="Adicionar comentário ou observação..." rows={2} className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400" />
           </div>
         </div>
       )}
 
-      {/* Expanded panel: status + wood type (Multilamina and Vareteira only) */}
-      {isExpandable && machineExpanded && (
+      {/* Expanded panel */}
+      {machineExpanded && (
         <div className="px-4 pb-3 pl-16 space-y-2">
           {/* Status selector */}
           <div className="bg-white rounded-lg border border-slate-200 p-3">
@@ -647,14 +702,8 @@ function MachineRow({
                 const isSelected = currentStatus === opt.value;
                 const OptIcon = opt.icon;
                 return (
-                  <button
-                    key={opt.value}
-                    onClick={() => onSetStatus(opt.value)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
-                      isSelected
-                        ? `${opt.bgClass} ${opt.textClass} ${opt.borderClass} ring-2 ring-offset-1`
-                        : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
-                    }`}
+                  <button key={opt.value} onClick={() => onSetStatus(opt.value)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${isSelected ? `${opt.bgClass} ${opt.textClass} ${opt.borderClass} ring-2 ring-offset-1` : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}
                     style={isSelected ? { '--tw-ring-color': opt.color } as React.CSSProperties : {}}
                   >
                     <OptIcon className="w-4 h-4 shrink-0" />
@@ -665,34 +714,106 @@ function MachineRow({
             </div>
           </div>
 
-          {/* Wood type selector */}
+          {/* Variant selector */}
           <div className="bg-white rounded-lg border border-slate-200 p-3">
             <div className="flex items-center gap-2 mb-2">
-              <TreePine className="w-3.5 h-3.5 text-slate-500" />
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tipo de Madeira</p>
-              <span className="text-[10px] text-slate-400 ml-1">(pode selecionar ambos)</span>
+              <VariantIcon className="w-3.5 h-3.5 text-slate-500" />
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{variantLabel}</p>
+              <span className="text-[10px] text-slate-400 ml-1">(selecione um ou mais)</span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {WOOD_TYPE_OPTIONS.map(opt => {
-                const isSelected = currentWoodTypes.has(opt.value);
+            <div className={`grid gap-2 ${variantOptions.length <= 3 ? "grid-cols-2" : "grid-cols-3 sm:grid-cols-4 lg:grid-cols-7"}`}>
+              {variantOptions.map(opt => {
+                const isSelected = currentVariants.has(opt.value);
                 return (
-                  <button
-                    key={opt.value}
-                    onClick={() => onToggleWoodType(opt.value)}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-                      isSelected
-                        ? `${opt.bgClass} ${opt.textClass} ${opt.borderClass} ring-2 ring-offset-1`
-                        : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
-                    }`}
+                  <button key={opt.value} onClick={() => onToggleVariant(opt.value)}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${isSelected ? `${opt.bgClass} ${opt.textClass} ${opt.borderClass} ring-2 ring-offset-1` : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}
                     style={isSelected ? { '--tw-ring-color': opt.color } as React.CSSProperties : {}}
                   >
-                    <TreePine className="w-4 h-4 shrink-0" />
+                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
                     <span>{opt.label}</span>
-                    {isSelected && <CheckCircle2 className="w-4 h-4 ml-auto shrink-0" />}
                   </button>
                 );
               })}
             </div>
+          </div>
+
+          {/* Quantity inputs per selected variant */}
+          {currentVariants.size > 0 && (
+            <div className="bg-white rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Produção por {variantLabel}</p>
+              <div className="space-y-2">
+                {Array.from(currentVariants).sort().map(variant => {
+                  const opt = variantOptions.find(o => o.value === variant);
+                  if (!opt) return null;
+                  const val = getVariantValue(variant);
+                  return (
+                    <div key={variant} className="flex items-center gap-3">
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold min-w-[100px] ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
+                        <VariantIcon className="w-3.5 h-3.5 shrink-0" />
+                        {opt.label}
+                      </div>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={val}
+                        onChange={(e) => onSetVariantValue(variant, e.target.value)}
+                        placeholder="0"
+                        className="w-28 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
+                      />
+                      <span className="text-xs text-slate-400">{sector.unidadeMedida}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SIMPLE MACHINE ROW (non-expandable sectors)
+   ═══════════════════════════════════════════════════════════ */
+interface SimpleMachineRowProps {
+  sector: any;
+  machine: any;
+  commentIsOpen: boolean;
+  isSaving: boolean;
+  currentVal: string;
+  currentComment: string;
+  changed: boolean;
+  onToggleComment: () => void;
+  onSetValue: (v: string) => void;
+  onSetComment: (v: string) => void;
+  onSave: () => void;
+}
+
+function SimpleMachineRow({ sector, machine, commentIsOpen, isSaving, currentVal, currentComment, changed, onToggleComment, onSetValue, onSetComment, onSave }: SimpleMachineRowProps) {
+  const hasComment = currentComment.trim().length > 0;
+  return (
+    <div className="bg-white/50">
+      <div className="flex items-center gap-3 px-4 py-2.5">
+        <div className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center shrink-0">
+          <span className="text-xs font-bold text-slate-500">{machine.ordem}</span>
+        </div>
+        <span className="text-sm text-slate-600 font-medium flex-1 min-w-0 truncate">{machine.nome}</span>
+        <button onClick={onToggleComment} className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${hasComment || commentIsOpen ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-white text-slate-400 border border-slate-200 hover:bg-slate-50"}`} title="Comentário">
+          <MessageSquare className="w-3.5 h-3.5" />
+        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <input type="text" inputMode="decimal" value={currentVal} onChange={(e) => onSetValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") onSave(); }} placeholder="0" className="w-24 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white" />
+          <span className="text-xs text-slate-400 w-10">{sector.unidadeMedida}</span>
+          <button onClick={onSave} disabled={isSaving || !changed} className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+      {commentIsOpen && (
+        <div className="px-4 pb-2 pl-16">
+          <div className="bg-white rounded-lg border border-slate-200 p-2">
+            <textarea value={currentComment} onChange={(e) => onSetComment(e.target.value)} placeholder="Adicionar comentário ou observação..." rows={2} className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400" />
           </div>
         </div>
       )}
@@ -704,21 +825,14 @@ function MachineRow({
    SECTOR WITHOUT MACHINES (Embalagem)
    ═══════════════════════════════════════════════════════════ */
 interface SectorWithoutMachinesProps {
-  sector: any;
-  currentVal: string;
-  currentComment: string;
-  commentIsOpen: boolean;
-  isSaving: boolean;
-  changed: boolean;
-  onSetValue: (v: string) => void;
-  onSetComment: (v: string) => void;
-  onToggleComment: () => void;
-  onSave: () => void;
+  sector: any; currentVal: string; currentComment: string; commentIsOpen: boolean;
+  isSaving: boolean; changed: boolean;
+  onSetValue: (v: string) => void; onSetComment: (v: string) => void;
+  onToggleComment: () => void; onSave: () => void;
 }
 
 function SectorWithoutMachines({ sector, currentVal, currentComment, commentIsOpen, isSaving, changed, onSetValue, onSetComment, onToggleComment, onSave }: SectorWithoutMachinesProps) {
   const hasComment = currentComment.trim().length > 0;
-
   return (
     <div>
       <div className="flex items-center gap-3 px-4 py-3">
@@ -726,31 +840,13 @@ function SectorWithoutMachines({ sector, currentVal, currentComment, commentIsOp
           <Box className="w-4 h-4 text-slate-400" />
         </div>
         <span className="text-sm text-slate-600 font-medium flex-1">Produção do setor</span>
-        <button
-          onClick={onToggleComment}
-          className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-            hasComment || commentIsOpen ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-white text-slate-400 border border-slate-200 hover:bg-slate-50"
-          }`}
-          title="Comentário"
-        >
+        <button onClick={onToggleComment} className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${hasComment || commentIsOpen ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-white text-slate-400 border border-slate-200 hover:bg-slate-50"}`} title="Comentário">
           <MessageSquare className="w-3.5 h-3.5" />
         </button>
         <div className="flex items-center gap-2 shrink-0">
-          <input
-            type="text"
-            inputMode="decimal"
-            value={currentVal}
-            onChange={(e) => onSetValue(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") onSave(); }}
-            placeholder="0"
-            className="w-24 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
-          />
+          <input type="text" inputMode="decimal" value={currentVal} onChange={(e) => onSetValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") onSave(); }} placeholder="0" className="w-24 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white" />
           <span className="text-xs text-slate-400 w-10">{sector.unidadeMedida}</span>
-          <button
-            onClick={onSave}
-            disabled={isSaving || !changed}
-            className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-          >
+          <button onClick={onSave} disabled={isSaving || !changed} className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           </button>
         </div>
@@ -758,13 +854,7 @@ function SectorWithoutMachines({ sector, currentVal, currentComment, commentIsOp
       {commentIsOpen && (
         <div className="px-4 pb-3 pl-16">
           <div className="bg-white rounded-lg border border-slate-200 p-2">
-            <textarea
-              value={currentComment}
-              onChange={(e) => onSetComment(e.target.value)}
-              placeholder="Adicionar comentário ou observação..."
-              rows={2}
-              className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400"
-            />
+            <textarea value={currentComment} onChange={(e) => onSetComment(e.target.value)} placeholder="Adicionar comentário ou observação..." rows={2} className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400" />
           </div>
         </div>
       )}
@@ -773,13 +863,10 @@ function SectorWithoutMachines({ sector, currentVal, currentComment, commentIsOp
 }
 
 /* ═══════════════════════════════════════════════════════════
-   HISTORY VIEW COMPONENT
+   HISTORY VIEW
    ═══════════════════════════════════════════════════════════ */
 interface HistoryViewProps {
-  sectors: any[];
-  weekRange: { start: string; end: string };
-  weeklySummary: any[];
-  selectedDate: string;
+  sectors: any[]; weekRange: { start: string; end: string }; weeklySummary: any[]; selectedDate: string;
 }
 
 function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: HistoryViewProps) {
@@ -798,9 +885,7 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
     const m: Record<number, Record<string, number>> = {};
     for (const sector of sectors) {
       m[sector.id] = {};
-      for (const day of weekDays) {
-        m[sector.id][day] = 0;
-      }
+      for (const day of weekDays) m[sector.id][day] = 0;
     }
     for (const entry of weeklySummary) {
       if (m[entry.sectorId] && m[entry.sectorId][entry.data] !== undefined) {

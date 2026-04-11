@@ -13,32 +13,35 @@ export const MACHINE_STATUS_OPTIONS = [
   { value: "manutencao_pontual", label: "Manutenção Pontual", color: "#8b5cf6" },
 ] as const;
 
-/** Tipos de madeira disponíveis */
+/** Tipos de madeira para Multilamina (setor 1) */
 export const WOOD_TYPE_OPTIONS = [
   { value: "benazzi", label: "Benazzi", color: "#d97706" },
   { value: "madeira_dura", label: "Madeira Dura", color: "#059669" },
 ] as const;
 
+/** Medidas de madeira para Vareteira (setor 2) */
+export const WOOD_MEASURE_OPTIONS = [
+  { value: "150mm", label: "150mm", color: "#0ea5e9" },
+  { value: "180mm", label: "180mm", color: "#06b6d4" },
+  { value: "200mm", label: "200mm", color: "#14b8a6" },
+  { value: "218mm", label: "218mm", color: "#10b981" },
+  { value: "250mm", label: "250mm", color: "#22c55e" },
+  { value: "300mm", label: "300mm", color: "#84cc16" },
+  { value: "350mm", label: "350mm", color: "#eab308" },
+] as const;
+
 export const productionRouter = router({
-  /**
-   * Listar todos os setores com suas máquinas
-   */
   getSectors: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
-
     const sectors = await db.select().from(productionSectors).orderBy(productionSectors.ordem);
     const machines = await db.select().from(productionMachines).orderBy(productionMachines.ordem);
-
     return sectors.map(s => ({
       ...s,
       machines: machines.filter(m => m.sectorId === s.id),
     }));
   }),
 
-  /**
-   * Buscar lançamentos de produção de um dia específico (ou hoje)
-   */
   getEntries: publicProcedure
     .input(z.object({
       data: z.string().optional(),
@@ -47,26 +50,22 @@ export const productionRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-
       const targetDate = input.data || new Date().toISOString().slice(0, 10);
-
       const conditions = [eq(productionEntries.data, targetDate)];
       if (input.sectorId) {
         conditions.push(eq(productionEntries.sectorId, input.sectorId));
       }
-
-      const entries = await db
+      return db
         .select()
         .from(productionEntries)
         .where(and(...conditions))
         .orderBy(productionEntries.sectorId, productionEntries.machineId);
-
-      return entries;
     }),
 
   /**
-   * Lançar ou atualizar produção de uma máquina/setor em um dia
-   * Aceita quantidade zero, campo status, tipoMadeira e observações
+   * Lançar ou atualizar produção.
+   * A chave de upsert agora é: sectorId + machineId + data + tipoMadeira
+   * Isso permite múltiplos registros por máquina/dia quando há diferentes tipos/medidas.
    */
   upsertEntry: publicProcedure
     .input(z.object({
@@ -75,7 +74,7 @@ export const productionRouter = router({
       data: z.string(),
       quantidade: z.number().min(0),
       status: z.string().optional().default("producao_normal"),
-      tipoMadeira: z.string().optional(), // "benazzi", "madeira_dura", "benazzi,madeira_dura"
+      tipoMadeira: z.string().optional(), // valor único: "benazzi", "madeira_dura", "150mm", etc.
       observacoes: z.string().optional(),
       lancadoPor: z.string().optional(),
     }))
@@ -83,7 +82,6 @@ export const productionRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Check if entry already exists for this sector/machine/date
       const conditions = [
         eq(productionEntries.sectorId, input.sectorId),
         eq(productionEntries.data, input.data),
@@ -92,6 +90,12 @@ export const productionRouter = router({
         conditions.push(eq(productionEntries.machineId, input.machineId));
       } else {
         conditions.push(sql`${productionEntries.machineId} IS NULL`);
+      }
+      // tipoMadeira is part of the upsert key
+      if (input.tipoMadeira) {
+        conditions.push(eq(productionEntries.tipoMadeira, input.tipoMadeira));
+      } else {
+        conditions.push(sql`${productionEntries.tipoMadeira} IS NULL`);
       }
 
       const existing = await db
@@ -106,7 +110,6 @@ export const productionRouter = router({
           .set({
             quantidade: String(input.quantidade),
             status: input.status || "producao_normal",
-            tipoMadeira: input.tipoMadeira || null,
             observacoes: input.observacoes || null,
             lancadoPor: input.lancadoPor || null,
           })
@@ -128,21 +131,87 @@ export const productionRouter = router({
     }),
 
   /**
-   * Deletar um lançamento de produção
+   * Batch upsert: salvar múltiplos registros de uma vez (para quando há vários tipos/medidas selecionados)
    */
+  batchUpsertEntries: publicProcedure
+    .input(z.object({
+      entries: z.array(z.object({
+        sectorId: z.number(),
+        machineId: z.number().nullable(),
+        data: z.string(),
+        quantidade: z.number().min(0),
+        status: z.string().optional().default("producao_normal"),
+        tipoMadeira: z.string().optional(),
+        observacoes: z.string().optional(),
+        lancadoPor: z.string().optional(),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const results: { tipoMadeira: string | null; action: string }[] = [];
+
+      for (const entry of input.entries) {
+        const conditions = [
+          eq(productionEntries.sectorId, entry.sectorId),
+          eq(productionEntries.data, entry.data),
+        ];
+        if (entry.machineId) {
+          conditions.push(eq(productionEntries.machineId, entry.machineId));
+        } else {
+          conditions.push(sql`${productionEntries.machineId} IS NULL`);
+        }
+        if (entry.tipoMadeira) {
+          conditions.push(eq(productionEntries.tipoMadeira, entry.tipoMadeira));
+        } else {
+          conditions.push(sql`${productionEntries.tipoMadeira} IS NULL`);
+        }
+
+        const existing = await db
+          .select()
+          .from(productionEntries)
+          .where(and(...conditions))
+          .limit(1);
+
+        if (existing.length > 0) {
+          await db
+            .update(productionEntries)
+            .set({
+              quantidade: String(entry.quantidade),
+              status: entry.status || "producao_normal",
+              observacoes: entry.observacoes || null,
+              lancadoPor: entry.lancadoPor || null,
+            })
+            .where(eq(productionEntries.id, existing[0].id));
+          results.push({ tipoMadeira: entry.tipoMadeira || null, action: "updated" });
+        } else {
+          await db.insert(productionEntries).values({
+            sectorId: entry.sectorId,
+            machineId: entry.machineId,
+            data: entry.data,
+            quantidade: String(entry.quantidade),
+            status: entry.status || "producao_normal",
+            tipoMadeira: entry.tipoMadeira || null,
+            observacoes: entry.observacoes || null,
+            lancadoPor: entry.lancadoPor || null,
+          });
+          results.push({ tipoMadeira: entry.tipoMadeira || null, action: "created" });
+        }
+      }
+
+      return { count: results.length, results };
+    }),
+
   deleteEntry: publicProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-
       await db.delete(productionEntries).where(eq(productionEntries.id, input.id));
       return { success: true };
     }),
 
-  /**
-   * Histórico de produção por período
-   */
   getHistory: publicProcedure
     .input(z.object({
       dataInicio: z.string(),
@@ -152,7 +221,6 @@ export const productionRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-
       const conditions = [
         gte(productionEntries.data, input.dataInicio),
         lte(productionEntries.data, input.dataFim),
@@ -160,30 +228,20 @@ export const productionRouter = router({
       if (input.sectorId) {
         conditions.push(eq(productionEntries.sectorId, input.sectorId));
       }
-
-      const entries = await db
+      return db
         .select()
         .from(productionEntries)
         .where(and(...conditions))
         .orderBy(desc(productionEntries.data), productionEntries.sectorId);
-
-      return entries;
     }),
 
-  /**
-   * Resumo diário: total produzido por setor em um dia
-   */
   getDailySummary: publicProcedure
-    .input(z.object({
-      data: z.string().optional(),
-    }))
+    .input(z.object({ data: z.string().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-
       const targetDate = input.data || new Date().toISOString().slice(0, 10);
-
-      const result = await db
+      return db
         .select({
           sectorId: productionEntries.sectorId,
           total: sql<string>`SUM(${productionEntries.quantidade})`,
@@ -192,13 +250,8 @@ export const productionRouter = router({
         .from(productionEntries)
         .where(eq(productionEntries.data, targetDate))
         .groupBy(productionEntries.sectorId);
-
-      return result;
     }),
 
-  /**
-   * Resumo semanal: total por setor por dia da semana
-   */
   getWeeklySummary: publicProcedure
     .input(z.object({
       dataInicio: z.string(),
@@ -207,8 +260,7 @@ export const productionRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-
-      const result = await db
+      return db
         .select({
           sectorId: productionEntries.sectorId,
           data: productionEntries.data,
@@ -222,14 +274,13 @@ export const productionRouter = router({
         ))
         .groupBy(productionEntries.sectorId, productionEntries.data)
         .orderBy(productionEntries.data, productionEntries.sectorId);
-
-      return result;
     }),
 
-  /**
-   * Retornar opções de status e tipo de madeira
-   */
   getStatusOptions: publicProcedure.query(() => {
-    return { statusOptions: MACHINE_STATUS_OPTIONS, woodTypeOptions: WOOD_TYPE_OPTIONS };
+    return {
+      statusOptions: MACHINE_STATUS_OPTIONS,
+      woodTypeOptions: WOOD_TYPE_OPTIONS,
+      woodMeasureOptions: WOOD_MEASURE_OPTIONS,
+    };
   }),
 });
