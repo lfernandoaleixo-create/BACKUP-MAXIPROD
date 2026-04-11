@@ -2610,7 +2610,7 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
       <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEditItem(null); }} onConfirm={handlePasswordConfirm} title="Quem está editando?" />
       <StockHistoryModal open={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(undefined); }} card="semiPronto" codigoItem={historyItem?.codigo} descricaoItem={historyItem?.descricao} />
 
-      <button onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer">
+      <div onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
@@ -2660,7 +2660,7 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
             <p className="text-base font-extrabold text-slate-700">{parentItems.length}</p>
           </div>
         </div>
-      </button>
+      </div>
 
       {isOpen && (
         <div className="px-5 pb-5 space-y-3">
@@ -2830,7 +2830,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
       <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEditItem(null); }} onConfirm={handlePasswordConfirm} title="Quem está editando?" />
       <StockHistoryModal open={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(undefined); }} card="aguardandoEscolha" codigoItem={historyItem?.codigo} descricaoItem={historyItem?.descricao} />
 
-      <button onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer">
+      <div onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
@@ -2880,7 +2880,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
             <p className="text-base font-extrabold text-slate-700">{parentItems.length}</p>
           </div>
         </div>
-      </button>
+      </div>
 
       {isOpen && (
         <div className="px-5 pb-5 space-y-3">

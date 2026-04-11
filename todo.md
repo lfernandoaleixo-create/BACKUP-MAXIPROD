@@ -1997,3 +1997,6 @@
 
 ## Aba Produção - Acesso Aberto
 - [x] Remover restrição de acesso da aba Produção (aberta a todos os operadores)
+
+## Bug: Erro no canto inferior esquerdo
+- [x] Diagnosticar e corrigir erro que aparece no canto inferior esquerdo do dashboard (button aninhado em button nos cards SemiPronto e AguardandoEscolha)
