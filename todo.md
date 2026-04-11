@@ -2027,3 +2027,8 @@
 - [x] Atualizar backend (upsert por sectorId+machineId+data+tipoMadeira)
 - [x] Atualizar frontend com inputs separados por tipo/medida selecionado
 - [x] Testes atualizados (34 testes passando)
+
+## Correção exibição totais e quantidades por variante
+- [x] Total do dia (card resumo + header setor) deve somar todas as quantidades de todos os tipos/medidas
+- [x] Ao lado de cada máquina expandível, mostrar quantidade de cada tipo/medida separadamente (ex: Benazzi: 5,5 | Madeira Dura: 3,2)
+- [x] Aplicar mesma lógica para Multilamina e Vareteira

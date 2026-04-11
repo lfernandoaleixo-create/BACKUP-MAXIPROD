@@ -532,6 +532,14 @@ export default function Production() {
                                       const entry = getEntryForVariant(sector.id, machine.id, v);
                                       return entry ? String(Number(entry.quantidade)) : "";
                                     }}
+                                    savedVariantQuantities={(() => {
+                                      const map = new Map<string, number>();
+                                      const machineEntries = getEntriesForMachine(sector.id, machine.id);
+                                      for (const e of machineEntries) {
+                                        if (e.tipoMadeira) map.set(e.tipoMadeira, Number(e.quantidade));
+                                      }
+                                      return map;
+                                    })()}
                                     onToggleMachine={() => toggleMachine(sector.id, machine.id)}
                                     onToggleComment={() => toggleComment(`${sector.id}-${machine.id}`)}
                                     onSetStatus={(v) => setStatusValue(sector.id, machine.id, v)}
@@ -607,6 +615,8 @@ interface ExpandableMachineRowProps {
   machineTotal: number;
   changed: boolean;
   getVariantValue: (variant: string) => string;
+  /** Map of variant -> saved quantity from DB entries */
+  savedVariantQuantities: Map<string, number>;
   onToggleMachine: () => void;
   onToggleComment: () => void;
   onSetStatus: (v: string) => void;
@@ -619,7 +629,7 @@ interface ExpandableMachineRowProps {
 function ExpandableMachineRow({
   sector, machine, machineExpanded, commentIsOpen, isSaving,
   currentStatus, currentVariants, currentComment, machineTotal, changed,
-  getVariantValue, onToggleMachine, onToggleComment, onSetStatus, onToggleVariant,
+  getVariantValue, savedVariantQuantities, onToggleMachine, onToggleComment, onSetStatus, onToggleVariant,
   onSetVariantValue, onSetComment, onSave,
 }: ExpandableMachineRowProps) {
   const statusOpt = getStatusOption(currentStatus);
@@ -628,6 +638,28 @@ function ExpandableMachineRow({
   const variantLabel = getVariantLabel(sector.ordem);
   const VariantIcon = getVariantIcon(sector.ordem);
   const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
+
+  // Compute live total from variant inputs (edited or saved)
+  let liveTotal = 0;
+  if (currentVariants.size > 0) {
+    for (const v of Array.from(currentVariants)) {
+      const val = getVariantValue(v);
+      const num = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+      if (!isNaN(num)) liveTotal += num;
+    }
+  } else {
+    liveTotal = machineTotal;
+  }
+
+  // Build per-variant display: use edited values if available, else saved
+  const variantDisplay: { label: string; value: number; color: string; bgClass: string; textClass: string; borderClass: string }[] = [];
+  for (const v of Array.from(currentVariants)) {
+    const opt = variantOptions.find(o => o.value === v);
+    if (!opt) continue;
+    const editVal = getVariantValue(v);
+    const num = editVal !== "" ? parseFloat(editVal.replace(",", ".")) : 0;
+    variantDisplay.push({ label: opt.label, value: isNaN(num) ? 0 : num, color: opt.color, bgClass: opt.bgClass, textClass: opt.textClass, borderClass: opt.borderClass });
+  }
 
   return (
     <div className="bg-white/50">
@@ -650,18 +682,14 @@ function ExpandableMachineRow({
           <span className="hidden sm:inline">{statusOpt.label}</span>
         </div>
 
-        {/* Variant badges */}
-        {currentVariants.size > 0 && (
+        {/* Variant badges with quantities */}
+        {variantDisplay.length > 0 && (
           <div className="flex items-center gap-1 flex-wrap">
-            {Array.from(currentVariants).map(v => {
-              const opt = variantOptions.find(o => o.value === v);
-              if (!opt) return null;
-              return (
-                <span key={v} className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
-                  {opt.label}
-                </span>
-              );
-            })}
+            {variantDisplay.map(vd => (
+              <span key={vd.label} className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${vd.bgClass} ${vd.textClass} ${vd.borderClass}`}>
+                {vd.label}: {fmtNum(vd.value, decimals)}
+              </span>
+            ))}
           </div>
         )}
 
@@ -670,9 +698,9 @@ function ExpandableMachineRow({
           <MessageSquare className="w-3.5 h-3.5" />
         </button>
 
-        {/* Total display */}
+        {/* Total display (live from inputs) */}
         <div className="text-right shrink-0 w-20">
-          <div className="text-sm font-bold tabular-nums text-slate-700">{fmtNum(machineTotal, decimals)}</div>
+          <div className="text-sm font-bold tabular-nums text-slate-700">{fmtNum(liveTotal, decimals)}</div>
           <div className="text-[9px] text-slate-400">{sector.unidadeMedida}</div>
         </div>
 
