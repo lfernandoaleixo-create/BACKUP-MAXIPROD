@@ -2039,3 +2039,6 @@
 ## Bug: Não permite desmarcar medida/tipo com valor preenchido
 - [x] Permitir desmarcar medida/tipo mesmo com valor preenchido (limpar valor ao desmarcar)
 - [x] Recalcular total sem a medida desmarcada
+
+## Bug: Produção fantasma - total mostra valor sem produção marcada (4 sacos)
+- [x] Investigar e resolver definitivamente o bug de total fantasma (getSectorTotal agora calcula localmente para setores expandíveis, respeitando variantes selecionadas pelo usuário)

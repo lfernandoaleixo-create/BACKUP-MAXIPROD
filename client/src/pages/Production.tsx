@@ -240,7 +240,57 @@ export default function Production() {
     return "";
   };
 
+  /**
+   * Calcula o total do setor.
+   * Para setores expandíveis (Multilamina/Vareteira), calcula a partir dos entries individuais,
+   * respeitando as variantes atualmente selecionadas pelo usuário (não as do banco).
+   * Para setores simples, usa o dailySummary do backend.
+   */
   const getSectorTotal = (sectorId: number): number => {
+    // Find the sector to check if it's expandable
+    const sector = sectors?.find(s => s.id === sectorId);
+    if (!sector) {
+      if (!dailySummary) return 0;
+      const s = dailySummary.find(d => d.sectorId === sectorId);
+      return s ? Number(s.total) : 0;
+    }
+
+    if (hasExpandableFeatures(sector.ordem)) {
+      // For expandable sectors: sum per-machine considering selected variants
+      if (!sector.machines || sector.machines.length === 0) return 0;
+      let sectorTotal = 0;
+      for (const machine of sector.machines) {
+        const machineKey = `${sectorId}-${machine.id}`;
+        const activeVariants = getSelectedVariants(sectorId, machine.id);
+
+        if (activeVariants.size > 0) {
+          // Sum only the selected variants (using edited values if available, else DB values)
+          for (const v of Array.from(activeVariants)) {
+            const varKey = `${machineKey}-${v}`;
+            if (variantEditValues[varKey] !== undefined && variantEditValues[varKey] !== "") {
+              const num = parseFloat(variantEditValues[varKey].replace(",", "."));
+              if (!isNaN(num)) sectorTotal += num;
+            } else {
+              const entry = getEntryForVariant(sectorId, machine.id, v);
+              if (entry) sectorTotal += Number(entry.quantidade);
+            }
+          }
+        } else {
+          // No variants selected: use the non-variant entry or edited value
+          if (editValues[machineKey] !== undefined && editValues[machineKey] !== "") {
+            const num = parseFloat(editValues[machineKey].replace(",", "."));
+            if (!isNaN(num)) sectorTotal += num;
+          } else {
+            // Only count entries without tipoMadeira (non-variant entries)
+            const entry = getEntryForVariant(sectorId, machine.id, null);
+            if (entry) sectorTotal += Number(entry.quantidade);
+          }
+        }
+      }
+      return sectorTotal;
+    }
+
+    // For simple sectors: use dailySummary from backend
     if (!dailySummary) return 0;
     const s = dailySummary.find(d => d.sectorId === sectorId);
     return s ? Number(s.total) : 0;
