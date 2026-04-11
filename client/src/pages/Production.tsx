@@ -272,43 +272,40 @@ export default function Production() {
     // Get selected variants
     const variants = selectedVariants[machineKey] || getExistingVariants(sectorId, machineId);
 
+    // Build batch entries - one per selected variant (or single entry if no variants)
+    const batchEntries: any[] = [];
+
     if (variants.size === 0) {
       // No variants selected: save as single entry without tipoMadeira
       const val = variantEditValues[`${machineKey}-_none`] || editValues[machineKey];
       const quantidade = val !== undefined && val !== "" ? parseFloat(val.replace(",", ".")) : 0;
       if (isNaN(quantidade) || quantidade < 0) { toast.error("Valor inválido"); return; }
-
-      setSavingKeys(prev => new Set(prev).add(machineKey));
-      upsertEntry.mutate({
+      batchEntries.push({
         sectorId, machineId, data: selectedDate, quantidade, status, observacoes: comment,
       });
-      return;
-    }
-
-    // Build batch entries - one per selected variant
-    const batchEntries: any[] = [];
-    for (const variant of Array.from(variants)) {
-      const varKey = `${machineKey}-${variant}`;
-      const existingEntry = getEntryForVariant(sectorId, machineId, variant);
-      const val = variantEditValues[varKey];
-      let quantidade: number;
-      if (val !== undefined && val !== "") {
-        quantidade = parseFloat(val.replace(",", "."));
-      } else if (existingEntry) {
-        quantidade = Number(existingEntry.quantidade);
-      } else {
-        quantidade = 0;
+    } else {
+      for (const variant of Array.from(variants)) {
+        const varKey = `${machineKey}-${variant}`;
+        const existingEntry = getEntryForVariant(sectorId, machineId, variant);
+        const val = variantEditValues[varKey];
+        let quantidade: number;
+        if (val !== undefined && val !== "") {
+          quantidade = parseFloat(val.replace(",", "."));
+        } else if (existingEntry) {
+          quantidade = Number(existingEntry.quantidade);
+        } else {
+          quantidade = 0;
+        }
+        if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${variant}`); return; }
+        batchEntries.push({
+          sectorId, machineId, data: selectedDate, quantidade, status,
+          tipoMadeira: variant, observacoes: comment,
+        });
       }
-      if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${variant}`); return; }
-
-      batchEntries.push({
-        sectorId, machineId, data: selectedDate, quantidade, status,
-        tipoMadeira: variant, observacoes: comment,
-      });
     }
 
     setSavingKeys(prev => new Set(prev).add(machineKey));
-    batchUpsert.mutate({ entries: batchEntries });
+    batchUpsert.mutate({ sectorId, machineId, data: selectedDate, entries: batchEntries });
   };
 
   // ─── Edit value helpers ───

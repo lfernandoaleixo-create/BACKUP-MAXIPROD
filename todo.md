@@ -2032,3 +2032,6 @@
 - [x] Total do dia (card resumo + header setor) deve somar todas as quantidades de todos os tipos/medidas
 - [x] Ao lado de cada máquina expandível, mostrar quantidade de cada tipo/medida separadamente (ex: Benazzi: 5,5 | Madeira Dura: 3,2)
 - [x] Aplicar mesma lógica para Multilamina e Vareteira
+
+## Bug: Vareteira mostra 14 sacos mesmo com produção zerada
+- [x] Diagnosticar e corrigir bug no card Vareteira que mostra 14 sacos mesmo após zerar todas as produções (causa: registros antigos de medidas desmarcadas não eram deletados; fix: batchUpsert agora limpa variantes removidas)

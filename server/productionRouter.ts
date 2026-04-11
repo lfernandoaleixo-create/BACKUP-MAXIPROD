@@ -131,10 +131,14 @@ export const productionRouter = router({
     }),
 
   /**
-   * Batch upsert: salvar múltiplos registros de uma vez (para quando há vários tipos/medidas selecionados)
+   * Batch upsert: salvar múltiplos registros de uma vez (para quando há vários tipos/medidas selecionados).
+   * Also cleans up old variant entries that are no longer selected.
    */
   batchUpsertEntries: publicProcedure
     .input(z.object({
+      sectorId: z.number(),
+      machineId: z.number().nullable(),
+      data: z.string(),
       entries: z.array(z.object({
         sectorId: z.number(),
         machineId: z.number().nullable(),
@@ -152,6 +156,34 @@ export const productionRouter = router({
 
       const results: { tipoMadeira: string | null; action: string }[] = [];
 
+      // 1. Find all existing entries for this machine/day
+      const existingConditions = [
+        eq(productionEntries.sectorId, input.sectorId),
+        eq(productionEntries.data, input.data),
+      ];
+      if (input.machineId) {
+        existingConditions.push(eq(productionEntries.machineId, input.machineId));
+      } else {
+        existingConditions.push(sql`${productionEntries.machineId} IS NULL`);
+      }
+      const allExisting = await db
+        .select()
+        .from(productionEntries)
+        .where(and(...existingConditions));
+
+      // 2. Determine which tipoMadeira values are being saved now
+      const newVariants = new Set(input.entries.map(e => e.tipoMadeira || null));
+
+      // 3. Delete old entries whose tipoMadeira is NOT in the new set
+      for (const old of allExisting) {
+        const oldVariant = old.tipoMadeira || null;
+        if (!newVariants.has(oldVariant)) {
+          await db.delete(productionEntries).where(eq(productionEntries.id, old.id));
+          results.push({ tipoMadeira: oldVariant, action: "deleted" });
+        }
+      }
+
+      // 4. Upsert the new entries
       for (const entry of input.entries) {
         const conditions = [
           eq(productionEntries.sectorId, entry.sectorId),
