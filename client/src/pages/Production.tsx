@@ -43,6 +43,12 @@ const WOOD_MEASURE_OPTIONS = [
   { value: "350mm", label: "350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
 ];
 
+// ─── Wood type options (Pirografar) - always shown ───
+const PIROGRAFAR_TYPE_OPTIONS = [
+  { value: "bambu", label: "Bambu", color: "#16a34a", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+  { value: "madeira", label: "Madeira", color: "#92400e", bgClass: "bg-amber-50", textClass: "text-amber-800", borderClass: "border-amber-300" },
+];
+
 function getStatusOption(value: string) {
   return MACHINE_STATUS_OPTIONS.find(o => o.value === value) || MACHINE_STATUS_OPTIONS[0];
 }
@@ -87,24 +93,27 @@ const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 // Sector 1 = Multilamina (tipo de madeira)
 // Sector 2 = Vareteira, 3 = Seletoras Toco, 4 = Seleção Automática (medida de madeira)
 function isMultilamina(ordem: number) { return ordem === 1; }
+function isPirografar(ordem: number) { return ordem === 9; }
 function hasMeasureFeatures(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4; }
 function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2 || ordem === 3 || ordem === 4 || ordem === 6 || ordem === 7 || ordem === 9; }
 
 // Get the FIXED variant options for a sector (always all shown)
 function getVariantOptions(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem)) return WOOD_TYPE_OPTIONS;
+  if (isPirografar(sectorOrdem)) return PIROGRAFAR_TYPE_OPTIONS;
   if (hasMeasureFeatures(sectorOrdem)) return WOOD_MEASURE_OPTIONS;
   return [];
 }
 
 function getVariantLabel(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem)) return "Tipo de Madeira";
+  if (isPirografar(sectorOrdem)) return "Tipo de Madeira";
   if (hasMeasureFeatures(sectorOrdem)) return "Medida de Madeira";
   return "";
 }
 
 function getVariantIcon(sectorOrdem: number) {
-  if (isMultilamina(sectorOrdem)) return TreePine;
+  if (isMultilamina(sectorOrdem) || isPirografar(sectorOrdem)) return TreePine;
   return Ruler;
 }
 

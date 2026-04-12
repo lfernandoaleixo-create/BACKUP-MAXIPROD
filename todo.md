@@ -2076,3 +2076,6 @@
 - [x] Flow Pack (setor 6): tornar expandível com status multi-select, comentários e produção por máquina
 - [x] Ponteira (setor 7): tornar expandível com status multi-select, comentários e produção por máquina
 - [x] Pirografar (setor 9): tornar expandível com status multi-select, comentários e produção por máquina
+
+## Tipo de madeira no Pirografar (setor 9)
+- [x] Adicionar variantes Bambu e Madeira no setor 9 (mesma dinâmica do Multilamina com Benazzi/Madeira Dura)
