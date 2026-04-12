@@ -667,7 +667,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
       <div className="max-h-[60vh] overflow-auto relative">
-        <table className={`w-full ${showFinancial ? 'min-w-[1100px]' : ''}`} style={!showFinancial ? { tableLayout: 'fixed' } : undefined}>
+        <table className={`w-full ${showFinancial ? 'min-w-[1100px]' : showSalesColumns ? 'min-w-[1800px]' : ''}`} style={!showFinancial && !showSalesColumns ? { tableLayout: 'fixed' } : undefined}>
           <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 shadow-sm">
             <tr>
               {showFinancial ? (
@@ -743,28 +743,28 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   {showSalesColumns && monthlySalesData?.months && (
                     <>
                       {monthlySalesData.months.slice(0, 3).map((m) => (
-                        <th key={m.key} className="px-3 py-2.5 text-right text-[11px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 85 }} title={`Vendas faturadas em ${m.label}`}>
+                        <th key={m.key} className="px-4 py-2.5 text-right text-xs font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }} title={`Vendas faturadas em ${m.label}`}>
                           <div className="flex flex-col items-end">
-                            <span className="text-[9px] text-blue-400 font-medium">Vendas</span>
+                            <span className="text-[10px] text-blue-500 font-medium">VENDAS</span>
                             <span>{m.label}</span>
                           </div>
                         </th>
                       ))}
-                      <th className="px-3 py-2.5 text-right text-[11px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 90 }} title="Média de vendas dos últimos 3 meses">
+                      <th className="px-4 py-2.5 text-right text-xs font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 130 }} title="Média de vendas dos últimos 3 meses">
                         <div className="flex flex-col items-end">
-                          <span className="text-[9px] text-indigo-400 font-medium">Média</span>
+                          <span className="text-[10px] text-indigo-500 font-medium">MÉDIA</span>
                           <span>3 Meses</span>
                         </div>
                       </th>
-                      <th className="px-3 py-2.5 text-right text-[11px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 95 }} title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                      <th className="px-4 py-2.5 text-right text-xs font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 140 }} title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
                         <div className="flex flex-col items-end">
-                          <span className="text-[9px] text-purple-400 font-medium">Est.Reg.</span>
+                          <span className="text-[10px] text-purple-500 font-medium">EST.REG.</span>
                           <span>Calculado</span>
                         </div>
                       </th>
-                      <th className="px-3 py-2.5 text-right text-[11px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 90 }} title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                      <th className="px-4 py-2.5 text-right text-xs font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 130 }} title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
                         <div className="flex flex-col items-end">
-                          <span className="text-[9px] text-emerald-400 font-medium">Vendas</span>
+                          <span className="text-[10px] text-emerald-500 font-medium">VENDAS</span>
                           <span>{monthlySalesData.months[3]?.label || 'Atual'}</span>
                         </div>
                       </th>
@@ -1016,22 +1016,22 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     const unit = item.isKgProduct ? "kg" : "cx";
                     return (
                       <>
-                        <td className="px-3 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 85 }}>
+                        <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
                           <span className={`text-xs font-medium ${m1 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m1 > 0 ? `${formatNumber(m1)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-3 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 85 }}>
+                        <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
                           <span className={`text-xs font-medium ${m2 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m2 > 0 ? `${formatNumber(m2)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-3 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 85 }}>
+                        <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
                           <span className={`text-xs font-medium ${m3 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m3 > 0 ? `${formatNumber(m3)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-3 py-2.5 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 90 }}>
+                        <td className="px-4 py-2.5 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 130 }}>
                           <span className={`text-xs font-bold ${avg3m > 0 ? 'text-indigo-800' : 'text-slate-300'}`}>{avg3m > 0 ? `${formatNumber(Math.round(avg3m))} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-3 py-2.5 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 95 }}>
+                        <td className="px-4 py-2.5 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 140 }}>
                           <span className={`text-xs font-bold ${estRegCalc > 0 ? 'text-purple-800' : 'text-slate-300'}`} title={`${formatNumber(Math.round(avg3m))} × 2,33 = ${formatNumber(estRegCalc)}`}>{estRegCalc > 0 ? `${formatNumber(estRegCalc)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-3 py-2.5 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 90 }}>
+                        <td className="px-4 py-2.5 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 130 }}>
                           {(() => {
                             const aboveAvg = avg3m > 0 && mAtual > avg3m;
                             const belowAvg = avg3m > 0 && mAtual < avg3m;
@@ -2504,28 +2504,28 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                     {showSalesColumns && monthlySalesData?.months && (
                       <>
                         {monthlySalesData.months.slice(0, 3).map((m) => (
-                          <th key={m.key} className="px-3 py-2.5 text-right text-[11px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 85 }} title={`Vendas faturadas em ${m.label}`}>
+                          <th key={m.key} className="px-4 py-2.5 text-right text-xs font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }} title={`Vendas faturadas em ${m.label}`}>
                             <div className="flex flex-col items-end">
-                              <span className="text-[9px] text-blue-400 font-medium">Vendas</span>
+                              <span className="text-[10px] text-blue-500 font-medium">VENDAS</span>
                               <span>{m.label}</span>
                             </div>
                           </th>
                         ))}
-                        <th className="px-3 py-2.5 text-right text-[11px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 90 }} title="Média de vendas dos últimos 3 meses">
+                        <th className="px-4 py-2.5 text-right text-xs font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 130 }} title="Média de vendas dos últimos 3 meses">
                           <div className="flex flex-col items-end">
-                            <span className="text-[9px] text-indigo-400 font-medium">Média</span>
+                            <span className="text-[10px] text-indigo-500 font-medium">MÉDIA</span>
                             <span>3 Meses</span>
                           </div>
                         </th>
-                        <th className="px-3 py-2.5 text-right text-[11px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 95 }} title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                        <th className="px-4 py-2.5 text-right text-xs font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 140 }} title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
                           <div className="flex flex-col items-end">
-                            <span className="text-[9px] text-purple-400 font-medium">Est.Reg.</span>
+                            <span className="text-[10px] text-purple-500 font-medium">EST.REG.</span>
                             <span>Calculado</span>
                           </div>
                         </th>
-                        <th className="px-3 py-2.5 text-right text-[11px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 90 }} title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                        <th className="px-4 py-2.5 text-right text-xs font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 130 }} title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
                           <div className="flex flex-col items-end">
-                            <span className="text-[9px] text-emerald-400 font-medium">Vendas</span>
+                            <span className="text-[10px] text-emerald-500 font-medium">VENDAS</span>
                             <span>{monthlySalesData.months[3]?.label || 'Atual'}</span>
                           </div>
                         </th>
@@ -2605,22 +2605,22 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                           const unit = item.isKgProduct || item.codigoItem === "00223" ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
                           return (
                             <>
-                              <td className="px-3 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 85 }}>
+                              <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
                                 <span className={`text-xs font-medium ${m1 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m1 > 0 ? `${formatNumber(m1)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-3 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 85 }}>
+                              <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
                                 <span className={`text-xs font-medium ${m2 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m2 > 0 ? `${formatNumber(m2)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-3 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 85 }}>
+                              <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
                                 <span className={`text-xs font-medium ${m3 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m3 > 0 ? `${formatNumber(m3)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-3 py-2.5 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 90 }}>
+                              <td className="px-4 py-2.5 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 130 }}>
                                 <span className={`text-xs font-bold ${avg3m > 0 ? 'text-indigo-800' : 'text-slate-300'}`}>{avg3m > 0 ? `${formatNumber(Math.round(avg3m))} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-3 py-2.5 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 95 }}>
+                              <td className="px-4 py-2.5 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 140 }}>
                                 <span className={`text-xs font-bold ${estRegCalc > 0 ? 'text-purple-800' : 'text-slate-300'}`} title={`${formatNumber(Math.round(avg3m))} × 2,33 = ${formatNumber(estRegCalc)}`}>{estRegCalc > 0 ? `${formatNumber(estRegCalc)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-3 py-2.5 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 90 }}>
+                              <td className="px-4 py-2.5 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 130 }}>
                                 {(() => {
                                   const aboveAvg = avg3m > 0 && mAtual > avg3m;
                                   const belowAvg = avg3m > 0 && mAtual < avg3m;

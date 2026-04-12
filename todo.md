@@ -2132,3 +2132,7 @@
 - [x] Aumentar espaçamento/largura das 6 colunas ocultas para melhor legibilidade
 - [x] Travar header da tabela (sticky) - container max-h-[60vh] overflow-auto com thead sticky top-0
 - [x] Destacar ícone de expandir colunas (amarelo pulsante quando fechado, azul sólido quando aberto, tamanho maior)
+
+## Estoque - CORRIGIR largura das colunas ocultas (URGENTE)
+- [x] Colunas de vendas corrigidas - removido tableLayout:fixed, adicionado min-w-[1800px], minWidth 120-140px por coluna
+- [x] Títulos completamente legíveis: VENDAS JAN/26, VENDAS FEV/26, VENDAS MAR/26, MÉDIA 3 MESES, EST.REG. CALCULADO, VENDAS ABR/26
