@@ -2109,3 +2109,7 @@
 - [x] Remover botões de salvar individuais de cada máquina/mesa
 - [x] Criar um único botão "Salvar Dia" que salva todos os lançamentos de produção de uma vez
 - [x] O botão deve ficar visível e acessível (sticky no rodapé, fica verde com asterisco quando há alterações)
+
+## Produção - Mover botão Salvar Dia para o header
+- [x] Mover botão "Salvar Dia" do rodapé para o lado do seletor de data no header
+- [x] Remover botão sticky do rodapé

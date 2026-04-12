@@ -658,6 +658,23 @@ export default function Production() {
           <button onClick={() => { setSelectedDate(getTodayBR()); resetEditState(); }} className="ml-auto text-xs text-teal-600 hover:text-teal-700 font-medium px-2 py-1 rounded hover:bg-teal-50 transition-colors">
             Ir para Hoje
           </button>
+          {viewMode === "lancamento" && (
+            <button
+              onClick={handleSaveAllDay}
+              disabled={isSavingAll || !hasAnyChanges}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                hasAnyChanges && !isSavingAll
+                  ? "bg-teal-600 text-white hover:bg-teal-700 shadow-sm"
+                  : "bg-slate-100 text-slate-400 cursor-not-allowed"
+              }`}
+            >
+              {isSavingAll ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+              ) : (
+                <><Save className="w-4 h-4" /> Salvar Dia{hasAnyChanges ? " *" : ""}</>
+              )}
+            </button>
+          )}
         </div>
 
         {viewMode === "lancamento" ? (
@@ -786,24 +803,7 @@ export default function Production() {
               })}
             </div>
 
-            {/* Save All Day button - fixed at bottom */}
-            <div className="sticky bottom-0 z-20 pt-4 pb-6">
-              <button
-                onClick={handleSaveAllDay}
-                disabled={isSavingAll || !hasAnyChanges}
-                className={`w-full flex items-center justify-center gap-3 py-4 rounded-xl text-base font-bold shadow-lg transition-all ${
-                  hasAnyChanges && !isSavingAll
-                    ? "bg-teal-600 text-white hover:bg-teal-700 shadow-teal-200 hover:shadow-xl"
-                    : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                }`}
-              >
-                {isSavingAll ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Salvando...</>
-                ) : (
-                  <><Save className="w-5 h-5" /> Salvar Dia{hasAnyChanges ? " *" : ""}</>
-                )}
-              </button>
-            </div>
+
           </>
         ) : (
           <HistoryView sectors={sectors || []} weekRange={weekRange} weeklySummary={weeklySummary || []} selectedDate={selectedDate} />
