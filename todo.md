@@ -2082,3 +2082,10 @@
 
 ## Medidas de madeira no Ponteira (setor 7)
 - [x] Adicionar medidas 180mm, 200mm, 220mm, 250mm no setor Ponteira (7)
+
+## Card Embalagem (setor 8) - Busca de Produtos Acabados
+- [x] Caixa de busca com os 53 produtos acabados do estoque (Madeira - Produto Acabado)
+- [x] Selecionar produto e abrir campo de quantidade para registrar produção
+- [x] Sincronização: novos produtos criados no estoque aparecem automaticamente no card 8
+- [x] Atualizar backend com procedure getFinishedProducts para listar produtos
+- [x] Atualizar frontend do setor 8 com busca, seleção e campo de quantidade

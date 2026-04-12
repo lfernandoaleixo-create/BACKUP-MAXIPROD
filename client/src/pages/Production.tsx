@@ -14,7 +14,7 @@ import {
   Factory, ChevronDown, ChevronRight, ChevronUp, Save, Calendar, BarChart3,
   ArrowLeft, ArrowRight, Loader2, Cog, Eye, Package, Box, Zap, Scissors,
   Layers, Printer, History, AlertTriangle, Wrench, Ban, CheckCircle2, Clock,
-  MessageSquare, TreePine, Ruler,
+  MessageSquare, TreePine, Ruler, Search, X, Plus,
 } from "lucide-react";
 
 // ─── Status options ───
@@ -363,6 +363,28 @@ export default function Production() {
     batchUpsert.mutate({ sectorId, machineId, data: selectedDate, entries: batchEntries });
   };
 
+  // Save for Embalagem sector (setor 8) - saves individual product entries
+  const handleEmbalagemSave = (sectorId: number, codigoItem: string, quantidade: number, _descricao: string) => {
+    const key = `${sectorId}-emb`;
+    setSavingKeys(prev => new Set(prev).add(key));
+    upsertEntry.mutate({
+      sectorId, machineId: null, data: selectedDate, quantidade,
+      tipoMadeira: codigoItem, observacoes: "",
+    }, {
+      onSuccess: () => {
+        setSavingKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
+        utils.production.getEntries.invalidate({ data: selectedDate });
+        utils.production.getDailySummary.invalidate({ data: selectedDate });
+        utils.production.getWeeklySummary.invalidate();
+        toast.success("Produção embalagem salva!");
+      },
+      onError: (err: any) => {
+        setSavingKeys(prev => { const n = new Set(prev); n.delete(key); return n; });
+        toast.error("Erro ao salvar: " + err.message);
+      },
+    });
+  };
+
   // ─── Edit value helpers ───
   const getEditValue = (sectorId: number, machineId: number | null): string => {
     const key = `${sectorId}-${machineId || "null"}`;
@@ -630,17 +652,12 @@ export default function Production() {
                             })}
                           </div>
                         ) : (
-                          <SectorWithoutMachines
+                          <EmbalagemSector
                             sector={sector}
-                            currentVal={getEditValue(sector.id, null)}
-                            currentComment={getCommentValue(sector.id, null)}
-                            commentIsOpen={commentOpen.has(`${sector.id}-null`)}
-                            isSaving={savingKeys.has(`${sector.id}-null`)}
-                            changed={hasChanges(sector.id, null)}
-                            onSetValue={(v) => setEditValue(sector.id, null, v)}
-                            onSetComment={(v) => setCommentValue(sector.id, null, v)}
-                            onToggleComment={() => toggleComment(`${sector.id}-null`)}
-                            onSave={() => handleSimpleSave(sector.id, null)}
+                            selectedDate={selectedDate}
+                            entries={entries || []}
+                            savingKeys={savingKeys}
+                            onSaveProduct={handleEmbalagemSave}
                           />
                         )}
                       </div>
@@ -901,40 +918,165 @@ function SimpleMachineRow({ sector, machine, commentIsOpen, isSaving, currentVal
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SECTOR WITHOUT MACHINES (Embalagem)
+   EMBALAGEM SECTOR (setor 8) - Busca de produtos acabados
    ═══════════════════════════════════════════════════════════ */
-interface SectorWithoutMachinesProps {
-  sector: any; currentVal: string; currentComment: string; commentIsOpen: boolean;
-  isSaving: boolean; changed: boolean;
-  onSetValue: (v: string) => void; onSetComment: (v: string) => void;
-  onToggleComment: () => void; onSave: () => void;
+interface EmbalagemSectorProps {
+  sector: any;
+  selectedDate: string;
+  entries: any[];
+  savingKeys: Set<string>;
+  onSaveProduct: (sectorId: number, codigoItem: string, quantidade: number, descricao: string) => void;
 }
 
-function SectorWithoutMachines({ sector, currentVal, currentComment, commentIsOpen, isSaving, changed, onSetValue, onSetComment, onToggleComment, onSave }: SectorWithoutMachinesProps) {
-  const hasComment = currentComment.trim().length > 0;
+function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProduct }: EmbalagemSectorProps) {
+  const [search, setSearch] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<{ codigoItem: string; descricaoItem: string; unidadeMedida: string } | null>(null);
+  const [qty, setQty] = useState("");
+
+  const { data: products, isLoading } = trpc.production.getFinishedProducts.useQuery();
+
+  // Entries for this sector on the selected date
+  const sectorEntries = useMemo(() => {
+    if (!entries) return [];
+    return entries.filter((e: any) => e.sectorId === sector.id && e.data === selectedDate && e.tipoMadeira);
+  }, [entries, sector.id, selectedDate]);
+
+  // Products already registered today
+  const registeredMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const e of sectorEntries) {
+      if (e.tipoMadeira) map[e.tipoMadeira] = Number(e.quantidade);
+    }
+    return map;
+  }, [sectorEntries]);
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    if (!search.trim()) return products;
+    const q = search.toLowerCase();
+    return products.filter((p: any) =>
+      p.descricaoItem.toLowerCase().includes(q) || p.codigoItem.toLowerCase().includes(q)
+    );
+  }, [products, search]);
+
+  const totalEmbalado = useMemo(() => {
+    return Object.values(registeredMap).reduce((sum, v) => sum + v, 0);
+  }, [registeredMap]);
+
+  const handleSelectProduct = (product: any) => {
+    if (selectedProduct?.codigoItem === product.codigoItem) {
+      setSelectedProduct(null);
+      setQty("");
+    } else {
+      setSelectedProduct(product);
+      const existing = registeredMap[product.codigoItem];
+      setQty(existing ? String(existing) : "");
+    }
+  };
+
+  const handleSave = () => {
+    if (!selectedProduct) return;
+    const quantidade = qty !== "" ? parseFloat(qty.replace(",", ".")) : 0;
+    if (isNaN(quantidade) || quantidade < 0) { toast.error("Valor inválido"); return; }
+    onSaveProduct(sector.id, selectedProduct.codigoItem, quantidade, selectedProduct.descricaoItem);
+    setSelectedProduct(null);
+    setQty("");
+  };
+
+  const isSaving = savingKeys.has(`${sector.id}-emb`);
+
   return (
-    <div>
-      <div className="flex items-center gap-3 px-4 py-3">
-        <div className="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center shrink-0">
-          <Box className="w-4 h-4 text-slate-400" />
-        </div>
-        <span className="text-sm text-slate-600 font-medium flex-1">Produção do setor</span>
-        <button onClick={onToggleComment} className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors ${hasComment || commentIsOpen ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-white text-slate-400 border border-slate-200 hover:bg-slate-50"}`} title="Comentário">
-          <MessageSquare className="w-3.5 h-3.5" />
-        </button>
-        <div className="flex items-center gap-2 shrink-0">
-          <input type="text" inputMode="decimal" value={currentVal} onChange={(e) => onSetValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") onSave(); }} placeholder="0" className="w-24 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white" />
-          <span className="text-xs text-slate-400 w-10">{sector.unidadeMedida}</span>
-          <button onClick={onSave} disabled={isSaving || !changed} className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+    <div className="px-4 py-3 space-y-3">
+      {/* Search bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar produto acabado..."
+          className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+        />
+        {search && (
+          <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
+            <X className="w-3 h-3 text-slate-500" />
           </button>
-        </div>
+        )}
       </div>
-      {commentIsOpen && (
-        <div className="px-4 pb-3 pl-16">
-          <div className="bg-white rounded-lg border border-slate-200 p-2">
-            <textarea value={currentComment} onChange={(e) => onSetComment(e.target.value)} placeholder="Adicionar comentário ou observação..." rows={2} className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400" />
-          </div>
+
+      {/* Summary */}
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>{Object.keys(registeredMap).length} produto(s) registrado(s) hoje</span>
+        <span className="font-semibold text-slate-700">Total: {totalEmbalado} cx</span>
+      </div>
+
+      {/* Product list */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-6">
+          <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+        </div>
+      ) : (
+        <div className="max-h-[400px] overflow-y-auto space-y-1 -mx-1 px-1">
+          {filteredProducts.map((product: any) => {
+            const isSelected = selectedProduct?.codigoItem === product.codigoItem;
+            const registeredQty = registeredMap[product.codigoItem];
+            const hasEntry = registeredQty !== undefined && registeredQty > 0;
+
+            return (
+              <div key={product.codigoItem}>
+                <button
+                  onClick={() => handleSelectProduct(product)}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-3 ${
+                    isSelected
+                      ? "bg-teal-50 border border-teal-300 ring-1 ring-teal-200"
+                      : hasEntry
+                        ? "bg-emerald-50 border border-emerald-200 hover:bg-emerald-100"
+                        : "bg-white border border-slate-100 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-mono text-slate-400">{product.codigoItem}</div>
+                    <div className="text-sm text-slate-700 truncate">{product.descricaoItem}</div>
+                  </div>
+                  {hasEntry && (
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">
+                      {registeredQty} cx
+                    </span>
+                  )}
+                  {isSelected ? <ChevronDown className="w-4 h-4 text-teal-600 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />}
+                </button>
+
+                {/* Expanded: quantity input */}
+                {isSelected && (
+                  <div className="ml-6 mt-1 mb-2 flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-2">
+                    <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="text-xs text-slate-500 shrink-0">Qtd:</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={qty}
+                      onChange={(e) => setQty(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+                      placeholder="0"
+                      autoFocus
+                      className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
+                    />
+                    <span className="text-xs text-slate-400">cx</span>
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                    >
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {filteredProducts.length === 0 && (
+            <div className="text-center py-6 text-sm text-slate-400">Nenhum produto encontrado</div>
+          )}
         </div>
       )}
     </div>

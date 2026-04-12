@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { productionSectors, productionMachines, productionEntries } from "../drizzle/schema";
+import { productionSectors, productionMachines, productionEntries, dashboardData } from "../drizzle/schema";
 import { eq, and, sql, desc, gte, lte } from "drizzle-orm";
 
 /** Status válidos para máquinas de produção */
@@ -314,5 +314,43 @@ export const productionRouter = router({
       woodTypeOptions: WOOD_TYPE_OPTIONS,
       woodMeasureOptions: WOOD_MEASURE_OPTIONS,
     };
+  }),
+
+  /**
+   * Get finished products (Madeira - Produto Acabado) from dashboard data.
+   * Used by Embalagem (setor 8) to list products for packaging registration.
+   */
+  getFinishedProducts: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    // Get latest dashboard data for Fox (or first empresa)
+    const rows = await db
+      .select()
+      .from(dashboardData)
+      .orderBy(desc(dashboardData.computedAt))
+      .limit(2);
+    if (!rows.length) return [];
+
+    const products: Array<{ codigoItem: string; descricaoItem: string; unidadeMedida: string }> = [];
+    for (const row of rows) {
+      const data = row.dataJson as any;
+      if (!data?.items) continue;
+      for (const item of data.items) {
+        // Only Madeira - Produto Acabado items
+        if (item.superGrupo === "MADEIRA" && item.grupo === "PRODUTO ACABADO") {
+          // Avoid duplicates
+          if (!products.find(p => p.codigoItem === item.codigoItem)) {
+            products.push({
+              codigoItem: item.codigoItem,
+              descricaoItem: item.descricaoItem || item.descricao || item.codigoItem,
+              unidadeMedida: item.unidadeMedida || "cx",
+            });
+          }
+        }
+      }
+    }
+    // Sort by description
+    products.sort((a, b) => a.descricaoItem.localeCompare(b.descricaoItem));
+    return products;
   }),
 });
