@@ -2,7 +2,7 @@ import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems } from "../drizzle/schema";
-import { eq, and, sql, desc, gte, lte } from "drizzle-orm";
+import { eq, and, or, sql, desc, gte, lte, inArray } from "drizzle-orm";
 
 /** Status válidos para máquinas de produção */
 export const MACHINE_STATUS_OPTIONS = [
@@ -323,7 +323,10 @@ export const productionRouter = router({
   getFinishedProducts: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
-    // Get unique products from stock_items table (the real source of stock data)
+    // Get products from stock_items that belong to the "Madeira - Produto Acabado" card.
+    // This card shows items classified as grupo="industrializacao" in stockProcessor:
+    //   - superGrupoCodigo = "05" (Industrialização: varetas G:06, espetos G:07, palitos G:08)
+    //   - superGrupoCodigo = "16" AND grupoCodigo IN ("18", "19") (Madeira serrada/pinus)
     const rows = await db
       .select({
         codigoItem: stockItems.codigoItem,
@@ -331,9 +334,18 @@ export const productionRouter = router({
         unidadeMedida: stockItems.unidadeMedida,
       })
       .from(stockItems)
+      .where(
+        or(
+          eq(stockItems.superGrupoCodigo, "05"),
+          and(
+            eq(stockItems.superGrupoCodigo, "16"),
+            inArray(stockItems.grupoCodigo, ["18", "19"])
+          )
+        )
+      )
       .orderBy(stockItems.descricaoItem);
     
-    // Deduplicate by codigoItem
+    // Deduplicate by codigoItem (same product may appear in multiple stock locations)
     const seen = new Set<string>();
     const products: Array<{ codigoItem: string; descricaoItem: string; unidadeMedida: string }> = [];
     for (const row of rows) {

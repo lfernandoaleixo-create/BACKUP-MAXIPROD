@@ -2092,3 +2092,6 @@
 
 ## Bug: Card Embalagem - produtos não aparecem na busca
 - [x] Diagnosticar e corrigir: getFinishedProducts buscava de dashboardData com filtro errado (MADEIRA/PRODUTO ACABADO não existe); corrigido para buscar de stock_items (142 produtos)
+
+## Bug: Card Embalagem - listar SOMENTE itens do card Madeira - Produto Acabado
+- [x] Analisar filtro do card "Madeira - Produto Acabado" na aba Estoque e replicar no getFinishedProducts (63 produtos: SG:05 + SG:16 G:18/19)
