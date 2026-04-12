@@ -2127,3 +2127,8 @@
 - [x] Aplicar nos cards Estoque e Sob Encomenda
 - [x] Aplicar no card Madeira - Produto Acabado (entre Disponível e Est. Reg.)
 - [x] Não alterar nenhuma informação existente
+
+## Estoque - Melhorias visuais nas colunas ocultas
+- [x] Aumentar espaçamento/largura das 6 colunas ocultas para melhor legibilidade
+- [x] Travar header da tabela (sticky) - container max-h-[60vh] overflow-auto com thead sticky top-0
+- [x] Destacar ícone de expandir colunas (amarelo pulsante quando fechado, azul sólido quando aberto, tamanho maior)
