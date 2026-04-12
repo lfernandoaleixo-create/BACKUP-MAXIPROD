@@ -2149,3 +2149,11 @@
 - [x] Tabela com min-w-[1300px] quando expandida para scroll horizontal
 - [x] Quando vendas ocultas: tabela EXATAMENTE como era antes
 - [x] Quando vendas expandidas: mesmas colunas + 6 colunas extras com scroll horizontal
+
+## URGENTE: Corrigir colunas - NÃO alterar largura de nenhuma coluna existente
+- [x] tableLayout: fixed SEMPRE com width 1500px quando expandido
+- [x] Ao expandir vendas: GRUPO removida, PRODUTO sticky left com largura 340px
+- [x] PO, PROJETADO, ESTOQUE, PEDIDOS, DISPONÍVEL, UN/CX, EST.REG., STATUS - larguras fixas explícitas
+- [x] 6 colunas de vendas adicionadas à direita com scroll horizontal
+- [x] Quando vendas ocultas: tabela EXATAMENTE como era antes
+- [x] PRODUTO sticky left para ficar visível ao rolar horizontalmente

@@ -667,7 +667,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
       <div className="max-h-[60vh] overflow-auto relative">
-        <table className={`w-full ${showFinancial ? 'min-w-[1100px]' : showSalesColumns ? 'min-w-[1300px]' : ''}`} style={!showFinancial && !showSalesColumns ? { tableLayout: 'fixed' } : undefined}>
+        <table className={`${showFinancial ? 'w-full min-w-[1100px]' : 'w-full'}`} style={!showFinancial ? { tableLayout: 'fixed', ...(showSalesColumns ? { width: 1500 } : {}) } : undefined}>
           <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 shadow-sm">
             <tr>
               {showFinancial ? (
@@ -694,8 +694,8 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
               ) : (
                 <>
                   <th
-                    className="py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none relative"
-                    style={{ width: showSalesColumns ? undefined : prodColWidth, minWidth: showSalesColumns ? 260 : 200, maxWidth: 800, paddingLeft: 8, paddingRight: 12 }}
+                    className={`py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none relative ${showSalesColumns ? 'sticky left-0 z-30 bg-slate-50' : ''}`}
+                    style={{ width: showSalesColumns ? 340 : prodColWidth, minWidth: 200, maxWidth: 800, paddingLeft: 8, paddingRight: 12 }}
                     onClick={() => onSort('descricaoItem')}
                   >
                     <div className="flex items-center gap-1">
@@ -709,7 +709,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                       onClick={(e) => e.stopPropagation()}
                     />
                   </th>
-                  <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ width: showSalesColumns ? undefined : 70, minWidth: 45 }}>Un/Cx</th>
+                  <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ width: showSalesColumns ? 55 : 70 }}>Un/Cx</th>
                   {!showSalesColumns && <th className="px-2 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 160, width: 170 }}>Grupo</th>}
                   <SortHeader field="estoqueCx">Estoque</SortHeader>
                   <SortHeader field="pedidosCx">Pedidos</SortHeader>
@@ -746,20 +746,20 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   {showSalesColumns && monthlySalesData?.months && (
                     <>
                       {monthlySalesData.months.slice(0, 3).map((m) => (
-                        <th key={m.key} className="px-1 py-2.5 text-right text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" style={{ width: 72 }} title={`Vendas faturadas em ${m.label}`}>
+                        <th key={m.key} className="px-1 py-2.5 text-right text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
                           <div className="text-[8px] text-blue-500 font-medium leading-tight">VENDAS</div>
                           <div>{m.label}</div>
                         </th>
                       ))}
-                      <th className="px-1 py-2.5 text-right text-[10px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" style={{ width: 72 }} title="Média de vendas dos últimos 3 meses">
+                      <th className="px-1 py-2.5 text-right text-[10px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
                         <div className="text-[8px] text-indigo-500 font-medium leading-tight">MÉDIA</div>
                         <div>3 Meses</div>
                       </th>
-                      <th className="px-1 py-2.5 text-right text-[10px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" style={{ width: 78 }} title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                      <th className="px-1 py-2.5 text-right text-[10px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
                         <div className="text-[8px] text-purple-500 font-medium leading-tight">EST.REG.</div>
                         <div>Calc.</div>
                       </th>
-                      <th className="px-1 py-2.5 text-right text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" style={{ width: 72 }} title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                      <th className="px-1 py-2.5 text-right text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
                         <div className="text-[8px] text-emerald-500 font-medium leading-tight">VENDAS</div>
                         <div>{monthlySalesData.months[3]?.label || 'Atual'}</div>
                       </th>
@@ -796,8 +796,8 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                 <tr className={`hover:bg-slate-50 transition-colors ${isNegative ? "bg-red-50/50" : isZero ? "bg-amber-50/30" : ""}`}>
                   {/* Produto - descrição EXATA do Maxiprod */}
                   <td
-                    className={showFinancial ? 'px-2 py-1.5' : 'px-2 py-2.5'}
-                    style={showFinancial ? { minWidth: 280 } : { width: prodColWidth, minWidth: 200, maxWidth: 800 }}
+                    className={`${showFinancial ? 'px-2 py-1.5' : 'px-2 py-2.5'} ${showSalesColumns && !showFinancial ? 'sticky left-0 z-20 bg-white' : ''}`}
+                    style={showFinancial ? { minWidth: 280 } : { width: showSalesColumns ? 340 : prodColWidth, minWidth: 200, maxWidth: 800 }}
                   >
                     <div className={`flex items-start gap-1 ${showFinancial ? 'whitespace-normal break-words leading-tight' : ''}`}>
                       {hasVariants && (
@@ -1142,8 +1142,8 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                 {hasVariants && isExpanded && item.variants!.map((variant) => (
                   <tr key={`${item.codigoItem}-${variant.codigoItem}`} className="bg-teal-50/30 border-l-4 border-teal-300">
                     <td
-                      className={showFinancial ? 'px-2 py-1 pl-8' : 'px-2 py-1.5 pl-8'}
-                      style={showFinancial ? { minWidth: 280 } : { width: prodColWidth, minWidth: 200, maxWidth: 800 }}
+                      className={`${showFinancial ? 'px-2 py-1 pl-8' : 'px-2 py-1.5 pl-8'} ${showSalesColumns && !showFinancial ? 'sticky left-0 z-20 bg-teal-50' : ''}`}
+                      style={showFinancial ? { minWidth: 280 } : { width: showSalesColumns ? 340 : prodColWidth, minWidth: 200, maxWidth: 800 }}
                       colSpan={showFinancial ? 1 : undefined}
                     >
                       <div className={showFinancial ? 'whitespace-normal break-words leading-tight' : ''}>
@@ -2499,20 +2499,20 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                     {showSalesColumns && monthlySalesData?.months && (
                       <>
                         {monthlySalesData.months.slice(0, 3).map((m) => (
-                          <th key={m.key} className="px-1 py-2.5 text-right text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" style={{ width: 72 }} title={`Vendas faturadas em ${m.label}`}>
+                          <th key={m.key} className="px-1 py-2.5 text-right text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
                             <div className="text-[8px] text-blue-500 font-medium leading-tight">VENDAS</div>
                             <div>{m.label}</div>
                           </th>
                         ))}
-                        <th className="px-1 py-2.5 text-right text-[10px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" style={{ width: 72 }} title="Média de vendas dos últimos 3 meses">
+                        <th className="px-1 py-2.5 text-right text-[10px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
                           <div className="text-[8px] text-indigo-500 font-medium leading-tight">MÉDIA</div>
                           <div>3 Meses</div>
                         </th>
-                        <th className="px-1 py-2.5 text-right text-[10px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" style={{ width: 78 }} title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                        <th className="px-1 py-2.5 text-right text-[10px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
                           <div className="text-[8px] text-purple-500 font-medium leading-tight">EST.REG.</div>
                           <div>Calc.</div>
                         </th>
-                        <th className="px-1 py-2.5 text-right text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" style={{ width: 72 }} title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                        <th className="px-1 py-2.5 text-right text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
                           <div className="text-[8px] text-emerald-500 font-medium leading-tight">VENDAS</div>
                           <div>{monthlySalesData.months[3]?.label || 'Atual'}</div>
                         </th>
