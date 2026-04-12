@@ -2142,3 +2142,10 @@
 - [x] Ocultar coluna GRUPO quando colunas de vendas estão expandidas (ganhar espaço)
 - [x] Remover coluna extra do ícone toggle - integrado no header PROJETADO
 - [x] Produto e vendas visíveis ao mesmo tempo (GRUPO oculta + toggle integrado + larguras compactas)
+
+## URGENTE: Colunas existentes estão sendo alteradas ao expandir vendas
+- [x] Corrigido: tableLayout fixed mantido quando vendas ocultas, auto quando expandidas
+- [x] PRODUTO com minWidth 260px quando expandido, mantém largura legível
+- [x] Tabela com min-w-[1300px] quando expandida para scroll horizontal
+- [x] Quando vendas ocultas: tabela EXATAMENTE como era antes
+- [x] Quando vendas expandidas: mesmas colunas + 6 colunas extras com scroll horizontal
