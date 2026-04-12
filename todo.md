@@ -2079,3 +2079,6 @@
 
 ## Tipo de madeira no Pirografar (setor 9)
 - [x] Adicionar variantes Bambu e Madeira no setor 9 (mesma dinâmica do Multilamina com Benazzi/Madeira Dura)
+
+## Medidas de madeira no Ponteira (setor 7)
+- [x] Adicionar medidas 180mm, 200mm, 220mm, 250mm no setor Ponteira (7)

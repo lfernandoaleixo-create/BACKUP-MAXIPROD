@@ -43,6 +43,14 @@ const WOOD_MEASURE_OPTIONS = [
   { value: "350mm", label: "350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
 ];
 
+// ─── Measure options (Ponteira) - always shown ───
+const PONTEIRA_MEASURE_OPTIONS = [
+  { value: "180mm", label: "180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
+  { value: "200mm", label: "200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
+  { value: "220mm", label: "220mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
+  { value: "250mm", label: "250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+];
+
 // ─── Wood type options (Pirografar) - always shown ───
 const PIROGRAFAR_TYPE_OPTIONS = [
   { value: "bambu", label: "Bambu", color: "#16a34a", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
@@ -94,6 +102,7 @@ const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 // Sector 2 = Vareteira, 3 = Seletoras Toco, 4 = Seleção Automática (medida de madeira)
 function isMultilamina(ordem: number) { return ordem === 1; }
 function isPirografar(ordem: number) { return ordem === 9; }
+function isPonteira(ordem: number) { return ordem === 7; }
 function hasMeasureFeatures(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4; }
 function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2 || ordem === 3 || ordem === 4 || ordem === 6 || ordem === 7 || ordem === 9; }
 
@@ -101,6 +110,7 @@ function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 
 function getVariantOptions(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem)) return WOOD_TYPE_OPTIONS;
   if (isPirografar(sectorOrdem)) return PIROGRAFAR_TYPE_OPTIONS;
+  if (isPonteira(sectorOrdem)) return PONTEIRA_MEASURE_OPTIONS;
   if (hasMeasureFeatures(sectorOrdem)) return WOOD_MEASURE_OPTIONS;
   return [];
 }
@@ -108,13 +118,14 @@ function getVariantOptions(sectorOrdem: number) {
 function getVariantLabel(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem)) return "Tipo de Madeira";
   if (isPirografar(sectorOrdem)) return "Tipo de Madeira";
+  if (isPonteira(sectorOrdem)) return "Medida de Madeira";
   if (hasMeasureFeatures(sectorOrdem)) return "Medida de Madeira";
   return "";
 }
 
 function getVariantIcon(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem) || isPirografar(sectorOrdem)) return TreePine;
-  return Ruler;
+  return Ruler; // Ponteira e setores com medida usam Ruler
 }
 
 export default function Production() {
