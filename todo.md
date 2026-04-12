@@ -2095,3 +2095,9 @@
 
 ## Bug: Card Embalagem - listar SOMENTE itens do card Madeira - Produto Acabado
 - [x] Analisar filtro do card "Madeira - Produto Acabado" na aba Estoque e replicar no getFinishedProducts (63 produtos: SG:05 + SG:16 G:18/19)
+
+## Card Embalagem (setor 8) - Cards individuais para produtos registrados
+- [x] Produtos registrados no dia aparecem como cards individuais após salvar
+- [x] Cada card mostra código, nome do produto e quantidade registrada
+- [x] Permitir edição rápida da quantidade diretamente no card
+- [x] Permitir remover registro do card
