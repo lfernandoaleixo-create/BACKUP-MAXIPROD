@@ -141,6 +141,7 @@ export default function Production() {
   const [commentValues, setCommentValues] = useState<Record<string, string>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"lancamento" | "historico">("lancamento");
+  const [isSavingAll, setIsSavingAll] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -384,6 +385,124 @@ export default function Production() {
       },
     });
   };
+
+  // ─── Save All Day handler ───
+  const handleSaveAllDay = async () => {
+    if (!sectors) return;
+    setIsSavingAll(true);
+    const promises: Promise<any>[] = [];
+
+    for (const sector of sectors) {
+      const hasMachines = sector.machines && sector.machines.length > 0;
+      const expandable = hasExpandableFeatures(sector.ordem);
+
+      // Setor 8 (Embalagem) é salvo individualmente por produto - pular
+      if (!hasMachines) continue;
+
+      for (const machine of sector.machines) {
+        const machineKey = `${sector.id}-${machine.id || "null"}`;
+
+        if (expandable) {
+          const variantOpts = getVariantOptions(sector.ordem);
+          const status = statusValues[machineKey] || getEntryStatus(sector.id, machine.id);
+          const comment = commentValues[machineKey] !== undefined ? commentValues[machineKey] : getEntryComment(sector.id, machine.id);
+
+          if (variantOpts.length === 0) {
+            // Expandable but no variants (6, 7, 9)
+            const val = editValues[machineKey];
+            const quantidade = val !== undefined && val !== "" ? parseFloat(val.replace(",", ".")) : undefined;
+            if (quantidade !== undefined && !isNaN(quantidade) && quantidade >= 0) {
+              promises.push(
+                upsertEntry.mutateAsync({
+                  sectorId: sector.id, machineId: machine.id, data: selectedDate, quantidade,
+                  status, observacoes: comment,
+                })
+              );
+            } else if (statusValues[machineKey] !== undefined || commentValues[machineKey] !== undefined) {
+              // Save status/comment even if no quantity change
+              const existingTotal = getEntriesForMachine(sector.id, machine.id).reduce((s, e) => s + Number(e.quantidade), 0);
+              promises.push(
+                upsertEntry.mutateAsync({
+                  sectorId: sector.id, machineId: machine.id, data: selectedDate, quantidade: existingTotal,
+                  status, observacoes: comment,
+                })
+              );
+            }
+          } else {
+            // Expandable with variants (1, 2, 3, 4, 5, 7-ponteira, 9-pirografar)
+            const batchEntries: any[] = [];
+            let hasAnyChange = false;
+            for (const opt of variantOpts) {
+              const varKey = `${machineKey}-${opt.value}`;
+              const existingEntry = getEntryForVariant(sector.id, machine.id, opt.value);
+              const val = variantEditValues[varKey];
+              let quantidade: number;
+              if (val !== undefined) {
+                quantidade = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+                hasAnyChange = true;
+              } else if (existingEntry) {
+                quantidade = Number(existingEntry.quantidade);
+              } else {
+                quantidade = 0;
+              }
+              if (isNaN(quantidade) || quantidade < 0) quantidade = 0;
+              batchEntries.push({
+                sectorId: sector.id, machineId: machine.id, data: selectedDate, quantidade, status,
+                tipoMadeira: opt.value, observacoes: comment,
+              });
+            }
+            if (hasAnyChange || statusValues[machineKey] !== undefined || commentValues[machineKey] !== undefined) {
+              promises.push(
+                batchUpsert.mutateAsync({ sectorId: sector.id, machineId: machine.id, data: selectedDate, entries: batchEntries })
+              );
+            }
+          }
+        } else {
+          // Simple sector
+          const val = editValues[machineKey];
+          const comment = commentValues[machineKey];
+          if (val !== undefined || comment !== undefined) {
+            const quantidade = val !== undefined && val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+            if (!isNaN(quantidade) && quantidade >= 0) {
+              promises.push(
+                upsertEntry.mutateAsync({
+                  sectorId: sector.id, machineId: machine.id, data: selectedDate, quantidade,
+                  observacoes: comment !== undefined ? comment : getEntryComment(sector.id, machine.id),
+                })
+              );
+            }
+          }
+        }
+      }
+    }
+
+    try {
+      if (promises.length === 0) {
+        toast.info("Nenhuma altera\u00e7\u00e3o para salvar");
+        setIsSavingAll(false);
+        return;
+      }
+      await Promise.all(promises);
+      utils.production.getEntries.invalidate({ data: selectedDate });
+      utils.production.getDailySummary.invalidate({ data: selectedDate });
+      utils.production.getWeeklySummary.invalidate();
+      toast.success(`Dia salvo com sucesso! (${promises.length} lan\u00e7amento(s))`);
+      resetEditState();
+    } catch (err: any) {
+      toast.error("Erro ao salvar: " + (err?.message || "Erro desconhecido"));
+    } finally {
+      setIsSavingAll(false);
+      setSavingKeys(new Set());
+    }
+  };
+
+  // Check if there are any unsaved changes across all sectors
+  const hasAnyChanges = useMemo(() => {
+    return Object.keys(editValues).length > 0 ||
+      Object.keys(variantEditValues).length > 0 ||
+      Object.keys(statusValues).length > 0 ||
+      Object.keys(commentValues).length > 0;
+  }, [editValues, variantEditValues, statusValues, commentValues]);
 
   // ─── Edit value helpers ───
   const getEditValue = (sectorId: number, machineId: number | null): string => {
@@ -666,6 +785,25 @@ export default function Production() {
                 );
               })}
             </div>
+
+            {/* Save All Day button - fixed at bottom */}
+            <div className="sticky bottom-0 z-20 pt-4 pb-6">
+              <button
+                onClick={handleSaveAllDay}
+                disabled={isSavingAll || !hasAnyChanges}
+                className={`w-full flex items-center justify-center gap-3 py-4 rounded-xl text-base font-bold shadow-lg transition-all ${
+                  hasAnyChanges && !isSavingAll
+                    ? "bg-teal-600 text-white hover:bg-teal-700 shadow-teal-200 hover:shadow-xl"
+                    : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                }`}
+              >
+                {isSavingAll ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Salvando...</>
+                ) : (
+                  <><Save className="w-5 h-5" /> Salvar Dia{hasAnyChanges ? " *" : ""}</>
+                )}
+              </button>
+            </div>
           </>
         ) : (
           <HistoryView sectors={sectors || []} weekRange={weekRange} weeklySummary={weeklySummary || []} selectedDate={selectedDate} />
@@ -776,10 +914,7 @@ function ExpandableMachineRow({
           <div className="text-[9px] text-slate-400">{sector.unidadeMedida}</div>
         </div>
 
-        {/* Save button */}
-        <button onClick={onSave} disabled={isSaving || !changed} className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
-          {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        </button>
+
       </div>
 
       {/* Comment box */}
@@ -899,11 +1034,9 @@ function SimpleMachineRow({ sector, machine, commentIsOpen, isSaving, currentVal
           <MessageSquare className="w-3.5 h-3.5" />
         </button>
         <div className="flex items-center gap-2 shrink-0">
-          <input type="text" inputMode="decimal" value={currentVal} onChange={(e) => onSetValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") onSave(); }} placeholder="0" className="w-24 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white" />
+          <input type="text" inputMode="decimal" value={currentVal} onChange={(e) => onSetValue(e.target.value)} placeholder="0" className="w-24 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white" />
           <span className="text-xs text-slate-400 w-10">{sector.unidadeMedida}</span>
-          <button onClick={onSave} disabled={isSaving || !changed} className="w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          </button>
+
         </div>
       </div>
       {commentIsOpen && (

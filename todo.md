@@ -2104,3 +2104,8 @@
 
 ## Seleção Visual (setor 5) - Adicionar medidas iguais à Seleção Automática (setor 4)
 - [x] Incluir as mesmas medidas/variantes do setor 4 no setor 5 (150mm, 180mm, 200mm, 218mm, 250mm, 300mm, 350mm)
+
+## Produção - Botão único "Salvar Dia"
+- [x] Remover botões de salvar individuais de cada máquina/mesa
+- [x] Criar um único botão "Salvar Dia" que salva todos os lançamentos de produção de uma vez
+- [x] O botão deve ficar visível e acessível (sticky no rodapé, fica verde com asterisco quando há alterações)
