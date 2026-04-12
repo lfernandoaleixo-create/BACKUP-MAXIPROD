@@ -2113,3 +2113,17 @@
 ## Produção - Mover botão Salvar Dia para o header
 - [x] Mover botão "Salvar Dia" do rodapé para o lado do seletor de data no header
 - [x] Remover botão sticky do rodapé
+
+## Estoque - 6 colunas ocultas informativas (Estoque + Sob Encomenda)
+- [x] Backend: endpoint getMonthlySalesByProduct para buscar vendas dos últimos 3 meses + mês atual
+- [x] Coluna 1: Vendas Mês -3 (quantidade vendida há 3 meses)
+- [x] Coluna 2: Vendas Mês -2 (quantidade vendida há 2 meses)
+- [x] Coluna 3: Vendas Mês -1 (quantidade vendida no mês passado)
+- [x] Coluna 4: Média 3M (média das vendas dos últimos 3 meses)
+- [x] Coluna 5: Estoque Regulador Calculado (média × 2,33 = cobertura 60 dias)
+- [x] Coluna 6: Vendas Mês Atual (vendas do mês corrente)
+- [x] Colunas ficam ocultas por padrão, toggle com ícone para mostrar/esconder
+- [x] Posicionadas entre Projetado e Estoque Regulador
+- [x] Aplicar nos cards Estoque e Sob Encomenda
+- [x] Aplicar no card Madeira - Produto Acabado (entre Disponível e Est. Reg.)
+- [x] Não alterar nenhuma informação existente

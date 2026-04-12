@@ -1852,4 +1852,66 @@ export const salesRouter = router({
         pendingItems,
       };
     }),
+
+  /**
+   * Get monthly sales quantity by product (codigoItem) for the last 3 months + current month.
+   * Used for the hidden informational columns in the Estoque and Sob Encomenda cards.
+   * Only counts items with estadoItem in ('Faturado', 'Faturado parcial', 'Faturado c/ entrega futura').
+   */
+  getMonthlySalesByProduct: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { months: [], data: {} };
+
+    // Calculate month boundaries in BR timezone
+    const now = new Date();
+    // Use Intl to get BR date parts
+    const brFormatter = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const brParts = brFormatter.formatToParts(now);
+    const curYear = parseInt(brParts.find(p => p.type === 'year')!.value);
+    const curMonth = parseInt(brParts.find(p => p.type === 'month')!.value);
+
+    // Build 4 month keys: -3, -2, -1, current
+    const monthKeys: string[] = [];
+    const monthLabels: string[] = [];
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    for (let offset = -3; offset <= 0; offset++) {
+      let m = curMonth + offset;
+      let y = curYear;
+      if (m <= 0) { m += 12; y -= 1; }
+      const key = `${y}-${String(m).padStart(2, '0')}`;
+      monthKeys.push(key);
+      monthLabels.push(`${monthNames[m - 1]}/${String(y).slice(2)}`);
+    }
+
+    // Query: sum quantity by codigoItem and month for faturado items
+    const startDate = `${monthKeys[0]}-01`;
+    const endMonth = monthKeys[3];
+    // End of current month
+    let endM = parseInt(endMonth.split('-')[1]);
+    let endY = parseInt(endMonth.split('-')[0]);
+    if (endM === 12) { endM = 1; endY += 1; } else { endM += 1; }
+    const endDate = `${endY}-${String(endM).padStart(2, '0')}-01`;
+
+    // Use raw SQL to avoid Drizzle ORM issues with DATE_FORMAT and SUBSTRING
+    const rawRows = await db.execute(
+      sql`SELECT codigoItem, DATE_FORMAT(SUBSTRING(dataEmissao, 1, 10), '%Y-%m') as yearMonth, COALESCE(SUM(quantidade), 0) as totalQty FROM sales_orders WHERE codigoItem IS NOT NULL AND codigoItem != '' AND estadoItem IN ('Faturado', 'Faturado parcial', 'Faturado c/ entrega futura') AND SUBSTRING(dataEmissao, 1, 10) >= ${startDate} AND SUBSTRING(dataEmissao, 1, 10) < ${endDate} GROUP BY codigoItem, DATE_FORMAT(SUBSTRING(dataEmissao, 1, 10), '%Y-%m')`
+    );
+
+    // Build result map: { codigoItem: { 'YYYY-MM': qty, ... } }
+    const data: Record<string, Record<string, number>> = {};
+    const rows = (rawRows as any)[0] || rawRows;
+    for (const row of (Array.isArray(rows) ? rows : [])) {
+      const code = (row as any).codigoItem;
+      const ym = (row as any).yearMonth;
+      const qty = parseFloat(String((row as any).totalQty)) || 0;
+      if (!code || !ym) continue;
+      if (!data[code]) data[code] = {};
+      data[code][ym] = qty;
+    }
+
+    return {
+      months: monthKeys.map((key, i) => ({ key, label: monthLabels[i] })),
+      data,
+    };
+  }),
 });

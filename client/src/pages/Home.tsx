@@ -527,7 +527,7 @@ function POCell({ item }: { item: StockItem }) {
 }
 
 /* --- Stock Table --- */
-function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter, crmSegmentoFilter, sort, sortDir, onSort, priceMap, showFinancial, pricingOverrides, enableCompraRule }: {
+function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter, crmSegmentoFilter, sort, sortDir, onSort, priceMap, showFinancial, pricingOverrides, enableCompraRule, monthlySalesData }: {
   items: StockItem[];
   search: string;
   segmentoFilter: string;
@@ -541,9 +541,11 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
   showFinancial?: boolean;
   pricingOverrides?: Array<{ codigoItem: string; vendaMensal: number | null; fatorMultiplicacao: string | null; prazoCompraDias: number | null }>;
   enableCompraRule?: boolean;
+  monthlySalesData?: MonthlySalesData;
 }) {
   const [prodColWidth, setProdColWidth] = useState(380);
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
+  const [showSalesColumns, setShowSalesColumns] = useState(false);
   const resizingRef = useRef(false);
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
@@ -728,6 +730,34 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   <SortHeader field="projetadoCx">
                     <TrendingUp className="w-3 h-3" /> Projetado
                   </SortHeader>
+                  {/* Toggle para colunas de vendas mensais */}
+                  <th className="px-1 py-3 text-center" style={{ width: 32 }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowSalesColumns(!showSalesColumns); }}
+                      className={`p-1 rounded transition-colors ${showSalesColumns ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}
+                      title={showSalesColumns ? 'Ocultar colunas de vendas' : 'Mostrar vendas mensais'}
+                    >
+                      <BarChart3 className="w-3.5 h-3.5" />
+                    </button>
+                  </th>
+                  {showSalesColumns && monthlySalesData?.months && (
+                    <>
+                      {monthlySalesData.months.slice(0, 3).map((m) => (
+                        <th key={m.key} className="px-1.5 py-2 text-right text-[10px] font-semibold text-blue-600 uppercase tracking-wider bg-blue-50/40 border-x border-blue-100 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
+                          {m.label}
+                        </th>
+                      ))}
+                      <th className="px-1.5 py-2 text-right text-[10px] font-semibold text-indigo-700 uppercase tracking-wider bg-indigo-50/40 border-x border-indigo-100 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
+                        Média 3M
+                      </th>
+                      <th className="px-1.5 py-2 text-right text-[10px] font-semibold text-purple-700 uppercase tracking-wider bg-purple-50/40 border-x border-purple-100 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                        Est.Reg.Calc
+                      </th>
+                      <th className="px-1.5 py-2 text-right text-[10px] font-semibold text-emerald-700 uppercase tracking-wider bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                        {monthlySalesData.months[3]?.label || 'Atual'}
+                      </th>
+                    </>
+                  )}
                   <th className="px-2 py-3 text-right text-xs font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador (definido em Config > Produtos)">Est. Reg.</th>
                   <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                 </>
@@ -960,6 +990,46 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                       <span className="text-slate-300 text-sm">{"—"}</span>
                     )}
                   </td>
+                  {/* Toggle icon cell (spacer) */}
+                  {!showFinancial && <td style={{ width: 32 }}></td>}
+                  {/* 6 colunas ocultas de vendas mensais */}
+                  {!showFinancial && showSalesColumns && monthlySalesData?.months && (() => {
+                    const salesByMonth = monthlySalesData.data[item.codigoItem] || {};
+                    const m1 = salesByMonth[monthlySalesData.months[0]?.key] || 0;
+                    const m2 = salesByMonth[monthlySalesData.months[1]?.key] || 0;
+                    const m3 = salesByMonth[monthlySalesData.months[2]?.key] || 0;
+                    const avg3m = (m1 + m2 + m3) / 3;
+                    const estRegCalc = Math.round(avg3m * 2.33);
+                    const mAtual = salesByMonth[monthlySalesData.months[3]?.key] || 0;
+                    const unit = item.isKgProduct ? "kg" : "cx";
+                    return (
+                      <>
+                        <td className="px-1.5 py-2 text-right bg-blue-50/30 border-x border-blue-100 whitespace-nowrap">
+                          <span className={`text-[11px] font-medium ${m1 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m1 > 0 ? `${formatNumber(m1)} ${unit}` : '—'}</span>
+                        </td>
+                        <td className="px-1.5 py-2 text-right bg-blue-50/30 border-x border-blue-100 whitespace-nowrap">
+                          <span className={`text-[11px] font-medium ${m2 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m2 > 0 ? `${formatNumber(m2)} ${unit}` : '—'}</span>
+                        </td>
+                        <td className="px-1.5 py-2 text-right bg-blue-50/30 border-x border-blue-100 whitespace-nowrap">
+                          <span className={`text-[11px] font-medium ${m3 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m3 > 0 ? `${formatNumber(m3)} ${unit}` : '—'}</span>
+                        </td>
+                        <td className="px-1.5 py-2 text-right bg-indigo-50/30 border-x border-indigo-100 whitespace-nowrap">
+                          <span className={`text-[11px] font-bold ${avg3m > 0 ? 'text-indigo-700' : 'text-slate-300'}`}>{avg3m > 0 ? `${formatNumber(Math.round(avg3m))} ${unit}` : '—'}</span>
+                        </td>
+                        <td className="px-1.5 py-2 text-right bg-purple-50/30 border-x border-purple-100 whitespace-nowrap">
+                          <span className={`text-[11px] font-bold ${estRegCalc > 0 ? 'text-purple-700' : 'text-slate-300'}`} title={`${formatNumber(Math.round(avg3m))} × 2,33 = ${formatNumber(estRegCalc)}`}>{estRegCalc > 0 ? `${formatNumber(estRegCalc)} ${unit}` : '—'}</span>
+                        </td>
+                        <td className="px-1.5 py-2 text-right bg-emerald-50/30 border-x border-emerald-100 whitespace-nowrap">
+                          {(() => {
+                            const aboveAvg = avg3m > 0 && mAtual > avg3m;
+                            const belowAvg = avg3m > 0 && mAtual < avg3m;
+                            const color = aboveAvg ? 'text-emerald-700' : belowAvg ? 'text-orange-600' : mAtual > 0 ? 'text-emerald-600' : 'text-slate-300';
+                            return <span className={`text-[11px] font-bold ${color}`}>{mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : '—'}{aboveAvg ? ' ↑' : belowAvg ? ' ↓' : ''}</span>;
+                          })()}
+                        </td>
+                      </>
+                    );
+                  })()}
                   {/* Estoque Regulador - oculto quando showFinancial */}
                   {!showFinancial && (
                     <td className="px-2 py-2.5 text-right">
@@ -1551,6 +1621,11 @@ function StockHistoryModal({ open, onClose, card, codigoItem, descricaoItem }: {
 /* --- Classification Group Card --- */
 type PriceMap = Record<string, { avgPrice: number; salesCount: number }>;
 
+type MonthlySalesData = {
+  months: { key: string; label: string }[];
+  data: Record<string, Record<string, number>>;
+} | undefined;
+
 function ClassificationCard({ 
   title, 
   subtitle,
@@ -1566,6 +1641,7 @@ function ClassificationCard({
   pricingOverrides,
   enableCompraRule,
   hideAlerts,
+  monthlySalesData,
 }: { 
   title: string; 
   subtitle: string;
@@ -1581,6 +1657,7 @@ function ClassificationCard({
   pricingOverrides?: Array<{ codigoItem: string; vendaMensal: number | null; fatorMultiplicacao: string | null; prazoCompraDias: number | null }>;
   enableCompraRule?: boolean;
   hideAlerts?: boolean;
+  monthlySalesData?: MonthlySalesData;
 }) {
   const [search, setSearch] = useState("");
   const [grupoFilter, setGrupoFilter] = useState("all");
@@ -1910,6 +1987,7 @@ function ClassificationCard({
             showFinancial={showFinancial}
             pricingOverrides={pricingOverrides}
             enableCompraRule={enableCompraRule}
+            monthlySalesData={monthlySalesData}
           />
         </div>
       )}
@@ -2111,11 +2189,12 @@ function MadeiraValorizacaoCard({
 }
 
 /* --- Madeira PA Card (estoque editável com senha e histórico - SOMENTE AUMENTO) --- */
-function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
+function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySalesData }: {
   items: StockItem[];
   isOpen: boolean;
   onToggle: () => void;
   pricingOverrides?: Array<{ codigoItem: string; vendaMensal: number | null; fatorMultiplicacao: string | null; prazoCompraDias: number | null }>;
+  monthlySalesData?: MonthlySalesData;
 }) {
   const [search, setSearch] = useState("");
   const [editingItem, setEditingItem] = useState<string | null>(null);
@@ -2125,6 +2204,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
   const [currentOperator, setCurrentOperator] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [historyItem, setHistoryItem] = useState<{ codigo: string; descricao: string } | undefined>(undefined);
+  const [showSalesColumns, setShowSalesColumns] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: madeiraStockData } = trpc.dashboard.getMadeiraStock.useQuery(undefined, {
@@ -2399,7 +2479,34 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                       <div className="flex items-center justify-center gap-1 text-emerald-700">Disponivel <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} /></div>
                       <span className="text-[8px] font-bold text-emerald-500 tracking-widest block text-center">P/ VENDA</span>
                     </th>
-
+                    {/* Toggle para colunas de vendas mensais */}
+                    <th className="px-0.5 py-2.5 text-center" style={{ width: 28 }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowSalesColumns(!showSalesColumns); }}
+                        className={`p-1 rounded transition-colors ${showSalesColumns ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}
+                        title={showSalesColumns ? 'Ocultar colunas de vendas' : 'Mostrar vendas mensais'}
+                      >
+                        <BarChart3 className="w-3 h-3" />
+                      </button>
+                    </th>
+                    {showSalesColumns && monthlySalesData?.months && (
+                      <>
+                        {monthlySalesData.months.slice(0, 3).map((m) => (
+                          <th key={m.key} className="px-1 py-2 text-right text-[10px] font-semibold text-blue-600 uppercase tracking-wider bg-blue-50/40 border-x border-blue-100 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
+                            {m.label}
+                          </th>
+                        ))}
+                        <th className="px-1 py-2 text-right text-[10px] font-semibold text-indigo-700 uppercase tracking-wider bg-indigo-50/40 border-x border-indigo-100 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
+                          Média 3M
+                        </th>
+                        <th className="px-1 py-2 text-right text-[10px] font-semibold text-purple-700 uppercase tracking-wider bg-purple-50/40 border-x border-purple-100 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                          Est.Reg.Calc
+                        </th>
+                        <th className="px-1 py-2 text-right text-[10px] font-semibold text-emerald-700 uppercase tracking-wider bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                          {monthlySalesData.months[3]?.label || 'Atual'}
+                        </th>
+                      </>
+                    )}
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador">Est. Reg.</th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                   </tr>
@@ -2460,7 +2567,46 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides }: {
                             {formatNumber(disponivelManual)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}
                           </span>
                         </td>
-
+                        {/* Toggle spacer cell */}
+                        <td style={{ width: 28 }}></td>
+                        {/* 6 colunas ocultas de vendas mensais */}
+                        {showSalesColumns && monthlySalesData?.months && (() => {
+                          const salesByMonth = monthlySalesData.data[item.codigoItem] || {};
+                          const m1 = salesByMonth[monthlySalesData.months[0]?.key] || 0;
+                          const m2 = salesByMonth[monthlySalesData.months[1]?.key] || 0;
+                          const m3 = salesByMonth[monthlySalesData.months[2]?.key] || 0;
+                          const avg3m = (m1 + m2 + m3) / 3;
+                          const estRegCalc = Math.round(avg3m * 2.33);
+                          const mAtual = salesByMonth[monthlySalesData.months[3]?.key] || 0;
+                          const unit = item.isKgProduct || item.codigoItem === "00223" ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
+                          return (
+                            <>
+                              <td className="px-1 py-2 text-right bg-blue-50/30 border-x border-blue-100 whitespace-nowrap">
+                                <span className={`text-[11px] font-medium ${m1 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m1 > 0 ? `${formatNumber(m1)} ${unit}` : '—'}</span>
+                              </td>
+                              <td className="px-1 py-2 text-right bg-blue-50/30 border-x border-blue-100 whitespace-nowrap">
+                                <span className={`text-[11px] font-medium ${m2 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m2 > 0 ? `${formatNumber(m2)} ${unit}` : '—'}</span>
+                              </td>
+                              <td className="px-1 py-2 text-right bg-blue-50/30 border-x border-blue-100 whitespace-nowrap">
+                                <span className={`text-[11px] font-medium ${m3 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m3 > 0 ? `${formatNumber(m3)} ${unit}` : '—'}</span>
+                              </td>
+                              <td className="px-1 py-2 text-right bg-indigo-50/30 border-x border-indigo-100 whitespace-nowrap">
+                                <span className={`text-[11px] font-bold ${avg3m > 0 ? 'text-indigo-700' : 'text-slate-300'}`}>{avg3m > 0 ? `${formatNumber(Math.round(avg3m))} ${unit}` : '—'}</span>
+                              </td>
+                              <td className="px-1 py-2 text-right bg-purple-50/30 border-x border-purple-100 whitespace-nowrap">
+                                <span className={`text-[11px] font-bold ${estRegCalc > 0 ? 'text-purple-700' : 'text-slate-300'}`} title={`${formatNumber(Math.round(avg3m))} × 2,33 = ${formatNumber(estRegCalc)}`}>{estRegCalc > 0 ? `${formatNumber(estRegCalc)} ${unit}` : '—'}</span>
+                              </td>
+                              <td className="px-1 py-2 text-right bg-emerald-50/30 border-x border-emerald-100 whitespace-nowrap">
+                                {(() => {
+                                  const aboveAvg = avg3m > 0 && mAtual > avg3m;
+                                  const belowAvg = avg3m > 0 && mAtual < avg3m;
+                                  const color = aboveAvg ? 'text-emerald-700' : belowAvg ? 'text-orange-600' : mAtual > 0 ? 'text-emerald-600' : 'text-slate-300';
+                                  return <span className={`text-[11px] font-bold ${color}`}>{mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : '—'}{aboveAvg ? ' ↑' : belowAvg ? ' ↓' : ''}</span>;
+                                })()}
+                              </td>
+                            </>
+                          );
+                        })()}
                         {/* Est. Reg. */}
                         <td className="px-1.5 py-2 text-center whitespace-nowrap">
                           {(() => {
@@ -2980,6 +3126,11 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   });
   // Fetch manual pricing overrides
   const { data: pricingOverrides } = trpc.settings.getProductPricing.useQuery();
+
+  // Fetch monthly sales by product for hidden informational columns
+  const { data: monthlySalesData } = trpc.sales.getMonthlySalesByProduct.useQuery(undefined, {
+    refetchInterval: 60000,
+  });
 
   const priceMap: PriceMap = useMemo(() => {
     const base = { ...(pricesData?.prices || {}) };
@@ -3503,6 +3654,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         showFinancial={showFinancial}
         pricingOverrides={pricingOverrides ?? undefined}
         enableCompraRule={true}
+        monthlySalesData={monthlySalesData}
       />
 
       <ClassificationCard
@@ -3519,6 +3671,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         showFinancial={showFinancial}
         pricingOverrides={pricingOverrides ?? undefined}
         hideAlerts={true}
+        monthlySalesData={monthlySalesData}
       />
 
       {/* ═══ SEÇÃO MADEIRA ═══ */}
@@ -3682,6 +3835,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         isOpen={openCards.madeira}
         onToggle={() => toggleCard("madeira")}
         pricingOverrides={pricingOverrides ?? undefined}
+        monthlySalesData={monthlySalesData}
       />
 
       <SemiProntoCard
