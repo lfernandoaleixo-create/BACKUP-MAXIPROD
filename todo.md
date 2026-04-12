@@ -2136,3 +2136,9 @@
 ## Estoque - CORRIGIR largura das colunas ocultas (URGENTE)
 - [x] Colunas de vendas corrigidas - removido tableLayout:fixed, adicionado min-w-[1800px], minWidth 120-140px por coluna
 - [x] Títulos completamente legíveis: VENDAS JAN/26, VENDAS FEV/26, VENDAS MAR/26, MÉDIA 3 MESES, EST.REG. CALCULADO, VENDAS ABR/26
+
+## Estoque - Ajustar colunas ocultas (largura, GRUPO, ícone toggle)
+- [x] Reduzir largura das colunas de vendas para o mínimo do texto (removido minWidth fixo, px-2)
+- [x] Ocultar coluna GRUPO quando colunas de vendas estão expandidas (ganhar espaço)
+- [x] Remover coluna extra do ícone toggle - integrado no header PROJETADO
+- [x] Produto e vendas visíveis ao mesmo tempo (GRUPO oculta + toggle integrado + larguras compactas)

@@ -667,7 +667,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
       <div className="max-h-[60vh] overflow-auto relative">
-        <table className={`w-full ${showFinancial ? 'min-w-[1100px]' : showSalesColumns ? 'min-w-[1800px]' : ''}`} style={!showFinancial && !showSalesColumns ? { tableLayout: 'fixed' } : undefined}>
+        <table className={`w-full ${showFinancial ? 'min-w-[1100px]' : showSalesColumns ? 'min-w-[1400px]' : ''}`} style={!showFinancial && !showSalesColumns ? { tableLayout: 'fixed' } : undefined}>
           <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 shadow-sm">
             <tr>
               {showFinancial ? (
@@ -710,7 +710,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     />
                   </th>
                   <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ width: 70 }}>Un/Cx</th>
-                  <th className="px-2 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 160, width: 170 }}>Grupo</th>
+                  {!showSalesColumns && <th className="px-2 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 160, width: 170 }}>Grupo</th>}
                   <SortHeader field="estoqueCx">Estoque</SortHeader>
                   <SortHeader field="pedidosCx">Pedidos</SortHeader>
                   <th
@@ -727,46 +727,41 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   <SortHeader field="poCx">
                     <Ship className="w-3 h-3" /> PO
                   </SortHeader>
-                  <SortHeader field="projetadoCx">
-                    <TrendingUp className="w-3 h-3" /> Projetado
-                  </SortHeader>
-                  {/* Toggle para colunas de vendas mensais */}
-                  <th className="px-1 py-3 text-center" style={{ width: 40 }}>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setShowSalesColumns(!showSalesColumns); }}
-                      className={`p-1.5 rounded-md transition-all ${showSalesColumns ? 'bg-blue-500 text-white shadow-md ring-2 ring-blue-300' : 'bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-700 ring-1 ring-amber-300 shadow-sm animate-pulse'}`}
-                      title={showSalesColumns ? 'Ocultar colunas de vendas' : 'Mostrar vendas mensais'}
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                    </button>
+                  <th
+                    className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap"
+                    onClick={() => onSort('projetadoCx')}
+                  >
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" /> Projetado
+                      <ArrowUpDown className={`w-3 h-3 ${sort === 'projetadoCx' ? 'text-teal-600' : 'text-slate-300'}`} />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowSalesColumns(!showSalesColumns); }}
+                        className={`ml-1 p-1 rounded transition-all ${showSalesColumns ? 'bg-blue-500 text-white shadow-sm' : 'bg-amber-100 text-amber-600 hover:bg-amber-200 ring-1 ring-amber-300 animate-pulse'}`}
+                        title={showSalesColumns ? 'Ocultar colunas de vendas' : 'Mostrar vendas mensais'}
+                      >
+                        <BarChart3 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </th>
                   {showSalesColumns && monthlySalesData?.months && (
                     <>
                       {monthlySalesData.months.slice(0, 3).map((m) => (
-                        <th key={m.key} className="px-4 py-2.5 text-right text-xs font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }} title={`Vendas faturadas em ${m.label}`}>
-                          <div className="flex flex-col items-end">
-                            <span className="text-[10px] text-blue-500 font-medium">VENDAS</span>
-                            <span>{m.label}</span>
-                          </div>
+                        <th key={m.key} className="px-2 py-2.5 text-right text-[11px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
+                          <div className="text-[9px] text-blue-500 font-medium leading-tight">VENDAS</div>
+                          <div>{m.label}</div>
                         </th>
                       ))}
-                      <th className="px-4 py-2.5 text-right text-xs font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 130 }} title="Média de vendas dos últimos 3 meses">
-                        <div className="flex flex-col items-end">
-                          <span className="text-[10px] text-indigo-500 font-medium">MÉDIA</span>
-                          <span>3 Meses</span>
-                        </div>
+                      <th className="px-2 py-2.5 text-right text-[11px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
+                        <div className="text-[9px] text-indigo-500 font-medium leading-tight">MÉDIA</div>
+                        <div>3 Meses</div>
                       </th>
-                      <th className="px-4 py-2.5 text-right text-xs font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 140 }} title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
-                        <div className="flex flex-col items-end">
-                          <span className="text-[10px] text-purple-500 font-medium">EST.REG.</span>
-                          <span>Calculado</span>
-                        </div>
+                      <th className="px-2 py-2.5 text-right text-[11px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                        <div className="text-[9px] text-purple-500 font-medium leading-tight">EST.REG.</div>
+                        <div>Calc.</div>
                       </th>
-                      <th className="px-4 py-2.5 text-right text-xs font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 130 }} title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
-                        <div className="flex flex-col items-end">
-                          <span className="text-[10px] text-emerald-500 font-medium">VENDAS</span>
-                          <span>{monthlySalesData.months[3]?.label || 'Atual'}</span>
-                        </div>
+                      <th className="px-2 py-2.5 text-right text-[11px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                        <div className="text-[9px] text-emerald-500 font-medium leading-tight">VENDAS</div>
+                        <div>{monthlySalesData.months[3]?.label || 'Atual'}</div>
                       </th>
                     </>
                   )}
@@ -829,9 +824,9 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                         {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "—")}
                       </td>
                       {/* Grupo/Subgrupo */}
-                      <td className="px-2 py-2.5 overflow-hidden" style={{ minWidth: 160, width: 170, maxWidth: 180 }}>
+                      {!showSalesColumns && <td className="px-2 py-2.5 overflow-hidden" style={{ minWidth: 160, width: 170, maxWidth: 180 }}>
                         <GrupoBadge grupo={item.grupo} subgrupo={item.subgrupo} />
-                      </td>
+                      </td>}
                     </>
                   )}
                   {/* Estoque - esconder quando showFinancial */}
@@ -1003,7 +998,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     )}
                   </td>
                   {/* Toggle icon cell (spacer) */}
-                  {!showFinancial && <td style={{ width: 32 }}></td>}
+
                   {/* 6 colunas ocultas de vendas mensais */}
                   {!showFinancial && showSalesColumns && monthlySalesData?.months && (() => {
                     const salesByMonth = monthlySalesData.data[item.codigoItem] || {};
@@ -1016,22 +1011,22 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     const unit = item.isKgProduct ? "kg" : "cx";
                     return (
                       <>
-                        <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
+                        <td className="px-2 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                           <span className={`text-xs font-medium ${m1 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m1 > 0 ? `${formatNumber(m1)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
+                        <td className="px-2 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                           <span className={`text-xs font-medium ${m2 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m2 > 0 ? `${formatNumber(m2)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
+                        <td className="px-2 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                           <span className={`text-xs font-medium ${m3 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m3 > 0 ? `${formatNumber(m3)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-4 py-2.5 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 130 }}>
+                        <td className="px-2 py-2 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap">
                           <span className={`text-xs font-bold ${avg3m > 0 ? 'text-indigo-800' : 'text-slate-300'}`}>{avg3m > 0 ? `${formatNumber(Math.round(avg3m))} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-4 py-2.5 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 140 }}>
+                        <td className="px-2 py-2 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap">
                           <span className={`text-xs font-bold ${estRegCalc > 0 ? 'text-purple-800' : 'text-slate-300'}`} title={`${formatNumber(Math.round(avg3m))} × 2,33 = ${formatNumber(estRegCalc)}`}>{estRegCalc > 0 ? `${formatNumber(estRegCalc)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-4 py-2.5 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 130 }}>
+                        <td className="px-2 py-2 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap">
                           {(() => {
                             const aboveAvg = avg3m > 0 && mAtual > avg3m;
                             const belowAvg = avg3m > 0 && mAtual < avg3m;
@@ -2488,46 +2483,38 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                       <div className="flex items-center justify-center gap-1">Pedidos <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'pedidosCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider cursor-pointer hover:text-emerald-700 select-none bg-emerald-50/60 border-x border-emerald-100 whitespace-nowrap" onClick={() => handleMadeiraSort('disponivelCx')}>
-                      <div className="flex items-center justify-center gap-1 text-emerald-700">Disponivel <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} /></div>
+                      <div className="flex items-center justify-center gap-1 text-emerald-700">
+                        Disponivel <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setShowSalesColumns(!showSalesColumns); }}
+                          className={`ml-1 p-1 rounded transition-all ${showSalesColumns ? 'bg-blue-500 text-white shadow-sm' : 'bg-amber-100 text-amber-600 hover:bg-amber-200 ring-1 ring-amber-300 animate-pulse'}`}
+                          title={showSalesColumns ? 'Ocultar colunas de vendas' : 'Mostrar vendas mensais'}
+                        >
+                          <BarChart3 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                       <span className="text-[8px] font-bold text-emerald-500 tracking-widest block text-center">P/ VENDA</span>
                     </th>
-                    {/* Toggle para colunas de vendas mensais */}
-                    <th className="px-1 py-2.5 text-center" style={{ width: 40 }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setShowSalesColumns(!showSalesColumns); }}
-                        className={`p-1.5 rounded-md transition-all ${showSalesColumns ? 'bg-blue-500 text-white shadow-md ring-2 ring-blue-300' : 'bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-700 ring-1 ring-amber-300 shadow-sm animate-pulse'}`}
-                        title={showSalesColumns ? 'Ocultar colunas de vendas' : 'Mostrar vendas mensais'}
-                      >
-                        <BarChart3 className="w-4 h-4" />
-                      </button>
-                    </th>
+
                     {showSalesColumns && monthlySalesData?.months && (
                       <>
                         {monthlySalesData.months.slice(0, 3).map((m) => (
-                          <th key={m.key} className="px-4 py-2.5 text-right text-xs font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }} title={`Vendas faturadas em ${m.label}`}>
-                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-blue-500 font-medium">VENDAS</span>
-                              <span>{m.label}</span>
-                            </div>
+                          <th key={m.key} className="px-2 py-2.5 text-right text-[11px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
+                            <div className="text-[9px] text-blue-500 font-medium leading-tight">VENDAS</div>
+                            <div>{m.label}</div>
                           </th>
                         ))}
-                        <th className="px-4 py-2.5 text-right text-xs font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 130 }} title="Média de vendas dos últimos 3 meses">
-                          <div className="flex flex-col items-end">
-                            <span className="text-[10px] text-indigo-500 font-medium">MÉDIA</span>
-                            <span>3 Meses</span>
-                          </div>
+                        <th className="px-2 py-2.5 text-right text-[11px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
+                          <div className="text-[9px] text-indigo-500 font-medium leading-tight">MÉDIA</div>
+                          <div>3 Meses</div>
                         </th>
-                        <th className="px-4 py-2.5 text-right text-xs font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 140 }} title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
-                          <div className="flex flex-col items-end">
-                            <span className="text-[10px] text-purple-500 font-medium">EST.REG.</span>
-                            <span>Calculado</span>
-                          </div>
+                        <th className="px-2 py-2.5 text-right text-[11px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                          <div className="text-[9px] text-purple-500 font-medium leading-tight">EST.REG.</div>
+                          <div>Calc.</div>
                         </th>
-                        <th className="px-4 py-2.5 text-right text-xs font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 130 }} title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
-                          <div className="flex flex-col items-end">
-                            <span className="text-[10px] text-emerald-500 font-medium">VENDAS</span>
-                            <span>{monthlySalesData.months[3]?.label || 'Atual'}</span>
-                          </div>
+                        <th className="px-2 py-2.5 text-right text-[11px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                          <div className="text-[9px] text-emerald-500 font-medium leading-tight">VENDAS</div>
+                          <div>{monthlySalesData.months[3]?.label || 'Atual'}</div>
                         </th>
                       </>
                     )}
@@ -2591,8 +2578,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                             {formatNumber(disponivelManual)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}
                           </span>
                         </td>
-                        {/* Toggle spacer cell */}
-                        <td style={{ width: 40 }}></td>
+
                         {/* 6 colunas ocultas de vendas mensais */}
                         {showSalesColumns && monthlySalesData?.months && (() => {
                           const salesByMonth = monthlySalesData.data[item.codigoItem] || {};
@@ -2605,22 +2591,22 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                           const unit = item.isKgProduct || item.codigoItem === "00223" ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
                           return (
                             <>
-                              <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
+                              <td className="px-2 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                                 <span className={`text-xs font-medium ${m1 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m1 > 0 ? `${formatNumber(m1)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
+                              <td className="px-2 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                                 <span className={`text-xs font-medium ${m2 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m2 > 0 ? `${formatNumber(m2)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-4 py-2.5 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap" style={{ minWidth: 120 }}>
+                              <td className="px-2 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                                 <span className={`text-xs font-medium ${m3 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m3 > 0 ? `${formatNumber(m3)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-4 py-2.5 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap" style={{ minWidth: 130 }}>
+                              <td className="px-2 py-2 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap">
                                 <span className={`text-xs font-bold ${avg3m > 0 ? 'text-indigo-800' : 'text-slate-300'}`}>{avg3m > 0 ? `${formatNumber(Math.round(avg3m))} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-4 py-2.5 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap" style={{ minWidth: 140 }}>
+                              <td className="px-2 py-2 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap">
                                 <span className={`text-xs font-bold ${estRegCalc > 0 ? 'text-purple-800' : 'text-slate-300'}`} title={`${formatNumber(Math.round(avg3m))} × 2,33 = ${formatNumber(estRegCalc)}`}>{estRegCalc > 0 ? `${formatNumber(estRegCalc)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-4 py-2.5 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap" style={{ minWidth: 130 }}>
+                              <td className="px-2 py-2 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap">
                                 {(() => {
                                   const aboveAvg = avg3m > 0 && mAtual > avg3m;
                                   const belowAvg = avg3m > 0 && mAtual < avg3m;
