@@ -2101,3 +2101,6 @@
 - [x] Cada card mostra código, nome do produto e quantidade registrada
 - [x] Permitir edição rápida da quantidade diretamente no card
 - [x] Permitir remover registro do card
+
+## Seleção Visual (setor 5) - Adicionar medidas iguais à Seleção Automática (setor 4)
+- [x] Incluir as mesmas medidas/variantes do setor 4 no setor 5 (150mm, 180mm, 200mm, 218mm, 250mm, 300mm, 350mm)

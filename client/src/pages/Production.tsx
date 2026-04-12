@@ -103,8 +103,8 @@ const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 function isMultilamina(ordem: number) { return ordem === 1; }
 function isPirografar(ordem: number) { return ordem === 9; }
 function isPonteira(ordem: number) { return ordem === 7; }
-function hasMeasureFeatures(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4; }
-function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2 || ordem === 3 || ordem === 4 || ordem === 6 || ordem === 7 || ordem === 9; }
+function hasMeasureFeatures(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4 || ordem === 5; }
+function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2 || ordem === 3 || ordem === 4 || ordem === 5 || ordem === 6 || ordem === 7 || ordem === 9; }
 
 // Get the FIXED variant options for a sector (always all shown)
 function getVariantOptions(sectorOrdem: number) {
