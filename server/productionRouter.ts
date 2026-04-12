@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { productionSectors, productionMachines, productionEntries, dashboardData } from "../drizzle/schema";
+import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems } from "../drizzle/schema";
 import { eq, and, sql, desc, gte, lte } from "drizzle-orm";
 
 /** Status válidos para máquinas de produção */
@@ -323,34 +323,29 @@ export const productionRouter = router({
   getFinishedProducts: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
-    // Get latest dashboard data for Fox (or first empresa)
+    // Get unique products from stock_items table (the real source of stock data)
     const rows = await db
-      .select()
-      .from(dashboardData)
-      .orderBy(desc(dashboardData.computedAt))
-      .limit(2);
-    if (!rows.length) return [];
-
+      .select({
+        codigoItem: stockItems.codigoItem,
+        descricaoItem: stockItems.descricaoItem,
+        unidadeMedida: stockItems.unidadeMedida,
+      })
+      .from(stockItems)
+      .orderBy(stockItems.descricaoItem);
+    
+    // Deduplicate by codigoItem
+    const seen = new Set<string>();
     const products: Array<{ codigoItem: string; descricaoItem: string; unidadeMedida: string }> = [];
     for (const row of rows) {
-      const data = row.dataJson as any;
-      if (!data?.items) continue;
-      for (const item of data.items) {
-        // Only Madeira - Produto Acabado items
-        if (item.superGrupo === "MADEIRA" && item.grupo === "PRODUTO ACABADO") {
-          // Avoid duplicates
-          if (!products.find(p => p.codigoItem === item.codigoItem)) {
-            products.push({
-              codigoItem: item.codigoItem,
-              descricaoItem: item.descricaoItem || item.descricao || item.codigoItem,
-              unidadeMedida: item.unidadeMedida || "cx",
-            });
-          }
-        }
+      if (!seen.has(row.codigoItem)) {
+        seen.add(row.codigoItem);
+        products.push({
+          codigoItem: row.codigoItem,
+          descricaoItem: row.descricaoItem || row.codigoItem,
+          unidadeMedida: row.unidadeMedida || "cx",
+        });
       }
     }
-    // Sort by description
-    products.sort((a, b) => a.descricaoItem.localeCompare(b.descricaoItem));
     return products;
   }),
 });

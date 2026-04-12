@@ -2089,3 +2089,6 @@
 - [x] Sincronização: novos produtos criados no estoque aparecem automaticamente no card 8
 - [x] Atualizar backend com procedure getFinishedProducts para listar produtos
 - [x] Atualizar frontend do setor 8 com busca, seleção e campo de quantidade
+
+## Bug: Card Embalagem - produtos não aparecem na busca
+- [x] Diagnosticar e corrigir: getFinishedProducts buscava de dashboardData com filtro errado (MADEIRA/PRODUTO ACABADO não existe); corrigido para buscar de stock_items (142 produtos)
