@@ -88,6 +88,7 @@ type Title = {
   vendedor: string;
   decisaoCobranca: string;
   observacoesMaxiprod: string;
+  anotacoes: string;
   cobranca: {
     status: string;
     promessaData: string | null;
@@ -1076,6 +1077,13 @@ function TitleDetails({ title }: { title: Title }) {
           <DetailItem label="Lembrete" value={formatDate(title.cobranca.lembreteData)} highlight={!!lembreteVencido} />
         )}
       </div>
+
+      {title.anotacoes && (
+        <div className="bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-3">
+          <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-0.5">Anotações Maxiprod</div>
+          <p className="text-sm font-semibold text-amber-900 whitespace-pre-line">{title.anotacoes}</p>
+        </div>
+      )}
 
       {(title.cobranca?.observacoes || title.observacoesMaxiprod) && (
         <div className="bg-slate-50 rounded-lg p-3">

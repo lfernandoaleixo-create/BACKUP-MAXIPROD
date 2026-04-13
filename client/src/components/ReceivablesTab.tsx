@@ -107,6 +107,7 @@ type ItemData = {
   agencia: string;
   isOverdue: boolean;
   formaCobranca: string;
+  anotacoes: string;
 };
 
 /** Extrai o tipo principal da forma de cobrança (PIX, Boleto, Cheque, Depósito, Dinheiro) */
@@ -162,7 +163,8 @@ export default function ReceivablesTab() {
               i.cliente.toUpperCase().includes(s) ||
               i.referenteA.toUpperCase().includes(s) ||
               i.documento.toUpperCase().includes(s) ||
-              (i.formaCobranca || "").toUpperCase().includes(s)
+              (i.formaCobranca || "").toUpperCase().includes(s) ||
+              (i.anotacoes || "").toUpperCase().includes(s)
             );
             return { ...tipo, items, total: items.reduce((a, b) => a + b.valorAReceber, 0), count: items.length };
           }).filter(t => t.count > 0);
@@ -522,6 +524,14 @@ export default function ReceivablesTab() {
                                                   {item.parcela && ` \u00b7 ${item.parcela}`}
                                                   {item.referenteA && ` \u00b7 ${item.referenteA}`}
                                                 </div>
+                                                {item.anotacoes && (
+                                                  <div className="mt-0.5 flex items-center gap-1">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded max-w-full">
+                                                      <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
+                                                      <span className="truncate">{item.anotacoes}</span>
+                                                    </span>
+                                                  </div>
+                                                )}
                                               </div>
 
                                               {/* Forma de Pagamento */}
@@ -568,6 +578,18 @@ export default function ReceivablesTab() {
                                             {/* Detalhes expandidos */}
                                             {isExp && (
                                               <div className="px-4 pl-12 pb-3 bg-slate-50">
+                                                {item.anotacoes && (
+                                                  <div className="mb-2 p-2.5 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
+                                                    <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-0.5">Anotações Maxiprod</div>
+                                                    <p className="text-sm font-semibold text-amber-900 whitespace-pre-line">{item.anotacoes}</p>
+                                                  </div>
+                                                )}
+                                                {item.referenteA && (
+                                                  <div className="mb-2 p-2.5 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                                                    <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-0.5">Referente A</div>
+                                                    <p className="text-sm font-semibold text-blue-900">{item.referenteA}</p>
+                                                  </div>
+                                                )}
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
                                                   <DetailItem label="Valor Original" value={formatCurrency(item.valorOriginal)} />
                                                   <DetailItem label="Valor Pago" value={formatCurrency(item.valorPago)} />

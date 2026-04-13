@@ -2236,3 +2236,9 @@
 - [x] Contas a Receber e a Pagar começam a partir do dia seguinte à última conciliação
 - [x] Considerar feriados nacionais na lógica de dia útil
 - [x] Aplicar no getMonthlyBreakdown e em todos os cards que usam data de início do mês
+
+## Anotações dos títulos - Contas a Receber e a Pagar
+- [x] Buscar campo tarefasEAnotacoes da API GraphQL do Maxiprod para contas a receber e a pagar
+- [x] Adicionar campo anotacoes no schema do banco (accounts_receivable e accounts_payable)
+- [x] Exibir anotações de forma bem visível em todas as listagens: ReceivablesTab, Financial (tabelas CR e CP), InadimplenciaTab
+- [x] Anotações em destaque: badge amber com borda, seção expandida com borda lateral amber

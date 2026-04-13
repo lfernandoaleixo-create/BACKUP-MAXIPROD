@@ -893,6 +893,7 @@ async function fetchAccountsPayable(): Promise<any[]> {
         centroDeCustos { id }
         conta { id }
         minhaEmpresaId
+        tarefasEAnotacoes { descricao }
       }
     }
   }`);
@@ -936,6 +937,7 @@ async function fetchAccountsReceivable(): Promise<any[]> {
         conta { id descricao }
         formaDeCobranca { id meioDePagamento banco { descricao } contaNumero agenciaCodigo pixChave carteira }
         minhaEmpresaId
+        tarefasEAnotacoes { descricao }
       }
     }
   }`);
@@ -974,6 +976,7 @@ function transformAccountsPayable(items: any[]): any[] {
     contaId: item.conta?.id || null,
     empresaId: item.minhaEmpresaId || null,
     empresaNome: getCompanyName(item.minhaEmpresaId),
+    anotacoes: (item.tarefasEAnotacoes || []).map((a: any) => a.descricao).filter(Boolean).join(' | ') || null,
   }));
 }
 
@@ -1052,6 +1055,7 @@ function transformAccountsReceivable(items: any[]): any[] {
     formaCobrancaId: item.formaDeCobranca?.id || null,
     empresaId: item.minhaEmpresaId || null,
     empresaNome: getCompanyName(item.minhaEmpresaId),
+    anotacoes: (item.tarefasEAnotacoes || []).map((a: any) => a.descricao).filter(Boolean).join(' | ') || null,
   }));
 }
 

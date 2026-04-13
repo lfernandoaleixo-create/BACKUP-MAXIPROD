@@ -867,6 +867,7 @@ function ContasAPagarTable() {
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Fornecedor</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Referente a</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-amber-600 uppercase tracking-wider">Anotações</th>
                 <th className="px-3 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Valor</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Vencimento</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Prazo</th>
@@ -883,6 +884,15 @@ function ContasAPagarTable() {
                     <span className="text-sm font-medium text-slate-800">{item.fornecedor || item.referenteA || item.observacoes || "—"}</span>                  </td>
                     <td className="px-3 py-2.5">
                       <span className="text-xs text-slate-500 truncate block max-w-[200px]">{item.referenteA || "—"}</span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {item.anotacoes ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded max-w-[200px] truncate" title={item.anotacoes}>
+                          {item.anotacoes}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-300">—</span>
+                      )}
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       <span className="text-sm font-semibold text-slate-800">
@@ -983,6 +993,7 @@ function ContasAReceberTable() {
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Cliente</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Referente a</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold text-amber-600 uppercase tracking-wider">Anotações</th>
                 <th className="px-3 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Valor</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Vencimento</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Prazo</th>
@@ -1000,6 +1011,15 @@ function ContasAReceberTable() {
                     </td>
                     <td className="px-3 py-2.5">
                       <span className="text-xs text-slate-500 truncate block max-w-[200px]">{item.referenteA || "—"}</span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {item.anotacoes ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded max-w-[200px] truncate" title={item.anotacoes}>
+                          {item.anotacoes}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-300">—</span>
+                      )}
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       <span className="text-sm font-semibold text-slate-800">
