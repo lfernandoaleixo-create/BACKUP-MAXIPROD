@@ -2178,3 +2178,7 @@
 
 ## Sininho de notificações: restringir acesso
 - [x] Sininho de notificações visível apenas para senhas Erica, Maria, Marcos e Guilherme
+
+## Fix: A Vencer ainda não bate com A Receber da Visão Geral
+- [x] Mudar isOverdue para vencDate < hoje (não <= cutoff), assim A Vencer = vencimento >= hoje = A Receber da Visão Geral
+- [x] Vencido = tudo com vencimento < hoje (inclui gap do fim de semana)

@@ -2684,7 +2684,7 @@ export const financialRouter = router({
       if (!db) return { empresas: [], totals: { total: 0, count: 0, vencido: 0, aVencer: 0 } };
 
       const estado = input?.estado || "EMITIDO";
-      const cutoffDate = getPreviousBusinessDay(); // Mesmo cutoff da Visão Geral
+      const todayBR = getTodayBR(); // Divisória: A Vencer >= hoje, Vencido < hoje
       const conditions = [
         inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
       ];
@@ -2808,8 +2808,9 @@ export const financialRouter = router({
         if (valorAReceber <= 0 && estado === "EMITIDO") continue;
 
         const vencDate = (row.vencimentoData || "").split("T")[0];
-        // Usar cutoff de dia útil anterior (mesmo critério da Visão Geral / Inadimplência)
-        const isOverdue = vencDate <= cutoffDate;
+        // Vencido = vencimento antes de hoje; A Vencer = vencimento a partir de hoje
+        // Alinhado com getMonthlyBreakdown (A Receber) da Visão Geral
+        const isOverdue = vencDate < todayBR;
         const mesKey = vencDate.substring(0, 7); // YYYY-MM
         const empresa = row.empresaNome || "Sem Empresa";
         const bancoNome = row.bancoNome || "Sem Banco";
