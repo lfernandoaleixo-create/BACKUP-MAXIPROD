@@ -2933,9 +2933,26 @@ export const financialRouter = router({
         else grandAVencer += valorAReceber;
       }
 
+      // Garantir que as 3 empresas principais sempre apareçam (mesmo com 0 títulos)
+      const EMPRESAS_OBRIGATORIAS = ["PALITOS INDUSTRIA", "VARETAS INDUSTRIA", "ESPETOS INDUSTRIA"];
+      for (const empName of EMPRESAS_OBRIGATORIAS) {
+        if (!empresaMap[empName]) {
+          empresaMap[empName] = { meses: {}, total: 0, count: 0, vencido: 0, aVencer: 0 };
+        }
+      }
+
       // Convert to sorted arrays: empresa → mês → conta → tipo
-      const empresas = Object.entries(empresaMap)
-        .sort(([, a], [, b]) => b.total - a.total)
+      // Ordenar: empresas obrigatórias primeiro (na ordem definida), depois as demais por total
+      const empresaEntries = Object.entries(empresaMap);
+      const obrigatorias = EMPRESAS_OBRIGATORIAS
+        .map(name => empresaEntries.find(([n]) => n === name))
+        .filter(Boolean) as [string, typeof empresaMap[string]][];
+      const outras = empresaEntries
+        .filter(([n]) => !EMPRESAS_OBRIGATORIAS.includes(n))
+        .sort(([, a], [, b]) => b.total - a.total);
+      const sortedEntries = [...obrigatorias, ...outras];
+
+      const empresas = sortedEntries
         .map(([nome, emp]) => ({
           nome,
           total: emp.total,

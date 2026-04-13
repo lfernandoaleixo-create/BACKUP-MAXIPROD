@@ -2251,3 +2251,11 @@
 - [x] Aplicar mesma data de corte (dia seguinte ao último dia útil) na aba Recebíveis
 - [x] Valores de A Vencer e Vencido devem bater exatamente com Visão Geral e Inadimplência (confirmado: Total 2.125.435,67 / Vencido 588.838,88 / 443 títulos)
 - [x] Incluir anotações do Maxiprod na aba Recebíveis (já implementado anteriormente)
+
+## Divergência Total vs A Vencer na aba Recebíveis
+- [x] Investigar diferença de R$ 1.200 entre Total (R$ 1.540.546,79) e A Vencer (R$ 1.539.346,79) - Causa: Total era geral, A Vencer era só Palitos. R$ 1.200 = Varetas. Não era bug.
+
+## Espetos + Card Total Consolidado
+- [x] Adicionar empresa Espetos ao Contas a Receber (mesma lógica da Varetas) - empresa sempre aparece mesmo com 0 títulos
+- [x] Criar card de Total consolidado das 3 empresas: total vencidos + total a vencer
+- [x] Aplicar todas as configurações existentes (conciliação, anotações, etc.)

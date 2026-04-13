@@ -289,7 +289,7 @@ export default function ReceivablesTab() {
       )}
 
       {/* Cards resumo por empresa */}
-      <div className={`grid gap-4 ${empresas.length === 1 ? 'grid-cols-1' : empresas.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {empresas.map(emp => {
           const colors = getEmpresaColor(emp.nome);
           const pctVencido = emp.total > 0 ? (emp.vencido / emp.total) * 100 : 0;
@@ -377,6 +377,53 @@ export default function ReceivablesTab() {
           );
         })}
       </div>
+
+      {/* Card Total Consolidado das 3 empresas */}
+      {empresas.length > 1 && (
+        <div className="rounded-2xl border-2 border-slate-300 bg-gradient-to-r from-slate-50 to-slate-100 overflow-hidden">
+          <div className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-slate-700 shadow-sm">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-slate-800">TOTAL CONSOLIDADO</h3>
+                <span className="text-xs text-slate-500">{empresas.map(e => shortEmpresaName(e.nome)).join(" + ")}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-extrabold text-slate-800">{formatCurrency(totals.total)}</div>
+              <div className="text-xs text-slate-500">{totals.count} títulos</div>
+            </div>
+          </div>
+          <div className="px-5 pb-4">
+            {/* Barra de progresso */}
+            <div className="w-full h-3 rounded-full bg-white/70 overflow-hidden shadow-inner mb-3">
+              <div className="h-full flex">
+                {totals.vencido > 0 && totals.total > 0 && <div className="bg-red-400 h-full transition-all" style={{ width: `${(totals.vencido / totals.total) * 100}%` }} />}
+                <div className="bg-slate-500 h-full opacity-60 transition-all" style={{ width: `${totals.total > 0 ? ((totals.aVencer / totals.total) * 100) : 100}%` }} />
+              </div>
+            </div>
+            {/* Valores vencido / a vencer */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-red-50 rounded-lg px-4 py-3 border border-red-200">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <AlertTriangle className="w-4 h-4 text-red-500" />
+                  <span className="text-xs font-bold text-red-500 uppercase tracking-wider">Total Vencido</span>
+                </div>
+                <div className="text-xl font-bold text-red-700">{formatCurrency(totals.vencido)}</div>
+              </div>
+              <div className="bg-blue-50 rounded-lg px-4 py-3 border border-blue-200">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Total A Vencer</span>
+                </div>
+                <div className="text-xl font-bold text-blue-700">{formatCurrency(totals.aVencer)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hierarquia expandida: Empresa → Mês → Banco → Lista por data */}
       <div className="space-y-6">
