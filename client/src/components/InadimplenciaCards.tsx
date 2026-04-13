@@ -877,10 +877,12 @@ export function InadimplenciaCard({ summary, grupo, crmSegmento }: { summary: an
               <span className={`text-xs font-semibold ${
                 Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod) > 1 ? "text-red-600" : "text-emerald-600"
               }`}>{formatCurrency(cpInadimplencia.valorMaxiprod)}</span>
-              {Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod) > 1 && (
+              {Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod) > 1 ? (
                 <span className="text-[9px] text-red-500 font-bold flex items-center gap-0.5">
                   <AlertTriangle className="w-2.5 h-2.5" /> Dif: {formatCurrency(Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod))}
                 </span>
+              ) : (
+                <span className="text-[9px] text-emerald-500 font-semibold">Confere</span>
               )}
             </div>
           )}

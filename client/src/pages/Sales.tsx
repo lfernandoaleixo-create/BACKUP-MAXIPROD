@@ -53,11 +53,19 @@ import {
   Mail,
   ListFilter,
   Gift,
+  Eye,
+  ExternalLink,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
 import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
 import { generateSalesPDF } from "@/lib/salesPdfExport";
+import { useOperator } from "@/contexts/OperatorContext";
+
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
 /* ---- Helpers ---- */
 function formatCurrencyFull(n: number): string {
@@ -2456,8 +2464,110 @@ function DraftOrdersCard({ orders }: { orders: DraftOrderData[] }) {
   );
 }
 
+/* ---- Sales KPI Verify Modal (Contraprova Maxiprod) ---- */
+function SalesVerifyModal({ card, startDate, endDate, dashboardValue, onClose }: {
+  card: string;
+  startDate: string;
+  endDate: string;
+  dashboardValue: number;
+  onClose: () => void;
+}) {
+  // Map card names to section and labels
+  const sectionMap: Record<string, { section: string; label: string; color: string }> = {
+    vendas: { section: "vendas", label: "Valor Total do Período", color: "teal" },
+    faturamento: { section: "faturamento", label: "Faturado", color: "emerald" },
+    a_faturar: { section: "vendas", label: "A Faturar (Período)", color: "orange" },
+    amostra_bonif: { section: "vendas", label: "Amostra / Bonificação", color: "blue" },
+  };
+  const cfg = sectionMap[card] || sectionMap.vendas;
+
+  const { data, isLoading } = trpc.financial.getMaxiprodContraprova.useQuery(
+    { section: cfg.section as any, startDate, endDate },
+    { refetchOnWindowFocus: false }
+  );
+
+  // For "vendas" section, the contraprova returns total vendas. For faturamento, it returns NF total.
+  // For a_faturar and amostra_bonif, we note that the contraprova is for the full vendas total (informational).
+  const isDirectComparison = card === "vendas" || card === "faturamento";
+  const maxiprodValue = data?.valorMaxiprod ?? 0;
+  const diff = Math.abs(dashboardValue - maxiprodValue);
+  const matches = diff < 1;
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+        <div className={`bg-${cfg.color}-50 border-b border-${cfg.color}-200 px-5 py-4 rounded-t-xl flex items-center justify-between`}>
+          <div>
+            <h3 className={`text-sm font-bold text-${cfg.color}-700`}>Contraprova Maxiprod</h3>
+            <p className="text-xs text-slate-500">{cfg.label}</p>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/50 transition-colors">
+            <X className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          {isLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+          ) : data ? (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Dashboard</p>
+                  <p className="text-lg font-bold text-slate-800">{formatCurrencyFull(dashboardValue)}</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">{isDirectComparison ? "Maxiprod" : "Vendas Total (Maxiprod)"}</p>
+                  <p className={`text-lg font-bold ${isDirectComparison ? (matches ? "text-emerald-600" : "text-red-600") : "text-slate-700"}`}>{formatCurrencyFull(maxiprodValue)}</p>
+                </div>
+              </div>
+              {isDirectComparison ? (
+                matches ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-700">Valores conferem!</p>
+                      <p className="text-xs text-emerald-600">{data.label}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-red-700">Diferença: {formatCurrencyFull(diff)}</p>
+                      <p className="text-xs text-red-600">{data.label}</p>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-700"><strong>Nota:</strong> O valor de "{cfg.label}" é um subconjunto do total de vendas. A contraprova mostra o total de vendas do Maxiprod para referência.</p>
+                  <p className="text-xs text-blue-600 mt-1">{data.label}</p>
+                </div>
+              )}
+              <p className="text-[10px] text-slate-400">Período: {startDate} a {endDate}</p>
+              <a
+                href={MAXIPROD_LOGIN_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-600 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> Abrir Maxiprod
+              </a>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500 text-center">Erro ao carregar dados</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---- Main Sales Page ---- */
 export default function Sales() {
+  const { operator } = useOperator();
+  const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
+  const [verifyingCard, setVerifyingCard] = useState<{ card: string; startDate: string; endDate: string; dashboardValue: number } | null>(null);
   const [period, setPeriod] = useState("current_month");
   const [grupo, setGrupo] = useState("all");
   const [subgrupo, setSubgrupo] = useState("all");
@@ -2927,7 +3037,15 @@ export default function Sales() {
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-teal-50">
                       <DollarSign className="w-4.5 h-4.5 text-teal-600" />
                     </div>
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Valor Total do Periodo</p>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Valor Total do Periodo</p>
+                    {canVerifyMaxiprod && (
+                      <button
+                        onClick={() => setVerifyingCard({ card: "vendas", startDate: start, endDate: end, dashboardValue: analytics.totalValue })}
+                        className="p-1 rounded hover:bg-teal-100 transition-colors" title="Conferir no Maxiprod"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-teal-600" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{formatCurrencyFull(analytics.totalValue)}</p>
                   <p className="text-xs text-slate-400 mt-1.5">{analytics.totalOrders} pedidos &bull; {analytics.totalClients} clientes</p>
@@ -2940,7 +3058,15 @@ export default function Sales() {
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-50">
                       <FileCheck className="w-4.5 h-4.5 text-emerald-600" />
                     </div>
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Faturado</p>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Faturado</p>
+                    {canVerifyMaxiprod && (
+                      <button
+                        onClick={() => setVerifyingCard({ card: "faturamento", startDate: start, endDate: end, dashboardValue: analytics.totalFaturado })}
+                        className="p-1 rounded hover:bg-emerald-100 transition-colors" title="Conferir no Maxiprod"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-2xl font-extrabold text-emerald-700 tracking-tight">{formatCurrencyFull(analytics.totalFaturado)}</p>
                   <div className="mt-3 flex items-center gap-2">
@@ -2962,7 +3088,15 @@ export default function Sales() {
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-orange-50">
                       <Clock className="w-4.5 h-4.5 text-orange-600" />
                     </div>
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">A Faturar (Periodo)</p>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">A Faturar (Periodo)</p>
+                    {canVerifyMaxiprod && (
+                      <button
+                        onClick={() => setVerifyingCard({ card: "a_faturar", startDate: start, endDate: end, dashboardValue: analytics.totalAFaturar })}
+                        className="p-1 rounded hover:bg-orange-100 transition-colors" title="Conferir no Maxiprod"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-orange-600" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-2xl font-extrabold text-orange-700 tracking-tight">{formatCurrencyFull(analytics.totalAFaturar)}</p>
                   <div className="mt-3 flex items-center gap-2">
@@ -2984,7 +3118,15 @@ export default function Sales() {
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-blue-50">
                         <Gift className="w-4.5 h-4.5 text-blue-600" />
                       </div>
-                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Amostra / Bonificação</p>
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Amostra / Bonificação</p>
+                      {canVerifyMaxiprod && (
+                        <button
+                          onClick={() => setVerifyingCard({ card: "amostra_bonif", startDate: start, endDate: end, dashboardValue: analytics.totalAmostraBonif })}
+                          className="p-1 rounded hover:bg-blue-100 transition-colors" title="Conferir no Maxiprod"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-blue-600" />
+                        </button>
+                      )}
                     </div>
                     <p className="text-2xl font-extrabold text-blue-700 tracking-tight">{formatCurrencyFull(analytics.totalAmostraBonif)}</p>
                     <div className="mt-2 space-y-1">
@@ -3135,6 +3277,17 @@ export default function Sales() {
           </>
         ) : null}
       </main>
+
+      {/* Modal de verificação Maxiprod para os 4 KPI cards */}
+      {verifyingCard && (
+        <SalesVerifyModal
+          card={verifyingCard.card}
+          startDate={verifyingCard.startDate}
+          endDate={verifyingCard.endDate}
+          dashboardValue={verifyingCard.dashboardValue}
+          onClose={() => setVerifyingCard(null)}
+        />
+      )}
     </div>
   );
 }

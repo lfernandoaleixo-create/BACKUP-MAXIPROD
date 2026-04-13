@@ -2307,8 +2307,14 @@
 - [ ] Checkbox de finalização (apenas senha Fernando)
 - [x] Histórico de ticagens com data, hora e operador ao lado
 - [x] Divergências sob demanda: mostrar origem e pedir autorização antes de corrigir
-- [ ] Replicar contraprova Maxiprod na aba Vendas (4 cards) com olho, passo a passo e link
-- [ ] Replicar contraprova Maxiprod na aba Inadimplência com olho, passo a passo e link
+- [x] Replicar contraprova Maxiprod na aba Vendas (4 cards) com olho, passo a passo e link
+- [x] Replicar contraprova Maxiprod na aba Inadimplência com olho, passo a passo e link
 - [ ] Adicionar olho de conferência Maxiprod dentro de cada conta bancária nos Recebíveis
 - [x] Divergências sob demanda: mostrar origem e pedir autorização antes de corrigir
 - [ ] Divergências: apontar valor, causa e pedir permissão antes de corrigir (nunca automático)
+- [x] Corrigir query Inadimplência Maxiprod (mostra R$ 0,00 em vez do valor correto de vencidos)
+- [x] Remover "Dif" quando valores Manus e Maxiprod batem (agora mostra "Confere" em verde)
+- [x] Adicionar botão conferência Maxiprod ao lado de cada mês em Contas a Receber
+- [x] Adicionar botão conferência Maxiprod ao lado de cada mês em Contas a Pagar
+- [x] Adicionar olho de conferência nos 4 cards da aba Vendas (Valor Total, Faturado, A Faturar, Amostra/Bonificação)
+- [x] Tudo visível apenas para senhas Fernando e Guilherme

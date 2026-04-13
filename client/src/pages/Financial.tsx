@@ -48,6 +48,9 @@ import {
   MessageSquare,
   CheckSquare,
   Square,
+  Eye,
+  ExternalLink,
+  ClipboardList,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -69,6 +72,9 @@ import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calculator, History } from "lucide-react";
 import FinancialHistoryPanel, { WeekHistoryPanel } from "@/components/FinancialHistoryPanel";
+
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
 /* ---- Helpers ---- */
 function formatCurrency(n: number): string {
@@ -1838,10 +1844,103 @@ function CashFlowCard() {
   );
 }
 
+/* ---- Month Verify Modal (Contraprova Maxiprod por Mês) ---- */
+function MonthVerifyModal({ label, type, from, to, dashboardTotal, onClose }: {
+  label: string;
+  type: "receber" | "pagar";
+  from: string;
+  to: string;
+  dashboardTotal: number;
+  onClose: () => void;
+}) {
+  const section = type === "receber" ? "contas_receber_mes" as const : "contas_pagar_mes" as const;
+  const { data, isLoading } = trpc.financial.getMaxiprodContraprova.useQuery(
+    { section, startDate: from, endDate: to },
+    { refetchOnWindowFocus: false }
+  );
+
+  const diff = data ? Math.abs(dashboardTotal - data.valorMaxiprod) : 0;
+  const matches = diff < 1;
+  const colorScheme = type === "receber" ? {
+    bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", label: "Contas a Receber",
+    icon: <TrendingUp className="w-5 h-5 text-emerald-600" />,
+  } : {
+    bg: "bg-red-50", border: "border-red-200", text: "text-red-700", label: "Contas a Pagar",
+    icon: <TrendingDown className="w-5 h-5 text-red-600" />,
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+        <div className={`${colorScheme.bg} ${colorScheme.border} border-b px-5 py-4 rounded-t-xl flex items-center justify-between`}>
+          <div className="flex items-center gap-2">
+            {colorScheme.icon}
+            <div>
+              <h3 className={`text-sm font-bold ${colorScheme.text}`}>Contraprova Maxiprod</h3>
+              <p className="text-xs text-slate-500">{colorScheme.label} &mdash; {label}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/50 transition-colors">
+            <X className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          {isLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+          ) : data ? (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Dashboard</p>
+                  <p className="text-lg font-bold text-slate-800">{formatCurrency(dashboardTotal)}</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3 text-center">
+                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Maxiprod (Banco)</p>
+                  <p className={`text-lg font-bold ${matches ? "text-emerald-600" : "text-red-600"}`}>{formatCurrency(data.valorMaxiprod)}</p>
+                </div>
+              </div>
+              {matches ? (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-700">Valores conferem!</p>
+                    <p className="text-xs text-emerald-600">{data.label}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-red-700">Diferença: {formatCurrency(diff)}</p>
+                    <p className="text-xs text-red-600">{data.label}</p>
+                  </div>
+                </div>
+              )}
+              <p className="text-[10px] text-slate-400">Período: {from} a {to}</p>
+              <a
+                href={MAXIPROD_LOGIN_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-600 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> Abrir Maxiprod
+              </a>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500 text-center">Erro ao carregar dados</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---- Main Financial Page ---- */
 export default function Financial() {
-  const { hasGranularAccess } = useOperator();
+  const { hasGranularAccess, operator } = useOperator();
+  const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis">("visao-geral");
+  const [verifyingMonth, setVerifyingMonth] = useState<{ label: string; type: "receber" | "pagar"; from: string; to: string; total: number } | null>(null);
   const { data: summary, isLoading: loadingSummary } = trpc.financial.getSummary.useQuery(undefined, { refetchInterval: 60000 });
   const { data: calendarData, isLoading: loadingCalendar } = trpc.financial.getPaymentCalendar.useQuery(undefined, { refetchInterval: 60000 });
   const { data: monthlyData, isLoading: loadingMonthly } = trpc.financial.getMonthlyBreakdown.useQuery(undefined, { refetchInterval: 60000 });
@@ -1962,6 +2061,17 @@ export default function Financial() {
           </div>
         ) : (
           <>
+            {/* Modal de verificação mensal Maxiprod */}
+            {verifyingMonth && (
+              <MonthVerifyModal
+                label={verifyingMonth.label}
+                type={verifyingMonth.type}
+                from={verifyingMonth.from}
+                to={verifyingMonth.to}
+                dashboardTotal={verifyingMonth.total}
+                onClose={() => setVerifyingMonth(null)}
+              />
+            )}
             <ConnectionStatusCard />
 
             {/* Resumo Financeiro (Faturamento + Vendas vs Contas Pagas) */}
@@ -2012,6 +2122,14 @@ export default function Financial() {
                               <span className="text-xs text-slate-400 ml-1">({m.receber.count})</span>
                             </div>
                             {isSelected ? <ChevronUp className="w-4 h-4 text-emerald-600 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" />}
+                            {canVerifyMaxiprod && (m as any).from && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setVerifyingMonth({ label: m.label, type: "receber", from: (m as any).from, to: (m as any).to, total: m.receber.total }); }}
+                                className="p-1 rounded hover:bg-emerald-200 transition-colors shrink-0" title="Conferir no Maxiprod"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                              </button>
+                            )}
                           </button>
                           {isSelected && (
                             <MonthDetailTable
@@ -2071,6 +2189,14 @@ export default function Financial() {
                               <span className="text-xs text-slate-400 ml-1">({m.pagar.count})</span>
                             </div>
                             {isSelected ? <ChevronUp className="w-4 h-4 text-red-600 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-300 shrink-0" />}
+                            {canVerifyMaxiprod && (m as any).from && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setVerifyingMonth({ label: m.label, type: "pagar", from: (m as any).from, to: (m as any).to, total: m.pagar.total }); }}
+                                className="p-1 rounded hover:bg-red-200 transition-colors shrink-0" title="Conferir no Maxiprod"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-red-600" />
+                              </button>
+                            )}
                           </button>
                           {isSelected && (
                             <MonthDetailTable

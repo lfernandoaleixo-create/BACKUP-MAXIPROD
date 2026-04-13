@@ -718,6 +718,8 @@ export const financialRouter = router({
 
         return {
           label: month.label,
+          from: month.from,
+          to: month.to,
           receber: { total: Number(receber?.total || 0), count: receber?.count || 0 },
           pagar: { total: Number(pagar?.total || 0), count: pagar?.count || 0 },
         };
@@ -4286,7 +4288,7 @@ ${acoesTexto}
    */
   getMaxiprodContraprova: publicProcedure
     .input(z.object({
-      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis", "inadimplencia"]),
+      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis", "inadimplencia", "contas_receber_mes", "contas_pagar_mes"]),
       startDate: z.string(),
       endDate: z.string(),
     }))
@@ -4379,12 +4381,12 @@ ${acoesTexto}
           };
         }
 
-        // inadimplencia - títulos vencidos a receber
+        // inadimplencia - títulos vencidos a receber (usa cutoffDate = último dia útil antes de hoje)
         if (section === "inadimplencia") {
           const db = await getDb();
           if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
 
-          const todayStr = new Date().toISOString().split('T')[0];
+          const cutoff = getPreviousBusinessDay();
           const result = await db.select({
             total: sql<number>`COALESCE(SUM(CAST(valor_liquido AS DECIMAL(15,2)) - CAST(COALESCE(valor_recebido_liquido, '0') AS DECIMAL(15,2))), 0)`,
             count: sql<number>`COUNT(*)`,
@@ -4392,13 +4394,58 @@ ${acoesTexto}
             .where(and(
               eq(accountsReceivable.estado, 'EMITIDO'),
               inArray(accountsReceivable.tipo, ['TITULO', 'RECEITA', 'ADIANTAMENTO']),
-              lte(accountsReceivable.vencimentoData, todayStr),
+              lte(accountsReceivable.vencimentoData, cutoff + "T23:59:59"),
             ));
 
           return {
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
-            label: `${result[0]?.count || 0} títulos vencidos (estado EMITIDO, vencimento até hoje)`,
+            label: `${result[0]?.count || 0} títulos vencidos (estado EMITIDO, vencimento até ${cutoff})`,
+          };
+        }
+
+        // contas_receber_mes - total de contas a receber em um mês específico (estado EMITIDO)
+        if (section === "contas_receber_mes") {
+          const db = await getDb();
+          if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          const result = await db.select({
+            total: sql<number>`COALESCE(SUM(CAST(valor_liquido AS DECIMAL(15,2)) - CAST(COALESCE(valor_recebido_liquido, '0') AS DECIMAL(15,2))), 0)`,
+            count: sql<number>`COUNT(*)`,
+          }).from(accountsReceivable)
+            .where(and(
+              eq(accountsReceivable.estado, 'EMITIDO'),
+              inArray(accountsReceivable.tipo, ['TITULO', 'RECEITA', 'ADIANTAMENTO']),
+              gte(accountsReceivable.vencimentoData, startDate),
+              lte(accountsReceivable.vencimentoData, endDate + "T23:59:59"),
+            ));
+
+          return {
+            valorMaxiprod: Number(result[0]?.total || 0),
+            count: Number(result[0]?.count || 0),
+            label: `${result[0]?.count || 0} títulos a receber no período`,
+          };
+        }
+
+        // contas_pagar_mes - total de contas a pagar em um mês específico (estado EMITIDO)
+        if (section === "contas_pagar_mes") {
+          const db = await getDb();
+          if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          const result = await db.select({
+            total: sql<number>`COALESCE(SUM(CAST(${accountsPayable.valorLiquido} AS DECIMAL(15,2)) - CAST(COALESCE(${accountsPayable.valorPagoLiquido}, '0') AS DECIMAL(15,2))), 0)`,
+            count: sql<number>`COUNT(*)`,
+          }).from(accountsPayable)
+            .where(and(
+              eq(accountsPayable.estado, 'EMITIDO'),
+              gte(accountsPayable.vencimentoData, startDate),
+              lte(accountsPayable.vencimentoData, endDate + "T23:59:59"),
+            ));
+
+          return {
+            valorMaxiprod: Number(result[0]?.total || 0),
+            count: Number(result[0]?.count || 0),
+            label: `${result[0]?.count || 0} contas a pagar no período`,
           };
         }
 
