@@ -1084,3 +1084,21 @@ export const productionEntries = mysqlTable("production_entries", {
 });
 export type ProductionEntry = typeof productionEntries.$inferSelect;
 export type InsertProductionEntry = typeof productionEntries.$inferInsert;
+
+
+/**
+ * Histórico de ticagens de desconto (antecipação) de títulos a receber
+ */
+export const discountSelectionHistory = mysqlTable("discount_selection_history", {
+  id: int("id").autoincrement().primaryKey(),
+  operatorName: varchar("operatorName", { length: 200 }).notNull(),
+  empresa: varchar("empresa", { length: 200 }).notNull(),
+  contaLabel: varchar("contaLabel", { length: 300 }).notNull(),
+  mesKey: varchar("mesKey", { length: 10 }).notNull(),
+  totalTitulos: int("totalTitulos").notNull(),
+  valorTotal: decimal("valorTotal", { precision: 18, scale: 2 }).notNull(),
+  titulosJson: text("titulosJson").notNull(), // JSON array of {id, cliente, documento, valor, vencimento}
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type DiscountSelectionHistory = typeof discountSelectionHistory.$inferSelect;
+export type InsertDiscountSelectionHistory = typeof discountSelectionHistory.$inferInsert;

@@ -28,7 +28,24 @@ import {
   FileText,
   ClipboardList,
   Eye,
+  History,
+  Lock,
+  CheckCircle2,
+  ShieldCheck,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+const FINALIZE_PASSWORD = "Fernando";
 
 /* ---- Helpers ---- */
 function formatCurrency(v: number) {
@@ -457,25 +474,33 @@ const FORMA_OPTIONS: { value: FormaFilter; label: string; icon: any; color: stri
 function ContaFiltersAndTable({
   allContaItems,
   contaLabel,
+  contaKey,
   selectedIds,
   toggleSelect,
   toggleSelectAll,
+  clearSelection,
   expandedItem,
   setExpandedItem,
   empresaNome,
   mesLabel,
   mesKey,
+  showHistoryPanel,
+  setShowHistoryPanel,
 }: {
   allContaItems: ItemData[];
   contaLabel: string;
+  contaKey: string;
   selectedIds: Set<number>;
   toggleSelect: (id: number) => void;
   toggleSelectAll: (items: ItemData[]) => void;
+  clearSelection: () => void;
   expandedItem: number | null;
   setExpandedItem: (id: number | null) => void;
   empresaNome: string;
   mesLabel: string;
   mesKey: string;
+  showHistoryPanel: boolean;
+  setShowHistoryPanel: (show: boolean) => void;
 }) {
   const { operator } = useOperator();
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
@@ -519,6 +544,93 @@ function ContaFiltersAndTable({
   const contaItemIds = filteredItems.map(i => i.id);
   const allContaSelected = contaItemIds.length > 0 && contaItemIds.every(id => selectedIds.has(id));
   const someContaSelected = contaItemIds.some(id => selectedIds.has(id));
+
+  // Selected items within this account
+  const selectedContaItems = filteredItems.filter(i => selectedIds.has(i.id));
+  const selectedContaTotal = selectedContaItems.reduce((a, b) => a + b.valorAReceber, 0);
+
+  // Finalization with Fernando password
+  const AUTH_PASSWORD = "Fernando";
+  const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const isFernando = operator?.name === "Fernando";
+
+  const saveHistoryMutation = trpc.financial.saveDiscountSelection.useMutation({
+    onSuccess: () => {
+      toast.success("Ticagem finalizada e registrada no histórico!");
+      clearSelection();
+      historyQuery.refetch();
+    },
+    onError: () => toast.error("Erro ao salvar histórico"),
+  });
+
+  const historyQuery = trpc.financial.getDiscountHistory.useQuery(
+    { empresa: empresaNome, contaLabel, mesKey, limit: 20 },
+    { enabled: showHistoryPanel }
+  );
+
+  function handleFinalize() {
+    if (passwordInput !== AUTH_PASSWORD) {
+      setPasswordError("Senha incorreta");
+      return;
+    }
+    setShowFinalizeDialog(false);
+    setPasswordInput("");
+    setPasswordError("");
+    saveHistoryMutation.mutate({
+      operatorName: operator?.name || "Desconhecido",
+      empresa: empresaNome,
+      contaLabel,
+      mesKey,
+      totalTitulos: selectedContaItems.length,
+      valorTotal: selectedContaTotal,
+      titulosJson: JSON.stringify(selectedContaItems.map(i => ({
+        cliente: i.cliente, documento: i.documento, valor: i.valorAReceber,
+        vencimento: i.vencimento, forma: i.formaCobranca,
+      }))),
+    });
+  }
+
+  function exportSelectedPDF() {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    const rows = selectedContaItems.map(i => `
+      <tr>
+        <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px">${i.cliente}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;text-align:center">${i.documento || "-"}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;text-align:center">${i.formaCobranca}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;text-align:right;font-weight:600">${formatCurrency(i.valorAReceber)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;text-align:center">${formatDate(i.vencimento)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;text-align:center">${i.isOverdue ? "Vencido" : "A Vencer"}</td>
+      </tr>
+    `).join("");
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Selecionados para Desconto - ${contaLabel}</title></head><body style="font-family:system-ui;padding:30px">
+      <div style="text-align:center;margin-bottom:20px">
+        <h2 style="color:#0f766e;margin:0">Selecionados para Desconto</h2>
+        <p style="color:#64748b;font-size:13px">${empresaNome} - ${contaLabel} - ${mesLabel}</p>
+        <p style="color:#64748b;font-size:12px">Gerado em ${new Date().toLocaleString("pt-BR")}</p>
+      </div>
+      <div style="background:#f0fdfa;border:2px solid #14b8a6;border-radius:8px;padding:16px;margin-bottom:20px;text-align:center">
+        <div style="font-size:12px;color:#0f766e;text-transform:uppercase;font-weight:700">Valor Total Selecionado</div>
+        <div style="font-size:28px;font-weight:800;color:#0f766e">${formatCurrency(selectedContaTotal)}</div>
+        <div style="font-size:12px;color:#64748b">${selectedContaItems.length} título(s)</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px">
+        <thead><tr style="background:#f1f5f9">
+          <th style="padding:8px;text-align:left;font-size:11px;color:#475569;text-transform:uppercase">Cliente</th>
+          <th style="padding:8px;text-align:center;font-size:11px;color:#475569;text-transform:uppercase">Documento</th>
+          <th style="padding:8px;text-align:center;font-size:11px;color:#475569;text-transform:uppercase">Forma</th>
+          <th style="padding:8px;text-align:right;font-size:11px;color:#475569;text-transform:uppercase">Valor</th>
+          <th style="padding:8px;text-align:center;font-size:11px;color:#475569;text-transform:uppercase">Vencimento</th>
+          <th style="padding:8px;text-align:center;font-size:11px;color:#475569;text-transform:uppercase">Status</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  }
 
   return (
     <div className="border-t border-slate-200">
@@ -840,6 +952,136 @@ function ContaFiltersAndTable({
           )}
         </div>
       )}
+
+      {/* ---- CARD SELECIONADOS PARA DESCONTO (dentro da conta) ---- */}
+      {selectedIds.size > 0 && (
+        <div className="mx-3 my-3">
+          <div className="bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl p-4 shadow-xl border border-teal-500">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <FileDown className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-sm">Selecionados para Desconto</div>
+                  <div className="text-teal-100 text-xs">{selectedIds.size} {selectedIds.size === 1 ? "t\u00edtulo" : "t\u00edtulos"} marcados para antecipa\u00e7\u00e3o</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <div className="text-[10px] text-teal-200 uppercase tracking-wide">Valor Total</div>
+                  <div className="text-xl font-bold" style={{ textShadow: "0 0 20px rgba(255,255,255,0.4)" }}>{formatCurrency(selectedContaTotal)}</div>
+                </div>
+                <div className="flex gap-1.5">
+                  <button onClick={exportSelectedPDF}
+                    className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-medium transition-all flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5" /> Exportar PDF
+                  </button>
+                  {isFernando && (
+                    <button onClick={() => setShowFinalizeDialog(true)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500/30 hover:bg-emerald-500/50 border border-emerald-400/40 text-xs font-medium transition-all flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Finalizar
+                    </button>
+                  )}
+                  <button onClick={() => setShowHistoryPanel(!showHistoryPanel)}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all flex items-center gap-1">
+                    <History className="w-3.5 h-3.5" /> Hist\u00f3rico
+                  </button>
+                  <button onClick={clearSelection}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all">
+                    Limpar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- PAINEL DE HIST\u00d3RICO ---- */}
+      {showHistoryPanel && (
+        <div className="mx-3 mb-3">
+          <div className="bg-white border-2 border-indigo-200 rounded-xl p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-indigo-600" />
+                <h4 className="font-bold text-sm text-slate-800">Hist\u00f3rico de Ticagens</h4>
+              </div>
+              <button onClick={() => setShowHistoryPanel(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {historyQuery.isLoading ? (
+              <div className="text-center py-4 text-slate-400 text-sm">Carregando...</div>
+            ) : historyQuery.data && historyQuery.data.length > 0 ? (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {historyQuery.data.map((h: any) => (
+                  <div key={h.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold">
+                      {h.operatorName?.charAt(0) || "?"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs text-slate-800">{h.operatorName}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(h.createdAt).toLocaleDateString("pt-BR")} \u00e0s {new Date(h.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {h.totalTitulos} t\u00edtulo(s) \u2022 <span className="font-semibold text-teal-700">{formatCurrency(Number(h.valorTotal))}</span>
+                      </div>
+                    </div>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-slate-400 text-sm">Nenhuma ticagem registrada</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ---- DIALOG DE FINALIZA\u00c7\u00c3O COM SENHA ---- */}
+      {showFinalizeDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowFinalizeDialog(false)}>
+          <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800">Finalizar Ticagem</h3>
+                <p className="text-xs text-slate-500">Digite a senha para confirmar</p>
+              </div>
+            </div>
+            <div className="bg-teal-50 rounded-lg p-3 mb-4 border border-teal-200">
+              <div className="text-xs text-teal-600 font-medium">{selectedContaItems.length} t\u00edtulo(s) selecionado(s)</div>
+              <div className="text-lg font-bold text-teal-800">{formatCurrency(selectedContaTotal)}</div>
+            </div>
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={e => { setPasswordInput(e.target.value); setPasswordError(""); }}
+              onKeyDown={e => e.key === "Enter" && handleFinalize()}
+              placeholder="Senha de autoriza\u00e7\u00e3o"
+              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:border-teal-500 focus:outline-none mb-2"
+              autoFocus
+            />
+            {passwordError && <p className="text-red-500 text-xs mb-2">{passwordError}</p>}
+            <div className="flex gap-2 mt-3">
+              <button onClick={() => setShowFinalizeDialog(false)}
+                className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50">
+                Cancelar
+              </button>
+              <button onClick={handleFinalize}
+                className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-sm font-bold hover:from-teal-700 hover:to-emerald-700 shadow-lg">
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -854,7 +1096,8 @@ export default function ReceivablesTab() {
   const [expandedMeses, setExpandedMeses] = useState<Set<string>>(new Set());
   const [expandedContas, setExpandedContas] = useState<Set<string>>(new Set());
   const [expandedItem, setExpandedItem] = useState<number | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIdsByAccount, setSelectedIdsByAccount] = useState<Record<string, Set<number>>>({});
+  const [showHistoryPanel, setShowHistoryPanel] = useState<string | null>(null);
 
   const { data, isLoading } = trpc.financial.getReceivablesByBank.useQuery({ estado });
 
@@ -932,23 +1175,36 @@ export default function ReceivablesTab() {
     setter(prev => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   }
 
-  function toggleSelect(id: number) {
-    setSelectedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  function getSelectedIds(contaKey: string): Set<number> {
+    return selectedIdsByAccount[contaKey] || new Set();
   }
 
-  function toggleSelectAll(items: ItemData[]) {
-    const ids = items.map(i => i.id);
-    const allSelected = ids.every(id => selectedIds.has(id));
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (allSelected) ids.forEach(id => next.delete(id));
-      else ids.forEach(id => next.add(id));
-      return next;
+  function toggleSelect(contaKey: string, id: number) {
+    setSelectedIdsByAccount(prev => {
+      const current = new Set(prev[contaKey] || []);
+      if (current.has(id)) current.delete(id); else current.add(id);
+      return { ...prev, [contaKey]: current };
     });
   }
 
-  const selectedItems = useMemo(() => allItems.filter(i => selectedIds.has(i.id)), [allItems, selectedIds]);
-  const selectedTotal = useMemo(() => selectedItems.reduce((a, b) => a + b.valorAReceber, 0), [selectedItems]);
+  function toggleSelectAll(contaKey: string, items: ItemData[]) {
+    const ids = items.map(i => i.id);
+    setSelectedIdsByAccount(prev => {
+      const current = new Set(prev[contaKey] || []);
+      const allSelected = ids.every(id => current.has(id));
+      if (allSelected) ids.forEach(id => current.delete(id));
+      else ids.forEach(id => current.add(id));
+      return { ...prev, [contaKey]: current };
+    });
+  }
+
+  function clearSelection(contaKey: string) {
+    setSelectedIdsByAccount(prev => {
+      const next = { ...prev };
+      delete next[contaKey];
+      return next;
+    });
+  }
 
   if (isLoading) {
     return (
@@ -1006,30 +1262,7 @@ export default function ReceivablesTab() {
         )}
       </div>
 
-      {/* Barra de seleção para desconto */}
-      {selectedIds.size > 0 && (
-        <div className="sticky top-0 z-30 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl p-4 shadow-xl border border-teal-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-              <FileDown className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="font-bold text-sm">Selecionados para Desconto</div>
-              <div className="text-teal-100 text-xs">{selectedIds.size} {selectedIds.size === 1 ? "título" : "títulos"} marcados para antecipação</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-xs text-teal-200 uppercase tracking-wide">Valor Total</div>
-              <div className="text-xl font-bold">{formatCurrency(selectedTotal)}</div>
-            </div>
-            <button onClick={() => setSelectedIds(new Set())}
-              className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-medium transition-all">
-              Limpar
-            </button>
-          </div>
-        </div>
-      )}
+
 
       {/* Cards resumo por empresa */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -1249,14 +1482,18 @@ export default function ReceivablesTab() {
                                   <ContaFiltersAndTable
                                     allContaItems={contaItems}
                                     contaLabel={contaLabel}
-                                    selectedIds={selectedIds}
-                                    toggleSelect={toggleSelect}
-                                    toggleSelectAll={toggleSelectAll}
+                                    contaKey={contaKey}
+                                    selectedIds={getSelectedIds(contaKey)}
+                                    toggleSelect={(id: number) => toggleSelect(contaKey, id)}
+                                    toggleSelectAll={(items: ItemData[]) => toggleSelectAll(contaKey, items)}
+                                    clearSelection={() => clearSelection(contaKey)}
                                     expandedItem={expandedItem}
                                     setExpandedItem={setExpandedItem}
                                     empresaNome={shortEmpresaName(emp.nome)}
                                     mesLabel={formatMonth(mes.mes)}
                                     mesKey={mes.mes}
+                                    showHistoryPanel={showHistoryPanel === contaKey}
+                                    setShowHistoryPanel={(show: boolean) => setShowHistoryPanel(show ? contaKey : null)}
                                   />
                                 )}
                               </div>

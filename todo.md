@@ -2299,3 +2299,16 @@
 - [ ] Implementar correção automática em tempo real quando houver diferença
 - [ ] Mostrar origem da diferença (quais pedidos/itens causam) quando persistir
 - [ ] Finalizar skill reutilizável erp-financial-dashboard
+
+## Card Selecionados para Desconto + Histórico + Divergências sob demanda
+- [ ] Mover card "Selecionados para Desconto" para dentro de cada conta bancária
+- [ ] Somatório dinâmico conforme títulos são ticados
+- [ ] Botão "Exportar PDF" no card de selecionados
+- [ ] Checkbox de finalização (apenas senha Fernando)
+- [x] Histórico de ticagens com data, hora e operador ao lado
+- [x] Divergências sob demanda: mostrar origem e pedir autorização antes de corrigir
+- [ ] Replicar contraprova Maxiprod na aba Vendas (4 cards) com olho, passo a passo e link
+- [ ] Replicar contraprova Maxiprod na aba Inadimplência com olho, passo a passo e link
+- [ ] Adicionar olho de conferência Maxiprod dentro de cada conta bancária nos Recebíveis
+- [x] Divergências sob demanda: mostrar origem e pedir autorização antes de corrigir
+- [ ] Divergências: apontar valor, causa e pedir permissão antes de corrigir (nunca automático)

@@ -4286,7 +4286,7 @@ ${acoesTexto}
    */
   getMaxiprodContraprova: publicProcedure
     .input(z.object({
-      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis"]),
+      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis", "inadimplencia"]),
       startDate: z.string(),
       endDate: z.string(),
     }))
@@ -4376,6 +4376,29 @@ ${acoesTexto}
             valorMaxiprod: total,
             count: uniqueOrders.size,
             label: `${uniqueOrders.size} pedidos de venda (excluindo Digitação e outros)`,
+          };
+        }
+
+        // inadimplencia - títulos vencidos a receber
+        if (section === "inadimplencia") {
+          const db = await getDb();
+          if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          const todayStr = new Date().toISOString().split('T')[0];
+          const result = await db.select({
+            total: sql<number>`COALESCE(SUM(CAST(valor_liquido AS DECIMAL(15,2)) - CAST(COALESCE(valor_recebido_liquido, '0') AS DECIMAL(15,2))), 0)`,
+            count: sql<number>`COUNT(*)`,
+          }).from(accountsReceivable)
+            .where(and(
+              eq(accountsReceivable.estado, 'EMITIDO'),
+              inArray(accountsReceivable.tipo, ['TITULO', 'RECEITA', 'ADIANTAMENTO']),
+              lte(accountsReceivable.vencimentoData, todayStr),
+            ));
+
+          return {
+            valorMaxiprod: Number(result[0]?.total || 0),
+            count: Number(result[0]?.count || 0),
+            label: `${result[0]?.count || 0} títulos vencidos (estado EMITIDO, vencimento até hoje)`,
           };
         }
 
@@ -4537,5 +4560,56 @@ ${acoesTexto}
         console.error("[getDivergenceDetails] Error:", error.message);
         return { diff: 0, diffPercent: "0", possibleCauses: [`Erro: ${error.message}`], details: [] };
       }
+    }),
+
+  /* ============================================================
+     Discount Selection History - Histórico de ticagens
+     ============================================================ */
+  saveDiscountSelection: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      empresa: z.string(),
+      contaLabel: z.string(),
+      mesKey: z.string(),
+      totalTitulos: z.number(),
+      valorTotal: z.number(),
+      titulosJson: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      const { discountSelectionHistory } = await import("../drizzle/schema");
+      await db!.insert(discountSelectionHistory).values({
+        operatorName: input.operatorName,
+        empresa: input.empresa,
+        contaLabel: input.contaLabel,
+        mesKey: input.mesKey,
+        totalTitulos: input.totalTitulos,
+        valorTotal: String(input.valorTotal),
+        titulosJson: input.titulosJson,
+      });
+      return { success: true };
+    }),
+
+  getDiscountHistory: publicProcedure
+    .input(z.object({
+      empresa: z.string().optional(),
+      contaLabel: z.string().optional(),
+      mesKey: z.string().optional(),
+      limit: z.number().default(50),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      const { discountSelectionHistory } = await import("../drizzle/schema");
+      const conditions: any[] = [];
+      if (input.empresa) conditions.push(eq(discountSelectionHistory.empresa, input.empresa));
+      if (input.contaLabel) conditions.push(eq(discountSelectionHistory.contaLabel, input.contaLabel));
+      if (input.mesKey) conditions.push(eq(discountSelectionHistory.mesKey, input.mesKey));
+
+      const rows = await db!.select()
+        .from(discountSelectionHistory)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(discountSelectionHistory.createdAt))
+        .limit(input.limit);
+      return rows;
     }),
 });

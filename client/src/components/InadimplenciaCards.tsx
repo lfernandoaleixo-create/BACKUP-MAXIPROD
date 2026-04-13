@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useMemo, useRef } from "react";
+import { useOperator } from "@/contexts/OperatorContext";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,13 @@ import {
   Search,
   ArrowUpDown,
   Filter,
+  Eye,
+  ExternalLink,
+  ClipboardList,
 } from "lucide-react";
+
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
 /* ---- Helpers ---- */
 function formatCurrency(n: number): string {
@@ -667,11 +674,146 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
 /* ---- Card Unificado de Inadimplência ---- */
 type ActiveTab = "evolucao" | "clientes";
 
+/* ============================================================
+   Modal de Contraprova Maxiprod para Inadimplência
+   ============================================================ */
+function MaxiprodVerifyModalInadimplencia({
+  onClose,
+  context,
+}: {
+  onClose: () => void;
+  context: {
+    valorManus?: number;
+    valorMaxiprod?: number;
+    maxiprodLoading?: boolean;
+  };
+}) {
+  const steps = useMemo(() => {
+    const s: { step: number; text: string; highlight?: boolean }[] = [];
+    let n = 1;
+    s.push({ step: n++, text: "Acesse o Maxiprod: app.maxiprod.com.br" });
+    s.push({ step: n++, text: "Login: lfernandoaleixo@gmail.com | Senha: Luizfernando7008*" });
+    s.push({ step: n++, text: "Vá em: Financeiro \u2192 Contas a receber" });
+    s.push({ step: n++, text: 'Estado: marque apenas "A receber"' });
+    s.push({ step: n++, text: 'Vencimento: até a data de hoje (apenas vencidos)' });
+    s.push({ step: n++, text: 'NOTA: O dashboard considera apenas títulos vencidos com estado "A receber"', highlight: true });
+    if (context.valorManus !== undefined) {
+      s.push({ step: n++, text: `Compare o total com o valor da Manus: ${formatCurrency(context.valorManus)}`, highlight: true });
+    }
+    return s;
+  }, [context]);
+
+  const divergencia = context.valorManus !== undefined && context.valorMaxiprod !== undefined
+    ? Math.abs(context.valorManus - context.valorMaxiprod)
+    : null;
+  const hasDivergencia = divergencia !== null && divergencia > 1;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="bg-gradient-to-r from-red-950 via-slate-900 to-red-950 px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/30">
+                <Eye className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">Contraprova Maxiprod</h3>
+                <p className="text-red-300 text-xs">Inadimplência (Títulos Vencidos)</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="px-4 py-2.5 bg-white/10 rounded-lg border border-white/20">
+              <span className="text-red-300 text-[10px] uppercase tracking-wider">Valor na Manus</span>
+              <p className="text-white font-bold text-lg" style={{ textShadow: "0 0 15px rgba(239,68,68,0.4)" }}>
+                {context.valorManus !== undefined ? formatCurrency(context.valorManus) : "-"}
+              </p>
+            </div>
+            <div className={`px-4 py-2.5 rounded-lg border ${
+              context.maxiprodLoading ? "bg-white/5 border-white/10" :
+              hasDivergencia ? "bg-red-500/20 border-red-400/40" : "bg-emerald-500/20 border-emerald-400/40"
+            }`}>
+              <span className="text-red-300 text-[10px] uppercase tracking-wider">Valor Maxiprod (API)</span>
+              {context.maxiprodLoading ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <Loader2 className="w-4 h-4 animate-spin text-red-300" />
+                  <span className="text-red-300 text-sm">Consultando...</span>
+                </div>
+              ) : context.valorMaxiprod !== undefined ? (
+                <p className={`font-bold text-lg ${hasDivergencia ? "text-red-300" : "text-emerald-300"}`}
+                  style={{ textShadow: hasDivergencia ? "0 0 15px rgba(239,68,68,0.4)" : "0 0 15px rgba(52,211,153,0.4)" }}>
+                  {formatCurrency(context.valorMaxiprod)}
+                </p>
+              ) : (
+                <p className="text-white/50 text-sm mt-1">Indisponível</p>
+              )}
+            </div>
+          </div>
+          {hasDivergencia && (
+            <div className="mt-2 px-4 py-2 bg-red-500/20 rounded-lg border border-red-400/30 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-300 flex-shrink-0" />
+              <span className="text-red-200 text-xs font-semibold">
+                Divergência de {formatCurrency(divergencia!)} detectada! Solicite autorização para corrigir.
+              </span>
+            </div>
+          )}
+          {!hasDivergencia && context.valorMaxiprod !== undefined && !context.maxiprodLoading && (
+            <div className="mt-2 px-4 py-2 bg-emerald-500/20 rounded-lg border border-emerald-400/30 flex items-center gap-2">
+              <span className="text-emerald-200 text-xs font-semibold">Valores conferem! Sem divergência.</span>
+            </div>
+          )}
+        </div>
+        <div className="px-6 py-5 max-h-[50vh] overflow-y-auto space-y-2.5">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4" /> Passo a passo para verificação
+          </div>
+          {steps.map(st => (
+            <div key={st.step} className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
+              st.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 border border-slate-200"
+            }`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                st.highlight ? "bg-amber-500 text-white shadow-md shadow-amber-500/30" : "bg-red-600 text-white"
+              }`}>{st.step}</div>
+              <p className={`text-sm leading-relaxed pt-0.5 ${
+                st.highlight ? "text-amber-800 font-semibold" : "text-slate-700"
+              }`}>{st.text}</p>
+            </div>
+          ))}
+        </div>
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <a href={MAXIPROD_LOGIN_URL} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-bold shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all hover:scale-[1.02]">
+            <ExternalLink className="w-4 h-4" /> Abrir Maxiprod
+          </a>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 font-medium">Fechar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function InadimplenciaCard({ summary, grupo, crmSegmento }: { summary: any; grupo?: string; crmSegmento?: string }) {
+  const { operator } = useOperator();
+  const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const [collapsed, setCollapsed] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>("evolucao");
   const [chartFilter, setChartFilter] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+
+  // Contraprova: consultar total de vencidos no Maxiprod
+  const today = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }, []);
+  const { data: cpInadimplencia, isLoading: cpInadimplenciaLoading } = trpc.financial.getMaxiprodContraprova.useQuery(
+    { section: "inadimplencia", startDate: "2020-01-01", endDate: today },
+    { enabled: !!canVerifyMaxiprod }
+  );
 
   // Buscar clientes para mostrar contagem no header
   const clientesQueryInput = useMemo(() => {
@@ -728,6 +870,28 @@ export function InadimplenciaCard({ summary, grupo, crmSegmento }: { summary: an
           {hasGrupoCrmFilter && <Badge className="bg-red-100 text-red-700 text-[10px] border-0">Filtrado</Badge>}
         </div>
         <div className="flex items-center gap-4">
+          {/* Contraprova Maxiprod inline */}
+          {canVerifyMaxiprod && cpInadimplencia && !cpInadimplenciaLoading && (
+            <div className="flex flex-col items-end mr-2" onClick={e => e.stopPropagation()}>
+              <span className="text-[9px] text-slate-400 uppercase tracking-wider leading-none">Maxiprod</span>
+              <span className={`text-xs font-semibold ${
+                Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod) > 1 ? "text-red-600" : "text-emerald-600"
+              }`}>{formatCurrency(cpInadimplencia.valorMaxiprod)}</span>
+              {Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod) > 1 && (
+                <span className="text-[9px] text-red-500 font-bold flex items-center gap-0.5">
+                  <AlertTriangle className="w-2.5 h-2.5" /> Dif: {formatCurrency(Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod))}
+                </span>
+              )}
+            </div>
+          )}
+          {canVerifyMaxiprod && (
+            <button
+              onClick={e => { e.stopPropagation(); setShowVerifyModal(true); }}
+              className="p-1.5 rounded-lg hover:bg-red-100 transition-colors group" title="Verificar no Maxiprod"
+            >
+              <Eye className="w-4 h-4 text-red-400 group-hover:text-red-600" />
+            </button>
+          )}
           <div className="flex items-center gap-3 text-right">
             <div className="flex flex-col items-end">
               <span className="text-[9px] text-red-500 uppercase tracking-wider leading-none">Falta Pagar</span>
@@ -737,6 +901,18 @@ export function InadimplenciaCard({ summary, grupo, crmSegmento }: { summary: an
           {collapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
         </div>
       </button>
+
+      {/* Modal de Contraprova */}
+      {showVerifyModal && (
+        <MaxiprodVerifyModalInadimplencia
+          onClose={() => setShowVerifyModal(false)}
+          context={{
+            valorManus: totaisClientes.faltaPagar,
+            valorMaxiprod: cpInadimplencia?.valorMaxiprod,
+            maxiprodLoading: cpInadimplenciaLoading,
+          }}
+        />
+      )}
 
       {!collapsed && (
         <div className="border-t border-red-200">
