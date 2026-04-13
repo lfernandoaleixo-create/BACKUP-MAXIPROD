@@ -2684,14 +2684,18 @@ export const financialRouter = router({
       if (!db) return { empresas: [], totals: { total: 0, count: 0, vencido: 0, aVencer: 0 } };
 
       const estado = input?.estado || "EMITIDO";
+      const todayBR = getTodayBR();
       const conditions = [
         inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
       ];
       if (estado !== "ALL") {
         conditions.push(eq(accountsReceivable.estado, estado));
       }
+      // Para EMITIDO sem dateFrom explícito: filtrar a partir de hoje para alinhar com Visão Geral
       if (input?.dateFrom) {
         conditions.push(gte(accountsReceivable.vencimentoData, input.dateFrom));
+      } else if (estado === "EMITIDO") {
+        conditions.push(gte(accountsReceivable.vencimentoData, todayBR + "T00:00:00"));
       }
       if (input?.dateTo) {
         conditions.push(lte(accountsReceivable.vencimentoData, input.dateTo + "T23:59:59"));

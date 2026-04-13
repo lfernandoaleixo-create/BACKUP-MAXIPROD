@@ -2161,3 +2161,11 @@
 ## Restrição de acesso à aba Produção
 - [x] Apenas senhas "Fernando", "Bruno" e "Guilherme" podem acessar a aba Produção
 - [x] Outros usuários não devem ver ou acessar a aba Produção (tela "Acesso Restrito" com botão voltar)
+
+## Bug: Valores divergentes entre aba Inadimplência e Visão Geral (Financeiro)
+- [ ] Investigar por que A Receber na aba Inadimplência (R$ 2.117.767) difere da Visão Geral (R$ 1.471.270)
+- [ ] Investigar por que Inadimplência na aba Inadimplência (R$ 647.697 vencido) difere da Visão Geral (R$ 628.792)
+- [ ] Corrigir para que os valores sejam consistentes entre as abas
+
+## Aba Recebíveis: alinhar total com Visão Geral
+- [x] Excluir títulos vencidos (antes de hoje) do total da aba Recebíveis para bater com a Visão Geral
