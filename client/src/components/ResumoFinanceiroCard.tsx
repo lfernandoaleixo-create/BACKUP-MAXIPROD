@@ -12,12 +12,13 @@
  */
 
 import { useState, useMemo, useEffect } from "react";
+import { useOperator } from "@/contexts/OperatorContext";
 import { trpc } from "@/lib/trpc";
 import {
   Loader2, TrendingUp, TrendingDown, Receipt, ShoppingCart, CreditCard,
   Calendar, Info, Database, AlertTriangle, ChevronDown, ChevronRight, Scale,
   ChevronUp, List, ArrowUpDown, ArrowUp, ArrowDown, Banknote, ArrowRightLeft,
-  Wallet, PiggyBank
+  Wallet, PiggyBank, ExternalLink, Eye, ClipboardList, X
 } from "lucide-react";
 import {
   Select,
@@ -142,6 +143,137 @@ function getPeriodDates(preset: PeriodPreset): { start: string; end: string } {
     default:
       return { start: "", end: "" };
   }
+}
+
+/* ---- Maxiprod Contraprova: senhas autorizadas ---- */
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
+
+function MaxiprodVerifyModalFinanceiro({
+  onClose,
+  section,
+  context,
+}: {
+  onClose: () => void;
+  section: "faturamento" | "vendas" | "entradas" | "contas_pagas";
+  context: {
+    periodStart?: string;
+    periodEnd?: string;
+    valorManus?: number;
+  };
+}) {
+  const steps = useMemo(() => {
+    const s: { step: number; text: string; highlight?: boolean }[] = [];
+    let n = 1;
+    s.push({ step: n++, text: "Acesse o Maxiprod: app.maxiprod.com.br" });
+    s.push({ step: n++, text: "Fa\u00e7a login com: lfernandoaleixo@gmail.com" });
+
+    if (section === "faturamento") {
+      s.push({ step: n++, text: "V\u00e1 em: Notas Fiscais \u2192 Notas Fiscais de Sa\u00edda" });
+      if (context.periodStart && context.periodEnd) {
+        const [sy, sm, sd] = context.periodStart.split("-");
+        const [ey, em, ed] = context.periodEnd.split("-");
+        s.push({ step: n++, text: `Emiss\u00e3o: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+      }
+      s.push({ step: n++, text: 'Estado: apenas "Emitida"' });
+      s.push({ step: n++, text: 'Tipo: apenas "Sa\u00edda"' });
+      s.push({ step: n++, text: 'IMPORTANTE: Exclua NFs com estado configur\u00e1vel: Amostra, Bonifica\u00e7\u00e3o, Devolu\u00e7\u00e3o, Remessa, Recusa, Transfer\u00eancia, Cancelado', highlight: true });
+      s.push({ step: n++, text: 'Aceite apenas NFs de produtos: Bambu, Madeira, Roj\u00e3o, Serragem, Madeira/Fibra e varia\u00e7\u00f5es', highlight: true });
+    } else if (section === "vendas") {
+      s.push({ step: n++, text: "V\u00e1 em: Vendas \u2192 Pedidos de Venda" });
+      if (context.periodStart && context.periodEnd) {
+        const [sy, sm, sd] = context.periodStart.split("-");
+        const [ey, em, ed] = context.periodEnd.split("-");
+        s.push({ step: n++, text: `Data do pedido: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+      }
+      s.push({ step: n++, text: 'Exclua pedidos com estado: Cancelado' });
+    } else if (section === "entradas") {
+      s.push({ step: n++, text: "V\u00e1 em: Financeiro \u2192 Contas a receber" });
+      s.push({ step: n++, text: 'Estado: marque apenas "Recebidos"' });
+      if (context.periodStart && context.periodEnd) {
+        const [sy, sm, sd] = context.periodStart.split("-");
+        const [ey, em, ed] = context.periodEnd.split("-");
+        s.push({ step: n++, text: `Liquida\u00e7\u00e3o: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+      }
+      s.push({ step: n++, text: 'NOTA: O dashboard exclui transfer\u00eancias entre empresas do grupo (Palitos Fox, Mesa Indust, Bambusa, Espetos Ind, Varetas)', highlight: true });
+    } else if (section === "contas_pagas") {
+      s.push({ step: n++, text: "V\u00e1 em: Financeiro \u2192 Contas a pagar" });
+      s.push({ step: n++, text: 'Estado: marque apenas "Pagos"' });
+      if (context.periodStart && context.periodEnd) {
+        const [sy, sm, sd] = context.periodStart.split("-");
+        const [ey, em, ed] = context.periodEnd.split("-");
+        s.push({ step: n++, text: `Liquida\u00e7\u00e3o: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+      }
+      s.push({ step: n++, text: 'Exclua contas com estado: Cancelado' });
+    }
+
+    if (context.valorManus !== undefined) {
+      s.push({ step: n++, text: `Compare o total com o valor da Manus: ${formatCurrency(context.valorManus)}`, highlight: true });
+    }
+    return s;
+  }, [section, context]);
+
+  const labels: Record<string, string> = {
+    faturamento: "Faturamento (NFs de Sa\u00edda)",
+    vendas: "Pedidos de Venda",
+    entradas: "Entradas (Recebimentos)",
+    contas_pagas: "Contas a Pagar",
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                <Eye className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">Contraprova Maxiprod</h3>
+                <p className="text-indigo-300 text-xs">{labels[section]}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          {context.valorManus !== undefined && (
+            <div className="mt-3 px-4 py-2.5 bg-white/10 rounded-lg border border-white/20">
+              <span className="text-indigo-300 text-xs">Valor na Manus:</span>
+              <span className="ml-2 text-white font-bold text-lg" style={{ textShadow: "0 0 15px rgba(34,211,238,0.4)" }}>
+                {formatCurrency(context.valorManus)}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="px-6 py-5 max-h-[50vh] overflow-y-auto space-y-2.5">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4" /> Passo a passo para verifica\u00e7\u00e3o
+          </div>
+          {steps.map(st => (
+            <div key={st.step} className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
+              st.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 border border-slate-200"
+            }`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                st.highlight ? "bg-amber-500 text-white shadow-md shadow-amber-500/30" : "bg-indigo-600 text-white"
+              }`}>{st.step}</div>
+              <p className={`text-sm leading-relaxed pt-0.5 ${
+                st.highlight ? "text-amber-800 font-semibold" : "text-slate-700"
+              }`}>{st.text}</p>
+            </div>
+          ))}
+        </div>
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <a href={MAXIPROD_LOGIN_URL} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:scale-[1.02]">
+            <ExternalLink className="w-4 h-4" /> Abrir Maxiprod
+          </a>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 font-medium">Fechar</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function ResumoFinanceiroCard() {
@@ -283,6 +415,7 @@ export default function ResumoFinanceiroCard() {
             salesData={salesData}
             expanded={expanded}
             onToggle={() => setExpanded(!expanded)}
+            dates={dates}
           />
 
           {/* Expanded Details */}
@@ -339,6 +472,7 @@ function CompactSummary({
   salesData,
   expanded,
   onToggle,
+  dates,
 }: {
   receivedData: ReceivedData | null | undefined;
   otherInflowsData: OtherInflowsData | null | undefined;
@@ -346,7 +480,11 @@ function CompactSummary({
   salesData: SalesData | null | undefined;
   expanded: boolean;
   onToggle: () => void;
+  dates: { start: string; end: string };
 }) {
+  const { operator } = useOperator();
+  const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
+  const [verifySection, setVerifySection] = useState<"faturamento" | "vendas" | "entradas" | "contas_pagas" | null>(null);
   const recebimentos = receivedData?.recebimentos?.total ?? 0;
   const outrasEntradas = otherInflowsData?.outrasEntradas?.total ?? 0;
   const faturamento = billingData?.faturamento?.total ?? 0;
@@ -364,12 +502,18 @@ function CompactSummary({
       {/* 4 cards alinhados: Entradas | Faturamento | Vendas | Contas Pagas */}
       <div className="grid grid-cols-4 gap-3 mb-4">
         {/* Card 1: Entradas (Recebimentos + Outras = Total) */}
-        <div className="px-3.5 py-3.5 rounded-lg bg-amber-50/60 border border-amber-100">
+        <div className="px-3.5 py-3.5 rounded-lg bg-amber-50/60 border border-amber-100 relative group">
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
               <Wallet className="w-3.5 h-3.5 text-amber-600" />
             </div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Entradas</span>
+            {canVerifyMaxiprod && (
+              <button onClick={(e) => { e.stopPropagation(); setVerifySection("entradas"); }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-amber-500/20 hover:bg-amber-500/40 flex items-center justify-center" title="Verificar no Maxiprod">
+                <Eye className="w-3 h-3 text-amber-700" />
+              </button>
+            )}
           </div>
           <p className="text-lg font-bold text-amber-700 leading-tight text-center">{formatCurrency(totalEntradas)}</p>
           <div className="mt-2 pt-2 border-t border-amber-200/60 space-y-1">
@@ -391,36 +535,54 @@ function CompactSummary({
         </div>
 
         {/* Card 2: Faturamento */}
-        <div className="text-center px-3 py-3.5 rounded-lg bg-emerald-50/60 border border-emerald-100">
+        <div className="text-center px-3 py-3.5 rounded-lg bg-emerald-50/60 border border-emerald-100 relative group">
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
               <Receipt className="w-3.5 h-3.5 text-emerald-600" />
             </div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Faturamento</span>
+            {canVerifyMaxiprod && (
+              <button onClick={(e) => { e.stopPropagation(); setVerifySection("faturamento"); }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-emerald-500/20 hover:bg-emerald-500/40 flex items-center justify-center" title="Verificar no Maxiprod">
+                <Eye className="w-3 h-3 text-emerald-700" />
+              </button>
+            )}
           </div>
           <p className="text-lg font-bold text-emerald-700 leading-tight">{formatCurrency(faturamento)}</p>
           <p className="text-[11px] text-slate-400 mt-1">{billingData?.faturamento?.count ?? 0} NFs emitidas</p>
         </div>
 
         {/* Card 3: Vendas */}
-        <div className="text-center px-3 py-3.5 rounded-lg bg-blue-50/60 border border-blue-100">
+        <div className="text-center px-3 py-3.5 rounded-lg bg-blue-50/60 border border-blue-100 relative group">
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
               <ShoppingCart className="w-3.5 h-3.5 text-blue-600" />
             </div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Vendas</span>
+            {canVerifyMaxiprod && (
+              <button onClick={(e) => { e.stopPropagation(); setVerifySection("vendas"); }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-blue-500/20 hover:bg-blue-500/40 flex items-center justify-center" title="Verificar no Maxiprod">
+                <Eye className="w-3 h-3 text-blue-700" />
+              </button>
+            )}
           </div>
           <p className="text-lg font-bold text-blue-700 leading-tight">{formatCurrency(vendas)}</p>
           <p className="text-[11px] text-slate-400 mt-1">{salesData?.vendas?.pedidos ?? 0} pedidos</p>
         </div>
 
         {/* Card 4: Contas Pagas */}
-        <div className="text-center px-3 py-3.5 rounded-lg bg-red-50/60 border border-red-100">
+        <div className="text-center px-3 py-3.5 rounded-lg bg-red-50/60 border border-red-100 relative group">
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
               <CreditCard className="w-3.5 h-3.5 text-red-500" />
             </div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contas Pagas</span>
+            {canVerifyMaxiprod && (
+              <button onClick={(e) => { e.stopPropagation(); setVerifySection("contas_pagas"); }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-red-500/20 hover:bg-red-500/40 flex items-center justify-center" title="Verificar no Maxiprod">
+                <Eye className="w-3 h-3 text-red-700" />
+              </button>
+            )}
           </div>
           <p className="text-lg font-bold text-red-600 leading-tight">{formatCurrency(contasPagas)}</p>
           <p className="text-[11px] text-slate-400 mt-1">{billingData?.contasPagar?.count ?? salesData?.contasPagas?.count ?? 0} contas</p>
@@ -461,6 +623,22 @@ function CompactSummary({
           )}
         </div>
       </div>
+
+      {/* Modal de Contraprova Maxiprod */}
+      {verifySection && (
+        <MaxiprodVerifyModalFinanceiro
+          onClose={() => setVerifySection(null)}
+          section={verifySection}
+          context={{
+            periodStart: dates.start,
+            periodEnd: dates.end,
+            valorManus: verifySection === "faturamento" ? faturamento
+              : verifySection === "vendas" ? vendas
+              : verifySection === "entradas" ? totalEntradas
+              : contasPagas,
+          }}
+        />
+      )}
     </div>
   );
 }

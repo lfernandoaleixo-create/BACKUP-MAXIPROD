@@ -2278,3 +2278,10 @@
 - [x] Card de resumo premium dentro de cada conta bancária com totais específicos da conta filtrada
 - [x] Filtros replicados para todas as empresas, todos os meses e todas as contas
 - [x] Cada conta bancária tem seu próprio estado de filtro independente
+
+## Links de Contraprova Maxiprod + Exportação PDF
+- [ ] Botões "Verificar no Maxiprod" nos cards Faturamento, Vendas, Entradas e Contas Pagas (Visão Geral)
+- [x] Links de contraprova Maxiprod na aba Recebíveis (por mês, por forma de cobrança)
+- [ ] Sistema de alerta de divergência entre valores Manus vs Maxiprod
+- [x] Botão de exportação PDF dos filtros aplicados em cada conta bancária (Recebíveis)
+- [x] Controle de acesso: links de contraprova Maxiprod visíveis apenas para senhas "Guilherme" e "Fernando"

@@ -1,4 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
+import { useOperator } from "@/contexts/OperatorContext";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { trpc } from "@/lib/trpc";
 import {
   Building2,
@@ -21,6 +24,10 @@ import {
   Wallet,
   CircleDollarSign,
   Sparkles,
+  ExternalLink,
+  FileText,
+  ClipboardList,
+  Eye,
 } from "lucide-react";
 
 /* ---- Helpers ---- */
@@ -55,6 +62,298 @@ function shortEmpresaName(nome: string) {
   if (nome.toUpperCase().includes("ESPETOS")) return "ESPETOS";
   if (nome.toUpperCase().includes("MESA")) return "MESA";
   return nome;
+}
+
+/* ---- Maxiprod Contraprova: senhas autorizadas ---- */
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
+
+/* ---- PDF Export ---- */
+function exportFilteredPDF(
+  contaLabel: string,
+  filterDescription: string,
+  filteredItems: ItemData[],
+  filteredTotals: { total: number; vencido: number; aVencer: number; count: number },
+  empresaNome: string,
+  mesLabel: string,
+) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // Header
+  doc.setFillColor(15, 23, 42); // slate-900
+  doc.rect(0, 0, pageW, 32, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("GRUPO FOX - Relatório de Recebíveis", 14, 14);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(`${empresaNome} | ${mesLabel} | ${contaLabel}`, 14, 22);
+  doc.text(`Filtro: ${filterDescription} | Gerado em: ${new Date().toLocaleString("pt-BR")}`, 14, 28);
+
+  // Summary boxes
+  const y0 = 38;
+  const boxW = 60;
+  const gap = 8;
+  // Total
+  doc.setFillColor(8, 145, 178); // cyan-600
+  doc.roundedRect(14, y0, boxW, 18, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.text("TOTAL FILTRADO", 18, y0 + 6);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(filteredTotals.total), 18, y0 + 14);
+  // Vencido
+  doc.setFillColor(220, 38, 38); // red-600
+  doc.roundedRect(14 + boxW + gap, y0, boxW, 18, 2, 2, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("VENCIDO", 18 + boxW + gap, y0 + 6);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(filteredTotals.vencido), 18 + boxW + gap, y0 + 14);
+  // A Vencer
+  doc.setFillColor(5, 150, 105); // emerald-600
+  doc.roundedRect(14 + 2 * (boxW + gap), y0, boxW, 18, 2, 2, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("A VENCER", 18 + 2 * (boxW + gap), y0 + 6);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(filteredTotals.aVencer), 18 + 2 * (boxW + gap), y0 + 14);
+  // Count
+  doc.setFillColor(71, 85, 105); // slate-600
+  doc.roundedRect(14 + 3 * (boxW + gap), y0, boxW, 18, 2, 2, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("TÍTULOS", 18 + 3 * (boxW + gap), y0 + 6);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text(String(filteredTotals.count), 18 + 3 * (boxW + gap), y0 + 14);
+
+  // Table
+  const tableData = filteredItems.map(item => [
+    item.cliente,
+    item.documento ? `Doc ${item.documento}${item.parcela ? ` · ${item.parcela}` : ""}` : "-",
+    shortFormaCobranca(item.formaCobranca).label || "-",
+    formatCurrency(item.valorAReceber),
+    formatDate(item.vencimento),
+    item.isOverdue ? "Vencido" : "A vencer",
+  ]);
+
+  autoTable(doc, {
+    startY: y0 + 24,
+    head: [["Cliente", "Documento", "Forma Pgto", "Valor", "Vencimento", "Status"]],
+    body: tableData,
+    theme: "grid",
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+    bodyStyles: { fontSize: 7.5, cellPadding: 2 },
+    columnStyles: {
+      0: { cellWidth: 70 },
+      3: { halign: "right", fontStyle: "bold" },
+      5: { halign: "center" },
+    },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    didParseCell: (data: any) => {
+      if (data.section === "body" && data.column.index === 5) {
+        if (data.cell.raw === "Vencido") {
+          data.cell.styles.textColor = [220, 38, 38];
+          data.cell.styles.fontStyle = "bold";
+        } else {
+          data.cell.styles.textColor = [5, 150, 105];
+        }
+      }
+    },
+  });
+
+  const fileName = `Recebiveis_${empresaNome.replace(/\s+/g, "_")}_${mesLabel.replace(/\s+/g, "_")}_${filterDescription.replace(/\s+/g, "_")}.pdf`;
+  doc.save(fileName);
+}
+
+/* ---- Maxiprod Contraprova Modal ---- */
+function MaxiprodVerifyModal({
+  onClose,
+  section,
+  context,
+}: {
+  onClose: () => void;
+  section: "recebiveis" | "faturamento" | "vendas" | "entradas" | "contas_pagas";
+  context: {
+    empresa?: string;
+    mes?: string;
+    contaLabel?: string;
+    formaCobranca?: string;
+    statusFilter?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    valorManus?: number;
+  };
+}) {
+  const steps = useMemo(() => {
+    const baseSteps: { step: number; text: string; highlight?: boolean }[] = [];
+    let n = 1;
+
+    baseSteps.push({ step: n++, text: `Acesse o Maxiprod: app.maxiprod.com.br` });
+    baseSteps.push({ step: n++, text: `Faça login com: lfernandoaleixo@gmail.com` });
+
+    if (section === "recebiveis") {
+      baseSteps.push({ step: n++, text: `Vá em: Financeiro → Contas a receber` });
+      baseSteps.push({ step: n++, text: `Estado: marque apenas "A receber"` });
+      if (context.mes) {
+        const [y, m] = context.mes.split("-");
+        const lastDay = new Date(Number(y), Number(m), 0).getDate();
+        baseSteps.push({ step: n++, text: `Vencimento: 01/${m}/${y} a ${lastDay}/${m}/${y}` });
+      }
+      if (context.empresa) {
+        baseSteps.push({ step: n++, text: `Empresa: selecione "${context.empresa}"` });
+      }
+      if (context.formaCobranca && context.formaCobranca !== "TODOS") {
+        baseSteps.push({ step: n++, text: `Forma de cobrança: selecione "${context.formaCobranca}"` });
+      }
+      if (context.contaLabel) {
+        const bankMatch = context.contaLabel.match(/^(\w+)/);
+        if (bankMatch) {
+          baseSteps.push({ step: n++, text: `Banco: filtre por "${bankMatch[1]}" e a conta correspondente` });
+        }
+      }
+      baseSteps.push({ step: n++, text: `Clique em "Ocultar filtros" para ver o total no rodapé da tabela` });
+      if (context.valorManus !== undefined) {
+        baseSteps.push({ step: n++, text: `Compare o total do Maxiprod com o valor da Manus: ${formatCurrency(context.valorManus)}`, highlight: true });
+      }
+    } else if (section === "faturamento") {
+      baseSteps.push({ step: n++, text: `Vá em: Notas Fiscais → Notas Fiscais de Saída` });
+      if (context.periodStart && context.periodEnd) {
+        const [sy, sm, sd] = context.periodStart.split("-");
+        const [ey, em, ed] = context.periodEnd.split("-");
+        baseSteps.push({ step: n++, text: `Emissão: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+      }
+      baseSteps.push({ step: n++, text: `Estado: apenas "Emitida"` });
+      baseSteps.push({ step: n++, text: `IMPORTANTE: Exclua manualmente NFs com estado configurável: Amostra, Bonificação, Devolução, Remessa, Recusa, Transferência, Cancelado`, highlight: true });
+      baseSteps.push({ step: n++, text: `Tipo: apenas "Saída"` });
+      if (context.valorManus !== undefined) {
+        baseSteps.push({ step: n++, text: `Compare o total com o valor da Manus: ${formatCurrency(context.valorManus)}`, highlight: true });
+      }
+    } else if (section === "vendas") {
+      baseSteps.push({ step: n++, text: `Vá em: Vendas → Pedidos de Venda` });
+      if (context.periodStart && context.periodEnd) {
+        const [sy, sm, sd] = context.periodStart.split("-");
+        const [ey, em, ed] = context.periodEnd.split("-");
+        baseSteps.push({ step: n++, text: `Data do pedido: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+      }
+      baseSteps.push({ step: n++, text: `Exclua pedidos com estado: Cancelado` });
+      if (context.valorManus !== undefined) {
+        baseSteps.push({ step: n++, text: `Compare o total com o valor da Manus: ${formatCurrency(context.valorManus)}`, highlight: true });
+      }
+    } else if (section === "entradas") {
+      baseSteps.push({ step: n++, text: `Vá em: Financeiro → Contas a receber` });
+      baseSteps.push({ step: n++, text: `Estado: marque apenas "Recebidos"` });
+      if (context.periodStart && context.periodEnd) {
+        const [sy, sm, sd] = context.periodStart.split("-");
+        const [ey, em, ed] = context.periodEnd.split("-");
+        baseSteps.push({ step: n++, text: `Liquidação: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+      }
+      baseSteps.push({ step: n++, text: `NOTA: O dashboard exclui transferências entre empresas do grupo (Palitos Fox, Mesa Indust, Bambusa, Espetos Ind, Varetas)`, highlight: true });
+      if (context.valorManus !== undefined) {
+        baseSteps.push({ step: n++, text: `Compare o total com o valor da Manus: ${formatCurrency(context.valorManus)}`, highlight: true });
+      }
+    } else if (section === "contas_pagas") {
+      baseSteps.push({ step: n++, text: `Vá em: Financeiro → Contas a pagar` });
+      baseSteps.push({ step: n++, text: `Estado: marque apenas "Pagos"` });
+      if (context.periodStart && context.periodEnd) {
+        const [sy, sm, sd] = context.periodStart.split("-");
+        const [ey, em, ed] = context.periodEnd.split("-");
+        baseSteps.push({ step: n++, text: `Liquidação: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+      }
+      baseSteps.push({ step: n++, text: `Exclua contas com estado: Cancelado` });
+      if (context.valorManus !== undefined) {
+        baseSteps.push({ step: n++, text: `Compare o total com o valor da Manus: ${formatCurrency(context.valorManus)}`, highlight: true });
+      }
+    }
+
+    return baseSteps;
+  }, [section, context]);
+
+  const sectionLabels: Record<string, string> = {
+    recebiveis: "Contas a Receber",
+    faturamento: "Faturamento (NFs de Saída)",
+    vendas: "Pedidos de Venda",
+    entradas: "Entradas (Recebimentos)",
+    contas_pagas: "Contas a Pagar",
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                <Eye className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">Contraprova Maxiprod</h3>
+                <p className="text-indigo-300 text-xs">{sectionLabels[section]}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          {context.valorManus !== undefined && (
+            <div className="mt-3 px-4 py-2.5 bg-white/10 rounded-lg border border-white/20">
+              <span className="text-indigo-300 text-xs">Valor na Manus:</span>
+              <span className="ml-2 text-white font-bold text-lg" style={{ textShadow: "0 0 15px rgba(34,211,238,0.4)" }}>
+                {formatCurrency(context.valorManus)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Steps */}
+        <div className="px-6 py-5 max-h-[50vh] overflow-y-auto space-y-2.5">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4" />
+            Passo a passo para verificação
+          </div>
+          {steps.map(s => (
+            <div key={s.step} className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
+              s.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 border border-slate-200"
+            }`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                s.highlight ? "bg-amber-500 text-white shadow-md shadow-amber-500/30" : "bg-indigo-600 text-white"
+              }`}>
+                {s.step}
+              </div>
+              <p className={`text-sm leading-relaxed pt-0.5 ${
+                s.highlight ? "text-amber-800 font-semibold" : "text-slate-700"
+              }`}>
+                {s.text}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <a
+            href={MAXIPROD_LOGIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:scale-[1.02]"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Abrir Maxiprod
+          </a>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 font-medium">
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const EMPRESA_COLORS: Record<string, { bg: string; border: string; text: string; accent: string; headerBg: string }> = {
@@ -163,6 +462,9 @@ function ContaFiltersAndTable({
   toggleSelectAll,
   expandedItem,
   setExpandedItem,
+  empresaNome,
+  mesLabel,
+  mesKey,
 }: {
   allContaItems: ItemData[];
   contaLabel: string;
@@ -171,7 +473,13 @@ function ContaFiltersAndTable({
   toggleSelectAll: (items: ItemData[]) => void;
   expandedItem: number | null;
   setExpandedItem: (id: number | null) => void;
+  empresaNome: string;
+  mesLabel: string;
+  mesKey: string;
 }) {
+  const { operator } = useOperator();
+  const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("TODOS");
   const [formaFilter, setFormaFilter] = useState<FormaFilter>("TODOS");
 
@@ -219,12 +527,14 @@ function ContaFiltersAndTable({
         <div className="flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-slate-400" />
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Filtros</span>
-          {hasActiveFilters && (
-            <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
-              className="ml-auto text-[10px] text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
-              <X className="w-3 h-3" /> Limpar
-            </button>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            {hasActiveFilters && (
+              <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
+                className="text-[10px] text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
+                <X className="w-3 h-3" /> Limpar
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Status */}
@@ -286,10 +596,30 @@ function ContaFiltersAndTable({
                     <p className="text-indigo-300 text-[10px] font-medium">{filterDescription}</p>
                   </div>
                 </div>
-                <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
-                  className="text-indigo-400 hover:text-white text-[10px] flex items-center gap-1 transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded-lg border border-white/10">
-                  <X className="w-3 h-3" /> Limpar
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Exportar PDF */}
+                  <button
+                    onClick={() => exportFilteredPDF(contaLabel, filterDescription, filteredItems, filteredTotals, empresaNome, mesLabel)}
+                    className="text-emerald-400 hover:text-white text-[10px] flex items-center gap-1 transition-colors bg-white/5 hover:bg-emerald-500/30 px-2.5 py-1.5 rounded-lg border border-emerald-400/30 hover:border-emerald-400/60"
+                    title="Exportar PDF deste filtro"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> PDF
+                  </button>
+                  {/* Verificar no Maxiprod */}
+                  {canVerifyMaxiprod && (
+                    <button
+                      onClick={() => setShowVerifyModal(true)}
+                      className="text-amber-400 hover:text-white text-[10px] flex items-center gap-1.5 transition-colors bg-white/5 hover:bg-amber-500/30 px-2.5 py-1.5 rounded-lg border border-amber-400/30 hover:border-amber-400/60 shadow-[0_0_8px_rgba(251,191,36,0.15)] hover:shadow-[0_0_12px_rgba(251,191,36,0.3)]"
+                      title="Verificar no Maxiprod"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Maxiprod
+                    </button>
+                  )}
+                  <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
+                    className="text-indigo-400 hover:text-white text-[10px] flex items-center gap-1 transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded-lg border border-white/10">
+                    <X className="w-3 h-3" /> Limpar
+                  </button>
+                </div>
               </div>
 
               {/* Valores */}
@@ -362,6 +692,22 @@ function ContaFiltersAndTable({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Contraprova Maxiprod */}
+      {showVerifyModal && (
+        <MaxiprodVerifyModal
+          onClose={() => setShowVerifyModal(false)}
+          section="recebiveis"
+          context={{
+            empresa: empresaNome,
+            mes: mesKey,
+            contaLabel,
+            formaCobranca: formaFilter,
+            statusFilter,
+            valorManus: filteredTotals.total,
+          }}
+        />
       )}
 
       {/* ---- TABELA DE TÍTULOS ---- */}
@@ -908,6 +1254,9 @@ export default function ReceivablesTab() {
                                     toggleSelectAll={toggleSelectAll}
                                     expandedItem={expandedItem}
                                     setExpandedItem={setExpandedItem}
+                                    empresaNome={shortEmpresaName(emp.nome)}
+                                    mesLabel={formatMonth(mes.mes)}
+                                    mesKey={mes.mes}
                                   />
                                 )}
                               </div>
