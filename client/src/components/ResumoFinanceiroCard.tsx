@@ -149,6 +149,149 @@ function getPeriodDates(preset: PeriodPreset): { start: string; end: string } {
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
+/* ---- Modal de Detalhamento de Divergência ---- */
+function DivergenceDetailModal({
+  onClose,
+  section,
+  startDate,
+  endDate,
+  valorManus,
+  valorMaxiprod,
+}: {
+  onClose: () => void;
+  section: "faturamento" | "vendas" | "entradas" | "contas_pagas";
+  startDate: string;
+  endDate: string;
+  valorManus: number;
+  valorMaxiprod: number;
+}) {
+  const { data, isLoading } = trpc.financial.getDivergenceDetails.useQuery(
+    { section, startDate, endDate, valorManus, valorMaxiprod },
+    { enabled: true }
+  );
+
+  const sectionLabels: Record<string, string> = {
+    faturamento: "Faturamento",
+    vendas: "Vendas",
+    entradas: "Entradas",
+    contas_pagas: "Contas Pagas",
+  };
+
+  const diff = Math.abs(valorManus - valorMaxiprod);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-red-900 via-red-800 to-orange-900 px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-orange-500 flex items-center justify-center shadow-lg shadow-red-500/30">
+                <AlertTriangle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-base">Origem da Divergência</h3>
+                <p className="text-red-200 text-xs">{sectionLabels[section]}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          {/* Valores comparativos */}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="px-3 py-2 bg-white/10 rounded-lg border border-white/20">
+              <span className="text-red-200 text-[10px] block">Manus</span>
+              <span className="text-white font-bold text-sm" style={{ textShadow: "0 0 10px rgba(34,211,238,0.4)" }}>
+                {formatCurrency(valorManus)}
+              </span>
+            </div>
+            <div className="px-3 py-2 bg-white/10 rounded-lg border border-white/20">
+              <span className="text-red-200 text-[10px] block">Maxiprod</span>
+              <span className="text-white font-bold text-sm" style={{ textShadow: "0 0 10px rgba(34,211,238,0.4)" }}>
+                {formatCurrency(valorMaxiprod)}
+              </span>
+            </div>
+            <div className="px-3 py-2 bg-red-500/30 rounded-lg border border-red-400/40">
+              <span className="text-red-200 text-[10px] block">Diferença</span>
+              <span className="text-red-100 font-bold text-sm" style={{ textShadow: "0 0 10px rgba(239,68,68,0.5)" }}>
+                {formatCurrency(diff)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 py-5 max-h-[50vh] overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-red-500" />
+              <span className="text-slate-500 text-sm">Analisando divergência...</span>
+            </div>
+          ) : data ? (
+            <>
+              {/* Possíveis causas */}
+              <div className="mb-4">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Info className="w-4 h-4" />
+                  Possíveis Causas ({data.diffPercent}% de divergência)
+                </h4>
+                <div className="space-y-2">
+                  {data.possibleCauses.map((cause: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-800">{cause}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Detalhes dos itens */}
+              {data.details && data.details.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <List className="w-4 h-4" />
+                    Itens que contribuem para a diferença
+                  </h4>
+                  <div className="border border-slate-200 rounded-lg overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="text-left px-3 py-2 font-semibold text-slate-600">Item</th>
+                          <th className="text-right px-3 py-2 font-semibold text-slate-600">Valor</th>
+                          <th className="text-left px-3 py-2 font-semibold text-slate-600">Motivo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.details.map((d: { item: string; valor: number; motivo: string }, i: number) => (
+                          <tr key={i} className={`border-t border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                            <td className="px-3 py-2 text-slate-700 max-w-[200px] truncate">{d.item}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-red-600">{formatCurrency(d.valor)}</td>
+                            <td className="px-3 py-2 text-slate-500 max-w-[200px] truncate">{d.motivo}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-center text-slate-400 py-8">Não foi possível analisar a divergência.</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 font-medium">
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MaxiprodVerifyModalFinanceiro({
   onClose,
   section,
@@ -530,6 +673,7 @@ function CompactSummary({
   const { operator } = useOperator();
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const [verifySection, setVerifySection] = useState<"faturamento" | "vendas" | "entradas" | "contas_pagas" | null>(null);
+  const [divergenceSection, setDivergenceSection] = useState<"faturamento" | "vendas" | "entradas" | "contas_pagas" | null>(null);
   const recebimentos = receivedData?.recebimentos?.total ?? 0;
   const outrasEntradas = otherInflowsData?.outrasEntradas?.total ?? 0;
   const faturamento = billingData?.faturamento?.total ?? 0;
@@ -617,6 +761,7 @@ function CompactSummary({
                   <span className="text-[10px] text-slate-400">Maxiprod: </span>
                   <span className={`text-[10px] font-bold ${divEntradas ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(cpEntradas.valorMaxiprod)}</span>
                   {divEntradas && <div className="flex items-center justify-center gap-1 mt-0.5"><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-[10px] font-bold text-red-600">Dif: {formatCurrency(divEntradas)}</span></div>}
+                  {divEntradas && <button onClick={(e) => { e.stopPropagation(); setDivergenceSection("entradas"); }} className="mt-1 text-[9px] text-red-500 hover:text-red-700 underline font-semibold">Ver origem da diferença</button>}
                 </div>
               ) : null}
             </div>
@@ -650,6 +795,7 @@ function CompactSummary({
                   <span className="text-[10px] text-slate-400">Maxiprod: </span>
                   <span className={`text-[10px] font-bold ${divFat ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(cpFaturamento.valorMaxiprod)}</span>
                   {divFat && <div className="flex items-center justify-center gap-1 mt-0.5"><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-[10px] font-bold text-red-600">Dif: {formatCurrency(divFat)}</span></div>}
+                  {divFat && <button onClick={(e) => { e.stopPropagation(); setDivergenceSection("faturamento"); }} className="mt-1 text-[9px] text-red-500 hover:text-red-700 underline font-semibold">Ver origem da diferença</button>}
                 </div>
               ) : null}
             </div>
@@ -683,6 +829,7 @@ function CompactSummary({
                   <span className="text-[10px] text-slate-400">Maxiprod: </span>
                   <span className={`text-[10px] font-bold ${divVendas ? "text-red-600" : "text-blue-600"}`}>{formatCurrency(cpVendas.valorMaxiprod)}</span>
                   {divVendas && <div className="flex items-center justify-center gap-1 mt-0.5"><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-[10px] font-bold text-red-600">Dif: {formatCurrency(divVendas)}</span></div>}
+                  {divVendas && <button onClick={(e) => { e.stopPropagation(); setDivergenceSection("vendas"); }} className="mt-1 text-[9px] text-red-500 hover:text-red-700 underline font-semibold">Ver origem da diferença</button>}
                 </div>
               ) : null}
             </div>
@@ -716,6 +863,7 @@ function CompactSummary({
                   <span className="text-[10px] text-slate-400">Maxiprod: </span>
                   <span className={`text-[10px] font-bold ${divPagas ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(cpContasPagas.valorMaxiprod)}</span>
                   {divPagas && <div className="flex items-center justify-center gap-1 mt-0.5"><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-[10px] font-bold text-red-600">Dif: {formatCurrency(divPagas)}</span></div>}
+                  {divPagas && <button onClick={(e) => { e.stopPropagation(); setDivergenceSection("contas_pagas"); }} className="mt-1 text-[9px] text-red-500 hover:text-red-700 underline font-semibold">Ver origem da diferença</button>}
                 </div>
               ) : null}
             </div>
@@ -783,6 +931,24 @@ function CompactSummary({
               : verifySection === "entradas" ? cpEntradasLoading
               : cpPagasLoading,
           }}
+        />
+      )}
+
+      {/* Modal de Detalhamento de Divergência */}
+      {divergenceSection && (
+        <DivergenceDetailModal
+          onClose={() => setDivergenceSection(null)}
+          section={divergenceSection}
+          startDate={dates.start}
+          endDate={dates.end}
+          valorManus={divergenceSection === "faturamento" ? faturamento
+            : divergenceSection === "vendas" ? vendas
+            : divergenceSection === "entradas" ? totalEntradas
+            : contasPagas}
+          valorMaxiprod={(divergenceSection === "faturamento" ? cpFaturamento?.valorMaxiprod
+            : divergenceSection === "vendas" ? cpVendas?.valorMaxiprod
+            : divergenceSection === "entradas" ? cpEntradas?.valorMaxiprod
+            : cpContasPagas?.valorMaxiprod) ?? 0}
         />
       )}
     </div>

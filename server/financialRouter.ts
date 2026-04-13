@@ -4322,8 +4322,7 @@ ${acoesTexto}
         }
 
         if (section === "vendas") {
-          // Vendas usa dados do banco local (salesOrders), não tem fetch direto
-          // Retorna null para indicar que não há consulta direta
+          // Vendas: usa MESMA lógica do getSalesVsPaid (agrupamento por pedido + valorTotalPedido)
           const db = await getDb();
           if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
 
@@ -4331,8 +4330,8 @@ ${acoesTexto}
           const endDay = endDate.substring(0, 10);
           const allItems = await db.select().from(salesOrders)
             .where(and(
-              gte(salesOrders.dataEmissao, startDay + 'T00:00:00.000Z'),
-              lte(salesOrders.dataEmissao, endDay + 'T23:59:59.999Z')
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`
             ));
 
           const estadoToGrupo = (estado: string | null): string => {
@@ -4344,17 +4343,39 @@ ${acoesTexto}
             return "outros";
           };
 
-          const filtered = allItems.filter(item => {
-            if ((item.estadoNota || "").toUpperCase() === "DIGITAÇÃO") return false;
-            const grupo = estadoToGrupo(item.estadoConfiguravel);
-            return grupo !== "outros";
-          });
+          const isDigitacao = (nota: string | null) => {
+            if (!nota) return false;
+            const n = nota.toUpperCase();
+            return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+          };
 
-          const total = filtered.reduce((sum, item) => sum + Number(item.valorTotal || 0), 0);
+          const filtered = allItems.filter(item => !isDigitacao(item.estadoNota) && estadoToGrupo(item.estadoConfiguravel) !== "outros");
+
+          // Mesma lógica de agrupamento por pedido do getSalesVsPaid
+          const uniqueOrders = new Set(filtered.map(i => i.pedido).filter(Boolean));
+          const pedidoValueMap = new Map<string, number>();
+          for (const item of filtered) {
+            const pedido = item.pedido || 'sem-pedido';
+            if (!pedidoValueMap.has(pedido)) {
+              if (item.valorTotalPedido) {
+                pedidoValueMap.set(pedido, Number(item.valorTotalPedido));
+              } else {
+                pedidoValueMap.set(pedido, Number(item.valorTotal || 0));
+              }
+            } else {
+              const firstItemHasVTP = filtered.find(i => i.pedido === pedido && i.valorTotalPedido);
+              if (!firstItemHasVTP) {
+                pedidoValueMap.set(pedido, (pedidoValueMap.get(pedido) || 0) + Number(item.valorTotal || 0));
+              }
+            }
+          }
+          const totalValue = Array.from(pedidoValueMap.values()).reduce((sum, v) => sum + v, 0);
+          const total = Math.round(totalValue * 100) / 100;
+
           return {
-            valorMaxiprod: Math.round(total * 100) / 100,
-            count: filtered.length,
-            label: `${filtered.length} pedidos de venda (excluindo Digitação e outros)`,
+            valorMaxiprod: total,
+            count: uniqueOrders.size,
+            label: `${uniqueOrders.size} pedidos de venda (excluindo Digitação e outros)`,
           };
         }
 
@@ -4385,6 +4406,136 @@ ${acoesTexto}
       } catch (error: any) {
         console.error("[getMaxiprodContraprova] Error:", error.message);
         return { valorMaxiprod: 0, count: 0, label: `Erro: ${error.message}` };
+      }
+    }),
+
+  /**
+   * Detalhamento de divergência - Mostra a origem da diferença entre Manus e Maxiprod
+   * SOMENTE LEITURA
+   */
+  getDivergenceDetails: publicProcedure
+    .input(z.object({
+      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas"]),
+      startDate: z.string(),
+      endDate: z.string(),
+      valorManus: z.number(),
+      valorMaxiprod: z.number(),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const { section, startDate, endDate, valorManus, valorMaxiprod } = input;
+        const diff = Math.abs(valorManus - valorMaxiprod);
+        const diffPercent = valorManus > 0 ? ((diff / valorManus) * 100).toFixed(2) : "0";
+
+        const possibleCauses: string[] = [];
+        const details: { item: string; valor: number; motivo: string }[] = [];
+
+        if (section === "vendas") {
+          const db = await getDb();
+          if (!db) return { diff, diffPercent, possibleCauses: ["Banco indisponível"], details: [] };
+
+          const startDay = startDate.substring(0, 10);
+          const endDay = endDate.substring(0, 10);
+          const allItems = await db.select().from(salesOrders)
+            .where(and(
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`
+            ));
+
+          // Itens excluídos por Digitação
+          const digitacaoItems = allItems.filter(i => {
+            const n = (i.estadoNota || "").toUpperCase();
+            return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+          });
+          if (digitacaoItems.length > 0) {
+            const totalDig = digitacaoItems.reduce((s, i) => s + Number(i.valorTotal || 0), 0);
+            possibleCauses.push(`${digitacaoItems.length} pedidos em Digitação excluídos (R$ ${totalDig.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`);
+            digitacaoItems.slice(0, 10).forEach(i => details.push({
+              item: `Pedido ${i.pedido || '?'} - ${(i.cliente || '').substring(0, 40)}`,
+              valor: Number(i.valorTotal || 0),
+              motivo: `Estado NF: ${i.estadoNota}`,
+            }));
+          }
+
+          // Itens excluídos por estado "outros"
+          const estadoToGrupo = (estado: string | null): string => {
+            if (!estado) return "outros";
+            const e = estado.toUpperCase();
+            if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+            if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+            if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+            return "outros";
+          };
+          const outrosItems = allItems.filter(i => {
+            const n = (i.estadoNota || "").toUpperCase();
+            if (n === 'DIGITAÇÃO' || n === 'DIGITACAO') return false;
+            return estadoToGrupo(i.estadoConfiguravel) === "outros";
+          });
+          if (outrosItems.length > 0) {
+            const totalOutros = outrosItems.reduce((s, i) => s + Number(i.valorTotal || 0), 0);
+            possibleCauses.push(`${outrosItems.length} pedidos com estado "outros" excluídos (R$ ${totalOutros.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`);
+            outrosItems.slice(0, 10).forEach(i => details.push({
+              item: `Pedido ${i.pedido || '?'} - ${(i.cliente || '').substring(0, 40)}`,
+              valor: Number(i.valorTotal || 0),
+              motivo: `Estado: ${i.estadoConfiguravel || 'NULL'}`,
+            }));
+          }
+
+          // Diferença por valorTotalPedido vs valorTotal
+          const validItems = allItems.filter(i => {
+            const n = (i.estadoNota || "").toUpperCase();
+            if (n === 'DIGITAÇÃO' || n === 'DIGITACAO') return false;
+            return estadoToGrupo(i.estadoConfiguravel) !== "outros";
+          });
+          const pedidosComVTP = validItems.filter(i => i.valorTotalPedido);
+          if (pedidosComVTP.length > 0) {
+            let diffVTP = 0;
+            const pedidosSeen = new Set<string>();
+            for (const item of pedidosComVTP) {
+              const ped = item.pedido || '';
+              if (pedidosSeen.has(ped)) continue;
+              pedidosSeen.add(ped);
+              const vtp = Number(item.valorTotalPedido);
+              const itemsOfPedido = validItems.filter(i => i.pedido === ped);
+              const sumVT = itemsOfPedido.reduce((s, i) => s + Number(i.valorTotal || 0), 0);
+              const pedDiff = Math.abs(vtp - sumVT);
+              if (pedDiff > 0.01) {
+                diffVTP += pedDiff;
+                details.push({
+                  item: `Pedido ${ped} - ${(item.cliente || '').substring(0, 40)}`,
+                  valor: pedDiff,
+                  motivo: `Desconto/frete: Total pedido R$ ${vtp.toFixed(2)} vs soma itens R$ ${sumVT.toFixed(2)}`,
+                });
+              }
+            }
+            if (diffVTP > 0.01) {
+              possibleCauses.push(`Descontos/fretes em ${pedidosSeen.size} pedidos causam diferença de R$ ${diffVTP.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
+            }
+          }
+
+          if (possibleCauses.length === 0) {
+            possibleCauses.push("Diferença pode ser causada por arredondamento ou dados em sincronização");
+          }
+        } else if (section === "faturamento") {
+          possibleCauses.push("Faturamento consulta diretamente a API Maxiprod - diferença pode indicar NFs recém-emitidas ou canceladas");
+          possibleCauses.push("Verifique se há NFs com estado Amostra, Bonificação, Devolução, Remessa, Recusa, Transferência ou Cancelado");
+        } else if (section === "entradas") {
+          possibleCauses.push("Entradas excluem transferências entre empresas do grupo (Palitos Fox, Mesa Indust, Bambusa, Espetos Ind, Varetas)");
+          possibleCauses.push("Diferença pode ser causada por recebimentos recém-liquidados ou estornados");
+        } else if (section === "contas_pagas") {
+          possibleCauses.push("Contas Pagas consulta diretamente a API Maxiprod");
+          possibleCauses.push("Diferença pode ser causada por pagamentos recém-liquidados ou cancelados");
+        }
+
+        return {
+          diff: Math.round(diff * 100) / 100,
+          diffPercent,
+          possibleCauses,
+          details: details.sort((a, b) => b.valor - a.valor).slice(0, 20),
+        };
+      } catch (error: any) {
+        console.error("[getDivergenceDetails] Error:", error.message);
+        return { diff: 0, diffPercent: "0", possibleCauses: [`Erro: ${error.message}`], details: [] };
       }
     }),
 });

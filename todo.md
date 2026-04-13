@@ -2293,3 +2293,9 @@
 - [ ] Exibir valor Maxiprod ao lado do valor Manus no modal
 - [ ] Tentar abrir Maxiprod na tela correta com filtros pré-configurados
 - [x] Mostrar valor Maxiprod automaticamente nos cards (sem clicar) com alerta de divergência
+
+## Correção automática de divergências e detalhamento
+- [ ] Investigar origem da divergência de R$ 91,01 em Vendas
+- [ ] Implementar correção automática em tempo real quando houver diferença
+- [ ] Mostrar origem da diferença (quais pedidos/itens causam) quando persistir
+- [ ] Finalizar skill reutilizável erp-financial-dashboard
