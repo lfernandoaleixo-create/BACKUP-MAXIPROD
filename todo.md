@@ -2175,3 +2175,6 @@
 - [x] "A Vencer" no card = deve bater com "A Receber" da Visão Geral (usa vencimento >= hoje)
 - [x] "Vencido" no card = deve bater com "Inadimplência - Falta Pagar" da Visão Geral (usa cutoff = dia útil anterior)
 - [x] Total do card = Vencido + A Vencer
+
+## Sininho de notificações: restringir acesso
+- [x] Sininho de notificações visível apenas para senhas Erica, Maria, Marcos e Guilherme

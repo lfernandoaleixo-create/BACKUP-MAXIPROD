@@ -112,7 +112,9 @@ export default function TopNav({ rightContent }: TopNavProps) {
           {/* Right content: notification bell + operator info + logout */}
           <div className="flex items-center gap-3">
             {rightContent}
-            <NotificationBell />
+            {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (
+              <NotificationBell />
+            )}
             {operator && (
               <div className="flex items-center gap-2 ml-2">
                 <span className="text-xs text-slate-500 font-medium hidden sm:inline">
