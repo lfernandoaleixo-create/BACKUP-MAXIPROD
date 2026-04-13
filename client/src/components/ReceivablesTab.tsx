@@ -79,15 +79,10 @@ const BANK_ICONS: Record<string, string> = {
   "Sem Banco": "text-slate-400",
 };
 
-/** Formata o número da conta com separadores para melhor legibilidade */
 function formatContaNumero(num: string): string {
   if (!num) return "";
-  if (num.length >= 9) {
-    return num.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-  }
-  if (num.length === 5) {
-    return num.replace(/(\d{2})(\d{3})/, '$1.$2');
-  }
+  if (num.length >= 9) return num.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
+  if (num.length === 5) return num.replace(/(\d{2})(\d{3})/, '$1.$2');
   return num;
 }
 
@@ -114,7 +109,6 @@ type ItemData = {
   anotacoes: string;
 };
 
-/** Extrai o tipo principal da forma de cobrança */
 function getFormaCobrancaCategory(desc: string): string {
   if (!desc) return "Outros";
   const d = desc.toUpperCase();
@@ -126,7 +120,6 @@ function getFormaCobrancaCategory(desc: string): string {
   return "Outros";
 }
 
-/** Extrai o tipo principal da forma de cobrança (PIX, Boleto, Cheque, Depósito, Dinheiro) */
 function shortFormaCobranca(desc: string): { label: string; color: string } {
   if (!desc) return { label: "", color: "text-slate-400" };
   const d = desc.toUpperCase();
@@ -158,6 +151,356 @@ const FORMA_OPTIONS: { value: FormaFilter; label: string; icon: any; color: stri
   { value: "Dinheiro", label: "Dinheiro", icon: Wallet, color: "text-green-700", activeBg: "bg-green-700", activeBorder: "border-green-600", activeText: "text-white", glow: "shadow-[0_0_12px_rgba(21,128,61,0.5)]" },
 ];
 
+/* ============================================================
+   Sub-component: Filters + Premium Card + Table for ONE bank account
+   Each bank account gets its own independent filter state
+   ============================================================ */
+function ContaFiltersAndTable({
+  allContaItems,
+  contaLabel,
+  selectedIds,
+  toggleSelect,
+  toggleSelectAll,
+  expandedItem,
+  setExpandedItem,
+}: {
+  allContaItems: ItemData[];
+  contaLabel: string;
+  selectedIds: Set<number>;
+  toggleSelect: (id: number) => void;
+  toggleSelectAll: (items: ItemData[]) => void;
+  expandedItem: number | null;
+  setExpandedItem: (id: number | null) => void;
+}) {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("TODOS");
+  const [formaFilter, setFormaFilter] = useState<FormaFilter>("TODOS");
+
+  const hasActiveFilters = statusFilter !== "TODOS" || formaFilter !== "TODOS";
+
+  // Filter items based on local filters
+  const filteredItems = useMemo(() => {
+    return allContaItems.filter(item => {
+      if (statusFilter === "VENCIDO" && !item.isOverdue) return false;
+      if (statusFilter === "A_VENCER" && item.isOverdue) return false;
+      if (formaFilter !== "TODOS") {
+        const cat = getFormaCobrancaCategory(item.formaCobranca);
+        if (cat !== formaFilter) return false;
+      }
+      return true;
+    });
+  }, [allContaItems, statusFilter, formaFilter]);
+
+  // Compute totals for the filtered items
+  const filteredTotals = useMemo(() => {
+    let total = 0, vencido = 0, aVencer = 0;
+    filteredItems.forEach(i => {
+      total += i.valorAReceber;
+      if (i.isOverdue) vencido += i.valorAReceber;
+      else aVencer += i.valorAReceber;
+    });
+    return { total, vencido, aVencer, count: filteredItems.length };
+  }, [filteredItems]);
+
+  const filterDescription = useMemo(() => {
+    const parts: string[] = [];
+    if (statusFilter !== "TODOS") parts.push(statusFilter === "VENCIDO" ? "Vencidos" : "A Vencer");
+    if (formaFilter !== "TODOS") parts.push(formaFilter);
+    return parts.length > 0 ? parts.join(" + ") : "Todos";
+  }, [statusFilter, formaFilter]);
+
+  const contaItemIds = filteredItems.map(i => i.id);
+  const allContaSelected = contaItemIds.length > 0 && contaItemIds.every(id => selectedIds.has(id));
+  const someContaSelected = contaItemIds.some(id => selectedIds.has(id));
+
+  return (
+    <div className="border-t border-slate-200">
+      {/* ---- FILTROS DENTRO DA CONTA ---- */}
+      <div className="px-4 py-3 bg-slate-50/80 border-b border-slate-200 space-y-3">
+        <div className="flex items-center gap-2">
+          <Filter className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Filtros</span>
+          {hasActiveFilters && (
+            <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
+              className="ml-auto text-[10px] text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
+              <X className="w-3 h-3" /> Limpar
+            </button>
+          )}
+        </div>
+
+        {/* Status */}
+        <div className="flex flex-wrap gap-1.5">
+          {STATUS_OPTIONS.map(opt => {
+            const Icon = opt.icon;
+            const isActive = statusFilter === opt.value;
+            return (
+              <button key={opt.value} onClick={() => setStatusFilter(opt.value)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-bold transition-all duration-200 ${
+                  isActive
+                    ? `${opt.activeBg} ${opt.activeBorder} ${opt.activeText} ${opt.glow} scale-[1.02]`
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                }`}>
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : opt.color}`} />
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Forma de cobrança */}
+        <div className="flex flex-wrap gap-1.5">
+          {FORMA_OPTIONS.map(opt => {
+            const Icon = opt.icon;
+            const isActive = formaFilter === opt.value;
+            return (
+              <button key={opt.value} onClick={() => setFormaFilter(opt.value)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-bold transition-all duration-200 ${
+                  isActive
+                    ? `${opt.activeBg} ${opt.activeBorder} ${opt.activeText} ${opt.glow} scale-[1.02]`
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                }`}>
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : opt.color}`} />
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ---- CARD DE RESUMO PREMIUM (dentro da conta) ---- */}
+      {hasActiveFilters && (
+        <div className="mx-3 my-3">
+          <div className="relative overflow-hidden rounded-xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 p-4 shadow-xl">
+            {/* Background glow effects */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+
+            <div className="relative z-10">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <Filter className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold text-sm">Resultado do Filtro</h4>
+                    <p className="text-indigo-300 text-[10px] font-medium">{filterDescription}</p>
+                  </div>
+                </div>
+                <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
+                  className="text-indigo-400 hover:text-white text-[10px] flex items-center gap-1 transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded-lg border border-white/10">
+                  <X className="w-3 h-3" /> Limpar
+                </button>
+              </div>
+
+              {/* Valores */}
+              <div className="grid grid-cols-3 gap-3">
+                {/* Total */}
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-lg blur-sm group-hover:blur-md transition-all" />
+                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-3 hover:border-cyan-400/30 transition-all">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
+                      <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider">Total</span>
+                    </div>
+                    <div className="text-lg font-extrabold text-white tracking-tight" style={{ textShadow: "0 0 20px rgba(34,211,238,0.3)" }}>
+                      {formatCurrency(filteredTotals.total)}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">{filteredTotals.count} {filteredTotals.count === 1 ? "título" : "títulos"}</div>
+                  </div>
+                </div>
+
+                {/* Vencido */}
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-lg blur-sm group-hover:blur-md transition-all" />
+                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-3 hover:border-red-400/30 transition-all">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)]" />
+                      <span className="text-[10px] font-bold text-red-300 uppercase tracking-wider">Vencido</span>
+                    </div>
+                    <div className="text-lg font-extrabold text-red-300 tracking-tight" style={{ textShadow: "0 0 20px rgba(248,113,113,0.3)" }}>
+                      {formatCurrency(filteredTotals.vencido)}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      {filteredTotals.total > 0 ? `${((filteredTotals.vencido / filteredTotals.total) * 100).toFixed(1)}%` : "0%"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* A Vencer */}
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-lg blur-sm group-hover:blur-md transition-all" />
+                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-3 hover:border-emerald-400/30 transition-all">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                      <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">A Vencer</span>
+                    </div>
+                    <div className="text-lg font-extrabold text-emerald-300 tracking-tight" style={{ textShadow: "0 0 20px rgba(52,211,153,0.3)" }}>
+                      {formatCurrency(filteredTotals.aVencer)}
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      {filteredTotals.total > 0 ? `${((filteredTotals.aVencer / filteredTotals.total) * 100).toFixed(1)}%` : "0%"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Barra de progresso */}
+              {filteredTotals.total > 0 && (
+                <div className="mt-3">
+                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div className="h-full flex">
+                      {filteredTotals.vencido > 0 && (
+                        <div className="bg-gradient-to-r from-red-500 to-red-400 h-full transition-all duration-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+                          style={{ width: `${(filteredTotals.vencido / filteredTotals.total) * 100}%` }} />
+                      )}
+                      <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+                        style={{ width: `${(filteredTotals.aVencer / filteredTotals.total) * 100}%` }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- TABELA DE TÍTULOS ---- */}
+      {filteredItems.length > 0 ? (
+        <>
+          <div className="grid grid-cols-[36px_1fr_120px_100px_90px_80px] gap-2 px-4 py-2 bg-slate-100 border-b border-slate-200">
+            <div className="flex items-center justify-center">
+              <button onClick={(e) => { e.stopPropagation(); toggleSelectAll(filteredItems); }}
+                className="text-slate-500 hover:text-teal-600 transition-colors" title="Selecionar todos">
+                {allContaSelected ? <CheckSquare className="w-4 h-4 text-teal-600" />
+                  : someContaSelected ? <MinusSquare className="w-4 h-4 text-teal-500" />
+                  : <Square className="w-4 h-4" />}
+              </button>
+            </div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider self-center">Cliente / Documento</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Forma de Pagamento</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right self-center">Valor</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider self-center">Vencimento</div>
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Status</div>
+          </div>
+
+          <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-100">
+            {filteredItems.map((item) => {
+              const isSelected = selectedIds.has(item.id);
+              const isExp = expandedItem === item.id;
+
+              return (
+                <div key={item.id}>
+                  <div className={`grid grid-cols-[36px_1fr_120px_100px_90px_80px] gap-2 px-4 py-2.5 items-center transition-all cursor-pointer ${
+                    isSelected ? "bg-teal-50/70 hover:bg-teal-50" : item.isOverdue ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-slate-50"
+                  }`}>
+                    <div className="flex items-center justify-center">
+                      <button onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
+                        className={`transition-colors ${isSelected ? "text-teal-600" : "text-slate-300 hover:text-slate-500"}`}>
+                        {isSelected ? <CheckSquare className="w-4.5 h-4.5" /> : <Square className="w-4.5 h-4.5" />}
+                      </button>
+                    </div>
+
+                    <div className="min-w-0 cursor-pointer" onClick={() => setExpandedItem(isExp ? null : item.id)}>
+                      <div className="font-medium text-sm text-slate-800 truncate">{item.cliente}</div>
+                      <div className="text-xs text-slate-400 truncate">
+                        {item.documento && `Doc ${item.documento}`}
+                        {item.parcela && ` · ${item.parcela}`}
+                        {item.referenteA && ` · ${item.referenteA}`}
+                      </div>
+                      {item.anotacoes && (
+                        <div className="mt-0.5 flex items-center gap-1">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded max-w-full">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
+                            <span className="truncate">{item.anotacoes}</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {(() => {
+                      const fc = shortFormaCobranca(item.formaCobranca);
+                      return (
+                        <div className="text-center" onClick={() => setExpandedItem(isExp ? null : item.id)} title={item.formaCobranca || "Não informado"}>
+                          {fc.label ? (
+                            <span className={`text-xs font-semibold ${fc.color}`}>{fc.label}</span>
+                          ) : (
+                            <span className="text-xs text-slate-300">—</span>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    <div className="text-right" onClick={() => setExpandedItem(isExp ? null : item.id)}>
+                      <span className={`font-bold text-sm ${isSelected ? "text-teal-700" : item.isOverdue ? "text-red-600" : "text-slate-800"}`}>
+                        {formatCurrency(item.valorAReceber)}
+                      </span>
+                    </div>
+
+                    <div className={`text-sm ${item.isOverdue ? "text-red-600 font-semibold" : "text-slate-600"}`}
+                      onClick={() => setExpandedItem(isExp ? null : item.id)}>
+                      {formatDate(item.vencimento)}
+                    </div>
+
+                    <div className="text-center" onClick={() => setExpandedItem(isExp ? null : item.id)}>
+                      {item.isOverdue ? (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">
+                          <AlertTriangle className="w-3 h-3" /> Vencido
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-bold">
+                          <Clock className="w-3 h-3" /> A vencer
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {isExp && (
+                    <div className="px-4 pl-12 pb-3 bg-slate-50">
+                      {item.anotacoes && (
+                        <div className="mb-2 p-2.5 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
+                          <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-0.5">Anotações Maxiprod</div>
+                          <p className="text-sm font-semibold text-amber-900 whitespace-pre-line">{item.anotacoes}</p>
+                        </div>
+                      )}
+                      {item.referenteA && (
+                        <div className="mb-2 p-2.5 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+                          <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-0.5">Referente A</div>
+                          <p className="text-sm font-semibold text-blue-900">{item.referenteA}</p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
+                        <DetailItem label="Valor Original" value={formatCurrency(item.valorOriginal)} />
+                        <DetailItem label="Valor Pago" value={formatCurrency(item.valorPago)} />
+                        <DetailItem label="Emissão" value={formatDate(item.emissao)} />
+                        <DetailItem label="Tipo" value={item.tipo} />
+                        <DetailItem label="Estado" value={item.estado || "-"} />
+                        {item.liquidacao && <DetailItem label="Liquidação" value={formatDate(item.liquidacao)} />}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <div className="text-center py-6 text-slate-400">
+          <p className="text-sm">Nenhum título encontrado para este filtro</p>
+          {hasActiveFilters && (
+            <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
+              className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-medium">
+              Limpar filtros
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   Main Component
+   ============================================================ */
 export default function ReceivablesTab() {
   const [estado, setEstado] = useState<"EMITIDO" | "RECEBIDO" | "ALL">("EMITIDO");
   const [search, setSearch] = useState("");
@@ -166,10 +509,6 @@ export default function ReceivablesTab() {
   const [expandedContas, setExpandedContas] = useState<Set<string>>(new Set());
   const [expandedItem, setExpandedItem] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-
-  // New filters
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("TODOS");
-  const [formaFilter, setFormaFilter] = useState<FormaFilter>("TODOS");
 
   const { data, isLoading } = trpc.financial.getReceivablesByBank.useQuery({ estado });
 
@@ -189,44 +528,23 @@ export default function ReceivablesTab() {
     return items;
   }, [data]);
 
-  /** Apply status + forma + search filters to an item */
-  const itemMatchesFilters = useCallback((item: ItemData, searchUpper: string): boolean => {
-    // Status filter
-    if (statusFilter === "VENCIDO" && !item.isOverdue) return false;
-    if (statusFilter === "A_VENCER" && item.isOverdue) return false;
-
-    // Forma de cobrança filter
-    if (formaFilter !== "TODOS") {
-      const cat = getFormaCobrancaCategory(item.formaCobranca);
-      if (cat !== formaFilter) return false;
-    }
-
-    // Search filter
-    if (searchUpper) {
-      const matches =
-        item.cliente.toUpperCase().includes(searchUpper) ||
-        item.referenteA.toUpperCase().includes(searchUpper) ||
-        item.documento.toUpperCase().includes(searchUpper) ||
-        (item.formaCobranca || "").toUpperCase().includes(searchUpper) ||
-        (item.anotacoes || "").toUpperCase().includes(searchUpper);
-      if (!matches) return false;
-    }
-
-    return true;
-  }, [statusFilter, formaFilter]);
-
-  // Filter items by search + status + forma
+  // Search-only filtered data (no status/forma filters at global level anymore)
   const filteredData = useMemo(() => {
     if (!data?.empresas) return data;
     const s = search.toUpperCase();
-    const hasFilters = s || statusFilter !== "TODOS" || formaFilter !== "TODOS";
-    if (!hasFilters) return data;
+    if (!s) return data;
 
     const empresas = data.empresas.map(emp => {
       const meses = emp.meses.map(mes => {
         const contas = mes.contas.map(conta => {
           const tipos = conta.tipos.map(tipo => {
-            const items = tipo.items.filter(i => itemMatchesFilters(i, s));
+            const items = tipo.items.filter(i => {
+              return i.cliente.toUpperCase().includes(s) ||
+                i.referenteA.toUpperCase().includes(s) ||
+                i.documento.toUpperCase().includes(s) ||
+                (i.formaCobranca || "").toUpperCase().includes(s) ||
+                (i.anotacoes || "").toUpperCase().includes(s);
+            });
             return { ...tipo, items, total: items.reduce((a, b) => a + b.valorAReceber, 0), count: items.length };
           }).filter(t => t.count > 0);
           return { ...conta, tipos, total: tipos.reduce((a, b) => a + b.total, 0), count: tipos.reduce((a, b) => a + b.count, 0) };
@@ -234,9 +552,7 @@ export default function ReceivablesTab() {
         return { ...mes, contas, total: contas.reduce((a, b) => a + b.total, 0), count: contas.reduce((a, b) => a + b.count, 0) };
       }).filter(m => m.count > 0);
 
-      // Recalculate vencido/aVencer for this empresa with filters
-      let empVencido = 0;
-      let empAVencer = 0;
+      let empVencido = 0, empAVencer = 0;
       meses.forEach(m => m.contas.forEach(c => c.tipos.forEach(t => t.items.forEach(i => {
         if (i.isOverdue) empVencido += i.valorAReceber;
         else empAVencer += i.valorAReceber;
@@ -245,22 +561,13 @@ export default function ReceivablesTab() {
       return { ...emp, meses, total: meses.reduce((a, b) => a + b.total, 0), count: meses.reduce((a, b) => a + b.count, 0), vencido: empVencido, aVencer: empAVencer };
     }).filter(e => e.count > 0);
 
-    // Recalculate global totals
-    let totalVencido = 0;
-    let totalAVencer = 0;
-    let totalCount = 0;
-    let totalVal = 0;
-    empresas.forEach(e => {
-      totalVencido += e.vencido;
-      totalAVencer += e.aVencer;
-      totalCount += e.count;
-      totalVal += e.total;
-    });
+    let totalVencido = 0, totalAVencer = 0, totalCount = 0, totalVal = 0;
+    empresas.forEach(e => { totalVencido += e.vencido; totalAVencer += e.aVencer; totalCount += e.count; totalVal += e.total; });
 
     return { empresas, totals: { total: totalVal, count: totalCount, vencido: totalVencido, aVencer: totalAVencer } };
-  }, [data, search, statusFilter, formaFilter, itemMatchesFilters]);
+  }, [data, search]);
 
-  // Get all items for a specific conta (bank account within a month)
+  // Get ALL items for a specific conta (unfiltered by status/forma — the sub-component handles that)
   const getContaItems = useCallback((emp: string, mes: string, bancoNome: string, contaNumero: string) => {
     if (!filteredData?.empresas) return [] as ItemData[];
     const empresa = filteredData.empresas.find(e => e.nome === emp);
@@ -294,24 +601,8 @@ export default function ReceivablesTab() {
     });
   }
 
-  // Selection summary
   const selectedItems = useMemo(() => allItems.filter(i => selectedIds.has(i.id)), [allItems, selectedIds]);
   const selectedTotal = useMemo(() => selectedItems.reduce((a, b) => a + b.valorAReceber, 0), [selectedItems]);
-
-  // Check if any filter is active (beyond defaults)
-  const hasActiveFilters = statusFilter !== "TODOS" || formaFilter !== "TODOS";
-
-  // Build filter description for the summary card
-  const filterDescription = useMemo(() => {
-    const parts: string[] = [];
-    if (statusFilter !== "TODOS") {
-      parts.push(statusFilter === "VENCIDO" ? "Vencidos" : "A Vencer");
-    }
-    if (formaFilter !== "TODOS") {
-      parts.push(formaFilter);
-    }
-    return parts.length > 0 ? parts.join(" + ") : "Todos";
-  }, [statusFilter, formaFilter]);
 
   if (isLoading) {
     return (
@@ -359,191 +650,7 @@ export default function ReceivablesTab() {
         </div>
       </div>
 
-      {/* ========== FILTROS AVANÇADOS ========== */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-4 shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <Filter className="w-4 h-4 text-slate-500" />
-          <span className="text-sm font-bold text-slate-700 uppercase tracking-wider">Filtros</span>
-          {hasActiveFilters && (
-            <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
-              className="ml-auto text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
-              <X className="w-3.5 h-3.5" /> Limpar filtros
-            </button>
-          )}
-        </div>
-
-        {/* Status filter row */}
-        <div>
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Status de Vencimento</div>
-          <div className="flex flex-wrap gap-2">
-            {STATUS_OPTIONS.map(opt => {
-              const Icon = opt.icon;
-              const isActive = statusFilter === opt.value;
-              return (
-                <button key={opt.value} onClick={() => setStatusFilter(opt.value)}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
-                    isActive
-                      ? `${opt.activeBg} ${opt.activeBorder} ${opt.activeText} ${opt.glow} scale-[1.02]`
-                      : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                  }`}>
-                  <Icon className={`w-4 h-4 ${isActive ? "text-white" : opt.color}`} />
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Forma de cobrança filter row */}
-        <div>
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Forma de Cobrança</div>
-          <div className="flex flex-wrap gap-2">
-            {FORMA_OPTIONS.map(opt => {
-              const Icon = opt.icon;
-              const isActive = formaFilter === opt.value;
-              return (
-                <button key={opt.value} onClick={() => setFormaFilter(opt.value)}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
-                    isActive
-                      ? `${opt.activeBg} ${opt.activeBorder} ${opt.activeText} ${opt.glow} scale-[1.02]`
-                      : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                  }`}>
-                  <Icon className={`w-4 h-4 ${isActive ? "text-white" : opt.color}`} />
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ========== CARD DE RESUMO DINÂMICO PREMIUM ========== */}
-      {hasActiveFilters && (
-        <div className="relative overflow-hidden rounded-2xl border-2 border-indigo-300 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 p-6 shadow-2xl">
-          {/* Background glow effects */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-          <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-cyan-500/5 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2" />
-
-          <div className="relative z-10">
-            {/* Header do card */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                  <Filter className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-white font-bold text-base">Resultado do Filtro</h3>
-                  <p className="text-indigo-300 text-xs font-medium">{filterDescription}</p>
-                </div>
-              </div>
-              <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
-                className="text-indigo-400 hover:text-white text-xs flex items-center gap-1 transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">
-                <X className="w-3.5 h-3.5" /> Limpar
-              </button>
-            </div>
-
-            {/* Valores principais */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-              {/* Total filtrado */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl blur-sm group-hover:blur-md transition-all" />
-                <div className="relative bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4 hover:border-cyan-400/30 transition-all">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
-                    <span className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">Total Filtrado</span>
-                  </div>
-                  <div className="text-2xl font-extrabold text-white tracking-tight" style={{ textShadow: "0 0 20px rgba(34,211,238,0.3)" }}>
-                    {formatCurrency(totals.total)}
-                  </div>
-                  <div className="text-xs text-slate-400 mt-1">{totals.count} {totals.count === 1 ? "título" : "títulos"}</div>
-                </div>
-              </div>
-
-              {/* Vencido filtrado */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-xl blur-sm group-hover:blur-md transition-all" />
-                <div className="relative bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4 hover:border-red-400/30 transition-all">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)]" />
-                    <span className="text-[11px] font-bold text-red-300 uppercase tracking-wider">Vencido</span>
-                  </div>
-                  <div className="text-2xl font-extrabold text-red-300 tracking-tight" style={{ textShadow: "0 0 20px rgba(248,113,113,0.3)" }}>
-                    {formatCurrency(totals.vencido)}
-                  </div>
-                  <div className="text-xs text-slate-400 mt-1">
-                    {totals.total > 0 ? `${((totals.vencido / totals.total) * 100).toFixed(1)}% do total` : "0%"}
-                  </div>
-                </div>
-              </div>
-
-              {/* A Vencer filtrado */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-xl blur-sm group-hover:blur-md transition-all" />
-                <div className="relative bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4 hover:border-emerald-400/30 transition-all">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-                    <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">A Vencer</span>
-                  </div>
-                  <div className="text-2xl font-extrabold text-emerald-300 tracking-tight" style={{ textShadow: "0 0 20px rgba(52,211,153,0.3)" }}>
-                    {formatCurrency(totals.aVencer)}
-                  </div>
-                  <div className="text-xs text-slate-400 mt-1">
-                    {totals.total > 0 ? `${((totals.aVencer / totals.total) * 100).toFixed(1)}% do total` : "0%"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Breakdown por empresa */}
-            {empresas.length > 0 && (
-              <div className="border-t border-white/10 pt-4">
-                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Por Empresa</div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {empresas.map(emp => {
-                    const empName = shortEmpresaName(emp.nome);
-                    const empColor = empName === "PALITOS" ? "from-blue-500/20 to-blue-600/10 border-blue-400/20 text-blue-300"
-                      : empName === "VARETAS" ? "from-amber-500/20 to-amber-600/10 border-amber-400/20 text-amber-300"
-                      : empName === "ESPETOS" ? "from-emerald-500/20 to-emerald-600/10 border-emerald-400/20 text-emerald-300"
-                      : "from-slate-500/20 to-slate-600/10 border-slate-400/20 text-slate-300";
-                    return (
-                      <div key={emp.nome} className={`bg-gradient-to-r ${empColor} rounded-lg border p-3`}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold">{empName}</span>
-                          <span className="text-xs text-slate-400">{emp.count} tít.</span>
-                        </div>
-                        <div className="text-lg font-extrabold text-white mt-1">{formatCurrency(emp.total)}</div>
-                        <div className="flex items-center gap-3 mt-1 text-[10px]">
-                          <span className="text-red-300">Venc: {formatCurrency(emp.vencido)}</span>
-                          <span className="text-emerald-300">A Venc: {formatCurrency(emp.aVencer)}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Barra de progresso visual */}
-            {totals.total > 0 && (
-              <div className="mt-4">
-                <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
-                  <div className="h-full flex">
-                    {totals.vencido > 0 && (
-                      <div className="bg-gradient-to-r from-red-500 to-red-400 h-full transition-all duration-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
-                        style={{ width: `${(totals.vencido / totals.total) * 100}%` }} />
-                    )}
-                    <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
-                      style={{ width: `${(totals.aVencer / totals.total) * 100}%` }} />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Busca */}
+      {/* Busca global */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" placeholder="Buscar por cliente, documento ou referência..." value={search} onChange={e => setSearch(e.target.value)}
@@ -660,7 +767,7 @@ export default function ReceivablesTab() {
         })}
       </div>
 
-      {/* Card Total Consolidado das 3 empresas */}
+      {/* Card Total Consolidado */}
       {empresas.length > 1 && (
         <div className="rounded-2xl border-2 border-slate-300 bg-gradient-to-r from-slate-50 to-slate-100 overflow-hidden">
           <div className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -705,7 +812,7 @@ export default function ReceivablesTab() {
         </div>
       )}
 
-      {/* Hierarquia expandida: Empresa → Mês → Banco → Lista por data */}
+      {/* Hierarquia expandida: Empresa → Mês → Banco → Filtros + Card + Lista */}
       <div className="space-y-6">
         {empresas.filter(emp => expandedEmpresas.has(emp.nome)).map(emp => {
           const empColors = getEmpresaColor(emp.nome);
@@ -771,9 +878,6 @@ export default function ReceivablesTab() {
                               ? `${bankShort}${contaEmpresa ? ` ${contaEmpresa}` : ''} · Ag ${conta.agencia || "-"} · Cc ${formatContaNumero(conta.contaNumero)}`
                               : bankShort;
                             const contaItems = isContaOpen ? getContaItems(emp.nome, mes.mes, conta.bancoNome, conta.contaNumero) : [];
-                            const contaItemIds = contaItems.map(i => i.id);
-                            const allContaSelected = contaItemIds.length > 0 && contaItemIds.every(id => selectedIds.has(id));
-                            const someContaSelected = contaItemIds.some(id => selectedIds.has(id));
 
                             return (
                               <div key={ci} className="rounded-xl border-2 border-slate-300 bg-white overflow-hidden shadow-md">
@@ -794,124 +898,17 @@ export default function ReceivablesTab() {
                                   </div>
                                 </button>
 
+                                {/* Filtros + Card + Tabela DENTRO da conta bancária */}
                                 {isContaOpen && contaItems.length > 0 && (
-                                  <div className="border-t border-slate-200">
-                                    <div className="grid grid-cols-[36px_1fr_120px_100px_90px_80px] gap-2 px-4 py-2 bg-slate-100 border-b border-slate-200">
-                                      <div className="flex items-center justify-center">
-                                        <button onClick={(e) => { e.stopPropagation(); toggleSelectAll(contaItems); }}
-                                          className="text-slate-500 hover:text-teal-600 transition-colors" title="Selecionar todos">
-                                          {allContaSelected ? <CheckSquare className="w-4 h-4 text-teal-600" />
-                                            : someContaSelected ? <MinusSquare className="w-4 h-4 text-teal-500" />
-                                            : <Square className="w-4 h-4" />}
-                                        </button>
-                                      </div>
-                                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider self-center">Cliente / Documento</div>
-                                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Forma de Pagamento</div>
-                                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right self-center">Valor</div>
-                                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider self-center">Vencimento</div>
-                                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Status</div>
-                                    </div>
-
-                                    <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-100">
-                                      {contaItems.map((item) => {
-                                        const isSelected = selectedIds.has(item.id);
-                                        const isExp = expandedItem === item.id;
-
-                                        return (
-                                          <div key={item.id}>
-                                            <div className={`grid grid-cols-[36px_1fr_120px_100px_90px_80px] gap-2 px-4 py-2.5 items-center transition-all cursor-pointer ${
-                                              isSelected ? "bg-teal-50/70 hover:bg-teal-50" : item.isOverdue ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-slate-50"
-                                            }`}>
-                                              <div className="flex items-center justify-center">
-                                                <button onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
-                                                  className={`transition-colors ${isSelected ? "text-teal-600" : "text-slate-300 hover:text-slate-500"}`}>
-                                                  {isSelected ? <CheckSquare className="w-4.5 h-4.5" /> : <Square className="w-4.5 h-4.5" />}
-                                                </button>
-                                              </div>
-
-                                              <div className="min-w-0 cursor-pointer" onClick={() => setExpandedItem(isExp ? null : item.id)}>
-                                                <div className="font-medium text-sm text-slate-800 truncate">{item.cliente}</div>
-                                                <div className="text-xs text-slate-400 truncate">
-                                                  {item.documento && `Doc ${item.documento}`}
-                                                  {item.parcela && ` · ${item.parcela}`}
-                                                  {item.referenteA && ` · ${item.referenteA}`}
-                                                </div>
-                                                {item.anotacoes && (
-                                                  <div className="mt-0.5 flex items-center gap-1">
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded max-w-full">
-                                                      <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>
-                                                      <span className="truncate">{item.anotacoes}</span>
-                                                    </span>
-                                                  </div>
-                                                )}
-                                              </div>
-
-                                              {(() => {
-                                                const fc = shortFormaCobranca(item.formaCobranca);
-                                                return (
-                                                  <div className="text-center" onClick={() => setExpandedItem(isExp ? null : item.id)} title={item.formaCobranca || "Não informado"}>
-                                                    {fc.label ? (
-                                                      <span className={`text-xs font-semibold ${fc.color}`}>{fc.label}</span>
-                                                    ) : (
-                                                      <span className="text-xs text-slate-300">—</span>
-                                                    )}
-                                                  </div>
-                                                );
-                                              })()}
-
-                                              <div className="text-right" onClick={() => setExpandedItem(isExp ? null : item.id)}>
-                                                <span className={`font-bold text-sm ${isSelected ? "text-teal-700" : item.isOverdue ? "text-red-600" : "text-slate-800"}`}>
-                                                  {formatCurrency(item.valorAReceber)}
-                                                </span>
-                                              </div>
-
-                                              <div className={`text-sm ${item.isOverdue ? "text-red-600 font-semibold" : "text-slate-600"}`}
-                                                onClick={() => setExpandedItem(isExp ? null : item.id)}>
-                                                {formatDate(item.vencimento)}
-                                              </div>
-
-                                              <div className="text-center" onClick={() => setExpandedItem(isExp ? null : item.id)}>
-                                                {item.isOverdue ? (
-                                                  <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">
-                                                    <AlertTriangle className="w-3 h-3" /> Vencido
-                                                  </span>
-                                                ) : (
-                                                  <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-bold">
-                                                    <Clock className="w-3 h-3" /> A vencer
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </div>
-
-                                            {isExp && (
-                                              <div className="px-4 pl-12 pb-3 bg-slate-50">
-                                                {item.anotacoes && (
-                                                  <div className="mb-2 p-2.5 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
-                                                    <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-0.5">Anotações Maxiprod</div>
-                                                    <p className="text-sm font-semibold text-amber-900 whitespace-pre-line">{item.anotacoes}</p>
-                                                  </div>
-                                                )}
-                                                {item.referenteA && (
-                                                  <div className="mb-2 p-2.5 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
-                                                    <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider mb-0.5">Referente A</div>
-                                                    <p className="text-sm font-semibold text-blue-900">{item.referenteA}</p>
-                                                  </div>
-                                                )}
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
-                                                  <DetailItem label="Valor Original" value={formatCurrency(item.valorOriginal)} />
-                                                  <DetailItem label="Valor Pago" value={formatCurrency(item.valorPago)} />
-                                                  <DetailItem label="Emissão" value={formatDate(item.emissao)} />
-                                                  <DetailItem label="Tipo" value={item.tipo} />
-                                                  <DetailItem label="Estado" value={item.estado || "-"} />
-                                                  {item.liquidacao && <DetailItem label="Liquidação" value={formatDate(item.liquidacao)} />}
-                                                </div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
+                                  <ContaFiltersAndTable
+                                    allContaItems={contaItems}
+                                    contaLabel={contaLabel}
+                                    selectedIds={selectedIds}
+                                    toggleSelect={toggleSelect}
+                                    toggleSelectAll={toggleSelectAll}
+                                    expandedItem={expandedItem}
+                                    setExpandedItem={setExpandedItem}
+                                  />
                                 )}
                               </div>
                             );
@@ -939,13 +936,7 @@ export default function ReceivablesTab() {
       {empresas.length === 0 && !isLoading && (
         <div className="text-center py-12 text-slate-400">
           <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p>Nenhum recebível encontrado{hasActiveFilters ? " para os filtros selecionados" : ""}</p>
-          {hasActiveFilters && (
-            <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); setSearch(""); }}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
-              Limpar todos os filtros
-            </button>
-          )}
+          <p>Nenhum recebível encontrado</p>
         </div>
       )}
     </div>

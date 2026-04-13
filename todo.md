@@ -2268,3 +2268,13 @@
 - [x] Filtro de forma de cobrança: PIX / Boleto / Cheque / Depósito / Dinheiro / Todos
 - [x] Card de resumo dinâmico premium com totais exatos do filtro aplicado
 - [x] Visual diferenciado: contornos brilhantes, valores reluzentes, design sofisticado
+
+## Filtros dentro de cada conta bancária
+- [ ] Mover filtros (Status + Forma de Cobrança) para dentro de cada conta bancária expandida
+- [ ] Card de resumo premium individual por conta bancária com totais daquela conta
+- [ ] Replicar para todas as empresas e todos os meses
+- [ ] Remover filtros globais do topo (manter apenas dentro das contas)
+- [x] Mover filtros (Status + Forma de Cobrança) para DENTRO de cada conta bancária individualmente
+- [x] Card de resumo premium dentro de cada conta bancária com totais específicos da conta filtrada
+- [x] Filtros replicados para todas as empresas, todos os meses e todas as contas
+- [x] Cada conta bancária tem seu próprio estado de filtro independente
