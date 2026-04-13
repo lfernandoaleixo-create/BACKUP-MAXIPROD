@@ -2200,3 +2200,11 @@
 - [x] Corrigir lógica de detecção de mudanças: agora compara com último snapshot disponível
 - [x] Limpar 6.193 mudanças incorretas e reprocessar: agora 43 mudanças reais (10/04 -> 13/04)
 - [x] Garantir que após fechamento do mês, apenas mudanças reais (novos títulos, remoções) sejam registradas
+
+## Venc. Orig. em laranja
+- [ ] Destacar "Venc. Orig." em cor laranja nos cards de pagamento/recebimento
+
+## Histórico Completo: valores inflados
+- [x] Investigar e limpar mudanças incorretas no histórico completo (2.415 mudanças falsas removidas)
+- [x] Reprocessar histórico com snapshots corretos: 108 mudanças reais (pagar: 6 add R$8.963 / 75 rem R$109.828 / 1 alt; receber: 3 add R$32.244 / 21 rem R$64.831 / 2 alt)
+- [x] Garantir que apenas mudanças reais dia a dia sejam registradas desde o início do mês
