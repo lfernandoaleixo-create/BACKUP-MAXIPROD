@@ -2722,7 +2722,10 @@ export const financialRouter = router({
       if (!db) return { empresas: [], totals: { total: 0, count: 0, vencido: 0, aVencer: 0 } };
 
       const estado = input?.estado || "EMITIDO";
-      const todayBR = getTodayBR(); // Divisória: A Vencer >= hoje, Vencido < hoje
+      // REGRA DE CONCILIAÇÃO BANCÁRIA (mesma lógica do getMonthlyBreakdown e getSummary):
+      // Vencido = vencimento até o último dia útil (cutoffDate)
+      // A Vencer = vencimento a partir do dia seguinte à conciliação
+      const cutoffDate = getPreviousBusinessDay();
       const conditions = [
         inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
       ];
@@ -2848,9 +2851,11 @@ export const financialRouter = router({
         if (valorAReceber <= 0 && estado === "EMITIDO") continue;
 
         const vencDate = (row.vencimentoData || "").split("T")[0];
-        // Vencido = vencimento antes de hoje; A Vencer = vencimento a partir de hoje
-        // Alinhado com getMonthlyBreakdown (A Receber) da Visão Geral
-        const isOverdue = vencDate < todayBR;
+        // REGRA DE CONCILIAÇÃO BANCÁRIA:
+        // Vencido = vencimento até cutoffDate (último dia útil antes de hoje)
+        // A Vencer = vencimento a partir do dia seguinte à conciliação
+        // Alinhado com getMonthlyBreakdown e getSummary da Visão Geral
+        const isOverdue = vencDate <= cutoffDate;
         const mesKey = vencDate.substring(0, 7); // YYYY-MM
         const empresa = row.empresaNome || "Sem Empresa";
         const bancoNome = row.bancoNome || "Sem Banco";

@@ -2246,3 +2246,8 @@
 ## Anotações na Autorização de Pagamentos
 - [x] Exibir anotações do Maxiprod na aba de Autorização de Pagamentos (destaque rosa, bem visível)
 - [x] Anotações são informação adicional - nada existente foi removido
+
+## Aba Recebíveis - Mesma lógica de conciliação
+- [x] Aplicar mesma data de corte (dia seguinte ao último dia útil) na aba Recebíveis
+- [x] Valores de A Vencer e Vencido devem bater exatamente com Visão Geral e Inadimplência (confirmado: Total 2.125.435,67 / Vencido 588.838,88 / 443 títulos)
+- [x] Incluir anotações do Maxiprod na aba Recebíveis (já implementado anteriormente)
