@@ -2262,3 +2262,9 @@
 
 ## Destaque visual dos valores no cabeçalho Recebíveis
 - [x] Valores (títulos, total, vencido) em contornos brilhantes retangulares com fontes maiores (border-2 + shadow glow + text-base font-bold)
+
+## Filtros Avançados na aba Recebíveis
+- [x] Filtro de status: Vencidos / A Vencer / Todos
+- [x] Filtro de forma de cobrança: PIX / Boleto / Cheque / Depósito / Dinheiro / Todos
+- [x] Card de resumo dinâmico premium com totais exatos do filtro aplicado
+- [x] Visual diferenciado: contornos brilhantes, valores reluzentes, design sofisticado
