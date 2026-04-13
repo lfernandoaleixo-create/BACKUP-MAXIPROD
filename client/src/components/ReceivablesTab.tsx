@@ -914,26 +914,36 @@ function ContaFiltersAndTable({
       )}
 
       {/* ---- CHECKBOX DESCONTOS AUTORIZADOS (entre card verde e tabela) ---- */}
-      {selectedIds.size > 0 && isFernando && (
+      {selectedIds.size > 0 && (
         <div className="mx-3 mb-1">
           <label
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all select-none border-2 ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all select-none border-2 ${
               discountsAuthorized
                 ? "bg-emerald-50 border-emerald-400 shadow-md shadow-emerald-100"
-                : "bg-white border-slate-200 hover:border-teal-300 hover:bg-teal-50/30"
+                : isFernando
+                  ? "bg-white border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 cursor-pointer"
+                  : "bg-slate-50 border-slate-200 cursor-not-allowed opacity-70"
             }`}
           >
             <input
               type="checkbox"
               checked={discountsAuthorized}
-              onChange={(e) => setDiscountsAuthorized(e.target.checked)}
-              className="w-5 h-5 rounded border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0 accent-emerald-600 cursor-pointer"
+              onChange={(e) => {
+                if (isFernando) setDiscountsAuthorized(e.target.checked);
+              }}
+              disabled={!isFernando}
+              className={`w-5 h-5 rounded border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0 accent-emerald-600 ${
+                isFernando ? "cursor-pointer" : "cursor-not-allowed"
+              }`}
             />
             <div className="flex items-center gap-2">
               <CheckCircle2 className={`w-4.5 h-4.5 ${discountsAuthorized ? "text-emerald-600" : "text-slate-400"}`} />
               <span className={`text-sm font-bold ${discountsAuthorized ? "text-emerald-700" : "text-slate-600"}`}>
                 Descontos Autorizados
               </span>
+              {!isFernando && !discountsAuthorized && (
+                <span className="text-xs text-slate-400 italic">(somente Fernando)</span>
+              )}
             </div>
             {discountsAuthorized && (
               <span className="ml-auto text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
