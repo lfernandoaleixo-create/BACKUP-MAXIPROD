@@ -2285,3 +2285,11 @@
 - [ ] Sistema de alerta de divergência entre valores Manus vs Maxiprod
 - [x] Botão de exportação PDF dos filtros aplicados em cada conta bancária (Recebíveis)
 - [x] Controle de acesso: links de contraprova Maxiprod visíveis apenas para senhas "Guilherme" e "Fernando"
+
+## Melhorias Modal Contraprova Maxiprod
+- [x] Incluir senha Maxiprod no passo a passo (Luizfernando7008*)
+- [x] Corrigir texto Unicode escapado "VERIFICA\U00E7\U00E3O" para "Verificação"
+- [ ] Consultar API GraphQL Maxiprod em tempo real para mostrar valor comparativo
+- [ ] Exibir valor Maxiprod ao lado do valor Manus no modal
+- [ ] Tentar abrir Maxiprod na tela correta com filtros pré-configurados
+- [x] Mostrar valor Maxiprod automaticamente nos cards (sem clicar) com alerta de divergência

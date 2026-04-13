@@ -4278,4 +4278,113 @@ ${acoesTexto}
   getSnapshotDates: publicProcedure.query(async () => {
     return getSnapshotDates();
   }),
+
+  /**
+   * Contraprova Maxiprod - Consulta valores em tempo real da API GraphQL
+   * SOMENTE LEITURA - jamais altera dados no Maxiprod
+   * Retorna o valor do Maxiprod para comparação com o valor da Manus
+   */
+  getMaxiprodContraprova: publicProcedure
+    .input(z.object({
+      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis"]),
+      startDate: z.string(),
+      endDate: z.string(),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const { section, startDate, endDate } = input;
+
+        if (section === "faturamento") {
+          const result = await fetchInvoicesTotal(startDate, endDate);
+          return {
+            valorMaxiprod: result.total,
+            count: result.count,
+            label: `${result.count} NFs de Saída (Emitidas, excluindo Amostra/Bonificação/Devolução/etc)`,
+          };
+        }
+
+        if (section === "entradas") {
+          const result = await fetchReceivedAccountsTotal(startDate, endDate);
+          return {
+            valorMaxiprod: result.total,
+            count: result.count,
+            label: `${result.count} lançamentos (Vendas/Revenda: ${result.vendasRevenda.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}, Demais: ${result.demaisReceitas.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})`,
+          };
+        }
+
+        if (section === "contas_pagas") {
+          const result = await fetchPaidAccountsTotal(startDate, endDate);
+          return {
+            valorMaxiprod: result.total,
+            count: result.count,
+            label: `${result.count} contas pagas (liquidação no período)`,
+          };
+        }
+
+        if (section === "vendas") {
+          // Vendas usa dados do banco local (salesOrders), não tem fetch direto
+          // Retorna null para indicar que não há consulta direta
+          const db = await getDb();
+          if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          const startDay = startDate.substring(0, 10);
+          const endDay = endDate.substring(0, 10);
+          const allItems = await db.select().from(salesOrders)
+            .where(and(
+              gte(salesOrders.dataEmissao, startDay + 'T00:00:00.000Z'),
+              lte(salesOrders.dataEmissao, endDay + 'T23:59:59.999Z')
+            ));
+
+          const estadoToGrupo = (estado: string | null): string => {
+            if (!estado) return "outros";
+            const e = estado.toUpperCase();
+            if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+            if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+            if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+            return "outros";
+          };
+
+          const filtered = allItems.filter(item => {
+            if ((item.estadoNota || "").toUpperCase() === "DIGITAÇÃO") return false;
+            const grupo = estadoToGrupo(item.estadoConfiguravel);
+            return grupo !== "outros";
+          });
+
+          const total = filtered.reduce((sum, item) => sum + Number(item.valorTotal || 0), 0);
+          return {
+            valorMaxiprod: Math.round(total * 100) / 100,
+            count: filtered.length,
+            label: `${filtered.length} pedidos de venda (excluindo Digitação e outros)`,
+          };
+        }
+
+        // recebiveis - busca do banco local
+        if (section === "recebiveis") {
+          const db = await getDb();
+          if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          const result = await db.select({
+            total: sql<number>`COALESCE(SUM(CAST(valor_liquido AS DECIMAL(15,2)) - CAST(COALESCE(valor_recebido_liquido, '0') AS DECIMAL(15,2))), 0)`,
+            count: sql<number>`COUNT(*)`,
+          }).from(accountsReceivable)
+            .where(and(
+              eq(accountsReceivable.estado, 'EMITIDO'),
+              inArray(accountsReceivable.tipo, ['TITULO', 'RECEITA', 'ADIANTAMENTO']),
+              gte(accountsReceivable.vencimentoData, startDate),
+              lte(accountsReceivable.vencimentoData, endDate),
+            ));
+
+          return {
+            valorMaxiprod: Number(result[0]?.total || 0),
+            count: Number(result[0]?.count || 0),
+            label: `${result[0]?.count || 0} títulos a receber no período`,
+          };
+        }
+
+        return { valorMaxiprod: 0, count: 0, label: "Seção não reconhecida" };
+      } catch (error: any) {
+        console.error("[getMaxiprodContraprova] Error:", error.message);
+        return { valorMaxiprod: 0, count: 0, label: `Erro: ${error.message}` };
+      }
+    }),
 });

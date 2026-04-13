@@ -196,7 +196,7 @@ function MaxiprodVerifyModal({
     let n = 1;
 
     baseSteps.push({ step: n++, text: `Acesse o Maxiprod: app.maxiprod.com.br` });
-    baseSteps.push({ step: n++, text: `Faça login com: lfernandoaleixo@gmail.com` });
+    baseSteps.push({ step: n++, text: `Login: lfernandoaleixo@gmail.com | Senha: Luizfernando7008*` });
 
     if (section === "recebiveis") {
       baseSteps.push({ step: n++, text: `Vá em: Financeiro → Contas a receber` });

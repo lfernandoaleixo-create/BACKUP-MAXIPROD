@@ -160,13 +160,16 @@ function MaxiprodVerifyModalFinanceiro({
     periodStart?: string;
     periodEnd?: string;
     valorManus?: number;
+    valorMaxiprod?: number;
+    maxiprodLabel?: string;
+    maxiprodLoading?: boolean;
   };
 }) {
   const steps = useMemo(() => {
     const s: { step: number; text: string; highlight?: boolean }[] = [];
     let n = 1;
     s.push({ step: n++, text: "Acesse o Maxiprod: app.maxiprod.com.br" });
-    s.push({ step: n++, text: "Fa\u00e7a login com: lfernandoaleixo@gmail.com" });
+    s.push({ step: n++, text: "Login: lfernandoaleixo@gmail.com | Senha: Luizfernando7008*" });
 
     if (section === "faturamento") {
       s.push({ step: n++, text: "V\u00e1 em: Notas Fiscais \u2192 Notas Fiscais de Sa\u00edda" });
@@ -220,6 +223,11 @@ function MaxiprodVerifyModalFinanceiro({
     contas_pagas: "Contas a Pagar",
   };
 
+  const divergencia = context.valorManus !== undefined && context.valorMaxiprod !== undefined
+    ? Math.abs(context.valorManus - context.valorMaxiprod)
+    : null;
+  const hasDivergencia = divergencia !== null && divergencia > 1; // tolerancia de R$1
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -238,13 +246,50 @@ function MaxiprodVerifyModalFinanceiro({
               <X className="w-5 h-5" />
             </button>
           </div>
-          {context.valorManus !== undefined && (
-            <div className="mt-3 px-4 py-2.5 bg-white/10 rounded-lg border border-white/20">
-              <span className="text-indigo-300 text-xs">Valor na Manus:</span>
-              <span className="ml-2 text-white font-bold text-lg" style={{ textShadow: "0 0 15px rgba(34,211,238,0.4)" }}>
-                {formatCurrency(context.valorManus)}
+          {/* Valores lado a lado: Manus vs Maxiprod */}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="px-4 py-2.5 bg-white/10 rounded-lg border border-white/20">
+              <span className="text-indigo-300 text-[10px] uppercase tracking-wider">Valor na Manus</span>
+              <p className="text-white font-bold text-lg" style={{ textShadow: "0 0 15px rgba(34,211,238,0.4)" }}>
+                {context.valorManus !== undefined ? formatCurrency(context.valorManus) : "-"}
+              </p>
+            </div>
+            <div className={`px-4 py-2.5 rounded-lg border ${
+              context.maxiprodLoading ? "bg-white/5 border-white/10" :
+              hasDivergencia ? "bg-red-500/20 border-red-400/40" : "bg-emerald-500/20 border-emerald-400/40"
+            }`}>
+              <span className="text-indigo-300 text-[10px] uppercase tracking-wider">Valor Maxiprod (API)</span>
+              {context.maxiprodLoading ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-300" />
+                  <span className="text-indigo-300 text-sm">Consultando...</span>
+                </div>
+              ) : context.valorMaxiprod !== undefined ? (
+                <p className={`font-bold text-lg ${hasDivergencia ? "text-red-300" : "text-emerald-300"}`}
+                  style={{ textShadow: hasDivergencia ? "0 0 15px rgba(239,68,68,0.4)" : "0 0 15px rgba(52,211,153,0.4)" }}>
+                  {formatCurrency(context.valorMaxiprod)}
+                </p>
+              ) : (
+                <p className="text-white/50 text-sm mt-1">Indispon\u00edvel</p>
+              )}
+            </div>
+          </div>
+          {/* Alerta de diverg\u00eancia */}
+          {hasDivergencia && (
+            <div className="mt-2 px-4 py-2 bg-red-500/20 rounded-lg border border-red-400/30 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-300 flex-shrink-0" />
+              <span className="text-red-200 text-xs font-semibold">
+                Diverg\u00eancia de {formatCurrency(divergencia!)} detectada!
               </span>
             </div>
+          )}
+          {!hasDivergencia && context.valorMaxiprod !== undefined && !context.maxiprodLoading && (
+            <div className="mt-2 px-4 py-2 bg-emerald-500/20 rounded-lg border border-emerald-400/30 flex items-center gap-2">
+              <span className="text-emerald-200 text-xs font-semibold">Valores conferem! Sem diverg\u00eancia.</span>
+            </div>
+          )}
+          {context.maxiprodLabel && !context.maxiprodLoading && (
+            <p className="mt-1 text-indigo-400/70 text-[10px] px-1">{context.maxiprodLabel}</p>
           )}
         </div>
         <div className="px-6 py-5 max-h-[50vh] overflow-y-auto space-y-2.5">
@@ -494,6 +539,35 @@ function CompactSummary({
   const totalEntradas = recebimentos + outrasEntradas;
   const variacaoSaldo = totalEntradas - contasPagas;
 
+  // Consultas automáticas do Maxiprod para contraprova (só para operadores autorizados)
+  const contraprovaEnabled = !!canVerifyMaxiprod && !!dates.start && !!dates.end;
+  const contraprovaInput = { startDate: dates.start, endDate: dates.end };
+
+  const { data: cpFaturamento, isLoading: cpFatLoading } = trpc.financial.getMaxiprodContraprova.useQuery(
+    { ...contraprovaInput, section: "faturamento" as const }, { enabled: contraprovaEnabled }
+  );
+  const { data: cpVendas, isLoading: cpVendasLoading } = trpc.financial.getMaxiprodContraprova.useQuery(
+    { ...contraprovaInput, section: "vendas" as const }, { enabled: contraprovaEnabled }
+  );
+  const { data: cpEntradas, isLoading: cpEntradasLoading } = trpc.financial.getMaxiprodContraprova.useQuery(
+    { ...contraprovaInput, section: "entradas" as const }, { enabled: contraprovaEnabled }
+  );
+  const { data: cpContasPagas, isLoading: cpPagasLoading } = trpc.financial.getMaxiprodContraprova.useQuery(
+    { ...contraprovaInput, section: "contas_pagas" as const }, { enabled: contraprovaEnabled }
+  );
+
+  // Helper para detectar divergência (tolerância de R$1)
+  const getDivergencia = (manus: number, maxiprod?: number) => {
+    if (maxiprod === undefined) return null;
+    const diff = Math.abs(manus - maxiprod);
+    return diff > 1 ? diff : null;
+  };
+
+  const divFat = getDivergencia(faturamento, cpFaturamento?.valorMaxiprod);
+  const divVendas = getDivergencia(vendas, cpVendas?.valorMaxiprod);
+  const divEntradas = getDivergencia(totalEntradas, cpEntradas?.valorMaxiprod);
+  const divPagas = getDivergencia(contasPagas, cpContasPagas?.valorMaxiprod);
+
   return (
     <div
       className="px-6 py-5 cursor-pointer hover:bg-slate-50/50 transition-colors"
@@ -502,7 +576,9 @@ function CompactSummary({
       {/* 4 cards alinhados: Entradas | Faturamento | Vendas | Contas Pagas */}
       <div className="grid grid-cols-4 gap-3 mb-4">
         {/* Card 1: Entradas (Recebimentos + Outras = Total) */}
-        <div className="px-3.5 py-3.5 rounded-lg bg-amber-50/60 border border-amber-100 relative group">
+        <div className={`px-3.5 py-3.5 rounded-lg relative group transition-all ${
+          divEntradas ? "bg-red-50/80 border-2 border-red-300 shadow-md shadow-red-100" : "bg-amber-50/60 border border-amber-100"
+        }`}>
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
               <Wallet className="w-3.5 h-3.5 text-amber-600" />
@@ -532,10 +608,25 @@ function CompactSummary({
               <span className="text-[11px] font-semibold text-slate-500">{formatCurrency(outrasEntradas)}</span>
             </div>
           </div>
+          {canVerifyMaxiprod && (
+            <div className="mt-2 pt-2 border-t border-amber-200/40">
+              {cpEntradasLoading ? (
+                <div className="flex items-center gap-1 justify-center"><Loader2 className="w-3 h-3 animate-spin text-amber-400" /><span className="text-[10px] text-amber-400">Maxiprod...</span></div>
+              ) : cpEntradas ? (
+                <div className="text-center">
+                  <span className="text-[10px] text-slate-400">Maxiprod: </span>
+                  <span className={`text-[10px] font-bold ${divEntradas ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(cpEntradas.valorMaxiprod)}</span>
+                  {divEntradas && <div className="flex items-center justify-center gap-1 mt-0.5"><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-[10px] font-bold text-red-600">Dif: {formatCurrency(divEntradas)}</span></div>}
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
 
         {/* Card 2: Faturamento */}
-        <div className="text-center px-3 py-3.5 rounded-lg bg-emerald-50/60 border border-emerald-100 relative group">
+        <div className={`text-center px-3 py-3.5 rounded-lg relative group transition-all ${
+          divFat ? "bg-red-50/80 border-2 border-red-300 shadow-md shadow-red-100" : "bg-emerald-50/60 border border-emerald-100"
+        }`}>
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
               <Receipt className="w-3.5 h-3.5 text-emerald-600" />
@@ -550,10 +641,25 @@ function CompactSummary({
           </div>
           <p className="text-lg font-bold text-emerald-700 leading-tight">{formatCurrency(faturamento)}</p>
           <p className="text-[11px] text-slate-400 mt-1">{billingData?.faturamento?.count ?? 0} NFs emitidas</p>
+          {canVerifyMaxiprod && (
+            <div className="mt-2 pt-2 border-t border-emerald-200/40">
+              {cpFatLoading ? (
+                <div className="flex items-center gap-1 justify-center"><Loader2 className="w-3 h-3 animate-spin text-emerald-400" /><span className="text-[10px] text-emerald-400">Maxiprod...</span></div>
+              ) : cpFaturamento ? (
+                <div>
+                  <span className="text-[10px] text-slate-400">Maxiprod: </span>
+                  <span className={`text-[10px] font-bold ${divFat ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(cpFaturamento.valorMaxiprod)}</span>
+                  {divFat && <div className="flex items-center justify-center gap-1 mt-0.5"><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-[10px] font-bold text-red-600">Dif: {formatCurrency(divFat)}</span></div>}
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
 
         {/* Card 3: Vendas */}
-        <div className="text-center px-3 py-3.5 rounded-lg bg-blue-50/60 border border-blue-100 relative group">
+        <div className={`text-center px-3 py-3.5 rounded-lg relative group transition-all ${
+          divVendas ? "bg-red-50/80 border-2 border-red-300 shadow-md shadow-red-100" : "bg-blue-50/60 border border-blue-100"
+        }`}>
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
               <ShoppingCart className="w-3.5 h-3.5 text-blue-600" />
@@ -568,10 +674,25 @@ function CompactSummary({
           </div>
           <p className="text-lg font-bold text-blue-700 leading-tight">{formatCurrency(vendas)}</p>
           <p className="text-[11px] text-slate-400 mt-1">{salesData?.vendas?.pedidos ?? 0} pedidos</p>
+          {canVerifyMaxiprod && (
+            <div className="mt-2 pt-2 border-t border-blue-200/40">
+              {cpVendasLoading ? (
+                <div className="flex items-center gap-1 justify-center"><Loader2 className="w-3 h-3 animate-spin text-blue-400" /><span className="text-[10px] text-blue-400">Maxiprod...</span></div>
+              ) : cpVendas ? (
+                <div>
+                  <span className="text-[10px] text-slate-400">Maxiprod: </span>
+                  <span className={`text-[10px] font-bold ${divVendas ? "text-red-600" : "text-blue-600"}`}>{formatCurrency(cpVendas.valorMaxiprod)}</span>
+                  {divVendas && <div className="flex items-center justify-center gap-1 mt-0.5"><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-[10px] font-bold text-red-600">Dif: {formatCurrency(divVendas)}</span></div>}
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
 
         {/* Card 4: Contas Pagas */}
-        <div className="text-center px-3 py-3.5 rounded-lg bg-red-50/60 border border-red-100 relative group">
+        <div className={`text-center px-3 py-3.5 rounded-lg relative group transition-all ${
+          divPagas ? "bg-red-50/80 border-2 border-red-300 shadow-md shadow-red-100" : "bg-red-50/60 border border-red-100"
+        }`}>
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
               <CreditCard className="w-3.5 h-3.5 text-red-500" />
@@ -586,6 +707,19 @@ function CompactSummary({
           </div>
           <p className="text-lg font-bold text-red-600 leading-tight">{formatCurrency(contasPagas)}</p>
           <p className="text-[11px] text-slate-400 mt-1">{billingData?.contasPagar?.count ?? salesData?.contasPagas?.count ?? 0} contas</p>
+          {canVerifyMaxiprod && (
+            <div className="mt-2 pt-2 border-t border-red-200/40">
+              {cpPagasLoading ? (
+                <div className="flex items-center gap-1 justify-center"><Loader2 className="w-3 h-3 animate-spin text-red-400" /><span className="text-[10px] text-red-400">Maxiprod...</span></div>
+              ) : cpContasPagas ? (
+                <div>
+                  <span className="text-[10px] text-slate-400">Maxiprod: </span>
+                  <span className={`text-[10px] font-bold ${divPagas ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(cpContasPagas.valorMaxiprod)}</span>
+                  {divPagas && <div className="flex items-center justify-center gap-1 mt-0.5"><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-[10px] font-bold text-red-600">Dif: {formatCurrency(divPagas)}</span></div>}
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
 
@@ -636,6 +770,18 @@ function CompactSummary({
               : verifySection === "vendas" ? vendas
               : verifySection === "entradas" ? totalEntradas
               : contasPagas,
+            valorMaxiprod: verifySection === "faturamento" ? cpFaturamento?.valorMaxiprod
+              : verifySection === "vendas" ? cpVendas?.valorMaxiprod
+              : verifySection === "entradas" ? cpEntradas?.valorMaxiprod
+              : cpContasPagas?.valorMaxiprod,
+            maxiprodLabel: verifySection === "faturamento" ? cpFaturamento?.label
+              : verifySection === "vendas" ? cpVendas?.label
+              : verifySection === "entradas" ? cpEntradas?.label
+              : cpContasPagas?.label,
+            maxiprodLoading: verifySection === "faturamento" ? cpFatLoading
+              : verifySection === "vendas" ? cpVendasLoading
+              : verifySection === "entradas" ? cpEntradasLoading
+              : cpPagasLoading,
           }}
         />
       )}
