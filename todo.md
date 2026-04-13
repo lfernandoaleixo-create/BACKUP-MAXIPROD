@@ -2224,3 +2224,6 @@
 - [x] Adicionar TRANSFERÊNCIA à lista de estados excluídos do faturamento (NF 2217 R$ 148,50)
 
 - [x] Adicionar CANCELADA à lista de estados excluídos do faturamento (NF R$ 10,00)
+
+## Regra de estados configuráveis do faturamento
+- [x] Documentar no código: estados aceitos são BAMBU, MADEIRA, ROJÃO, SERRAGEM, MADEIRA/FIBRA e variações/combinações desses produtos. Qualquer outro estado novo deve ser excluído.

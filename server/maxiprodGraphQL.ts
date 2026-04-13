@@ -2071,8 +2071,13 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
 /**
  * Fetch total de Faturamento via Notas Fiscais do Maxiprod (Vendas > Notas Fiscais).
  * Filtros: emissaoData no período, estado EMITIDA, entradaOuSaida SAIDA.
- * Inclui NFs de saída emitidas de venda (BAMBU, MADEIRA, FIBRA, etc.)
- * Exclui NFs com estadoConfiguravel: CANCELADO, CANCELADA, AMOSTRA, BONIFICAÇÃO, DEVOLUÇÃO, REMESSA, RECUSA, TRANSFERÊNCIA.
+ *
+ * REGRA DE ESTADOS CONFIGURÁVEIS:
+ * - ACEITOS (não modificar): BAMBU, MADEIRA, ROJÃO, SERRAGEM, MADEIRA/FIBRA
+ *   e variações/combinações desses produtos (ex: MADEIRA/BAMBU, SERRAGEM/ROJÃO).
+ * - EXCLUÍDOS (lista abaixo): qualquer outro estado que não seja produto de venda.
+ *   Se aparecer um estado novo no Maxiprod que não seja variação de produto, adicionar aqui.
+ *
  * SOMENTE LEITURA
  */
 const FATURAMENTO_ESTADOS_EXCLUIDOS = new Set([
