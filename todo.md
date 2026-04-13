@@ -2182,3 +2182,9 @@
 ## Fix: A Vencer ainda não bate com A Receber da Visão Geral
 - [x] Mudar isOverdue para vencDate < hoje (não <= cutoff), assim A Vencer = vencimento >= hoje = A Receber da Visão Geral
 - [x] Vencido = tudo com vencimento < hoje (inclui gap do fim de semana)
+
+## Reset diário de autorizações de contas
+- [x] Na virada do dia, TODAS as contas autorizadas devem ser desmarcadas (incluindo transferidas para pagamento posterior)
+- [x] Exigir ticagem manual diária para cada conta
+- [x] Reset manual executado: 292 autorizações removidas
+- [x] auth_completion também resetado na virada do dia
