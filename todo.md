@@ -2188,3 +2188,15 @@
 - [x] Exigir ticagem manual diária para cada conta
 - [x] Reset manual executado: 292 autorizações removidas
 - [x] auth_completion também resetado na virada do dia
+
+## Sincronização Maxiprod
+- [ ] Diagnosticar e corrigir erros na sincronização GraphQL com Maxiprod
+
+## Correção de estoque manual
+- [x] Queijo Coalho (Cod 00103): corrigir estoque manual de 306 para 296 caixas (atualizado por Guilherme)
+
+## Histórico financeiro: valores inflados
+- [x] Investigar por que o histórico mostra +R$ 733K acrescentados quando o total da semana é ~R$ 332K (causa: comparava com snapshot inexistente do dia anterior)
+- [x] Corrigir lógica de detecção de mudanças: agora compara com último snapshot disponível
+- [x] Limpar 6.193 mudanças incorretas e reprocessar: agora 43 mudanças reais (10/04 -> 13/04)
+- [x] Garantir que após fechamento do mês, apenas mudanças reais (novos títulos, remoções) sejam registradas

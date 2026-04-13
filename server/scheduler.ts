@@ -9,7 +9,7 @@
  */
 import { schedule, type ScheduledTask } from "node-cron";
 import { runGraphQLSync, syncBankBalances, syncPaidAccountsSnapshots } from "./maxiprodGraphQL";
-import { saveFinancialSnapshot, detectFinancialChanges } from "./financialHistory";
+import { saveFinancialSnapshot, detectFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { resetDailyPaymentAuthorizations } from "./paymentAuthReset";
 
 let scheduledTask: ScheduledTask | null = null;
@@ -56,12 +56,17 @@ export function startScheduler(): void {
             const snap = await saveFinancialSnapshot(todayStr);
             console.log(`[Scheduler] Financial snapshot saved: ${snap.payableCount} pagar, ${snap.receivableCount} receber`);
 
-            // Detectar mudanças comparando com o dia anterior
-            const yesterday = new Date(now);
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-            const changes = await detectFinancialChanges(yesterdayStr, todayStr);
-            console.log(`[Scheduler] Financial changes detected: ${changes.pagarChanges} pagar, ${changes.receberChanges} receber`);
+            // Detectar mudanças comparando com o último snapshot disponível (não necessariamente ontem)
+            const snapshotDates = await getSnapshotDates();
+            // snapshotDates vem em ordem DESC, o primeiro é o de hoje que acabamos de salvar
+            // O segundo é o snapshot anterior mais recente
+            const previousSnapshotDate = snapshotDates.find(d => d < todayStr);
+            if (previousSnapshotDate) {
+              const changes = await detectFinancialChanges(previousSnapshotDate, todayStr);
+              console.log(`[Scheduler] Financial changes detected (${previousSnapshotDate} -> ${todayStr}): ${changes.pagarChanges} pagar, ${changes.receberChanges} receber`);
+            } else {
+              console.log(`[Scheduler] No previous snapshot found, skipping change detection`);
+            }
           } catch (histErr: any) {
             console.error(`[Scheduler] Financial history sync failed: ${histErr.message}`);
           }
