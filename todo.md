@@ -2219,3 +2219,6 @@
 ## Card Total Entradas - Ajustes
 - [x] Vendas/Revenda: subtrair valor de "outros" do total
 - [x] Valores sem aproximação: mostrar valor completo (R$ 1.048.652,91 em vez de R$ 1.0M)
+
+## Faturamento: excluir TRANSFERÊNCIA
+- [x] Adicionar TRANSFERÊNCIA à lista de estados excluídos do faturamento (NF 2217 R$ 148,50)
