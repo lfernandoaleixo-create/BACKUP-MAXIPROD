@@ -2259,3 +2259,6 @@
 - [x] Adicionar empresa Espetos ao Contas a Receber (mesma lógica da Varetas) - empresa sempre aparece mesmo com 0 títulos
 - [x] Criar card de Total consolidado das 3 empresas: total vencidos + total a vencer
 - [x] Aplicar todas as configurações existentes (conciliação, anotações, etc.)
+
+## Destaque visual dos valores no cabeçalho Recebíveis
+- [x] Valores (títulos, total, vencido) em contornos brilhantes retangulares com fontes maiores (border-2 + shadow glow + text-base font-bold)

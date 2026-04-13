@@ -238,10 +238,19 @@ export default function ReceivablesTab() {
             <TrendingUp className="w-5 h-5 text-blue-600" />
             Controle de Recebíveis
           </h2>
-          <p className="text-sm text-slate-500">
-            {totals.count} títulos · Total: <span className="font-semibold text-slate-700">{formatCurrency(totals.total)}</span>
-            {totals.vencido > 0 && <span className="text-red-500 ml-2">· Vencido: {formatCurrency(totals.vencido)}</span>}
-          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <span className="inline-flex items-center px-3 py-1.5 rounded-lg border-2 border-blue-300 bg-blue-50 text-base font-bold text-blue-700 shadow-[0_0_8px_rgba(59,130,246,0.35)]">
+              {totals.count} títulos
+            </span>
+            <span className="inline-flex items-center px-3 py-1.5 rounded-lg border-2 border-slate-300 bg-slate-50 text-base font-bold text-slate-800 shadow-[0_0_8px_rgba(100,116,139,0.3)]">
+              Total: {formatCurrency(totals.total)}
+            </span>
+            {totals.vencido > 0 && (
+              <span className="inline-flex items-center px-3 py-1.5 rounded-lg border-2 border-red-300 bg-red-50 text-base font-bold text-red-600 shadow-[0_0_8px_rgba(239,68,68,0.35)]">
+                Vencido: {formatCurrency(totals.vencido)}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
           {(["EMITIDO", "RECEBIDO", "ALL"] as const).map(e => (
