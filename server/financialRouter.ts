@@ -318,20 +318,49 @@ function getDayOfWeekStr(dateStr: string): number {
 }
 
 /**
+ * Feriados bancários nacionais (Anbima) — 2025, 2026, 2027.
+ * Fonte: https://www.anbima.com.br/feriados/fer_nacionais/
+ * Atualizar anualmente conforme publicação oficial.
+ */
+const BANK_HOLIDAYS: Set<string> = new Set([
+  // 2025
+  "2025-01-01", "2025-03-03", "2025-03-04", "2025-04-18",
+  "2025-04-21", "2025-05-01", "2025-06-19", "2025-09-07",
+  "2025-10-12", "2025-11-02", "2025-11-15", "2025-11-20", "2025-12-25",
+  // 2026
+  "2026-01-01", "2026-02-16", "2026-02-17", "2026-04-03",
+  "2026-04-21", "2026-05-01", "2026-06-04", "2026-09-07",
+  "2026-10-12", "2026-11-02", "2026-11-15", "2026-11-20", "2026-12-25",
+  // 2027
+  "2027-01-01", "2027-02-08", "2027-02-09", "2027-03-26",
+  "2027-04-21", "2027-05-01", "2027-05-27", "2027-09-07",
+  "2027-10-12", "2027-11-02", "2027-11-15", "2027-11-20", "2027-12-25",
+]);
+
+/** Verifica se uma data YYYY-MM-DD é dia útil (não é fim de semana nem feriado bancário) */
+function isBusinessDay(dateStr: string): boolean {
+  const dow = getDayOfWeekStr(dateStr);
+  if (dow === 0 || dow === 6) return false; // Domingo ou Sábado
+  return !BANK_HOLIDAYS.has(dateStr);
+}
+
+/**
  * Retorna o dia útil anterior a hoje (Brasília).
- * Ex: se hoje é segunda (16/03), retorna sexta (13/03).
- * Se hoje é terça, retorna segunda.
- * Sábado/Domingo nunca são retornados.
+ * REGRA DE CONCILIAÇÃO BANCÁRIA:
+ * A conciliação bancária é realizada até o último dia útil antes de hoje.
+ * Considera fins de semana E feriados bancários nacionais (Anbima).
+ * Ex: hoje é segunda 13/04 → última conciliação foi sexta 10/04 → retorna 10/04.
+ * Ex: se sexta 10/04 fosse feriado → última conciliação seria quinta 09/04 → retorna 09/04.
  */
 function getPreviousBusinessDay(): string {
   const todayStr = getTodayBR();
-  const dow = getDayOfWeekStr(todayStr);
-  // dow: 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab
-  let daysBack = 1;
-  if (dow === 1) daysBack = 3; // Segunda -> Sexta (-3)
-  else if (dow === 0) daysBack = 2; // Domingo -> Sexta (-2)
-  // Sab (dow===6) -> Sexta (-1), default
-  return addDaysStr(todayStr, -daysBack);
+  let candidate = addDaysStr(todayStr, -1);
+  // Recua até encontrar um dia útil (máx 10 iterações para segurança)
+  for (let i = 0; i < 10; i++) {
+    if (isBusinessDay(candidate)) return candidate;
+    candidate = addDaysStr(candidate, -1);
+  }
+  return candidate; // fallback
 }
 
 /** Ajusta sábado/domingo para segunda-feira seguinte (string-based) */
@@ -640,10 +669,13 @@ export const financialRouter = router({
       const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
       const label = date.toLocaleDateString("pt-BR", { month: "long" }).replace(/^./, (c) => c.toUpperCase());
 
-      // Regra do mês corrente: para o mês atual, usar hoje como data de início
+      // REGRA DE CONCILIAÇÃO BANCÁRIA:
+      // Para o mês corrente, usar o dia seguinte à última conciliação bancária
+      // (= dia seguinte ao último dia útil antes de hoje).
+      // Para meses futuros, usar o 1º dia do mês.
       const isCurrentMonth = date.getFullYear() === curY && date.getMonth() + 1 === curM;
       const fromDate = isCurrentMonth
-        ? todayBR
+        ? addDaysStr(getPreviousBusinessDay(), 1) // dia seguinte à última conciliação
         : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
 
       months.push({

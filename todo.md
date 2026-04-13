@@ -2227,3 +2227,12 @@
 
 ## Regra de estados configuráveis do faturamento
 - [x] Documentar no código: estados aceitos são BAMBU, MADEIRA, ROJÃO, SERRAGEM, MADEIRA/FIBRA e variações/combinações desses produtos. Qualquer outro estado novo deve ser excluído.
+
+## Contas a Receber - Divergência com Maxiprod
+- [x] Investigar e corrigir: dashboard R$ 1.509.456,80 vs Maxiprod R$ 1.528.361,79 (diferença R$ 18.904,99) - Causa: dashboard usava hoje como início, agora usa dia seguinte à conciliação
+
+## Regra de Conciliação Bancária - Data de início
+- [x] Implementar lógica: último dia útil antes de hoje = data da última conciliação
+- [x] Contas a Receber e a Pagar começam a partir do dia seguinte à última conciliação
+- [x] Considerar feriados nacionais na lógica de dia útil
+- [x] Aplicar no getMonthlyBreakdown e em todos os cards que usam data de início do mês
