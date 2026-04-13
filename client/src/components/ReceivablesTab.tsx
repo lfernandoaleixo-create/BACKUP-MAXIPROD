@@ -555,6 +555,7 @@ function ContaFiltersAndTable({
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const isFernando = operator?.name === "Fernando";
+  const [discountsAuthorized, setDiscountsAuthorized] = useState(false);
 
   const saveHistoryMutation = trpc.financial.saveDiscountSelection.useMutation({
     onSuccess: () => {
@@ -837,6 +838,26 @@ function ContaFiltersAndTable({
                 </div>
               </div>
               <div className="flex items-center gap-3">
+                {isFernando && (
+                  <label
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all select-none ${
+                      discountsAuthorized
+                        ? "bg-emerald-400/30 border border-emerald-300/50"
+                        : "bg-white/10 border border-white/20 hover:bg-white/20"
+                    }`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={discountsAuthorized}
+                      onChange={(e) => setDiscountsAuthorized(e.target.checked)}
+                      className="w-4 h-4 rounded border-white/40 text-emerald-400 focus:ring-emerald-400 focus:ring-offset-0 accent-emerald-400"
+                    />
+                    <span className={`text-xs font-semibold whitespace-nowrap ${discountsAuthorized ? "text-emerald-200" : "text-teal-100"}`}>
+                      Descontos Autorizados
+                    </span>
+                  </label>
+                )}
                 <div className="text-right">
                   <div className="text-[10px] text-teal-200 uppercase tracking-wide">Valor Total</div>
                   <div className="text-xl font-bold" style={{ textShadow: "0 0 20px rgba(255,255,255,0.4)" }}>{formatCurrency(selectedContaTotal)}</div>
@@ -856,7 +877,7 @@ function ContaFiltersAndTable({
                     className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all flex items-center gap-1">
                     <History className="w-3.5 h-3.5" /> Histórico
                   </button>
-                  <button onClick={clearSelection}
+                  <button onClick={() => { setDiscountsAuthorized(false); clearSelection(); }}
                     className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all">
                     Limpar
                   </button>
