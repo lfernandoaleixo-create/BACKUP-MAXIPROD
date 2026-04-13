@@ -2208,3 +2208,14 @@
 - [x] Investigar e limpar mudanças incorretas no histórico completo (2.415 mudanças falsas removidas)
 - [x] Reprocessar histórico com snapshots corretos: 108 mudanças reais (pagar: 6 add R$8.963 / 75 rem R$109.828 / 1 alt; receber: 3 add R$32.244 / 21 rem R$64.831 / 2 alt)
 - [x] Garantir que apenas mudanças reais dia a dia sejam registradas desde o início do mês
+
+
+## NFs sem número de pedido no card Faturado
+- [x] Investigar causa: NFs emitidas sem pedido de venda vinculado (itemDoPedidoDeVendaId = NULL)
+- [x] Buscar campo destinatarioOuRemetente do Maxiprod para obter nome do cliente
+- [x] Usar clienteNome como fallback quando não há pedido vinculado (antes mostrava "NF XXXX")
+
+
+## Card Total Entradas - Ajustes
+- [x] Vendas/Revenda: subtrair valor de "outros" do total
+- [x] Valores sem aproximação: mostrar valor completo (R$ 1.048.652,91 em vez de R$ 1.0M)

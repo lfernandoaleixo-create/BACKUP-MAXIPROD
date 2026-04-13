@@ -378,14 +378,14 @@ function CompactSummary({
                 <Banknote className="w-3 h-3 text-amber-500" />
                 Vendas/Revenda
               </span>
-              <span className="text-[11px] font-semibold text-amber-600">{formatCurrencyShort(recebimentos)}</span>
+              <span className="text-[11px] font-semibold text-amber-600">{formatCurrency(recebimentos)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-slate-500 flex items-center gap-1">
                 <ArrowRightLeft className="w-3 h-3 text-slate-400" />
                 Demais Receitas
               </span>
-              <span className="text-[11px] font-semibold text-slate-500">{formatCurrencyShort(outrasEntradas)}</span>
+              <span className="text-[11px] font-semibold text-slate-500">{formatCurrency(outrasEntradas)}</span>
             </div>
           </div>
         </div>
@@ -565,7 +565,7 @@ function ExpandedDetails({
             >
               <div className="w-3 h-3 rounded-sm bg-amber-500" />
               <span className="text-xs text-slate-600 font-medium">Vendas/Revenda</span>
-              <span className="text-xs font-bold text-amber-700">{formatCurrencyShort(recebimentos)}</span>
+              <span className="text-xs font-bold text-amber-700">{formatCurrency(recebimentos)}</span>
               <span className="text-[10px] text-slate-400">({receivedData?.recebimentos?.count ?? 0})</span>
               {showReceivedDetail ? (
                 <ChevronUp className="w-3.5 h-3.5 text-amber-600" />
@@ -581,7 +581,7 @@ function ExpandedDetails({
             >
               <div className="w-3 h-3 rounded-sm bg-slate-400" />
               <span className="text-xs text-slate-600 font-medium">Demais Receitas</span>
-              <span className="text-xs font-bold text-slate-600">{formatCurrencyShort(outrasEntradas)}</span>
+              <span className="text-xs font-bold text-slate-600">{formatCurrency(outrasEntradas)}</span>
               <span className="text-[10px] text-slate-400">({otherInflowsData?.outrasEntradas?.count ?? 0})</span>
               <Tooltip>
                 <TooltipTrigger>
@@ -842,7 +842,8 @@ function ReceivedDetailTable({ startDate, endDate }: { startDate: string; endDat
 
   const sorted = useMemo(() => {
     if (!data) return [];
-    const items = [...data] as ReceivedItem[];
+    // Filtrar apenas vendas (excluir 'outras' que vão em Demais Receitas)
+    const items = ([...data] as ReceivedItem[]).filter(i => i.classificacao === 'vendas');
     items.sort((a, b) => {
       let cmp = 0;
       switch (sortField) {

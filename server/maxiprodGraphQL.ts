@@ -2158,6 +2158,7 @@ export async function fetchInvoicesDetails(startDate: string, endDate: string): 
   emissaoData: string;
   estadoConfiguravel: string;
   nomeDestinatario: string;
+  clienteNome: string;
 }[]> {
   try {
     const startISO = `${startDate}T00:00:00.000-03:00`;
@@ -2186,6 +2187,7 @@ export async function fetchInvoicesDetails(startDate: string, endDate: string): 
             emissaoData
             estadoConfiguravel { descricao }
             entradaOuSaida
+            destinatarioOuRemetente { razaoSocial nomeFantasia }
           }
         }
       }`);
@@ -2290,6 +2292,8 @@ export async function fetchInvoicesDetails(startDate: string, endDate: string): 
 
     return filtered.map(item => {
       const pedidoNum = nfToPedido[item.id] || '-';
+      const dest = item.destinatarioOuRemetente;
+      const clienteNome = dest?.nomeFantasia || dest?.razaoSocial || '';
       return {
         numero: item.numero,
         serie: item.serie,
@@ -2297,6 +2301,7 @@ export async function fetchInvoicesDetails(startDate: string, endDate: string): 
         emissaoData: item.emissaoData || '',
         estadoConfiguravel: (item.estadoConfiguravel?.descricao || '').toUpperCase(),
         nomeDestinatario: pedidoNum,
+        clienteNome,
       };
     }).sort((a, b) => a.emissaoData.localeCompare(b.emissaoData));
   } catch (error: any) {

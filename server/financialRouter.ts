@@ -2376,8 +2376,9 @@ export const financialRouter = router({
     }
     
     return nfs.map(nf => {
-      const pedido = nf.nomeDestinatario;
-      const cliente = pedidoToCliente.get(pedido) || `NF ${nf.numero}`;
+      const pedido = nf.nomeDestinatario; // número do pedido ou '-'
+      // Para o nome do cliente: prioridade 1 = banco local (via pedido), prioridade 2 = destinatário da NF no Maxiprod
+      const cliente = pedidoToCliente.get(pedido) || nf.clienteNome || `NF ${nf.numero}`;
       const emDate = nf.emissaoData ? nf.emissaoData.slice(0, 10) : '-';
       return {
         pedido,
