@@ -2323,3 +2323,4 @@
 - [x] Corrigir nome "Histórico" com encoding quebrado (Hist\u00f3rico aparecendo como caracteres estranhos)
 - [x] Mover card verde "Selecionados para Troca" para o topo de cada conta bancária (em vez de na base)
 - [x] Contraprova A Receber: excluir títulos vencidos (inadimplência) da comparação, pois Manus já exclui (já estava correto - usa mesmos from/to do getMonthlyBreakdown)
+- [x] Remover ícones de olho (conferência Maxiprod) dos 4 cards da aba Vendas

@@ -3038,14 +3038,7 @@ export default function Sales() {
                       <DollarSign className="w-4.5 h-4.5 text-teal-600" />
                     </div>
                     <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Valor Total do Periodo</p>
-                    {canVerifyMaxiprod && (
-                      <button
-                        onClick={() => setVerifyingCard({ card: "vendas", startDate: start, endDate: end, dashboardValue: analytics.totalValue })}
-                        className="p-1 rounded hover:bg-teal-100 transition-colors" title="Conferir no Maxiprod"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-teal-600" />
-                      </button>
-                    )}
+
                   </div>
                   <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{formatCurrencyFull(analytics.totalValue)}</p>
                   <p className="text-xs text-slate-400 mt-1.5">{analytics.totalOrders} pedidos &bull; {analytics.totalClients} clientes</p>
@@ -3059,14 +3052,7 @@ export default function Sales() {
                       <FileCheck className="w-4.5 h-4.5 text-emerald-600" />
                     </div>
                     <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Faturado</p>
-                    {canVerifyMaxiprod && (
-                      <button
-                        onClick={() => setVerifyingCard({ card: "faturamento", startDate: start, endDate: end, dashboardValue: analytics.totalFaturado })}
-                        className="p-1 rounded hover:bg-emerald-100 transition-colors" title="Conferir no Maxiprod"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-emerald-600" />
-                      </button>
-                    )}
+
                   </div>
                   <p className="text-2xl font-extrabold text-emerald-700 tracking-tight">{formatCurrencyFull(analytics.totalFaturado)}</p>
                   <div className="mt-3 flex items-center gap-2">
@@ -3089,14 +3075,7 @@ export default function Sales() {
                       <Clock className="w-4.5 h-4.5 text-orange-600" />
                     </div>
                     <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">A Faturar (Periodo)</p>
-                    {canVerifyMaxiprod && (
-                      <button
-                        onClick={() => setVerifyingCard({ card: "a_faturar", startDate: start, endDate: end, dashboardValue: analytics.totalAFaturar })}
-                        className="p-1 rounded hover:bg-orange-100 transition-colors" title="Conferir no Maxiprod"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-orange-600" />
-                      </button>
-                    )}
+
                   </div>
                   <p className="text-2xl font-extrabold text-orange-700 tracking-tight">{formatCurrencyFull(analytics.totalAFaturar)}</p>
                   <div className="mt-3 flex items-center gap-2">
@@ -3119,14 +3098,7 @@ export default function Sales() {
                         <Gift className="w-4.5 h-4.5 text-blue-600" />
                       </div>
                       <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Amostra / Bonificação</p>
-                      {canVerifyMaxiprod && (
-                        <button
-                          onClick={() => setVerifyingCard({ card: "amostra_bonif", startDate: start, endDate: end, dashboardValue: analytics.totalAmostraBonif })}
-                          className="p-1 rounded hover:bg-blue-100 transition-colors" title="Conferir no Maxiprod"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-blue-600" />
-                        </button>
-                      )}
+
                     </div>
                     <p className="text-2xl font-extrabold text-blue-700 tracking-tight">{formatCurrencyFull(analytics.totalAmostraBonif)}</p>
                     <div className="mt-2 space-y-1">
@@ -3278,16 +3250,7 @@ export default function Sales() {
         ) : null}
       </main>
 
-      {/* Modal de verificação Maxiprod para os 4 KPI cards */}
-      {verifyingCard && (
-        <SalesVerifyModal
-          card={verifyingCard.card}
-          startDate={verifyingCard.startDate}
-          endDate={verifyingCard.endDate}
-          dashboardValue={verifyingCard.dashboardValue}
-          onClose={() => setVerifyingCard(null)}
-        />
-      )}
+
     </div>
   );
 }
