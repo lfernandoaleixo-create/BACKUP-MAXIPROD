@@ -2169,3 +2169,9 @@
 
 ## Aba Recebíveis: alinhar total com Visão Geral
 - [x] Excluir títulos vencidos (antes de hoje) do total da aba Recebíveis para bater com a Visão Geral
+
+## Aba Recebíveis: corrigir valores para bater com Visão Geral
+- [x] Reverter filtro de data - mostrar TODOS os títulos (vencidos + a vencer) com meses anteriores e contas bancárias
+- [x] "A Vencer" no card = deve bater com "A Receber" da Visão Geral (usa vencimento >= hoje)
+- [x] "Vencido" no card = deve bater com "Inadimplência - Falta Pagar" da Visão Geral (usa cutoff = dia útil anterior)
+- [x] Total do card = Vencido + A Vencer
