@@ -7,7 +7,9 @@
  */
 
 import { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import TopNav from "@/components/TopNav";
+import { useOperator } from "@/contexts/OperatorContext";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
@@ -129,6 +131,35 @@ function getVariantIcon(sectorOrdem: number) {
 }
 
 export default function Production() {
+  const { hasAccess, operator } = useOperator();
+  const [, setLocation] = useLocation();
+
+  // Guard: redirecionar se não tem acesso à produção
+  if (!hasAccess("producao")) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <TopNav />
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="bg-white rounded-2xl shadow-lg border border-red-100 p-8 max-w-md text-center">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Factory className="w-8 h-8 text-red-400" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Acesso Restrito</h2>
+            <p className="text-slate-500 mb-4">
+              {operator?.name || "Você"} não tem permissão para acessar o Controle de Produção.
+            </p>
+            <button
+              onClick={() => setLocation("/")}
+              className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+            >
+              Voltar ao Estoque
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [selectedDate, setSelectedDate] = useState(getTodayBR);
   const [expandedSectors, setExpandedSectors] = useState<Set<number>>(new Set());
   const [expandedMachines, setExpandedMachines] = useState<Set<string>>(new Set());

@@ -2157,3 +2157,7 @@
 - [x] 6 colunas de vendas adicionadas à direita com scroll horizontal
 - [x] Quando vendas ocultas: tabela EXATAMENTE como era antes
 - [x] PRODUTO sticky left para ficar visível ao rolar horizontalmente
+
+## Restrição de acesso à aba Produção
+- [x] Apenas senhas "Fernando", "Bruno" e "Guilherme" podem acessar a aba Produção
+- [x] Outros usuários não devem ver ou acessar a aba Produção (tela "Acesso Restrito" com botão voltar)
