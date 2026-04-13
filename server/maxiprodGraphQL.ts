@@ -2072,7 +2072,7 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
  * Fetch total de Faturamento via Notas Fiscais do Maxiprod (Vendas > Notas Fiscais).
  * Filtros: emissaoData no período, estado EMITIDA, entradaOuSaida SAIDA.
  * Inclui NFs de saída emitidas de venda (BAMBU, MADEIRA, FIBRA, etc.)
- * Exclui NFs com estadoConfiguravel: CANCELADO, AMOSTRA, BONIFICAÇÃO, DEVOLUÇÃO, REMESSA, RECUSA, TRANSFERÊNCIA.
+ * Exclui NFs com estadoConfiguravel: CANCELADO, CANCELADA, AMOSTRA, BONIFICAÇÃO, DEVOLUÇÃO, REMESSA, RECUSA, TRANSFERÊNCIA.
  * SOMENTE LEITURA
  */
 const FATURAMENTO_ESTADOS_EXCLUIDOS = new Set([
@@ -2086,6 +2086,7 @@ const FATURAMENTO_ESTADOS_EXCLUIDOS = new Set([
   'RECUSA',
   'TRANSFERÊNCIA',
   'TRANSFERENCIA',
+  'CANCELADA',
 ]);
 
 export async function fetchInvoicesTotal(startDate: string, endDate: string): Promise<{

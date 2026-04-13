@@ -2222,3 +2222,5 @@
 
 ## Faturamento: excluir TRANSFERÊNCIA
 - [x] Adicionar TRANSFERÊNCIA à lista de estados excluídos do faturamento (NF 2217 R$ 148,50)
+
+- [x] Adicionar CANCELADA à lista de estados excluídos do faturamento (NF R$ 10,00)
