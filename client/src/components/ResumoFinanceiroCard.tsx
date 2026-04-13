@@ -315,18 +315,18 @@ function MaxiprodVerifyModalFinanceiro({
     s.push({ step: n++, text: "Login: lfernandoaleixo@gmail.com | Senha: Luizfernando7008*" });
 
     if (section === "faturamento") {
-      s.push({ step: n++, text: "V\u00e1 em: Notas Fiscais \u2192 Notas Fiscais de Sa\u00edda" });
+      s.push({ step: n++, text: "Vá em: Notas Fiscais → Notas Fiscais de Saída" });
       if (context.periodStart && context.periodEnd) {
         const [sy, sm, sd] = context.periodStart.split("-");
         const [ey, em, ed] = context.periodEnd.split("-");
-        s.push({ step: n++, text: `Emiss\u00e3o: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+        s.push({ step: n++, text: `Emissão: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
       }
       s.push({ step: n++, text: 'Estado: apenas "Emitida"' });
-      s.push({ step: n++, text: 'Tipo: apenas "Sa\u00edda"' });
-      s.push({ step: n++, text: 'IMPORTANTE: Exclua NFs com estado configur\u00e1vel: Amostra, Bonifica\u00e7\u00e3o, Devolu\u00e7\u00e3o, Remessa, Recusa, Transfer\u00eancia, Cancelado', highlight: true });
-      s.push({ step: n++, text: 'Aceite apenas NFs de produtos: Bambu, Madeira, Roj\u00e3o, Serragem, Madeira/Fibra e varia\u00e7\u00f5es', highlight: true });
+      s.push({ step: n++, text: 'Tipo: apenas "Saída"' });
+      s.push({ step: n++, text: 'IMPORTANTE: Exclua NFs com estado configurável: Amostra, Bonificação, Devolução, Remessa, Recusa, Transferência, Cancelado', highlight: true });
+      s.push({ step: n++, text: 'Aceite apenas NFs de produtos: Bambu, Madeira, Rojão, Serragem, Madeira/Fibra e variações', highlight: true });
     } else if (section === "vendas") {
-      s.push({ step: n++, text: "V\u00e1 em: Vendas \u2192 Pedidos de Venda" });
+      s.push({ step: n++, text: "Vá em: Vendas → Pedidos de Venda" });
       if (context.periodStart && context.periodEnd) {
         const [sy, sm, sd] = context.periodStart.split("-");
         const [ey, em, ed] = context.periodEnd.split("-");
@@ -334,21 +334,21 @@ function MaxiprodVerifyModalFinanceiro({
       }
       s.push({ step: n++, text: 'Exclua pedidos com estado: Cancelado' });
     } else if (section === "entradas") {
-      s.push({ step: n++, text: "V\u00e1 em: Financeiro \u2192 Contas a receber" });
+      s.push({ step: n++, text: "Vá em: Financeiro → Contas a receber" });
       s.push({ step: n++, text: 'Estado: marque apenas "Recebidos"' });
       if (context.periodStart && context.periodEnd) {
         const [sy, sm, sd] = context.periodStart.split("-");
         const [ey, em, ed] = context.periodEnd.split("-");
-        s.push({ step: n++, text: `Liquida\u00e7\u00e3o: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+        s.push({ step: n++, text: `Liquidação: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
       }
-      s.push({ step: n++, text: 'NOTA: O dashboard exclui transfer\u00eancias entre empresas do grupo (Palitos Fox, Mesa Indust, Bambusa, Espetos Ind, Varetas)', highlight: true });
+      s.push({ step: n++, text: 'NOTA: O dashboard exclui transferências entre empresas do grupo (Palitos Fox, Mesa Indust, Bambusa, Espetos Ind, Varetas)', highlight: true });
     } else if (section === "contas_pagas") {
-      s.push({ step: n++, text: "V\u00e1 em: Financeiro \u2192 Contas a pagar" });
+      s.push({ step: n++, text: "Vá em: Financeiro → Contas a pagar" });
       s.push({ step: n++, text: 'Estado: marque apenas "Pagos"' });
       if (context.periodStart && context.periodEnd) {
         const [sy, sm, sd] = context.periodStart.split("-");
         const [ey, em, ed] = context.periodEnd.split("-");
-        s.push({ step: n++, text: `Liquida\u00e7\u00e3o: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
+        s.push({ step: n++, text: `Liquidação: ${sd}/${sm}/${sy} a ${ed}/${em}/${ey}` });
       }
       s.push({ step: n++, text: 'Exclua contas com estado: Cancelado' });
     }
@@ -360,7 +360,7 @@ function MaxiprodVerifyModalFinanceiro({
   }, [section, context]);
 
   const labels: Record<string, string> = {
-    faturamento: "Faturamento (NFs de Sa\u00edda)",
+    faturamento: "Faturamento (NFs de Saída)",
     vendas: "Pedidos de Venda",
     entradas: "Entradas (Recebimentos)",
     contas_pagas: "Contas a Pagar",
@@ -413,22 +413,22 @@ function MaxiprodVerifyModalFinanceiro({
                   {formatCurrency(context.valorMaxiprod)}
                 </p>
               ) : (
-                <p className="text-white/50 text-sm mt-1">Indispon\u00edvel</p>
+                <p className="text-white/50 text-sm mt-1">Indisponível</p>
               )}
             </div>
           </div>
-          {/* Alerta de diverg\u00eancia */}
+          {/* Alerta de divergência */}
           {hasDivergencia && (
             <div className="mt-2 px-4 py-2 bg-red-500/20 rounded-lg border border-red-400/30 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-300 flex-shrink-0" />
               <span className="text-red-200 text-xs font-semibold">
-                Diverg\u00eancia de {formatCurrency(divergencia!)} detectada!
+                Divergência de {formatCurrency(divergencia!)} detectada!
               </span>
             </div>
           )}
           {!hasDivergencia && context.valorMaxiprod !== undefined && !context.maxiprodLoading && (
             <div className="mt-2 px-4 py-2 bg-emerald-500/20 rounded-lg border border-emerald-400/30 flex items-center gap-2">
-              <span className="text-emerald-200 text-xs font-semibold">Valores conferem! Sem diverg\u00eancia.</span>
+              <span className="text-emerald-200 text-xs font-semibold">Valores conferem! Sem divergência.</span>
             </div>
           )}
           {context.maxiprodLabel && !context.maxiprodLoading && (
@@ -437,7 +437,7 @@ function MaxiprodVerifyModalFinanceiro({
         </div>
         <div className="px-6 py-5 max-h-[50vh] overflow-y-auto space-y-2.5">
           <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <ClipboardList className="w-4 h-4" /> Passo a passo para verifica\u00e7\u00e3o
+            <ClipboardList className="w-4 h-4" /> Passo a passo para verificação
           </div>
           {steps.map(st => (
             <div key={st.step} className={`flex items-start gap-3 p-3 rounded-lg transition-all ${

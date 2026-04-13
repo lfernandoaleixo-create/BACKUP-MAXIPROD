@@ -130,7 +130,7 @@ async function fetchCobrancaDecisionMap(): Promise<Record<string, string>> {
 
       for (const emp of data.empresas.items) {
         const situacao = emp.campoAdicionalEspecifico?.find((c: any) => 
-          c.descricao === 'SITUA\u00c7\u00c3O' || c.descricao?.toUpperCase() === 'SITUACAO' || c.descricao?.toUpperCase() === 'SITUA\u00c7\u00c3O'
+          c.descricao === 'SITUAÇÃO' || c.descricao?.toUpperCase() === 'SITUACAO' || c.descricao?.toUpperCase() === 'SITUAÇÃO'
         );
         if (situacao?.valor) {
           // Map all name variants to the decision (both original and normalized)
@@ -147,9 +147,9 @@ async function fetchCobrancaDecisionMap(): Promise<Record<string, string>> {
 
     cobrancaDecisionCacheMap = map;
     cobrancaDecisionCacheTimestamp = now;
-    console.log(`[Cobran\u00e7a Cache] Refreshed: ${Object.keys(map).length} mappings from ${totalCount} clientes`);
+    console.log(`[Cobrança Cache] Refreshed: ${Object.keys(map).length} mappings from ${totalCount} clientes`);
   } catch (err) {
-    console.error("[Cobran\u00e7a Cache] Error fetching from GraphQL:", err);
+    console.error("[Cobrança Cache] Error fetching from GraphQL:", err);
   }
 
   return cobrancaDecisionCacheMap;
@@ -4388,7 +4388,7 @@ ${acoesTexto}
 
           const cutoff = getPreviousBusinessDay();
           const result = await db.select({
-            total: sql<number>`COALESCE(SUM(CAST(valor_liquido AS DECIMAL(15,2)) - CAST(COALESCE(valor_recebido_liquido, '0') AS DECIMAL(15,2))), 0)`,
+            total: sql<number>`COALESCE(SUM(CAST(${accountsReceivable.valorLiquido} AS DECIMAL(15,2)) - CAST(COALESCE(${accountsReceivable.valorRecebidoLiquido}, '0') AS DECIMAL(15,2))), 0)`,
             count: sql<number>`COUNT(*)`,
           }).from(accountsReceivable)
             .where(and(
@@ -4410,7 +4410,7 @@ ${acoesTexto}
           if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
 
           const result = await db.select({
-            total: sql<number>`COALESCE(SUM(CAST(valor_liquido AS DECIMAL(15,2)) - CAST(COALESCE(valor_recebido_liquido, '0') AS DECIMAL(15,2))), 0)`,
+            total: sql<number>`COALESCE(SUM(CAST(${accountsReceivable.valorLiquido} AS DECIMAL(15,2)) - CAST(COALESCE(${accountsReceivable.valorRecebidoLiquido}, '0') AS DECIMAL(15,2))), 0)`,
             count: sql<number>`COUNT(*)`,
           }).from(accountsReceivable)
             .where(and(
@@ -4455,7 +4455,7 @@ ${acoesTexto}
           if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
 
           const result = await db.select({
-            total: sql<number>`COALESCE(SUM(CAST(valor_liquido AS DECIMAL(15,2)) - CAST(COALESCE(valor_recebido_liquido, '0') AS DECIMAL(15,2))), 0)`,
+            total: sql<number>`COALESCE(SUM(CAST(${accountsReceivable.valorLiquido} AS DECIMAL(15,2)) - CAST(COALESCE(${accountsReceivable.valorRecebidoLiquido}, '0') AS DECIMAL(15,2))), 0)`,
             count: sql<number>`COUNT(*)`,
           }).from(accountsReceivable)
             .where(and(

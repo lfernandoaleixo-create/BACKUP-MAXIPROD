@@ -822,6 +822,95 @@ function ContaFiltersAndTable({
         />
       )}
 
+      {/* ---- CARD SELECIONADOS PARA DESCONTO (TOPO da conta) ---- */}
+      {selectedIds.size > 0 && (
+        <div className="mx-3 mt-3 mb-1">
+          <div className="bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl p-4 shadow-xl border border-teal-500">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+                  <FileDown className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-sm">Selecionados para Desconto</div>
+                  <div className="text-teal-100 text-xs">{selectedIds.size} {selectedIds.size === 1 ? "título" : "títulos"} marcados para antecipação</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <div className="text-[10px] text-teal-200 uppercase tracking-wide">Valor Total</div>
+                  <div className="text-xl font-bold" style={{ textShadow: "0 0 20px rgba(255,255,255,0.4)" }}>{formatCurrency(selectedContaTotal)}</div>
+                </div>
+                <div className="flex gap-1.5">
+                  <button onClick={exportSelectedPDF}
+                    className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-medium transition-all flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5" /> Exportar PDF
+                  </button>
+                  {isFernando && (
+                    <button onClick={() => setShowFinalizeDialog(true)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500/30 hover:bg-emerald-500/50 border border-emerald-400/40 text-xs font-medium transition-all flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Finalizar
+                    </button>
+                  )}
+                  <button onClick={() => setShowHistoryPanel(!showHistoryPanel)}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all flex items-center gap-1">
+                    <History className="w-3.5 h-3.5" /> Histórico
+                  </button>
+                  <button onClick={clearSelection}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all">
+                    Limpar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- PAINEL DE HISTÓRICO (junto ao card de selecionados) ---- */}
+      {showHistoryPanel && (
+        <div className="mx-3 mb-1">
+          <div className="bg-white border-2 border-indigo-200 rounded-xl p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-indigo-600" />
+                <h4 className="font-bold text-sm text-slate-800">Histórico de Ticagens</h4>
+              </div>
+              <button onClick={() => setShowHistoryPanel(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {historyQuery.isLoading ? (
+              <div className="text-center py-4 text-slate-400 text-sm">Carregando...</div>
+            ) : historyQuery.data && historyQuery.data.length > 0 ? (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {historyQuery.data.map((h: any) => (
+                  <div key={h.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold">
+                      {h.operatorName?.charAt(0) || "?"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs text-slate-800">{h.operatorName}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(h.createdAt).toLocaleDateString("pt-BR")} às {new Date(h.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {h.totalTitulos} título(s) • <span className="font-semibold text-teal-700">{formatCurrency(Number(h.valorTotal))}</span>
+                      </div>
+                    </div>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-slate-400 text-sm">Nenhuma ticagem registrada</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ---- TABELA DE TÍTULOS ---- */}
       {filteredItems.length > 0 ? (
         <>
@@ -953,96 +1042,9 @@ function ContaFiltersAndTable({
         </div>
       )}
 
-      {/* ---- CARD SELECIONADOS PARA DESCONTO (dentro da conta) ---- */}
-      {selectedIds.size > 0 && (
-        <div className="mx-3 my-3">
-          <div className="bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl p-4 shadow-xl border border-teal-500">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                  <FileDown className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-sm">Selecionados para Desconto</div>
-                  <div className="text-teal-100 text-xs">{selectedIds.size} {selectedIds.size === 1 ? "t\u00edtulo" : "t\u00edtulos"} marcados para antecipa\u00e7\u00e3o</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <div className="text-[10px] text-teal-200 uppercase tracking-wide">Valor Total</div>
-                  <div className="text-xl font-bold" style={{ textShadow: "0 0 20px rgba(255,255,255,0.4)" }}>{formatCurrency(selectedContaTotal)}</div>
-                </div>
-                <div className="flex gap-1.5">
-                  <button onClick={exportSelectedPDF}
-                    className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-medium transition-all flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5" /> Exportar PDF
-                  </button>
-                  {isFernando && (
-                    <button onClick={() => setShowFinalizeDialog(true)}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-500/30 hover:bg-emerald-500/50 border border-emerald-400/40 text-xs font-medium transition-all flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Finalizar
-                    </button>
-                  )}
-                  <button onClick={() => setShowHistoryPanel(!showHistoryPanel)}
-                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all flex items-center gap-1">
-                    <History className="w-3.5 h-3.5" /> Hist\u00f3rico
-                  </button>
-                  <button onClick={clearSelection}
-                    className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium transition-all">
-                    Limpar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Card e histórico movidos para o topo da conta */}
 
-      {/* ---- PAINEL DE HIST\u00d3RICO ---- */}
-      {showHistoryPanel && (
-        <div className="mx-3 mb-3">
-          <div className="bg-white border-2 border-indigo-200 rounded-xl p-4 shadow-lg">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <History className="w-4 h-4 text-indigo-600" />
-                <h4 className="font-bold text-sm text-slate-800">Hist\u00f3rico de Ticagens</h4>
-              </div>
-              <button onClick={() => setShowHistoryPanel(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            {historyQuery.isLoading ? (
-              <div className="text-center py-4 text-slate-400 text-sm">Carregando...</div>
-            ) : historyQuery.data && historyQuery.data.length > 0 ? (
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {historyQuery.data.map((h: any) => (
-                  <div key={h.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold">
-                      {h.operatorName?.charAt(0) || "?"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-slate-800">{h.operatorName}</span>
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(h.createdAt).toLocaleDateString("pt-BR")} \u00e0s {new Date(h.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {h.totalTitulos} t\u00edtulo(s) \u2022 <span className="font-semibold text-teal-700">{formatCurrency(Number(h.valorTotal))}</span>
-                      </div>
-                    </div>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-slate-400 text-sm">Nenhuma ticagem registrada</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ---- DIALOG DE FINALIZA\u00c7\u00c3O COM SENHA ---- */}
+      {/* ---- DIALOG DE FINALIZAÇÃO COM SENHA ---- */}
       {showFinalizeDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowFinalizeDialog(false)}>
           <div className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
@@ -1056,7 +1058,7 @@ function ContaFiltersAndTable({
               </div>
             </div>
             <div className="bg-teal-50 rounded-lg p-3 mb-4 border border-teal-200">
-              <div className="text-xs text-teal-600 font-medium">{selectedContaItems.length} t\u00edtulo(s) selecionado(s)</div>
+              <div className="text-xs text-teal-600 font-medium">{selectedContaItems.length} título(s) selecionado(s)</div>
               <div className="text-lg font-bold text-teal-800">{formatCurrency(selectedContaTotal)}</div>
             </div>
             <input
@@ -1064,7 +1066,7 @@ function ContaFiltersAndTable({
               value={passwordInput}
               onChange={e => { setPasswordInput(e.target.value); setPasswordError(""); }}
               onKeyDown={e => e.key === "Enter" && handleFinalize()}
-              placeholder="Senha de autoriza\u00e7\u00e3o"
+              placeholder="Senha de autorização"
               className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:border-teal-500 focus:outline-none mb-2"
               autoFocus
             />

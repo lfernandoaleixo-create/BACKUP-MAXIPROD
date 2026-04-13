@@ -509,7 +509,7 @@ export default function Production() {
 
     try {
       if (promises.length === 0) {
-        toast.info("Nenhuma altera\u00e7\u00e3o para salvar");
+        toast.info("Nenhuma alteração para salvar");
         setIsSavingAll(false);
         return;
       }
@@ -517,7 +517,7 @@ export default function Production() {
       utils.production.getEntries.invalidate({ data: selectedDate });
       utils.production.getDailySummary.invalidate({ data: selectedDate });
       utils.production.getWeeklySummary.invalidate();
-      toast.success(`Dia salvo com sucesso! (${promises.length} lan\u00e7amento(s))`);
+      toast.success(`Dia salvo com sucesso! (${promises.length} lançamento(s))`);
       resetEditState();
     } catch (err: any) {
       toast.error("Erro ao salvar: " + (err?.message || "Erro desconhecido"));
@@ -1162,7 +1162,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
   const handleSave = () => {
     if (!selectedProduct) return;
     const quantidade = qty !== "" ? parseFloat(qty.replace(",", ".")) : 0;
-    if (isNaN(quantidade) || quantidade <= 0) { toast.error("Digite uma quantidade v\u00e1lida"); return; }
+    if (isNaN(quantidade) || quantidade <= 0) { toast.error("Digite uma quantidade válida"); return; }
     onSaveProduct(sector.id, selectedProduct.codigoItem, quantidade, selectedProduct.descricaoItem);
     setSelectedProduct(null);
     setQty("");
@@ -1176,7 +1176,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
 
   const handleSaveCardEdit = (codigoItem: string, descricao: string) => {
     const quantidade = editCardQty !== "" ? parseFloat(editCardQty.replace(",", ".")) : 0;
-    if (isNaN(quantidade) || quantidade < 0) { toast.error("Valor inv\u00e1lido"); return; }
+    if (isNaN(quantidade) || quantidade < 0) { toast.error("Valor inválido"); return; }
     onSaveProduct(sector.id, codigoItem, quantidade, descricao);
     setEditingCard(null);
     setEditCardQty("");
@@ -1358,7 +1358,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
             );
           })}
           {filteredProducts.length === 0 && !search && registeredProducts.length > 0 && (
-            <div className="text-center py-4 text-sm text-slate-400">Todos os produtos j\u00e1 foram registrados</div>
+            <div className="text-center py-4 text-sm text-slate-400">Todos os produtos já foram registrados</div>
           )}
           {filteredProducts.length === 0 && search && (
             <div className="text-center py-4 text-sm text-slate-400">Nenhum produto encontrado</div>
