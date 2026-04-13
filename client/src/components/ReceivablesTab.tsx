@@ -838,26 +838,7 @@ function ContaFiltersAndTable({
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {isFernando && (
-                  <label
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all select-none ${
-                      discountsAuthorized
-                        ? "bg-emerald-400/30 border border-emerald-300/50"
-                        : "bg-white/10 border border-white/20 hover:bg-white/20"
-                    }`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={discountsAuthorized}
-                      onChange={(e) => setDiscountsAuthorized(e.target.checked)}
-                      className="w-4 h-4 rounded border-white/40 text-emerald-400 focus:ring-emerald-400 focus:ring-offset-0 accent-emerald-400"
-                    />
-                    <span className={`text-xs font-semibold whitespace-nowrap ${discountsAuthorized ? "text-emerald-200" : "text-teal-100"}`}>
-                      Descontos Autorizados
-                    </span>
-                  </label>
-                )}
+
                 <div className="text-right">
                   <div className="text-[10px] text-teal-200 uppercase tracking-wide">Valor Total</div>
                   <div className="text-xl font-bold" style={{ textShadow: "0 0 20px rgba(255,255,255,0.4)" }}>{formatCurrency(selectedContaTotal)}</div>
@@ -929,6 +910,37 @@ function ContaFiltersAndTable({
               <div className="text-center py-4 text-slate-400 text-sm">Nenhuma ticagem registrada</div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ---- CHECKBOX DESCONTOS AUTORIZADOS (entre card verde e tabela) ---- */}
+      {selectedIds.size > 0 && isFernando && (
+        <div className="mx-3 mb-1">
+          <label
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all select-none border-2 ${
+              discountsAuthorized
+                ? "bg-emerald-50 border-emerald-400 shadow-md shadow-emerald-100"
+                : "bg-white border-slate-200 hover:border-teal-300 hover:bg-teal-50/30"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={discountsAuthorized}
+              onChange={(e) => setDiscountsAuthorized(e.target.checked)}
+              className="w-5 h-5 rounded border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0 accent-emerald-600 cursor-pointer"
+            />
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className={`w-4.5 h-4.5 ${discountsAuthorized ? "text-emerald-600" : "text-slate-400"}`} />
+              <span className={`text-sm font-bold ${discountsAuthorized ? "text-emerald-700" : "text-slate-600"}`}>
+                Descontos Autorizados
+              </span>
+            </div>
+            {discountsAuthorized && (
+              <span className="ml-auto text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
+                Autorizado por Fernando
+              </span>
+            )}
+          </label>
         </div>
       )}
 
