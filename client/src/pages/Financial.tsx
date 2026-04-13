@@ -494,7 +494,8 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
       const term = searchTerm.toLowerCase();
       items = items.filter((item: any) =>
         (item.fornecedor || "").toLowerCase().includes(term) ||
-        (item.referenteA || "").toLowerCase().includes(term)
+        (item.referenteA || "").toLowerCase().includes(term) ||
+        (item.anotacoes || "").toLowerCase().includes(term)
       );
     }
 
@@ -692,6 +693,13 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                     </span>
                   )}
                 </div>
+                {item.anotacoes && (
+                  <div className="mt-0.5 pl-0.5">
+                    <span className="inline-flex items-center text-[10px] font-bold text-pink-800 bg-pink-100 border border-pink-300 px-1.5 py-0.5 rounded" style={{ wordBreak: 'break-word' }}>
+                      📌 {item.anotacoes}
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}

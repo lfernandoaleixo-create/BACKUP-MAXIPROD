@@ -2242,3 +2242,7 @@
 - [x] Adicionar campo anotacoes no schema do banco (accounts_receivable e accounts_payable)
 - [x] Exibir anotações de forma bem visível em todas as listagens: ReceivablesTab, Financial (tabelas CR e CP), InadimplenciaTab
 - [x] Anotações em destaque: badge amber com borda, seção expandida com borda lateral amber
+
+## Anotações na Autorização de Pagamentos
+- [x] Exibir anotações do Maxiprod na aba de Autorização de Pagamentos (destaque rosa, bem visível)
+- [x] Anotações são informação adicional - nada existente foi removido

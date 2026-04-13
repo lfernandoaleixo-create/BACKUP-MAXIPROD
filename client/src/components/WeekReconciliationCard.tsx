@@ -65,6 +65,7 @@ type PayableItem = {
   authorized: boolean;
   authStatus: string | null;
   authNotes: string | null;
+  anotacoes?: string;
 };
 
 type DayData = {
@@ -108,6 +109,7 @@ function PayableRow({
 
   // Descrição principal: referenteA é o campo "Anotações - Descrição" do Maxiprod
   const descricao = item.referenteA || item.observacoes || "";
+  const anotacoes = item.anotacoes || "";
 
   return (
     <div
@@ -162,6 +164,18 @@ function PayableRow({
           >
             {descricao}
           </p>
+        )}
+        {/* Linha 2b: Anotações Maxiprod - DESTAQUE ROSA */}
+        {anotacoes && (
+          <div className="mt-1">
+            <span className={`inline-flex items-center text-[11px] font-bold px-2 py-1 rounded border whitespace-normal break-words ${
+              item.authorized
+                ? "text-emerald-800 bg-emerald-50 border-emerald-300"
+                : "text-pink-800 bg-pink-100 border-pink-300"
+            }`} style={{ wordBreak: "break-word" }}>
+              📌 {anotacoes}
+            </span>
+          </div>
         )}
         {/* Linha 3: Metadados (NF, Parcela, Empresa) */}
         {metaText && (

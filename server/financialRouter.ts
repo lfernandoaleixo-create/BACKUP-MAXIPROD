@@ -997,6 +997,7 @@ export const financialRouter = router({
         parcela: accountsPayable.parcela,
         parcelasQuantidadeTotal: accountsPayable.parcelasQuantidadeTotal,
         empresaNome: accountsPayable.empresaNome,
+        anotacoes: accountsPayable.anotacoes,
       })
       .from(accountsPayable)
       .where(eq(accountsPayable.estado, "EMITIDO"));
@@ -1044,6 +1045,7 @@ export const financialRouter = router({
         empresaNome: item.empresaNome || "",
         authStatus: calAuth?.status || null,
         authNotes: calAuth?.notes || null,
+        anotacoes: item.anotacoes || "",
       };
 
       if (adjVenc < todayStr) {
@@ -1803,6 +1805,7 @@ export const financialRouter = router({
         emissaoData: accountsPayable.emissaoData,
         documentoVinculadoNumero: accountsPayable.documentoVinculadoNumero,
         vencimentoOriginalData: accountsPayable.vencimentoOriginalData,
+        anotacoes: accountsPayable.anotacoes,
       })
       .from(accountsPayable)
       .where(eq(accountsPayable.estado, "EMITIDO"));
@@ -1829,6 +1832,7 @@ export const financialRouter = router({
       authorized: boolean;
       authStatus: string | null;
       authNotes: string | null;
+      anotacoes: string;
     };
 
     // Buckets: vencidas (antes da semana) + 5 dias
@@ -1861,6 +1865,7 @@ export const financialRouter = router({
         authorized: authData?.status === "autorizado" || false,
         authStatus: authData?.status || null,
         authNotes: authData?.notes || null,
+        anotacoes: item.anotacoes || "",
       };
 
       // Vencidas: antes da segunda-feira da semana
