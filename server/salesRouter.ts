@@ -1516,7 +1516,7 @@ export const salesRouter = router({
           dedupCountMap.set(key, r);
         }
       }
-      const dedupForCountsRaw = Array.from(dedupCountMap.values());
+      let dedupForCountsRaw = Array.from(dedupCountMap.values());
       // KPIs de títulos serão calculados após buscar NFs (para excluir títulos duplicados)
       // Placeholder - serão preenchidos abaixo
       let titulosEmitidos: typeof allReceivables = [];
@@ -1564,7 +1564,7 @@ export const salesRouter = router({
           dedupMap.set(key, r);
         }
       }
-      const deduplicatedReceivables = Array.from(dedupMap.values());
+      let deduplicatedReceivables = Array.from(dedupMap.values());
 
       // ===== VINCULAR NF AO PEDIDO VIA GRAPHQL DO MAXIPROD =====
       // Buscar TODAS as NFs de saída e mapear NF→Pedido via itensDasNotasFiscais
@@ -1573,25 +1573,179 @@ export const salesRouter = router({
       const nfNumToPedidoNum = new Map<string, string>();
       // pedidoToNfNums: mapa de número do pedido → números das NFs vinculadas
       const pedidoToNf = new Map<string, string[]>();
+      // Títulos buscados ao vivo do Maxiprod (para pedidos faturados sem títulos locais)
+      const liveTitulos: Array<typeof allReceivables[number]> = [];
       
       try {
-        // Coletar todos os documentoVinculadoNumero dos títulos deste cliente
+        // ===== BUSCA AO VIVO: Para pedidos faturados sem títulos locais =====
+        // Identificar pedidos faturados
+        const pedidosFaturados = pedidoGroups.filter(p => p.estadoNotaPedido === "Faturado");
+        // Verificar quais pedidos faturados NÃO têm títulos locais
+        const localDocNums = new Set(deduplicatedReceivables.map(r => r.documentoVinculadoNumero).filter(Boolean));
+        const pedidosSemTitulos = pedidosFaturados.filter(p => !localDocNums.has(p.pedido));
+        
+        if (pedidosSemTitulos.length > 0) {
+          // Para cada pedido faturado sem títulos, buscar via Maxiprod GraphQL:
+          // 1. Buscar itens do pedido de venda pelo número
+          // 2. Encontrar NFs vinculadas
+          // 3. Buscar títulos (contaAReceber) vinculados à NF
+          for (const pedido of pedidosSemTitulos) {
+            try {
+              // Buscar o pedido de venda pelo número para pegar o ID
+              const pedidoData = await gql<any>(`{
+                pedidosDeVenda(skip: 0, take: 5, where: { numero: { eq: "${pedido.pedido}" } }) {
+                  items { id numero }
+                }
+              }`);
+              if (!pedidoData?.pedidosDeVenda?.items?.length) continue;
+              const pedidoId = pedidoData.pedidosDeVenda.items[0].id;
+              
+              // Buscar itens do pedido
+              const pedidoItemsData = await gql<any>(`{
+                itensDosPedidosDeVendas(skip: 0, take: 100, where: { pedidoDeVendaId: { eq: ${pedidoId} } }) {
+                  items { id }
+                }
+              }`);
+              if (!pedidoItemsData?.itensDosPedidosDeVendas?.items?.length) continue;
+              const itemIds = pedidoItemsData.itensDosPedidosDeVendas.items.map((i: any) => i.id);
+              
+              // Buscar itens de NF vinculados a esses itens do pedido
+              const nfItemsData = await gql<any>(`{
+                itensDasNotasFiscais(skip: 0, take: 200, where: { itemDoPedidoDeVendaId: { in: [${itemIds.join(',')}] } }) {
+                  items { notaFiscalId itemDoPedidoDeVendaId }
+                }
+              }`);
+              if (!nfItemsData?.itensDasNotasFiscais?.items?.length) continue;
+              const nfIds = Array.from(new Set(nfItemsData.itensDasNotasFiscais.items.map((i: any) => i.notaFiscalId)));
+              
+              // Buscar detalhes das NFs
+              for (const nfId of nfIds) {
+                const nfDetail = await gql<any>(`{
+                  notasFiscais(skip: 0, take: 1, where: { id: { eq: ${nfId} } }) {
+                    items { id numero estado entradaOuSaida }
+                  }
+                }`);
+                if (!nfDetail?.notasFiscais?.items?.length) continue;
+                const nf = nfDetail.notasFiscais.items[0];
+                if (nf.entradaOuSaida !== "SAIDA" || nf.estado !== "EMITIDA") continue;
+                
+                const nfNumStr = String(nf.numero);
+                nfNumToPedidoNum.set(nfNumStr, pedido.pedido);
+                const existing = pedidoToNf.get(pedido.pedido) || [];
+                if (!existing.includes(nfNumStr)) existing.push(nfNumStr);
+                pedidoToNf.set(pedido.pedido, existing);
+                
+                // Buscar títulos (contaAReceber) vinculados a esta NF
+                // Buscar TODOS os estados (EMITIDO e RECEBIDO)
+                const titulosData = await gql<any>(`{
+                  contaAReceber(skip: 0, take: 100, where: { documentoVinculadoNumero: { eq: "${nfNumStr}" } }) {
+                    totalCount
+                    items {
+                      id estado tipo valorOriginal valorLiquido valorRetido
+                      valorDeDesconto valorDeAcrescimo valorRecebidoLiquido
+                      emissaoData vencimentoData vencimentoOriginalData liquidacaoData
+                      referenteA parcela parcelasQuantidadeTotal observacoes
+                      documentoVinculadoNumero bloqueado
+                      cliente { nomeFantasia razaoSocial }
+                      formaDeCobranca { banco { descricao } }
+                    }
+                  }
+                }`);
+                if (titulosData?.contaAReceber?.items?.length) {
+                  for (const t of titulosData.contaAReceber.items) {
+                    liveTitulos.push({
+                      id: 0, // placeholder
+                      maxiprodId: t.id,
+                      estado: t.estado || "",
+                      tipo: t.tipo || null,
+                      valorOriginal: t.valorOriginal != null ? String(t.valorOriginal) : null,
+                      valorLiquido: t.valorLiquido != null ? String(t.valorLiquido) : null,
+                      valorRetido: t.valorRetido != null ? String(t.valorRetido) : null,
+                      valorDeDesconto: t.valorDeDesconto != null ? String(t.valorDeDesconto) : null,
+                      valorDeAcrescimo: t.valorDeAcrescimo != null ? String(t.valorDeAcrescimo) : null,
+                      valorRecebidoLiquido: t.valorRecebidoLiquido != null ? String(t.valorRecebidoLiquido) : null,
+                      emissaoData: t.emissaoData || null,
+                      vencimentoData: t.vencimentoData || null,
+                      vencimentoOriginalData: t.vencimentoOriginalData || null,
+                      liquidacaoData: t.liquidacaoData || null,
+                      referenteA: t.referenteA || null,
+                      parcela: t.parcela || null,
+                      parcelasQuantidadeTotal: t.parcelasQuantidadeTotal || null,
+                      observacoes: t.observacoes || null,
+                      documentoVinculadoNumero: t.documentoVinculadoNumero || null,
+                      bloqueado: t.bloqueado || false,
+                      cliente: t.cliente?.razaoSocial || t.cliente?.nomeFantasia || cn,
+                      centroDeCustosId: null,
+                      contaId: null,
+                      empresaId: null,
+                      empresaNome: null,
+                      collectedAt: new Date(),
+                      bancoNome: t.formaDeCobranca?.banco?.descricao || null,
+                      contaNumero: null,
+                      agencia: null,
+                      formaCobranca: null,
+                      formaCobrancaId: null,
+                      anotacoes: null,
+                    } as any);
+                  }
+                }
+              }
+            } catch (pedErr: any) {
+              console.error(`[getClientSummary] Error fetching live titles for pedido ${pedido.pedido}:`, pedErr.message);
+            }
+          }
+          
+          // Adicionar títulos ao vivo aos deduplicatedReceivables
+          if (liveTitulos.length > 0) {
+            // Deduplicar títulos ao vivo
+            for (const lt of liveTitulos) {
+              const key = `${lt.documentoVinculadoNumero || ''}|${lt.parcela || 'null'}|${lt.valorOriginal || ''}|${lt.vencimentoData || ''}`;
+              const existing = dedupMap.get(key);
+              if (!existing || lt.maxiprodId > existing.maxiprodId) {
+                dedupMap.set(key, lt);
+              }
+            }
+            // Rebuild deduplicatedReceivables with live data included
+            deduplicatedReceivables.length = 0;
+            deduplicatedReceivables.push(...Array.from(dedupMap.values()));
+            // Also update dedupForCountsRaw
+            dedupCountMap.clear();
+            for (const r of deduplicatedReceivables) {
+              const key = `${r.documentoVinculadoNumero || ''}|${r.parcela || 'null'}|${r.valorOriginal || ''}|${r.vencimentoData || ''}`;
+              const existing = dedupCountMap.get(key);
+              if (!existing || r.maxiprodId > existing.maxiprodId) {
+                dedupCountMap.set(key, r);
+              }
+            }
+            dedupForCountsRaw.length = 0;
+            dedupForCountsRaw.push(...Array.from(dedupCountMap.values()));
+          }
+        }
+        
+        // Coletar todos os documentoVinculadoNumero dos títulos deste cliente (agora inclui live)
         const allDocNums = Array.from(new Set(deduplicatedReceivables.map(r => r.documentoVinculadoNumero).filter(Boolean))) as string[];
         
-        // Buscar NFs de saída do Maxiprod (paginado)
+        // Buscar NFs de saída do Maxiprod (paginado) - apenas se ainda não temos mapeamento completo
+        // Pular se já temos todos os pedidos faturados mapeados via busca ao vivo
+        const pedidosFaturadosAll = pedidoGroups.filter(p => p.estadoNotaPedido === "Faturado");
+        const pedidosJaMapeados = new Set(Array.from(pedidoToNf.keys()));
+        const pedidosFaltando = pedidosFaturadosAll.filter(p => !pedidosJaMapeados.has(p.pedido));
+        
         let allNfs: any[] = [];
-        let nfSkip = 0;
-        while (true) {
-          const nfData = await gql<any>(`{
-            notasFiscais(skip: ${nfSkip}, take: 200, where: { entradaOuSaida: { eq: SAIDA }, estado: { eq: EMITIDA } }) {
-              totalCount
-              items { id numero }
-            }
-          }`);
-          if (!nfData?.notasFiscais?.items?.length) break;
-          allNfs.push(...nfData.notasFiscais.items);
-          nfSkip += 200;
-          if (nfSkip >= nfData.notasFiscais.totalCount) break;
+        if (allDocNums.length > 0 && pedidosFaltando.length > 0) {
+          let nfSkip = 0;
+          while (true) {
+            const nfData = await gql<any>(`{
+              notasFiscais(skip: ${nfSkip}, take: 200, where: { entradaOuSaida: { eq: SAIDA }, estado: { eq: EMITIDA } }) {
+                totalCount
+                items { id numero }
+              }
+            }`);
+            if (!nfData?.notasFiscais?.items?.length) break;
+            allNfs.push(...nfData.notasFiscais.items);
+            nfSkip += 200;
+            if (nfSkip >= nfData.notasFiscais.totalCount) break;
+          }
         }
         
         // Filtrar NFs cujo número bate com algum documentoVinculadoNumero dos títulos do cliente

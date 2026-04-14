@@ -2365,3 +2365,7 @@
 ## Operador Bruno (14/04/2026)
 - [x] Adicionar "Bruno" como operador com mesmo acesso que Guilherme e Fernando em todos os pontos do código
 - [x] Senha "Bruno" já existia no banco com mesmas permissões de Guilherme/Fernando (confirmado via query)
+
+## Ajustes visuais e funcionalidade (14/04/2026)
+- [x] Suavizar paleta de vermelhos nos cards de confrontamento (Entradas vs Saídas, Fat. vs Pago, Vendas vs Pago) - cores muito fortes para a vista
+- [x] Corrigir consulta por cliente: pedidos faturados não mostram títulos (boletos/NFs) correspondentes - implementada busca ao vivo via Maxiprod GraphQL (pedidosDeVenda → itensDosPedidosDeVendas → itensDasNotasFiscais → contaAReceber)

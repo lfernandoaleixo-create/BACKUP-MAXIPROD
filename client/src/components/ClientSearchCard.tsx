@@ -58,7 +58,7 @@ export function ClientSearchCard() {
     overdue: true,
     products: false,
     history: false,
-    titles: false,
+    titles: true,
     pending: false,
   });
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -467,6 +467,11 @@ export function ClientSearchCard() {
                     {clientSummary.groupedReceivables.map((group, gIdx) => (
                       <TituloGroupCard key={gIdx} group={group} />
                     ))}
+                  </div>
+                ) : clientSummary.orders.pedidosFaturados > 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-xs text-amber-600 font-medium">Pedido faturado encontrado, mas sem títulos vinculados.</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Os títulos podem ainda não ter sido gerados no Maxiprod ou estão vinculados a outro nome de cliente.</p>
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 text-center py-4">Nenhum título encontrado para este cliente.</p>

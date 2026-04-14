@@ -878,13 +878,13 @@ function CompactSummary({
         <div className="grid grid-cols-3 gap-2">
           {/* Entradas vs Saídas */}
           <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
-            variacaoSaldo >= 0 ? "bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-200" : "bg-gradient-to-br from-red-50 to-orange-50 border-red-200"
+            variacaoSaldo >= 0 ? "bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-200" : "bg-gradient-to-br from-orange-50 to-amber-50 border-amber-200"
           }`}>
             <div className="flex items-center gap-1.5 mb-1">
-              {variacaoSaldo >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-teal-500" /> : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+              {variacaoSaldo >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-teal-500" /> : <TrendingDown className="w-3.5 h-3.5 text-amber-500" />}
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Entradas vs Saidas</span>
             </div>
-            <p className={`text-sm font-bold ${variacaoSaldo >= 0 ? "text-teal-700" : "text-red-700"}`}>
+            <p className={`text-sm font-bold ${variacaoSaldo >= 0 ? "text-teal-700" : "text-amber-700"}`}>
               {variacaoSaldo >= 0 ? "+" : ""}{formatCurrency(variacaoSaldo)}
             </p>
             <p className="text-[9px] text-slate-400 mt-1 leading-tight">
@@ -896,13 +896,13 @@ function CompactSummary({
 
           {/* Fat. vs Pago */}
           <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
-            faturamento - contasPagas >= 0 ? "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200" : "bg-gradient-to-br from-red-50 to-rose-50 border-red-200"
+            faturamento - contasPagas >= 0 ? "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200" : "bg-gradient-to-br from-orange-50 to-rose-50 border-amber-200"
           }`}>
             <div className="flex items-center gap-1.5 mb-1">
-              {faturamento - contasPagas >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+              {faturamento - contasPagas >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> : <TrendingDown className="w-3.5 h-3.5 text-amber-500" />}
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Fat. vs Pago</span>
             </div>
-            <p className={`text-sm font-bold ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+            <p className={`text-sm font-bold ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-amber-700"}`}>
               {faturamento - contasPagas >= 0 ? "+" : ""}{formatCurrency(faturamento - contasPagas)}
             </p>
             <p className="text-[9px] text-slate-400 mt-1 leading-tight">
@@ -914,13 +914,13 @@ function CompactSummary({
 
           {/* Vendas vs Pago */}
           <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
-            vendas - contasPagas >= 0 ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200" : "bg-gradient-to-br from-red-50 to-pink-50 border-red-200"
+            vendas - contasPagas >= 0 ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200" : "bg-gradient-to-br from-rose-50 to-pink-50 border-amber-200"
           }`}>
             <div className="flex items-center gap-1.5 mb-1">
-              {vendas - contasPagas >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-blue-500" /> : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+              {vendas - contasPagas >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-blue-500" /> : <TrendingDown className="w-3.5 h-3.5 text-amber-500" />}
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Vendas vs Pago</span>
             </div>
-            <p className={`text-sm font-bold ${vendas - contasPagas >= 0 ? "text-blue-700" : "text-red-700"}`}>
+            <p className={`text-sm font-bold ${vendas - contasPagas >= 0 ? "text-blue-700" : "text-amber-700"}`}>
               {vendas - contasPagas >= 0 ? "+" : ""}{formatCurrency(vendas - contasPagas)}
             </p>
             <p className="text-[9px] text-slate-400 mt-1 leading-tight">
@@ -1305,10 +1305,10 @@ function ExpandedDetails({
 
         {/* Entradas vs Saídas - Card principal */}
         <div className={`rounded-xl overflow-hidden shadow-sm border ${
-          variacaoSaldo >= 0 ? "border-teal-200" : "border-red-200"
+          variacaoSaldo >= 0 ? "border-teal-200" : "border-amber-200"
         }`}>
           <div className={`px-5 py-4 ${
-            variacaoSaldo >= 0 ? "bg-gradient-to-r from-teal-600 to-emerald-600" : "bg-gradient-to-r from-red-600 to-rose-600"
+            variacaoSaldo >= 0 ? "bg-gradient-to-r from-teal-600 to-emerald-600" : "bg-gradient-to-r from-rose-400 to-orange-400"
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1332,7 +1332,7 @@ function ExpandedDetails({
             </div>
           </div>
           <div className={`px-5 py-3 flex items-center justify-between text-xs ${
-            variacaoSaldo >= 0 ? "bg-teal-50" : "bg-red-50"
+            variacaoSaldo >= 0 ? "bg-teal-50" : "bg-orange-50/60"
           }`}>
             <div className="flex items-center gap-4">
               <span className="text-slate-500"><span className="font-semibold text-teal-700">{formatCurrency(totalEntradas)}</span> entradas</span>
@@ -1341,7 +1341,7 @@ function ExpandedDetails({
             </div>
             <div className="flex items-center gap-1">
               <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${variacaoSaldo >= 0 ? "bg-teal-500" : "bg-red-500"}`} style={{ width: `${Math.min(100, totalEntradas > 0 ? (Math.min(totalEntradas, contasPagas) / Math.max(totalEntradas, contasPagas)) * 100 : 0)}%` }} />
+                <div className={`h-full rounded-full ${variacaoSaldo >= 0 ? "bg-teal-500" : "bg-orange-400"}`} style={{ width: `${Math.min(100, totalEntradas > 0 ? (Math.min(totalEntradas, contasPagas) / Math.max(totalEntradas, contasPagas)) * 100 : 0)}%` }} />
               </div>
             </div>
           </div>
@@ -1351,10 +1351,10 @@ function ExpandedDetails({
         <div className="grid grid-cols-2 gap-3">
           {/* Faturamento vs Pago */}
           <div className={`rounded-xl overflow-hidden shadow-sm border ${
-            faturamento - contasPagas >= 0 ? "border-emerald-200" : "border-red-200"
+            faturamento - contasPagas >= 0 ? "border-emerald-200" : "border-amber-200"
           }`}>
             <div className={`px-4 py-3 ${
-              faturamento - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gradient-to-r from-red-500 to-rose-500"
+              faturamento - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gradient-to-r from-rose-400 to-amber-400"
             }`}>
               <div className="flex items-center justify-between">
                 <div>
@@ -1371,20 +1371,20 @@ function ExpandedDetails({
               </div>
             </div>
             <div className={`px-4 py-2 text-[10px] flex items-center justify-between ${
-              faturamento - contasPagas >= 0 ? "bg-emerald-50" : "bg-red-50"
+              faturamento - contasPagas >= 0 ? "bg-emerald-50" : "bg-orange-50/60"
             }`}>
               <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrencyShort(faturamento)}</span> fat.</span>
               <span className="text-slate-400">vs</span>
-              <span className="text-slate-500"><span className="font-semibold text-red-700">{formatCurrencyShort(contasPagas)}</span> pago</span>
+              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrencyShort(contasPagas)}</span> pago</span>
             </div>
           </div>
 
           {/* Vendas vs Pago */}
           <div className={`rounded-xl overflow-hidden shadow-sm border ${
-            vendas - contasPagas >= 0 ? "border-blue-200" : "border-red-200"
+            vendas - contasPagas >= 0 ? "border-blue-200" : "border-amber-200"
           }`}>
             <div className={`px-4 py-3 ${
-              vendas - contasPagas >= 0 ? "bg-gradient-to-r from-blue-500 to-indigo-500" : "bg-gradient-to-r from-red-500 to-pink-500"
+              vendas - contasPagas >= 0 ? "bg-gradient-to-r from-blue-500 to-indigo-500" : "bg-gradient-to-r from-rose-400 to-pink-300"
             }`}>
               <div className="flex items-center justify-between">
                 <div>
@@ -1401,11 +1401,11 @@ function ExpandedDetails({
               </div>
             </div>
             <div className={`px-4 py-2 text-[10px] flex items-center justify-between ${
-              vendas - contasPagas >= 0 ? "bg-blue-50" : "bg-red-50"
+              vendas - contasPagas >= 0 ? "bg-blue-50" : "bg-orange-50/60"
             }`}>
               <span className="text-slate-500"><span className="font-semibold text-blue-700">{formatCurrencyShort(vendas)}</span> vendas</span>
               <span className="text-slate-400">vs</span>
-              <span className="text-slate-500"><span className="font-semibold text-red-700">{formatCurrencyShort(contasPagas)}</span> pago</span>
+              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrencyShort(contasPagas)}</span> pago</span>
             </div>
           </div>
         </div>
