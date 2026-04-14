@@ -737,6 +737,28 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
         </div>
       </div>
 
+      {/* Botão Histórico de Modificação Semanal (topo do card) */}
+      <button
+        onClick={() => setShowWeekHistory(!showWeekHistory)}
+        className={`w-full mb-2 flex items-center justify-center gap-1.5 text-[10px] font-semibold py-1.5 rounded-md transition-colors cursor-pointer ${
+          showWeekHistory
+            ? isPagar ? "bg-red-200 text-red-800" : "bg-emerald-200 text-emerald-800"
+            : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+        }`}
+      >
+        <History className="w-3 h-3" />
+        {showWeekHistory ? "Ocultar Histórico de Modificação Semanal" : "Histórico de Modificação Semanal"}
+      </button>
+
+      {/* Week History Panel */}
+      {showWeekHistory && (
+        <WeekHistoryPanel
+          tipo={isPagar ? "pagar" : "receber"}
+          semanaLabel={bucket.label}
+          onClose={() => setShowWeekHistory(false)}
+        />
+      )}
+
       {/* Search input */}
       {showSearch && (
         <div className="mb-2 relative">
@@ -824,27 +846,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
         </button>
       )}
 
-      {/* Botão Histórico da Semana */}
-      <button
-        onClick={() => setShowWeekHistory(!showWeekHistory)}
-        className={`w-full mt-2 flex items-center justify-center gap-1.5 text-[10px] font-semibold py-1.5 rounded-md transition-colors cursor-pointer ${
-          showWeekHistory
-            ? isPagar ? "bg-red-200 text-red-800" : "bg-emerald-200 text-emerald-800"
-            : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
-        }`}
-      >
-        <History className="w-3 h-3" />
-        {showWeekHistory ? "Ocultar Histórico" : "Histórico"}
-      </button>
 
-      {/* Week History Panel */}
-      {showWeekHistory && (
-        <WeekHistoryPanel
-          tipo={isPagar ? "pagar" : "receber"}
-          semanaLabel={bucket.label}
-          onClose={() => setShowWeekHistory(false)}
-        />
-      )}
     </div>
   );
 }

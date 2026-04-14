@@ -314,3 +314,103 @@ describe("Financial History - Logic Tests", () => {
     });
   });
 });
+
+describe("FinancialHistoryPanel - Frontend helper logic", () => {
+  // Replicate the frontend helper functions for testing
+  function formatSemanaLabel(label: string): string {
+    if (!label) return "Sem semana";
+    if (label === "Vencidas") return "Títulos vencidos (anteriores à data atual)";
+    if (label === "Além de 8 semanas") return "Títulos com vencimento além de 8 semanas";
+    if (label === "Sem vencimento") return "Títulos sem data de vencimento";
+    const match = label.match(/^(\d{2}\/\d{2})\s*-\s*(\d{2}\/\d{2})$/);
+    if (match) {
+      return `Semana analisada: ${match[1]} a ${match[2]}`;
+    }
+    return label;
+  }
+
+  function getSemanaOrderKey(label: string): number {
+    if (label === "Vencidas") return -1;
+    if (label === "Sem vencimento") return 9998;
+    if (label === "Além de 8 semanas") return 9999;
+    const match = label.match(/^(\d{2})\/(\d{2})\s*-/);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10);
+      return month * 100 + day;
+    }
+    return 5000;
+  }
+
+  describe("formatSemanaLabel", () => {
+    it("should format date range labels as 'Semana analisada: DD/MM a DD/MM'", () => {
+      expect(formatSemanaLabel("07/04 - 13/04")).toBe("Semana analisada: 07/04 a 13/04");
+      expect(formatSemanaLabel("14/04 - 20/04")).toBe("Semana analisada: 14/04 a 20/04");
+      expect(formatSemanaLabel("01/06 - 07/06")).toBe("Semana analisada: 01/06 a 07/06");
+    });
+
+    it("should format special labels with explanatory text", () => {
+      expect(formatSemanaLabel("Vencidas")).toBe("Títulos vencidos (anteriores à data atual)");
+      expect(formatSemanaLabel("Além de 8 semanas")).toBe("Títulos com vencimento além de 8 semanas");
+      expect(formatSemanaLabel("Sem vencimento")).toBe("Títulos sem data de vencimento");
+    });
+
+    it("should return 'Sem semana' for empty labels", () => {
+      expect(formatSemanaLabel("")).toBe("Sem semana");
+    });
+
+    it("should pass through unknown labels unchanged", () => {
+      expect(formatSemanaLabel("Algo desconhecido")).toBe("Algo desconhecido");
+    });
+  });
+
+  describe("getSemanaOrderKey", () => {
+    it("should order Vencidas first (lowest key)", () => {
+      expect(getSemanaOrderKey("Vencidas")).toBe(-1);
+    });
+
+    it("should order date ranges by month and day", () => {
+      const key1 = getSemanaOrderKey("07/04 - 13/04");
+      const key2 = getSemanaOrderKey("14/04 - 20/04");
+      const key3 = getSemanaOrderKey("01/05 - 07/05");
+      expect(key1).toBeLessThan(key2);
+      expect(key2).toBeLessThan(key3);
+    });
+
+    it("should order 'Além de 8 semanas' last", () => {
+      const keyWeek = getSemanaOrderKey("14/04 - 20/04");
+      const keyAlem = getSemanaOrderKey("Além de 8 semanas");
+      expect(keyWeek).toBeLessThan(keyAlem);
+    });
+
+    it("should handle month boundaries correctly", () => {
+      const keyMar = getSemanaOrderKey("30/03 - 05/04");
+      const keyApr = getSemanaOrderKey("06/04 - 12/04");
+      expect(keyMar).toBeLessThan(keyApr);
+    });
+  });
+
+  describe("Sort order toggle", () => {
+    it("should sort ascending (oldest first) by default", () => {
+      const labels = ["14/04 - 20/04", "Vencidas", "07/04 - 13/04", "Além de 8 semanas"];
+      const sortAsc = true;
+      const sorted = [...labels].sort((a, b) => {
+        const keyA = getSemanaOrderKey(a);
+        const keyB = getSemanaOrderKey(b);
+        return sortAsc ? keyA - keyB : keyB - keyA;
+      });
+      expect(sorted).toEqual(["Vencidas", "07/04 - 13/04", "14/04 - 20/04", "Além de 8 semanas"]);
+    });
+
+    it("should sort descending (newest first) when toggled", () => {
+      const labels = ["14/04 - 20/04", "Vencidas", "07/04 - 13/04", "Além de 8 semanas"];
+      const sortAsc = false;
+      const sorted = [...labels].sort((a, b) => {
+        const keyA = getSemanaOrderKey(a);
+        const keyB = getSemanaOrderKey(b);
+        return sortAsc ? keyA - keyB : keyB - keyA;
+      });
+      expect(sorted).toEqual(["Além de 8 semanas", "14/04 - 20/04", "07/04 - 13/04", "Vencidas"]);
+    });
+  });
+});

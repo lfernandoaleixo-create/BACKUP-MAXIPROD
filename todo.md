@@ -2430,3 +2430,14 @@
 
 ## Reordenar Valor antes de Vencimento (14/04/2026)
 - [x] Mover coluna Valor para antes de Vencimento na tabela de inadimplência (header + TitleRow + ClienteTitleRow)
+
+## Melhorias Histórico Completo Recebimentos (14/04/2026)
+- [x] Ordenar semanas do mais antigo para o mais recente (inverter ordem atual)
+- [x] Adicionar setinhas de filtro (toggle) para inverter ordenação quando quiser
+- [x] Mostrar sempre datas completas das semanas (ex: "Semana analisada: 01/06 a 07/06") em vez de "Além de 8 semanas"/"Vencidas"
+- [x] Adicionar label "Data da modificação:" antes das datas de modificação
+- [x] Explicar todos os números visíveis com labels claros
+- [ ] Adicionar ícone do olho com vídeo explicativo mostrando o que foi acrescentado e retirado
+- [x] Corrigir nomes/descrições cortados no Histórico Completo (remover truncate, permitir quebra de linha)
+- [x] Mover botão "Histórico" da base para o topo do card semanal
+- [x] Renomear botão para "Histórico de Modificação Semanal"

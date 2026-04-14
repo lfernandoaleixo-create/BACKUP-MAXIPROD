@@ -6,6 +6,10 @@
  * - Cards por semana com barras de progresso visual
  * - Itens com layout limpo e hierarquia visual clara
  * - Animações suaves e micro-interações
+ * - Ordenação do mais antigo para o mais recente (com toggle)
+ * - Datas completas das semanas (ex: "Semana analisada: 01/06 a 07/06")
+ * - Labels explicativos nos números e datas de modificação
+ * - Nomes sem truncar (quebra de linha)
  * 
  * Dois modos:
  * 1. Por semana (inline no BucketCard): mostra mudanças de uma semana específica
@@ -30,6 +34,8 @@ import {
   TrendingDown,
   FileText,
   BarChart3,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 
 function formatCurrency(n: number): string {
@@ -62,6 +68,42 @@ function getDayName(dateStr: string): string {
   return dayNames[dt.getDay()] || "";
 }
 
+/**
+ * Converte labels de semana como "07/04 - 13/04" para "Semana analisada: 07/04 a 13/04"
+ * e labels especiais como "Vencidas" para "Títulos vencidos (anteriores à data atual)"
+ */
+function formatSemanaLabel(label: string): string {
+  if (!label) return "Sem semana";
+  if (label === "Vencidas") return "Títulos vencidos (anteriores à data atual)";
+  if (label === "Além de 8 semanas") return "Títulos com vencimento além de 8 semanas";
+  if (label === "Sem vencimento") return "Títulos sem data de vencimento";
+  // Formato DD/MM - DD/MM → "Semana analisada: DD/MM a DD/MM"
+  const match = label.match(/^(\d{2}\/\d{2})\s*-\s*(\d{2}\/\d{2})$/);
+  if (match) {
+    return `Semana analisada: ${match[1]} a ${match[2]}`;
+  }
+  return label;
+}
+
+/**
+ * Extrai uma chave de ordenação numérica de um semanaLabel para ordenar cronologicamente.
+ * Labels no formato DD/MM - DD/MM são convertidos para MMDD (início da semana).
+ * "Vencidas" vem antes de tudo (retorna -1).
+ * "Além de 8 semanas" vem depois de tudo (retorna 9999).
+ */
+function getSemanaOrderKey(label: string): number {
+  if (label === "Vencidas") return -1;
+  if (label === "Sem vencimento") return 9998;
+  if (label === "Além de 8 semanas") return 9999;
+  const match = label.match(/^(\d{2})\/(\d{2})\s*-/);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    return month * 100 + day;
+  }
+  return 5000; // fallback
+}
+
 /* ============================================
    MINI PANEL - Inline dentro de cada BucketCard
    ============================================ */
@@ -78,6 +120,7 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
 
   const [activeTab, setActiveTab] = useState<"adicionado" | "removido">("adicionado");
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+  const [sortAsc, setSortAsc] = useState(true); // true = mais antigo primeiro
 
   const toggleDay = (date: string) => {
     setExpandedDays(prev => {
@@ -115,8 +158,10 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
       if (!grouped[date]) grouped[date] = [];
       grouped[date].push(item);
     }
-    return Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a));
-  }, [currentItems]);
+    const entries = Object.entries(grouped);
+    // Sort: ascending (oldest first) or descending (newest first)
+    return entries.sort(([a], [b]) => sortAsc ? a.localeCompare(b) : b.localeCompare(a));
+  }, [currentItems, sortAsc]);
 
   const hasChanges = allItems.adicionado.length > 0 || allItems.removido.length > 0 || allItems.alterado.length > 0;
 
@@ -129,7 +174,7 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
             <History className="w-3.5 h-3.5 text-white" />
           </div>
           <div>
-            <span className="text-xs font-bold text-white">Histórico — {semanaLabel}</span>
+            <span className="text-xs font-bold text-white">Histórico de Modificação — {formatSemanaLabel(semanaLabel)}</span>
           </div>
         </div>
         <button onClick={onClose} className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer">
@@ -142,14 +187,14 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
         <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
           <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-2.5 py-1">
             <TrendingUp className="w-3 h-3 text-green-600" />
-            <span className="text-[10px] font-bold text-green-700">+{formatCurrency(totalAdicionado)}</span>
+            <span className="text-[10px] font-bold text-green-700">Acrescentados: +{formatCurrency(totalAdicionado)}</span>
           </div>
           <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-2.5 py-1">
             <TrendingDown className="w-3 h-3 text-red-600" />
-            <span className="text-[10px] font-bold text-red-700">-{formatCurrency(totalRemovido)}</span>
+            <span className="text-[10px] font-bold text-red-700">Retirados: -{formatCurrency(totalRemovido)}</span>
           </div>
           <div className="ml-auto flex items-center gap-1.5">
-            <span className="text-[10px] font-semibold text-slate-500">Saldo:</span>
+            <span className="text-[10px] font-semibold text-slate-500">Saldo líquido:</span>
             <span className={`text-[11px] font-bold ${totalAdicionado - totalRemovido >= 0 ? "text-green-700" : "text-red-700"}`}>
               {totalAdicionado - totalRemovido >= 0 ? "+" : ""}{formatCurrency(totalAdicionado - totalRemovido)}
             </span>
@@ -160,19 +205,19 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-6 gap-2">
           <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-          <span className="text-[10px] text-slate-400">Carregando histórico...</span>
+          <span className="text-[10px] text-slate-400">Carregando histórico de modificações...</span>
         </div>
       ) : !hasChanges ? (
         <div className="text-center py-6">
           <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
             <FileText className="w-5 h-5 text-slate-300" />
           </div>
-          <span className="text-xs text-slate-400">Nenhuma mudança registrada nesta semana</span>
+          <span className="text-xs text-slate-400">Nenhuma modificação registrada nesta semana</span>
         </div>
       ) : (
         <>
-          {/* Tabs */}
-          <div className="flex">
+          {/* Tabs + Sort toggle */}
+          <div className="flex items-center border-b border-slate-100">
             <button
               onClick={() => setActiveTab("adicionado")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-all cursor-pointer border-b-2 ${
@@ -205,6 +250,15 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
                 {allItems.removido.length + allItems.alterado.length}
               </span>
             </button>
+            {/* Sort toggle */}
+            <button
+              onClick={() => setSortAsc(!sortAsc)}
+              className="px-2 py-2.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center gap-0.5"
+              title={sortAsc ? "Ordenado: mais antigo primeiro. Clique para inverter." : "Ordenado: mais recente primeiro. Clique para inverter."}
+            >
+              {sortAsc ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+              <span className="text-[9px] font-semibold">{sortAsc ? "Antigo" : "Recente"}</span>
+            </button>
           </div>
 
           {/* Items grouped by day */}
@@ -229,9 +283,10 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
                           <div className={`w-5 h-5 rounded flex items-center justify-center ${activeTab === "adicionado" ? "bg-green-100" : "bg-red-100"}`}>
                             <CalendarDays className={`w-3 h-3 ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`} />
                           </div>
+                          <span className="text-[10px] text-slate-500 font-medium">Data da modificação:</span>
                           <span className="text-[11px] font-bold text-slate-700">{formatDateBR(date)}</span>
                           <span className="text-[10px] text-slate-400 font-medium">({getDayName(date)})</span>
-                          <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-medium">{items.length} itens</span>
+                          <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-medium">{items.length} {items.length === 1 ? "título" : "títulos"}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`text-[11px] font-bold ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`}>
@@ -245,26 +300,26 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
                         <div className="px-4 pb-3 space-y-1">
                           {items.map((item: any, idx: number) => (
                             <div key={item.maxiprodId || idx} className="bg-white rounded-lg border border-slate-100 px-3 py-1.5 hover:border-slate-200 transition-colors">
-                              <div className="flex items-center gap-x-2">
+                              <div className="flex items-start gap-x-2">
                                 {item.changeType === "adicionado" ? (
-                                  <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                  <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
                                     <Plus className="w-2.5 h-2.5 text-green-600" />
                                   </div>
                                 ) : item.changeType === "removido" ? (
-                                  <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                  <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
                                     <Minus className="w-2.5 h-2.5 text-red-600" />
                                   </div>
                                 ) : (
-                                  <div className="w-4 h-4 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                  <div className="w-4 h-4 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
                                     <ArrowUpDown className="w-2.5 h-2.5 text-amber-600" />
                                   </div>
                                 )}
-                                <span className="text-[11px] text-slate-700 font-medium truncate min-w-0" style={{ flex: '1 1 0' }}>
+                                <span className="text-[11px] text-slate-700 font-medium min-w-0 break-words" style={{ flex: '1 1 0', wordBreak: 'break-word' }}>
                                   {item.nome || "—"}
                                 </span>
                                 {item.vencimentoData && (
                                   <span className="text-[10px] text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                    {formatVencimento(item.vencimentoData)}
+                                    Venc. {formatVencimento(item.vencimentoData)}
                                   </span>
                                 )}
                                 <span className={`text-[11px] font-bold whitespace-nowrap text-right shrink-0 ${
@@ -283,7 +338,7 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
                                 </span>
                               </div>
                               {(item.referenteA || item.observacoes) && (
-                                <p className="text-[9px] text-slate-400 truncate pl-6 mt-0.5">
+                                <p className="text-[9px] text-slate-400 pl-6 mt-0.5 break-words" style={{ wordBreak: 'break-word' }}>
                                   {item.referenteA || item.observacoes}
                                 </p>
                               )}
@@ -321,6 +376,7 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<"adicionado" | "removido">("adicionado");
+  const [sortAsc, setSortAsc] = useState(true); // true = mais antigo primeiro (default)
 
   const toggleWeek = (semana: string) => {
     setExpandedWeeks(prev => {
@@ -403,6 +459,16 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
     return max;
   }, [currentMap]);
 
+  // Sorted entries: oldest first (ascending) or newest first (descending)
+  const sortedEntries = useMemo(() => {
+    const entries = Array.from(currentMap.entries());
+    return entries.sort(([a], [b]) => {
+      const keyA = getSemanaOrderKey(a);
+      const keyB = getSemanaOrderKey(b);
+      return sortAsc ? keyA - keyB : keyB - keyA;
+    });
+  }, [currentMap, sortAsc]);
+
   return (
     <div className={`bg-white rounded-2xl border ${isPagar ? "border-red-200/50" : "border-emerald-200/50"} shadow-xl overflow-hidden`}>
       {/* ── Gradient Header ── */}
@@ -414,9 +480,9 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
-                Histórico Completo
+                Histórico Completo de Modificações
               </h3>
-              <p className="text-[11px] text-white/70 font-medium">{title} — Desde início do mês</p>
+              <p className="text-[11px] text-white/70 font-medium">{title} — Todas as alterações detectadas desde o início do mês</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all cursor-pointer">
@@ -429,21 +495,21 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
           <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
             <div className="flex items-center gap-1 mb-0.5">
               <TrendingUp className="w-3 h-3 text-green-300" />
-              <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">Acrescentados</span>
+              <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">Títulos acrescentados</span>
             </div>
             <span className="text-sm font-bold text-green-200">+{formatCurrency(totalAdicionado)}</span>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
             <div className="flex items-center gap-1 mb-0.5">
               <TrendingDown className="w-3 h-3 text-red-300" />
-              <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">Retirados</span>
+              <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">Títulos retirados</span>
             </div>
             <span className="text-sm font-bold text-red-200">-{formatCurrency(totalRemovido)}</span>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
             <div className="flex items-center gap-1 mb-0.5">
               <BarChart3 className="w-3 h-3 text-white/60" />
-              <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">Saldo Líquido</span>
+              <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">Saldo líquido</span>
             </div>
             <span className={`text-sm font-bold ${saldoLiquido >= 0 ? "text-green-200" : "text-red-200"}`}>
               {saldoLiquido >= 0 ? "+" : ""}{formatCurrency(saldoLiquido)}
@@ -452,7 +518,7 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
         </div>
       </div>
 
-      {/* ── Tab Switcher ── */}
+      {/* ── Tab Switcher + Sort Toggle ── */}
       <div className="flex bg-slate-50 border-b border-slate-200">
         <button
           onClick={() => setActiveTab("adicionado")}
@@ -490,6 +556,18 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
             {Array.from(grouped.removido.values()).reduce((s, items) => s + items.length, 0)}
           </span>
         </button>
+        {/* Sort toggle button */}
+        <button
+          onClick={() => setSortAsc(!sortAsc)}
+          className="px-3 py-3 flex items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer border-b-[3px] border-transparent hover:bg-slate-100"
+          title={sortAsc ? "Ordenação: mais antigo primeiro. Clique para inverter." : "Ordenação: mais recente primeiro. Clique para inverter."}
+        >
+          <div className="flex flex-col items-center">
+            <ArrowUp className={`w-3 h-3 ${sortAsc ? "text-teal-600" : "text-slate-300"}`} />
+            <ArrowDown className={`w-3 h-3 -mt-1 ${!sortAsc ? "text-teal-600" : "text-slate-300"}`} />
+          </div>
+          <span className="text-[9px] font-bold uppercase">{sortAsc ? "Antigo" : "Recente"}</span>
+        </button>
       </div>
 
       {/* ── Content grouped by semana ── */}
@@ -499,7 +577,7 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
             <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
               <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
-            <span className="text-xs text-slate-400 font-medium">Carregando histórico de conciliações...</span>
+            <span className="text-xs text-slate-400 font-medium">Carregando histórico de modificações...</span>
           </div>
         ) : currentMap.size === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -507,13 +585,12 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
               <FileText className="w-6 h-6 text-slate-300" />
             </div>
             <span className="text-sm text-slate-400 font-medium">
-              Nenhum item {activeTab === "adicionado" ? "acrescentado" : "retirado"} neste mês
+              Nenhum título {activeTab === "adicionado" ? "acrescentado" : "retirado"} neste mês
             </span>
           </div>
         ) : (
           <div className="p-3 space-y-2">
-            {Array.from(currentMap.entries())
-              .sort(([a], [b]) => a.localeCompare(b))
+            {sortedEntries
               .map(([semana, items]) => {
                 const semanaTotal = items.reduce((s: number, i: any) => s + Number(i.valor || 0), 0);
                 const isWeekExpanded = expandedWeeks.has(semana);
@@ -526,7 +603,8 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
                   if (!byDay[date]) byDay[date] = [];
                   byDay[date].push(item);
                 }
-                const dayEntries = Object.entries(byDay).sort(([a], [b]) => b.localeCompare(a));
+                // Sort days: ascending (oldest first) or descending
+                const dayEntries = Object.entries(byDay).sort(([a], [b]) => sortAsc ? a.localeCompare(b) : b.localeCompare(a));
 
                 return (
                   <div key={semana} className={`rounded-xl border overflow-hidden transition-all ${
@@ -550,10 +628,10 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
                           <CalendarDays className={`w-4 h-4 ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`} />
                         </div>
                         <div className="text-left min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-800">{semana}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-bold text-slate-800">{formatSemanaLabel(semana)}</span>
                             <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold">
-                              {items.length} {items.length === 1 ? "item" : "itens"}
+                              {items.length} {items.length === 1 ? "título" : "títulos"}
                             </span>
                           </div>
                           {/* Mini progress bar */}
@@ -594,9 +672,10 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
                               >
                                 <div className="flex items-center gap-2">
                                   <div className="w-1.5 h-1.5 rounded-full bg-slate-300 ml-2" />
+                                  <span className="text-[10px] text-slate-500 font-medium">Data da modificação:</span>
                                   <span className="text-[11px] font-bold text-slate-600">{formatDateBR(date)}</span>
                                   <span className="text-[10px] text-slate-400 font-medium">({getDayName(date)})</span>
-                                  <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-medium">{dayItems.length} itens</span>
+                                  <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-medium">{dayItems.length} {dayItems.length === 1 ? "título" : "títulos"}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span className={`text-[11px] font-bold ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`}>
@@ -610,26 +689,26 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
                                 <div className="px-4 pb-3 pl-8 space-y-1">
                                   {dayItems.map((item: any, idx: number) => (
                                     <div key={item.maxiprodId || idx} className="bg-slate-50/80 rounded-lg border border-slate-100 px-3 py-1.5 hover:bg-white hover:border-slate-200 transition-all">
-                                      <div className="flex items-center gap-x-2">
+                                      <div className="flex items-start gap-x-2">
                                         {item.changeType === "adicionado" ? (
-                                          <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                          <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
                                             <Plus className="w-2.5 h-2.5 text-green-600" />
                                           </div>
                                         ) : item.changeType === "removido" ? (
-                                          <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                          <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
                                             <Minus className="w-2.5 h-2.5 text-red-600" />
                                           </div>
                                         ) : (
-                                          <div className="w-4 h-4 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                          <div className="w-4 h-4 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
                                             <ArrowUpDown className="w-2.5 h-2.5 text-amber-600" />
                                           </div>
                                         )}
-                                        <span className="text-[11px] text-slate-700 font-medium truncate min-w-0" style={{ flex: '1 1 0' }}>
+                                        <span className="text-[11px] text-slate-700 font-medium min-w-0 break-words" style={{ flex: '1 1 0', wordBreak: 'break-word' }}>
                                           {item.nome || "—"}
                                         </span>
                                         {item.vencimentoData && (
                                           <span className="text-[10px] text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-100 whitespace-nowrap shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                            {formatVencimento(item.vencimentoData)}
+                                            Venc. {formatVencimento(item.vencimentoData)}
                                           </span>
                                         )}
                                         <span className={`text-[11px] font-bold whitespace-nowrap text-right shrink-0 ${
@@ -648,7 +727,7 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
                                         </span>
                                       </div>
                                       {(item.referenteA || item.observacoes) && (
-                                        <p className="text-[9px] text-slate-400 truncate pl-6 mt-0.5 italic">
+                                        <p className="text-[9px] text-slate-400 pl-6 mt-0.5 italic break-words" style={{ wordBreak: 'break-word' }}>
                                           {item.referenteA || item.observacoes}
                                         </p>
                                       )}
