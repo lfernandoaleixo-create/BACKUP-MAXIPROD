@@ -31,6 +31,7 @@ import {
   ExternalLink,
   ClipboardList,
 } from "lucide-react";
+import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
@@ -904,15 +905,16 @@ export function InadimplenciaCard({ summary, grupo, crmSegmento }: { summary: an
         </div>
       </button>
 
-      {/* Modal de Contraprova */}
+      {/* Modal de Contraprova - Dinâmico com vídeo animado */}
       {showVerifyModal && (
-        <MaxiprodVerifyModalInadimplencia
+        <MaxiprodAutoVerifier
+          title="Contraprova Maxiprod"
+          subtitle="Inadimplência (Títulos Vencidos)"
+          section="inadimplencia"
+          startDate="2020-01-01"
+          endDate={today}
+          valorManus={totaisClientes.faltaPagar || 0}
           onClose={() => setShowVerifyModal(false)}
-          context={{
-            valorManus: totaisClientes.faltaPagar,
-            valorMaxiprod: cpInadimplencia?.valorMaxiprod,
-            maxiprodLoading: cpInadimplenciaLoading,
-          }}
         />
       )}
 

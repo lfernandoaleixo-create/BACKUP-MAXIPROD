@@ -2441,3 +2441,12 @@
 - [x] Corrigir nomes/descrições cortados no Histórico Completo (remover truncate, permitir quebra de linha)
 - [x] Mover botão "Histórico" da base para o topo do card semanal
 - [x] Renomear botão para "Histórico de Modificação Semanal"
+
+## Melhorias Visuais Histórico e Inadimplência (14/04/2026 - Parte 5)
+- [x] Card de inadimplência (Contraprova Maxiprod): tornar dinâmico com vídeo animado ao vivo igual aos outros MaxiprodAutoVerifier
+- [x] Corrigir expand/collapse dos cards do Histórico de Modificação Semanal (não está funcionando)
+- [x] Cards do Histórico: layout maior, mais expansivo, espaçado e limpo (fácil de ler)
+- [x] Botão "Histórico de Modificação Semanal": trocar cinza sem vida por neon amarelo escuro chamativo
+- [x] Criar ícone do olho no Histórico com animação visual didática explicando o sistema de detecção de mudanças semanais
+- [x] Animação deve mostrar: início do mês registra títulos, cada dia detecta alterações (entradas/saídas) nas 8 semanas seguintes
+- [x] Garantir que conferência Maxiprod só aparece para operadores Fernando, Bruno e Guilherme

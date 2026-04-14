@@ -740,13 +740,13 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
       {/* Botão Histórico de Modificação Semanal (topo do card) */}
       <button
         onClick={() => setShowWeekHistory(!showWeekHistory)}
-        className={`w-full mb-2 flex items-center justify-center gap-1.5 text-[10px] font-semibold py-1.5 rounded-md transition-colors cursor-pointer ${
+        className={`w-full mb-2 flex items-center justify-center gap-2 text-xs font-bold py-2.5 rounded-lg transition-all cursor-pointer ${
           showWeekHistory
-            ? isPagar ? "bg-red-200 text-red-800" : "bg-emerald-200 text-emerald-800"
-            : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+            ? isPagar ? "bg-red-200 text-red-800 shadow-sm" : "bg-emerald-200 text-emerald-800 shadow-sm"
+            : "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 text-amber-900 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-500 shadow-md shadow-amber-400/30 hover:shadow-amber-500/40 hover:scale-[1.01]"
         }`}
       >
-        <History className="w-3 h-3" />
+        <History className="w-4 h-4" />
         {showWeekHistory ? "Ocultar Histórico de Modificação Semanal" : "Histórico de Modificação Semanal"}
       </button>
 
