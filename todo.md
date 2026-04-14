@@ -2384,3 +2384,7 @@
 - [x] Mover calculadora para o topo do card de cada mês (em vez do rodapé)
 - [x] Aumentar tamanho do ícone da calculadora em todos os cards
 - [x] Adicionar preview sofisticado dos valores (A Receber, A Pagar, Saldo Projetado) no card fechado do Fluxo de Caixa
+
+## Notificações e Sistema de Cobrança (14/04/2026)
+- [x] Sininho de notificações visível apenas para Maria, Erica, Marcos e Guilherme (remover Fernando, Bruno, Gilson)
+- [x] Sistema de cobrança automática de inadimplência - manter funcionando normalmente
