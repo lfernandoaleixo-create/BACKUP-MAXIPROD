@@ -143,43 +143,43 @@ function HistoryExplainerModal({ onClose, tipo }: { onClose: () => void; tipo: "
   const steps = useMemo(() => [
     {
       icon: Calendar,
-      title: "Início do mês",
-      description: "No dia 1° de cada mês, o sistema registra uma \"foto\" de todos os títulos a " + (isPagar ? "pagar" : "receber") + " existentes no Maxiprod.",
+      title: "Início do mês — Snapshot",
+      description: "No início de cada mês, o sistema \"printa\" (registra uma foto) de TODOS os títulos a " + (isPagar ? "pagar" : "receber") + " previstos para as 8 semanas seguintes no Maxiprod. Esse é o ponto de partida.",
       visual: "snapshot",
       highlight: "amber",
     },
     {
       icon: Search,
-      title: "Monitoramento diário",
-      description: "Todos os dias, o sistema compara a lista atual de títulos com a \"foto\" do dia anterior, detectando automaticamente qualquer diferença.",
+      title: "Monitoramento diário automático",
+      description: "A cada dia do mês, o sistema compara automaticamente a lista atual de títulos com a do dia anterior. Qualquer alteração — acréscimo ou decréscimo — é detectada e registrada no histórico.",
       visual: "compare",
       highlight: "blue",
     },
     {
       icon: Plus,
-      title: "Títulos acrescentados",
-      description: "Quando um novo título aparece na lista (novo boleto, nova nota fiscal), ele é registrado como \"Acrescentado\" com a data exata da detecção.",
+      title: "Títulos acrescentados (entradas)",
+      description: "Quando um novo título aparece em qualquer semana (novo boleto, nova nota fiscal, renegociação), ele é registrado como \"Acrescentado\". O histórico mostra: o nome do cliente, o valor, a data de vencimento e QUANDO a modificação foi detectada.",
       visual: "added",
       highlight: "green",
     },
     {
       icon: Minus,
-      title: "Títulos retirados",
-      description: "Quando um título desaparece da lista (pagamento realizado, cancelamento, baixa), ele é registrado como \"Retirado\" com a data da detecção.",
+      title: "Títulos retirados (saídas)",
+      description: "Quando um título desaparece de uma semana (pagamento, cancelamento, baixa, transferência), ele é registrado como \"Retirado\". Você sabe exatamente qual dia aquele título saiu e quanto representava.",
       visual: "removed",
       highlight: "red",
     },
     {
       icon: CalendarDays,
-      title: "Organização por semana",
-      description: "As alterações são agrupadas nas 8 semanas seguintes do mês, facilitando a visualização de quando cada mudança aconteceu em relação ao vencimento.",
+      title: "Organização por semana de vencimento",
+      description: "As alterações são agrupadas nas 8 semanas seguintes. Cada semana mostra suas datas (ex: 13/04 a 19/04), o total acrescentado, o total retirado e o saldo líquido. Dentro de cada semana, as mudanças são organizadas por dia de modificação.",
       visual: "weeks",
       highlight: "purple",
     },
     {
       icon: CheckCircle2,
       title: "Rastreabilidade completa",
-      description: "Você pode ver exatamente o que entrou e saiu em cada semana, com nome do cliente, valor e data de vencimento. Tudo registrado automaticamente!",
+      description: "Resumindo: no início do mês tudo é \"printado\". Durante o mês, qualquer entrada ou saída fica registrada com data, valor, cliente e semana de vencimento. Você tem controle total sobre o que mudou, quando mudou e quanto mudou!",
       visual: "complete",
       highlight: "emerald",
     },
@@ -513,12 +513,7 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
 
   const hasChanges = allItems.adicionado.length > 0 || allItems.removido.length > 0 || allItems.alterado.length > 0;
 
-  // Auto-expand all days on first load
-  useEffect(() => {
-    if (data && expandedDays.size === 0 && groupedByDay.length > 0) {
-      setExpandedDays(new Set(groupedByDay.map(([date]) => date)));
-    }
-  }, [data, groupedByDay]);
+  // Cards start collapsed - user clicks to expand
 
   return (
     <div className={`mt-3 rounded-2xl border-2 ${isPagar ? "border-red-200/60" : "border-emerald-200/60"} overflow-hidden shadow-lg`}>

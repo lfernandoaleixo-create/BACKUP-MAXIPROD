@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
+import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
 import { Eye } from "lucide-react";
 
 const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno"];
@@ -138,7 +139,9 @@ export default function InadimplenciaTab() {
   const [pendingPhoneAction, setPendingPhoneAction] = useState<{ titleId: number; action: "contato" | "actionPlan" | "document" } | null>(null);
   const [collectionUnlocked, setCollectionUnlocked] = useState(false);
   const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
+  const [decisaoTutorialData, setDecisaoTutorialData] = useState<{clienteName: string; vendedorName: string} | null>(null);
   const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
+  const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
 
   const COLLECTION_PASSWORD = "Thiago";
 
@@ -474,6 +477,34 @@ export default function InadimplenciaTab() {
         </div>
       </div>
 
+      {/* Alerta Vitória - Decisão de Cobrança */}
+      {isVitoria && titles.length > 0 && (() => {
+        const semDecisao = titles.filter(t => !t.decisaoCobranca || t.decisaoCobranca.trim() === '' || t.decisaoCobranca === '—');
+        if (semDecisao.length === 0) return null;
+        return (
+          <div className="rounded-xl border-2 border-amber-400 bg-gradient-to-r from-amber-50 via-amber-100 to-orange-50 p-4 shadow-lg" style={{ animation: 'pulse 2s ease-in-out infinite' }}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-amber-900 font-bold text-sm flex items-center gap-2">
+                  Atenção, Vitória!
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">{semDecisao.length} pendente{semDecisao.length > 1 ? 's' : ''}</span>
+                </h3>
+                <p className="text-amber-800 text-xs mt-1">
+                  Existem <strong>{semDecisao.length} título{semDecisao.length > 1 ? 's' : ''}</strong> sem decisão de cobrança preenchida no Maxiprod.
+                  Vendas feitas a partir de hoje sem decisão preenchida são de sua responsabilidade.
+                </p>
+                <p className="text-amber-700 text-[10px] mt-1.5">
+                  Clique no ícone <Eye className="w-3 h-3 inline text-amber-600" /> ao lado de cada título sem decisão para ver o passo a passo de como preencher.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Cards de faixa de atraso (aging) */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {AGING_RANGES.map(r => {
@@ -625,6 +656,8 @@ export default function InadimplenciaTab() {
                           needsActionPlan={needsActionPlan(title)}
                           hasDocument={hasCollectionDocument(title)}
                           canCobranca={canCobranca}
+                          isVitoria={isVitoria}
+                          onOpenDecisaoTutorial={(cn, vn) => setDecisaoTutorialData({ clienteName: cn, vendedorName: vn })}
                         />
                       ))}
                     </div>
@@ -687,6 +720,8 @@ export default function InadimplenciaTab() {
                 needsActionPlan={needsActionPlan(title)}
                 hasDocument={hasCollectionDocument(title)}
                 canCobranca={canCobranca}
+                isVitoria={isVitoria}
+                onOpenDecisaoTutorial={(cn, vn) => setDecisaoTutorialData({ clienteName: cn, vendedorName: vn })}
               />
             ))}
           </div>
@@ -765,6 +800,15 @@ export default function InadimplenciaTab() {
         <CobrancaGuideSimulator
           valorTotal={stats.total}
           onClose={() => setShowCobrancaGuide(false)}
+        />
+      )}
+
+      {/* Tutorial Decisão de Cobrança (Vitória) */}
+      {decisaoTutorialData && (
+        <DecisaoCobrancaTutorial
+          clienteName={decisaoTutorialData.clienteName}
+          vendedorName={decisaoTutorialData.vendedorName}
+          onClose={() => setDecisaoTutorialData(null)}
         />
       )}
 
@@ -850,7 +894,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
 }
 
 /* ---- Componente TitleRow (vista por título) ---- */
-function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true }: {
+function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true, isVitoria = false, onOpenDecisaoTutorial }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -867,6 +911,8 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   needsActionPlan: boolean;
   hasDocument: boolean;
   canCobranca?: boolean;
+  isVitoria?: boolean;
+  onOpenDecisaoTutorial?: (clienteName: string, vendedorName: string) => void;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
   const hasHistorico = title.cobranca?.contatoHistorico && title.cobranca.contatoHistorico.length > 0;
@@ -949,6 +995,15 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
             }`}>
               {title.decisaoCobranca}
             </span>
+          ) : (isVitoria && onOpenDecisaoTutorial) ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenDecisaoTutorial(title.cliente, title.vendedor || 'Vendedor'); }}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-100 border border-amber-300 text-amber-700 hover:bg-amber-200 transition-all animate-pulse hover:animate-none"
+              title="Clique para ver como preencher a decisão de cobrança"
+            >
+              <Eye className="w-3 h-3" />
+              <span className="text-[9px] font-bold">Preencher</span>
+            </button>
           ) : (
             <span className="text-xs text-slate-300">—</span>
           )}
@@ -1020,7 +1075,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
 }
 
 /* ---- Componente ClienteTitleRow (vista por cliente) ---- */
-function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true }: {
+function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true, isVitoria = false, onOpenDecisaoTutorial }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -1037,6 +1092,8 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   needsActionPlan: boolean;
   hasDocument: boolean;
   canCobranca?: boolean;
+  isVitoria?: boolean;
+  onOpenDecisaoTutorial?: (clienteName: string, vendedorName: string) => void;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
 
@@ -1107,6 +1164,15 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             }`}>
               {title.decisaoCobranca}
             </span>
+          ) : (isVitoria && onOpenDecisaoTutorial) ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenDecisaoTutorial(title.cliente, title.vendedor || 'Vendedor'); }}
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-amber-100 border border-amber-300 text-amber-700 hover:bg-amber-200 transition-all animate-pulse hover:animate-none"
+              title="Clique para ver como preencher a decisão de cobrança"
+            >
+              <Eye className="w-3 h-3" />
+              <span className="text-[8px] font-bold">Preencher</span>
+            </button>
           ) : (
             <span className="text-[10px] text-slate-300">—</span>
           )}

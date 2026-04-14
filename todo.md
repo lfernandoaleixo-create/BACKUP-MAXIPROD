@@ -2465,3 +2465,12 @@
 - [x] Botão "Histórico de Modificação Semanal": amarelo neon mais discreto (menos chamativo)
 - [x] Botão: retângulo mais justo com o texto (menos largo)
 - [x] Substituir "Títulos vencidos (anteriores à data atual)" por datas reais das semanas modificadas
+
+## Alerta Decisão Cobrança + Histórico Fechado (14/04/2026 - Parte 8)
+- [x] Cards do histórico de modificação semanal devem iniciar fechados (collapsed)
+- [x] Alerta para Vitória: destacar clientes inadimplentes sem decisão de cobrança preenchida
+- [x] Card "Olho do Maxiprod" com vídeo dinâmico ensinando a preencher decisão de cobrança
+- [x] Vídeo personalizado por vendedor (login genérico: "Use seu login e senha do Maxiprod")
+- [x] Passo a passo: Clientes → buscar cliente → Campos adicionais grupo COBRANÇA → SITUAÇÃO → escolher opção
+- [x] Responsabilidade da Vitória: vendas a partir de hoje sem decisão de cobrança preenchida
+- [x] Atualizar conteúdo do tutorial "Como Funciona o Histórico" com informações mais completas (snapshot no início do mês, detecção diária, entradas/saídas com data/valor/cliente/semana)
