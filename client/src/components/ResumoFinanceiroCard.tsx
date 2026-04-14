@@ -1373,9 +1373,9 @@ function ExpandedDetails({
             <div className={`px-4 py-2 text-[10px] flex items-center justify-between ${
               faturamento - contasPagas >= 0 ? "bg-emerald-50" : "bg-orange-50/60"
             }`}>
-              <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrencyShort(faturamento)}</span> fat.</span>
+              <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrency(faturamento)}</span> fat.</span>
               <span className="text-slate-400">vs</span>
-              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrencyShort(contasPagas)}</span> pago</span>
+              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrency(contasPagas)}</span> pago</span>
             </div>
           </div>
 
@@ -1403,9 +1403,9 @@ function ExpandedDetails({
             <div className={`px-4 py-2 text-[10px] flex items-center justify-between ${
               vendas - contasPagas >= 0 ? "bg-blue-50" : "bg-orange-50/60"
             }`}>
-              <span className="text-slate-500"><span className="font-semibold text-blue-700">{formatCurrencyShort(vendas)}</span> vendas</span>
+              <span className="text-slate-500"><span className="font-semibold text-blue-700">{formatCurrency(vendas)}</span> vendas</span>
               <span className="text-slate-400">vs</span>
-              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrencyShort(contasPagas)}</span> pago</span>
+              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrency(contasPagas)}</span> pago</span>
             </div>
           </div>
         </div>

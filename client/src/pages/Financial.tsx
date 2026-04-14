@@ -1699,10 +1699,8 @@ function CashFlowCard() {
           <span className="text-[10px] text-blue-500 ml-1">8 semanas</span>
           {collapsed ? <ChevronDown className="w-5 h-5 text-blue-600 ml-1" /> : <ChevronUp className="w-5 h-5 text-blue-600 ml-1" />}
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-xs text-emerald-600 font-semibold">Receber: {formatCurrency(totalReceber)}</span>
-          <span className="text-xs text-red-600 font-semibold">Pagar: {formatCurrency(totalPagar)}</span>
-          <span className={`text-sm font-bold ${saldoTotal >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-bold px-2 py-0.5 rounded ${saldoTotal >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
             Saldo: {formatCurrency(saldoTotal)}
           </span>
         </div>
@@ -1710,6 +1708,42 @@ function CashFlowCard() {
 
       {!collapsed && (
         <div className="p-4">
+          {/* Summary Cards - Receber / Pagar / Saldo */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {/* A Receber */}
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-3.5 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">A Receber</span>
+              </div>
+              <p className="text-lg font-bold text-emerald-700 tabular-nums">{formatCurrency(totalReceber)}</p>
+              <p className="text-[9px] text-slate-500 mt-1 leading-tight">Total de contas a receber nas proximas 8 semanas (incluindo vencidas)</p>
+            </div>
+            {/* A Pagar */}
+            <div className="bg-gradient-to-br from-red-50 to-rose-50 border border-red-200 rounded-xl p-3.5 shadow-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
+                  <TrendingDown className="w-3.5 h-3.5 text-red-600" />
+                </div>
+                <span className="text-[10px] font-semibold text-red-600 uppercase tracking-wider">A Pagar</span>
+              </div>
+              <p className="text-lg font-bold text-red-700 tabular-nums">{formatCurrency(totalPagar)}</p>
+              <p className="text-[9px] text-slate-500 mt-1 leading-tight">Total de contas a pagar nas proximas 8 semanas (incluindo vencidas)</p>
+            </div>
+            {/* Saldo */}
+            <div className={`bg-gradient-to-br ${saldoTotal >= 0 ? "from-blue-50 to-indigo-50 border-blue-200" : "from-amber-50 to-orange-50 border-amber-200"} border rounded-xl p-3.5 shadow-sm`}>
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`w-6 h-6 rounded-full ${saldoTotal >= 0 ? "bg-blue-100" : "bg-amber-100"} flex items-center justify-center`}>
+                  <Wallet className={`w-3.5 h-3.5 ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"}`} />
+                </div>
+                <span className={`text-[10px] font-semibold ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"} uppercase tracking-wider`}>Saldo Projetado</span>
+              </div>
+              <p className={`text-lg font-bold tabular-nums ${saldoTotal >= 0 ? "text-blue-700" : "text-red-700"}`}>{formatCurrency(saldoTotal)}</p>
+              <p className="text-[9px] text-slate-500 mt-1 leading-tight">{saldoTotal >= 0 ? "Recebimentos cobrem os pagamentos no periodo" : "Pagamentos excedem os recebimentos no periodo"} (Receber - Pagar)</p>
+            </div>
+          </div>
           {/* Legend */}
           <div className="flex items-center gap-5 mb-3 text-xs">
             <div className="flex items-center gap-1.5">

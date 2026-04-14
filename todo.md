@@ -2375,3 +2375,7 @@
 - [x] Adicionar calculadora somatória (seleção de itens + soma) em cada mês de A Pagar
 - [x] Adicionar calculadora somatória no total de A Receber (já existia no BucketCard)
 - [x] Adicionar calculadora somatória no total de A Pagar (já existia no BucketCard)
+
+## Ajustes visuais - Valores e Cards (14/04/2026)
+- [x] Remover arredondamento nos valores dos cards de confrontamento (mostrar até centavos, não K/M)
+- [x] Redesenhar cards Receber/Pagar/Saldo do gráfico semanal com visual profissional e explicações claras do significado de cada valor
