@@ -582,7 +582,7 @@ export default function InadimplenciaTab() {
 
                 {isOpen && (
                   <div className="bg-white/80 border-t border-slate-100">
-                    <div className="hidden md:grid grid-cols-[1fr_90px_90px_110px_80px_55px_100px_90px_90px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-300">
+                    <div className="hidden md:grid grid-cols-[1fr_100px_85px_130px_85px_55px_100px_95px_120px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-300">
                       <span className="flex items-center justify-start px-3 py-2 border-r border-slate-300">Referência / Documento</span>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-300">Vendedor</span>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-300">Forma Cobr.</span>
@@ -639,7 +639,7 @@ export default function InadimplenciaTab() {
       {/* Vista por Título */}
       {viewMode === "titulos" && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="hidden md:grid grid-cols-[1fr_100px_100px_130px_95px_65px_120px_100px_100px] bg-slate-50 border-b border-slate-300 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+          <div className="hidden md:grid grid-cols-[1fr_110px_90px_140px_90px_60px_110px_100px_130px] bg-slate-50 border-b border-slate-300 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
             <button onClick={() => toggleSort("cliente")} className="flex items-center justify-start gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-300">
               Cliente {sortBy === "cliente" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
@@ -807,12 +807,12 @@ export default function InadimplenciaTab() {
 
 /* ---- Componente PhoneIcon com animação ---- */
 function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "idle" | "document"; onClick: () => void }) {
-  const baseClasses = "p-1.5 rounded-md transition-colors cursor-pointer";
+  const baseClasses = "p-1 rounded-md transition-colors cursor-pointer";
 
   if (state === "idle") {
     return (
       <button onClick={onClick} title="Sem ação necessária" className={`${baseClasses} text-slate-300`}>
-        <Phone className="w-4 h-4" />
+        <Phone className="w-3.5 h-3.5" />
       </button>
     );
   }
@@ -820,7 +820,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
   if (state === "done") {
     return (
       <button onClick={onClick} title="Ação registrada hoje" className={`${baseClasses} text-blue-600 bg-blue-50 hover:bg-blue-100`}>
-        <Phone className="w-4 h-4" />
+        <Phone className="w-3.5 h-3.5" />
       </button>
     );
   }
@@ -828,7 +828,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
   if (state === "urgent") {
     return (
       <button onClick={onClick} title="URGENTE: Plano de ação obrigatório!" className={`${baseClasses} text-red-600 bg-red-50 hover:bg-red-100 animate-pulse`}>
-        <Phone className="w-4 h-4" />
+        <Phone className="w-3.5 h-3.5" />
       </button>
     );
   }
@@ -836,7 +836,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
   if (state === "document") {
     return (
       <button onClick={onClick} title="Documento de cobrança gerado - Clique para ver" className={`${baseClasses} text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300 animate-pulse`}>
-        <FileText className="w-4 h-4" />
+       <FileText className="w-3.5 h-3.5" />
       </button>
     );
   }
@@ -844,7 +844,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
   // blink
   return (
     <button onClick={onClick} title="Ação de cobrança necessária! Não para até registrar ação." className={`${baseClasses} text-blue-600 hover:bg-blue-100 animate-pulse`}>
-      <Phone className="w-4 h-4" />
+      <Phone className="w-3.5 h-3.5" />
     </button>
   );
 }
@@ -874,13 +874,13 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_130px_95px_65px_120px_100px_100px] cursor-pointer hover:bg-white/50 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_110px_90px_140px_90px_60px_110px_100px_130px] cursor-pointer hover:bg-white/50 items-center"
         onClick={onToggle}
       >
         {/* Cliente + Referência + Badges */}
         <div className="flex flex-col min-w-0 px-3 py-3 border-r border-slate-300">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm text-slate-800 truncate">{title.cliente}</span>
+            <span className="font-semibold text-[13px] text-slate-800 break-words leading-tight">{title.cliente}</span>
             {canCobranca && dayBadge && (
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-800 border border-amber-300 shrink-0">
                 {dayBadge}
@@ -903,8 +903,8 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5 truncate">
-            <span className="truncate">{title.referenteA}</span>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 flex-wrap">
+            <span className="break-words">{title.referenteA}</span>
             {title.documento && <span className="shrink-0">· {title.documento}</span>}
             {title.parcela && <span className="shrink-0">· {title.parcela}</span>}
           </div>
@@ -913,7 +913,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         {/* Vendedor */}
         <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300">
           {title.vendedor ? (
-            <span className="text-xs font-medium text-blue-600 truncate" title={title.vendedor}>{title.vendedor}</span>
+            <span className="text-[11px] font-medium text-blue-600 break-words text-center leading-tight" title={title.vendedor}>{title.vendedor}</span>
           ) : (
             <span className="text-xs text-slate-300">—</span>
           )}
@@ -955,11 +955,11 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Vencimento */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
+        <div className="flex items-center justify-center px-1 py-3 border-r border-slate-300 text-[12px] text-slate-600 whitespace-nowrap">{formatDate(title.vencimento)}</div>
 
         {/* Dias atraso */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300">
-          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${getAgingColor(title.diasAtraso)}`}>
+        <div className="flex items-center justify-center px-1 py-3 border-r border-slate-300">
+          <span className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-bold ${getAgingColor(title.diasAtraso)}`}>
             {title.diasAtraso}d
           </span>
         </div>
@@ -991,25 +991,25 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Ações */}
-        <div className="flex items-center justify-center gap-0.5 px-2 py-3" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-center gap-0.5 px-1 py-3 flex-wrap" onClick={e => e.stopPropagation()}>
           {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
           {hasDocument && (
-            <button onClick={onOpenDocument} title="Ver documento de cobrança" className="p-1.5 rounded-md hover:bg-amber-100 text-amber-700 hover:text-amber-900 transition-colors border border-amber-200">
-              <FileText className="w-4 h-4" />
+            <button onClick={onOpenDocument} title="Ver documento de cobrança" className="p-1 rounded-md hover:bg-amber-100 text-amber-700 hover:text-amber-900 transition-colors border border-amber-200">
+              <FileText className="w-3.5 h-3.5" />
             </button>
           )}
           {canCobranca && (
-            <button onClick={onOpenHistory} title="Histórico de cobrança" className="p-1.5 rounded-md hover:bg-white/80 text-emerald-600 hover:text-emerald-800 transition-colors">
-              <History className="w-4 h-4" />
+            <button onClick={onOpenHistory} title="Histórico de cobrança" className="p-1 rounded-md hover:bg-white/80 text-emerald-600 hover:text-emerald-800 transition-colors">
+              <History className="w-3.5 h-3.5" />
             </button>
           )}
           {canCobranca && (
-            <button onClick={onOpenAction} title="Gerenciar cobrança" className="p-1.5 rounded-md hover:bg-white/80 text-slate-600 hover:text-slate-800 transition-colors">
-              <FileText className="w-4 h-4" />
+            <button onClick={onOpenAction} title="Gerenciar cobrança" className="p-1 rounded-md hover:bg-white/80 text-slate-600 hover:text-slate-800 transition-colors">
+              <FileText className="w-3.5 h-3.5" />
             </button>
           )}
-          <button onClick={onToggle} className="p-1.5 rounded-md hover:bg-white/80 text-slate-400">
-            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          <button onClick={onToggle} className="p-1 rounded-md hover:bg-white/80 text-slate-400">
+            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
@@ -1043,12 +1043,12 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   return (
     <div className="transition-all">
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_90px_90px_110px_80px_55px_100px_90px_90px] cursor-pointer hover:bg-slate-50/80 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_100px_85px_130px_85px_55px_100px_95px_120px] cursor-pointer hover:bg-slate-50/80 items-center"
         onClick={onToggle}
       >
         <div className="min-w-0 px-3 py-2.5 border-r border-slate-300">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-sm text-slate-700 truncate">
+            <span className="text-[12px] text-slate-700 break-words leading-tight">
               {title.referenteA}
               {title.documento && ` · ${title.documento}`}
               {title.parcela && ` · ${title.parcela}`}
@@ -1073,7 +1073,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
         {/* Vendedor */}
         <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
           {title.vendedor ? (
-            <span className="text-[10px] font-medium text-blue-600 truncate" title={title.vendedor}>{title.vendedor}</span>
+            <span className="text-[10px] font-medium text-blue-600 break-words text-center leading-tight" title={title.vendedor}>{title.vendedor}</span>
           ) : (
             <span className="text-[10px] text-slate-300">—</span>
           )}

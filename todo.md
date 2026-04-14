@@ -2423,3 +2423,7 @@
 - [x] Adicionar bordas mais escuras entre as colunas da tabela (border-slate-300)
 - [x] Restaurar vídeo animado do passo a passo no MaxiprodAutoVerifier (simulação visual dos passos)
 - [x] Corrigir verificação Maxiprod do card "Faturado" na aba Vendas: nova seção vendas_faturado (pedidos com estadoItem=Faturado)
+
+## Ajuste Layout Tabela Inadimplência (14/04/2026 - Parte 4)
+- [x] Corrigir layout da tabela: nada cortado (nomes, vendedor, ícones de ações telefone/histórico/livrinho)
+- [x] Otimizar larguras das colunas, texto menor onde necessário, quebra de linha adequada
