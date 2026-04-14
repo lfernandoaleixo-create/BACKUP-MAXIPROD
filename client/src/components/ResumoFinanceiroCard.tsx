@@ -958,10 +958,21 @@ function CompactSummary({
       {simulatorSection && (
         <MaxiprodSimulator
           onClose={() => setSimulatorSection(null)}
-          steps={getFinancialSteps(simulatorSection, dates.start, dates.end)}
+          steps={getFinancialSteps(simulatorSection, dates.start, dates.end, 
+            simulatorSection === "entradas" ? totalEntradas :
+            simulatorSection === "faturamento" ? faturamento :
+            simulatorSection === "vendas" ? vendas :
+            contasPagas
+          )}
           title={simulatorSection === "entradas" ? "Entradas" : simulatorSection === "faturamento" ? "Faturamento" : simulatorSection === "vendas" ? "Vendas" : "Contas Pagas"}
           subtitle={`Período: ${dates.start} a ${dates.end}`}
           maxiprodUrl="https://app.maxiprod.com.br"
+          valorManus={
+            simulatorSection === "entradas" ? totalEntradas :
+            simulatorSection === "faturamento" ? faturamento :
+            simulatorSection === "vendas" ? vendas :
+            contasPagas
+          }
         />
       )}
     </div>

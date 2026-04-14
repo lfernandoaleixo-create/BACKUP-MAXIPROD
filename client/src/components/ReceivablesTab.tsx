@@ -44,6 +44,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import MaxiprodSimulator, { getReceivablesSteps } from "@/components/MaxiprodSimulator";
 
 const FINALIZE_PASSWORD = "Fernando";
 
@@ -807,19 +808,22 @@ function ContaFiltersAndTable({
         </div>
       )}
 
-      {/* Modal de Contraprova Maxiprod */}
+      {/* Simulador Maxiprod - passo a passo animado */}
       {showVerifyModal && (
-        <MaxiprodVerifyModal
+        <MaxiprodSimulator
           onClose={() => setShowVerifyModal(false)}
-          section="recebiveis"
-          context={{
+          title="Contraprova: Contas a Receber"
+          subtitle={`${empresaNome} - ${mesLabel} - ${contaLabel}`}
+          steps={getReceivablesSteps({
             empresa: empresaNome,
             mes: mesKey,
             contaLabel,
             formaCobranca: formaFilter,
             statusFilter,
             valorManus: filteredTotals.total,
-          }}
+          })}
+          maxiprodUrl="https://app.maxiprod.com.br/"
+          valorManus={filteredTotals.total}
         />
       )}
 

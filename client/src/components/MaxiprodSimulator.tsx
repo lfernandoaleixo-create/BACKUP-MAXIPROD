@@ -23,7 +23,6 @@ interface MaxiprodSimulatorProps {
   steps: SimulatorStep[];
   maxiprodUrl: string;
   valorManus?: number;
-  valorMaxiprod?: number;
   onClose: () => void;
 }
 
@@ -47,7 +46,6 @@ export default function MaxiprodSimulator({
   steps,
   maxiprodUrl,
   valorManus,
-  valorMaxiprod,
   onClose,
 }: MaxiprodSimulatorProps) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -111,9 +109,8 @@ export default function MaxiprodSimulator({
 
   const ActionIcon = actionIcons[step?.actionType || "navigate"];
 
-  const divergencia = valorManus !== undefined && valorMaxiprod !== undefined
-    ? Math.abs(valorManus - valorMaxiprod) : null;
-  const hasDivergencia = divergencia !== null && divergencia > 1;
+  // No divergencia check needed - simulator is instantaneous, no API comparison
+  // valorMaxiprod is not used anymore
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
@@ -135,28 +132,16 @@ export default function MaxiprodSimulator({
             </button>
           </div>
 
-          {/* Values comparison */}
-          {valorManus !== undefined && (
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="px-3 py-2 bg-white/10 rounded-lg border border-white/20">
-                <span className="text-indigo-300 text-[10px] uppercase tracking-wider">Dashboard</span>
-                <p className="text-white font-bold text-base" style={{ textShadow: "0 0 15px rgba(34,211,238,0.4)" }}>
+          {/* Dashboard value */}
+          {valorManus != null && (
+            <div className="mt-3">
+              <div className="px-4 py-2.5 bg-white/10 rounded-lg border border-white/20 flex items-center justify-between">
+                <span className="text-indigo-300 text-xs uppercase tracking-wider">Valor no Dashboard</span>
+                <p className="text-white font-bold text-lg" style={{ textShadow: "0 0 15px rgba(34,211,238,0.4)" }}>
                   {formatCurrency(valorManus)}
                 </p>
               </div>
-              <div className={`px-3 py-2 rounded-lg border ${
-                valorMaxiprod === undefined ? "bg-white/5 border-white/10" :
-                hasDivergencia ? "bg-red-500/20 border-red-400/40" : "bg-emerald-500/20 border-emerald-400/40"
-              }`}>
-                <span className="text-indigo-300 text-[10px] uppercase tracking-wider">Maxiprod (API)</span>
-                {valorMaxiprod !== undefined ? (
-                  <p className={`font-bold text-base ${hasDivergencia ? "text-red-300" : "text-emerald-300"}`}>
-                    {formatCurrency(valorMaxiprod)}
-                  </p>
-                ) : (
-                  <p className="text-white/50 text-sm mt-0.5">Consultando...</p>
-                )}
-              </div>
+              <p className="text-indigo-400/60 text-[10px] mt-1.5 text-center">Siga o passo a passo abaixo para conferir este valor no Maxiprod</p>
             </div>
           )}
         </div>
@@ -334,7 +319,7 @@ export function getSalesSteps(section: string, periodStart: string, periodEnd: s
       { screen: "Filtros de Pedidos de Venda\nAplicando período...", action: `Definir data do pedido: ${dateRange}`, actionType: "type", fieldLabel: "Data do Pedido", typedValue: dateRange },
       { screen: "Filtros aplicados\nExcluindo pedidos cancelados...", action: "Excluir pedidos com estado: Cancelado", actionType: "select", highlight: true },
       { screen: "Resultado da pesquisa\nSomando valor líquido de todos os pedidos...", action: "Somar coluna 'Valor Líquido' de todos os pedidos", actionType: "verify" },
-      { screen: `Total de Vendas no Período\n${valorManus ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
+      { screen: `Total de Vendas no Período\n${valorManus != null ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
     ];
   }
 
@@ -347,7 +332,7 @@ export function getSalesSteps(section: string, periodStart: string, periodEnd: s
       { screen: "IMPORTANTE!\nExcluir NFs com estado configurável:\nAmostra, Bonificação, Devolução,\nRemessa, Recusa, Transferência, Cancelado", action: "Excluir NFs de Amostra, Bonificação, Devolução, Remessa, Recusa, Transferência, Cancelado", actionType: "select", highlight: true },
       { screen: "Filtro de produtos\nAceitar apenas: Bambu, Madeira, Rojão,\nSerragem, Madeira/Fibra e variações", action: "Aceitar apenas NFs de produtos do grupo (Bambu, Madeira, Rojão, etc.)", actionType: "select", highlight: true },
       { screen: "Resultado da pesquisa\nSomando valores das NFs filtradas...", action: "Somar coluna 'Valor Total' das NFs", actionType: "verify" },
-      { screen: `Total Faturado no Período\n${valorManus ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
+      { screen: `Total Faturado no Período\n${valorManus != null ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
     ];
   }
 
@@ -359,7 +344,7 @@ export function getSalesSteps(section: string, periodStart: string, periodEnd: s
       { screen: "Filtros\nEstado do Item: A Faturar", action: 'Filtrar por Estado do Item: "A faturar"', actionType: "select" },
       { screen: "Excluindo cancelados...", action: "Excluir pedidos com estado: Cancelado", actionType: "select", highlight: true },
       { screen: "Resultado da pesquisa\nSomando valor líquido dos pedidos A Faturar...", action: "Somar coluna 'Valor Líquido' dos pedidos filtrados", actionType: "verify" },
-      { screen: `Total A Faturar no Período\n${valorManus ? formatCurrency(valorManus) : "R$ ---"}\n\nNota: Este é um subconjunto do total de vendas`, action: "Compare com o valor do Dashboard (subconjunto de vendas)", actionType: "result", highlight: true },
+      { screen: `Total A Faturar no Período\n${valorManus != null ? formatCurrency(valorManus) : "R$ ---"}\n\nNota: Este é um subconjunto do total de vendas`, action: "Compare com o valor do Dashboard (subconjunto de vendas)", actionType: "result", highlight: true },
     ];
   }
 
@@ -371,7 +356,7 @@ export function getSalesSteps(section: string, periodStart: string, periodEnd: s
       { screen: "Filtros\nEstado Configurável: Amostra + Bonificação", action: 'Filtrar por Estado Configurável: "Amostra" e "Bonificação"', actionType: "select" },
       { screen: "Excluindo cancelados...", action: "Excluir pedidos com estado: Cancelado", actionType: "select", highlight: true },
       { screen: "Resultado da pesquisa\nSomando valor líquido dos pedidos\nde Amostra e Bonificação...", action: "Somar coluna 'Valor Líquido' dos pedidos filtrados", actionType: "verify" },
-      { screen: `Total Amostra/Bonificação\n${valorManus ? formatCurrency(valorManus) : "R$ ---"}\n\nNota: Este é um subconjunto do total de vendas`, action: "Compare com o valor do Dashboard (subconjunto de vendas)", actionType: "result", highlight: true },
+      { screen: `Total Amostra/Bonificação\n${valorManus != null ? formatCurrency(valorManus) : "R$ ---"}\n\nNota: Este é um subconjunto do total de vendas`, action: "Compare com o valor do Dashboard (subconjunto de vendas)", actionType: "result", highlight: true },
     ];
   }
 
@@ -399,7 +384,7 @@ export function getFinancialSteps(section: string, periodStart: string, periodEn
       { screen: "Filtros\nAplicando período de liquidação...", action: `Definir liquidação: ${dateRange}`, actionType: "type", fieldLabel: "Liquidação", typedValue: dateRange },
       { screen: "IMPORTANTE!\nO Dashboard exclui transferências entre\nempresas do grupo:\nPalitos Fox, Mesa Indust, Bambusa,\nEspetos Ind, Varetas", action: "Dashboard exclui transferências entre empresas do grupo", actionType: "select", highlight: true },
       { screen: "Resultado da pesquisa\nSomando valor recebido líquido...", action: "Somar coluna 'Valor Recebido Líquido'", actionType: "verify" },
-      { screen: `Total Entradas no Período\n${valorManus ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
+      { screen: `Total Entradas no Período\n${valorManus != null ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
     ];
   }
 
@@ -411,7 +396,7 @@ export function getFinancialSteps(section: string, periodStart: string, periodEn
       { screen: "Filtros\nEstado: Emitida | Tipo: Saída", action: 'Selecionar Estado: "Emitida" e Tipo: "Saída"', actionType: "select" },
       { screen: "IMPORTANTE!\nExcluir NFs com estado configurável:\nAmostra, Bonificação, Devolução,\nRemessa, Recusa, Transferência, Cancelado", action: "Excluir NFs de Amostra, Bonificação, Devolução, Remessa, Recusa, Transferência, Cancelado", actionType: "select", highlight: true },
       { screen: "Resultado da pesquisa\nSomando valores das NFs filtradas...", action: "Somar coluna 'Valor Total' das NFs", actionType: "verify" },
-      { screen: `Total Faturado no Período\n${valorManus ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
+      { screen: `Total Faturado no Período\n${valorManus != null ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
     ];
   }
 
@@ -422,7 +407,7 @@ export function getFinancialSteps(section: string, periodStart: string, periodEn
       { screen: "Filtros de Pedidos de Venda\nAplicando período...", action: `Definir data do pedido: ${dateRange}`, actionType: "type", fieldLabel: "Data do Pedido", typedValue: dateRange },
       { screen: "Excluindo cancelados...", action: "Excluir pedidos com estado: Cancelado", actionType: "select", highlight: true },
       { screen: "Resultado da pesquisa\nSomando valor líquido de todos os pedidos...", action: "Somar coluna 'Valor Líquido' de todos os pedidos", actionType: "verify" },
-      { screen: `Total Vendas no Período\n${valorManus ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
+      { screen: `Total Vendas no Período\n${valorManus != null ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
     ];
   }
 
@@ -434,9 +419,60 @@ export function getFinancialSteps(section: string, periodStart: string, periodEn
       { screen: "Filtros\nAplicando período de liquidação...", action: `Definir liquidação: ${dateRange}`, actionType: "type", fieldLabel: "Liquidação", typedValue: dateRange },
       { screen: "Excluindo cancelados...", action: "Excluir contas com estado: Cancelado", actionType: "select", highlight: true },
       { screen: "Resultado da pesquisa\nSomando valor pago líquido...", action: "Somar coluna 'Valor Pago Líquido'", actionType: "verify" },
-      { screen: `Total Contas Pagas no Período\n${valorManus ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
+      { screen: `Total Contas Pagas no Período\n${valorManus != null ? formatCurrency(valorManus) : "R$ ---"}`, action: "Compare o total com o valor do Dashboard", actionType: "result", highlight: true },
     ];
   }
 
   return loginSteps;
+}
+
+export function getReceivablesSteps(context: {
+  empresa?: string;
+  mes?: string;
+  contaLabel?: string;
+  formaCobranca?: string;
+  statusFilter?: string;
+  valorManus?: number;
+}): SimulatorStep[] {
+  const loginSteps: SimulatorStep[] = [
+    { screen: "Acessando Maxiprod...\napp.maxiprod.com.br", action: "Abrir o Maxiprod no navegador", actionType: "navigate" },
+    { screen: "Tela de Login do Maxiprod", action: "Preencher e-mail de acesso", actionType: "type", fieldLabel: "E-mail", typedValue: "lfernandoaleixo@gmail.com" },
+    { screen: "Tela de Login do Maxiprod", action: "Preencher senha", actionType: "type", fieldLabel: "Senha", typedValue: "Luizfernando7008*" },
+    { screen: "Entrando no sistema...\nLogin realizado com sucesso!", action: "Clicar em Entrar", actionType: "click" },
+  ];
+
+  const steps: SimulatorStep[] = [...loginSteps];
+
+  steps.push({ screen: "Menu Principal\n\u2192 Financeiro \u2192 Contas a Receber", action: "Navegar para Financeiro \u2192 Contas a Receber", actionType: "navigate" });
+  steps.push({ screen: "Filtros de Contas a Receber\nEstado: A receber", action: 'Selecionar Estado: apenas "A receber"', actionType: "select" });
+
+  if (context.mes) {
+    const [y, m] = context.mes.split("-");
+    const lastDay = new Date(Number(y), Number(m), 0).getDate();
+    const dateRange = `01/${m}/${y} a ${lastDay}/${m}/${y}`;
+    steps.push({ screen: `Filtros\nAplicando per\u00edodo de vencimento...\n${dateRange}`, action: `Definir vencimento: ${dateRange}`, actionType: "type", fieldLabel: "Vencimento", typedValue: dateRange });
+  }
+
+  if (context.empresa) {
+    steps.push({ screen: `Filtros\nSelecionando empresa: ${context.empresa}`, action: `Selecionar empresa: "${context.empresa}"`, actionType: "select" });
+  }
+
+  if (context.formaCobranca && context.formaCobranca !== "TODOS") {
+    steps.push({ screen: `Filtros\nForma de cobran\u00e7a: ${context.formaCobranca}`, action: `Filtrar por forma de cobran\u00e7a: "${context.formaCobranca}"`, actionType: "select" });
+  }
+
+  if (context.contaLabel) {
+    const bankMatch = context.contaLabel.match(/^(\w+)/);
+    if (bankMatch) {
+      steps.push({ screen: `Filtros\nBanco: ${bankMatch[1]}\nConta: ${context.contaLabel}`, action: `Filtrar por banco "${bankMatch[1]}" e conta correspondente`, actionType: "select" });
+    }
+  }
+
+  steps.push({ screen: 'Clique em "Ocultar filtros"\npara ver o total no rodap\u00e9 da tabela', action: 'Clicar em "Ocultar filtros" para ver o total', actionType: "click" });
+  steps.push({ screen: "Resultado da pesquisa\nSomando valor total a receber...", action: "Verificar total no rodap\u00e9 da tabela", actionType: "verify" });
+
+  const valorText = context.valorManus != null ? formatCurrency(context.valorManus) : "R$ ---";
+  steps.push({ screen: `Total Contas a Receber\n${valorText}`, action: "Compare o total do Maxiprod com o valor do Dashboard", actionType: "result", highlight: true });
+
+  return steps;
 }

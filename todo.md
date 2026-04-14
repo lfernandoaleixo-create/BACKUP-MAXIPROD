@@ -2334,3 +2334,12 @@
 - [x] Incluir login/senha Fernando no passo a passo e link "Abrir Maxiprod"
 - [x] Liberar aba Produção para senhas "Erica" e "Maria" (atualizado no banco: accessProducao = true)
 - [x] Otimizar consulta ao Maxiprod (API GraphQL) na contraprova: take 200→1000, cache 5min em memória
+- [x] Corrigir cards dinâmicos (simulador Maxiprod) na aba Faturamento - valores agora passados corretamente
+- [x] Adicionar card dinâmico MaxiprodSimulator na aba Recebíveis (olho do Maxiprod)
+- [x] Tornar card dinâmico do simulador Maxiprod instantâneo (removido MAXIPROD API / Consultando, mostra só valor Dashboard)
+
+## Correções MaxiprodSimulator (14/04/2026)
+- [x] Fix: MaxiprodSimulator mostrando "R$ ---" em vez do valor real do Dashboard (valorManus undefined)
+- [x] Fix: Corrigir passagem de valorManus para MaxiprodSimulator nos cards de Vendas
+- [x] Fix: Corrigir passagem de valorManus para MaxiprodSimulator nos cards do Financeiro
+- [x] Adicionar MaxiprodSimulator na aba Recebíveis (olho do Maxiprod)
