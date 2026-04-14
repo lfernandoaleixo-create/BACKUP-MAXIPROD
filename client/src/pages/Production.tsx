@@ -972,6 +972,18 @@ function ExpandableMachineRow({
         <div className="px-4 pb-2 pl-16">
           <div className="bg-white rounded-lg border border-slate-200 p-2">
             <textarea value={currentComment} onChange={(e) => onSetComment(e.target.value)} placeholder="Adicionar comentário ou observação..." rows={2} className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400" disabled={!canEdit} />
+            {canEdit && (
+              <div className="flex justify-end mt-1.5">
+                <button
+                  onClick={onSave}
+                  disabled={isSaving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white text-xs font-medium rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Enviar Observação
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1097,6 +1109,18 @@ function SimpleMachineRow({ sector, machine, commentIsOpen, isSaving, currentVal
         <div className="px-4 pb-2 pl-16">
           <div className="bg-white rounded-lg border border-slate-200 p-2">
             <textarea value={currentComment} onChange={(e) => onSetComment(e.target.value)} placeholder="Adicionar comentário ou observação..." rows={2} className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400" disabled={!canEdit} />
+            {canEdit && (
+              <div className="flex justify-end mt-1.5">
+                <button
+                  onClick={onSave}
+                  disabled={isSaving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white text-xs font-medium rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Enviar Observação
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -2483,3 +2483,6 @@
 - [x] Embalagem (setor 8) com data >= 15/04/2026: soma no estoque Madeira PA pelo código do produto (em caixas)
 - [x] Registros anteriores a 15/04/2026: apenas histórico, não afeta estoque nenhum
 - [x] Outros setores (Multilâmina, Vareteira, Seletoras, etc.): apenas histórico, nunca afetam estoque
+
+## Botão Enviar Observação (14/04/2026 - Parte 11)
+- [x] Adicionar botão "Enviar Observação" na caixa de comentários para confirmar o registro
