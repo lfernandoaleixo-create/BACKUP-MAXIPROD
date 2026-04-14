@@ -63,7 +63,8 @@ import TopNav from "@/components/TopNav";
 import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
 import { generateSalesPDF } from "@/lib/salesPdfExport";
 import { useOperator } from "@/contexts/OperatorContext";
-import MaxiprodSimulator, { getSalesSteps } from "@/components/MaxiprodSimulator";
+import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
+import type { VerifySection } from "@/components/MaxiprodAutoVerifier";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
@@ -3272,13 +3273,14 @@ export default function Sales() {
         ) : null}
       </main>
 
-      {/* Maxiprod Simulator Modal */}
+      {/* Maxiprod Auto-Verifier Modal */}
       {simulatorCard && start && end && (
-        <MaxiprodSimulator
+        <MaxiprodAutoVerifier
           title={simulatorCard.title}
           subtitle={simulatorCard.subtitle}
-          steps={getSalesSteps(simulatorCard.section, start, end, simulatorCard.value)}
-          maxiprodUrl={MAXIPROD_LOGIN_URL}
+          section={simulatorCard.section as VerifySection}
+          startDate={start}
+          endDate={end}
           valorManus={simulatorCard.value}
           onClose={() => setSimulatorCard(null)}
         />

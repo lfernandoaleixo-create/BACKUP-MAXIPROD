@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import MaxiprodSimulator, { getFinancialSteps } from "@/components/MaxiprodSimulator";
+import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import { Input } from "@/components/ui/input";
 import {
   Tooltip,
@@ -878,16 +878,16 @@ function CompactSummary({
         <div className="grid grid-cols-3 gap-2">
           {/* Entradas vs Saídas */}
           <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
-            variacaoSaldo >= 0 ? "bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-200" : "bg-gradient-to-br from-orange-50 to-amber-50 border-amber-200"
+            variacaoSaldo >= 0 ? "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-300" : "bg-gradient-to-br from-red-50 to-rose-50 border-red-300"
           }`}>
-            <div className="flex items-center gap-1.5 mb-1">
-              {variacaoSaldo >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-teal-500" /> : <TrendingDown className="w-3.5 h-3.5 text-amber-500" />}
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Entradas vs Saidas</span>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              {variacaoSaldo >= 0 ? <TrendingUp className="w-4 h-4 text-emerald-600" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
+              <span className={`text-xs font-bold uppercase tracking-wider ${variacaoSaldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>Entradas vs Saidas</span>
             </div>
-            <p className={`text-sm font-bold ${variacaoSaldo >= 0 ? "text-teal-700" : "text-amber-700"}`}>
+            <p className={`text-xl font-extrabold ${variacaoSaldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
               {variacaoSaldo >= 0 ? "+" : ""}{formatCurrency(variacaoSaldo)}
             </p>
-            <p className="text-[9px] text-slate-400 mt-1 leading-tight">
+            <p className={`text-sm mt-1.5 leading-snug font-medium ${variacaoSaldo >= 0 ? "text-emerald-600/70" : "text-red-500/70"}`}>
               {variacaoSaldo >= 0
                 ? "O que entrou no caixa cobre o que saiu"
                 : "Saiu mais dinheiro do que entrou no periodo"}
@@ -896,16 +896,16 @@ function CompactSummary({
 
           {/* Fat. vs Pago */}
           <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
-            faturamento - contasPagas >= 0 ? "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200" : "bg-gradient-to-br from-orange-50 to-rose-50 border-amber-200"
+            faturamento - contasPagas >= 0 ? "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-300" : "bg-gradient-to-br from-red-50 to-rose-50 border-red-300"
           }`}>
-            <div className="flex items-center gap-1.5 mb-1">
-              {faturamento - contasPagas >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> : <TrendingDown className="w-3.5 h-3.5 text-amber-500" />}
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Fat. vs Pago</span>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              {faturamento - contasPagas >= 0 ? <TrendingUp className="w-4 h-4 text-emerald-600" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
+              <span className={`text-xs font-bold uppercase tracking-wider ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>Fat. vs Pago</span>
             </div>
-            <p className={`text-sm font-bold ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-amber-700"}`}>
+            <p className={`text-xl font-extrabold ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>
               {faturamento - contasPagas >= 0 ? "+" : ""}{formatCurrency(faturamento - contasPagas)}
             </p>
-            <p className="text-[9px] text-slate-400 mt-1 leading-tight">
+            <p className={`text-sm mt-1.5 leading-snug font-medium ${faturamento - contasPagas >= 0 ? "text-emerald-600/70" : "text-red-500/70"}`}>
               {faturamento - contasPagas >= 0
                 ? "O faturamento cobre os pagamentos"
                 : "O que faturei nao paga as contas"}
@@ -914,16 +914,16 @@ function CompactSummary({
 
           {/* Vendas vs Pago */}
           <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
-            vendas - contasPagas >= 0 ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200" : "bg-gradient-to-br from-rose-50 to-pink-50 border-amber-200"
+            vendas - contasPagas >= 0 ? "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-300" : "bg-gradient-to-br from-red-50 to-rose-50 border-red-300"
           }`}>
-            <div className="flex items-center gap-1.5 mb-1">
-              {vendas - contasPagas >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-blue-500" /> : <TrendingDown className="w-3.5 h-3.5 text-amber-500" />}
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Vendas vs Pago</span>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              {vendas - contasPagas >= 0 ? <TrendingUp className="w-4 h-4 text-emerald-600" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
+              <span className={`text-xs font-bold uppercase tracking-wider ${vendas - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>Vendas vs Pago</span>
             </div>
-            <p className={`text-sm font-bold ${vendas - contasPagas >= 0 ? "text-blue-700" : "text-amber-700"}`}>
+            <p className={`text-xl font-extrabold ${vendas - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>
               {vendas - contasPagas >= 0 ? "+" : ""}{formatCurrency(vendas - contasPagas)}
             </p>
-            <p className="text-[9px] text-slate-400 mt-1 leading-tight">
+            <p className={`text-sm mt-1.5 leading-snug font-medium ${vendas - contasPagas >= 0 ? "text-emerald-600/70" : "text-red-500/70"}`}>
               {vendas - contasPagas >= 0
                 ? "O que vendi cobre os pagamentos"
                 : "O que vendi nao paga as contas"}
@@ -988,19 +988,15 @@ function CompactSummary({
         />
       )}
 
-      {/* Simulador Maxiprod - passo a passo animado */}
+      {/* Verificacao automatica Maxiprod */}
       {simulatorSection && (
-        <MaxiprodSimulator
+        <MaxiprodAutoVerifier
           onClose={() => setSimulatorSection(null)}
-          steps={getFinancialSteps(simulatorSection, dates.start, dates.end, 
-            simulatorSection === "entradas" ? totalEntradas :
-            simulatorSection === "faturamento" ? faturamento :
-            simulatorSection === "vendas" ? vendas :
-            contasPagas
-          )}
           title={simulatorSection === "entradas" ? "Entradas" : simulatorSection === "faturamento" ? "Faturamento" : simulatorSection === "vendas" ? "Vendas" : "Contas Pagas"}
-          subtitle={`Período: ${dates.start} a ${dates.end}`}
-          maxiprodUrl="https://app.maxiprod.com.br"
+          subtitle={`Conferencia automatica — ${dates.start} a ${dates.end}`}
+          section={simulatorSection}
+          startDate={dates.start}
+          endDate={dates.end}
           valorManus={
             simulatorSection === "entradas" ? totalEntradas :
             simulatorSection === "faturamento" ? faturamento :
@@ -1305,10 +1301,10 @@ function ExpandedDetails({
 
         {/* Entradas vs Saídas - Card principal */}
         <div className={`rounded-xl overflow-hidden shadow-sm border ${
-          variacaoSaldo >= 0 ? "border-teal-200" : "border-amber-200"
+          variacaoSaldo >= 0 ? "border-emerald-300" : "border-amber-300"
         }`}>
           <div className={`px-5 py-4 ${
-            variacaoSaldo >= 0 ? "bg-gradient-to-r from-teal-600 to-emerald-600" : "bg-gradient-to-r from-rose-400 to-orange-400"
+            variacaoSaldo >= 0 ? "bg-gradient-to-r from-emerald-600 to-green-600" : "bg-gradient-to-r from-amber-500 to-orange-500"
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1318,30 +1314,30 @@ function ExpandedDetails({
                   <TrendingDown className="w-7 h-7 text-white/90" />
                 )}
                 <div>
-                  <p className="text-white font-bold text-sm">Entradas vs Saidas</p>
-                  <p className="text-white/70 text-[10px]">
+                  <p className="text-white font-bold text-base">Entradas vs Saidas</p>
+                  <p className="text-white/80 text-sm">
                     {variacaoSaldo >= 0
                       ? "O que entrou no caixa cobre o que saiu no periodo"
                       : "Saiu mais dinheiro do caixa do que entrou no periodo"}
                   </p>
                 </div>
               </div>
-              <span className="text-xl font-bold text-white">
+              <span className="text-2xl font-bold text-white">
                 {variacaoSaldo >= 0 ? "+" : ""}{formatCurrency(variacaoSaldo)}
               </span>
             </div>
           </div>
-          <div className={`px-5 py-3 flex items-center justify-between text-xs ${
-            variacaoSaldo >= 0 ? "bg-teal-50" : "bg-orange-50/60"
+          <div className={`px-5 py-3 flex items-center justify-between text-sm ${
+            variacaoSaldo >= 0 ? "bg-emerald-50" : "bg-amber-50/60"
           }`}>
             <div className="flex items-center gap-4">
               <span className="text-slate-500"><span className="font-semibold text-teal-700">{formatCurrency(totalEntradas)}</span> entradas</span>
               <span className="text-slate-400">&minus;</span>
-              <span className="text-slate-500"><span className="font-semibold text-red-700">{formatCurrency(contasPagas)}</span> saidas</span>
+              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrency(contasPagas)}</span> saidas</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${variacaoSaldo >= 0 ? "bg-teal-500" : "bg-orange-400"}`} style={{ width: `${Math.min(100, totalEntradas > 0 ? (Math.min(totalEntradas, contasPagas) / Math.max(totalEntradas, contasPagas)) * 100 : 0)}%` }} />
+                <div className={`h-full rounded-full ${variacaoSaldo >= 0 ? "bg-emerald-500" : "bg-red-400"}`} style={{ width: `${Math.min(100, totalEntradas > 0 ? (Math.min(totalEntradas, contasPagas) / Math.max(totalEntradas, contasPagas)) * 100 : 0)}%` }} />
               </div>
             </div>
           </div>
@@ -1351,27 +1347,27 @@ function ExpandedDetails({
         <div className="grid grid-cols-2 gap-3">
           {/* Faturamento vs Pago */}
           <div className={`rounded-xl overflow-hidden shadow-sm border ${
-            faturamento - contasPagas >= 0 ? "border-emerald-200" : "border-amber-200"
+            faturamento - contasPagas >= 0 ? "border-emerald-300" : "border-amber-300"
           }`}>
             <div className={`px-4 py-3 ${
-              faturamento - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gradient-to-r from-rose-400 to-amber-400"
+              faturamento - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gradient-to-r from-amber-500 to-orange-500"
             }`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-bold text-xs">Faturamento vs Pago</p>
-                  <p className="text-white/70 text-[9px] mt-0.5">
+                  <p className="text-white font-bold text-sm">Faturamento vs Pago</p>
+                  <p className="text-white/80 text-xs mt-0.5">
                     {faturamento - contasPagas >= 0
                       ? "O que faturei paga as contas"
                       : "O que faturei NAO paga as contas"}
                   </p>
                 </div>
-                <span className="text-base font-bold text-white">
+                <span className="text-xl font-bold text-white">
                   {faturamento - contasPagas >= 0 ? "+" : ""}{formatCurrency(faturamento - contasPagas)}
                 </span>
               </div>
             </div>
-            <div className={`px-4 py-2 text-[10px] flex items-center justify-between ${
-              faturamento - contasPagas >= 0 ? "bg-emerald-50" : "bg-orange-50/60"
+            <div className={`px-4 py-2.5 text-sm flex items-center justify-between ${
+              faturamento - contasPagas >= 0 ? "bg-emerald-50" : "bg-amber-50/60"
             }`}>
               <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrency(faturamento)}</span> fat.</span>
               <span className="text-slate-400">vs</span>
@@ -1381,29 +1377,29 @@ function ExpandedDetails({
 
           {/* Vendas vs Pago */}
           <div className={`rounded-xl overflow-hidden shadow-sm border ${
-            vendas - contasPagas >= 0 ? "border-blue-200" : "border-amber-200"
+            vendas - contasPagas >= 0 ? "border-emerald-300" : "border-amber-300"
           }`}>
             <div className={`px-4 py-3 ${
-              vendas - contasPagas >= 0 ? "bg-gradient-to-r from-blue-500 to-indigo-500" : "bg-gradient-to-r from-rose-400 to-pink-300"
+              vendas - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-gradient-to-r from-amber-500 to-orange-500"
             }`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white font-bold text-xs">Vendas vs Pago</p>
-                  <p className="text-white/70 text-[9px] mt-0.5">
+                  <p className="text-white font-bold text-sm">Vendas vs Pago</p>
+                  <p className="text-white/80 text-xs mt-0.5">
                     {vendas - contasPagas >= 0
                       ? "O que vendi paga as contas"
                       : "O que vendi NAO paga as contas"}
                   </p>
                 </div>
-                <span className="text-base font-bold text-white">
+                <span className="text-xl font-bold text-white">
                   {vendas - contasPagas >= 0 ? "+" : ""}{formatCurrency(vendas - contasPagas)}
                 </span>
               </div>
             </div>
-            <div className={`px-4 py-2 text-[10px] flex items-center justify-between ${
-              vendas - contasPagas >= 0 ? "bg-blue-50" : "bg-orange-50/60"
+            <div className={`px-4 py-2.5 text-sm flex items-center justify-between ${
+              vendas - contasPagas >= 0 ? "bg-emerald-50" : "bg-amber-50/60"
             }`}>
-              <span className="text-slate-500"><span className="font-semibold text-blue-700">{formatCurrency(vendas)}</span> vendas</span>
+              <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrency(vendas)}</span> vendas</span>
               <span className="text-slate-400">vs</span>
               <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrency(contasPagas)}</span> pago</span>
             </div>

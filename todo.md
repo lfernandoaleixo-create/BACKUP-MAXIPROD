@@ -2388,3 +2388,20 @@
 ## Notificações e Sistema de Cobrança (14/04/2026)
 - [x] Sininho de notificações visível apenas para Maria, Erica, Marcos e Guilherme (remover Fernando, Bruno, Gilson)
 - [x] Sistema de cobrança automática de inadimplência - manter funcionando normalmente
+
+## Autorização Fernando nos PDFs (14/04/2026)
+- [x] PDF de descontos (Recebíveis): mostrar bem grande e visível se foi "AUTORIZADO POR FERNANDO" ou "NÃO AUTORIZADO" dependendo da senha
+- [ ] PDF de pagamentos semanais (Financeiro): mostrar de forma visível se o checkbox foi ticado e autorizado pelo Fernando
+
+## Verificação Automática Maxiprod em Tempo Real (14/04/2026)
+- [x] Criar endpoints tRPC que consultam Maxiprod GraphQL em tempo real para cada seção (Faturamento, Vendas, A Receber, A Pagar, etc.)
+- [x] Criar componente MaxiprodAutoVerifier que mostra resultado da comparação (verde=confere, vermelho=divergência)
+- [x] Substituir MaxiprodSimulator pelo MaxiprodAutoVerifier em todos os pontos (Financial, Sales, ReceivablesTab, ResumoFinanceiroCard)
+- [x] Completar indicação de autorização Fernando nos PDFs de descontos e pagamentos semanais
+- [x] Cards de confrontamento compactos e expandidos: valor negativo = vermelho, positivo = verde, legendas maiores
+
+## Cores Dinâmicas e Legendas Maiores nos Cards Financeiros (14/04/2026)
+- [x] Cards de confrontamento: valores negativos ficam VERMELHO, positivos ficam VERDE
+- [x] Legendas dos cards de confrontamento aumentadas (text-xs → text-sm, valores text-base → text-xl)
+- [x] Cards expandidos: legendas e valores também aumentados
+- [x] Cores suavizadas nos cards expandidos negativos (de red para amber/orange)

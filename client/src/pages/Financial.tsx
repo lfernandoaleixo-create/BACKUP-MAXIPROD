@@ -68,7 +68,7 @@ import WeekReconciliationCard from "@/components/WeekReconciliationCard";
 import ResumoFinanceiroCard from "@/components/ResumoFinanceiroCard";
 import InadimplenciaTab from "@/components/InadimplenciaTab";
 import ReceivablesTab from "@/components/ReceivablesTab";
-import MaxiprodSimulator, { getMonthlyReceberSteps, getMonthlyPagarSteps, getTotalReceberSteps, getTotalPagarSteps } from "@/components/MaxiprodSimulator";
+import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calculator, History } from "lucide-react";
@@ -2011,7 +2011,7 @@ function CashFlowCard() {
   );
 }
 
-/* MonthVerifyModal removed - replaced by MaxiprodSimulator */
+/* MonthVerifyModal removed - replaced by MaxiprodAutoVerifier (auto-verification) */
 
 /* ---- Main Financial Page ---- */
 export default function Financial() {
@@ -2141,39 +2141,39 @@ export default function Financial() {
           </div>
         ) : (
           <>
-            {/* Simulador Maxiprod para verificação mensal */}
+            {/* Verificação automática Maxiprod para mês específico */}
             {verifyingMonth && (
-              <MaxiprodSimulator
+              <MaxiprodAutoVerifier
                 title={verifyingMonth.type === "receber" ? "A Receber" : "A Pagar"}
-                subtitle={`Conferência — ${verifyingMonth.label}`}
-                steps={verifyingMonth.type === "receber"
-                  ? getMonthlyReceberSteps(verifyingMonth.label, verifyingMonth.from, verifyingMonth.to, verifyingMonth.total)
-                  : getMonthlyPagarSteps(verifyingMonth.label, verifyingMonth.from, verifyingMonth.to, verifyingMonth.total)
-                }
-                maxiprodUrl={MAXIPROD_LOGIN_URL}
+                subtitle={`Conferencia automatica — ${verifyingMonth.label}`}
+                section={verifyingMonth.type === "receber" ? "contas_receber_mes" : "contas_pagar_mes"}
+                startDate={verifyingMonth.from}
+                endDate={verifyingMonth.to}
                 valorManus={verifyingMonth.total}
                 onClose={() => setVerifyingMonth(null)}
               />
             )}
-            {/* Simulador Maxiprod para total geral A Receber */}
+            {/* Verificação automática Maxiprod para total geral A Receber */}
             {showTotalReceberSim && (
-              <MaxiprodSimulator
+              <MaxiprodAutoVerifier
                 title="Total A Receber"
-                subtitle="Conferência do total geral de contas a receber"
-                steps={getTotalReceberSteps(monthlyData ? monthlyData.reduce((s, m) => s + m.receber.total, 0) : summary?.receber.emAberto.total)}
-                maxiprodUrl={MAXIPROD_LOGIN_URL}
-                valorManus={monthlyData ? monthlyData.reduce((s, m) => s + m.receber.total, 0) : summary?.receber.emAberto.total}
+                subtitle="Conferencia automatica do total geral de contas a receber"
+                section="contas_receber_mes"
+                startDate="2020-01-01"
+                endDate="2099-12-31"
+                valorManus={monthlyData ? monthlyData.reduce((s, m) => s + m.receber.total, 0) : (summary?.receber.emAberto.total ?? 0)}
                 onClose={() => setShowTotalReceberSim(false)}
               />
             )}
-            {/* Simulador Maxiprod para total geral A Pagar */}
+            {/* Verificação automática Maxiprod para total geral A Pagar */}
             {showTotalPagarSim && (
-              <MaxiprodSimulator
+              <MaxiprodAutoVerifier
                 title="Total A Pagar"
-                subtitle="Conferência do total geral de contas a pagar"
-                steps={getTotalPagarSteps(monthlyData ? monthlyData.reduce((s, m) => s + m.pagar.total, 0) : summary?.pagar.emAberto.total)}
-                maxiprodUrl={MAXIPROD_LOGIN_URL}
-                valorManus={monthlyData ? monthlyData.reduce((s, m) => s + m.pagar.total, 0) : summary?.pagar.emAberto.total}
+                subtitle="Conferencia automatica do total geral de contas a pagar"
+                section="contas_pagar_mes"
+                startDate="2020-01-01"
+                endDate="2099-12-31"
+                valorManus={monthlyData ? monthlyData.reduce((s, m) => s + m.pagar.total, 0) : (summary?.pagar.emAberto.total ?? 0)}
                 onClose={() => setShowTotalPagarSim(false)}
               />
             )}

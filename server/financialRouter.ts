@@ -4294,7 +4294,7 @@ ${acoesTexto}
    */
   getMaxiprodContraprova: publicProcedure
     .input(z.object({
-      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis", "inadimplencia", "contas_receber_mes", "contas_pagar_mes"]),
+      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis", "inadimplencia", "contas_receber_mes", "contas_pagar_mes", "a_faturar", "amostra_bonif"]),
       startDate: z.string(),
       endDate: z.string(),
     }))
@@ -4489,6 +4489,78 @@ ${acoesTexto}
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
             label: `${result[0]?.count || 0} títulos a receber no período`,
+          });
+        }
+
+        // a_faturar - pedidos de venda com estado do item "A Faturar"
+        if (section === "a_faturar") {
+          const db = await getDb();
+          if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          const startDay = startDate.substring(0, 10);
+          const endDay = endDate.substring(0, 10);
+          const allItems = await db.select().from(salesOrders)
+            .where(and(
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`,
+              sql`UPPER(${salesOrders.estadoItem}) = 'A FATURAR'`
+            ));
+
+          const estadoToGrupo = (estado: string | null): string => {
+            if (!estado) return "outros";
+            const e = estado.toUpperCase();
+            if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+            if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+            if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+            return "outros";
+          };
+
+          const isDigitacao = (nota: string | null) => {
+            if (!nota) return false;
+            const n = nota.toUpperCase();
+            return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+          };
+
+          const filtered = allItems.filter(item => !isDigitacao(item.estadoNota) && estadoToGrupo(item.estadoConfiguravel) !== "outros");
+          const total = filtered.reduce((sum, item) => sum + Number(item.valorTotal || 0), 0);
+          const rounded = Math.round(total * 100) / 100;
+
+          return cacheAndReturn({
+            valorMaxiprod: rounded,
+            count: filtered.length,
+            label: `${filtered.length} itens a faturar no período`,
+          });
+        }
+
+        // amostra_bonif - pedidos de venda com estado configurável Amostra ou Bonificação
+        if (section === "amostra_bonif") {
+          const db = await getDb();
+          if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          const startDay = startDate.substring(0, 10);
+          const endDay = endDate.substring(0, 10);
+          const allItems = await db.select().from(salesOrders)
+            .where(and(
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`,
+              sql`UPPER(${salesOrders.estadoConfiguravel}) IN ('AMOSTRA', 'BONIFICAÇÃO', 'BONIFICACAO')`
+            ));
+
+          const isDigitacao = (nota: string | null) => {
+            if (!nota) return false;
+            const n = nota.toUpperCase();
+            return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+          };
+
+          const filtered = allItems.filter(item => !isDigitacao(item.estadoNota));
+          const uniqueOrders = new Set(filtered.map(i => i.pedido).filter(Boolean));
+          const total = filtered.reduce((sum, item) => sum + Number(item.valorTotal || 0), 0);
+          const rounded = Math.round(total * 100) / 100;
+
+          return cacheAndReturn({
+            valorMaxiprod: rounded,
+            count: uniqueOrders.size,
+            label: `${uniqueOrders.size} pedidos de amostra/bonificação no período`,
           });
         }
 

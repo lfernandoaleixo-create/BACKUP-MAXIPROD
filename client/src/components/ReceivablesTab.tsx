@@ -44,7 +44,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import MaxiprodSimulator, { getReceivablesSteps } from "@/components/MaxiprodSimulator";
+import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 
 
 /* ---- Helpers ---- */
@@ -606,12 +606,26 @@ function ContaFiltersAndTable({
         <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;text-align:center">${i.isOverdue ? "Vencido" : "A Vencer"}</td>
       </tr>
     `).join("");
+    const authBanner = discountsAuthorized
+      ? `<div style="background:#ecfdf5;border:3px solid #10b981;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center">
+          <div style="font-size:36px;margin-bottom:8px">&#9989;</div>
+          <div style="font-size:24px;font-weight:900;color:#059669;text-transform:uppercase;letter-spacing:2px">AUTORIZADO POR FERNANDO</div>
+          <div style="font-size:13px;color:#047857;margin-top:6px">Desconto aprovado e autorizado antes da exportação</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px">Data da autorização: ${new Date().toLocaleString("pt-BR")}</div>
+        </div>`
+      : `<div style="background:#fef2f2;border:3px solid #ef4444;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center">
+          <div style="font-size:36px;margin-bottom:8px">&#10060;</div>
+          <div style="font-size:24px;font-weight:900;color:#dc2626;text-transform:uppercase;letter-spacing:2px">NÃO AUTORIZADO</div>
+          <div style="font-size:13px;color:#b91c1c;margin-top:6px">Este desconto NÃO foi autorizado por Fernando antes da exportação</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px">Exportado em: ${new Date().toLocaleString("pt-BR")}</div>
+        </div>`;
     printWindow.document.write(`<!DOCTYPE html><html><head><title>Selecionados para Desconto - ${contaLabel}</title></head><body style="font-family:system-ui;padding:30px">
       <div style="text-align:center;margin-bottom:20px">
         <h2 style="color:#0f766e;margin:0">Selecionados para Desconto</h2>
         <p style="color:#64748b;font-size:13px">${empresaNome} - ${contaLabel} - ${mesLabel}</p>
         <p style="color:#64748b;font-size:12px">Gerado em ${new Date().toLocaleString("pt-BR")}</p>
       </div>
+      ${authBanner}
       <div style="background:#f0fdfa;border:2px solid #14b8a6;border-radius:8px;padding:16px;margin-bottom:20px;text-align:center">
         <div style="font-size:12px;color:#0f766e;text-transform:uppercase;font-weight:700">Valor Total Selecionado</div>
         <div style="font-size:28px;font-weight:800;color:#0f766e">${formatCurrency(selectedContaTotal)}</div>
@@ -807,24 +821,25 @@ function ContaFiltersAndTable({
         </div>
       )}
 
-      {/* Simulador Maxiprod - passo a passo animado */}
-      {showVerifyModal && (
-        <MaxiprodSimulator
-          onClose={() => setShowVerifyModal(false)}
-          title="Contraprova: Contas a Receber"
-          subtitle={`${empresaNome} - ${mesLabel} - ${contaLabel}`}
-          steps={getReceivablesSteps({
-            empresa: empresaNome,
-            mes: mesKey,
-            contaLabel,
-            formaCobranca: formaFilter,
-            statusFilter,
-            valorManus: filteredTotals.total,
-          })}
-          maxiprodUrl="https://app.maxiprod.com.br/"
-          valorManus={filteredTotals.total}
-        />
-      )}
+      {/* Verificacao automatica Maxiprod */}
+      {showVerifyModal && (() => {
+        // Calculate date range from mesKey (YYYY-MM)
+        const [y, m] = mesKey.split("-");
+        const lastDay = new Date(Number(y), Number(m), 0).getDate();
+        const sDate = `${y}-${m}-01`;
+        const eDate = `${y}-${m}-${String(lastDay).padStart(2, "0")}`;
+        return (
+          <MaxiprodAutoVerifier
+            onClose={() => setShowVerifyModal(false)}
+            title="Conferencia: Contas a Receber"
+            subtitle={`${empresaNome} - ${mesLabel} - ${contaLabel}`}
+            section="recebiveis"
+            startDate={sDate}
+            endDate={eDate}
+            valorManus={filteredTotals.total}
+          />
+        );
+      })()}
 
       {/* ---- CARD SELECIONADOS PARA DESCONTO (TOPO da conta) ---- */}
       {selectedIds.size > 0 && (
