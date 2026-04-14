@@ -149,6 +149,88 @@ function getVerificationSteps(section: VerifySection, startDate: string, endDate
   return login;
 }
 
+/* ---- Animated CSS keyframes injected once ---- */
+const STYLE_ID = "maxiprod-verifier-animations";
+function ensureAnimationStyles() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  style.textContent = `
+    @keyframes mp-gradient-shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes mp-shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    @keyframes mp-pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(52,211,153,0.3), 0 0 30px rgba(52,211,153,0.1); }
+      50% { box-shadow: 0 0 25px rgba(52,211,153,0.5), 0 0 50px rgba(52,211,153,0.2); }
+    }
+    @keyframes mp-pulse-glow-red {
+      0%, 100% { box-shadow: 0 0 15px rgba(239,68,68,0.3), 0 0 30px rgba(239,68,68,0.1); }
+      50% { box-shadow: 0 0 25px rgba(239,68,68,0.5), 0 0 50px rgba(239,68,68,0.2); }
+    }
+    @keyframes mp-float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+    @keyframes mp-scan-line {
+      0% { top: 0%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    @keyframes mp-value-count {
+      0% { opacity: 0; transform: scale(0.8); }
+      50% { transform: scale(1.05); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes mp-check-bounce {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+    .mp-gradient-bg {
+      background: linear-gradient(135deg, #1e1b4b, #0f172a, #3b0764, #1e1b4b, #0f172a);
+      background-size: 400% 400%;
+      animation: mp-gradient-shift 8s ease infinite;
+    }
+    .mp-shimmer-overlay {
+      position: relative;
+      overflow: hidden;
+    }
+    .mp-shimmer-overlay::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+      animation: mp-shimmer 3s ease-in-out infinite;
+    }
+    .mp-float { animation: mp-float 3s ease-in-out infinite; }
+    .mp-glow-green { animation: mp-pulse-glow 2s ease-in-out infinite; }
+    .mp-glow-red { animation: mp-pulse-glow-red 2s ease-in-out infinite; }
+    .mp-value-appear { animation: mp-value-count 0.6s ease-out forwards; }
+    .mp-check-bounce { animation: mp-check-bounce 0.5s ease-out forwards; }
+    .mp-scan-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent);
+      animation: mp-scan-line 2s ease-in-out infinite;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 /* ---- Component ---- */
 export default function MaxiprodAutoVerifier({
   title,
@@ -160,6 +242,10 @@ export default function MaxiprodAutoVerifier({
   onClose,
 }: MaxiprodAutoVerifierProps) {
   const [showSteps, setShowSteps] = useState(true);
+  const [showResult, setShowResult] = useState(false);
+
+  // Inject animation styles
+  useEffect(() => { ensureAnimationStyles(); }, []);
 
   // Auto-query Maxiprod via backend
   const { data: cpData, isLoading: cpLoading, error: cpError } = trpc.financial.getMaxiprodContraprova.useQuery(
@@ -177,16 +263,28 @@ export default function MaxiprodAutoVerifier({
   const hasDivergencia = divergencia !== null && divergencia > 1; // tolerancia R$1
   const confere = !cpLoading && !cpError && valorMaxiprod !== undefined && !hasDivergencia;
 
+  // Delay result appearance for dramatic effect
+  useEffect(() => {
+    if (!cpLoading && (confere || hasDivergencia)) {
+      const timer = setTimeout(() => setShowResult(true), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [cpLoading, confere, hasDivergencia]);
+
   const steps = useMemo(() => getVerificationSteps(section, startDate, endDate), [section, startDate, endDate]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 px-6 py-5">
-          <div className="flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden" onClick={e => e.stopPropagation()}
+        style={{ animation: "mp-value-count 0.3s ease-out" }}>
+        {/* Header - animated gradient */}
+        <div className="mp-gradient-bg mp-shimmer-overlay px-6 py-5 relative">
+          {/* Scan line while loading */}
+          {cpLoading && <div className="mp-scan-line" />}
+
+          <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30 ${cpLoading ? "mp-float" : ""}`}>
                 <Eye className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -200,29 +298,29 @@ export default function MaxiprodAutoVerifier({
           </div>
 
           {/* Values side by side */}
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <div className="px-4 py-3 bg-white/10 rounded-lg border border-white/20">
+          <div className="mt-4 grid grid-cols-2 gap-2 relative z-10">
+            <div className="px-4 py-3 bg-white/10 rounded-lg border border-white/20 backdrop-blur-sm transition-all duration-500">
               <span className="text-indigo-300 text-[10px] uppercase tracking-wider">Valor no Dashboard</span>
-              <p className="text-white font-bold text-lg mt-0.5" style={{ textShadow: "0 0 15px rgba(34,211,238,0.4)" }}>
+              <p className="text-white font-bold text-lg mt-0.5 mp-value-appear" style={{ textShadow: "0 0 15px rgba(34,211,238,0.4)" }}>
                 {formatCurrency(valorManus)}
               </p>
             </div>
-            <div className={`px-4 py-3 rounded-lg border ${
+            <div className={`px-4 py-3 rounded-lg border backdrop-blur-sm transition-all duration-700 ${
               cpLoading ? "bg-white/5 border-white/10" :
-              hasDivergencia ? "bg-red-500/20 border-red-400/40" :
-              confere ? "bg-emerald-500/20 border-emerald-400/40" :
+              hasDivergencia ? "bg-red-500/20 border-red-400/40 mp-glow-red" :
+              confere ? "bg-emerald-500/20 border-emerald-400/40 mp-glow-green" :
               "bg-white/5 border-white/10"
             }`}>
               <span className="text-indigo-300 text-[10px] uppercase tracking-wider">Valor Maxiprod (API)</span>
               {cpLoading ? (
                 <div className="flex items-center gap-2 mt-1.5">
                   <Loader2 className="w-5 h-5 animate-spin text-indigo-300" />
-                  <span className="text-indigo-300 text-sm">Consultando Maxiprod...</span>
+                  <span className="text-indigo-300 text-sm">Consultando...</span>
                 </div>
               ) : cpError ? (
                 <p className="text-red-300 text-sm mt-1">Erro na consulta</p>
               ) : valorMaxiprod !== undefined ? (
-                <p className={`font-bold text-lg mt-0.5 ${hasDivergencia ? "text-red-300" : "text-emerald-300"}`}
+                <p className={`font-bold text-lg mt-0.5 mp-value-appear ${hasDivergencia ? "text-red-300" : "text-emerald-300"}`}
                   style={{ textShadow: hasDivergencia ? "0 0 15px rgba(239,68,68,0.4)" : "0 0 15px rgba(52,211,153,0.4)" }}>
                   {formatCurrency(valorMaxiprod)}
                 </p>
@@ -232,33 +330,49 @@ export default function MaxiprodAutoVerifier({
             </div>
           </div>
 
-          {/* Result banner */}
-          {confere && (
-            <div className="mt-3 px-4 py-3 bg-emerald-500/25 rounded-lg border border-emerald-400/40 flex items-center gap-3">
-              <ShieldCheck className="w-6 h-6 text-emerald-300 flex-shrink-0" />
-              <div>
-                <p className="text-emerald-100 text-sm font-bold">Conferencia automatica com Maxiprod realizada. Os valores conferem!</p>
-                {maxiprodLabel && <p className="text-emerald-300/70 text-[10px] mt-0.5">{maxiprodLabel}</p>}
+          {/* Result banner with animation */}
+          <div className="relative z-10">
+            {showResult && confere && (
+              <div className="mt-3 px-4 py-3 bg-emerald-500/25 rounded-lg border border-emerald-400/40 flex items-center gap-3 mp-glow-green"
+                style={{ animation: "mp-value-count 0.5s ease-out" }}>
+                <div className="mp-check-bounce">
+                  <ShieldCheck className="w-6 h-6 text-emerald-300 flex-shrink-0" />
+                </div>
+                <div>
+                  <p className="text-emerald-100 text-sm font-bold">Conferencia automatica com Maxiprod realizada. Os valores conferem!</p>
+                  {maxiprodLabel && <p className="text-emerald-300/70 text-[10px] mt-0.5">{maxiprodLabel}</p>}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {hasDivergencia && (
-            <div className="mt-3 px-4 py-3 bg-red-500/25 rounded-lg border border-red-400/40 flex items-center gap-3">
-              <ShieldAlert className="w-6 h-6 text-red-300 flex-shrink-0" />
-              <div>
-                <p className="text-red-100 text-sm font-bold">Divergencia de {formatCurrency(divergencia!)} detectada!</p>
-                {maxiprodLabel && <p className="text-red-300/70 text-[10px] mt-0.5">{maxiprodLabel}</p>}
+            {showResult && hasDivergencia && (
+              <div className="mt-3 px-4 py-3 bg-red-500/25 rounded-lg border border-red-400/40 flex items-center gap-3 mp-glow-red"
+                style={{ animation: "mp-value-count 0.5s ease-out" }}>
+                <div className="mp-check-bounce">
+                  <ShieldAlert className="w-6 h-6 text-red-300 flex-shrink-0" />
+                </div>
+                <div>
+                  <p className="text-red-100 text-sm font-bold">Divergencia de {formatCurrency(divergencia!)} detectada!</p>
+                  {maxiprodLabel && <p className="text-red-300/70 text-[10px] mt-0.5">{maxiprodLabel}</p>}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {cpLoading && (
-            <div className="mt-3 px-4 py-3 bg-indigo-500/15 rounded-lg border border-indigo-400/30 flex items-center gap-3">
-              <Shield className="w-5 h-5 text-indigo-300 flex-shrink-0 animate-pulse" />
-              <p className="text-indigo-200 text-sm">Verificando valores com o Maxiprod em tempo real...</p>
-            </div>
-          )}
+            {cpLoading && (
+              <div className="mt-3 px-4 py-3 bg-indigo-500/15 rounded-lg border border-indigo-400/30 flex items-center gap-3"
+                style={{ animation: "mp-value-count 0.4s ease-out" }}>
+                <Shield className="w-5 h-5 text-indigo-300 flex-shrink-0 animate-pulse" />
+                <div className="flex items-center gap-2">
+                  <p className="text-indigo-200 text-sm">Verificando valores com o Maxiprod em tempo real</p>
+                  <span className="flex gap-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Verification steps (collapsible) */}
@@ -281,7 +395,8 @@ export default function MaxiprodAutoVerifier({
               {steps.map((st, idx) => (
                 <div key={idx} className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
                   st.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 border border-slate-200"
-                }`}>
+                }`}
+                  style={{ animation: `mp-value-count 0.4s ease-out ${idx * 0.08}s both` }}>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold ${
                     st.highlight ? "bg-amber-500 text-white shadow-md shadow-amber-500/30" : "bg-indigo-600 text-white"
                   }`}>{idx + 1}</div>

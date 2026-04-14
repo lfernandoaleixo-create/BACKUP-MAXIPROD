@@ -2413,3 +2413,7 @@
 - [x] Mover coluna "Decisão de Cobrança" para após Atraso (reordenado: Cliente, Vendedor, Forma Cobr., Venc., Atraso, Decisão, Status, Valor, Ações)
 - [x] Cards expandidos negativos: trocar amber/orange por vermelho neon suave (rose/red com opacidade)
 - [x] MaxiprodAutoVerifier: passo a passo deve iniciar EXPANDIDO (não recolhido) ao abrir o modal
+
+## Ajustes Visuais (14/04/2026 - Parte 2)
+- [x] MaxiprodAutoVerifier card: adicionar animação/movimento dinâmico (gradiente animado, shimmer, etc.)
+- [x] Legendas dos cards compactos de confrontamento: trocar textos informais por norma culta formal

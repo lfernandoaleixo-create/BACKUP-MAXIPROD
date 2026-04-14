@@ -889,8 +889,8 @@ function CompactSummary({
             </p>
             <p className={`text-sm mt-1.5 leading-snug font-medium ${variacaoSaldo >= 0 ? "text-emerald-600/70" : "text-red-500/70"}`}>
               {variacaoSaldo >= 0
-                ? "O que entrou no caixa cobre o que saiu"
-                : "Saiu mais dinheiro do que entrou no periodo"}
+                ? "O total de entradas é superior ao total de saídas no período"
+                : "O total de saídas excede o total de entradas no período"}
             </p>
           </div>
 
@@ -907,8 +907,8 @@ function CompactSummary({
             </p>
             <p className={`text-sm mt-1.5 leading-snug font-medium ${faturamento - contasPagas >= 0 ? "text-emerald-600/70" : "text-red-500/70"}`}>
               {faturamento - contasPagas >= 0
-                ? "O faturamento cobre os pagamentos"
-                : "O que faturei nao paga as contas"}
+                ? "O valor faturado é suficiente para cobrir os pagamentos realizados"
+                : "O valor faturado é inferior ao total de pagamentos realizados"}
             </p>
           </div>
 
@@ -925,8 +925,8 @@ function CompactSummary({
             </p>
             <p className={`text-sm mt-1.5 leading-snug font-medium ${vendas - contasPagas >= 0 ? "text-emerald-600/70" : "text-red-500/70"}`}>
               {vendas - contasPagas >= 0
-                ? "O que vendi cobre os pagamentos"
-                : "O que vendi nao paga as contas"}
+                ? "O volume de vendas é suficiente para cobrir os pagamentos realizados"
+                : "O volume de vendas é inferior ao total de pagamentos realizados"}
             </p>
           </div>
         </div>
@@ -1316,9 +1316,9 @@ function ExpandedDetails({
                 <div>
                   <p className="text-white font-bold text-base">Entradas vs Saidas</p>
                   <p className="text-white/80 text-sm">
-                    {variacaoSaldo >= 0
-                      ? "O que entrou no caixa cobre o que saiu no periodo"
-                      : "Saiu mais dinheiro do caixa do que entrou no periodo"}
+{variacaoSaldo >= 0
+                       ? "O total de entradas é superior ao total de saídas no período"
+                       : "O total de saídas excede o total de entradas no período"}
                   </p>
                 </div>
               </div>
@@ -1356,9 +1356,9 @@ function ExpandedDetails({
                 <div>
                   <p className="text-white font-bold text-sm">Faturamento vs Pago</p>
                   <p className="text-white/80 text-xs mt-0.5">
-                    {faturamento - contasPagas >= 0
-                      ? "O que faturei paga as contas"
-                      : "O que faturei NAO paga as contas"}
+{faturamento - contasPagas >= 0
+                       ? "O valor faturado é suficiente para cobrir os pagamentos"
+                       : "O valor faturado é inferior ao total de pagamentos"}
                   </p>
                 </div>
                 <span className="text-xl font-bold text-white">
@@ -1386,9 +1386,9 @@ function ExpandedDetails({
                 <div>
                   <p className="text-white font-bold text-sm">Vendas vs Pago</p>
                   <p className="text-white/80 text-xs mt-0.5">
-                    {vendas - contasPagas >= 0
-                      ? "O que vendi paga as contas"
-                      : "O que vendi NAO paga as contas"}
+{vendas - contasPagas >= 0
+                       ? "O volume de vendas é suficiente para cobrir os pagamentos"
+                       : "O volume de vendas é inferior ao total de pagamentos"}
                   </p>
                 </div>
                 <span className="text-xl font-bold text-white">
