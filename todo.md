@@ -2460,3 +2460,8 @@
 - [x] Guia de Cobrança: Dia 5 pós-vencimento = Ligação + Email
 - [x] Registrar tudo no guia de cobrança e histórico
 - [x] Atualizar documento gerado no histórico de cobrança com novas regras
+
+## Ajustes Visuais Botão + Labels (14/04/2026 - Parte 7)
+- [x] Botão "Histórico de Modificação Semanal": amarelo neon mais discreto (menos chamativo)
+- [x] Botão: retângulo mais justo com o texto (menos largo)
+- [x] Substituir "Títulos vencidos (anteriores à data atual)" por datas reais das semanas modificadas

@@ -64,9 +64,21 @@ function getWeekBoundaries(todayStr: string) {
 /** Determina em qual semana um título cai */
 function getWeekLabel(vencStr: string, todayStr: string, weeks: { start: string; end: string; label: string }[]): string {
   const adjVenc = adjustWeekendStr(vencStr);
-  if (adjVenc < todayStr) return "Vencidas";
+  if (adjVenc < todayStr) {
+    // Em vez de "Vencidas", mostrar a data real: "Venc. antes de DD/MM"
+    const dd = todayStr.slice(8, 10);
+    const mm = todayStr.slice(5, 7);
+    return `Venc. antes de ${dd}/${mm}`;
+  }
   for (const w of weeks) {
     if (adjVenc >= w.start && adjVenc <= w.end) return w.label;
+  }
+  // Em vez de "Além de 8 semanas", mostrar a data real
+  if (weeks.length > 0) {
+    const lastWeek = weeks[weeks.length - 1];
+    const dd = lastWeek.end.slice(8, 10);
+    const mm = lastWeek.end.slice(5, 7);
+    return `Após ${dd}/${mm}`;
   }
   return "Além de 8 semanas";
 }

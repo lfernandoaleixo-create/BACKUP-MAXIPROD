@@ -84,13 +84,23 @@ function getDayName(dateStr: string): string {
  */
 export function formatSemanaLabel(label: string): string {
   if (!label) return "Sem semana";
-  if (label === "Vencidas") return "Títulos vencidos (anteriores à data atual)";
-  if (label === "Além de 8 semanas") return "Títulos com vencimento além de 8 semanas";
-  if (label === "Sem vencimento") return "Títulos sem data de vencimento";
-  // Formato DD/MM - DD/MM → "Semana analisada: DD/MM a DD/MM"
+  // Labels dinâmicos: "Venc. antes de DD/MM"
+  if (label.startsWith("Venc. antes de ")) {
+    const date = label.replace("Venc. antes de ", "");
+    return `Vencidos antes de ${date}`;
+  }
+  // Labels dinâmicos: "Após DD/MM"
+  if (label.startsWith("Após ")) {
+    return `Vencimento após ${label.replace("Após ", "")}`;
+  }
+  // Compat: labels antigos que ainda podem existir no banco
+  if (label === "Vencidas") return "Títulos vencidos";
+  if (label === "Além de 8 semanas") return "Além de 8 semanas";
+  if (label === "Sem vencimento") return "Sem data de vencimento";
+  // Formato DD/MM - DD/MM → "Semana: DD/MM a DD/MM"
   const match = label.match(/^(\d{2}\/\d{2})\s*-\s*(\d{2}\/\d{2})$/);
   if (match) {
-    return `Semana analisada: ${match[1]} a ${match[2]}`;
+    return `Semana: ${match[1]} a ${match[2]}`;
   }
   return label;
 }
@@ -102,8 +112,13 @@ export function formatSemanaLabel(label: string): string {
  * "Além de 8 semanas" vem depois de tudo (retorna 9999).
  */
 export function getSemanaOrderKey(label: string): number {
+  // Labels dinâmicos: "Venc. antes de DD/MM" → vem primeiro
+  if (label.startsWith("Venc. antes de ")) return -1;
+  // Compat: labels antigos
   if (label === "Vencidas") return -1;
   if (label === "Sem vencimento") return 9998;
+  // Labels dinâmicos: "Após DD/MM" → vem por último
+  if (label.startsWith("Após ")) return 9999;
   if (label === "Além de 8 semanas") return 9999;
   const match = label.match(/^(\d{2})\/(\d{2})\s*-/);
   if (match) {
