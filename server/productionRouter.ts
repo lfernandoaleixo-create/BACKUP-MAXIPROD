@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems } from "../drizzle/schema";
+import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory } from "../drizzle/schema";
 import { eq, and, or, sql, desc, gte, lte, inArray } from "drizzle-orm";
 
 /** Status válidos para máquinas de produção */
@@ -104,7 +104,12 @@ export const productionRouter = router({
         .where(and(...conditions))
         .limit(1);
 
+      let entryId: number;
+      let entryAction: string;
+      let previousQty = 0;
+
       if (existing.length > 0) {
+        previousQty = parseFloat(String(existing[0].quantidade)) || 0;
         await db
           .update(productionEntries)
           .set({
@@ -114,7 +119,8 @@ export const productionRouter = router({
             lancadoPor: input.lancadoPor || null,
           })
           .where(eq(productionEntries.id, existing[0].id));
-        return { id: existing[0].id, action: "updated" };
+        entryId = existing[0].id;
+        entryAction = "updated";
       } else {
         const result = await db.insert(productionEntries).values({
           sectorId: input.sectorId,
@@ -126,8 +132,61 @@ export const productionRouter = router({
           observacoes: input.observacoes || null,
           lancadoPor: input.lancadoPor || null,
         });
-        return { id: result[0].insertId, action: "created" };
+        entryId = result[0].insertId;
+        entryAction = "created";
       }
+
+      // ─── Embalagem (setor sem máquina) com data >= 15/04/2026 alimenta estoque Madeira PA ───
+      // Identifica Embalagem: machineId é null e tipoMadeira contém o codigoItem do produto
+      const STOCK_CUTOFF_DATE = "2026-04-15";
+      if (
+        input.machineId === null &&
+        input.tipoMadeira &&
+        input.data >= STOCK_CUTOFF_DATE
+      ) {
+        // Verificar se este setor é realmente Embalagem (tipoEquipamento = "nenhum")
+        const sectorRows = await db.select().from(productionSectors).where(eq(productionSectors.id, input.sectorId)).limit(1);
+        const isEmbalagem = sectorRows.length > 0 && sectorRows[0].tipoEquipamento === "nenhum";
+
+        if (isEmbalagem) {
+          const codigoItem = input.tipoMadeira; // Na embalagem, tipoMadeira armazena o codigoItem
+          const diff = input.quantidade - previousQty;
+
+          if (diff !== 0) {
+            // Get current stock value
+            const stockRows = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, codigoItem));
+            const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
+            const newStock = Math.max(0, currentStock + diff); // Não deixar ficar negativo
+
+            // Record history
+            await db.insert(stockEditHistory).values({
+              card: "madeira",
+              codigoItem,
+              descricaoItem: null,
+              valorAnterior: String(currentStock),
+              valorNovo: String(newStock),
+              operador: `Produção (${input.lancadoPor || "Sistema"})`,
+              tipo: "alteracao",
+            });
+
+            // Upsert stock
+            await db.insert(madeiraStock)
+              .values({
+                codigoItem,
+                quantidade: String(newStock),
+                updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
+              })
+              .onDuplicateKeyUpdate({
+                set: {
+                  quantidade: sql`${String(newStock)}`,
+                  updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
+                },
+              });
+          }
+        }
+      }
+
+      return { id: entryId, action: entryAction };
     }),
 
   /**

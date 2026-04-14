@@ -2474,3 +2474,12 @@
 - [x] Passo a passo: Clientes → buscar cliente → Campos adicionais grupo COBRANÇA → SITUAÇÃO → escolher opção
 - [x] Responsabilidade da Vitória: vendas a partir de hoje sem decisão de cobrança preenchida
 - [x] Atualizar conteúdo do tutorial "Como Funciona o Histórico" com informações mais completas (snapshot no início do mês, detecção diária, entradas/saídas com data/valor/cliente/semana)
+## Histórico de Variação do Estoque Projetado (14/04/2026 - Parte 9)
+- [ ] Registrar snapshots diários do estoque projetado (Disponível + PO) por produto
+- [ ] Criar componente visual de histórico de variação no card PROJETADO
+- [ ] Mostrar quando e por que o número mudou (aumento de PO, entrada de mercadoria, etc.)
+## Regras Aba Produção (14/04/2026 - Parte 10)
+- [x] Permissão de edição: APENAS Maria pode editar na aba Produção; demais operadores somente visualizam
+- [x] Embalagem (setor 8) com data >= 15/04/2026: soma no estoque Madeira PA pelo código do produto (em caixas)
+- [x] Registros anteriores a 15/04/2026: apenas histórico, não afeta estoque nenhum
+- [x] Outros setores (Multilâmina, Vareteira, Seletoras, etc.): apenas histórico, nunca afetam estoque
