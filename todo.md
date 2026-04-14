@@ -2427,3 +2427,6 @@
 ## Ajuste Layout Tabela Inadimplência (14/04/2026 - Parte 4)
 - [x] Corrigir layout da tabela: nada cortado (nomes, vendedor, ícones de ações telefone/histórico/livrinho)
 - [x] Otimizar larguras das colunas, texto menor onde necessário, quebra de linha adequada
+
+## Reordenar Valor antes de Vencimento (14/04/2026)
+- [x] Mover coluna Valor para antes de Vencimento na tabela de inadimplência (header + TitleRow + ClienteTitleRow)

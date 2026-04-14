@@ -582,11 +582,14 @@ export default function InadimplenciaTab() {
 
                 {isOpen && (
                   <div className="bg-white/80 border-t border-slate-100">
-                    <div className="hidden md:grid grid-cols-[1fr_100px_85px_130px_85px_55px_100px_95px_120px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-300">
+                    <div className="hidden md:grid grid-cols-[1fr_100px_85px_130px_95px_85px_55px_100px_120px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-300">
                       <span className="flex items-center justify-start px-3 py-2 border-r border-slate-300">Referência / Documento</span>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-300">Vendedor</span>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-300">Forma Cobr.</span>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-300">Decisão Cobr.</span>
+                      <button onClick={() => toggleClientSort("valor")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-300 hover:text-slate-700 cursor-pointer select-none">
+                        Valor {clientSortBy === "valor" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
+                      </button>
                       <button onClick={() => toggleClientSort("vencimento")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-300 hover:text-slate-700 cursor-pointer select-none">
                         Venc. {clientSortBy === "vencimento" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
                       </button>
@@ -594,9 +597,6 @@ export default function InadimplenciaTab() {
                         Atraso {clientSortBy === "dias" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
                       </button>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-300">Status</span>
-                      <button onClick={() => toggleClientSort("valor")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-300 hover:text-slate-700 cursor-pointer select-none">
-                        Valor {clientSortBy === "valor" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
-                      </button>
                       <span className="flex items-center justify-center px-2 py-2">Ações</span>
                     </div>
                     <div className="divide-y divide-slate-50">
@@ -639,13 +639,16 @@ export default function InadimplenciaTab() {
       {/* Vista por Título */}
       {viewMode === "titulos" && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="hidden md:grid grid-cols-[1fr_110px_90px_140px_90px_60px_110px_100px_130px] bg-slate-50 border-b border-slate-300 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+          <div className="hidden md:grid grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px] bg-slate-50 border-b border-slate-300 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
             <button onClick={() => toggleSort("cliente")} className="flex items-center justify-start gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-300">
               Cliente {sortBy === "cliente" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
             <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">Vendedor</div>
             <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">Forma Cobr.</div>
             <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">Decisão Cobr.</div>
+            <button onClick={() => toggleSort("valor")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-300">
+              Valor {sortBy === "valor" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
+            </button>
             <button onClick={() => toggleSort("vencimento")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-300">
               Venc. {sortBy === "vencimento" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
@@ -653,9 +656,6 @@ export default function InadimplenciaTab() {
               Atraso {sortBy === "dias" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
             <div className="flex items-center justify-center px-3 py-2.5 border-r border-slate-300">Status</div>
-            <button onClick={() => toggleSort("valor")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-300">
-              Valor {sortBy === "valor" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
-            </button>
             <div className="flex items-center justify-center px-3 py-2.5">Ações</div>
           </div>
 
@@ -874,7 +874,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_110px_90px_140px_90px_60px_110px_100px_130px] cursor-pointer hover:bg-white/50 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px] cursor-pointer hover:bg-white/50 items-center"
         onClick={onToggle}
       >
         {/* Cliente + Referência + Badges */}
@@ -954,6 +954,13 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
           )}
         </div>
 
+        {/* Valor */}
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300">
+          <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
+            {formatCurrency(title.valorAReceber)}
+          </span>
+        </div>
+
         {/* Vencimento */}
         <div className="flex items-center justify-center px-1 py-3 border-r border-slate-300 text-[12px] text-slate-600 whitespace-nowrap">{formatDate(title.vencimento)}</div>
 
@@ -981,13 +988,6 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               {statusBadge.label}
             </span>
           )}
-        </div>
-
-        {/* Valor */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300">
-          <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
-            {formatCurrency(title.valorAReceber)}
-          </span>
         </div>
 
         {/* Ações */}
@@ -1043,7 +1043,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   return (
     <div className="transition-all">
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_100px_85px_130px_85px_55px_100px_95px_120px] cursor-pointer hover:bg-slate-50/80 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_100px_85px_130px_95px_85px_55px_100px_120px] cursor-pointer hover:bg-slate-50/80 items-center"
         onClick={onToggle}
       >
         <div className="min-w-0 px-3 py-2.5 border-r border-slate-300">
@@ -1111,6 +1111,12 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             <span className="text-[10px] text-slate-300">—</span>
           )}
         </div>
+        {/* Valor */}
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
+          <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
+            {formatCurrency(title.valorAReceber)}
+          </span>
+        </div>
         <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
         <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
           <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold ${getAgingColor(title.diasAtraso)}`}>
@@ -1133,12 +1139,6 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
               {statusBadge.label}
             </span>
           )}
-        </div>
-        {/* Valor */}
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
-          <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
-            {formatCurrency(title.valorAReceber)}
-          </span>
         </div>
         <div className="flex items-center justify-center gap-0.5 px-2 py-2.5" onClick={e => e.stopPropagation()}>
           {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
