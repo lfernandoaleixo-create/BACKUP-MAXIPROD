@@ -1716,7 +1716,7 @@ export async function fetchPaidAccountsTotal(startDate: string, endDate: string)
 
     let allItems: { valorPagoLiquido: number; tipo: string; fornecedor: { apelido: string | null; razaoSocial: string | null } | null; documentoVinculadoNumero: string | null; notaFiscalId: number | null; liquidacaoConta: { codigoEstruturado: string; descricao: string } | null }[] = [];
     let skip = 0;
-    const take = 200;
+    const take = 1000;
     let totalCount = 0;
 
     while (true) {
@@ -1913,7 +1913,7 @@ export async function syncPaidAccountsSnapshots(): Promise<void> {
 
       let allItems: { valorPagoLiquido: number; liquidacaoConta: { codigoEstruturado: string } | null }[] = [];
       let skip = 0;
-      const take = 200;
+      const take = 1000;
       let totalCount = 0;
 
       while (true) {
@@ -1995,7 +1995,7 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
     let allItems: { descricao: string; fornecedor: string; valorPagoLiquido: number; liquidacaoData: string; vencimentoData: string }[] = [];
     let excludedBaixaCount = 0;
     let skip = 0;
-    const take = 200;
+    const take = 1000;
     let totalCount = 0;
 
     while (true) {
@@ -2108,7 +2108,7 @@ export async function fetchInvoicesTotal(startDate: string, endDate: string): Pr
 
     let allItems: { valorTotal: number; numero: number; serie: number; estadoConfiguravel: { descricao: string } | null; entradaOuSaida: string }[] = [];
     let skip = 0;
-    const take = 200;
+    const take = 1000;
 
     while (true) {
       const data = await gql<any>(`{
@@ -2178,7 +2178,7 @@ export async function fetchInvoicesDetails(startDate: string, endDate: string): 
 
     let allItems: any[] = [];
     let skip = 0;
-    const take = 200;
+    const take = 1000;
 
     while (true) {
       const data = await gql<any>(`{
@@ -2449,7 +2449,7 @@ type LancEntry = { id: number; valor: number; debitoOuCredito: string; data: str
 async function fetchAllLancamentos(startISO: string, endISO: string): Promise<Map<number, LancEntry>> {
   const map = new Map<number, LancEntry>();
   let skip = 0;
-  const take = 200;
+  const take = 1000;
   while (true) {
     const data = await gql<any>(`{
       lancamentosContabeis(

@@ -2333,3 +2333,4 @@
 - [x] Adicionar olho Maxiprod + simulador nos 4 cards do Financeiro (Entradas, Faturado, Vendas, Contas Pagas)
 - [x] Incluir login/senha Fernando no passo a passo e link "Abrir Maxiprod"
 - [x] Liberar aba Produção para senhas "Erica" e "Maria" (atualizado no banco: accessProducao = true)
+- [x] Otimizar consulta ao Maxiprod (API GraphQL) na contraprova: take 200→1000, cache 5min em memória

@@ -13,6 +13,10 @@ import { generateCollectionPdf } from "./generateCollectionPdf";
 import { storagePut } from "./storage";
 import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial, gql } from "./maxiprodGraphQL";
 
+// Cache em memória para contraprova Maxiprod (TTL 5 minutos)
+const CONTRAPROVA_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const contraprovaCache = new Map<string, { data: any; timestamp: number }>();
+
 /**
  * Tipos válidos de contas a receber (conforme filtro do Maxiprod):
  * TITULO, RECEITA, ADIANTAMENTO — exclui TITULO_PEDIDO_DE_VENDA e TITULO_PROPOSTA_DE_VENDA
@@ -4285,6 +4289,7 @@ ${acoesTexto}
    * Contraprova Maxiprod - Consulta valores em tempo real da API GraphQL
    * SOMENTE LEITURA - jamais altera dados no Maxiprod
    * Retorna o valor do Maxiprod para comparação com o valor da Manus
+   * Cache em memória com TTL de 5 minutos para evitar re-consultas repetidas
    */
   getMaxiprodContraprova: publicProcedure
     .input(z.object({
@@ -4296,31 +4301,45 @@ ${acoesTexto}
       try {
         const { section, startDate, endDate } = input;
 
+        // Cache em memória com TTL de 5 minutos
+        const cacheKey = `${section}:${startDate}:${endDate}`;
+        const cached = contraprovaCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < CONTRAPROVA_CACHE_TTL) {
+          console.log(`[getMaxiprodContraprova] Cache hit: ${cacheKey}`);
+          return cached.data;
+        }
+
+        // Helper para salvar no cache e retornar
+        const cacheAndReturn = (data: { valorMaxiprod: number; count: number; label: string }) => {
+          contraprovaCache.set(cacheKey, { data, timestamp: Date.now() });
+          return data;
+        };
+
         if (section === "faturamento") {
           const result = await fetchInvoicesTotal(startDate, endDate);
-          return {
+          return cacheAndReturn({
             valorMaxiprod: result.total,
             count: result.count,
             label: `${result.count} NFs de Saída (Emitidas, excluindo Amostra/Bonificação/Devolução/etc)`,
-          };
+          });
         }
 
         if (section === "entradas") {
           const result = await fetchReceivedAccountsTotal(startDate, endDate);
-          return {
+          return cacheAndReturn({
             valorMaxiprod: result.total,
             count: result.count,
             label: `${result.count} lançamentos (Vendas/Revenda: ${result.vendasRevenda.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}, Demais: ${result.demaisReceitas.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})`,
-          };
+          });
         }
 
         if (section === "contas_pagas") {
           const result = await fetchPaidAccountsTotal(startDate, endDate);
-          return {
+          return cacheAndReturn({
             valorMaxiprod: result.total,
             count: result.count,
             label: `${result.count} contas pagas (liquidação no período)`,
-          };
+          });
         }
 
         if (section === "vendas") {
@@ -4374,11 +4393,11 @@ ${acoesTexto}
           const totalValue = Array.from(pedidoValueMap.values()).reduce((sum, v) => sum + v, 0);
           const total = Math.round(totalValue * 100) / 100;
 
-          return {
+          return cacheAndReturn({
             valorMaxiprod: total,
             count: uniqueOrders.size,
             label: `${uniqueOrders.size} pedidos de venda (excluindo Digitação e outros)`,
-          };
+          });
         }
 
         // inadimplencia - títulos vencidos a receber (usa cutoffDate = último dia útil antes de hoje)
@@ -4397,11 +4416,11 @@ ${acoesTexto}
               lte(accountsReceivable.vencimentoData, cutoff + "T23:59:59"),
             ));
 
-          return {
+          return cacheAndReturn({
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
             label: `${result[0]?.count || 0} títulos vencidos (estado EMITIDO, vencimento até ${cutoff})`,
-          };
+          });
         }
 
         // contas_receber_mes - total de contas a receber em um mês específico (estado EMITIDO)
@@ -4420,11 +4439,11 @@ ${acoesTexto}
               lte(accountsReceivable.vencimentoData, endDate + "T23:59:59"),
             ));
 
-          return {
+          return cacheAndReturn({
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
             label: `${result[0]?.count || 0} títulos a receber no período`,
-          };
+          });
         }
 
         // contas_pagar_mes - total de contas a pagar em um mês específico (estado EMITIDO)
@@ -4442,11 +4461,11 @@ ${acoesTexto}
               lte(accountsPayable.vencimentoData, endDate + "T23:59:59"),
             ));
 
-          return {
+          return cacheAndReturn({
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
             label: `${result[0]?.count || 0} contas a pagar no período`,
-          };
+          });
         }
 
         // recebiveis - busca do banco local
@@ -4465,11 +4484,11 @@ ${acoesTexto}
               lte(accountsReceivable.vencimentoData, endDate),
             ));
 
-          return {
+          return cacheAndReturn({
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
             label: `${result[0]?.count || 0} títulos a receber no período`,
-          };
+          });
         }
 
         return { valorMaxiprod: 0, count: 0, label: "Seção não reconhecida" };
