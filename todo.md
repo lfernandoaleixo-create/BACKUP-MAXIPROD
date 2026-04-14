@@ -2369,3 +2369,9 @@
 ## Ajustes visuais e funcionalidade (14/04/2026)
 - [x] Suavizar paleta de vermelhos nos cards de confrontamento (Entradas vs Saídas, Fat. vs Pago, Vendas vs Pago) - cores muito fortes para a vista
 - [x] Corrigir consulta por cliente: pedidos faturados não mostram títulos (boletos/NFs) correspondentes - implementada busca ao vivo via Maxiprod GraphQL (pedidosDeVenda → itensDosPedidosDeVendas → itensDasNotasFiscais → contaAReceber)
+
+## Calculadora Somatória em A Receber e A Pagar (14/04/2026)
+- [x] Adicionar calculadora somatória (seleção de itens + soma) em cada mês de A Receber
+- [x] Adicionar calculadora somatória (seleção de itens + soma) em cada mês de A Pagar
+- [x] Adicionar calculadora somatória no total de A Receber (já existia no BucketCard)
+- [x] Adicionar calculadora somatória no total de A Pagar (já existia no BucketCard)

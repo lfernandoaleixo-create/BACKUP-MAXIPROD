@@ -268,6 +268,8 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
   colorScheme: "emerald" | "red";
 }) {
   const [sort, setSort] = useState<MonthDetailSort>("data_asc");
+  const [calcMode, setCalcMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   // Helper: saldo restante = valorLiquido - valorPagoLiquido (ou valorRecebidoLiquido)
   const getSaldo = (item: any) => {
@@ -284,6 +286,13 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
     valueText: "text-emerald-700",
     sortActive: "text-emerald-600",
     sortInactive: "text-slate-300",
+    calcBg: "bg-emerald-100",
+    calcBorder: "border-emerald-300",
+    calcText: "text-emerald-700",
+    calcIcon: "text-emerald-600",
+    calcCheckedBg: "bg-emerald-50",
+    checkboxBorder: "border-emerald-400",
+    checkboxChecked: "data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600",
   } : {
     border: "border-red-200",
     headerBg: "bg-red-50",
@@ -292,6 +301,13 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
     valueText: "text-red-700",
     sortActive: "text-red-600",
     sortInactive: "text-slate-300",
+    calcBg: "bg-red-100",
+    calcBorder: "border-red-300",
+    calcText: "text-red-700",
+    calcIcon: "text-red-600",
+    calcCheckedBg: "bg-red-50",
+    checkboxBorder: "border-red-400",
+    checkboxChecked: "data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600",
   };
 
   const toggleSort = (field: "nome" | "valor" | "data") => {
@@ -325,6 +341,30 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
     return sorted;
   }, [items, sort, nameField]);
 
+  // Calculator: sum of selected items
+  const calcTotal = useMemo(() => {
+    if (!calcMode || selectedIds.size === 0) return 0;
+    return sortedItems
+      .filter((_: any, i: number) => selectedIds.has(i))
+      .reduce((sum: number, item: any) => sum + getSaldo(item), 0);
+  }, [calcMode, selectedIds, sortedItems]);
+
+  const toggleItem = useCallback((idx: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    setSelectedIds(prev => {
+      if (prev.size === sortedItems.length) return new Set();
+      return new Set(sortedItems.map((_, i) => i));
+    });
+  }, [sortedItems]);
+
   const nameLabel = nameField === "cliente" ? "Cliente" : "Fornecedor";
 
   const SortArrow = ({ field }: { field: "nome" | "valor" | "data" }) => {
@@ -339,6 +379,20 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
 
   return (
     <div className={`mt-1 ml-2 mr-2 mb-2 border ${colors.border} rounded-lg overflow-hidden`}>
+      {/* Calculator toolbar */}
+      {calcMode && selectedIds.size > 0 && (
+        <div className={`${colors.calcBg} border-b ${colors.calcBorder} px-3 py-1.5 flex items-center justify-between`}>
+          <div className="flex items-center gap-1.5">
+            <Calculator className={`w-3.5 h-3.5 ${colors.calcIcon}`} />
+            <span className={`text-xs font-bold ${colors.calcText} tabular-nums`}>{formatCurrency(calcTotal)}</span>
+            <span className="text-[9px] text-slate-500">({selectedIds.size} selecionados)</span>
+          </div>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-[10px] text-slate-500 hover:text-slate-700 underline"
+          >Limpar</button>
+        </div>
+      )}
       <div className="max-h-[500px] overflow-y-auto">
         {isLoading ? (
           <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>
@@ -348,6 +402,15 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
           <table className="w-full text-xs">
             <thead className={`${colors.headerBg} sticky top-0 z-10`}>
               <tr>
+                {calcMode && (
+                  <th className="px-2 py-2 w-8">
+                    <Checkbox
+                      checked={selectedIds.size === sortedItems.length && sortedItems.length > 0}
+                      onCheckedChange={toggleAll}
+                      className={`w-3.5 h-3.5 ${colors.checkboxBorder} ${colors.checkboxChecked}`}
+                    />
+                  </th>
+                )}
                 <th
                   className={`px-3 py-2 text-left ${colors.headerText} font-semibold cursor-pointer select-none hover:opacity-80`}
                   onClick={() => toggleSort("nome")}
@@ -375,11 +438,25 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
               {sortedItems.map((item: any, i: number) => {
                 const saldo = getSaldo(item);
                 const temAbatimento = Number(item.valorPagoLiquido || item.valorRecebidoLiquido || 0) > 0;
+                const isChecked = selectedIds.has(i);
                 return (
-                  <tr key={i} className={colors.hoverBg}>
+                  <tr
+                    key={i}
+                    className={`${calcMode && isChecked ? colors.calcCheckedBg : ''} ${colors.hoverBg} ${calcMode ? 'cursor-pointer' : ''}`}
+                    onClick={calcMode ? () => toggleItem(i) : undefined}
+                  >
+                    {calcMode && (
+                      <td className="px-2 py-2">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={() => toggleItem(i)}
+                          className={`w-3.5 h-3.5 ${colors.checkboxBorder} ${colors.checkboxChecked}`}
+                        />
+                      </td>
+                    )}
                     <td className="px-3 py-2 text-slate-700 truncate max-w-[180px]" title={item[nameField] || ""}>{item[nameField] || (item.referenteA || item.observacoes || "—")}</td>
                     <td className="px-3 py-2 text-slate-500 text-[11px] truncate max-w-[220px]" title={item.referenteA || ""}>{item.referenteA || "—"}</td>
-                    <td className={`px-3 py-2 text-right font-semibold ${colors.valueText}`}>
+                    <td className={`px-3 py-2 text-right font-semibold ${calcMode && isChecked ? colors.calcText : colors.valueText}`}>
                       {formatCurrency(saldo)}
                       {temAbatimento && (
                         <span className="block text-[10px] text-slate-400 font-normal line-through">
@@ -398,9 +475,22 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
       {sortedItems.length > 0 && (
         <div className={`${colors.headerBg} px-3 py-1.5 border-t ${colors.border} flex justify-between items-center`}>
           <span className="text-[10px] text-slate-500">{sortedItems.length} contas</span>
-          <span className={`text-[10px] font-semibold ${colors.headerText}`}>
-            Total: {formatCurrency(sortedItems.reduce((sum: number, item: any) => sum + getSaldo(item), 0))}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-semibold ${colors.headerText}`}>
+              Total: {formatCurrency(sortedItems.reduce((sum: number, item: any) => sum + getSaldo(item), 0))}
+            </span>
+            <button
+              onClick={() => { setCalcMode(!calcMode); if (calcMode) setSelectedIds(new Set()); }}
+              className={`p-1 rounded transition-colors cursor-pointer ${
+                calcMode
+                  ? `${colors.calcBg} ${colors.calcIcon}`
+                  : 'text-slate-400 hover:text-slate-600 hover:bg-black/5'
+              }`}
+              title="Calculadora: selecione itens para somar"
+            >
+              <Calculator className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
     </div>
