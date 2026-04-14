@@ -2379,3 +2379,8 @@
 ## Ajustes visuais - Valores e Cards (14/04/2026)
 - [x] Remover arredondamento nos valores dos cards de confrontamento (mostrar até centavos, não K/M)
 - [x] Redesenhar cards Receber/Pagar/Saldo do gráfico semanal com visual profissional e explicações claras do significado de cada valor
+
+## Ajustes Calculadora e Fluxo de Caixa (14/04/2026)
+- [x] Mover calculadora para o topo do card de cada mês (em vez do rodapé)
+- [x] Aumentar tamanho do ícone da calculadora em todos os cards
+- [x] Adicionar preview sofisticado dos valores (A Receber, A Pagar, Saldo Projetado) no card fechado do Fluxo de Caixa

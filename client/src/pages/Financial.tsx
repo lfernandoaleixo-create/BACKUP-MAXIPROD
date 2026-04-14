@@ -379,20 +379,34 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
 
   return (
     <div className={`mt-1 ml-2 mr-2 mb-2 border ${colors.border} rounded-lg overflow-hidden`}>
-      {/* Calculator toolbar */}
-      {calcMode && selectedIds.size > 0 && (
-        <div className={`${colors.calcBg} border-b ${colors.calcBorder} px-3 py-1.5 flex items-center justify-between`}>
-          <div className="flex items-center gap-1.5">
-            <Calculator className={`w-3.5 h-3.5 ${colors.calcIcon}`} />
-            <span className={`text-xs font-bold ${colors.calcText} tabular-nums`}>{formatCurrency(calcTotal)}</span>
-            <span className="text-[9px] text-slate-500">({selectedIds.size} selecionados)</span>
-          </div>
+      {/* Calculator toolbar - always at top */}
+      <div className={`${colors.headerBg} border-b ${colors.border} px-3 py-1.5 flex items-center justify-between`}>
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setSelectedIds(new Set())}
-            className="text-[10px] text-slate-500 hover:text-slate-700 underline"
-          >Limpar</button>
+            onClick={() => { setCalcMode(!calcMode); if (calcMode) setSelectedIds(new Set()); }}
+            className={`p-1.5 rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
+              calcMode
+                ? `${colors.calcBg} ${colors.calcIcon} shadow-sm`
+                : 'text-slate-400 hover:text-slate-600 hover:bg-black/5'
+            }`}
+            title="Calculadora: selecione itens para somar"
+          >
+            <Calculator className="w-4.5 h-4.5" />
+            <span className={`text-[10px] font-medium ${calcMode ? colors.calcText : 'text-slate-500'}`}>Calculadora</span>
+          </button>
+          {calcMode && selectedIds.size > 0 && (
+            <div className={`${colors.calcBg} rounded-md px-2.5 py-1 flex items-center gap-1.5 shadow-sm`}>
+              <span className={`text-xs font-bold ${colors.calcText} tabular-nums`}>{formatCurrency(calcTotal)}</span>
+              <span className="text-[9px] text-slate-500">({selectedIds.size} sel.)</span>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="text-[9px] text-slate-500 hover:text-slate-700 underline ml-1"
+              >Limpar</button>
+            </div>
+          )}
         </div>
-      )}
+        <span className={`text-[10px] text-slate-500`}>{sortedItems.length} contas</span>
+      </div>
       <div className="max-h-[500px] overflow-y-auto">
         {isLoading ? (
           <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>
@@ -473,24 +487,10 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
         )}
       </div>
       {sortedItems.length > 0 && (
-        <div className={`${colors.headerBg} px-3 py-1.5 border-t ${colors.border} flex justify-between items-center`}>
-          <span className="text-[10px] text-slate-500">{sortedItems.length} contas</span>
-          <div className="flex items-center gap-2">
-            <span className={`text-[10px] font-semibold ${colors.headerText}`}>
-              Total: {formatCurrency(sortedItems.reduce((sum: number, item: any) => sum + getSaldo(item), 0))}
-            </span>
-            <button
-              onClick={() => { setCalcMode(!calcMode); if (calcMode) setSelectedIds(new Set()); }}
-              className={`p-1 rounded transition-colors cursor-pointer ${
-                calcMode
-                  ? `${colors.calcBg} ${colors.calcIcon}`
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-black/5'
-              }`}
-              title="Calculadora: selecione itens para somar"
-            >
-              <Calculator className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        <div className={`${colors.headerBg} px-3 py-1.5 border-t ${colors.border} flex justify-end items-center`}>
+          <span className={`text-[10px] font-semibold ${colors.headerText}`}>
+            Total: {formatCurrency(sortedItems.reduce((sum: number, item: any) => sum + getSaldo(item), 0))}
+          </span>
         </div>
       )}
     </div>
@@ -670,7 +670,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
           {/* Calculator total badge */}
           {calcMode && selectedIds.size > 0 && (
             <div className="flex items-center gap-1 bg-violet-100 border border-violet-300 rounded-md px-2 py-0.5">
-              <Calculator className="w-3 h-3 text-violet-600" />
+              <Calculator className="w-4 h-4 text-violet-600" />
               <span className="text-xs font-bold text-violet-700 tabular-nums">{formatCurrency(calcTotal)}</span>
               <span className="text-[9px] text-violet-500">({selectedIds.size})</span>
             </div>
@@ -730,7 +730,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                 className={`p-1 rounded transition-colors cursor-pointer ${calcMode ? 'bg-violet-100 text-violet-600' : 'text-slate-400 hover:text-slate-600 hover:bg-black/5'}`}
                 title="Calculadora: selecione itens para somar"
               >
-                <Calculator className="w-3.5 h-3.5" />
+                <Calculator className="w-4.5 h-4.5" />
               </button>
             </div>
           )}
@@ -1690,20 +1690,62 @@ function CashFlowCard() {
     <div className="bg-white rounded-lg border border-blue-200 shadow-sm overflow-hidden">
       {/* Header */}
       <div
-        className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-blue-100/50 transition-colors"
+        className="bg-blue-50 border-b border-blue-200 cursor-pointer hover:bg-blue-100/50 transition-colors"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-blue-600" />
-          <h3 className="text-sm font-bold text-blue-700">Fluxo de Caixa</h3>
-          <span className="text-[10px] text-blue-500 ml-1">8 semanas</span>
-          {collapsed ? <ChevronDown className="w-5 h-5 text-blue-600 ml-1" /> : <ChevronUp className="w-5 h-5 text-blue-600 ml-1" />}
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-blue-600" />
+            <h3 className="text-sm font-bold text-blue-700">Fluxo de Caixa</h3>
+            <span className="text-[10px] text-blue-500 ml-1">8 semanas</span>
+            {collapsed ? <ChevronDown className="w-5 h-5 text-blue-600 ml-1" /> : <ChevronUp className="w-5 h-5 text-blue-600 ml-1" />}
+          </div>
+          {!collapsed && (
+            <span className={`text-xs font-bold px-2 py-0.5 rounded ${saldoTotal >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+              Saldo: {formatCurrency(saldoTotal)}
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs font-bold px-2 py-0.5 rounded ${saldoTotal >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-            Saldo: {formatCurrency(saldoTotal)}
-          </span>
-        </div>
+        {/* Collapsed preview - sophisticated summary */}
+        {collapsed && (
+          <div className="px-4 pb-3 pt-0">
+            <div className="grid grid-cols-3 gap-2">
+              {/* A Receber mini card */}
+              <div className="bg-white/80 border border-emerald-200/60 rounded-lg px-3 py-2 flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-semibold text-emerald-600 uppercase tracking-wider">A Receber</p>
+                  <p className="text-sm font-bold text-emerald-700 tabular-nums truncate">{formatCurrency(totalReceber)}</p>
+                  <p className="text-[8px] text-slate-400">8 semanas + vencidas</p>
+                </div>
+              </div>
+              {/* A Pagar mini card */}
+              <div className="bg-white/80 border border-red-200/60 rounded-lg px-3 py-2 flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <TrendingDown className="w-3.5 h-3.5 text-red-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-semibold text-red-600 uppercase tracking-wider">A Pagar</p>
+                  <p className="text-sm font-bold text-red-700 tabular-nums truncate">{formatCurrency(totalPagar)}</p>
+                  <p className="text-[8px] text-slate-400">8 semanas + vencidas</p>
+                </div>
+              </div>
+              {/* Saldo Projetado mini card */}
+              <div className={`bg-white/80 border ${saldoTotal >= 0 ? "border-blue-200/60" : "border-amber-200/60"} rounded-lg px-3 py-2 flex items-center gap-2.5`}>
+                <div className={`w-7 h-7 rounded-full ${saldoTotal >= 0 ? "bg-blue-100" : "bg-amber-100"} flex items-center justify-center flex-shrink-0`}>
+                  <Wallet className={`w-3.5 h-3.5 ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className={`text-[9px] font-semibold ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"} uppercase tracking-wider`}>Saldo</p>
+                  <p className={`text-sm font-bold tabular-nums truncate ${saldoTotal >= 0 ? "text-blue-700" : "text-red-700"}`}>{formatCurrency(saldoTotal)}</p>
+                  <p className="text-[8px] text-slate-400">Receber - Pagar</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {!collapsed && (
