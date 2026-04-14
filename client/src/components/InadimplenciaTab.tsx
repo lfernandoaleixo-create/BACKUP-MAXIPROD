@@ -7,6 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
+import { Eye } from "lucide-react";
+
+const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando"];
 
 const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente", color: "bg-slate-100 text-slate-700 border-slate-300" },
@@ -122,6 +126,8 @@ export default function InadimplenciaTab() {
   const [passwordInput, setPasswordInput] = useState("");
   const [pendingPhoneAction, setPendingPhoneAction] = useState<{ titleId: number; action: "contato" | "actionPlan" | "document" } | null>(null);
   const [collectionUnlocked, setCollectionUnlocked] = useState(false);
+  const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
+  const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
 
   const COLLECTION_PASSWORD = "Thiago";
 
@@ -424,23 +430,35 @@ export default function InadimplenciaTab() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-          <button
-            onClick={() => setViewMode("titulos")}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
-              viewMode === "titulos" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" /> Por Título
-          </button>
-          <button
-            onClick={() => setViewMode("clientes")}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
-              viewMode === "clientes" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" /> Por Cliente
-          </button>
+        <div className="flex items-center gap-2">
+          {canSeeCobrancaGuide && (
+            <button
+              onClick={() => setShowCobrancaGuide(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-500 to-amber-500 text-white text-xs font-bold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
+              title="Ver guia completo do processo de cobrança"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Guia de Cobrança
+            </button>
+          )}
+          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("titulos")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
+                viewMode === "titulos" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" /> Por Título
+            </button>
+            <button
+              onClick={() => setViewMode("clientes")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
+                viewMode === "clientes" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" /> Por Cliente
+            </button>
+          </div>
         </div>
       </div>
 
@@ -711,6 +729,14 @@ export default function InadimplenciaTab() {
         <CollectionDocumentDialog
           receivableId={documentDialogId}
           onClose={() => setDocumentDialogId(null)}
+        />
+      )}
+
+      {/* Guia de Cobrança (card dinâmico) */}
+      {showCobrancaGuide && (
+        <CobrancaGuideSimulator
+          valorTotal={stats.total}
+          onClose={() => setShowCobrancaGuide(false)}
         />
       )}
 

@@ -2344,3 +2344,6 @@
 - [x] Fix: Corrigir passagem de valorManus para MaxiprodSimulator nos cards do Financeiro
 - [x] Adicionar MaxiprodSimulator na aba Recebíveis (olho do Maxiprod)
 - [x] Trocar texto "Valor encontrado!" por "Valor do Dashboard da Manus confere com o Maxiprod" no último passo do simulador
+- [x] Criar card dinâmico "Guia de Cobrança" com passo a passo do processo de cobrança (olho na aba Inadimplência)
+- [x] Restringir botão olho apenas para senhas Flavio, Thiago, Guilherme, Fernando
+- [x] Incluir régua de cobrança (1, 3, 5 dias após vencimento), ações do responsável, salvar histórico, mudar status
