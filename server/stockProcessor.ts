@@ -627,7 +627,7 @@ export async function processStockData(): Promise<void> {
       poFornecedores: poData ? Array.from(poData.fornecedores) : [],
       poLotes: poData ? aggregateLotes(poData.lotes) : [],
       projetadoUn,
-      projetadoCx: isKg ? (disponivelCxVal !== null ? disponivelCxVal + poUn : null) : (unitsPerBox ? Math.floor(projetadoUn / unitsPerBox) : null),
+      projetadoCx: isKg ? (disponivelCxVal !== null ? disponivelCxVal + poUn : null) : (disponivelCxVal !== null ? disponivelCxVal + (poCx || 0) : null),
       segmento: classifySegment(item.descricaoItem),
       grupo: baseClassification.grupo,
       subgrupo: finalSubgrupo,
@@ -718,7 +718,7 @@ export async function processStockData(): Promise<void> {
       poFornecedores: Array.from(poData.fornecedores),
       poLotes: aggregateLotes(poData.lotes),
       projetadoUn,
-      projetadoCx: unitsPerBox ? Math.floor(projetadoUn / unitsPerBox) : null,
+      projetadoCx: unitsPerBox ? (Math.floor(disponivelUn / unitsPerBox) + (poCx || 0)) : null,
       segmento: classifySegment(descricaoItem),
       ...classifyGrupoFromDesc(descricaoItem, poData.lotes[0]?.referenciaPO),
       isKgProduct: isKgBasedProduct(poItem.unidadeMedidaEstoque || poItem.unidadeMedida || "", poItem.descricaoItem || poItem.descricao || ""),
@@ -800,7 +800,7 @@ export async function processStockData(): Promise<void> {
         if (parent.isKgProduct) {
           parent.projetadoCx = parent.disponivelCx !== null ? parent.disponivelCx + parent.poUn : null;
         } else {
-          parent.projetadoCx = Math.floor(parent.projetadoUn / parent.unidadesPorCaixa);
+          parent.projetadoCx = (parent.disponivelCx ?? 0) + (parent.poCx ?? 0);
         }
       }
     }
