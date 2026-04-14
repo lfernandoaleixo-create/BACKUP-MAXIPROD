@@ -2353,3 +2353,4 @@
 - [x] Redesign: Cards de Histórico Completo (Recebimentos/Pagamentos) com visual mais profissional, requintado e sofisticado
 - [x] Fix: Divergência no valor "Faturado" entre aba Vendas e aba Financeiro - investigado: são métricas diferentes (NFs emitidas vs itens de pedidos com estado Faturado)
 - [x] Fix: Botão "Guia de Cobrança" na aba Inadimplência - melhorado posicionamento e destaque com banner grande
+- [x] Fix: Divergência entre card FATURADO e lista PEDIDOS FATURADOS na aba Vendas - corrigido: lista agora usa valorTotalPedido (com descontos/frete) quando disponível

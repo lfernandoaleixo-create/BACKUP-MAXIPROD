@@ -939,16 +939,21 @@ export const salesRouter = router({
         });
       }
 
-      // Convert to array and round values
-      const orders = Array.from(orderMap.values()).map(o => ({
-        ...o,
-        valorTotal: Math.round(o.valorTotal * 100) / 100,
-        itens: o.itens.map(i => ({
-          ...i,
-          valorTotal: Math.round(i.valorTotal * 100) / 100,
-          valorUnitario: Math.round(i.valorUnitario * 100) / 100,
-        })),
-      }));
+      // Use valorTotalPedido when available (includes discounts/freight adjustments)
+      // This matches the analytics card calculation (proportional distribution)
+      const orders = Array.from(orderMap.values()).map(o => {
+        // If valorTotalPedido exists and is different from sum of items, use it
+        const adjustedTotal = o.valorTotalPedido && o.valorTotalPedido > 0 ? o.valorTotalPedido : o.valorTotal;
+        return {
+          ...o,
+          valorTotal: Math.round(adjustedTotal * 100) / 100,
+          itens: o.itens.map(i => ({
+            ...i,
+            valorTotal: Math.round(i.valorTotal * 100) / 100,
+            valorUnitario: Math.round(i.valorUnitario * 100) / 100,
+          })),
+        };
+      });
 
       // Sort by date descending (most recent first)
       orders.sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao));
