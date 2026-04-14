@@ -4296,7 +4296,7 @@ ${acoesTexto}
    */
   getMaxiprodContraprova: publicProcedure
     .input(z.object({
-      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis", "inadimplencia", "contas_receber_mes", "contas_pagar_mes", "a_faturar", "amostra_bonif"]),
+      section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis", "inadimplencia", "contas_receber_mes", "contas_pagar_mes", "a_faturar", "amostra_bonif", "vendas_faturado"]),
       startDate: z.string(),
       endDate: z.string(),
     }))
@@ -4563,6 +4563,65 @@ ${acoesTexto}
             valorMaxiprod: rounded,
             count: uniqueOrders.size,
             label: `${uniqueOrders.size} pedidos de amostra/bonificação no período`,
+          });
+        }
+
+        // vendas_faturado - pedidos de venda com estado do item "Faturado" (conceito diferente de NFs de saída)
+        if (section === "vendas_faturado") {
+          const db = await getDb();
+          if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          const startDay = startDate.substring(0, 10);
+          const endDay = endDate.substring(0, 10);
+          const allItems = await db.select().from(salesOrders)
+            .where(and(
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+              sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`,
+              sql`UPPER(${salesOrders.estadoItem}) = 'FATURADO'`
+            ));
+
+          const estadoToGrupo = (estado: string | null): string => {
+            if (!estado) return "outros";
+            const e = estado.toUpperCase();
+            if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+            if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+            if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+            return "outros";
+          };
+
+          const isDigitacao = (nota: string | null) => {
+            if (!nota) return false;
+            const n = nota.toUpperCase();
+            return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+          };
+
+          const filtered = allItems.filter(item => !isDigitacao(item.estadoNota) && estadoToGrupo(item.estadoConfiguravel) !== "outros");
+          
+          // Agrupamento por pedido (mesma lógica de vendas)
+          const uniqueOrders = new Set(filtered.map(i => i.pedido).filter(Boolean));
+          const pedidoValueMap = new Map<string, number>();
+          for (const item of filtered) {
+            const pedido = item.pedido || 'sem-pedido';
+            if (!pedidoValueMap.has(pedido)) {
+              if (item.valorTotalPedido) {
+                pedidoValueMap.set(pedido, Number(item.valorTotalPedido));
+              } else {
+                pedidoValueMap.set(pedido, Number(item.valorTotal || 0));
+              }
+            } else {
+              const firstItemHasVTP = filtered.find(i => i.pedido === pedido && i.valorTotalPedido);
+              if (!firstItemHasVTP) {
+                pedidoValueMap.set(pedido, (pedidoValueMap.get(pedido) || 0) + Number(item.valorTotal || 0));
+              }
+            }
+          }
+          const totalValue = Array.from(pedidoValueMap.values()).reduce((sum, v) => sum + v, 0);
+          const total = Math.round(totalValue * 100) / 100;
+
+          return cacheAndReturn({
+            valorMaxiprod: total,
+            count: uniqueOrders.size,
+            label: `${uniqueOrders.size} pedidos faturados no período (estado do item: Faturado)`,
           });
         }
 

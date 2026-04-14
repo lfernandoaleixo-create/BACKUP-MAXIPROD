@@ -2417,3 +2417,9 @@
 ## Ajustes Visuais (14/04/2026 - Parte 2)
 - [x] MaxiprodAutoVerifier card: adicionar animação/movimento dinâmico (gradiente animado, shimmer, etc.)
 - [x] Legendas dos cards compactos de confrontamento: trocar textos informais por norma culta formal
+
+## Ajustes Inadimplência Colunas (14/04/2026 - Parte 3)
+- [x] Reordenar colunas: Decisão de Cobrança → Vencimento → Atraso (nessa ordem)
+- [x] Adicionar bordas mais escuras entre as colunas da tabela (border-slate-300)
+- [x] Restaurar vídeo animado do passo a passo no MaxiprodAutoVerifier (simulação visual dos passos)
+- [x] Corrigir verificação Maxiprod do card "Faturado" na aba Vendas: nova seção vendas_faturado (pedidos com estadoItem=Faturado)

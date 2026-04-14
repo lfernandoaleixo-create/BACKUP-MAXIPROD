@@ -2477,9 +2477,9 @@ function SalesVerifyModal({ card, startDate, endDate, dashboardValue, onClose }:
   // Map card names to section and labels
   const sectionMap: Record<string, { section: string; label: string; color: string }> = {
     vendas: { section: "vendas", label: "Valor Total do Período", color: "teal" },
-    faturamento: { section: "faturamento", label: "Faturado", color: "emerald" },
-    a_faturar: { section: "vendas", label: "A Faturar (Período)", color: "orange" },
-    amostra_bonif: { section: "vendas", label: "Amostra / Bonificação", color: "blue" },
+    faturamento: { section: "vendas_faturado", label: "Faturado (Vendas)", color: "emerald" },
+    a_faturar: { section: "a_faturar", label: "A Faturar (Período)", color: "orange" },
+    amostra_bonif: { section: "amostra_bonif", label: "Amostra / Bonificação", color: "blue" },
   };
   const cfg = sectionMap[card] || sectionMap.vendas;
 
@@ -2488,9 +2488,8 @@ function SalesVerifyModal({ card, startDate, endDate, dashboardValue, onClose }:
     { refetchOnWindowFocus: false }
   );
 
-  // For "vendas" section, the contraprova returns total vendas. For faturamento, it returns NF total.
-  // For a_faturar and amostra_bonif, we note that the contraprova is for the full vendas total (informational).
-  const isDirectComparison = card === "vendas" || card === "faturamento";
+  // Each card now has its own dedicated section in the backend for direct comparison
+  const isDirectComparison = true;
   const maxiprodValue = data?.valorMaxiprod ?? 0;
   const diff = Math.abs(dashboardValue - maxiprodValue);
   const matches = diff < 1;
@@ -3061,7 +3060,7 @@ export default function Sales() {
                     </div>
                     <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Faturado</p>
                     {canVerifyMaxiprod && (
-                      <button onClick={() => setSimulatorCard({ section: "faturamento", title: "Contraprova: Faturado", subtitle: "NFs de Saída", value: analytics.totalFaturado })}
+                      <button onClick={() => setSimulatorCard({ section: "vendas_faturado", title: "Contraprova: Faturado (Vendas)", subtitle: "Pedidos de venda com estado Faturado", value: analytics.totalFaturado })}
                         className="w-7 h-7 rounded-full bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center transition-colors" title="Ver passo a passo Maxiprod">
                         <Eye className="w-3.5 h-3.5 text-emerald-600" />
                       </button>
