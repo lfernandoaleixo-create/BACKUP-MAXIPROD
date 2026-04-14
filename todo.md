@@ -2450,3 +2450,13 @@
 - [x] Criar ícone do olho no Histórico com animação visual didática explicando o sistema de detecção de mudanças semanais
 - [x] Animação deve mostrar: início do mês registra títulos, cada dia detecta alterações (entradas/saídas) nas 8 semanas seguintes
 - [x] Garantir que conferência Maxiprod só aparece para operadores Fernando, Bruno e Guilherme
+
+## Melhorias Gráfico + Guia de Cobrança (14/04/2026 - Parte 6)
+- [x] Colunas dinâmicas no gráfico Evolução Diária: barras surgindo uma a uma com animação ao clicar
+- [x] Números mais nítidos e destacados no relatório exportado (não achatar)
+- [x] Destacar o número das vendas no gráfico/relatório
+- [x] Guia de Cobrança: Dia 1 pós-vencimento = WhatsApp + Email (registro formal)
+- [x] Guia de Cobrança: Dia 3 pós-vencimento = Ligação + Email
+- [x] Guia de Cobrança: Dia 5 pós-vencimento = Ligação + Email
+- [x] Registrar tudo no guia de cobrança e histórico
+- [x] Atualizar documento gerado no histórico de cobrança com novas regras

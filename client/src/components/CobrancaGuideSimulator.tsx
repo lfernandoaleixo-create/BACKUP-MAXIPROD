@@ -3,7 +3,7 @@ import {
   X, Play, Pause, RotateCcw, ChevronRight,
   Phone, MessageCircle, FileText, AlertTriangle,
   CheckCircle2, Clock, Shield, ShieldAlert,
-  Bell, Calendar, History, Users, Gavel
+  Bell, Calendar, History, Users, Gavel, Mail
 } from "lucide-react";
 
 /* ---- Types ---- */
@@ -34,62 +34,69 @@ const formatCurrency = (v: number) =>
 function getCobrancaSteps(): GuideStep[] {
   return [
     {
-      title: "Dia 1 — Primeiro Contato",
-      description: "No 1º dia após o vencimento, o telefone começa a vibrar (piscar) na tela do responsável pela cobrança. A cobrança é obrigatória.",
-      icon: Phone,
-      iconColor: "text-blue-600",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-300",
+      title: "Dia 1 — WhatsApp + E-mail (Registro Formal)",
+      description: "No 1º dia após o vencimento, o responsável pela cobrança deve enviar uma mensagem de cobrança via WhatsApp e um e-mail formal. Ambos servem como registro formal da cobrança.",
+      icon: MessageCircle,
+      iconColor: "text-green-600",
+      bgColor: "bg-green-50",
+      borderColor: "border-green-300",
       dayLabel: "DIA 1",
+      highlight: true,
       details: [
-        "O ícone do telefone pisca em azul na linha do título",
-        "Clique no telefone para abrir o painel de contato",
-        "Ligue para o cliente ou envie WhatsApp",
-        "Registre o contato: tipo (Ligação/WhatsApp/E-mail), resumo do que foi conversado",
-        "O telefone só para de vibrar quando a ação for registrada",
+        "📱 Enviar mensagem de cobrança via WhatsApp para o cliente",
+        "📧 Enviar e-mail formal de cobrança com dados do título (valor, vencimento, referência)",
+        "O WhatsApp e o e-mail servem como REGISTRO FORMAL da cobrança",
+        "Registre ambas as ações no sistema: tipo 'WhatsApp' + tipo 'E-mail'",
+        "O telefone só para de vibrar quando AMBAS as ações forem registradas",
+        "Salve prints do WhatsApp e cópia do e-mail como comprovante",
       ],
     },
     {
-      title: "Registrar Contato",
-      description: "Ao clicar no telefone, preencha os dados do contato realizado. Isso fica salvo no histórico do título.",
-      icon: MessageCircle,
+      title: "Registrar Contato do Dia 1",
+      description: "Ao clicar no telefone, registre as duas ações realizadas: WhatsApp e E-mail. Isso fica salvo no histórico do título como prova formal.",
+      icon: CheckCircle2,
       iconColor: "text-emerald-600",
       bgColor: "bg-emerald-50",
       borderColor: "border-emerald-300",
       details: [
-        "Selecione o tipo: Ligação, WhatsApp, E-mail ou Presencial",
-        "Escreva um resumo breve: ex. 'Cliente prometeu pagar dia 20'",
-        "Clique em Salvar — o contato é registrado com data, hora e operador",
+        "Registre o WhatsApp: tipo 'WhatsApp', resumo da mensagem enviada",
+        "Registre o E-mail: tipo 'E-mail', resumo do conteúdo enviado",
+        "Ambos ficam salvos com data, hora e operador responsável",
         "O histórico completo fica visível no ícone de relógio (🕐)",
+        "Esses registros servem como prova formal em caso de protesto ou ação judicial",
       ],
     },
     {
       title: "Dia 2 — Intervalo",
-      description: "No dia 2 o telefone não vibra. É um dia de espera. Mas se o dia 1 não foi registrado, o telefone continua vibrando!",
+      description: "No dia 2 o telefone não vibra. É um dia de espera. Mas se as ações do dia 1 não foram registradas, o telefone continua vibrando!",
       icon: Clock,
       iconColor: "text-slate-500",
       bgColor: "bg-slate-50",
       borderColor: "border-slate-300",
       dayLabel: "DIA 2",
       details: [
-        "Se a ação do dia 1 foi registrada: telefone fica cinza (idle)",
-        "Se a ação do dia 1 NÃO foi registrada: telefone continua piscando!",
+        "Se as ações do dia 1 foram registradas: telefone fica cinza (idle)",
+        "Se as ações do dia 1 NÃO foram registradas: telefone continua piscando!",
         "Ações pendentes de dias anteriores não desaparecem",
+        "Aproveite para verificar se o cliente respondeu ao WhatsApp ou e-mail",
       ],
     },
     {
-      title: "Dia 3 — Segundo Contato",
-      description: "No 3º dia, o telefone volta a vibrar. Nova cobrança obrigatória — o cliente precisa ser contatado novamente.",
+      title: "Dia 3 — Ligação + E-mail (2º Contato)",
+      description: "No 3º dia, o telefone volta a vibrar. O responsável deve fazer uma LIGAÇÃO telefônica e enviar um novo e-mail de cobrança. A ligação é mais incisiva que o WhatsApp.",
       icon: Phone,
       iconColor: "text-amber-600",
       bgColor: "bg-amber-50",
       borderColor: "border-amber-300",
       dayLabel: "DIA 3",
+      highlight: true,
       details: [
-        "Telefone pisca novamente em azul",
-        "Faça novo contato com o cliente",
-        "Registre o que foi conversado",
+        "📞 Fazer LIGAÇÃO telefônica para o cliente — contato direto e pessoal",
+        "📧 Enviar novo e-mail formal reforçando a cobrança",
+        "Na ligação: cobrar o pagamento, ouvir justificativas, negociar prazo se necessário",
         "Se o cliente fez promessa de pagamento, registre a data e valor prometido",
+        "Registre AMBAS as ações: tipo 'Ligação' + tipo 'E-mail'",
+        "O e-mail serve como registro formal complementar à ligação",
       ],
     },
     {
@@ -119,11 +126,12 @@ function getCobrancaSteps(): GuideStep[] {
       details: [
         "Mesma regra do dia 2: se ações anteriores estão pendentes, telefone vibra",
         "Aproveite para verificar se promessas de pagamento foram cumpridas",
+        "Verifique se o cliente respondeu aos e-mails ou ligações anteriores",
       ],
     },
     {
-      title: "Dia 5 — Terceiro e Último Contato",
-      description: "Último dia de cobrança por telefone. Após isso, o processo muda para decisão de protesto.",
+      title: "Dia 5 — Ligação + E-mail (Último Contato)",
+      description: "Último dia de cobrança antes da decisão de protesto. O responsável deve fazer uma LIGAÇÃO final e enviar o último e-mail formal, informando sobre o possível protesto.",
       icon: Phone,
       iconColor: "text-red-600",
       bgColor: "bg-red-50",
@@ -131,24 +139,27 @@ function getCobrancaSteps(): GuideStep[] {
       dayLabel: "DIA 5",
       highlight: true,
       details: [
-        "Telefone pisca pela última vez na régua de cobrança",
-        "Faça o contato final com o cliente",
-        "Informe que o título será encaminhado para protesto se não houver pagamento",
-        "Registre o contato e atualize o status",
+        "📞 Fazer LIGAÇÃO telefônica FINAL — informar que o título será protestado se não houver pagamento",
+        "📧 Enviar e-mail formal FINAL com aviso de protesto iminente",
+        "Na ligação: ser firme, informar consequências do protesto (SPC/Serasa)",
+        "Registre AMBAS as ações: tipo 'Ligação' + tipo 'E-mail'",
+        "Este é o ÚLTIMO contato antes da decisão de protesto no dia 7",
+        "O e-mail final serve como notificação formal pré-protesto",
       ],
     },
     {
       title: "Dia 6 — Preparação",
-      description: "Dia de preparação antes da decisão de protesto. Revise o histórico de contatos.",
+      description: "Dia de preparação antes da decisão de protesto. Revise o histórico completo de contatos.",
       icon: FileText,
       iconColor: "text-orange-600",
       bgColor: "bg-orange-50",
       borderColor: "border-orange-300",
       dayLabel: "DIA 6",
       details: [
-        "Revise o histórico de contatos dos dias 1, 3 e 5",
+        "Revise o histórico de contatos: Dia 1 (WhatsApp + E-mail), Dia 3 (Ligação + E-mail), Dia 5 (Ligação + E-mail)",
         "Verifique se há promessas de pagamento pendentes",
         "Prepare a documentação para a decisão do dia 7",
+        "Confirme que todos os 6 registros formais foram feitos (2 por dia de cobrança)",
       ],
     },
     {
@@ -165,6 +176,7 @@ function getCobrancaSteps(): GuideStep[] {
         "Opção 2: NÃO PROTESTAR — obrigatório criar um Plano de Ação justificando",
         "O Plano de Ação deve explicar por que não protestar e qual a estratégia",
         "Se escolher 'Não Protestar', um documento de cobrança é gerado automaticamente",
+        "O documento registra todas as 6 ações formais realizadas nos dias 1, 3 e 5",
         "O ícone muda para documento (📄) indicando que há documento pendente",
       ],
     },
@@ -177,28 +189,29 @@ function getCobrancaSteps(): GuideStep[] {
       borderColor: "border-purple-300",
       details: [
         "Clique no ícone de relógio (🕐) para ver todo o histórico",
-        "Cada entrada mostra: data, tipo de contato, resumo e operador",
+        "Cada entrada mostra: data, tipo de contato (WhatsApp/E-mail/Ligação), resumo e operador",
         "O histórico é permanente e não pode ser apagado",
         "Útil para auditoria e acompanhamento da cobrança",
+        "Os registros de WhatsApp e E-mail servem como prova formal",
       ],
     },
     {
       title: "Resumo da Régua de Cobrança",
-      description: "Visão geral completa do processo de cobrança do Grupo Fox.",
+      description: "Visão geral completa do processo de cobrança do Grupo Fox — com canais formais definidos por dia.",
       icon: Shield,
       iconColor: "text-emerald-700",
       bgColor: "bg-emerald-50",
       borderColor: "border-emerald-400",
       highlight: true,
       details: [
-        "📱 Dia 1 → Primeiro contato obrigatório (telefone vibra)",
+        "📱📧 Dia 1 → WhatsApp + E-mail (registro formal da cobrança)",
         "⏸️ Dia 2 → Intervalo (pendências anteriores continuam vibrando)",
-        "📱 Dia 3 → Segundo contato obrigatório (telefone vibra)",
+        "📞📧 Dia 3 → Ligação + E-mail (2º contato, mais incisivo)",
         "⏸️ Dia 4 → Intervalo",
-        "📱 Dia 5 → Terceiro e último contato (telefone vibra)",
-        "📋 Dia 6 → Preparação para decisão",
+        "📞📧 Dia 5 → Ligação + E-mail (último contato, aviso de protesto)",
+        "📋 Dia 6 → Preparação para decisão (revisão dos 6 registros formais)",
         "⚖️ Dia 7+ → Decisão: Protesto Automático ou Plano de Ação",
-        "📊 Tudo fica salvo no histórico do título",
+        "📊 Tudo fica salvo no histórico do título como prova formal",
       ],
     },
   ];
@@ -290,6 +303,22 @@ export default function CobrancaGuideSimulator({
               )}
             </div>
           )}
+
+          {/* Channel legend */}
+          <div className="mt-3 flex gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/20 rounded-md border border-green-400/30">
+              <MessageCircle className="w-3 h-3 text-green-400" />
+              <span className="text-[10px] text-green-300 font-medium">Dia 1: WhatsApp</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/20 rounded-md border border-blue-400/30">
+              <Mail className="w-3 h-3 text-blue-400" />
+              <span className="text-[10px] text-blue-300 font-medium">Dias 1,3,5: E-mail</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 rounded-md border border-amber-400/30">
+              <Phone className="w-3 h-3 text-amber-400" />
+              <span className="text-[10px] text-amber-300 font-medium">Dias 3,5: Ligação</span>
+            </div>
+          </div>
         </div>
 
         {/* Main content area */}

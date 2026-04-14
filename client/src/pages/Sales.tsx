@@ -432,6 +432,27 @@ function DailyChart({ data, mode, period, comparison }: {
 
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full" style={{ minWidth: "600px" }}>
+          {/* CSS animation for bars growing from bottom */}
+          <defs>
+            <style>{`
+              @keyframes barGrow {
+                from { transform: scaleY(0); }
+                to { transform: scaleY(1); }
+              }
+              @keyframes fadeInUp {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+              .bar-animated {
+                animation: barGrow 0.5s ease-out forwards;
+                transform-origin: bottom;
+              }
+              .label-animated {
+                animation: fadeInUp 0.3s ease-out forwards;
+                opacity: 0;
+              }
+            `}</style>
+          </defs>
           {/* Grid lines + left axis (bars) */}
           {yTicks.map((tick, i) => (
             <g key={`grid-${i}`}>
@@ -475,9 +496,20 @@ function DailyChart({ data, mode, period, comparison }: {
                   stroke={item.isFuture ? "#e2e8f0" : "none"}
                   strokeWidth={item.isFuture ? 1 : 0}
                   strokeDasharray={item.isFuture ? "3 2" : "none"}
+                  className={!item.isFuture && val > 0 ? "bar-animated" : undefined}
+                  style={!item.isFuture && val > 0 ? { animationDelay: `${idx * 60}ms`, transformBox: "fill-box" as any } : undefined}
                 />
                 {val > 0 && !item.isFuture && (
-                  <text x={x + barWidth / 2} y={y - 6} textAnchor="middle" fill="#475569" fontSize="11" fontWeight="600">
+                  <text
+                    x={x + barWidth / 2}
+                    y={y - 8}
+                    textAnchor="middle"
+                    fill="#1e293b"
+                    fontSize="13"
+                    fontWeight="700"
+                    className="label-animated"
+                    style={{ animationDelay: `${idx * 60 + 300}ms` }}
+                  >
                     {mode === "value" ? (val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)) : val}
                   </text>
                 )}

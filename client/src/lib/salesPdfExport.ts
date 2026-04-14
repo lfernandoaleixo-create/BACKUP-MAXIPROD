@@ -334,12 +334,12 @@ function drawChartInPdf(
     doc.setFillColor(...(weekend ? [203, 213, 225] as [number, number, number] : tealLight));
     doc.rect(x, y, barWidth, barH, "F");
 
-    // Value label on top of bar
+    // Value label on top of bar - BIGGER and BOLDER
     if (d.value > 0) {
-      doc.setFontSize(5);
-      doc.setTextColor(...slate700);
+      doc.setFontSize(7);
+      doc.setTextColor(15, 23, 42); // slate-900 for maximum contrast
       doc.setFont("helvetica", "bold");
-      doc.text(fmtCompact(d.value), x + barWidth / 2, y - 1.5, { align: "center" });
+      doc.text(fmtCompact(d.value), x + barWidth / 2, y - 2.5, { align: "center" });
     }
 
     // X axis labels
@@ -516,28 +516,30 @@ export async function generateSalesPDF(
 
   const kpiW = (pageW - margin * 2) / 3;
 
-  // Valor Total
+  // Valor Total - DESTAQUE MAIOR
   doc.setFontSize(8);
   doc.setTextColor(...slate400);
   doc.setFont("helvetica", "bold");
   doc.text("VALOR TOTAL DO PERIODO", margin + 8, y + 8);
-  doc.setFontSize(16);
-  doc.setTextColor(...slate700);
-  doc.text(fmtCurrency(analytics.totalValue), margin + 8, y + 16);
+  doc.setFontSize(20);
+  doc.setTextColor(15, 23, 42); // slate-900 for maximum contrast
+  doc.setFont("helvetica", "bold");
+  doc.text(fmtCurrency(analytics.totalValue), margin + 8, y + 17);
   doc.setFontSize(7);
   doc.setTextColor(...slate400);
   doc.setFont("helvetica", "normal");
   doc.text(`${fmtNumber(analytics.totalOrders)} pedidos  •  ${fmtNumber(analytics.totalClients)} clientes  •  Ticket: ${fmtCurrency(analytics.ticketMedio)}`, margin + 8, y + 22);
 
-  // Faturado
+  // Faturado - DESTAQUE MAIOR
   const fX = margin + kpiW;
   doc.setFontSize(8);
   doc.setTextColor(...slate400);
   doc.setFont("helvetica", "bold");
   doc.text("FATURADO", fX + 8, y + 8);
-  doc.setFontSize(16);
+  doc.setFontSize(18);
   doc.setTextColor(...emerald);
-  doc.text(fmtCurrency(analytics.totalFaturado), fX + 8, y + 16);
+  doc.setFont("helvetica", "bold");
+  doc.text(fmtCurrency(analytics.totalFaturado), fX + 8, y + 17);
   doc.setFontSize(8);
   doc.text(fmtPct(analytics.totalFaturado, analytics.totalValue), fX + 8, y + 22);
 
@@ -552,15 +554,16 @@ export async function generateSalesPDF(
     doc.roundedRect(fX + barStartOffset, y + 20, barMaxW * fPct, 3, 1, 1, "F");
   }
 
-  // A Faturar
+  // A Faturar - DESTAQUE MAIOR
   const aX = margin + kpiW * 2;
   doc.setFontSize(8);
   doc.setTextColor(...slate400);
   doc.setFont("helvetica", "bold");
   doc.text("A FATURAR", aX + 8, y + 8);
-  doc.setFontSize(16);
+  doc.setFontSize(18);
   doc.setTextColor(...orange);
-  doc.text(fmtCurrency(analytics.totalAFaturar), aX + 8, y + 16);
+  doc.setFont("helvetica", "bold");
+  doc.text(fmtCurrency(analytics.totalAFaturar), aX + 8, y + 17);
   doc.setFontSize(8);
   doc.text(fmtPct(analytics.totalAFaturar, analytics.totalValue), aX + 8, y + 22);
 

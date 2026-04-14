@@ -155,7 +155,13 @@ export async function generateCollectionPdf(data: CollectionDocData): Promise<Bu
         doc.text(`${data.responsavelCobranca}`, leftMargin + 10, y);
         doc.fontSize(9).font("Helvetica").fillColor(mediumGray);
         doc.text("Responsável pelas ações de cobrança nos dias 1, 3 e 5 após vencimento", leftMargin + 10, doc.y + 3);
-        y = doc.y + 15;
+        doc.fontSize(8.5).font("Helvetica").fillColor(blueAccent);
+        doc.text("Régua de Cobrança:", leftMargin + 10, doc.y + 6);
+        doc.fontSize(8).font("Helvetica").fillColor(mediumGray);
+        doc.text("• Dia 1: WhatsApp + E-mail (registro formal)", leftMargin + 18, doc.y + 3);
+        doc.text("• Dia 3: Ligação + E-mail (2º contato)", leftMargin + 18, doc.y + 2);
+        doc.text("• Dia 5: Ligação + E-mail (último contato, aviso de protesto)", leftMargin + 18, doc.y + 2);
+        y = doc.y + 12;
       }
 
       // ── HISTÓRICO DE AÇÕES ──
@@ -229,7 +235,7 @@ export async function generateCollectionPdf(data: CollectionDocData): Promise<Bu
         `Prezado(a) Sr(a). ${data.vendedor},`,
         `Por meio deste documento, informamos que o cliente ${data.cliente}, que está sob sua responsabilidade comercial, encontra-se INADIMPLENTE há ${data.diasAtraso} dias.`,
         `Conforme o protocolo interno de cobrança da empresa, a opção selecionada para este cliente foi "NÃO PROTESTAR AUTOMATICAMENTE", o que significa que o título NÃO será encaminhado a cartório para protesto.`,
-        `Informamos que todas as ações de cobrança previstas no protocolo (dias 1, 3 e 5 após o vencimento) já foram executadas por ${responsavelTexto}, conforme detalhado no histórico acima.`,
+        `Informamos que todas as ações de cobrança previstas no protocolo foram executadas por ${responsavelTexto} conforme a régua de cobrança: Dia 1 (WhatsApp + E-mail), Dia 3 (Ligação + E-mail) e Dia 5 (Ligação + E-mail). Todas as ações foram registradas formalmente no sistema.`,
         `Apesar dos esforços realizados, o cliente não efetuou o pagamento do valor em aberto de ${valorFormatted}.`,
       ];
 

@@ -3777,6 +3777,11 @@ Documento gerado automaticamente pelo Sistema Grupo Fox
 ──────────────────────────────────────────────────────────
   Responsável pelas ações de cobrança nos dias 1, 3 e 5
 
+  RÉGUA DE COBRANÇA (canais formais por dia):
+  • Dia 1: WhatsApp + E-mail (registro formal da cobrança)
+  • Dia 3: Ligação telefônica + E-mail (2º contato)
+  • Dia 5: Ligação telefônica + E-mail (último contato, aviso de protesto)
+
 ──────────────────────────────────────────────────────────
           HISTÓRICO DE AÇÕES DE COBRANÇA REALIZADAS
 ──────────────────────────────────────────────────────────
@@ -3798,14 +3803,17 @@ ${acoesTexto}
   encaminhado a cartório para protesto.
 
   Informamos que todas as ações de cobrança previstas no
-  protocolo (dias 1, 3 e 5 após o vencimento) já foram
-  executadas por Thiago, conforme detalhado no histórico.
+  protocolo foram executadas conforme a régua de cobrança:
+  • Dia 1: WhatsApp + E-mail (registro formal da cobrança)
+  • Dia 3: Ligação telefônica + E-mail (2º contato)
+  • Dia 5: Ligação telefônica + E-mail (último contato)
+  Todas as ações foram registradas formalmente no sistema.
 
   Apesar dos esforços realizados, o cliente não efetuou o
   pagamento do valor em aberto de ${valorFormatted}.
 
   SOLICITAMOS QUE DEFINA O PRÓXIMO PASSO PARA ESTE CLIENTE:
-  • Manter a cobrança ativa (Thiago continuará as tentativas)
+  • Manter a cobrança ativa (o responsável continuará as tentativas)
   • Negociar diretamente com o cliente
   • Encaminhar para protesto manual
   • Outra ação que julgar necessária
@@ -4127,6 +4135,11 @@ Documento gerado automaticamente pelo Sistema Grupo Fox
 ──────────────────────────────────────────────────────────
   Responsável pelas ações de cobrança nos dias 1, 3 e 5
 
+  RÉGUA DE COBRANÇA (canais formais por dia):
+  • Dia 1: WhatsApp + E-mail (registro formal da cobrança)
+  • Dia 3: Ligação telefônica + E-mail (2º contato)
+  • Dia 5: Ligação telefônica + E-mail (último contato, aviso de protesto)
+
 ──────────────────────────────────────────────────────────
           HISTÓRICO DE AÇÕES DE COBRANÇA REALIZADAS
 ──────────────────────────────────────────────────────────
@@ -4148,14 +4161,17 @@ ${acoesTexto}
   encaminhado a cartório para protesto.
 
   Informamos que todas as ações de cobrança previstas no
-  protocolo (dias 1, 3 e 5 após o vencimento) já foram
-  executadas por Thiago, conforme detalhado no histórico.
+  protocolo foram executadas conforme a régua de cobrança:
+  • Dia 1: WhatsApp + E-mail (registro formal da cobrança)
+  • Dia 3: Ligação telefônica + E-mail (2º contato)
+  • Dia 5: Ligação telefônica + E-mail (último contato)
+  Todas as ações foram registradas formalmente no sistema.
 
   Apesar dos esforços realizados, o cliente não efetuou o
   pagamento do valor em aberto de ${valorFormatted}.
 
   SOLICITAMOS QUE DEFINA O PRÓXIMO PASSO PARA ESTE CLIENTE:
-  • Manter a cobrança ativa (Thiago continuará as tentativas)
+  • Manter a cobrança ativa (o responsável continuará as tentativas)
   • Negociar diretamente com o cliente
   • Encaminhar para protesto manual
   • Outra ação que julgar necessária
