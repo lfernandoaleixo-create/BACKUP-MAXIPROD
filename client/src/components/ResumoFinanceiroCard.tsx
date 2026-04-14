@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import MaxiprodSimulator, { getFinancialSteps } from "@/components/MaxiprodSimulator";
 import { Input } from "@/components/ui/input";
 import {
   Tooltip,
@@ -674,6 +675,7 @@ function CompactSummary({
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const [verifySection, setVerifySection] = useState<"faturamento" | "vendas" | "entradas" | "contas_pagas" | null>(null);
   const [divergenceSection, setDivergenceSection] = useState<"faturamento" | "vendas" | "entradas" | "contas_pagas" | null>(null);
+  const [simulatorSection, setSimulatorSection] = useState<"faturamento" | "vendas" | "entradas" | "contas_pagas" | null>(null);
   const recebimentos = receivedData?.recebimentos?.total ?? 0;
   const outrasEntradas = otherInflowsData?.outrasEntradas?.total ?? 0;
   const faturamento = billingData?.faturamento?.total ?? 0;
@@ -729,8 +731,8 @@ function CompactSummary({
             </div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Entradas</span>
             {canVerifyMaxiprod && (
-              <button onClick={(e) => { e.stopPropagation(); setVerifySection("entradas"); }}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-amber-500/20 hover:bg-amber-500/40 flex items-center justify-center" title="Verificar no Maxiprod">
+              <button onClick={(e) => { e.stopPropagation(); setSimulatorSection("entradas"); }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-amber-500/20 hover:bg-amber-500/40 flex items-center justify-center" title="Ver passo a passo Maxiprod">
                 <Eye className="w-3 h-3 text-amber-700" />
               </button>
             )}
@@ -778,8 +780,8 @@ function CompactSummary({
             </div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Faturamento</span>
             {canVerifyMaxiprod && (
-              <button onClick={(e) => { e.stopPropagation(); setVerifySection("faturamento"); }}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-emerald-500/20 hover:bg-emerald-500/40 flex items-center justify-center" title="Verificar no Maxiprod">
+              <button onClick={(e) => { e.stopPropagation(); setSimulatorSection("faturamento"); }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-emerald-500/20 hover:bg-emerald-500/40 flex items-center justify-center" title="Ver passo a passo Maxiprod">
                 <Eye className="w-3 h-3 text-emerald-700" />
               </button>
             )}
@@ -812,8 +814,8 @@ function CompactSummary({
             </div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Vendas</span>
             {canVerifyMaxiprod && (
-              <button onClick={(e) => { e.stopPropagation(); setVerifySection("vendas"); }}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-blue-500/20 hover:bg-blue-500/40 flex items-center justify-center" title="Verificar no Maxiprod">
+              <button onClick={(e) => { e.stopPropagation(); setSimulatorSection("vendas"); }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-blue-500/20 hover:bg-blue-500/40 flex items-center justify-center" title="Ver passo a passo Maxiprod">
                 <Eye className="w-3 h-3 text-blue-700" />
               </button>
             )}
@@ -846,8 +848,8 @@ function CompactSummary({
             </div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contas Pagas</span>
             {canVerifyMaxiprod && (
-              <button onClick={(e) => { e.stopPropagation(); setVerifySection("contas_pagas"); }}
-                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-red-500/20 hover:bg-red-500/40 flex items-center justify-center" title="Verificar no Maxiprod">
+              <button onClick={(e) => { e.stopPropagation(); setSimulatorSection("contas_pagas"); }}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-red-500/20 hover:bg-red-500/40 flex items-center justify-center" title="Ver passo a passo Maxiprod">
                 <Eye className="w-3 h-3 text-red-700" />
               </button>
             )}
@@ -949,6 +951,17 @@ function CompactSummary({
             : divergenceSection === "vendas" ? cpVendas?.valorMaxiprod
             : divergenceSection === "entradas" ? cpEntradas?.valorMaxiprod
             : cpContasPagas?.valorMaxiprod) ?? 0}
+        />
+      )}
+
+      {/* Simulador Maxiprod - passo a passo animado */}
+      {simulatorSection && (
+        <MaxiprodSimulator
+          onClose={() => setSimulatorSection(null)}
+          steps={getFinancialSteps(simulatorSection, dates.start, dates.end)}
+          title={simulatorSection === "entradas" ? "Entradas" : simulatorSection === "faturamento" ? "Faturamento" : simulatorSection === "vendas" ? "Vendas" : "Contas Pagas"}
+          subtitle={`Período: ${dates.start} a ${dates.end}`}
+          maxiprodUrl="https://app.maxiprod.com.br"
         />
       )}
     </div>

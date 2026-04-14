@@ -63,6 +63,7 @@ import TopNav from "@/components/TopNav";
 import { InadimplenciaCard, ClientesInadimplentesCard } from "@/components/InadimplenciaCards";
 import { generateSalesPDF } from "@/lib/salesPdfExport";
 import { useOperator } from "@/contexts/OperatorContext";
+import MaxiprodSimulator, { getSalesSteps } from "@/components/MaxiprodSimulator";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
@@ -2568,6 +2569,7 @@ export default function Sales() {
   const { operator } = useOperator();
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const [verifyingCard, setVerifyingCard] = useState<{ card: string; startDate: string; endDate: string; dashboardValue: number } | null>(null);
+  const [simulatorCard, setSimulatorCard] = useState<{ section: string; title: string; subtitle: string; value: number } | null>(null);
   const [period, setPeriod] = useState("current_month");
   const [grupo, setGrupo] = useState("all");
   const [subgrupo, setSubgrupo] = useState("all");
@@ -3038,7 +3040,12 @@ export default function Sales() {
                       <DollarSign className="w-4.5 h-4.5 text-teal-600" />
                     </div>
                     <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Valor Total do Periodo</p>
-
+                    {canVerifyMaxiprod && (
+                      <button onClick={() => setSimulatorCard({ section: "vendas", title: "Contraprova: Valor Total", subtitle: "Pedidos de Venda", value: analytics.totalValue })}
+                        className="w-7 h-7 rounded-full bg-teal-100 hover:bg-teal-200 flex items-center justify-center transition-colors" title="Ver passo a passo Maxiprod">
+                        <Eye className="w-3.5 h-3.5 text-teal-600" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{formatCurrencyFull(analytics.totalValue)}</p>
                   <p className="text-xs text-slate-400 mt-1.5">{analytics.totalOrders} pedidos &bull; {analytics.totalClients} clientes</p>
@@ -3052,7 +3059,12 @@ export default function Sales() {
                       <FileCheck className="w-4.5 h-4.5 text-emerald-600" />
                     </div>
                     <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Faturado</p>
-
+                    {canVerifyMaxiprod && (
+                      <button onClick={() => setSimulatorCard({ section: "faturamento", title: "Contraprova: Faturado", subtitle: "NFs de Saída", value: analytics.totalFaturado })}
+                        className="w-7 h-7 rounded-full bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center transition-colors" title="Ver passo a passo Maxiprod">
+                        <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-2xl font-extrabold text-emerald-700 tracking-tight">{formatCurrencyFull(analytics.totalFaturado)}</p>
                   <div className="mt-3 flex items-center gap-2">
@@ -3075,7 +3087,12 @@ export default function Sales() {
                       <Clock className="w-4.5 h-4.5 text-orange-600" />
                     </div>
                     <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">A Faturar (Periodo)</p>
-
+                    {canVerifyMaxiprod && (
+                      <button onClick={() => setSimulatorCard({ section: "a_faturar", title: "Contraprova: A Faturar", subtitle: "Pedidos A Faturar", value: analytics.totalAFaturar })}
+                        className="w-7 h-7 rounded-full bg-orange-100 hover:bg-orange-200 flex items-center justify-center transition-colors" title="Ver passo a passo Maxiprod">
+                        <Eye className="w-3.5 h-3.5 text-orange-600" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-2xl font-extrabold text-orange-700 tracking-tight">{formatCurrencyFull(analytics.totalAFaturar)}</p>
                   <div className="mt-3 flex items-center gap-2">
@@ -3098,7 +3115,12 @@ export default function Sales() {
                         <Gift className="w-4.5 h-4.5 text-blue-600" />
                       </div>
                       <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-1">Amostra / Bonificação</p>
-
+                      {canVerifyMaxiprod && (
+                        <button onClick={() => setSimulatorCard({ section: "amostra_bonif", title: "Contraprova: Amostra/Bonificação", subtitle: "Pedidos de Amostra e Bonificação", value: analytics.totalAmostraBonif })}
+                          className="w-7 h-7 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center transition-colors" title="Ver passo a passo Maxiprod">
+                          <Eye className="w-3.5 h-3.5 text-blue-600" />
+                        </button>
+                      )}
                     </div>
                     <p className="text-2xl font-extrabold text-blue-700 tracking-tight">{formatCurrencyFull(analytics.totalAmostraBonif)}</p>
                     <div className="mt-2 space-y-1">
@@ -3250,7 +3272,17 @@ export default function Sales() {
         ) : null}
       </main>
 
-
+      {/* Maxiprod Simulator Modal */}
+      {simulatorCard && start && end && (
+        <MaxiprodSimulator
+          title={simulatorCard.title}
+          subtitle={simulatorCard.subtitle}
+          steps={getSalesSteps(simulatorCard.section, start, end, simulatorCard.value)}
+          maxiprodUrl={MAXIPROD_LOGIN_URL}
+          valorManus={simulatorCard.value}
+          onClose={() => setSimulatorCard(null)}
+        />
+      )}
     </div>
   );
 }

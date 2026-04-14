@@ -2328,3 +2328,8 @@
 - [x] Mover checkbox "Descontos Autorizados" para o topo de cada conta bancária (entre card verde e tabela), só Fernando pode ticar
 - [x] Corrigir checkbox visível para todos operadores, mas só Fernando consegue ticar (disabled para outros)
 - [x] Corrigir projetadoCx para usar disponivelCx + poCx diretamente (evitar diferença de arredondamento Math.floor)
+- [x] Criar componente MaxiprodSimulator reutilizável com animação passo a passo (simula preenchimento no Maxiprod)
+- [x] Adicionar olho Maxiprod + simulador nos 4 cards de Vendas (Valor Total, Faturado, A Faturar, Amostra/Bonificação)
+- [x] Adicionar olho Maxiprod + simulador nos 4 cards do Financeiro (Entradas, Faturado, Vendas, Contas Pagas)
+- [x] Incluir login/senha Fernando no passo a passo e link "Abrir Maxiprod"
+- [x] Liberar aba Produção para senhas "Erica" e "Maria" (atualizado no banco: accessProducao = true)
