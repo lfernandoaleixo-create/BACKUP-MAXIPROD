@@ -186,9 +186,9 @@ export default function MaxiprodSimulator({
 
                 {/* Result highlight */}
                 {step?.actionType === "result" && (
-                  <div className="mt-3 mx-auto max-w-xs bg-emerald-50 border-2 border-emerald-300 rounded-lg px-4 py-3">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-1" />
-                    <p className="text-sm font-bold text-emerald-700">Valor encontrado!</p>
+                  <div className="mt-3 mx-auto max-w-sm bg-emerald-50 border-2 border-emerald-300 rounded-lg px-4 py-3">
+                    <CheckCircle2 className="w-7 h-7 text-emerald-500 mx-auto mb-1.5" />
+                    <p className="text-sm font-bold text-emerald-700 text-center leading-snug">Valor do Dashboard da Manus<br/>confere com o Maxiprod</p>
                   </div>
                 )}
               </div>
