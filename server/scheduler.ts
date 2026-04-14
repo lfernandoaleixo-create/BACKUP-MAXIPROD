@@ -10,7 +10,7 @@
 import { schedule, type ScheduledTask } from "node-cron";
 import { runGraphQLSync, syncBankBalances, syncPaidAccountsSnapshots } from "./maxiprodGraphQL";
 import { saveFinancialSnapshot, detectFinancialChanges, getSnapshotDates } from "./financialHistory";
-import { resetDailyPaymentAuthorizations } from "./paymentAuthReset";
+import { resetDailyPaymentAuthorizations, checkAndResetOnStartup } from "./paymentAuthReset";
 
 let scheduledTask: ScheduledTask | null = null;
 let dailyResetTask: ScheduledTask | null = null;
@@ -82,6 +82,12 @@ export function startScheduler(): void {
   });
 
   console.log("[Scheduler] Auto-sync: a cada 5 min, seg-sex 7h-18h (America/Sao_Paulo)");
+
+  // Startup check: reset stale authorizations from previous days
+  // This handles the case where sandbox hibernates overnight and midnight cron never fires
+  checkAndResetOnStartup().catch(err => {
+    console.error(`[Scheduler] Startup auth reset check failed: ${err.message}`);
+  });
 
   // Daily reset of payment authorizations at midnight (00:00) Brasilia time, every day
   if (!dailyResetTask) {

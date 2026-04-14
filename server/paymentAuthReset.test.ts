@@ -17,7 +17,7 @@ vi.mock("../drizzle/schema", () => ({
 }));
 
 import { getDb } from "./db";
-import { resetDailyPaymentAuthorizations } from "./paymentAuthReset";
+import { resetDailyPaymentAuthorizations, checkAndResetOnStartup } from "./paymentAuthReset";
 
 describe("Payment Authorization Daily Reset", () => {
   beforeEach(() => {
@@ -88,5 +88,32 @@ describe("Scheduler Integration - Daily Reset", () => {
     expect(result).toHaveProperty("date");
     expect(typeof result.deleted).toBe("number");
     expect(typeof result.date).toBe("string");
+  });
+
+  it("checkAndResetOnStartup should be importable and return reset status", async () => {
+    expect(typeof checkAndResetOnStartup).toBe("function");
+  });
+
+  it("checkAndResetOnStartup should return reset:false when db is not available", async () => {
+    (getDb as any).mockResolvedValueOnce(null);
+    
+    const result = await checkAndResetOnStartup();
+    
+    expect(result).toHaveProperty("reset");
+    expect(result).toHaveProperty("deleted");
+    expect(result.reset).toBe(false);
+    expect(result.deleted).toBe(0);
+  });
+
+  it("checkAndResetOnStartup should return reset:false when no authorizations exist", async () => {
+    mockSelect.mockReturnValueOnce({
+      from: vi.fn().mockResolvedValueOnce([]),
+    });
+    (getDb as any).mockResolvedValueOnce(mockDb);
+    
+    const result = await checkAndResetOnStartup();
+    
+    expect(result.reset).toBe(false);
+    expect(result.deleted).toBe(0);
   });
 });

@@ -2347,3 +2347,9 @@
 - [x] Criar card dinâmico "Guia de Cobrança" com passo a passo do processo de cobrança (olho na aba Inadimplência)
 - [x] Restringir botão olho apenas para senhas Flavio, Thiago, Guilherme, Fernando
 - [x] Incluir régua de cobrança (1, 3, 5 dias após vencimento), ações do responsável, salvar histórico, mudar status
+
+## Correções 14/04/2026 - Autorizações, Histórico e Faturado
+- [x] Fix: Autorizações de pagamento devem resetar (desticar) automaticamente na virada do dia (meia-noite) - adicionado startup check + cron
+- [x] Redesign: Cards de Histórico Completo (Recebimentos/Pagamentos) com visual mais profissional, requintado e sofisticado
+- [x] Fix: Divergência no valor "Faturado" entre aba Vendas e aba Financeiro - investigado: são métricas diferentes (NFs emitidas vs itens de pedidos com estado Faturado)
+- [x] Fix: Botão "Guia de Cobrança" na aba Inadimplência - melhorado posicionamento e destaque com banner grande

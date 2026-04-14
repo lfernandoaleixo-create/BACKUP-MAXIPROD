@@ -434,11 +434,12 @@ export default function InadimplenciaTab() {
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-red-500 to-amber-500 text-white text-xs font-bold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30"
               title="Ver guia completo do processo de cobrança"
             >
-              <Eye className="w-3.5 h-3.5" />
-              Guia de Cobrança
+              <Eye className="w-5 h-5" />
+              <span>Guia de Cobrança</span>
+              <span className="bg-white/20 rounded-full px-2 py-0.5 text-[10px] font-bold">PASSO A PASSO</span>
             </button>
           )}
           <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">

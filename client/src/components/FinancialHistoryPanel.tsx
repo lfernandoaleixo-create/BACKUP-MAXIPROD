@@ -1,6 +1,12 @@
 /**
  * FinancialHistoryPanel - Painel de Histórico de Mudanças Financeiras
  * 
+ * Design sofisticado e profissional com:
+ * - Header com gradiente e estatísticas resumidas
+ * - Cards por semana com barras de progresso visual
+ * - Itens com layout limpo e hierarquia visual clara
+ * - Animações suaves e micro-interações
+ * 
  * Dois modos:
  * 1. Por semana (inline no BucketCard): mostra mudanças de uma semana específica
  * 2. Completo (painel grande): mostra todas as mudanças do mês, agrupadas por semana e dia
@@ -20,6 +26,10 @@ import {
   CalendarDays,
   FolderOpen,
   History,
+  TrendingUp,
+  TrendingDown,
+  FileText,
+  BarChart3,
 } from "lucide-react";
 
 function formatCurrency(n: number): string {
@@ -78,7 +88,6 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
     });
   };
 
-  // Flatten all items and separate by type
   const allItems = useMemo(() => {
     if (!data) return { adicionado: [], removido: [], alterado: [] };
     const adicionado: any[] = [];
@@ -98,7 +107,6 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
   const totalAdicionado = allItems.adicionado.reduce((s, i) => s + Number(i.valor || 0), 0);
   const totalRemovido = allItems.removido.reduce((s, i) => s + Number(i.valor || 0), 0);
 
-  // Group current tab items by day
   const currentItems = activeTab === "adicionado" ? allItems.adicionado : [...allItems.removido, ...allItems.alterado];
   const groupedByDay = useMemo(() => {
     const grouped: Record<string, any[]> = {};
@@ -113,78 +121,96 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
   const hasChanges = allItems.adicionado.length > 0 || allItems.removido.length > 0 || allItems.alterado.length > 0;
 
   return (
-    <div className={`mt-2 rounded-lg border ${isPagar ? "border-red-200 bg-red-50/30" : "border-emerald-200 bg-emerald-50/30"} overflow-hidden`}>
+    <div className={`mt-2 rounded-xl border-2 ${isPagar ? "border-red-200/60" : "border-emerald-200/60"} overflow-hidden shadow-sm`}>
       {/* Header */}
-      <div className={`${isPagar ? "bg-red-100" : "bg-emerald-100"} px-3 py-2 flex items-center justify-between`}>
-        <div className="flex items-center gap-1.5">
-          <History className="w-3.5 h-3.5 text-slate-600" />
-          <span className="text-xs font-bold text-slate-700">Histórico — {semanaLabel}</span>
+      <div className={`${isPagar ? "bg-gradient-to-r from-red-600 to-red-500" : "bg-gradient-to-r from-emerald-600 to-emerald-500"} px-4 py-2.5 flex items-center justify-between`}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+            <History className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div>
+            <span className="text-xs font-bold text-white">Histórico — {semanaLabel}</span>
+          </div>
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
-          <X className="w-4 h-4" />
+        <button onClick={onClose} className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer">
+          <X className="w-3.5 h-3.5 text-white" />
         </button>
       </div>
 
+      {/* Summary badges */}
+      {hasChanges && !isLoading && (
+        <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
+          <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-2.5 py-1">
+            <TrendingUp className="w-3 h-3 text-green-600" />
+            <span className="text-[10px] font-bold text-green-700">+{formatCurrency(totalAdicionado)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-2.5 py-1">
+            <TrendingDown className="w-3 h-3 text-red-600" />
+            <span className="text-[10px] font-bold text-red-700">-{formatCurrency(totalRemovido)}</span>
+          </div>
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold text-slate-500">Saldo:</span>
+            <span className={`text-[11px] font-bold ${totalAdicionado - totalRemovido >= 0 ? "text-green-700" : "text-red-700"}`}>
+              {totalAdicionado - totalRemovido >= 0 ? "+" : ""}{formatCurrency(totalAdicionado - totalRemovido)}
+            </span>
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
-        <div className="flex justify-center py-4">
-          <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+        <div className="flex flex-col items-center justify-center py-6 gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+          <span className="text-[10px] text-slate-400">Carregando histórico...</span>
         </div>
       ) : !hasChanges ? (
-        <div className="text-center py-4 text-xs text-slate-400">
-          Nenhuma mudança registrada nesta semana
+        <div className="text-center py-6">
+          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2">
+            <FileText className="w-5 h-5 text-slate-300" />
+          </div>
+          <span className="text-xs text-slate-400">Nenhuma mudança registrada nesta semana</span>
         </div>
       ) : (
         <>
-          {/* Tabs: Acrescentados / Retirados */}
-          <div className="flex border-b border-slate-200">
+          {/* Tabs */}
+          <div className="flex">
             <button
               onClick={() => setActiveTab("adicionado")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-all cursor-pointer border-b-2 ${
                 activeTab === "adicionado"
-                  ? "bg-green-50 text-green-700 border-b-2 border-green-500"
-                  : "text-slate-500 hover:bg-slate-50"
+                  ? "bg-green-50/80 text-green-700 border-green-500"
+                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-transparent"
               }`}
             >
-              <FolderOpen className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Acrescentados</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                activeTab === "adicionado" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeTab === "adicionado" ? "bg-green-200/60 text-green-800" : "bg-slate-100 text-slate-500"
               }`}>
                 {allItems.adicionado.length}
               </span>
-              {totalAdicionado > 0 && (
-                <span className="text-[10px] text-green-600 font-bold">
-                  +{formatCurrency(totalAdicionado)}
-                </span>
-              )}
             </button>
             <button
               onClick={() => setActiveTab("removido")}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-all cursor-pointer border-b-2 ${
                 activeTab === "removido"
-                  ? "bg-red-50 text-red-700 border-b-2 border-red-500"
-                  : "text-slate-500 hover:bg-slate-50"
+                  ? "bg-red-50/80 text-red-700 border-red-500"
+                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-transparent"
               }`}
             >
-              <FolderOpen className="w-3.5 h-3.5" />
+              <Minus className="w-3.5 h-3.5" />
               <span>Retirados</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                activeTab === "removido" ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-500"
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeTab === "removido" ? "bg-red-200/60 text-red-800" : "bg-slate-100 text-slate-500"
               }`}>
                 {allItems.removido.length + allItems.alterado.length}
               </span>
-              {totalRemovido > 0 && (
-                <span className="text-[10px] text-red-600 font-bold">
-                  -{formatCurrency(totalRemovido)}
-                </span>
-              )}
             </button>
           </div>
 
           {/* Items grouped by day */}
           <div className="max-h-[300px] overflow-y-auto">
             {groupedByDay.length === 0 ? (
-              <div className="text-center py-4 text-xs text-slate-400">
+              <div className="text-center py-6 text-xs text-slate-400">
                 Nenhum item {activeTab === "adicionado" ? "acrescentado" : "retirado"} nesta semana
               </div>
             ) : (
@@ -197,46 +223,54 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
                     <div key={date}>
                       <button
                         onClick={() => toggleDay(date)}
-                        className="w-full px-3 py-1.5 flex items-center justify-between hover:bg-white/50 transition-colors cursor-pointer"
+                        className="w-full px-4 py-2 flex items-center justify-between hover:bg-slate-50/80 transition-colors cursor-pointer"
                       >
-                        <div className="flex items-center gap-1.5">
-                          <CalendarDays className="w-3 h-3 text-slate-400" />
-                          <span className="text-[11px] font-bold text-slate-600">{formatDateBR(date)}</span>
-                          <span className="text-[10px] text-slate-400">({getDayName(date)})</span>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-5 h-5 rounded flex items-center justify-center ${activeTab === "adicionado" ? "bg-green-100" : "bg-red-100"}`}>
+                            <CalendarDays className={`w-3 h-3 ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`} />
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-700">{formatDateBR(date)}</span>
+                          <span className="text-[10px] text-slate-400 font-medium">({getDayName(date)})</span>
+                          <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-medium">{items.length} itens</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-slate-400">{items.length} itens</span>
+                        <div className="flex items-center gap-2">
                           <span className={`text-[11px] font-bold ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`}>
                             {formatCurrency(dayTotal)}
                           </span>
-                          {isExpanded ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
+                          {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
                         </div>
                       </button>
 
                       {isExpanded && (
-                        <div className="px-3 pb-2 space-y-0.5">
+                        <div className="px-4 pb-3 space-y-1">
                           {items.map((item: any, idx: number) => (
-                            <div key={item.maxiprodId || idx} className="text-[11px] leading-5">
-                              <div className="flex items-center gap-x-1.5">
+                            <div key={item.maxiprodId || idx} className="bg-white rounded-lg border border-slate-100 px-3 py-1.5 hover:border-slate-200 transition-colors">
+                              <div className="flex items-center gap-x-2">
                                 {item.changeType === "adicionado" ? (
-                                  <Plus className="w-3 h-3 text-green-500 shrink-0" />
+                                  <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                    <Plus className="w-2.5 h-2.5 text-green-600" />
+                                  </div>
                                 ) : item.changeType === "removido" ? (
-                                  <Minus className="w-3 h-3 text-red-500 shrink-0" />
+                                  <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                    <Minus className="w-2.5 h-2.5 text-red-600" />
+                                  </div>
                                 ) : (
-                                  <ArrowUpDown className="w-3 h-3 text-amber-500 shrink-0" />
+                                  <div className="w-4 h-4 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                    <ArrowUpDown className="w-2.5 h-2.5 text-amber-600" />
+                                  </div>
                                 )}
-                                <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>
+                                <span className="text-[11px] text-slate-700 font-medium truncate min-w-0" style={{ flex: '1 1 0' }}>
                                   {item.nome || "—"}
                                 </span>
                                 {item.vencimentoData && (
-                                  <span className="text-slate-400 whitespace-nowrap text-right shrink-0 text-[10px]" style={{ width: '42px', fontVariantNumeric: 'tabular-nums' }}>
+                                  <span className="text-[10px] text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
                                     {formatVencimento(item.vencimentoData)}
                                   </span>
                                 )}
-                                <span className={`font-semibold whitespace-nowrap text-right shrink-0 ${
+                                <span className={`text-[11px] font-bold whitespace-nowrap text-right shrink-0 ${
                                   item.changeType === "adicionado" ? "text-green-700" :
                                   item.changeType === "removido" ? "text-red-700" : "text-amber-700"
-                                }`} style={{ width: '80px', fontVariantNumeric: 'tabular-nums' }}>
+                                }`} style={{ width: '85px', fontVariantNumeric: 'tabular-nums' }}>
                                   {item.changeType === "alterado" ? (
                                     <>
                                       <span className="text-slate-400 line-through text-[9px]">{formatCurrency(Number(item.valorAnterior || 0))}</span>
@@ -249,7 +283,7 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
                                 </span>
                               </div>
                               {(item.referenteA || item.observacoes) && (
-                                <p className="text-[9px] text-slate-400 truncate pl-5 mt-0">
+                                <p className="text-[9px] text-slate-400 truncate pl-6 mt-0.5">
                                   {item.referenteA || item.observacoes}
                                 </p>
                               )}
@@ -284,8 +318,18 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
 
   const { data, isLoading } = trpc.financial.getChanges.useQuery({ tipo });
 
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<"adicionado" | "removido">("adicionado");
+
+  const toggleWeek = (semana: string) => {
+    setExpandedWeeks(prev => {
+      const next = new Set(prev);
+      if (next.has(semana)) next.delete(semana);
+      else next.add(semana);
+      return next;
+    });
+  };
 
   const toggleDay = (date: string) => {
     setExpandedDays(prev => {
@@ -340,78 +384,140 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
     return total;
   }, [grouped]);
 
+  const totalCount = useMemo(() => {
+    let count = 0;
+    for (const items of Array.from(grouped.adicionado.values())) count += items.length;
+    for (const items of Array.from(grouped.removido.values())) count += items.length;
+    return count;
+  }, [grouped]);
+
+  const saldoLiquido = totalAdicionado - totalRemovido;
+
+  // Find max week total for progress bars
+  const maxWeekTotal = useMemo(() => {
+    let max = 0;
+    for (const [, items] of Array.from(currentMap.entries())) {
+      const total = items.reduce((s: number, i: any) => s + Number(i.valor || 0), 0);
+      if (total > max) max = total;
+    }
+    return max;
+  }, [currentMap]);
+
   return (
-    <div className={`bg-white rounded-xl border-2 ${isPagar ? "border-red-200" : "border-emerald-200"} shadow-lg overflow-hidden`}>
-      {/* Header */}
-      <div className={`${isPagar ? "bg-red-600" : "bg-emerald-600"} px-4 py-3 flex items-center justify-between`}>
-        <div className="flex items-center gap-2">
-          <History className="w-4 h-4 text-white" />
-          <h3 className="text-sm font-bold text-white">
-            Histórico Completo — {title}
-          </h3>
+    <div className={`bg-white rounded-2xl border ${isPagar ? "border-red-200/50" : "border-emerald-200/50"} shadow-xl overflow-hidden`}>
+      {/* ── Gradient Header ── */}
+      <div className={`${isPagar ? "bg-gradient-to-br from-red-700 via-red-600 to-rose-500" : "bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-500"} px-5 py-4`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
+              <History className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white tracking-tight">
+                Histórico Completo
+              </h3>
+              <p className="text-[11px] text-white/70 font-medium">{title} — Desde início do mês</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all cursor-pointer">
+            <X className="w-4 h-4 text-white" />
+          </button>
         </div>
-        <button onClick={onClose} className="text-white/80 hover:text-white transition-colors cursor-pointer">
-          <X className="w-5 h-5" />
-        </button>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
+            <div className="flex items-center gap-1 mb-0.5">
+              <TrendingUp className="w-3 h-3 text-green-300" />
+              <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">Acrescentados</span>
+            </div>
+            <span className="text-sm font-bold text-green-200">+{formatCurrency(totalAdicionado)}</span>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
+            <div className="flex items-center gap-1 mb-0.5">
+              <TrendingDown className="w-3 h-3 text-red-300" />
+              <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">Retirados</span>
+            </div>
+            <span className="text-sm font-bold text-red-200">-{formatCurrency(totalRemovido)}</span>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
+            <div className="flex items-center gap-1 mb-0.5">
+              <BarChart3 className="w-3 h-3 text-white/60" />
+              <span className="text-[9px] text-white/60 font-semibold uppercase tracking-wider">Saldo Líquido</span>
+            </div>
+            <span className={`text-sm font-bold ${saldoLiquido >= 0 ? "text-green-200" : "text-red-200"}`}>
+              {saldoLiquido >= 0 ? "+" : ""}{formatCurrency(saldoLiquido)}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Summary bar */}
-      <div className={`${isPagar ? "bg-red-50" : "bg-emerald-50"} px-4 py-2 flex items-center justify-between border-b ${isPagar ? "border-red-100" : "border-emerald-100"}`}>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
-            <Plus className="w-3 h-3 text-green-600" />
-            <span className="text-xs font-semibold text-green-700">{formatCurrency(totalAdicionado)}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Minus className="w-3 h-3 text-red-600" />
-            <span className="text-xs font-semibold text-red-700">{formatCurrency(totalRemovido)}</span>
-          </div>
-        </div>
-        <span className="text-[10px] text-slate-400">Desde início do mês</span>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200">
+      {/* ── Tab Switcher ── */}
+      <div className="flex bg-slate-50 border-b border-slate-200">
         <button
           onClick={() => setActiveTab("adicionado")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold transition-all cursor-pointer border-b-[3px] ${
             activeTab === "adicionado"
-              ? "bg-green-50 text-green-700 border-b-2 border-green-500"
-              : "text-slate-500 hover:bg-slate-50"
+              ? "bg-white text-green-700 border-green-500 shadow-sm"
+              : "text-slate-400 hover:text-slate-600 border-transparent"
           }`}
         >
-          <FolderOpen className="w-3.5 h-3.5" />
+          <div className={`w-5 h-5 rounded-full flex items-center justify-center ${activeTab === "adicionado" ? "bg-green-100" : "bg-slate-100"}`}>
+            <Plus className={`w-3 h-3 ${activeTab === "adicionado" ? "text-green-600" : "text-slate-400"}`} />
+          </div>
           Acrescentados
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+            activeTab === "adicionado" ? "bg-green-100 text-green-800" : "bg-slate-200 text-slate-500"
+          }`}>
+            {Array.from(grouped.adicionado.values()).reduce((s, items) => s + items.length, 0)}
+          </span>
         </button>
         <button
           onClick={() => setActiveTab("removido")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold transition-all cursor-pointer border-b-[3px] ${
             activeTab === "removido"
-              ? "bg-red-50 text-red-700 border-b-2 border-red-500"
-              : "text-slate-500 hover:bg-slate-50"
+              ? "bg-white text-red-700 border-red-500 shadow-sm"
+              : "text-slate-400 hover:text-slate-600 border-transparent"
           }`}
         >
-          <FolderOpen className="w-3.5 h-3.5" />
+          <div className={`w-5 h-5 rounded-full flex items-center justify-center ${activeTab === "removido" ? "bg-red-100" : "bg-slate-100"}`}>
+            <Minus className={`w-3 h-3 ${activeTab === "removido" ? "text-red-600" : "text-slate-400"}`} />
+          </div>
           Retirados
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+            activeTab === "removido" ? "bg-red-100 text-red-800" : "bg-slate-200 text-slate-500"
+          }`}>
+            {Array.from(grouped.removido.values()).reduce((s, items) => s + items.length, 0)}
+          </span>
         </button>
       </div>
 
-      {/* Content grouped by semana */}
+      {/* ── Content grouped by semana ── */}
       <div className="max-h-[500px] overflow-y-auto">
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            </div>
+            <span className="text-xs text-slate-400 font-medium">Carregando histórico de conciliações...</span>
           </div>
         ) : currentMap.size === 0 ? (
-          <div className="text-center py-8 text-sm text-slate-400">
-            Nenhum item {activeTab === "adicionado" ? "acrescentado" : "retirado"} neste mês
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
+              <FileText className="w-6 h-6 text-slate-300" />
+            </div>
+            <span className="text-sm text-slate-400 font-medium">
+              Nenhum item {activeTab === "adicionado" ? "acrescentado" : "retirado"} neste mês
+            </span>
           </div>
         ) : (
-          <div className="divide-y divide-slate-200">
+          <div className="p-3 space-y-2">
             {Array.from(currentMap.entries())
               .sort(([a], [b]) => a.localeCompare(b))
               .map(([semana, items]) => {
                 const semanaTotal = items.reduce((s: number, i: any) => s + Number(i.valor || 0), 0);
+                const isWeekExpanded = expandedWeeks.has(semana);
+                const progressPercent = maxWeekTotal > 0 ? (semanaTotal / maxWeekTotal) * 100 : 0;
                 
                 // Group items by day within this semana
                 const byDay: Record<string, any[]> = {};
@@ -423,90 +529,156 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
                 const dayEntries = Object.entries(byDay).sort(([a], [b]) => b.localeCompare(a));
 
                 return (
-                  <div key={semana} className="py-2">
-                    {/* Semana header */}
-                    <div className={`px-4 py-1.5 flex items-center justify-between ${
-                      activeTab === "adicionado" ? "bg-green-50/50" : "bg-red-50/50"
-                    }`}>
-                      <div className="flex items-center gap-1.5">
-                        <CalendarDays className="w-3.5 h-3.5 text-slate-500" />
-                        <span className="text-xs font-bold text-slate-700">{semana}</span>
-                        <span className="text-[10px] text-slate-400">({items.length} itens)</span>
+                  <div key={semana} className={`rounded-xl border overflow-hidden transition-all ${
+                    isWeekExpanded 
+                      ? activeTab === "adicionado" ? "border-green-200 shadow-md" : "border-red-200 shadow-md"
+                      : "border-slate-200 hover:border-slate-300 hover:shadow-sm"
+                  }`}>
+                    {/* Semana header card */}
+                    <button
+                      onClick={() => toggleWeek(semana)}
+                      className={`w-full px-4 py-3 flex items-center justify-between transition-all cursor-pointer ${
+                        isWeekExpanded
+                          ? activeTab === "adicionado" ? "bg-green-50" : "bg-red-50"
+                          : "bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                          activeTab === "adicionado" ? "bg-green-100" : "bg-red-100"
+                        }`}>
+                          <CalendarDays className={`w-4 h-4 ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`} />
+                        </div>
+                        <div className="text-left min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-800">{semana}</span>
+                            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold">
+                              {items.length} {items.length === 1 ? "item" : "itens"}
+                            </span>
+                          </div>
+                          {/* Mini progress bar */}
+                          <div className="w-24 h-1 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                activeTab === "adicionado" ? "bg-green-400" : "bg-red-400"
+                              }`}
+                              style={{ width: `${Math.max(progressPercent, 5)}%` }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <span className={`text-xs font-bold ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`}>
-                        {activeTab === "adicionado" ? "+" : "-"}{formatCurrency(semanaTotal)}
-                      </span>
-                    </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-sm font-bold ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`}>
+                          {activeTab === "adicionado" ? "+" : "-"}{formatCurrency(semanaTotal)}
+                        </span>
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-transform ${isWeekExpanded ? "rotate-180" : ""} ${
+                          activeTab === "adicionado" ? "bg-green-100" : "bg-red-100"
+                        }`}>
+                          <ChevronDown className={`w-3 h-3 ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`} />
+                        </div>
+                      </div>
+                    </button>
 
                     {/* Days within semana */}
-                    {dayEntries.map(([date, dayItems]) => {
-                      const isExpanded = expandedDays.has(`${semana}-${date}`);
-                      const dayTotal = dayItems.reduce((s: number, i: any) => s + Number(i.valor || 0), 0);
+                    {isWeekExpanded && (
+                      <div className="border-t border-slate-100">
+                        {dayEntries.map(([date, dayItems]) => {
+                          const isDayExpanded = expandedDays.has(`${semana}-${date}`);
+                          const dayTotal = dayItems.reduce((s: number, i: any) => s + Number(i.valor || 0), 0);
 
-                      return (
-                        <div key={date}>
-                          <button
-                            onClick={() => toggleDay(`${semana}-${date}`)}
-                            className="w-full px-4 py-1.5 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[11px] font-semibold text-slate-600 ml-4">{formatDateBR(date)}</span>
-                              <span className="text-[10px] text-slate-400">({getDayName(date)})</span>
-                              <span className="text-[10px] text-slate-400">{dayItems.length} itens</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className={`text-[11px] font-bold ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`}>
-                                {formatCurrency(dayTotal)}
-                              </span>
-                              {isExpanded ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
-                            </div>
-                          </button>
-
-                          {isExpanded && (
-                            <div className="px-4 pb-2 ml-4 space-y-0.5">
-                              {dayItems.map((item: any, idx: number) => (
-                                <div key={item.maxiprodId || idx} className="text-[11px] leading-5">
-                                  <div className="flex items-center gap-x-1.5">
-                                    {item.changeType === "adicionado" ? (
-                                      <Plus className="w-3 h-3 text-green-500 shrink-0" />
-                                    ) : item.changeType === "removido" ? (
-                                      <Minus className="w-3 h-3 text-red-500 shrink-0" />
-                                    ) : (
-                                      <ArrowUpDown className="w-3 h-3 text-amber-500 shrink-0" />
-                                    )}
-                                    <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>
-                                      {item.nome || "—"}
-                                    </span>
-                                    {item.vencimentoData && (
-                                      <span className="text-slate-400 whitespace-nowrap text-right shrink-0 text-[10px]" style={{ width: '42px', fontVariantNumeric: 'tabular-nums' }}>
-                                        {formatVencimento(item.vencimentoData)}
-                                      </span>
-                                    )}
-                                    <span className={`font-semibold whitespace-nowrap text-right shrink-0 ${
-                                      item.changeType === "adicionado" ? "text-green-700" :
-                                      item.changeType === "removido" ? "text-red-700" : "text-amber-700"
-                                    }`} style={{ width: '80px', fontVariantNumeric: 'tabular-nums' }}>
-                                      {formatCurrency(Number(item.valor || 0))}
-                                    </span>
-                                  </div>
-                                  {(item.referenteA || item.observacoes) && (
-                                    <p className="text-[9px] text-slate-400 truncate pl-5 mt-0">
-                                      {item.referenteA || item.observacoes}
-                                    </p>
-                                  )}
+                          return (
+                            <div key={date} className="border-b border-slate-50 last:border-b-0">
+                              <button
+                                onClick={() => toggleDay(`${semana}-${date}`)}
+                                className="w-full px-4 py-2 flex items-center justify-between hover:bg-slate-50/80 transition-colors cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300 ml-2" />
+                                  <span className="text-[11px] font-bold text-slate-600">{formatDateBR(date)}</span>
+                                  <span className="text-[10px] text-slate-400 font-medium">({getDayName(date)})</span>
+                                  <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-medium">{dayItems.length} itens</span>
                                 </div>
-                              ))}
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[11px] font-bold ${activeTab === "adicionado" ? "text-green-600" : "text-red-600"}`}>
+                                    {formatCurrency(dayTotal)}
+                                  </span>
+                                  {isDayExpanded ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
+                                </div>
+                              </button>
+
+                              {isDayExpanded && (
+                                <div className="px-4 pb-3 pl-8 space-y-1">
+                                  {dayItems.map((item: any, idx: number) => (
+                                    <div key={item.maxiprodId || idx} className="bg-slate-50/80 rounded-lg border border-slate-100 px-3 py-1.5 hover:bg-white hover:border-slate-200 transition-all">
+                                      <div className="flex items-center gap-x-2">
+                                        {item.changeType === "adicionado" ? (
+                                          <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                            <Plus className="w-2.5 h-2.5 text-green-600" />
+                                          </div>
+                                        ) : item.changeType === "removido" ? (
+                                          <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                            <Minus className="w-2.5 h-2.5 text-red-600" />
+                                          </div>
+                                        ) : (
+                                          <div className="w-4 h-4 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                                            <ArrowUpDown className="w-2.5 h-2.5 text-amber-600" />
+                                          </div>
+                                        )}
+                                        <span className="text-[11px] text-slate-700 font-medium truncate min-w-0" style={{ flex: '1 1 0' }}>
+                                          {item.nome || "—"}
+                                        </span>
+                                        {item.vencimentoData && (
+                                          <span className="text-[10px] text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-100 whitespace-nowrap shrink-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                            {formatVencimento(item.vencimentoData)}
+                                          </span>
+                                        )}
+                                        <span className={`text-[11px] font-bold whitespace-nowrap text-right shrink-0 ${
+                                          item.changeType === "adicionado" ? "text-green-700" :
+                                          item.changeType === "removido" ? "text-red-700" : "text-amber-700"
+                                        }`} style={{ width: '85px', fontVariantNumeric: 'tabular-nums' }}>
+                                          {item.changeType === "alterado" ? (
+                                            <>
+                                              <span className="text-slate-400 line-through text-[9px]">{formatCurrency(Number(item.valorAnterior || 0))}</span>
+                                              {" → "}
+                                              {formatCurrency(Number(item.valor || 0))}
+                                            </>
+                                          ) : (
+                                            formatCurrency(Number(item.valor || 0))
+                                          )}
+                                        </span>
+                                      </div>
+                                      {(item.referenteA || item.observacoes) && (
+                                        <p className="text-[9px] text-slate-400 truncate pl-6 mt-0.5 italic">
+                                          {item.referenteA || item.observacoes}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
           </div>
         )}
       </div>
+
+      {/* ── Footer ── */}
+      {!isLoading && totalCount > 0 && (
+        <div className="px-5 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <span className="text-[10px] text-slate-400 font-medium">
+            {totalCount} movimentações registradas neste mês
+          </span>
+          <span className="text-[10px] text-slate-400">
+            Conciliação diária automática
+          </span>
+        </div>
+      )}
     </div>
   );
 }
