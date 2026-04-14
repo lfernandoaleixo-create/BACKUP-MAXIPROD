@@ -3038,6 +3038,7 @@ export const financialRouter = router({
           anotacoes: accountsReceivable.anotacoes,
           contaId: accountsReceivable.contaId,
           bancoNome: bankAccounts.bancoNome,
+          formaCobranca: accountsReceivable.formaCobranca,
         })
         .from(accountsReceivable)
         .leftJoin(bankAccounts, eq(accountsReceivable.contaId, bankAccounts.maxiprodId))
@@ -3094,6 +3095,7 @@ export const financialRouter = router({
           diasAtraso,
           vendedor,
           decisaoCobranca,
+          formaCobranca: row.formaCobranca || "",
           observacoesMaxiprod: row.observacoes || "",
           anotacoes: row.anotacoes || "",
           // Dados de cobrança

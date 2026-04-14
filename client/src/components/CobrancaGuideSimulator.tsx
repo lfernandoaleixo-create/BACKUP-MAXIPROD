@@ -35,7 +35,7 @@ function getCobrancaSteps(): GuideStep[] {
   return [
     {
       title: "Dia 1 — Primeiro Contato",
-      description: "No 1º dia após o vencimento, o telefone começa a vibrar (piscar) na tela do responsável. A cobrança é obrigatória.",
+      description: "No 1º dia após o vencimento, o telefone começa a vibrar (piscar) na tela do responsável pela cobrança. A cobrança é obrigatória.",
       icon: Phone,
       iconColor: "text-blue-600",
       bgColor: "bg-blue-50",

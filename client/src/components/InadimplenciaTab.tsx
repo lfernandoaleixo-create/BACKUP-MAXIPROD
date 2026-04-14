@@ -91,6 +91,7 @@ type Title = {
   diasAtraso: number;
   vendedor: string;
   decisaoCobranca: string;
+  formaCobranca: string;
   observacoesMaxiprod: string;
   anotacoes: string;
   cobranca: {
@@ -581,19 +582,21 @@ export default function InadimplenciaTab() {
 
                 {isOpen && (
                   <div className="bg-white/80 border-t border-slate-100">
-                    <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_140px_110px_100px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-200">
+                    <div className="hidden md:grid grid-cols-[1fr_90px_90px_80px_55px_90px_110px_100px_90px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-200">
                       <span className="flex items-center justify-start px-3 py-2 border-r border-slate-200">Referência / Documento</span>
-                      <button onClick={() => toggleClientSort("valor")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-200 hover:text-slate-700 cursor-pointer select-none">
-                        Valor {clientSortBy === "valor" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
-                      </button>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Vendedor</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Forma Cobr.</span>
                       <button onClick={() => toggleClientSort("vencimento")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-200 hover:text-slate-700 cursor-pointer select-none">
                         Venc. {clientSortBy === "vencimento" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
                       </button>
                       <button onClick={() => toggleClientSort("dias")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-200 hover:text-slate-700 cursor-pointer select-none">
                         Atraso {clientSortBy === "dias" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
                       </button>
-                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Decisão de Cobrança</span>
+                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Decisão Cobr.</span>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Status</span>
+                      <button onClick={() => toggleClientSort("valor")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-200 hover:text-slate-700 cursor-pointer select-none">
+                        Valor {clientSortBy === "valor" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
+                      </button>
                       <span className="flex items-center justify-center px-2 py-2">Ações</span>
                     </div>
                     <div className="divide-y divide-slate-50">
@@ -636,21 +639,23 @@ export default function InadimplenciaTab() {
       {/* Vista por Título */}
       {viewMode === "titulos" && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="hidden md:grid grid-cols-[1fr_110px_95px_65px_150px_130px_110px] bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+          <div className="hidden md:grid grid-cols-[1fr_100px_100px_95px_65px_100px_130px_120px_100px] bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
             <button onClick={() => toggleSort("cliente")} className="flex items-center justify-start gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
               Cliente {sortBy === "cliente" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
-            <button onClick={() => toggleSort("valor")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
-              Valor {sortBy === "valor" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
-            </button>
+            <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">Vendedor</div>
+            <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">Forma Cobr.</div>
             <button onClick={() => toggleSort("vencimento")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
               Venc. {sortBy === "vencimento" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
             <button onClick={() => toggleSort("dias")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
               Atraso {sortBy === "dias" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
-            <div className="flex items-center justify-center px-3 py-2.5 border-r border-slate-200">Decisão de Cobrança</div>
+            <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">Decisão Cobr.</div>
             <div className="flex items-center justify-center px-3 py-2.5 border-r border-slate-200">Status</div>
+            <button onClick={() => toggleSort("valor")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
+              Valor {sortBy === "valor" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
+            </button>
             <div className="flex items-center justify-center px-3 py-2.5">Ações</div>
           </div>
 
@@ -869,7 +874,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_110px_95px_65px_150px_130px_110px] cursor-pointer hover:bg-white/50 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_95px_65px_100px_130px_120px_100px] cursor-pointer hover:bg-white/50 items-center"
         onClick={onToggle}
       >
         {/* Cliente + Referência + Badges */}
@@ -902,15 +907,36 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
             <span className="truncate">{title.referenteA}</span>
             {title.documento && <span className="shrink-0">· {title.documento}</span>}
             {title.parcela && <span className="shrink-0">· {title.parcela}</span>}
-            {title.vendedor && <span className="shrink-0 text-blue-500">· {title.vendedor}</span>}
           </div>
         </div>
 
-        {/* Valor */}
+        {/* Vendedor */}
         <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200">
-          <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
-            {formatCurrency(title.valorAReceber)}
-          </span>
+          {title.vendedor ? (
+            <span className="text-xs font-medium text-blue-600 truncate" title={title.vendedor}>{title.vendedor}</span>
+          ) : (
+            <span className="text-xs text-slate-300">—</span>
+          )}
+        </div>
+
+        {/* Forma de Cobrança */}
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200">
+          {(() => {
+            const fc = title.formaCobranca || "";
+            const d = fc.toUpperCase();
+            let label = "", color = "text-slate-400";
+            if (d.startsWith("PIX")) { label = "PIX"; color = "text-emerald-600"; }
+            else if (d.startsWith("BOLETO")) { label = "Boleto"; color = "text-blue-600"; }
+            else if (d.startsWith("CHEQUE")) { label = "Cheque"; color = "text-amber-600"; }
+            else if (d.startsWith("DEP\u00d3SITO") || d.startsWith("DEPOSITO")) { label = "Dep\u00f3sito"; color = "text-purple-600"; }
+            else if (d.startsWith("DINHEIRO")) { label = "Dinheiro"; color = "text-green-700"; }
+            else if (fc) { const first = fc.split(" ")[0]; label = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase(); color = "text-slate-600"; }
+            return label ? (
+              <span className={`text-xs font-semibold ${color}`} title={fc}>{label}</span>
+            ) : (
+              <span className="text-xs text-slate-300">—</span>
+            );
+          })()}
         </div>
 
         {/* Vencimento */}
@@ -955,6 +981,13 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               {statusBadge.label}
             </span>
           )}
+        </div>
+
+        {/* Valor */}
+        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-200">
+          <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
+            {formatCurrency(title.valorAReceber)}
+          </span>
         </div>
 
         {/* Ações */}
@@ -1010,7 +1043,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   return (
     <div className="transition-all">
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_100px_80px_60px_140px_110px_100px] cursor-pointer hover:bg-slate-50/80 items-center"
+        className="grid grid-cols-1 md:grid-cols-[1fr_90px_90px_80px_55px_90px_110px_100px_90px] cursor-pointer hover:bg-slate-50/80 items-center"
         onClick={onToggle}
       >
         <div className="min-w-0 px-3 py-2.5 border-r border-slate-200">
@@ -1037,10 +1070,32 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             )}
           </div>
         </div>
+        {/* Vendedor */}
         <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">
-          <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
-            {formatCurrency(title.valorAReceber)}
-          </span>
+          {title.vendedor ? (
+            <span className="text-[10px] font-medium text-blue-600 truncate" title={title.vendedor}>{title.vendedor}</span>
+          ) : (
+            <span className="text-[10px] text-slate-300">—</span>
+          )}
+        </div>
+        {/* Forma de Cobrança */}
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">
+          {(() => {
+            const fc = title.formaCobranca || "";
+            const d = fc.toUpperCase();
+            let label = "", color = "text-slate-400";
+            if (d.startsWith("PIX")) { label = "PIX"; color = "text-emerald-600"; }
+            else if (d.startsWith("BOLETO")) { label = "Boleto"; color = "text-blue-600"; }
+            else if (d.startsWith("CHEQUE")) { label = "Cheque"; color = "text-amber-600"; }
+            else if (d.startsWith("DEP\u00d3SITO") || d.startsWith("DEPOSITO")) { label = "Dep\u00f3sito"; color = "text-purple-600"; }
+            else if (d.startsWith("DINHEIRO")) { label = "Dinheiro"; color = "text-green-700"; }
+            else if (fc) { const first = fc.split(" ")[0]; label = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase(); color = "text-slate-600"; }
+            return label ? (
+              <span className={`text-[10px] font-semibold ${color}`} title={fc}>{label}</span>
+            ) : (
+              <span className="text-[10px] text-slate-300">—</span>
+            );
+          })()}
         </div>
         <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
         <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">
@@ -1078,6 +1133,12 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
               {statusBadge.label}
             </span>
           )}
+        </div>
+        {/* Valor */}
+        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-200">
+          <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
+            {formatCurrency(title.valorAReceber)}
+          </span>
         </div>
         <div className="flex items-center justify-center gap-0.5 px-2 py-2.5" onClick={e => e.stopPropagation()}>
           {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}

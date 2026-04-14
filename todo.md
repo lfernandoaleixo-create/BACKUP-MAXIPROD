@@ -2405,3 +2405,11 @@
 - [x] Legendas dos cards de confrontamento aumentadas (text-xs → text-sm, valores text-base → text-xl)
 - [x] Cards expandidos: legendas e valores também aumentados
 - [x] Cores suavizadas nos cards expandidos negativos (de red para amber/orange)
+
+## Ajustes Inadimplência Tab (14/04/2026)
+- [x] Trocar "responsável" por "responsável pela cobrança" no texto do Dia 1 — Primeiro Contato
+- [x] Adicionar coluna "Vendedor" (puxado do Maxiprod - responsável) ao lado de Cliente
+- [x] Adicionar colunas "Forma de Cobrança" ao lado de Vendedor
+- [x] Mover coluna "Decisão de Cobrança" para após Atraso (reordenado: Cliente, Vendedor, Forma Cobr., Venc., Atraso, Decisão, Status, Valor, Ações)
+- [x] Cards expandidos negativos: trocar amber/orange por vermelho neon suave (rose/red com opacidade)
+- [x] MaxiprodAutoVerifier: passo a passo deve iniciar EXPANDIDO (não recolhido) ao abrir o modal

@@ -1301,10 +1301,10 @@ function ExpandedDetails({
 
         {/* Entradas vs Saídas - Card principal */}
         <div className={`rounded-xl overflow-hidden shadow-sm border ${
-          variacaoSaldo >= 0 ? "border-emerald-300" : "border-amber-300"
+          variacaoSaldo >= 0 ? "border-emerald-300" : "border-rose-300/60"
         }`}>
           <div className={`px-5 py-4 ${
-            variacaoSaldo >= 0 ? "bg-gradient-to-r from-emerald-600 to-green-600" : "bg-gradient-to-r from-amber-500 to-orange-500"
+            variacaoSaldo >= 0 ? "bg-gradient-to-r from-emerald-600 to-green-600" : "bg-gradient-to-r from-rose-500/80 to-red-400/80"
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1328,7 +1328,7 @@ function ExpandedDetails({
             </div>
           </div>
           <div className={`px-5 py-3 flex items-center justify-between text-sm ${
-            variacaoSaldo >= 0 ? "bg-emerald-50" : "bg-amber-50/60"
+            variacaoSaldo >= 0 ? "bg-emerald-50" : "bg-rose-50/50"
           }`}>
             <div className="flex items-center gap-4">
               <span className="text-slate-500"><span className="font-semibold text-teal-700">{formatCurrency(totalEntradas)}</span> entradas</span>
@@ -1347,10 +1347,10 @@ function ExpandedDetails({
         <div className="grid grid-cols-2 gap-3">
           {/* Faturamento vs Pago */}
           <div className={`rounded-xl overflow-hidden shadow-sm border ${
-            faturamento - contasPagas >= 0 ? "border-emerald-300" : "border-amber-300"
+            faturamento - contasPagas >= 0 ? "border-emerald-300" : "border-rose-300/60"
           }`}>
             <div className={`px-4 py-3 ${
-              faturamento - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gradient-to-r from-amber-500 to-orange-500"
+              faturamento - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gradient-to-r from-rose-500/80 to-red-400/80"
             }`}>
               <div className="flex items-center justify-between">
                 <div>
@@ -1367,7 +1367,7 @@ function ExpandedDetails({
               </div>
             </div>
             <div className={`px-4 py-2.5 text-sm flex items-center justify-between ${
-              faturamento - contasPagas >= 0 ? "bg-emerald-50" : "bg-amber-50/60"
+              faturamento - contasPagas >= 0 ? "bg-emerald-50" : "bg-rose-50/50"
             }`}>
               <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrency(faturamento)}</span> fat.</span>
               <span className="text-slate-400">vs</span>
@@ -1377,10 +1377,10 @@ function ExpandedDetails({
 
           {/* Vendas vs Pago */}
           <div className={`rounded-xl overflow-hidden shadow-sm border ${
-            vendas - contasPagas >= 0 ? "border-emerald-300" : "border-amber-300"
+            vendas - contasPagas >= 0 ? "border-emerald-300" : "border-rose-300/60"
           }`}>
             <div className={`px-4 py-3 ${
-              vendas - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-gradient-to-r from-amber-500 to-orange-500"
+              vendas - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-gradient-to-r from-rose-500/80 to-red-400/80"
             }`}>
               <div className="flex items-center justify-between">
                 <div>
@@ -1397,7 +1397,7 @@ function ExpandedDetails({
               </div>
             </div>
             <div className={`px-4 py-2.5 text-sm flex items-center justify-between ${
-              vendas - contasPagas >= 0 ? "bg-emerald-50" : "bg-amber-50/60"
+              vendas - contasPagas >= 0 ? "bg-emerald-50" : "bg-rose-50/50"
             }`}>
               <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrency(vendas)}</span> vendas</span>
               <span className="text-slate-400">vs</span>

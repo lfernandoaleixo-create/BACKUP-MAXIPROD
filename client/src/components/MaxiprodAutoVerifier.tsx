@@ -159,7 +159,7 @@ export default function MaxiprodAutoVerifier({
   valorManus,
   onClose,
 }: MaxiprodAutoVerifierProps) {
-  const [showSteps, setShowSteps] = useState(false);
+  const [showSteps, setShowSteps] = useState(true);
 
   // Auto-query Maxiprod via backend
   const { data: cpData, isLoading: cpLoading, error: cpError } = trpc.financial.getMaxiprodContraprova.useQuery(
