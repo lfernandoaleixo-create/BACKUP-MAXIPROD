@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
 function formatCurrency(n: number): string {

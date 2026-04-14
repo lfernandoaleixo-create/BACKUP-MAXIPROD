@@ -46,7 +46,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import MaxiprodSimulator, { getReceivablesSteps } from "@/components/MaxiprodSimulator";
 
-const FINALIZE_PASSWORD = "Fernando";
 
 /* ---- Helpers ---- */
 function formatCurrency(v: number) {
@@ -83,7 +82,7 @@ function shortEmpresaName(nome: string) {
 }
 
 /* ---- Maxiprod Contraprova: senhas autorizadas ---- */
-const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
 /* ---- PDF Export ---- */
@@ -550,12 +549,12 @@ function ContaFiltersAndTable({
   const selectedContaItems = filteredItems.filter(i => selectedIds.has(i.id));
   const selectedContaTotal = selectedContaItems.reduce((a, b) => a + b.valorAReceber, 0);
 
-  // Finalization with Fernando password
-  const AUTH_PASSWORD = "Fernando";
+  // Finalization with authorized operators (Fernando/Bruno)
+  const AUTH_PASSWORDS = ["Fernando", "Bruno"];
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const isFernando = operator?.name === "Fernando";
+  const isAuthorizer = operator ? AUTH_PASSWORDS.includes(operator.name) : false;
   const [discountsAuthorized, setDiscountsAuthorized] = useState(false);
 
   const saveHistoryMutation = trpc.financial.saveDiscountSelection.useMutation({
@@ -573,7 +572,7 @@ function ContaFiltersAndTable({
   );
 
   function handleFinalize() {
-    if (passwordInput !== AUTH_PASSWORD) {
+    if (!AUTH_PASSWORDS.includes(passwordInput)) {
       setPasswordError("Senha incorreta");
       return;
     }
@@ -852,7 +851,7 @@ function ContaFiltersAndTable({
                     className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-medium transition-all flex items-center gap-1">
                     <FileText className="w-3.5 h-3.5" /> Exportar PDF
                   </button>
-                  {isFernando && (
+                  {isAuthorizer && (
                     <button onClick={() => setShowFinalizeDialog(true)}
                       className="px-3 py-1.5 rounded-lg bg-emerald-500/30 hover:bg-emerald-500/50 border border-emerald-400/40 text-xs font-medium transition-all flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Finalizar
@@ -924,7 +923,7 @@ function ContaFiltersAndTable({
             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all select-none border-2 ${
               discountsAuthorized
                 ? "bg-emerald-50 border-emerald-400 shadow-md shadow-emerald-100"
-                : isFernando
+                : isAuthorizer
                   ? "bg-white border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 cursor-pointer"
                   : "bg-slate-50 border-slate-200 cursor-not-allowed opacity-70"
             }`}
@@ -933,11 +932,11 @@ function ContaFiltersAndTable({
               type="checkbox"
               checked={discountsAuthorized}
               onChange={(e) => {
-                if (isFernando) setDiscountsAuthorized(e.target.checked);
+                if (isAuthorizer) setDiscountsAuthorized(e.target.checked);
               }}
-              disabled={!isFernando}
+              disabled={!isAuthorizer}
               className={`w-5 h-5 rounded border-2 border-slate-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0 accent-emerald-600 ${
-                isFernando ? "cursor-pointer" : "cursor-not-allowed"
+                isAuthorizer ? "cursor-pointer" : "cursor-not-allowed"
               }`}
             />
             <div className="flex items-center gap-2">
@@ -945,13 +944,13 @@ function ContaFiltersAndTable({
               <span className={`text-sm font-bold ${discountsAuthorized ? "text-emerald-700" : "text-slate-600"}`}>
                 Descontos Autorizados
               </span>
-              {!isFernando && !discountsAuthorized && (
-                <span className="text-xs text-slate-400 italic">(somente Fernando)</span>
+              {!isAuthorizer && !discountsAuthorized && (
+                <span className="text-xs text-slate-400 italic">(somente Fernando/Bruno)</span>
               )}
             </div>
             {discountsAuthorized && (
               <span className="ml-auto text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
-                Autorizado por Fernando
+                Autorizado por {operator?.name || "Fernando"}
               </span>
             )}
           </label>

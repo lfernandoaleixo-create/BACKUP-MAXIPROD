@@ -227,24 +227,29 @@ describe("Supplier group collapsing logic", () => {
 });
 
 describe("Password authentication for payment authorization", () => {
-  const AUTH_PASSWORD = "Fernando";
+  const AUTH_PASSWORDS = ["Fernando", "Bruno"];
 
-  it("should accept correct password", () => {
-    const input = "Fernando";
-    expect(input === AUTH_PASSWORD).toBe(true);
+  it("should accept Fernando password", () => {
+    expect(AUTH_PASSWORDS.includes("Fernando")).toBe(true);
+  });
+
+  it("should accept Bruno password", () => {
+    expect(AUTH_PASSWORDS.includes("Bruno")).toBe(true);
   });
 
   it("should reject incorrect password", () => {
-    const wrongPasswords = ["fernando", "FERNANDO", "admin", "123456", ""];
+    const wrongPasswords = ["fernando", "FERNANDO", "admin", "123456", "", "bruno", "BRUNO"];
     for (const pwd of wrongPasswords) {
-      expect(pwd === AUTH_PASSWORD).toBe(false);
+      expect(AUTH_PASSWORDS.includes(pwd)).toBe(false);
     }
   });
 
   it("should be case-sensitive", () => {
-    expect("fernando" === AUTH_PASSWORD).toBe(false);
-    expect("FERNANDO" === AUTH_PASSWORD).toBe(false);
-    expect("Fernando" === AUTH_PASSWORD).toBe(true);
+    expect(AUTH_PASSWORDS.includes("fernando")).toBe(false);
+    expect(AUTH_PASSWORDS.includes("FERNANDO")).toBe(false);
+    expect(AUTH_PASSWORDS.includes("Fernando")).toBe(true);
+    expect(AUTH_PASSWORDS.includes("bruno")).toBe(false);
+    expect(AUTH_PASSWORDS.includes("Bruno")).toBe(true);
   });
 });
 

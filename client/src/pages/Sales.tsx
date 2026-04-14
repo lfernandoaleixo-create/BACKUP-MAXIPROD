@@ -65,7 +65,7 @@ import { generateSalesPDF } from "@/lib/salesPdfExport";
 import { useOperator } from "@/contexts/OperatorContext";
 import MaxiprodSimulator, { getSalesSteps } from "@/components/MaxiprodSimulator";
 
-const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
 /* ---- Helpers ---- */

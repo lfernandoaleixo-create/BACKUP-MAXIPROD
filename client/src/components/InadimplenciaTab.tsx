@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import { Eye } from "lucide-react";
 
-const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando"];
+const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno"];
 
 const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente", color: "bg-slate-100 text-slate-700 border-slate-300" },
@@ -115,6 +115,16 @@ export default function InadimplenciaTab() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [expandedCliente, setExpandedCliente] = useState<string | null>(null);
+  const [clientSortBy, setClientSortBy] = useState<"valor" | "vencimento" | "dias">("dias");
+  const [clientSortDir, setClientSortDir] = useState<"asc" | "desc">("desc");
+  function toggleClientSort(field: typeof clientSortBy) {
+    if (clientSortBy === field) {
+      setClientSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setClientSortBy(field);
+      setClientSortDir("desc");
+    }
+  }
   const [actionDialogId, setActionDialogId] = useState<number | null>(null);
   const [contatoDialogId, setContatoDialogId] = useState<number | null>(null);
   const [historyDialogId, setHistoryDialogId] = useState<number | null>(null);
@@ -573,15 +583,27 @@ export default function InadimplenciaTab() {
                   <div className="bg-white/80 border-t border-slate-100">
                     <div className="hidden md:grid grid-cols-[1fr_100px_80px_60px_140px_110px_100px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-200">
                       <span className="flex items-center justify-start px-3 py-2 border-r border-slate-200">Referência / Documento</span>
-                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Valor</span>
-                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Venc.</span>
-                      <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Atraso</span>
+                      <button onClick={() => toggleClientSort("valor")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-200 hover:text-slate-700 cursor-pointer select-none">
+                        Valor {clientSortBy === "valor" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
+                      </button>
+                      <button onClick={() => toggleClientSort("vencimento")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-200 hover:text-slate-700 cursor-pointer select-none">
+                        Venc. {clientSortBy === "vencimento" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
+                      </button>
+                      <button onClick={() => toggleClientSort("dias")} className="flex items-center justify-center gap-0.5 px-2 py-2 border-r border-slate-200 hover:text-slate-700 cursor-pointer select-none">
+                        Atraso {clientSortBy === "dias" ? (clientSortDir === "asc" ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />) : <ChevronDown className="w-2.5 h-2.5 opacity-30" />}
+                      </button>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Decisão de Cobrança</span>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-200">Status</span>
                       <span className="flex items-center justify-center px-2 py-2">Ações</span>
                     </div>
                     <div className="divide-y divide-slate-50">
-                      {group.titulos.map(title => (
+                      {[...group.titulos].sort((a, b) => {
+                        let cmp = 0;
+                        if (clientSortBy === "valor") cmp = a.valorAReceber - b.valorAReceber;
+                        else if (clientSortBy === "vencimento") cmp = (a.vencimento || "").localeCompare(b.vencimento || "");
+                        else cmp = a.diasAtraso - b.diasAtraso;
+                        return clientSortDir === "asc" ? cmp : -cmp;
+                      }).map(title => (
                         <ClienteTitleRow
                           key={title.id}
                           title={title}
@@ -616,16 +638,16 @@ export default function InadimplenciaTab() {
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="hidden md:grid grid-cols-[1fr_110px_95px_65px_150px_130px_110px] bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wide">
             <button onClick={() => toggleSort("cliente")} className="flex items-center justify-start gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
-              Cliente {sortBy === "cliente" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+              Cliente {sortBy === "cliente" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
             <button onClick={() => toggleSort("valor")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
-              Valor {sortBy === "valor" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+              Valor {sortBy === "valor" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
             <button onClick={() => toggleSort("vencimento")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
-              Venc. {sortBy === "vencimento" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+              Venc. {sortBy === "vencimento" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
             <button onClick={() => toggleSort("dias")} className="flex items-center justify-center gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-200">
-              Atraso {sortBy === "dias" && (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+              Atraso {sortBy === "dias" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
             <div className="flex items-center justify-center px-3 py-2.5 border-r border-slate-200">Decisão de Cobrança</div>
             <div className="flex items-center justify-center px-3 py-2.5 border-r border-slate-200">Status</div>

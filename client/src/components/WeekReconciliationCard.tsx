@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-const AUTH_PASSWORD = "Fernando";
+const AUTH_PASSWORDS = ["Fernando", "Bruno"];
 
 function formatCurrency(n: number): string {
   return n.toLocaleString("pt-BR", {
@@ -772,7 +772,7 @@ export default function WeekReconciliationCard() {
 
   const handlePasswordSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
-    if (passwordInput === AUTH_PASSWORD) {
+    if (AUTH_PASSWORDS.includes(passwordInput)) {
       setIsAuthenticated(true);
       setShowPasswordDialog(false);
       setPasswordError(false);

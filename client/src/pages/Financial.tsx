@@ -68,12 +68,13 @@ import WeekReconciliationCard from "@/components/WeekReconciliationCard";
 import ResumoFinanceiroCard from "@/components/ResumoFinanceiroCard";
 import InadimplenciaTab from "@/components/InadimplenciaTab";
 import ReceivablesTab from "@/components/ReceivablesTab";
+import MaxiprodSimulator, { getMonthlyReceberSteps, getMonthlyPagarSteps, getTotalReceberSteps, getTotalPagarSteps } from "@/components/MaxiprodSimulator";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calculator, History } from "lucide-react";
 import FinancialHistoryPanel, { WeekHistoryPanel } from "@/components/FinancialHistoryPanel";
 
-const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
 /* ---- Helpers ---- */
@@ -1844,96 +1845,7 @@ function CashFlowCard() {
   );
 }
 
-/* ---- Month Verify Modal (Contraprova Maxiprod por Mês) ---- */
-function MonthVerifyModal({ label, type, from, to, dashboardTotal, onClose }: {
-  label: string;
-  type: "receber" | "pagar";
-  from: string;
-  to: string;
-  dashboardTotal: number;
-  onClose: () => void;
-}) {
-  const section = type === "receber" ? "contas_receber_mes" as const : "contas_pagar_mes" as const;
-  const { data, isLoading } = trpc.financial.getMaxiprodContraprova.useQuery(
-    { section, startDate: from, endDate: to },
-    { refetchOnWindowFocus: false }
-  );
-
-  const diff = data ? Math.abs(dashboardTotal - data.valorMaxiprod) : 0;
-  const matches = diff < 1;
-  const colorScheme = type === "receber" ? {
-    bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", label: "Contas a Receber",
-    icon: <TrendingUp className="w-5 h-5 text-emerald-600" />,
-  } : {
-    bg: "bg-red-50", border: "border-red-200", text: "text-red-700", label: "Contas a Pagar",
-    icon: <TrendingDown className="w-5 h-5 text-red-600" />,
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-        <div className={`${colorScheme.bg} ${colorScheme.border} border-b px-5 py-4 rounded-t-xl flex items-center justify-between`}>
-          <div className="flex items-center gap-2">
-            {colorScheme.icon}
-            <div>
-              <h3 className={`text-sm font-bold ${colorScheme.text}`}>Contraprova Maxiprod</h3>
-              <p className="text-xs text-slate-500">{colorScheme.label} &mdash; {label}</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/50 transition-colors">
-            <X className="w-4 h-4 text-slate-500" />
-          </button>
-        </div>
-        <div className="p-5 space-y-4">
-          {isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
-          ) : data ? (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Dashboard</p>
-                  <p className="text-lg font-bold text-slate-800">{formatCurrency(dashboardTotal)}</p>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-3 text-center">
-                  <p className="text-[10px] text-slate-400 uppercase font-semibold">Maxiprod (Banco)</p>
-                  <p className={`text-lg font-bold ${matches ? "text-emerald-600" : "text-red-600"}`}>{formatCurrency(data.valorMaxiprod)}</p>
-                </div>
-              </div>
-              {matches ? (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-700">Valores conferem!</p>
-                    <p className="text-xs text-emerald-600">{data.label}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-red-700">Diferença: {formatCurrency(diff)}</p>
-                    <p className="text-xs text-red-600">{data.label}</p>
-                  </div>
-                </div>
-              )}
-              <p className="text-[10px] text-slate-400">Período: {from} a {to}</p>
-              <a
-                href={MAXIPROD_LOGIN_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-600 transition-colors"
-              >
-                <ExternalLink className="w-3.5 h-3.5" /> Abrir Maxiprod
-              </a>
-            </>
-          ) : (
-            <p className="text-sm text-slate-500 text-center">Erro ao carregar dados</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+/* MonthVerifyModal removed - replaced by MaxiprodSimulator */
 
 /* ---- Main Financial Page ---- */
 export default function Financial() {
@@ -1941,6 +1853,8 @@ export default function Financial() {
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis">("visao-geral");
   const [verifyingMonth, setVerifyingMonth] = useState<{ label: string; type: "receber" | "pagar"; from: string; to: string; total: number } | null>(null);
+  const [showTotalReceberSim, setShowTotalReceberSim] = useState(false);
+  const [showTotalPagarSim, setShowTotalPagarSim] = useState(false);
   const { data: summary, isLoading: loadingSummary } = trpc.financial.getSummary.useQuery(undefined, { refetchInterval: 60000 });
   const { data: calendarData, isLoading: loadingCalendar } = trpc.financial.getPaymentCalendar.useQuery(undefined, { refetchInterval: 60000 });
   const { data: monthlyData, isLoading: loadingMonthly } = trpc.financial.getMonthlyBreakdown.useQuery(undefined, { refetchInterval: 60000 });
@@ -2061,15 +1975,40 @@ export default function Financial() {
           </div>
         ) : (
           <>
-            {/* Modal de verificação mensal Maxiprod */}
+            {/* Simulador Maxiprod para verificação mensal */}
             {verifyingMonth && (
-              <MonthVerifyModal
-                label={verifyingMonth.label}
-                type={verifyingMonth.type}
-                from={verifyingMonth.from}
-                to={verifyingMonth.to}
-                dashboardTotal={verifyingMonth.total}
+              <MaxiprodSimulator
+                title={verifyingMonth.type === "receber" ? "A Receber" : "A Pagar"}
+                subtitle={`Conferência — ${verifyingMonth.label}`}
+                steps={verifyingMonth.type === "receber"
+                  ? getMonthlyReceberSteps(verifyingMonth.label, verifyingMonth.from, verifyingMonth.to, verifyingMonth.total)
+                  : getMonthlyPagarSteps(verifyingMonth.label, verifyingMonth.from, verifyingMonth.to, verifyingMonth.total)
+                }
+                maxiprodUrl={MAXIPROD_LOGIN_URL}
+                valorManus={verifyingMonth.total}
                 onClose={() => setVerifyingMonth(null)}
+              />
+            )}
+            {/* Simulador Maxiprod para total geral A Receber */}
+            {showTotalReceberSim && (
+              <MaxiprodSimulator
+                title="Total A Receber"
+                subtitle="Conferência do total geral de contas a receber"
+                steps={getTotalReceberSteps(monthlyData ? monthlyData.reduce((s, m) => s + m.receber.total, 0) : summary?.receber.emAberto.total)}
+                maxiprodUrl={MAXIPROD_LOGIN_URL}
+                valorManus={monthlyData ? monthlyData.reduce((s, m) => s + m.receber.total, 0) : summary?.receber.emAberto.total}
+                onClose={() => setShowTotalReceberSim(false)}
+              />
+            )}
+            {/* Simulador Maxiprod para total geral A Pagar */}
+            {showTotalPagarSim && (
+              <MaxiprodSimulator
+                title="Total A Pagar"
+                subtitle="Conferência do total geral de contas a pagar"
+                steps={getTotalPagarSteps(monthlyData ? monthlyData.reduce((s, m) => s + m.pagar.total, 0) : summary?.pagar.emAberto.total)}
+                maxiprodUrl={MAXIPROD_LOGIN_URL}
+                valorManus={monthlyData ? monthlyData.reduce((s, m) => s + m.pagar.total, 0) : summary?.pagar.emAberto.total}
+                onClose={() => setShowTotalPagarSim(false)}
               />
             )}
             <ConnectionStatusCard />
@@ -2090,8 +2029,16 @@ export default function Financial() {
                     A Receber
                     {showReceberChart ? <ChevronUp className="w-5 h-5 text-emerald-600" /> : <ChevronDown className="w-5 h-5 text-emerald-600" />}
                   </h3>
-                  <span className="text-sm font-bold text-emerald-800">
+                  <span className="text-sm font-bold text-emerald-800 flex items-center gap-2">
                     Total: {formatCurrency(monthlyData ? monthlyData.reduce((s, m) => s + m.receber.total, 0) : (summary!.receber.emAberto.total))}
+                    {canVerifyMaxiprod && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowTotalReceberSim(true); }}
+                        className="p-1 rounded-full hover:bg-emerald-200 transition-colors" title="Conferir total no Maxiprod"
+                      >
+                        <Eye className="w-4 h-4 text-emerald-600" />
+                      </button>
+                    )}
                   </span>
                 </button>
                 {showReceberChart && (
@@ -2157,8 +2104,16 @@ export default function Financial() {
                     A Pagar
                     {showPagarChart ? <ChevronUp className="w-5 h-5 text-red-600" /> : <ChevronDown className="w-5 h-5 text-red-600" />}
                   </h3>
-                  <span className="text-sm font-bold text-red-800">
+                  <span className="text-sm font-bold text-red-800 flex items-center gap-2">
                     Total: {formatCurrency(monthlyData ? monthlyData.reduce((s, m) => s + m.pagar.total, 0) : (summary!.pagar.emAberto.total))}
+                    {canVerifyMaxiprod && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowTotalPagarSim(true); }}
+                        className="p-1 rounded-full hover:bg-red-200 transition-colors" title="Conferir total no Maxiprod"
+                      >
+                        <Eye className="w-4 h-4 text-red-600" />
+                      </button>
+                    )}
                   </span>
                 </button>
                 {showPagarChart && (

@@ -32,7 +32,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 
-const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
 /* ---- Helpers ---- */

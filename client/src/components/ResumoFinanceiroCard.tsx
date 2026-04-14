@@ -147,7 +147,7 @@ function getPeriodDates(preset: PeriodPreset): { start: string; end: string } {
 }
 
 /* ---- Maxiprod Contraprova: senhas autorizadas ---- */
-const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando"];
+const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
 
 /* ---- Modal de Detalhamento de Divergência ---- */
@@ -873,38 +873,72 @@ function CompactSummary({
         </div>
       </div>
 
-      {/* Saldo row: Total Entradas - Contas Pagas = Variação */}
-      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Main balance: Total Entradas vs Contas Pagas */}
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-            variacaoSaldo >= 0 ? "bg-teal-50 border border-teal-200" : "bg-red-50 border border-red-200"
+      {/* Saldo row: Cards de confrontamento sofisticados */}
+      <div className="pt-3 border-t border-slate-100 space-y-2">
+        <div className="grid grid-cols-3 gap-2">
+          {/* Entradas vs Saídas */}
+          <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
+            variacaoSaldo >= 0 ? "bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-200" : "bg-gradient-to-br from-red-50 to-orange-50 border-red-200"
           }`}>
-            {variacaoSaldo >= 0 ? <TrendingUp className="w-4 h-4 text-teal-500" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
-            <span className={`text-xs font-bold ${variacaoSaldo >= 0 ? "text-teal-700" : "text-red-700"}`}>
-              Entradas vs Saidas: {variacaoSaldo >= 0 ? "+" : ""}{formatCurrency(variacaoSaldo)}
-            </span>
+            <div className="flex items-center gap-1.5 mb-1">
+              {variacaoSaldo >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-teal-500" /> : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Entradas vs Saidas</span>
+            </div>
+            <p className={`text-sm font-bold ${variacaoSaldo >= 0 ? "text-teal-700" : "text-red-700"}`}>
+              {variacaoSaldo >= 0 ? "+" : ""}{formatCurrency(variacaoSaldo)}
+            </p>
+            <p className="text-[9px] text-slate-400 mt-1 leading-tight">
+              {variacaoSaldo >= 0
+                ? "O que entrou no caixa cobre o que saiu"
+                : "Saiu mais dinheiro do que entrou no periodo"}
+            </p>
           </div>
 
-          {/* Secondary balances */}
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-slate-50">
-            <span className={`text-[11px] font-semibold ${faturamento - contasPagas >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-              Fat. vs Pago: {formatCurrency(faturamento - contasPagas)}
-            </span>
+          {/* Fat. vs Pago */}
+          <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
+            faturamento - contasPagas >= 0 ? "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200" : "bg-gradient-to-br from-red-50 to-rose-50 border-red-200"
+          }`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              {faturamento - contasPagas >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Fat. vs Pago</span>
+            </div>
+            <p className={`text-sm font-bold ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+              {faturamento - contasPagas >= 0 ? "+" : ""}{formatCurrency(faturamento - contasPagas)}
+            </p>
+            <p className="text-[9px] text-slate-400 mt-1 leading-tight">
+              {faturamento - contasPagas >= 0
+                ? "O faturamento cobre os pagamentos"
+                : "O que faturei nao paga as contas"}
+            </p>
           </div>
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-slate-50">
-            <span className={`text-[11px] font-semibold ${vendas - contasPagas >= 0 ? "text-blue-600" : "text-red-600"}`}>
-              Vendas vs Pago: {formatCurrency(vendas - contasPagas)}
-            </span>
+
+          {/* Vendas vs Pago */}
+          <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
+            vendas - contasPagas >= 0 ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200" : "bg-gradient-to-br from-red-50 to-pink-50 border-red-200"
+          }`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              {vendas - contasPagas >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-blue-500" /> : <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Vendas vs Pago</span>
+            </div>
+            <p className={`text-sm font-bold ${vendas - contasPagas >= 0 ? "text-blue-700" : "text-red-700"}`}>
+              {vendas - contasPagas >= 0 ? "+" : ""}{formatCurrency(vendas - contasPagas)}
+            </p>
+            <p className="text-[9px] text-slate-400 mt-1 leading-tight">
+              {vendas - contasPagas >= 0
+                ? "O que vendi cobre os pagamentos"
+                : "O que vendi nao paga as contas"}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-teal-600 transition-colors">
-          <span>{expanded ? "Recolher" : "Detalhes"}</span>
-          {expanded ? (
-            <ChevronUp className="w-4.5 h-4.5" />
-          ) : (
-            <ChevronDown className="w-4.5 h-4.5" />
-          )}
+        <div className="flex justify-end">
+          <div className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-teal-600 transition-colors cursor-pointer">
+            <span>{expanded ? "Recolher" : "Detalhes"}</span>
+            {expanded ? (
+              <ChevronUp className="w-4.5 h-4.5" />
+            ) : (
+              <ChevronDown className="w-4.5 h-4.5" />
+            )}
+          </div>
         </div>
       </div>
 
@@ -1263,68 +1297,117 @@ function ExpandedDetails({
         )}
       </div>
 
-      {/* Bottom summary: Total Entradas vs Contas Pagas = Variação */}
-      <div className={`flex items-center justify-between px-5 py-4 rounded-lg shadow-sm ${
-        variacaoSaldo >= 0 ? "bg-teal-50 border border-teal-200" : "bg-red-50 border border-red-200"
-      }`}>
-        <div className="flex items-center gap-3">
-          {variacaoSaldo >= 0 ? (
-            <PiggyBank className="w-6 h-6 text-teal-600" />
-          ) : (
-            <TrendingDown className="w-6 h-6 text-red-600" />
-          )}
-          <div>
-            <span className={`text-sm uppercase tracking-wider font-semibold ${variacaoSaldo >= 0 ? "text-teal-600" : "text-red-600"}`}>
-              Variacao do Saldo (Entradas - Saidas)
-            </span>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {formatCurrency(totalEntradas)} (entradas) - {formatCurrency(contasPagas)} (saidas)
-            </p>
+      {/* Bottom summary: Cards de confrontamento sofisticados com explicações */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+          <Scale className="w-4 h-4" /> Analise de Confrontamento
+        </h4>
+
+        {/* Entradas vs Saídas - Card principal */}
+        <div className={`rounded-xl overflow-hidden shadow-sm border ${
+          variacaoSaldo >= 0 ? "border-teal-200" : "border-red-200"
+        }`}>
+          <div className={`px-5 py-4 ${
+            variacaoSaldo >= 0 ? "bg-gradient-to-r from-teal-600 to-emerald-600" : "bg-gradient-to-r from-red-600 to-rose-600"
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {variacaoSaldo >= 0 ? (
+                  <PiggyBank className="w-7 h-7 text-white/90" />
+                ) : (
+                  <TrendingDown className="w-7 h-7 text-white/90" />
+                )}
+                <div>
+                  <p className="text-white font-bold text-sm">Entradas vs Saidas</p>
+                  <p className="text-white/70 text-[10px]">
+                    {variacaoSaldo >= 0
+                      ? "O que entrou no caixa cobre o que saiu no periodo"
+                      : "Saiu mais dinheiro do caixa do que entrou no periodo"}
+                  </p>
+                </div>
+              </div>
+              <span className="text-xl font-bold text-white">
+                {variacaoSaldo >= 0 ? "+" : ""}{formatCurrency(variacaoSaldo)}
+              </span>
+            </div>
+          </div>
+          <div className={`px-5 py-3 flex items-center justify-between text-xs ${
+            variacaoSaldo >= 0 ? "bg-teal-50" : "bg-red-50"
+          }`}>
+            <div className="flex items-center gap-4">
+              <span className="text-slate-500"><span className="font-semibold text-teal-700">{formatCurrency(totalEntradas)}</span> entradas</span>
+              <span className="text-slate-400">&minus;</span>
+              <span className="text-slate-500"><span className="font-semibold text-red-700">{formatCurrency(contasPagas)}</span> saidas</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${variacaoSaldo >= 0 ? "bg-teal-500" : "bg-red-500"}`} style={{ width: `${Math.min(100, totalEntradas > 0 ? (Math.min(totalEntradas, contasPagas) / Math.max(totalEntradas, contasPagas)) * 100 : 0)}%` }} />
+              </div>
+            </div>
           </div>
         </div>
-        <span className={`text-xl font-bold ${variacaoSaldo >= 0 ? "text-teal-700" : "text-red-700"}`}>
-          {variacaoSaldo >= 0 ? "+" : ""}{formatCurrency(variacaoSaldo)}
-        </span>
-      </div>
 
-      {/* Secondary balances */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Faturamento vs Pago */}
-        <div className={`flex items-center justify-between px-4 py-3 rounded-lg shadow-sm ${
-          faturamento - contasPagas >= 0 ? "bg-emerald-50 border border-emerald-200" : "bg-red-50 border border-red-200"
-        }`}>
-          <div className="flex items-center gap-2">
-            {faturamento - contasPagas >= 0 ? (
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-            ) : (
-              <TrendingDown className="w-4 h-4 text-red-600" />
-            )}
-            <span className={`text-xs uppercase tracking-wider font-semibold ${faturamento - contasPagas >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-              Fat. vs Pago
-            </span>
+        {/* Grid 2 colunas: Fat. vs Pago + Vendas vs Pago */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Faturamento vs Pago */}
+          <div className={`rounded-xl overflow-hidden shadow-sm border ${
+            faturamento - contasPagas >= 0 ? "border-emerald-200" : "border-red-200"
+          }`}>
+            <div className={`px-4 py-3 ${
+              faturamento - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gradient-to-r from-red-500 to-rose-500"
+            }`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white font-bold text-xs">Faturamento vs Pago</p>
+                  <p className="text-white/70 text-[9px] mt-0.5">
+                    {faturamento - contasPagas >= 0
+                      ? "O que faturei paga as contas"
+                      : "O que faturei NAO paga as contas"}
+                  </p>
+                </div>
+                <span className="text-base font-bold text-white">
+                  {faturamento - contasPagas >= 0 ? "+" : ""}{formatCurrency(faturamento - contasPagas)}
+                </span>
+              </div>
+            </div>
+            <div className={`px-4 py-2 text-[10px] flex items-center justify-between ${
+              faturamento - contasPagas >= 0 ? "bg-emerald-50" : "bg-red-50"
+            }`}>
+              <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrencyShort(faturamento)}</span> fat.</span>
+              <span className="text-slate-400">vs</span>
+              <span className="text-slate-500"><span className="font-semibold text-red-700">{formatCurrencyShort(contasPagas)}</span> pago</span>
+            </div>
           </div>
-          <span className={`text-base font-bold ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-red-700"}`}>
-            {faturamento - contasPagas >= 0 ? "+" : ""}{formatCurrency(faturamento - contasPagas)}
-          </span>
-        </div>
 
-        {/* Vendas vs Pago */}
-        <div className={`flex items-center justify-between px-4 py-3 rounded-lg shadow-sm ${
-          vendas - contasPagas >= 0 ? "bg-blue-50 border border-blue-200" : "bg-red-50 border border-red-200"
-        }`}>
-          <div className="flex items-center gap-2">
-            {vendas - contasPagas >= 0 ? (
-              <TrendingUp className="w-4 h-4 text-blue-600" />
-            ) : (
-              <TrendingDown className="w-4 h-4 text-red-600" />
-            )}
-            <span className={`text-xs uppercase tracking-wider font-semibold ${vendas - contasPagas >= 0 ? "text-blue-600" : "text-red-600"}`}>
-              Vendas vs Pago
-            </span>
+          {/* Vendas vs Pago */}
+          <div className={`rounded-xl overflow-hidden shadow-sm border ${
+            vendas - contasPagas >= 0 ? "border-blue-200" : "border-red-200"
+          }`}>
+            <div className={`px-4 py-3 ${
+              vendas - contasPagas >= 0 ? "bg-gradient-to-r from-blue-500 to-indigo-500" : "bg-gradient-to-r from-red-500 to-pink-500"
+            }`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white font-bold text-xs">Vendas vs Pago</p>
+                  <p className="text-white/70 text-[9px] mt-0.5">
+                    {vendas - contasPagas >= 0
+                      ? "O que vendi paga as contas"
+                      : "O que vendi NAO paga as contas"}
+                  </p>
+                </div>
+                <span className="text-base font-bold text-white">
+                  {vendas - contasPagas >= 0 ? "+" : ""}{formatCurrency(vendas - contasPagas)}
+                </span>
+              </div>
+            </div>
+            <div className={`px-4 py-2 text-[10px] flex items-center justify-between ${
+              vendas - contasPagas >= 0 ? "bg-blue-50" : "bg-red-50"
+            }`}>
+              <span className="text-slate-500"><span className="font-semibold text-blue-700">{formatCurrencyShort(vendas)}</span> vendas</span>
+              <span className="text-slate-400">vs</span>
+              <span className="text-slate-500"><span className="font-semibold text-red-700">{formatCurrencyShort(contasPagas)}</span> pago</span>
+            </div>
           </div>
-          <span className={`text-base font-bold ${vendas - contasPagas >= 0 ? "text-blue-700" : "text-red-700"}`}>
-            {vendas - contasPagas >= 0 ? "+" : ""}{formatCurrency(vendas - contasPagas)}
-          </span>
         </div>
       </div>
     </div>

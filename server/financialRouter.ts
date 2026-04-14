@@ -3272,7 +3272,7 @@ export const financialRouter = router({
 
   /**
    * Set auth completion for today.
-   * Requires password "Fernando" to mark as completed.
+   * Requires password "Fernando" or "Bruno" to mark as completed.
    */
   setAuthCompletion: publicProcedure
     .input(z.object({
@@ -3281,7 +3281,8 @@ export const financialRouter = router({
     }))
     .mutation(async ({ input }) => {
       // Validate password
-      if (input.password !== "Fernando") {
+      const AUTH_PASSWORDS = ["Fernando", "Bruno"];
+      if (!AUTH_PASSWORDS.includes(input.password)) {
         return { success: false, error: "Senha incorreta" };
       }
 
@@ -3301,7 +3302,7 @@ export const financialRouter = router({
           .update(authCompletion)
           .set({
             completed: input.completed,
-            completedBy: input.completed ? "Fernando" : null,
+            completedBy: input.completed ? input.password : null,
             completedAt: input.completed ? new Date() : null,
           })
           .where(eq(authCompletion.date, todayBR));
@@ -3309,7 +3310,7 @@ export const financialRouter = router({
         await db.insert(authCompletion).values({
           date: todayBR,
           completed: input.completed,
-          completedBy: input.completed ? "Fernando" : null,
+          completedBy: input.completed ? input.password : null,
           completedAt: input.completed ? new Date() : null,
         });
       }

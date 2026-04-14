@@ -2354,3 +2354,14 @@
 - [x] Fix: Divergência no valor "Faturado" entre aba Vendas e aba Financeiro - investigado: são métricas diferentes (NFs emitidas vs itens de pedidos com estado Faturado)
 - [x] Fix: Botão "Guia de Cobrança" na aba Inadimplência - melhorado posicionamento e destaque com banner grande
 - [x] Fix: Divergência entre card FATURADO e lista PEDIDOS FATURADOS na aba Vendas - corrigido: lista agora usa valorTotalPedido (com descontos/frete) quando disponível
+- [ ] Adicionar setinhas de ordenação (asc/desc) nas colunas Valor e Venc. da tabela de inadimplentes (aba Financeiro > Inadimplência)
+- [x] Redesign: Cards de confrontamento (Entradas vs Saídas, Fat. vs Pago, Vendas vs Pago) com visual sofisticado e explicações claras do que significam os valores negativos/vermelhos
+- [x] Adicionar setinhas de ordenação (asc/desc) nas colunas Valor, Venc. e Atraso da tabela interna de títulos na vista por Cliente (Inadimplência)
+- [x] Tornar setinhas de ordenação sempre visíveis (com opacidade baixa quando inativas) na vista por Título
+- [x] Adicionar olho do Maxiprod (card dinâmico) em cada mês do resumo financeiro (substituído MonthVerifyModal por MaxiprodSimulator animado)
+- [x] Adicionar olho do Maxiprod (card dinâmico) no total "A Receber" do resumo financeiro
+- [x] Adicionar olho do Maxiprod (card dinâmico) no total "A Pagar" do resumo financeiro
+
+## Operador Bruno (14/04/2026)
+- [x] Adicionar "Bruno" como operador com mesmo acesso que Guilherme e Fernando em todos os pontos do código
+- [x] Senha "Bruno" já existia no banco com mesmas permissões de Guilherme/Fernando (confirmado via query)
