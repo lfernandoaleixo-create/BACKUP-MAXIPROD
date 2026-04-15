@@ -2527,20 +2527,20 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             </div>
           </div>
           {/* APITO mini-card - ROXO */}
-          <div className="bg-purple-50/80 rounded-lg px-2.5 py-3 border border-purple-200">
-            <p className="text-[9px] text-purple-600 font-bold uppercase tracking-wider mb-0.5">Apito (kg)</p>
+          <div className="bg-indigo-50/80 rounded-lg px-2.5 py-3 border border-indigo-200">
+            <p className="text-[9px] text-indigo-600 font-bold uppercase tracking-wider mb-0.5">Apito (kg)</p>
             <div className="space-y-0">
               <div className="flex justify-between items-baseline">
-                <span className="text-[9px] text-purple-600 font-semibold">Estoque</span>
-                <span className="text-xs font-extrabold text-purple-700">{formatNumber(paEstoqueKg)}</span>
+                <span className="text-[9px] text-indigo-600 font-semibold">Estoque</span>
+                <span className="text-xs font-extrabold text-indigo-700">{formatNumber(paEstoqueKg)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[9px] text-purple-600 font-semibold">Pedidos</span>
-                <span className={`text-xs font-extrabold ${paPedidosKg > 0 ? 'text-purple-700' : 'text-slate-400'}`}>{formatNumber(paPedidosKg)}</span>
+                <span className="text-[9px] text-indigo-600 font-semibold">Pedidos</span>
+                <span className="text-xs font-extrabold text-indigo-700">{formatNumber(paPedidosKg)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className={`text-[9px] font-bold ${paDisponivelKg < 0 ? 'text-red-600' : 'text-purple-600'}`}>Disponível</span>
-                <span className={`text-xs font-black ${paDisponivelKg < 0 ? 'text-red-700' : 'text-purple-700'}`}>{formatNumber(paDisponivelKg)}</span>
+                <span className={`text-[9px] font-bold ${paDisponivelKg < 0 ? 'text-red-600' : 'text-indigo-600'}`}>Disponível</span>
+                <span className={`text-xs font-black ${paDisponivelKg < 0 ? 'text-red-700' : 'text-indigo-700'}`}>{formatNumber(paDisponivelKg)}</span>
               </div>
             </div>
           </div>
