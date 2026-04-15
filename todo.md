@@ -2486,3 +2486,10 @@
 
 ## Botão Enviar Observação (14/04/2026 - Parte 11)
 - [x] Adicionar botão "Enviar Observação" na caixa de comentários para confirmar o registro
+
+## Colunas Caixa/Saco nos Setores 2-3-4 (15/04/2026 - Parte 12)
+- [x] Cada medida (150mm-350mm) nos setores 2, 3, 4 terá 2 colunas: caixa e saco
+- [x] Conversão automática de caixa para saco usando fator de conversão configurável por medida
+- [x] Somatório total sempre em sacos (saco direto + caixa convertida)
+- [x] Ícone "Olho" visível para todos com card brilhante/neon mostrando fator de conversão e cálculo
+- [x] Fatores de conversão padrão (1:1) prontos para atualização posterior

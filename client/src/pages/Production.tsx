@@ -45,6 +45,27 @@ const WOOD_MEASURE_OPTIONS = [
   { value: "350mm", label: "350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
 ];
 
+// ─── Fatores de conversão caixa → saco (setores 2, 3, 4) ───
+// Cada medida tem um fator diferente. 1 caixa = X sacos.
+// Será atualizado com os fatores reais fornecidos pelo usuário.
+const CONVERSION_FACTORS: Record<string, number> = {
+  "150mm": 1,
+  "180mm": 1,
+  "200mm": 1,
+  "218mm": 1,
+  "250mm": 1,
+  "300mm": 1,
+  "350mm": 1,
+};
+
+// Setores que usam sistema dual caixa/saco (Vareteira, Seletoras Toco, Seleção Automática)
+function isDualUnitSector(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4; }
+
+function convertCxToSaco(medida: string, caixas: number): number {
+  const fator = CONVERSION_FACTORS[medida] || 1;
+  return caixas * fator;
+}
+
 // ─── Measure options (Ponteira) - always shown ───
 const PONTEIRA_MEASURE_OPTIONS = [
   { value: "180mm", label: "180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
@@ -176,6 +197,7 @@ export default function Production() {
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"lancamento" | "historico">("lancamento");
   const [isSavingAll, setIsSavingAll] = useState(false);
+  const [showConversionModal, setShowConversionModal] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -310,20 +332,48 @@ export default function Production() {
         }
         return sectorTotal;
       }
+      const dualUnit = isDualUnitSector(sector.ordem);
       for (const machine of sector.machines) {
         for (const opt of variantOpts) {
-          const varKey = `${sectorId}-${machine.id}-${opt.value}`;
-          // Se o usuário editou o campo, usar o valor editado (mesmo que seja 0)
-          if (variantEditValues[varKey] !== undefined) {
-            if (variantEditValues[varKey] !== "") {
-              const num = parseFloat(variantEditValues[varKey].replace(",", "."));
-              if (!isNaN(num) && num >= 0) sectorTotal += num;
+          if (dualUnit) {
+            // Dual unit: saco direto + caixa convertida
+            const sacoKey = `${sectorId}-${machine.id}-${opt.value}_saco`;
+            const cxKey = `${sectorId}-${machine.id}-${opt.value}_cx`;
+            let sacoVal = 0;
+            let cxVal = 0;
+            // Saco
+            if (variantEditValues[sacoKey] !== undefined) {
+              if (variantEditValues[sacoKey] !== "") {
+                const n = parseFloat(variantEditValues[sacoKey].replace(",", "."));
+                if (!isNaN(n) && n >= 0) sacoVal = n;
+              }
+            } else {
+              const entry = getEntryForVariant(sectorId, machine.id, `${opt.value}_saco`);
+              if (entry) sacoVal = Number(entry.quantidade);
             }
-            // Se editou e está vazio, conta como 0 (não busca do banco)
+            // Caixa
+            if (variantEditValues[cxKey] !== undefined) {
+              if (variantEditValues[cxKey] !== "") {
+                const n = parseFloat(variantEditValues[cxKey].replace(",", "."));
+                if (!isNaN(n) && n >= 0) cxVal = n;
+              }
+            } else {
+              const entry = getEntryForVariant(sectorId, machine.id, `${opt.value}_cx`);
+              if (entry) cxVal = Number(entry.quantidade);
+            }
+            sectorTotal += sacoVal + convertCxToSaco(opt.value, cxVal);
           } else {
-            // Não editou: buscar do banco
-            const entry = getEntryForVariant(sectorId, machine.id, opt.value);
-            if (entry) sectorTotal += Number(entry.quantidade);
+            // Single unit (Multilamina, Ponteira, etc.)
+            const varKey = `${sectorId}-${machine.id}-${opt.value}`;
+            if (variantEditValues[varKey] !== undefined) {
+              if (variantEditValues[varKey] !== "") {
+                const num = parseFloat(variantEditValues[varKey].replace(",", "."));
+                if (!isNaN(num) && num >= 0) sectorTotal += num;
+              }
+            } else {
+              const entry = getEntryForVariant(sectorId, machine.id, opt.value);
+              if (entry) sectorTotal += Number(entry.quantidade);
+            }
           }
         }
       }
@@ -375,23 +425,47 @@ export default function Production() {
     }
 
     const batchEntries: any[] = [];
+    const dualUnit = isDualUnitSector(sectorOrdem);
     for (const opt of variantOpts) {
-      const varKey = `${machineKey}-${opt.value}`;
-      const existingEntry = getEntryForVariant(sectorId, machineId, opt.value);
-      const val = variantEditValues[varKey];
-      let quantidade: number;
-      if (val !== undefined) {
-        quantidade = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
-      } else if (existingEntry) {
-        quantidade = Number(existingEntry.quantidade);
+      if (dualUnit) {
+        // Dual unit: salvar 2 registros por medida (caixa e saco)
+        for (const suffix of ["_cx", "_saco"] as const) {
+          const varKey = `${machineKey}-${opt.value}${suffix}`;
+          const existingEntry = getEntryForVariant(sectorId, machineId, `${opt.value}${suffix}`);
+          const val = variantEditValues[varKey];
+          let quantidade: number;
+          if (val !== undefined) {
+            quantidade = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+          } else if (existingEntry) {
+            quantidade = Number(existingEntry.quantidade);
+          } else {
+            quantidade = 0;
+          }
+          if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${opt.label} (${suffix === "_cx" ? "caixa" : "saco"})`); return; }
+          batchEntries.push({
+            sectorId, machineId, data: selectedDate, quantidade, status,
+            tipoMadeira: `${opt.value}${suffix}`, observacoes: comment,
+          });
+        }
       } else {
-        quantidade = 0;
+        // Single unit
+        const varKey = `${machineKey}-${opt.value}`;
+        const existingEntry = getEntryForVariant(sectorId, machineId, opt.value);
+        const val = variantEditValues[varKey];
+        let quantidade: number;
+        if (val !== undefined) {
+          quantidade = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+        } else if (existingEntry) {
+          quantidade = Number(existingEntry.quantidade);
+        } else {
+          quantidade = 0;
+        }
+        if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${opt.label}`); return; }
+        batchEntries.push({
+          sectorId, machineId, data: selectedDate, quantidade, status,
+          tipoMadeira: opt.value, observacoes: comment,
+        });
       }
-      if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${opt.label}`); return; }
-      batchEntries.push({
-        sectorId, machineId, data: selectedDate, quantidade, status,
-        tipoMadeira: opt.value, observacoes: comment,
-      });
     }
 
     setSavingKeys(prev => new Set(prev).add(machineKey));
@@ -467,24 +541,47 @@ export default function Production() {
             // Expandable with variants (1, 2, 3, 4, 5, 7-ponteira, 9-pirografar)
             const batchEntries: any[] = [];
             let hasAnyChange = false;
+            const dualUnit = isDualUnitSector(sector.ordem);
             for (const opt of variantOpts) {
-              const varKey = `${machineKey}-${opt.value}`;
-              const existingEntry = getEntryForVariant(sector.id, machine.id, opt.value);
-              const val = variantEditValues[varKey];
-              let quantidade: number;
-              if (val !== undefined) {
-                quantidade = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
-                hasAnyChange = true;
-              } else if (existingEntry) {
-                quantidade = Number(existingEntry.quantidade);
+              if (dualUnit) {
+                for (const suffix of ["_cx", "_saco"] as const) {
+                  const varKey = `${machineKey}-${opt.value}${suffix}`;
+                  const existingEntry = getEntryForVariant(sector.id, machine.id, `${opt.value}${suffix}`);
+                  const val = variantEditValues[varKey];
+                  let quantidade: number;
+                  if (val !== undefined) {
+                    quantidade = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+                    hasAnyChange = true;
+                  } else if (existingEntry) {
+                    quantidade = Number(existingEntry.quantidade);
+                  } else {
+                    quantidade = 0;
+                  }
+                  if (isNaN(quantidade) || quantidade < 0) quantidade = 0;
+                  batchEntries.push({
+                    sectorId: sector.id, machineId: machine.id, data: selectedDate, quantidade, status,
+                    tipoMadeira: `${opt.value}${suffix}`, observacoes: comment,
+                  });
+                }
               } else {
-                quantidade = 0;
+                const varKey = `${machineKey}-${opt.value}`;
+                const existingEntry = getEntryForVariant(sector.id, machine.id, opt.value);
+                const val = variantEditValues[varKey];
+                let quantidade: number;
+                if (val !== undefined) {
+                  quantidade = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+                  hasAnyChange = true;
+                } else if (existingEntry) {
+                  quantidade = Number(existingEntry.quantidade);
+                } else {
+                  quantidade = 0;
+                }
+                if (isNaN(quantidade) || quantidade < 0) quantidade = 0;
+                batchEntries.push({
+                  sectorId: sector.id, machineId: machine.id, data: selectedDate, quantidade, status,
+                  tipoMadeira: opt.value, observacoes: comment,
+                });
               }
-              if (isNaN(quantidade) || quantidade < 0) quantidade = 0;
-              batchEntries.push({
-                sectorId: sector.id, machineId: machine.id, data: selectedDate, quantidade, status,
-                tipoMadeira: opt.value, observacoes: comment,
-              });
             }
             if (hasAnyChange || statusValues[machineKey] !== undefined || commentValues[machineKey] !== undefined) {
               promises.push(
@@ -623,11 +720,21 @@ export default function Production() {
       return 0;
     }
     let total = 0;
+    const dualUnit = isDualUnitSector(sectorOrdem);
     for (const opt of variantOpts) {
-      const val = getVariantEditValue(sectorId, machineId, opt.value);
-      if (val !== "") {
-        const num = parseFloat(val.replace(",", "."));
-        if (!isNaN(num) && num >= 0) total += num;
+      if (dualUnit) {
+        const sacoVal = getVariantEditValue(sectorId, machineId, `${opt.value}_saco`);
+        const cxVal = getVariantEditValue(sectorId, machineId, `${opt.value}_cx`);
+        const sacoNum = sacoVal !== "" ? parseFloat(sacoVal.replace(",", ".")) : 0;
+        const cxNum = cxVal !== "" ? parseFloat(cxVal.replace(",", ".")) : 0;
+        if (!isNaN(sacoNum) && sacoNum >= 0) total += sacoNum;
+        if (!isNaN(cxNum) && cxNum >= 0) total += convertCxToSaco(opt.value, cxNum);
+      } else {
+        const val = getVariantEditValue(sectorId, machineId, opt.value);
+        if (val !== "") {
+          const num = parseFloat(val.replace(",", "."));
+          if (!isNaN(num) && num >= 0) total += num;
+        }
       }
     }
     return total;
@@ -738,7 +845,7 @@ export default function Production() {
                       <span className="text-[10px] font-semibold text-slate-500 uppercase truncate leading-tight">{sector.nome}</span>
                     </div>
                     <div className="text-lg font-bold text-slate-800 tabular-nums">{fmtNum(total, sector.unidadeMedida === "m³" ? 3 : 0)}</div>
-                    <div className="text-[10px] text-slate-400">{sector.unidadeLabel}</div>
+                    <div className="text-[10px] text-slate-400">{isDualUnitSector(sector.ordem) ? "sacos produzidos" : sector.unidadeLabel}</div>
                   </div>
                 );
               })}
@@ -768,7 +875,15 @@ export default function Production() {
                       <div className="flex-1 text-left">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold text-slate-800">{sector.ordem}. {sector.nome}</span>
-
+                          {isDualUnitSector(sector.ordem) && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setShowConversionModal(true); }}
+                              className="w-7 h-7 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-300/50 hover:shadow-violet-400/70 hover:scale-110 transition-all duration-200"
+                              title="Ver fatores de conversão"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                         <div className="text-xs text-slate-400 mt-0.5">
                           {hasMachines ? `${sector.quantidadeEquipamentos} ${sector.tipoEquipamento === "mesa" ? "mesas" : "máquinas"}` : "Sem equipamento"}
@@ -776,8 +891,8 @@ export default function Production() {
                         </div>
                       </div>
                       <div className="text-right mr-3">
-                        <div className="text-lg font-bold tabular-nums" style={{ color: sector.cor || "#6b7280" }}>{fmtNum(total, decimals)}</div>
-                        <div className="text-[10px] text-slate-400">{sector.unidadeMedida}</div>
+                        <div className="text-lg font-bold tabular-nums" style={{ color: sector.cor || "#6b7280" }}>{fmtNum(total, isDualUnitSector(sector.ordem) ? 0 : decimals)}</div>
+                        <div className="text-[10px] text-slate-400">{isDualUnitSector(sector.ordem) ? "saco" : sector.unidadeMedida}</div>
                       </div>
                       {isExpanded ? <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" /> : <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />}
                     </div>
@@ -857,6 +972,103 @@ export default function Production() {
           <HistoryView sectors={sectors || []} weekRange={weekRange} weeklySummary={weeklySummary || []} selectedDate={selectedDate} />
         )}
       </div>
+
+      {/* ─── Modal Neon: Fatores de Conversão Caixa → Saco ─── */}
+      {showConversionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowConversionModal(false)}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          {/* Card */}
+          <div
+            className="relative w-full max-w-lg rounded-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "linear-gradient(135deg, #0f0c29 0%, #1a1145 40%, #24243e 100%)",
+              boxShadow: "0 0 40px rgba(139, 92, 246, 0.3), 0 0 80px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)",
+            }}
+          >
+            {/* Glow border effect */}
+            <div className="absolute inset-0 rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.4), rgba(59,130,246,0.2), rgba(236,72,153,0.3))", padding: "1px", mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)", maskComposite: "exclude", WebkitMaskComposite: "xor", pointerEvents: "none" }} />
+
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #8b5cf6, #6366f1)", boxShadow: "0 0 20px rgba(139,92,246,0.5)" }}>
+                    <Eye className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Fatores de Conversão</h3>
+                    <p className="text-xs text-violet-300/80">Caixa → Saco | Setores 2, 3 e 4</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowConversionModal(false)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Explicação */}
+            <div className="px-6 pb-4">
+              <div className="rounded-xl p-3" style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}>
+                <p className="text-xs text-violet-200/90 leading-relaxed">
+                  Quando a produção é registrada em <span className="font-bold text-amber-300">caixas</span>, o sistema converte automaticamente para <span className="font-bold text-blue-300">sacos</span> usando o fator abaixo.
+                  O total do setor é sempre exibido em sacos.
+                </p>
+                <div className="mt-2 px-3 py-2 rounded-lg" style={{ background: "rgba(255,255,255,0.05)" }}>
+                  <p className="text-[11px] text-violet-300 font-mono">
+                    Total (sacos) = <span className="text-blue-300">Sacos digitados</span> + (<span className="text-amber-300">Caixas digitadas</span> × <span className="text-emerald-300">Fator</span>)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabela de fatores */}
+            <div className="px-6 pb-6">
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(139,92,246,0.2)" }}>
+                <div className="grid grid-cols-3 text-[10px] font-bold uppercase tracking-wider" style={{ background: "rgba(139,92,246,0.15)" }}>
+                  <div className="px-4 py-2.5 text-violet-300">Medida</div>
+                  <div className="px-4 py-2.5 text-violet-300 text-center">Fator</div>
+                  <div className="px-4 py-2.5 text-violet-300 text-right">Exemplo</div>
+                </div>
+                {WOOD_MEASURE_OPTIONS.map((opt, i) => {
+                  const fator = CONVERSION_FACTORS[opt.value] || 1;
+                  return (
+                    <div
+                      key={opt.value}
+                      className="grid grid-cols-3 items-center"
+                      style={{ background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.05)" }}
+                    >
+                      <div className="px-4 py-2.5">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`} style={{ border: "1px solid" }}>
+                          <Ruler className="w-3 h-3" />
+                          {opt.label}
+                        </span>
+                      </div>
+                      <div className="px-4 py-2.5 text-center">
+                        <span className="text-lg font-bold" style={{ color: "#a78bfa", textShadow: "0 0 10px rgba(167,139,250,0.5)" }}>
+                          {fator === 1 ? "1:1" : `1:${fator}`}
+                        </span>
+                      </div>
+                      <div className="px-4 py-2.5 text-right">
+                        <span className="text-[11px] text-slate-400">
+                          <span className="text-amber-300">1 cx</span> = <span className="text-blue-300">{fator} {fator === 1 ? "saco" : "sacos"}</span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-violet-400/60 mt-3 text-center">
+                Fatores serão atualizados conforme informações do gestor
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -903,12 +1115,24 @@ function ExpandableMachineRow({
   const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
 
   // Build per-variant display for badges (only show variants with value > 0)
-  const variantDisplay: { label: string; value: number; bgClass: string; textClass: string; borderClass: string }[] = [];
+  const dualUnit = isDualUnitSector(sector.ordem);
+  const variantDisplay: { label: string; value: number; unit: string; bgClass: string; textClass: string; borderClass: string }[] = [];
   for (const opt of variantOptions) {
-    const val = getVariantValue(opt.value);
-    const num = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
-    if (!isNaN(num) && num > 0) {
-      variantDisplay.push({ label: opt.label, value: num, bgClass: opt.bgClass, textClass: opt.textClass, borderClass: opt.borderClass });
+    if (dualUnit) {
+      const sacoVal = getVariantValue(`${opt.value}_saco`);
+      const cxVal = getVariantValue(`${opt.value}_cx`);
+      const sacoNum = sacoVal !== "" ? parseFloat(sacoVal.replace(",", ".")) : 0;
+      const cxNum = cxVal !== "" ? parseFloat(cxVal.replace(",", ".")) : 0;
+      const totalSacos = (isNaN(sacoNum) ? 0 : sacoNum) + convertCxToSaco(opt.value, isNaN(cxNum) ? 0 : cxNum);
+      if (totalSacos > 0) {
+        variantDisplay.push({ label: opt.label, value: totalSacos, unit: "saco", bgClass: opt.bgClass, textClass: opt.textClass, borderClass: opt.borderClass });
+      }
+    } else {
+      const val = getVariantValue(opt.value);
+      const num = val !== "" ? parseFloat(val.replace(",", ".")) : 0;
+      if (!isNaN(num) && num > 0) {
+        variantDisplay.push({ label: opt.label, value: num, unit: sector.unidadeMedida, bgClass: opt.bgClass, textClass: opt.textClass, borderClass: opt.borderClass });
+      }
     }
   }
 
@@ -960,8 +1184,8 @@ function ExpandableMachineRow({
 
         {/* Total display */}
         <div className="text-right shrink-0 w-20">
-          <div className="text-sm font-bold tabular-nums text-slate-700">{fmtNum(liveTotal, decimals)}</div>
-          <div className="text-[9px] text-slate-400">{sector.unidadeMedida}</div>
+          <div className="text-sm font-bold tabular-nums text-slate-700">{fmtNum(liveTotal, dualUnit ? 0 : decimals)}</div>
+          <div className="text-[9px] text-slate-400">{dualUnit ? "saco" : sector.unidadeMedida}</div>
         </div>
 
 
@@ -1019,29 +1243,67 @@ function ExpandableMachineRow({
               <VariantIcon className="w-3.5 h-3.5 text-slate-500" />
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Produção por {variantLabel}</p>
             </div>
-            <div className={`grid gap-2 ${variantOptions.length <= 3 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"}`}>
-              {variantOptions.map(opt => {
-                const val = getVariantValue(opt.value);
-                return (
-                  <div key={opt.value} className="flex items-center gap-2">
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold shrink-0 ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`} style={{ minWidth: variantOptions.length <= 3 ? "110px" : "80px" }}>
-                      <VariantIcon className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{opt.label}</span>
+            {dualUnit ? (
+              /* ─── Dual unit layout: caixa + saco por medida ─── */
+              <div className="space-y-2">
+                {/* Header labels */}
+                <div className="grid grid-cols-[100px_1fr_32px_1fr_32px] gap-1.5 items-center px-1">
+                  <span />
+                  <span className="text-[10px] font-semibold text-amber-600 uppercase text-center">Caixa</span>
+                  <span />
+                  <span className="text-[10px] font-semibold text-blue-600 uppercase text-center">Saco</span>
+                  <span />
+                </div>
+                {variantOptions.map(opt => {
+                  const cxVal = getVariantValue(`${opt.value}_cx`);
+                  const sacoVal = getVariantValue(`${opt.value}_saco`);
+                  return (
+                    <div key={opt.value} className="grid grid-cols-[100px_1fr_32px_1fr_32px] gap-1.5 items-center">
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold shrink-0 ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
+                        <VariantIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{opt.label}</span>
+                      </div>
+                      <input
+                        type="text" inputMode="decimal" value={cxVal}
+                        onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_cx`, e.target.value)}
+                        placeholder="0" disabled={!canEdit}
+                        className={`w-full text-right text-sm font-medium border border-amber-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-amber-50/30'}`}
+                      />
+                      <span className="text-[9px] text-amber-500 font-medium text-center">cx</span>
+                      <input
+                        type="text" inputMode="decimal" value={sacoVal}
+                        onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_saco`, e.target.value)}
+                        placeholder="0" disabled={!canEdit}
+                        className={`w-full text-right text-sm font-medium border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-blue-50/30'}`}
+                      />
+                      <span className="text-[9px] text-blue-500 font-medium text-center">saco</span>
                     </div>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={val}
-                      onChange={(e) => canEdit && onSetVariantValue(opt.value, e.target.value)}
-                      placeholder="0"
-                      disabled={!canEdit}
-                      className={`flex-1 min-w-0 w-20 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-white'}`}
-                    />
-                    <span className="text-[10px] text-slate-400 shrink-0 w-8">{sector.unidadeMedida}</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* ─── Single unit layout (original) ─── */
+              <div className={`grid gap-2 ${variantOptions.length <= 3 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"}`}>
+                {variantOptions.map(opt => {
+                  const val = getVariantValue(opt.value);
+                  return (
+                    <div key={opt.value} className="flex items-center gap-2">
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold shrink-0 ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`} style={{ minWidth: variantOptions.length <= 3 ? "110px" : "80px" }}>
+                        <VariantIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{opt.label}</span>
+                      </div>
+                      <input
+                        type="text" inputMode="decimal" value={val}
+                        onChange={(e) => canEdit && onSetVariantValue(opt.value, e.target.value)}
+                        placeholder="0" disabled={!canEdit}
+                        className={`flex-1 min-w-0 w-20 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-white'}`}
+                      />
+                      <span className="text-[10px] text-slate-400 shrink-0 w-8">{sector.unidadeMedida}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
           ) : (
           <div className="bg-white rounded-lg border border-slate-200 p-3">
