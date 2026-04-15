@@ -482,6 +482,9 @@ function ContaFiltersAndTable({
   expandedItem,
   setExpandedItem,
   empresaNome,
+  empresaNomeFull,
+  bancoNome,
+  contaNumero,
   mesLabel,
   mesKey,
   showHistoryPanel,
@@ -497,6 +500,9 @@ function ContaFiltersAndTable({
   expandedItem: number | null;
   setExpandedItem: (id: number | null) => void;
   empresaNome: string;
+  empresaNomeFull: string;
+  bancoNome: string;
+  contaNumero: string;
   mesLabel: string;
   mesKey: string;
   showHistoryPanel: boolean;
@@ -837,6 +843,9 @@ function ContaFiltersAndTable({
             startDate={sDate}
             endDate={eDate}
             valorManus={filteredTotals.total}
+            empresaNome={empresaNomeFull}
+            bancoNome={bancoNome}
+            contaNumero={contaNumero}
           />
         );
       })()}
@@ -1553,6 +1562,9 @@ export default function ReceivablesTab() {
                                     expandedItem={expandedItem}
                                     setExpandedItem={setExpandedItem}
                                     empresaNome={shortEmpresaName(emp.nome)}
+                                    empresaNomeFull={emp.nome}
+                                    bancoNome={conta.bancoNome}
+                                    contaNumero={conta.contaNumero}
                                     mesLabel={formatMonth(mes.mes)}
                                     mesKey={mes.mes}
                                     showHistoryPanel={showHistoryPanel === contaKey}

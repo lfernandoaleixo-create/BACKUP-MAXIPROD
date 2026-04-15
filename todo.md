@@ -2531,3 +2531,13 @@
 - [x] Fixar ordem dos bancos para ser sempre a mesma independente dos valores (não ordenar por valor)
 - [x] Redesign colunas 3-col (Caixa Pequena, Caixa Grande, Saco) nos setores 2-3-4: nomes completos sem abreviação, números pretos e maiores, labels visíveis, medidas mais vistosas, preencher todo o card, layout profissional
 - [x] Fix ordenação de bancos: ordem fixa alfabética em vez de por valor (já implementado no backend)
+
+## Fix Comparação Maxiprod Recebíveis (15/04/2026 - Parte 20)
+- [x] Corrigir valores absurdos do Maxiprod na conferência de Contas a Receber (ex: R$ 719.718,10 vs R$ 8.500,00 do dashboard)
+- [x] Causa raiz: getMaxiprodContraprova seção 'recebiveis' não filtrava por empresa/banco/conta — somava TODOS os títulos do mês
+- [x] Backend: adicionar filtros opcionais empresaNome, bancoNome, contaNumero ao getMaxiprodContraprova
+- [x] Backend: usar mesma lógica de cálculo do getReceivablesByBank (valorLiquido - valorRecebidoLiquido, excluir <= 0)
+- [x] Frontend: estender MaxiprodAutoVerifier com props opcionais empresaNome, bancoNome, contaNumero
+- [x] Frontend: ReceivablesTab passa empresa/banco/conta ao MaxiprodAutoVerifier
+- [x] Cache key inclui filtros de empresa/conta para evitar colisão
+- [x] Testes: 7 testes para getMaxiprodContraprova recebiveis (com/sem filtros, combinados, sem resultados)

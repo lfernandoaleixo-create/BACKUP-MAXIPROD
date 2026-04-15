@@ -22,6 +22,10 @@ interface MaxiprodAutoVerifierProps {
   endDate: string;
   valorManus: number;
   onClose: () => void;
+  // Filtros opcionais para seção "recebiveis" (empresa + conta bancária)
+  empresaNome?: string;
+  bancoNome?: string;
+  contaNumero?: string;
 }
 
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br";
@@ -273,6 +277,9 @@ export default function MaxiprodAutoVerifier({
   endDate,
   valorManus,
   onClose,
+  empresaNome,
+  bancoNome,
+  contaNumero,
 }: MaxiprodAutoVerifierProps) {
   const [showResult, setShowResult] = useState(false);
 
@@ -286,9 +293,17 @@ export default function MaxiprodAutoVerifier({
 
   useEffect(() => { ensureAnimationStyles(); }, []);
 
-  // Auto-query Maxiprod via backend
+  // Auto-query Maxiprod via backend (inclui filtros de empresa/conta para recebiveis)
+  const queryInput = useMemo(() => {
+    const base: { section: VerifySection; startDate: string; endDate: string; empresaNome?: string; bancoNome?: string; contaNumero?: string } = { section, startDate, endDate };
+    if (empresaNome) base.empresaNome = empresaNome;
+    if (bancoNome) base.bancoNome = bancoNome;
+    if (contaNumero) base.contaNumero = contaNumero;
+    return base;
+  }, [section, startDate, endDate, empresaNome, bancoNome, contaNumero]);
+
   const { data: cpData, isLoading: cpLoading, error: cpError } = trpc.financial.getMaxiprodContraprova.useQuery(
-    { section, startDate, endDate },
+    queryInput,
     { staleTime: 5 * 60 * 1000, retry: 1 }
   );
 

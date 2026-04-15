@@ -4323,13 +4323,17 @@ ${acoesTexto}
       section: z.enum(["faturamento", "vendas", "entradas", "contas_pagas", "recebiveis", "inadimplencia", "contas_receber_mes", "contas_pagar_mes", "a_faturar", "amostra_bonif", "vendas_faturado"]),
       startDate: z.string(),
       endDate: z.string(),
+      // Filtros opcionais para seção "recebiveis" (filtra por empresa + conta bancária)
+      empresaNome: z.string().optional(),
+      bancoNome: z.string().optional(),
+      contaNumero: z.string().optional(),
     }))
     .query(async ({ input }) => {
       try {
-        const { section, startDate, endDate } = input;
+        const { section, startDate, endDate, empresaNome, bancoNome, contaNumero } = input;
 
-        // Cache em memória com TTL de 5 minutos
-        const cacheKey = `${section}:${startDate}:${endDate}`;
+        // Cache em memória com TTL de 5 minutos (inclui filtros de empresa/conta)
+        const cacheKey = `${section}:${startDate}:${endDate}:${empresaNome || ''}:${bancoNome || ''}:${contaNumero || ''}`;
         const cached = contraprovaCache.get(cacheKey);
         if (cached && Date.now() - cached.timestamp < CONTRAPROVA_CACHE_TTL) {
           console.log(`[getMaxiprodContraprova] Cache hit: ${cacheKey}`);
@@ -4495,26 +4499,61 @@ ${acoesTexto}
           });
         }
 
-        // recebiveis - busca do banco local
+        // recebiveis - busca do banco local, filtrado por empresa + conta bancária
         if (section === "recebiveis") {
           const db = await getDb();
           if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
 
-          const result = await db.select({
-            total: sql<number>`COALESCE(SUM(CAST(${accountsReceivable.valorLiquido} AS DECIMAL(15,2)) - CAST(COALESCE(${accountsReceivable.valorRecebidoLiquido}, '0') AS DECIMAL(15,2))), 0)`,
-            count: sql<number>`COUNT(*)`,
+          const conditions = [
+            eq(accountsReceivable.estado, 'EMITIDO'),
+            inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+            gte(accountsReceivable.vencimentoData, startDate),
+            lte(accountsReceivable.vencimentoData, endDate + "T23:59:59"),
+          ];
+
+          // Filtrar por empresa (se fornecido)
+          if (empresaNome) {
+            conditions.push(eq(accountsReceivable.empresaNome, empresaNome));
+          }
+          // Filtrar por banco (se fornecido)
+          if (bancoNome) {
+            conditions.push(eq(accountsReceivable.bancoNome, bancoNome));
+          }
+          // Filtrar por conta bancária (se fornecido)
+          if (contaNumero) {
+            conditions.push(eq(accountsReceivable.contaNumero, contaNumero));
+          }
+
+          // Usar mesma lógica do getReceivablesByBank: valorAReceber = valorLiquido - valorRecebidoLiquido, excluir <= 0
+          const rows = await db.select({
+            valorLiquido: accountsReceivable.valorLiquido,
+            valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
           }).from(accountsReceivable)
-            .where(and(
-              eq(accountsReceivable.estado, 'EMITIDO'),
-              inArray(accountsReceivable.tipo, ['TITULO', 'RECEITA', 'ADIANTAMENTO']),
-              gte(accountsReceivable.vencimentoData, startDate),
-              lte(accountsReceivable.vencimentoData, endDate),
-            ));
+            .where(and(...conditions));
+
+          let total = 0;
+          let count = 0;
+          for (const row of rows) {
+            const valorOriginal = Number(row.valorLiquido) || 0;
+            const valorPago = Number(row.valorRecebidoLiquido) || 0;
+            const valorAReceber = valorOriginal - valorPago;
+            if (valorAReceber > 0) {
+              total += valorAReceber;
+              count++;
+            }
+          }
+          total = Math.round(total * 100) / 100;
+
+          const filterParts: string[] = [];
+          if (empresaNome) filterParts.push(empresaNome);
+          if (bancoNome) filterParts.push(bancoNome);
+          if (contaNumero) filterParts.push(`Cc ${contaNumero}`);
+          const filterLabel = filterParts.length > 0 ? ` (${filterParts.join(' · ')})` : '';
 
           return cacheAndReturn({
-            valorMaxiprod: Number(result[0]?.total || 0),
-            count: Number(result[0]?.count || 0),
-            label: `${result[0]?.count || 0} títulos a receber no período`,
+            valorMaxiprod: total,
+            count,
+            label: `${count} títulos a receber no período${filterLabel}`,
           });
         }
 

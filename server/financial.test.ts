@@ -117,6 +117,9 @@ const sampleReceivables = [
     parcelasQuantidadeTotal: 1,
     cliente: "CLIENTE TESTE A",
     empresaNome: "PALITOS INDUSTRIA",
+    bancoNome: "Banco Cooperativo Sicredi S.A.",
+    contaNumero: "50051",
+    agencia: "0155",
   },
   {
     maxiprodId: 80002,
@@ -136,6 +139,9 @@ const sampleReceivables = [
     parcelasQuantidadeTotal: 1,
     cliente: "CLIENTE TESTE B",
     empresaNome: "PALITOS INDUSTRIA",
+    bancoNome: "Banco Cooperativo Sicredi S.A.",
+    contaNumero: "50051",
+    agencia: "0155",
   },
   {
     maxiprodId: 80003,
@@ -156,6 +162,9 @@ const sampleReceivables = [
     parcelasQuantidadeTotal: 1,
     cliente: "CLIENTE TESTE A",
     empresaNome: "PALITOS INDUSTRIA",
+    bancoNome: "Banco Cooperativo Sicredi S.A.",
+    contaNumero: "50051",
+    agencia: "0155",
   },
   {
     maxiprodId: 80004,
@@ -175,6 +184,32 @@ const sampleReceivables = [
     parcelasQuantidadeTotal: 1,
     cliente: "CLIENTE TESTE C",
     empresaNome: "PALITOS INDUSTRIA",
+    bancoNome: "Banco Cooperativo Sicredi S.A.",
+    contaNumero: "50051",
+    agencia: "0155",
+  },
+  // Título de OUTRA empresa/banco para testar filtro
+  {
+    maxiprodId: 80005,
+    estado: "EMITIDO",
+    tipo: "TITULO",
+    valorOriginal: "7500.00",
+    valorLiquido: "7500.00",
+    valorRetido: "0.00",
+    valorDeDesconto: "0.00",
+    valorDeAcrescimo: "0.00",
+    valorRecebidoLiquido: "0.00",
+    emissaoData: "2026-03-01T00:00:00",
+    vencimentoData: "2026-04-15T00:00:00",
+    vencimentoOriginalData: "2026-04-15T00:00:00",
+    referenteA: "CLIENTE D ref. NF 999",
+    parcela: 1,
+    parcelasQuantidadeTotal: 1,
+    cliente: "CLIENTE TESTE D",
+    empresaNome: "VARETAS INDUSTRIA",
+    bancoNome: "Banco do Brasil S.A.",
+    contaNumero: "80246",
+    agencia: "3333",
   },
 ];
 
@@ -472,6 +507,94 @@ describe("financial router", () => {
       // 80002 (vencimento 2026-04-01) should NOT be included (not overdue)
       const aprilEntry = result.find((p: any) => p.mes === "2026-04");
       expect(aprilEntry).toBeUndefined();
+    });
+  });
+
+  describe("getMaxiprodContraprova - recebiveis", () => {
+    it("returns total of ALL receivables when no empresa/banco filters", async () => {
+      // Sem filtros: deve retornar todos os títulos EMITIDO no período
+      // 80002: 2000 (abr 2026) + 80005: 7500 (abr 2026) = 9500
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+      });
+      expect(result.valorMaxiprod).toBe(9500);
+      expect(result.count).toBe(2);
+    });
+
+    it("filters by empresaNome when provided", async () => {
+      // Filtro por PALITOS INDUSTRIA: só 80002 (2000) em abril
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        empresaNome: "PALITOS INDUSTRIA",
+      });
+      expect(result.valorMaxiprod).toBe(2000);
+      expect(result.count).toBe(1);
+    });
+
+    it("filters by bancoNome when provided", async () => {
+      // Filtro por Banco do Brasil: só 80005 (7500) em abril
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        bancoNome: "Banco do Brasil S.A.",
+      });
+      expect(result.valorMaxiprod).toBe(7500);
+      expect(result.count).toBe(1);
+    });
+
+    it("filters by contaNumero when provided", async () => {
+      // Filtro por conta 50051 (Sicredi PALITOS): só 80002 (2000) em abril
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        contaNumero: "50051",
+      });
+      expect(result.valorMaxiprod).toBe(2000);
+      expect(result.count).toBe(1);
+    });
+
+    it("filters by empresa + banco + conta combined", async () => {
+      // Filtro combinado: PALITOS + Sicredi + 50051 em abril = só 80002 (2000)
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        empresaNome: "PALITOS INDUSTRIA",
+        bancoNome: "Banco Cooperativo Sicredi S.A.",
+        contaNumero: "50051",
+      });
+      expect(result.valorMaxiprod).toBe(2000);
+      expect(result.count).toBe(1);
+    });
+
+    it("returns 0 when filters match no records", async () => {
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        empresaNome: "MESA INDUSTRIA",
+      });
+      expect(result.valorMaxiprod).toBe(0);
+      expect(result.count).toBe(0);
+    });
+
+    it("excludes receivables with valorAReceber <= 0", async () => {
+      // 80003 is RECEBIDO so won't match estado=EMITIDO anyway
+      // But even if it were EMITIDO, valorRecebidoLiquido = valorLiquido so valorAReceber = 0
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+      });
+      // No EMITIDO receivables in January (80003 is RECEBIDO)
+      expect(result.valorMaxiprod).toBe(0);
+      expect(result.count).toBe(0);
     });
   });
 });
