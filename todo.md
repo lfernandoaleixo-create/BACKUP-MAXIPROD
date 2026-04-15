@@ -2511,3 +2511,14 @@
 - [x] Expandir badges das medidas para mostrar nome completo (sem truncar)
 - [x] Mover olho roxo para ao lado do título "PRODUÇÃO POR MEDIDA DE MADEIRA"
 - [x] Vareteira (2): medidas 3,5x200/250/350 apenas na Máquina 5, máquinas 1-4 só com 3,8x
+
+## Flow Pack e Remoção 300mm (15/04/2026 - Parte 16)
+- [x] Flow Pack (item 6): adicionar medidas 3,8x220mm, 3,8x250mm, 3,8x180mm, 3,5x200mm
+- [x] Remover todas as medidas 300mm (3,8x300mm, 3,5x300mm) de todos os setores/máquinas
+
+## 3 Colunas: Cx Peq + Cx Grande + Saco (15/04/2026 - Parte 17)
+- [x] Alterar de 2 colunas (caixa/saco) para 3 colunas (caixa pequena, caixa grande, saco) nos setores 2-3-4
+- [x] Fatores de conversão separados por tipo de caixa (cx peq e cx grande) para cada medida
+- [x] Atualizar card do olho para mostrar fatores de ambos os tipos de caixa em ordem crescente
+- [x] Atualizar backend (salvamento) para suportar 3 tipos de registro por medida (_cxp, _cxg, _saco)
+- [x] Fatores reais aplicados: 3,8x180(0.5cp), 3,8x200(0.6cp/0.8cg), 3,8x220(0.5cp/0.7cg), 3,8x250(0.8cg), 3,8x350(0.4cp/0.6cg), 3,5x200(0.6cp/0.8cg)

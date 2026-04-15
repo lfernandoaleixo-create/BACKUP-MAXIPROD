@@ -43,7 +43,6 @@ const VARETEIRA_BASE_OPTIONS = [
   { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
   { value: "3.8x218mm", label: "3,8x218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
   { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
-  { value: "3.8x300mm", label: "3,8x300mm", color: "#84cc16", bgClass: "bg-lime-50", textClass: "text-lime-800", borderClass: "border-lime-300" },
   { value: "3.8x350mm", label: "3,8x350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
 ];
 // Vareteira: medidas extras (3,5x) apenas para máquina 5
@@ -76,41 +75,52 @@ const SELECAO_AUTO_MEASURE_OPTIONS = [
   { value: "3.5x250mm", label: "3,5x250mm", color: "#ef4444", bgClass: "bg-red-50", textClass: "text-red-800", borderClass: "border-red-300" },
 ];
 
-// Seleção Visual (setor 5): 3,8x em todas + 3,5x200mm
+// Seleção Visual (setor 5): 3,8x em todas (sem 300mm) + 3,5x200mm
 const SELECAO_VISUAL_MEASURE_OPTIONS = [
   { value: "3.8x150mm", label: "3,8x150mm", color: "#0ea5e9", bgClass: "bg-sky-50", textClass: "text-sky-800", borderClass: "border-sky-300" },
   { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
   { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
   { value: "3.8x218mm", label: "3,8x218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
   { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
-  { value: "3.8x300mm", label: "3,8x300mm", color: "#84cc16", bgClass: "bg-lime-50", textClass: "text-lime-800", borderClass: "border-lime-300" },
   { value: "3.8x350mm", label: "3,8x350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
   { value: "3.5x200mm", label: "3,5x200mm", color: "#f97316", bgClass: "bg-orange-50", textClass: "text-orange-800", borderClass: "border-orange-300" },
 ];
 
 // ─── Fatores de conversão caixa → saco (setores 2, 3, 4) ───
-// Cada medida tem um fator diferente. 1 caixa = X sacos.
+// Cada medida tem fatores diferentes para caixa pequena e caixa grande.
 // Será atualizado com os fatores reais fornecidos pelo usuário.
-const CONVERSION_FACTORS: Record<string, number> = {
-  "3.8x150mm": 1,
-  "3.8x180mm": 1,
-  "3.8x200mm": 1,
-  "3.8x218mm": 1,
-  "3.8x250mm": 1,
-  "3.8x300mm": 1,
-  "3.8x350mm": 1,
-  "3.5x200mm": 1,
-  "3.5x250mm": 1,
-  "3.5x350mm": 1,
+const CONVERSION_FACTORS: Record<string, { cxp: number; cxg: number }> = {
+  "3.8x150mm": { cxp: 0, cxg: 0 },
+  "3.8x180mm": { cxp: 0.5, cxg: 0 },
+  "3.8x200mm": { cxp: 0.6, cxg: 0.8 },
+  "3.8x218mm": { cxp: 0, cxg: 0 },
+  "3.8x220mm": { cxp: 0.5, cxg: 0.7 },
+  "3.8x250mm": { cxp: 0, cxg: 0.8 },
+  "3.8x350mm": { cxp: 0.4, cxg: 0.6 },
+  "3.5x200mm": { cxp: 0.6, cxg: 0.8 },
+  "3.5x250mm": { cxp: 0, cxg: 0 },
+  "3.5x350mm": { cxp: 0, cxg: 0 },
 };
 
-// Setores que usam sistema dual caixa/saco (Vareteira, Seletoras Toco, Seleção Automática)
+// Setores que usam sistema triplo caixa peq/caixa grande/saco (Vareteira, Seletoras Toco, Seleção Automática)
 function isDualUnitSector(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4; }
 
-function convertCxToSaco(medida: string, caixas: number): number {
-  const fator = CONVERSION_FACTORS[medida] || 1;
+function convertCxpToSaco(medida: string, caixas: number): number {
+  const fator = CONVERSION_FACTORS[medida]?.cxp || 1;
   return caixas * fator;
 }
+function convertCxgToSaco(medida: string, caixas: number): number {
+  const fator = CONVERSION_FACTORS[medida]?.cxg || 1;
+  return caixas * fator;
+}
+
+// ─── Measure options (Flow Pack, setor 6) ───
+const FLOWPACK_MEASURE_OPTIONS = [
+  { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
+  { value: "3.8x220mm", label: "3,8x220mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
+  { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+  { value: "3.5x200mm", label: "3,5x200mm", color: "#f97316", bgClass: "bg-orange-50", textClass: "text-orange-800", borderClass: "border-orange-300" },
+];
 
 // ─── Measure options (Ponteira) - always shown ───
 const PONTEIRA_MEASURE_OPTIONS = [
@@ -172,7 +182,8 @@ const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 function isMultilamina(ordem: number) { return ordem === 1; }
 function isPirografar(ordem: number) { return ordem === 9; }
 function isPonteira(ordem: number) { return ordem === 7; }
-function hasMeasureFeatures(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4 || ordem === 5; }
+function isFlowPack(ordem: number) { return ordem === 6; }
+function hasMeasureFeatures(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4 || ordem === 5 || ordem === 6; }
 function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2 || ordem === 3 || ordem === 4 || ordem === 5 || ordem === 6 || ordem === 7 || ordem === 9; }
 
 // Get the FIXED variant options for a sector (always all shown)
@@ -180,6 +191,7 @@ function getVariantOptions(sectorOrdem: number, machineOrdem?: number) {
   if (isMultilamina(sectorOrdem)) return WOOD_TYPE_OPTIONS;
   if (isPirografar(sectorOrdem)) return PIROGRAFAR_TYPE_OPTIONS;
   if (isPonteira(sectorOrdem)) return PONTEIRA_MEASURE_OPTIONS;
+  if (isFlowPack(sectorOrdem)) return FLOWPACK_MEASURE_OPTIONS;
   if (sectorOrdem === 2) {
     // Vareteira: máquina 5 tem medidas extras 3,5x; máquinas 1-4 só 3,8x
     return machineOrdem === 5 ? VARETEIRA_MEASURE_OPTIONS : VARETEIRA_BASE_OPTIONS;
@@ -194,6 +206,7 @@ function getVariantLabel(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem)) return "Tipo de Madeira";
   if (isPirografar(sectorOrdem)) return "Tipo de Madeira";
   if (isPonteira(sectorOrdem)) return "Medida de Madeira";
+  if (isFlowPack(sectorOrdem)) return "Medida de Madeira";
   if (hasMeasureFeatures(sectorOrdem)) return "Medida de Madeira";
   return "";
 }
@@ -389,11 +402,13 @@ export default function Production() {
         const machineVariantOpts = getVariantOptions(sector.ordem, machine.ordem);
         for (const opt of machineVariantOpts) {
           if (dualUnit) {
-            // Dual unit: saco direto + caixa convertida
+            // Triple unit: saco direto + caixa pequena convertida + caixa grande convertida
             const sacoKey = `${sectorId}-${machine.id}-${opt.value}_saco`;
-            const cxKey = `${sectorId}-${machine.id}-${opt.value}_cx`;
+            const cxpKey = `${sectorId}-${machine.id}-${opt.value}_cxp`;
+            const cxgKey = `${sectorId}-${machine.id}-${opt.value}_cxg`;
             let sacoVal = 0;
-            let cxVal = 0;
+            let cxpVal = 0;
+            let cxgVal = 0;
             // Saco
             if (variantEditValues[sacoKey] !== undefined) {
               if (variantEditValues[sacoKey] !== "") {
@@ -404,17 +419,27 @@ export default function Production() {
               const entry = getEntryForVariant(sectorId, machine.id, `${opt.value}_saco`);
               if (entry) sacoVal = Number(entry.quantidade);
             }
-            // Caixa
-            if (variantEditValues[cxKey] !== undefined) {
-              if (variantEditValues[cxKey] !== "") {
-                const n = parseFloat(variantEditValues[cxKey].replace(",", "."));
-                if (!isNaN(n) && n >= 0) cxVal = n;
+            // Caixa Pequena
+            if (variantEditValues[cxpKey] !== undefined) {
+              if (variantEditValues[cxpKey] !== "") {
+                const n = parseFloat(variantEditValues[cxpKey].replace(",", "."));
+                if (!isNaN(n) && n >= 0) cxpVal = n;
               }
             } else {
-              const entry = getEntryForVariant(sectorId, machine.id, `${opt.value}_cx`);
-              if (entry) cxVal = Number(entry.quantidade);
+              const entry = getEntryForVariant(sectorId, machine.id, `${opt.value}_cxp`);
+              if (entry) cxpVal = Number(entry.quantidade);
             }
-            sectorTotal += sacoVal + convertCxToSaco(opt.value, cxVal);
+            // Caixa Grande
+            if (variantEditValues[cxgKey] !== undefined) {
+              if (variantEditValues[cxgKey] !== "") {
+                const n = parseFloat(variantEditValues[cxgKey].replace(",", "."));
+                if (!isNaN(n) && n >= 0) cxgVal = n;
+              }
+            } else {
+              const entry = getEntryForVariant(sectorId, machine.id, `${opt.value}_cxg`);
+              if (entry) cxgVal = Number(entry.quantidade);
+            }
+            sectorTotal += sacoVal + convertCxpToSaco(opt.value, cxpVal) + convertCxgToSaco(opt.value, cxgVal);
           } else {
             // Single unit (Multilamina, Ponteira, etc.)
             const varKey = `${sectorId}-${machine.id}-${opt.value}`;
@@ -481,8 +506,9 @@ export default function Production() {
     const dualUnit = isDualUnitSector(sectorOrdem);
     for (const opt of variantOpts) {
       if (dualUnit) {
-        // Dual unit: salvar 2 registros por medida (caixa e saco)
-        for (const suffix of ["_cx", "_saco"] as const) {
+        // Triple unit: salvar 3 registros por medida (cx pequena, cx grande e saco)
+        const suffixLabels = { "_cxp": "cx pequena", "_cxg": "cx grande", "_saco": "saco" };
+        for (const suffix of ["_cxp", "_cxg", "_saco"] as const) {
           const varKey = `${machineKey}-${opt.value}${suffix}`;
           const existingEntry = getEntryForVariant(sectorId, machineId, `${opt.value}${suffix}`);
           const val = variantEditValues[varKey];
@@ -494,7 +520,7 @@ export default function Production() {
           } else {
             quantidade = 0;
           }
-          if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${opt.label} (${suffix === "_cx" ? "caixa" : "saco"})`); return; }
+          if (isNaN(quantidade) || quantidade < 0) { toast.error(`Valor inválido para ${opt.label} (${suffixLabels[suffix]})`); return; }
           batchEntries.push({
             sectorId, machineId, data: selectedDate, quantidade, status,
             tipoMadeira: `${opt.value}${suffix}`, observacoes: comment,
@@ -597,7 +623,7 @@ export default function Production() {
             const dualUnit = isDualUnitSector(sector.ordem);
             for (const opt of variantOpts) {
               if (dualUnit) {
-                for (const suffix of ["_cx", "_saco"] as const) {
+                for (const suffix of ["_cxp", "_cxg", "_saco"] as const) {
                   const varKey = `${machineKey}-${opt.value}${suffix}`;
                   const existingEntry = getEntryForVariant(sector.id, machine.id, `${opt.value}${suffix}`);
                   const val = variantEditValues[varKey];
@@ -777,11 +803,14 @@ export default function Production() {
     for (const opt of variantOpts) {
       if (dualUnit) {
         const sacoVal = getVariantEditValue(sectorId, machineId, `${opt.value}_saco`);
-        const cxVal = getVariantEditValue(sectorId, machineId, `${opt.value}_cx`);
+        const cxpVal = getVariantEditValue(sectorId, machineId, `${opt.value}_cxp`);
+        const cxgVal = getVariantEditValue(sectorId, machineId, `${opt.value}_cxg`);
         const sacoNum = sacoVal !== "" ? parseFloat(sacoVal.replace(",", ".")) : 0;
-        const cxNum = cxVal !== "" ? parseFloat(cxVal.replace(",", ".")) : 0;
+        const cxpNum = cxpVal !== "" ? parseFloat(cxpVal.replace(",", ".")) : 0;
+        const cxgNum = cxgVal !== "" ? parseFloat(cxgVal.replace(",", ".")) : 0;
         if (!isNaN(sacoNum) && sacoNum >= 0) total += sacoNum;
-        if (!isNaN(cxNum) && cxNum >= 0) total += convertCxToSaco(opt.value, cxNum);
+        if (!isNaN(cxpNum) && cxpNum >= 0) total += convertCxpToSaco(opt.value, cxpNum);
+        if (!isNaN(cxgNum) && cxgNum >= 0) total += convertCxgToSaco(opt.value, cxgNum);
       } else {
         const val = getVariantEditValue(sectorId, machineId, opt.value);
         if (val !== "") {
@@ -1060,12 +1089,12 @@ export default function Production() {
             <div className="px-6 pb-4">
               <div className="rounded-xl p-3" style={{ background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}>
                 <p className="text-xs text-violet-200/90 leading-relaxed">
-                  Quando a produção é registrada em <span className="font-bold text-amber-300">caixas</span>, o sistema converte automaticamente para <span className="font-bold text-blue-300">sacos</span> usando o fator abaixo.
+                  Quando a produção é registrada em <span className="font-bold text-orange-300">caixas pequenas</span> ou <span className="font-bold text-amber-300">caixas grandes</span>, o sistema converte automaticamente para <span className="font-bold text-blue-300">sacos</span> usando os fatores abaixo.
                   O total do setor é sempre exibido em sacos.
                 </p>
                 <div className="mt-2 px-3 py-2 rounded-lg" style={{ background: "rgba(255,255,255,0.05)" }}>
-                  <p className="text-[11px] text-violet-300 font-mono">
-                    Total (sacos) = <span className="text-blue-300">Sacos digitados</span> + (<span className="text-amber-300">Caixas digitadas</span> × <span className="text-emerald-300">Fator</span>)
+                  <p className="text-[11px] text-violet-300 font-mono leading-relaxed">
+                    Total (sacos) = <span className="text-blue-300">Sacos</span> + (<span className="text-orange-300">Cx Peq</span> × <span className="text-emerald-300">Fator Peq</span>) + (<span className="text-amber-300">Cx Grande</span> × <span className="text-emerald-300">Fator Grande</span>)
                   </p>
                 </div>
               </div>
@@ -1074,19 +1103,22 @@ export default function Production() {
             {/* Tabela de fatores */}
             <div className="px-6 pb-6">
               <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(139,92,246,0.2)" }}>
-                <div className="grid grid-cols-3 text-[10px] font-bold uppercase tracking-wider" style={{ background: "rgba(139,92,246,0.15)" }}>
+                <div className="grid grid-cols-[1fr_80px_80px] text-[10px] font-bold uppercase tracking-wider" style={{ background: "rgba(139,92,246,0.15)" }}>
                   <div className="px-4 py-2.5 text-violet-300">Medida</div>
-                  <div className="px-4 py-2.5 text-violet-300 text-center">Fator</div>
-                  <div className="px-4 py-2.5 text-violet-300 text-right">Exemplo</div>
+                  <div className="px-4 py-2.5 text-violet-300 text-center">Cx Peq</div>
+                  <div className="px-4 py-2.5 text-violet-300 text-center">Cx Grande</div>
                 </div>
-                {/* Todas as medidas únicas dos setores 2-3-4 */}
-                {Object.keys(CONVERSION_FACTORS).map((key: string, i: number) => {
-                  const opt = VARETEIRA_MEASURE_OPTIONS.find(o => o.value === key) || SELETORA_TOCO_MEASURE_OPTIONS.find(o => o.value === key) || SELECAO_AUTO_MEASURE_OPTIONS.find(o => o.value === key) || { value: key, label: key, bgClass: "bg-slate-50", textClass: "text-slate-800", borderClass: "border-slate-300" };
-                  const fator = CONVERSION_FACTORS[opt.value] || 1;
+                {/* Medidas em ordem crescente */}
+                {[
+                  "3.5x200mm", "3.5x250mm", "3.5x350mm",
+                  "3.8x150mm", "3.8x180mm", "3.8x200mm", "3.8x218mm", "3.8x220mm", "3.8x250mm", "3.8x350mm",
+                ].filter(key => CONVERSION_FACTORS[key]).map((key: string, i: number) => {
+                  const opt = VARETEIRA_MEASURE_OPTIONS.find(o => o.value === key) || SELETORA_TOCO_MEASURE_OPTIONS.find(o => o.value === key) || SELECAO_AUTO_MEASURE_OPTIONS.find(o => o.value === key) || FLOWPACK_MEASURE_OPTIONS.find(o => o.value === key) || { value: key, label: key.replace(".", ","), bgClass: "bg-slate-50", textClass: "text-slate-800", borderClass: "border-slate-300" };
+                  const factors = CONVERSION_FACTORS[key];
                   return (
                     <div
-                      key={opt.value}
-                      className="grid grid-cols-3 items-center"
+                      key={key}
+                      className="grid grid-cols-[1fr_80px_80px] items-center"
                       style={{ background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.05)" }}
                     >
                       <div className="px-4 py-2.5">
@@ -1096,22 +1128,36 @@ export default function Production() {
                         </span>
                       </div>
                       <div className="px-4 py-2.5 text-center">
-                        <span className="text-lg font-bold" style={{ color: "#a78bfa", textShadow: "0 0 10px rgba(167,139,250,0.5)" }}>
-                          {fator === 1 ? "1:1" : `1:${fator}`}
-                        </span>
+                        {factors.cxp > 0 ? (
+                          <span className="text-base font-bold" style={{ color: "#fb923c", textShadow: "0 0 8px rgba(251,146,60,0.4)" }}>
+                            {factors.cxp}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-500">—</span>
+                        )}
                       </div>
-                      <div className="px-4 py-2.5 text-right">
-                        <span className="text-[11px] text-slate-400">
-                          <span className="text-amber-300">1 cx</span> = <span className="text-blue-300">{fator} {fator === 1 ? "saco" : "sacos"}</span>
-                        </span>
+                      <div className="px-4 py-2.5 text-center">
+                        {factors.cxg > 0 ? (
+                          <span className="text-base font-bold" style={{ color: "#fbbf24", textShadow: "0 0 8px rgba(251,191,36,0.4)" }}>
+                            {factors.cxg}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-500">—</span>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
-              <p className="text-[10px] text-violet-400/60 mt-3 text-center">
-                Fatores serão atualizados conforme informações do gestor
-              </p>
+              <div className="mt-3 px-2">
+                <p className="text-[10px] text-violet-300/70 leading-relaxed">
+                  <span className="font-semibold text-orange-300">Cx Peq</span> = fator de conversão da caixa pequena para sacos &nbsp;|&nbsp;
+                  <span className="font-semibold text-amber-300">Cx Grande</span> = fator de conversão da caixa grande para sacos
+                </p>
+                <p className="text-[10px] text-violet-400/50 mt-1">
+                  Ex: 10 cx peq de 3,8x180mm = 10 × 0,5 = <span className="text-blue-300 font-semibold">5 sacos</span>
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1168,10 +1214,12 @@ function ExpandableMachineRow({
   for (const opt of variantOptions) {
     if (dualUnit) {
       const sacoVal = getVariantValue(`${opt.value}_saco`);
-      const cxVal = getVariantValue(`${opt.value}_cx`);
+      const cxpVal = getVariantValue(`${opt.value}_cxp`);
+      const cxgVal = getVariantValue(`${opt.value}_cxg`);
       const sacoNum = sacoVal !== "" ? parseFloat(sacoVal.replace(",", ".")) : 0;
-      const cxNum = cxVal !== "" ? parseFloat(cxVal.replace(",", ".")) : 0;
-      const totalSacos = (isNaN(sacoNum) ? 0 : sacoNum) + convertCxToSaco(opt.value, isNaN(cxNum) ? 0 : cxNum);
+      const cxpNum = cxpVal !== "" ? parseFloat(cxpVal.replace(",", ".")) : 0;
+      const cxgNum = cxgVal !== "" ? parseFloat(cxgVal.replace(",", ".")) : 0;
+      const totalSacos = (isNaN(sacoNum) ? 0 : sacoNum) + convertCxpToSaco(opt.value, isNaN(cxpNum) ? 0 : cxpNum) + convertCxgToSaco(opt.value, isNaN(cxgNum) ? 0 : cxgNum);
       if (totalSacos > 0) {
         variantDisplay.push({ label: opt.label, value: totalSacos, unit: "saco", bgClass: opt.bgClass, textClass: opt.textClass, borderClass: opt.borderClass });
       }
@@ -1301,59 +1349,65 @@ function ExpandableMachineRow({
               )}
             </div>
             {dualUnit ? (
-              /* ─── Dual unit layout: caixa + saco + total por medida ─── */
+              /* ─── Triple unit layout: cx peq + cx grande + saco + total por medida ─── */
               <div className="space-y-1.5">
                 {/* Header labels */}
-                <div className="grid grid-cols-[110px_70px_22px_36px_70px_22px_1fr] gap-1 items-center px-1">
+                <div className="grid grid-cols-[110px_60px_20px_60px_20px_60px_20px_1fr] gap-1 items-center px-1">
                   <span />
-                  <span className="text-[9px] font-bold text-amber-600 uppercase text-center">Caixa</span>
+                  <span className="text-[8px] font-bold text-orange-500 uppercase text-center">Cx Peq</span>
                   <span />
+                  <span className="text-[8px] font-bold text-amber-500 uppercase text-center">Cx Grande</span>
                   <span />
-                  <span className="text-[9px] font-bold text-blue-600 uppercase text-center">Saco</span>
+                  <span className="text-[8px] font-bold text-blue-600 uppercase text-center">Saco</span>
                   <span />
-                  <span className="text-[9px] font-bold text-emerald-600 uppercase text-right pr-1">Total</span>
+                  <span className="text-[8px] font-bold text-emerald-600 uppercase text-right pr-1">Total</span>
                 </div>
                 {variantOptions.map(opt => {
-                  const cxVal = getVariantValue(`${opt.value}_cx`);
+                  const cxpVal = getVariantValue(`${opt.value}_cxp`);
+                  const cxgVal = getVariantValue(`${opt.value}_cxg`);
                   const sacoVal = getVariantValue(`${opt.value}_saco`);
-                  const cxNum = cxVal !== "" ? parseFloat(cxVal.replace(",", ".")) : 0;
+                  const cxpNum = cxpVal !== "" ? parseFloat(cxpVal.replace(",", ".")) : 0;
+                  const cxgNum = cxgVal !== "" ? parseFloat(cxgVal.replace(",", ".")) : 0;
                   const sacoNum = sacoVal !== "" ? parseFloat(sacoVal.replace(",", ".")) : 0;
-                  const cxConverted = !isNaN(cxNum) && cxNum > 0 ? convertCxToSaco(opt.value, cxNum) : 0;
-                  const lineTotal = (!isNaN(sacoNum) ? sacoNum : 0) + cxConverted;
+                  const cxpConverted = !isNaN(cxpNum) && cxpNum > 0 ? convertCxpToSaco(opt.value, cxpNum) : 0;
+                  const cxgConverted = !isNaN(cxgNum) && cxgNum > 0 ? convertCxgToSaco(opt.value, cxgNum) : 0;
+                  const lineTotal = (!isNaN(sacoNum) ? sacoNum : 0) + cxpConverted + cxgConverted;
                   return (
-                    <div key={opt.value} className="grid grid-cols-[110px_70px_22px_36px_70px_22px_1fr] gap-1 items-center">
+                    <div key={opt.value} className="grid grid-cols-[110px_60px_20px_60px_20px_60px_20px_1fr] gap-1 items-center">
                       <div className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[10px] font-semibold shrink-0 whitespace-nowrap ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
                         <VariantIcon className="w-3 h-3 shrink-0" />
                         <span>{opt.label}</span>
                       </div>
+                      {/* Caixa Pequena */}
                       <input
-                        type="text" inputMode="decimal" value={cxVal}
-                        onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_cx`, e.target.value)}
+                        type="text" inputMode="decimal" value={cxpVal}
+                        onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_cxp`, e.target.value)}
                         placeholder="0" disabled={!canEdit}
-                        className={`w-full text-right text-sm font-medium border border-amber-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-amber-50/30'}`}
+                        className={`w-full text-right text-sm font-medium border border-orange-200 rounded-lg px-1.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-orange-50/30'}`}
                       />
-                      <span className="text-[8px] text-amber-500 font-medium text-center">cx</span>
-                      {/* Preview conversão caixa→saco */}
-                      <div className="text-center">
-                        {cxConverted > 0 ? (
-                          <span className="text-[9px] text-violet-500 font-semibold">≈{Math.round(cxConverted)}s</span>
-                        ) : (
-                          <span className="text-[9px] text-slate-300">—</span>
-                        )}
-                      </div>
+                      <span className="text-[7px] text-orange-400 font-medium text-center">cp</span>
+                      {/* Caixa Grande */}
+                      <input
+                        type="text" inputMode="decimal" value={cxgVal}
+                        onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_cxg`, e.target.value)}
+                        placeholder="0" disabled={!canEdit}
+                        className={`w-full text-right text-sm font-medium border border-amber-200 rounded-lg px-1.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-amber-50/30'}`}
+                      />
+                      <span className="text-[7px] text-amber-500 font-medium text-center">cg</span>
+                      {/* Saco */}
                       <input
                         type="text" inputMode="decimal" value={sacoVal}
                         onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_saco`, e.target.value)}
                         placeholder="0" disabled={!canEdit}
-                        className={`w-full text-right text-sm font-medium border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-blue-50/30'}`}
+                        className={`w-full text-right text-sm font-medium border border-blue-200 rounded-lg px-1.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-blue-50/30'}`}
                       />
-                      <span className="text-[8px] text-blue-500 font-medium text-center">sc</span>
+                      <span className="text-[7px] text-blue-500 font-medium text-center">sc</span>
                       {/* Total da medida em sacos */}
                       <div className="text-right pr-1">
                         <span className={`text-sm font-bold tabular-nums ${lineTotal > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>
                           {lineTotal > 0 ? Math.round(lineTotal).toLocaleString('pt-BR') : '0'}
                         </span>
-                        <span className="text-[8px] text-slate-400 ml-0.5">sc</span>
+                        <span className="text-[7px] text-slate-400 ml-0.5">sc</span>
                       </div>
                     </div>
                   );
