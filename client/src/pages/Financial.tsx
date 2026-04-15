@@ -1759,9 +1759,9 @@ function CashFlowCard() {
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[9px] font-semibold text-emerald-600 uppercase tracking-wider">A Receber</p>
-                  <p className="text-sm font-bold text-emerald-700 tabular-nums truncate">{formatCurrency(totalReceber)}</p>
-                  <p className="text-[8px] text-slate-400">8 semanas + vencidas</p>
+                  <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">A Receber</p>
+                  <p className="text-base font-bold text-emerald-700 tabular-nums truncate">{formatCurrency(totalReceber)}</p>
+                  <p className="text-[9px] text-slate-400">8 semanas + vencidas</p>
                 </div>
               </div>
               {/* A Pagar mini card */}
@@ -1770,9 +1770,9 @@ function CashFlowCard() {
                   <TrendingDown className="w-3.5 h-3.5 text-red-600" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[9px] font-semibold text-red-600 uppercase tracking-wider">A Pagar</p>
-                  <p className="text-sm font-bold text-red-700 tabular-nums truncate">{formatCurrency(totalPagar)}</p>
-                  <p className="text-[8px] text-slate-400">8 semanas + vencidas</p>
+                  <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wider">A Pagar</p>
+                  <p className="text-base font-bold text-red-700 tabular-nums truncate">{formatCurrency(totalPagar)}</p>
+                  <p className="text-[9px] text-slate-400">8 semanas + vencidas</p>
                 </div>
               </div>
               {/* Saldo Projetado mini card */}
@@ -1781,9 +1781,9 @@ function CashFlowCard() {
                   <Wallet className={`w-3.5 h-3.5 ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"}`} />
                 </div>
                 <div className="min-w-0">
-                  <p className={`text-[9px] font-semibold ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"} uppercase tracking-wider`}>Saldo</p>
-                  <p className={`text-sm font-bold tabular-nums truncate ${saldoTotal >= 0 ? "text-blue-700" : "text-red-700"}`}>{formatCurrency(saldoTotal)}</p>
-                  <p className="text-[8px] text-slate-400">Receber - Pagar</p>
+                  <p className={`text-[10px] font-semibold ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"} uppercase tracking-wider`}>Saldo</p>
+                  <p className={`text-base font-bold tabular-nums truncate ${saldoTotal >= 0 ? "text-blue-700" : "text-red-700"}`}>{formatCurrency(saldoTotal)}</p>
+                  <p className="text-[9px] text-slate-400">Receber - Pagar</p>
                 </div>
               </div>
             </div>

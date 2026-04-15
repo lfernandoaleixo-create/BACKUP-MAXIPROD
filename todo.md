@@ -2714,3 +2714,9 @@
 - [x] Card sofisticado e moderno para a consulta de cliente
 - [x] Contas Pagas: puxar todos os dados completos (fornecedor sem "-", descrição, anotações)
 - [x] Contas Pagas: garantir que todos os fornecedores apareçam (não faltar nenhum)
+
+## Ajustes Visuais Financeiro (15/04/2026)
+- [x] Cards de confrontamento: afinar (menos padding/grossura), cor vermelha mais suave e avermelhada (menos rosa/brilhosa)
+- [x] Substituir "fat." por "faturamento" (palavra completa)
+- [x] Fluxo de Caixa: aumentar tamanho da fonte nos cards (A Receber, A Pagar, Saldo)
+- [x] Criar seção IMPORTAÇÃO no dashboard de Estoque (mesmo estilo da INDUSTRIALIZAÇÃO MADEIRA, abaixo do card de sync, antes do estoque geral)
