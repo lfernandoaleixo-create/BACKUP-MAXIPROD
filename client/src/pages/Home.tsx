@@ -2908,9 +2908,7 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
             <p className="text-lg font-extrabold text-emerald-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div />
-          <div />
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 text-right" style={{ gridColumn: '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
             <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
@@ -3114,9 +3112,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
             <p className="text-lg font-extrabold text-emerald-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div />
-          <div />
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 text-right" style={{ gridColumn: '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
             <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
