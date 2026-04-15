@@ -137,7 +137,10 @@ export const productionRouter = router({
       }
 
       // ─── Embalagem (setor sem máquina) com data >= 15/04/2026 alimenta estoque Madeira PA ───
-      // Identifica Embalagem: machineId é null e tipoMadeira contém o codigoItem do produto
+      // ⚠️ AUTO-FEED DESABILITADO: estoque Madeira PA em modo MANUAL por solicitação do Guilherme.
+      // A produção continua sendo registrada no histórico, mas NÃO altera o estoque automaticamente.
+      // Para reativar: remover o flag MADEIRA_STOCK_AUTO_FEED_DISABLED abaixo.
+      const MADEIRA_STOCK_AUTO_FEED_DISABLED = true; // ← Mudar para false para reativar
       const STOCK_CUTOFF_DATE = "2026-04-15";
       if (
         input.machineId === null &&
@@ -153,35 +156,37 @@ export const productionRouter = router({
           const diff = input.quantidade - previousQty;
 
           if (diff !== 0) {
-            // Get current stock value
+            // Get current stock value (para registro no histórico)
             const stockRows = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, codigoItem));
             const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
-            const newStock = Math.max(0, currentStock + diff); // Não deixar ficar negativo
+            const newStock = Math.max(0, currentStock + diff);
 
-            // Record history
+            // Record history (SEMPRE registra, mesmo com auto-feed desabilitado)
             await db.insert(stockEditHistory).values({
               card: "madeira",
               codigoItem,
               descricaoItem: null,
               valorAnterior: String(currentStock),
-              valorNovo: String(newStock),
+              valorNovo: MADEIRA_STOCK_AUTO_FEED_DISABLED ? `${String(newStock)} (não aplicado - manual)` : String(newStock),
               operador: `Produção (${input.lancadoPor || "Sistema"})`,
               tipo: "alteracao",
             });
 
-            // Upsert stock
-            await db.insert(madeiraStock)
-              .values({
-                codigoItem,
-                quantidade: String(newStock),
-                updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
-              })
-              .onDuplicateKeyUpdate({
-                set: {
-                  quantidade: sql`${String(newStock)}`,
+            // Upsert stock - SÓ se auto-feed estiver habilitado
+            if (!MADEIRA_STOCK_AUTO_FEED_DISABLED) {
+              await db.insert(madeiraStock)
+                .values({
+                  codigoItem,
+                  quantidade: String(newStock),
                   updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
-                },
-              });
+                })
+                .onDuplicateKeyUpdate({
+                  set: {
+                    quantidade: sql`${String(newStock)}`,
+                    updatedBy: `Produção (${input.lancadoPor || "Sistema"})`,
+                  },
+                });
+            }
           }
         }
       }
@@ -234,6 +239,8 @@ export const productionRouter = router({
       const newVariants = new Set(input.entries.map(e => e.tipoMadeira || null));
 
       // ─── Embalagem auto-feed: verificar se é setor Embalagem para atualizar estoque ───
+      // ⚠️ AUTO-FEED DESABILITADO: estoque Madeira PA em modo MANUAL por solicitação do Guilherme.
+      const BATCH_MADEIRA_STOCK_AUTO_FEED_DISABLED = true; // ← Mudar para false para reativar
       const STOCK_CUTOFF_DATE = "2026-04-15";
       let isEmbalagemSector = false;
       if (input.machineId === null && input.data >= STOCK_CUTOFF_DATE) {
@@ -331,28 +338,32 @@ export const productionRouter = router({
             const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
             const newStock = Math.max(0, currentStock + diff);
 
+            // Record history (SEMPRE registra, mesmo com auto-feed desabilitado)
             await db.insert(stockEditHistory).values({
               card: "madeira",
               codigoItem,
               descricaoItem: null,
               valorAnterior: String(currentStock),
-              valorNovo: String(newStock),
+              valorNovo: BATCH_MADEIRA_STOCK_AUTO_FEED_DISABLED ? `${String(newStock)} (não aplicado - manual)` : String(newStock),
               operador: `Produção (${lancadoPor})`,
               tipo: "alteracao",
             });
 
-            await db.insert(madeiraStock)
-              .values({
-                codigoItem,
-                quantidade: String(newStock),
-                updatedBy: `Produção (${lancadoPor})`,
-              })
-              .onDuplicateKeyUpdate({
-                set: {
-                  quantidade: sql`${String(newStock)}`,
+            // Upsert stock - SÓ se auto-feed estiver habilitado
+            if (!BATCH_MADEIRA_STOCK_AUTO_FEED_DISABLED) {
+              await db.insert(madeiraStock)
+                .values({
+                  codigoItem,
+                  quantidade: String(newStock),
                   updatedBy: `Produção (${lancadoPor})`,
-                },
-              });
+                })
+                .onDuplicateKeyUpdate({
+                  set: {
+                    quantidade: sql`${String(newStock)}`,
+                    updatedBy: `Produção (${lancadoPor})`,
+                  },
+                });
+            }
           }
         }
       }
