@@ -2599,3 +2599,14 @@
 
 ## Ajustar Altura dos KPI Cards do Bambu (15/04/2026)
 - [x] Igualar altura dos KPI cards em todos os cards expandíveis (Bambu/ClassificationCard, Madeira PA, Semi Pronto, Aguardando) - py-3.5 + text-lg + mt-1 para consistência visual
+
+## Visibilidade da Aba Produção para Todos os Operadores (15/04/2026)
+- [x] Todos os operadores (Erica, Maria, Bruno, Fernando, Guilherme) devem poder visualizar todos os cards/setores da aba Produção
+- [x] Todos podem expandir cards, ver dados, navegar por tudo
+- [x] Apenas Maria pode preencher/editar dados na Pirografia (campos desabilitados para outros)
+- [x] Outros setores mantêm regra existente de quem pode editar
+
+## Fix: Visibilidade Completa dos Setores para Não-Maria (15/04/2026)
+- [x] PirografiaSector: mostrar seletor Bambu/Madeira, lista de produtos e registros para todos (somente leitura)
+- [x] EmbalagemSector: mostrar lista de produtos e busca para todos (somente leitura)
+- [x] Campos de entrada (nome, quantidade, botão salvar) desabilitados para não-Maria

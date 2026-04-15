@@ -1781,134 +1781,133 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
         </div>
       )}
 
-      {/* Divider between registered and search - only show if can edit */}
-      {canEdit && registeredProducts.length > 0 && (
+      {/* Divider between registered and search */}
+      {registeredProducts.length > 0 && (
         <div className="flex items-center gap-2 pt-1">
           <div className="flex-1 h-px bg-slate-200" />
-          <span className="text-xs text-slate-400">Adicionar produto</span>
+          <span className="text-xs text-slate-400">{canEdit ? 'Adicionar produto' : 'Produtos disponíveis'}</span>
           <div className="flex-1 h-px bg-slate-200" />
         </div>
       )}
 
-      {/* Search bar and product list - only show if can edit */}
-      {canEdit && (
-        <>
-          {/* Category selector: Madeira / Bambu */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => { setCategoria("madeira"); setSearch(""); setSelectedProduct(null); }}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
-                categoria === "madeira"
-                  ? "bg-amber-50 border-amber-400 text-amber-800 shadow-sm shadow-amber-100"
-                  : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              <span className="flex items-center justify-center gap-2">
-                <span className="text-base">🪵</span>
-                Madeira
-              </span>
-            </button>
-            <button
-              onClick={() => { setCategoria("bambu"); setSearch(""); setSelectedProduct(null); }}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
-                categoria === "bambu"
-                  ? "bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm shadow-emerald-100"
-                  : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              <span className="flex items-center justify-center gap-2">
-                <span className="text-base">🎋</span>
-                Bambu
-              </span>
-            </button>
-          </div>
+      {/* Search bar and product list - visible to all */}
+      <>
+        {/* Category selector: Madeira / Bambu */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setCategoria("madeira"); setSearch(""); setSelectedProduct(null); }}
+            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+              categoria === "madeira"
+                ? "bg-amber-50 border-amber-400 text-amber-800 shadow-sm shadow-amber-100"
+                : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <span className="text-base">🪵</span>
+              Madeira
+            </span>
+          </button>
+          <button
+            onClick={() => { setCategoria("bambu"); setSearch(""); setSelectedProduct(null); }}
+            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+              categoria === "bambu"
+                ? "bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm shadow-emerald-100"
+                : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <span className="flex items-center justify-center gap-2">
+              <span className="text-base">🎋</span>
+              Bambu
+            </span>
+          </button>
+        </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={`Buscar produto ${categoria === "madeira" ? "de madeira" : "de bambu"}...`}
-              className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
-                <X className="w-3 h-3 text-slate-500" />
-              </button>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={`Buscar produto ${categoria === "madeira" ? "de madeira" : "de bambu"}...`}
+            className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
+              <X className="w-3 h-3 text-slate-500" />
+            </button>
+          )}
+        </div>
+
+        {/* Product list (only unregistered) */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <div className="max-h-[300px] overflow-y-auto space-y-1 -mx-1 px-1">
+            {filteredProducts.map((product: any) => {
+              const isSelected = selectedProduct?.codigoItem === product.codigoItem;
+
+              return (
+                <div key={product.codigoItem}>
+                  <button
+                    onClick={() => handleSelectProduct(product)}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-3 ${
+                      isSelected
+                        ? "bg-teal-50 border border-teal-300 ring-1 ring-teal-200"
+                        : "bg-white border border-slate-100 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-mono text-slate-400">{product.codigoItem}</div>
+                      <div className="text-sm text-slate-700 truncate">{product.descricaoItem}</div>
+                    </div>
+                    {isSelected ? <ChevronDown className="w-4 h-4 text-teal-600 shrink-0" /> : <Plus className="w-4 h-4 text-slate-300 shrink-0" />}
+                  </button>
+
+                  {/* Expanded: quantity input - only editable for Maria */}
+                  {isSelected && canEdit && (
+                    <div className="ml-6 mt-1 mb-2 flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-2">
+                      <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="text-xs text-slate-500 shrink-0">Qtd:</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={qty}
+                        onChange={(e) => setQty(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+                        placeholder="0"
+                        autoFocus
+                        className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
+                      />
+                      <span className="text-xs text-slate-400">cx</span>
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                      >
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  )}
+                  {/* Read-only: show product is selected but no form */}
+                  {isSelected && !canEdit && (
+                    <div className="ml-6 mt-1 mb-2 bg-slate-50 rounded-lg border border-slate-200 p-2">
+                      <p className="text-xs text-slate-400 italic">Somente visualização — apenas Maria pode registrar</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {filteredProducts.length === 0 && !search && registeredProducts.length > 0 && (
+              <div className="text-center py-4 text-sm text-slate-400">Todos os produtos já foram registrados</div>
+            )}
+            {filteredProducts.length === 0 && search && (
+              <div className="text-center py-4 text-sm text-slate-400">Nenhum produto encontrado</div>
             )}
           </div>
-
-          {/* Product list (only unregistered) */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-6">
-              <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-            </div>
-          ) : (
-            <div className="max-h-[300px] overflow-y-auto space-y-1 -mx-1 px-1">
-              {filteredProducts.map((product: any) => {
-                const isSelected = selectedProduct?.codigoItem === product.codigoItem;
-
-                return (
-                  <div key={product.codigoItem}>
-                    <button
-                      onClick={() => handleSelectProduct(product)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-3 ${
-                        isSelected
-                          ? "bg-teal-50 border border-teal-300 ring-1 ring-teal-200"
-                          : "bg-white border border-slate-100 hover:bg-slate-50"
-                      }`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-mono text-slate-400">{product.codigoItem}</div>
-                        <div className="text-sm text-slate-700 truncate">{product.descricaoItem}</div>
-                      </div>
-                      {isSelected ? <ChevronDown className="w-4 h-4 text-teal-600 shrink-0" /> : <Plus className="w-4 h-4 text-slate-300 shrink-0" />}
-                    </button>
-
-                    {/* Expanded: quantity input */}
-                    {isSelected && (
-                      <div className="ml-6 mt-1 mb-2 flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-2">
-                        <Package className="w-4 h-4 text-slate-400 shrink-0" />
-                        <span className="text-xs text-slate-500 shrink-0">Qtd:</span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={qty}
-                          onChange={(e) => setQty(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
-                          placeholder="0"
-                          autoFocus
-                          className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
-                        />
-                        <span className="text-xs text-slate-400">cx</span>
-                        <button
-                          onClick={handleSave}
-                          disabled={isSaving}
-                          className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-                        >
-                          {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              {filteredProducts.length === 0 && !search && registeredProducts.length > 0 && (
-                <div className="text-center py-4 text-sm text-slate-400">Todos os produtos já foram registrados</div>
-              )}
-              {filteredProducts.length === 0 && search && (
-                <div className="text-center py-4 text-sm text-slate-400">Nenhum produto encontrado</div>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Read-only message for non-Maria operators when no products registered */}
-      {!canEdit && registeredProducts.length === 0 && (
-        <div className="text-center py-4 text-sm text-slate-400">Nenhum produto registrado neste dia</div>
-      )}
+        )}
+      </>
     </div>
   );
 }
@@ -2208,152 +2207,151 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
                   </div>
                 )}
 
-                {/* Add new entry form - only if canEdit */}
-                {canEdit && (
-                  <div className="space-y-3">
-                    {machineEntries.length > 0 && (
-                      <div className="flex items-center gap-2 pt-1">
-                        <div className="flex-1 h-px bg-slate-200" />
-                        <span className="text-xs text-slate-400">Novo registro</span>
-                        <div className="flex-1 h-px bg-slate-200" />
-                      </div>
-                    )}
-
-                    {/* Category selector */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setCategoria("bambu"); setSearch(""); setSelectedProduct(null); }}
-                        className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
-                          categoria === "bambu"
-                            ? "bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm shadow-emerald-100"
-                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
-                        }`}
-                      >
-                        <span className="flex items-center justify-center gap-1.5">
-                          <span className="text-sm">🎋</span> Bambu
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => { setCategoria("madeira"); setSearch(""); setSelectedProduct(null); }}
-                        className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
-                          categoria === "madeira"
-                            ? "bg-amber-50 border-amber-400 text-amber-800 shadow-sm shadow-amber-100"
-                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
-                        }`}
-                      >
-                        <span className="flex items-center justify-center gap-1.5">
-                          <span className="text-sm">🪵</span> Madeira
-                        </span>
-                      </button>
+                {/* Category selector, search and product list - visible to all */}
+                <div className="space-y-3">
+                  {machineEntries.length > 0 && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <div className="flex-1 h-px bg-slate-200" />
+                      <span className="text-xs text-slate-400">{canEdit ? 'Novo registro' : 'Produtos disponíveis'}</span>
+                      <div className="flex-1 h-px bg-slate-200" />
                     </div>
+                  )}
 
-                    {/* Product search */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder={`Buscar produto ${categoria === "bambu" ? "de bambu" : "de madeira"}...`}
-                        className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
-                      />
-                      {search && (
-                        <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
-                          <X className="w-3 h-3 text-slate-500" />
-                        </button>
-                      )}
-                    </div>
+                  {/* Category selector */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setCategoria("bambu"); setSearch(""); setSelectedProduct(null); }}
+                      className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+                        categoria === "bambu"
+                          ? "bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm shadow-emerald-100"
+                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="flex items-center justify-center gap-1.5">
+                        <span className="text-sm">🎋</span> Bambu
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => { setCategoria("madeira"); setSearch(""); setSelectedProduct(null); }}
+                      className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+                        categoria === "madeira"
+                          ? "bg-amber-50 border-amber-400 text-amber-800 shadow-sm shadow-amber-100"
+                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="flex items-center justify-center gap-1.5">
+                        <span className="text-sm">🪵</span> Madeira
+                      </span>
+                    </button>
+                  </div>
 
-                    {/* Product list */}
-                    {loadingProducts ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-                      </div>
-                    ) : (
-                      <div className="max-h-[200px] overflow-y-auto space-y-1 -mx-1 px-1">
-                        {filteredProducts.map((product: any) => {
-                          const isSelected = selectedProduct?.codigoItem === product.codigoItem;
-                          return (
-                            <div key={product.codigoItem}>
-                              <button
-                                onClick={() => {
-                                  if (isSelected) { setSelectedProduct(null); } else {
-                                    setSelectedProduct(product);
-                                    setSelectedMachineId(machine.id);
-                                    setQty("");
-                                  }
-                                }}
-                                className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-3 ${
-                                  isSelected
-                                    ? "bg-orange-50 border border-orange-300 ring-1 ring-orange-200"
-                                    : "bg-white border border-slate-100 hover:bg-slate-50"
-                                }`}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-mono text-slate-400">{product.codigoItem}</div>
-                                  <div className="text-sm text-slate-700 truncate">{product.descricaoItem}</div>
-                                </div>
-                                {isSelected ? <ChevronDown className="w-4 h-4 text-orange-600 shrink-0" /> : <Plus className="w-4 h-4 text-slate-300 shrink-0" />}
-                              </button>
-
-                              {/* Expanded: name + quantity input */}
-                              {isSelected && (
-                                <div className="ml-4 mt-1 mb-2 space-y-2 bg-white rounded-lg border border-slate-200 p-3">
-                                  {/* Nome pirografado */}
-                                  <div className="flex items-center gap-2">
-                                    <Flame className="w-4 h-4 text-orange-500 shrink-0" />
-                                    <span className="text-xs text-slate-500 shrink-0 whitespace-nowrap">Nome pirografado:</span>
-                                    <input
-                                      type="text"
-                                      value={nomePirografado}
-                                      onChange={(e) => setNomePirografado(e.target.value)}
-                                      placeholder="Ex: João Silva"
-                                      className="flex-1 text-sm font-medium border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
-                                    />
-                                  </div>
-                                  {/* Quantidade */}
-                                  <div className="flex items-center gap-2">
-                                    <Package className="w-4 h-4 text-slate-400 shrink-0" />
-                                    <span className="text-xs text-slate-500 shrink-0">Qtd:</span>
-                                    <input
-                                      type="text"
-                                      inputMode="decimal"
-                                      value={qty}
-                                      onChange={(e) => setQty(e.target.value)}
-                                      onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
-                                      placeholder="0"
-                                      className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 tabular-nums bg-white"
-                                    />
-                                    <span className="text-xs text-slate-400">cx</span>
-                                    <button
-                                      onClick={handleSave}
-                                      disabled={isSaving}
-                                      className="ml-auto px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-orange-600 text-white text-xs font-medium hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-                                    >
-                                      {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                      Salvar
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                        {filteredProducts.length === 0 && search && (
-                          <div className="text-center py-4 text-sm text-slate-400">Nenhum produto encontrado</div>
-                        )}
-                        {filteredProducts.length === 0 && !search && (
-                          <div className="text-center py-4 text-sm text-slate-400">Nenhum produto disponível</div>
-                        )}
-                      </div>
+                  {/* Product search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder={`Buscar produto ${categoria === "bambu" ? "de bambu" : "de madeira"}...`}
+                      className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                    />
+                    {search && (
+                      <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
+                        <X className="w-3 h-3 text-slate-500" />
+                      </button>
                     )}
                   </div>
-                )}
 
-                {/* Read-only empty state */}
-                {!canEdit && machineEntries.length === 0 && (
-                  <div className="text-center py-4 text-sm text-slate-400">Nenhum registro neste dia</div>
-                )}
+                  {/* Product list */}
+                  {loadingProducts ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                    </div>
+                  ) : (
+                    <div className="max-h-[200px] overflow-y-auto space-y-1 -mx-1 px-1">
+                      {filteredProducts.map((product: any) => {
+                        const isSelected = selectedProduct?.codigoItem === product.codigoItem;
+                        return (
+                          <div key={product.codigoItem}>
+                            <button
+                              onClick={() => {
+                                if (isSelected) { setSelectedProduct(null); } else {
+                                  setSelectedProduct(product);
+                                  setSelectedMachineId(machine.id);
+                                  setQty("");
+                                }
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-3 ${
+                                isSelected
+                                  ? "bg-orange-50 border border-orange-300 ring-1 ring-orange-200"
+                                  : "bg-white border border-slate-100 hover:bg-slate-50"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-mono text-slate-400">{product.codigoItem}</div>
+                                <div className="text-sm text-slate-700 truncate">{product.descricaoItem}</div>
+                              </div>
+                              {isSelected ? <ChevronDown className="w-4 h-4 text-orange-600 shrink-0" /> : <Plus className="w-4 h-4 text-slate-300 shrink-0" />}
+                            </button>
+
+                            {/* Expanded: name + quantity input - only editable for Maria */}
+                            {isSelected && canEdit && (
+                              <div className="ml-4 mt-1 mb-2 space-y-2 bg-white rounded-lg border border-slate-200 p-3">
+                                {/* Nome pirografado */}
+                                <div className="flex items-center gap-2">
+                                  <Flame className="w-4 h-4 text-orange-500 shrink-0" />
+                                  <span className="text-xs text-slate-500 shrink-0 whitespace-nowrap">Nome pirografado:</span>
+                                  <input
+                                    type="text"
+                                    value={nomePirografado}
+                                    onChange={(e) => setNomePirografado(e.target.value)}
+                                    placeholder="Ex: João Silva"
+                                    className="flex-1 text-sm font-medium border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                                  />
+                                </div>
+                                {/* Quantidade */}
+                                <div className="flex items-center gap-2">
+                                  <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                                  <span className="text-xs text-slate-500 shrink-0">Qtd:</span>
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={qty}
+                                    onChange={(e) => setQty(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+                                    placeholder="0"
+                                    className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 tabular-nums bg-white"
+                                  />
+                                  <span className="text-xs text-slate-400">cx</span>
+                                  <button
+                                    onClick={handleSave}
+                                    disabled={isSaving}
+                                    className="ml-auto px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-orange-600 text-white text-xs font-medium hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                                  >
+                                    {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                    Salvar
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            {/* Read-only: show product is selected but no form */}
+                            {isSelected && !canEdit && (
+                              <div className="ml-4 mt-1 mb-2 bg-slate-50 rounded-lg border border-slate-200 p-3">
+                                <p className="text-xs text-slate-400 italic">Somente visualização — apenas Maria pode registrar pirografia</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {filteredProducts.length === 0 && search && (
+                        <div className="text-center py-4 text-sm text-slate-400">Nenhum produto encontrado</div>
+                      )}
+                      {filteredProducts.length === 0 && !search && (
+                        <div className="text-center py-4 text-sm text-slate-400">Nenhum produto disponível</div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
