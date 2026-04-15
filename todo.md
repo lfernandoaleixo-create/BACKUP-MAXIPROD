@@ -2596,3 +2596,6 @@
 - [x] UI: Registro por máquina (Máquina 1, 2, 3)
 - [x] Tudo registrado no banco para histórico futuro
 - [x] Testes automatizados para endpoints de pirografia (17 testes passando)
+
+## Ajustar Altura dos KPI Cards do Bambu (15/04/2026)
+- [x] Igualar altura dos KPI cards em todos os cards expandíveis (Bambu/ClassificationCard, Madeira PA, Semi Pronto, Aguardando) - py-3.5 + text-lg + mt-1 para consistência visual

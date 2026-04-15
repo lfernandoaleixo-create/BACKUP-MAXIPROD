@@ -1837,29 +1837,29 @@ function ClassificationCard({
 
         {/* Metrics row - Desktop: Quantidades */}
         <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
-          <div className="bg-teal-50/80 rounded-lg px-3 py-2">
+          <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-base font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-orange-50/80 rounded-lg px-3 py-2">
+          <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className={`text-base font-extrabold ${totalPedidos > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className={`rounded-lg px-3 py-2 ${totalDisponivel < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
+          <div className={`rounded-lg px-3 py-3.5 ${totalDisponivel < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
-            <p className={`text-base font-extrabold ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-blue-50/80 rounded-lg px-3 py-2">
+          <div className="bg-blue-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">PO (Compra)</p>
-            <p className={`text-base font-extrabold ${totalPO > 0 ? 'text-blue-700' : 'text-slate-400'}`}>{formatNumber(totalPO)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPO > 0 ? 'text-blue-700' : 'text-slate-400'}`}>{formatNumber(totalPO)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-indigo-50/80 rounded-lg px-3 py-2">
+          <div className="bg-indigo-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Projetado</p>
-            <p className={`text-base font-extrabold ${totalProjetado < 0 ? 'text-red-700' : 'text-indigo-700'}`}>{formatNumber(totalProjetado)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalProjetado < 0 ? 'text-red-700' : 'text-indigo-700'}`}>{formatNumber(totalProjetado)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-slate-50/80 rounded-lg px-3 py-2">
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
-            <p className="text-base font-extrabold text-slate-700">{parentCount}</p>
+            <p className="text-lg font-extrabold text-slate-700 mt-1">{parentCount}</p>
           </div>
         </div>
 
@@ -2496,20 +2496,20 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
           </div>
         </div>
         <div className="hidden sm:grid grid-cols-5 gap-3 mt-4 ml-16">
-          <div className="bg-teal-50/80 rounded-lg px-3 py-2">
+          <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-base font-extrabold text-teal-700">{formatNumber(paEstoqueCx)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(paEstoqueCx)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-orange-50/80 rounded-lg px-3 py-2">
+          <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className={`text-base font-extrabold ${paPedidosCx > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(paPedidosCx)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${paPedidosCx > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(paPedidosCx)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className={`rounded-lg px-3 py-2 ${paDisponivelCx < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
+          <div className={`rounded-lg px-3 py-3.5 ${paDisponivelCx < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
-            <p className={`text-base font-extrabold ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           {/* ROJÃO mini-card */}
-          <div className="bg-blue-50/80 rounded-lg px-3 py-2 border border-blue-200">
+          <div className="bg-blue-50/80 rounded-lg px-3 py-3.5 border border-blue-200">
             <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-0.5">Rojão (dz)</p>
             <div className="space-y-0">
               <div className="flex justify-between items-baseline">
@@ -2527,7 +2527,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             </div>
           </div>
           {/* APITO mini-card */}
-          <div className="bg-purple-50/80 rounded-lg px-3 py-2 border border-purple-200">
+          <div className="bg-purple-50/80 rounded-lg px-3 py-3.5 border border-purple-200">
             <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider mb-0.5">Apito (kg)</p>
             <div className="space-y-0">
               <div className="flex justify-between items-baseline">
@@ -2891,21 +2891,21 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
           </div>
         </div>
 <div className="hidden sm:grid grid-cols-4 gap-3 mt-4 ml-16">
-           <div className="bg-teal-50/80 rounded-lg px-3 py-2">
+           <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
              <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-             <p className="text-base font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+             <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
            </div>
-           <div className="bg-orange-50/80 rounded-lg px-3 py-2">
+           <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
              <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-             <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+             <p className="text-lg font-extrabold text-slate-400 mt-1">0 <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-emerald-50/80 rounded-lg px-4 py-2.5">
+          <div className="bg-emerald-50/80 rounded-lg px-4 py-3.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
-            <p className="text-lg font-extrabold text-emerald-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-emerald-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-slate-50/80 rounded-lg px-4 py-2.5">
+          <div className="bg-slate-50/80 rounded-lg px-4 py-3.5">
             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
-            <p className="text-lg font-extrabold text-slate-700">{parentItems.length}</p>
+            <p className="text-lg font-extrabold text-slate-700 mt-1">{parentItems.length}</p>
           </div>
         </div>
       </div>
