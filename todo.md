@@ -2679,3 +2679,9 @@
 - [x] Testes para contraprova aplicando statusFilter (VENCIDO/A_VENCER)
 - [x] Testes para contraprova aplicando formaFilter (Boleto/Cheque/PIX)
 - [x] Testes para contraprova com filtros combinados
+
+## Ajuste Visual dos Cards de Estoque (15/04/2026)
+- [x] Título do produto em cinza claro
+- [x] Labels (Estoque, Pedidos, Disponível) e valores em preto
+- [x] Mini-cards Rojão e Apito: labels e valores todos em roxo
+- [x] Não abreviar 'Dispon.' nos mini-cards Rojão e Apito (usar 'Disponível')

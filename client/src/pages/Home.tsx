@@ -2509,20 +2509,20 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             <p className={`text-lg font-extrabold mt-1 ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           {/* ROJÃO mini-card */}
-          <div className="bg-blue-50/80 rounded-lg px-3 py-3.5 border border-blue-200">
-            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-0.5">Rojão (dz)</p>
+          <div className="bg-purple-50/80 rounded-lg px-3 py-3.5 border border-purple-200">
+            <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider mb-0.5">Rojão (dz)</p>
             <div className="space-y-0">
               <div className="flex justify-between items-baseline">
-                <span className="text-[9px] text-slate-500 font-semibold">Estoque</span>
-                <span className="text-xs font-extrabold text-blue-700">{formatNumber(paEstoqueDz)}</span>
+                <span className="text-[9px] text-purple-600 font-semibold">Estoque</span>
+                <span className="text-xs font-extrabold text-purple-700">{formatNumber(paEstoqueDz)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[9px] text-orange-500 font-semibold">Pedidos</span>
-                <span className={`text-xs font-extrabold ${paPedidosDz > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosDz)}</span>
+                <span className="text-[9px] text-purple-600 font-semibold">Pedidos</span>
+                <span className={`text-xs font-extrabold ${paPedidosDz > 0 ? 'text-purple-700' : 'text-slate-400'}`}>{formatNumber(paPedidosDz)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className={`text-[9px] font-bold ${paDisponivelDz < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Dispon.</span>
-                <span className={`text-xs font-black ${paDisponivelDz < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelDz)}</span>
+                <span className={`text-[9px] font-bold ${paDisponivelDz < 0 ? 'text-red-600' : 'text-purple-600'}`}>Disponível</span>
+                <span className={`text-xs font-black ${paDisponivelDz < 0 ? 'text-red-700' : 'text-purple-700'}`}>{formatNumber(paDisponivelDz)}</span>
               </div>
             </div>
           </div>
@@ -2531,16 +2531,16 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider mb-0.5">Apito (kg)</p>
             <div className="space-y-0">
               <div className="flex justify-between items-baseline">
-                <span className="text-[9px] text-slate-500 font-semibold">Estoque</span>
+                <span className="text-[9px] text-purple-600 font-semibold">Estoque</span>
                 <span className="text-xs font-extrabold text-purple-700">{formatNumber(paEstoqueKg)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[9px] text-orange-500 font-semibold">Pedidos</span>
-                <span className={`text-xs font-extrabold ${paPedidosKg > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosKg)}</span>
+                <span className="text-[9px] text-purple-600 font-semibold">Pedidos</span>
+                <span className={`text-xs font-extrabold ${paPedidosKg > 0 ? 'text-purple-700' : 'text-slate-400'}`}>{formatNumber(paPedidosKg)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className={`text-[9px] font-bold ${paDisponivelKg < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Dispon.</span>
-                <span className={`text-xs font-black ${paDisponivelKg < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelKg)}</span>
+                <span className={`text-[9px] font-bold ${paDisponivelKg < 0 ? 'text-red-600' : 'text-purple-600'}`}>Disponível</span>
+                <span className={`text-xs font-black ${paDisponivelKg < 0 ? 'text-red-700' : 'text-purple-700'}`}>{formatNumber(paDisponivelKg)}</span>
               </div>
             </div>
           </div>
@@ -3807,24 +3807,24 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         {/* Card Rojão expandido: Estoque, Pedidos, Disponível */}
         <div className="rounded-xl border bg-white p-3 shadow-sm" style={{ borderTop: '3px solid #22c55e' }}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Rojão 7x1000 (dz)</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rojão 7x1000 (dz)</span>
             <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center">
               <Package className="w-4 h-4 text-green-600" />
             </div>
           </div>
           <div className="space-y-1.5">
             <div className="flex justify-between items-baseline">
-              <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
-              <span className="text-sm font-extrabold text-green-700">{formatNumber(estoqueDuzias)} dz</span>
+              <span className="text-[10px] text-slate-900 font-semibold">Estoque</span>
+              <span className="text-sm font-extrabold text-slate-900">{formatNumber(estoqueDuzias)} dz</span>
             </div>
             <div className="flex justify-between items-baseline">
-              <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
-              <span className={`text-sm font-extrabold ${pedidosDuzias > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(pedidosDuzias)} dz</span>
+              <span className="text-[10px] text-slate-900 font-semibold">Pedidos</span>
+              <span className="text-sm font-extrabold text-slate-900">{formatNumber(pedidosDuzias)} dz</span>
             </div>
             <div className="h-px bg-slate-100" />
             <div className="flex justify-between items-baseline">
-              <span className={`text-[10px] font-bold ${disponivelDuzias < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
-              <span className={`text-base font-extrabold ${disponivelDuzias < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(disponivelDuzias)} dz</span>
+              <span className="text-[10px] font-bold text-slate-900">Disponível</span>
+              <span className={`text-base font-extrabold ${disponivelDuzias < 0 ? 'text-red-700' : 'text-slate-900'}`}>{formatNumber(disponivelDuzias)} dz</span>
             </div>
           </div>
         </div>
