@@ -2498,3 +2498,11 @@
 - [x] Colunas caixa e saco mais estreitas
 - [x] Somatório total à direita de cada medida (caixa convertida + saco = total em sacos)
 - [x] Preview de conversão: ao preencher caixa, mostrar "= X sacos" na coluna da medida
+
+## Alterações Medidas e Embalagem (15/04/2026 - Parte 14)
+- [x] Vareteira (2): renomear para 3,8x + adicionar 3,5x200, 3,5x250, 3,5x350
+- [x] Seletora Toco (3): adicionar Máquina 4, remover 150/300/350, renomear para 3,8x, adicionar 3,5x200, 3,5x250
+- [x] Seleção Automática (4): remover 300/350, adicionar 3,5x200/3,5x250, renomear para 3,8x
+- [x] Seleção Visual (5): adicionar 3,8x na frente + adicionar 3,5x200mm
+- [x] Ponteira (7): adicionar 3,8x na frente de todas
+- [x] Embalagem (8): seletor Madeira/Bambu com 2 categorias de produtos do estoque

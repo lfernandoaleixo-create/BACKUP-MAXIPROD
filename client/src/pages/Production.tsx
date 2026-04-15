@@ -34,28 +34,68 @@ const WOOD_TYPE_OPTIONS = [
   { value: "madeira_dura", label: "Madeira Dura", color: "#059669", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
 ];
 
-// ─── Wood measure options (Vareteira) - always shown ───
-const WOOD_MEASURE_OPTIONS = [
-  { value: "150mm", label: "150mm", color: "#0ea5e9", bgClass: "bg-sky-50", textClass: "text-sky-800", borderClass: "border-sky-300" },
-  { value: "180mm", label: "180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
-  { value: "200mm", label: "200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
-  { value: "218mm", label: "218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
-  { value: "250mm", label: "250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
-  { value: "300mm", label: "300mm", color: "#84cc16", bgClass: "bg-lime-50", textClass: "text-lime-800", borderClass: "border-lime-300" },
-  { value: "350mm", label: "350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
+// ─── Medidas por setor ───
+// Vareteira (setor 2): todas 3,8x + 3,5x200/250/350
+const VARETEIRA_MEASURE_OPTIONS = [
+  { value: "3.8x150mm", label: "3,8x150mm", color: "#0ea5e9", bgClass: "bg-sky-50", textClass: "text-sky-800", borderClass: "border-sky-300" },
+  { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
+  { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
+  { value: "3.8x218mm", label: "3,8x218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
+  { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+  { value: "3.8x300mm", label: "3,8x300mm", color: "#84cc16", bgClass: "bg-lime-50", textClass: "text-lime-800", borderClass: "border-lime-300" },
+  { value: "3.8x350mm", label: "3,8x350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
+  { value: "3.5x200mm", label: "3,5x200mm", color: "#f97316", bgClass: "bg-orange-50", textClass: "text-orange-800", borderClass: "border-orange-300" },
+  { value: "3.5x250mm", label: "3,5x250mm", color: "#ef4444", bgClass: "bg-red-50", textClass: "text-red-800", borderClass: "border-red-300" },
+  { value: "3.5x350mm", label: "3,5x350mm", color: "#ec4899", bgClass: "bg-pink-50", textClass: "text-pink-800", borderClass: "border-pink-300" },
+];
+
+// Seletora de Toco (setor 3): sem 150/300/350, 3,8x nas restantes + 3,5x200/250
+const SELETORA_TOCO_MEASURE_OPTIONS = [
+  { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
+  { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
+  { value: "3.8x218mm", label: "3,8x218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
+  { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+  { value: "3.5x200mm", label: "3,5x200mm", color: "#f97316", bgClass: "bg-orange-50", textClass: "text-orange-800", borderClass: "border-orange-300" },
+  { value: "3.5x250mm", label: "3,5x250mm", color: "#ef4444", bgClass: "bg-red-50", textClass: "text-red-800", borderClass: "border-red-300" },
+];
+
+// Seleção Automática (setor 4): sem 300/350, 3,8x nas restantes + 3,5x200/250
+const SELECAO_AUTO_MEASURE_OPTIONS = [
+  { value: "3.8x150mm", label: "3,8x150mm", color: "#0ea5e9", bgClass: "bg-sky-50", textClass: "text-sky-800", borderClass: "border-sky-300" },
+  { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
+  { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
+  { value: "3.8x218mm", label: "3,8x218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
+  { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+  { value: "3.5x200mm", label: "3,5x200mm", color: "#f97316", bgClass: "bg-orange-50", textClass: "text-orange-800", borderClass: "border-orange-300" },
+  { value: "3.5x250mm", label: "3,5x250mm", color: "#ef4444", bgClass: "bg-red-50", textClass: "text-red-800", borderClass: "border-red-300" },
+];
+
+// Seleção Visual (setor 5): 3,8x em todas + 3,5x200mm
+const SELECAO_VISUAL_MEASURE_OPTIONS = [
+  { value: "3.8x150mm", label: "3,8x150mm", color: "#0ea5e9", bgClass: "bg-sky-50", textClass: "text-sky-800", borderClass: "border-sky-300" },
+  { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
+  { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
+  { value: "3.8x218mm", label: "3,8x218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
+  { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+  { value: "3.8x300mm", label: "3,8x300mm", color: "#84cc16", bgClass: "bg-lime-50", textClass: "text-lime-800", borderClass: "border-lime-300" },
+  { value: "3.8x350mm", label: "3,8x350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
+  { value: "3.5x200mm", label: "3,5x200mm", color: "#f97316", bgClass: "bg-orange-50", textClass: "text-orange-800", borderClass: "border-orange-300" },
 ];
 
 // ─── Fatores de conversão caixa → saco (setores 2, 3, 4) ───
 // Cada medida tem um fator diferente. 1 caixa = X sacos.
 // Será atualizado com os fatores reais fornecidos pelo usuário.
 const CONVERSION_FACTORS: Record<string, number> = {
-  "150mm": 1,
-  "180mm": 1,
-  "200mm": 1,
-  "218mm": 1,
-  "250mm": 1,
-  "300mm": 1,
-  "350mm": 1,
+  "3.8x150mm": 1,
+  "3.8x180mm": 1,
+  "3.8x200mm": 1,
+  "3.8x218mm": 1,
+  "3.8x250mm": 1,
+  "3.8x300mm": 1,
+  "3.8x350mm": 1,
+  "3.5x200mm": 1,
+  "3.5x250mm": 1,
+  "3.5x350mm": 1,
 };
 
 // Setores que usam sistema dual caixa/saco (Vareteira, Seletoras Toco, Seleção Automática)
@@ -68,10 +108,10 @@ function convertCxToSaco(medida: string, caixas: number): number {
 
 // ─── Measure options (Ponteira) - always shown ───
 const PONTEIRA_MEASURE_OPTIONS = [
-  { value: "180mm", label: "180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
-  { value: "200mm", label: "200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
-  { value: "220mm", label: "220mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
-  { value: "250mm", label: "250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+  { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
+  { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
+  { value: "3.8x220mm", label: "3,8x220mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
+  { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
 ];
 
 // ─── Wood type options (Pirografar) - always shown ───
@@ -134,7 +174,10 @@ function getVariantOptions(sectorOrdem: number) {
   if (isMultilamina(sectorOrdem)) return WOOD_TYPE_OPTIONS;
   if (isPirografar(sectorOrdem)) return PIROGRAFAR_TYPE_OPTIONS;
   if (isPonteira(sectorOrdem)) return PONTEIRA_MEASURE_OPTIONS;
-  if (hasMeasureFeatures(sectorOrdem)) return WOOD_MEASURE_OPTIONS;
+  if (sectorOrdem === 2) return VARETEIRA_MEASURE_OPTIONS;
+  if (sectorOrdem === 3) return SELETORA_TOCO_MEASURE_OPTIONS;
+  if (sectorOrdem === 4) return SELECAO_AUTO_MEASURE_OPTIONS;
+  if (sectorOrdem === 5) return SELECAO_VISUAL_MEASURE_OPTIONS;
   return [];
 }
 
@@ -1034,7 +1077,9 @@ export default function Production() {
                   <div className="px-4 py-2.5 text-violet-300 text-center">Fator</div>
                   <div className="px-4 py-2.5 text-violet-300 text-right">Exemplo</div>
                 </div>
-                {WOOD_MEASURE_OPTIONS.map((opt, i) => {
+                {/* Todas as medidas únicas dos setores 2-3-4 */}
+                {Object.keys(CONVERSION_FACTORS).map((key: string, i: number) => {
+                  const opt = VARETEIRA_MEASURE_OPTIONS.find(o => o.value === key) || SELETORA_TOCO_MEASURE_OPTIONS.find(o => o.value === key) || SELECAO_AUTO_MEASURE_OPTIONS.find(o => o.value === key) || { value: key, label: key, bgClass: "bg-slate-50", textClass: "text-slate-800", borderClass: "border-slate-300" };
                   const fator = CONVERSION_FACTORS[opt.value] || 1;
                   return (
                     <div
@@ -1429,8 +1474,9 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
   const [qty, setQty] = useState("");
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [editCardQty, setEditCardQty] = useState("");
+  const [categoria, setCategoria] = useState<"madeira" | "bambu">("madeira");
 
-  const { data: products, isLoading } = trpc.production.getFinishedProducts.useQuery();
+  const { data: products, isLoading } = trpc.production.getFinishedProducts.useQuery({ categoria });
 
   // Entries for this sector on the selected date
   const sectorEntries = useMemo(() => {
@@ -1623,13 +1669,43 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
       {/* Search bar and product list - only show if can edit */}
       {canEdit && (
         <>
+          {/* Category selector: Madeira / Bambu */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setCategoria("madeira"); setSearch(""); setSelectedProduct(null); }}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+                categoria === "madeira"
+                  ? "bg-amber-50 border-amber-400 text-amber-800 shadow-sm shadow-amber-100"
+                  : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <span className="text-base">🪵</span>
+                Madeira
+              </span>
+            </button>
+            <button
+              onClick={() => { setCategoria("bambu"); setSearch(""); setSelectedProduct(null); }}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+                categoria === "bambu"
+                  ? "bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm shadow-emerald-100"
+                  : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <span className="text-base">🎋</span>
+                Bambu
+              </span>
+            </button>
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar produto acabado..."
+              placeholder={`Buscar produto ${categoria === "madeira" ? "de madeira" : "de bambu"}...`}
               className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
             />
             {search && (

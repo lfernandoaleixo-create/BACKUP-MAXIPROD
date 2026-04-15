@@ -376,16 +376,32 @@ export const productionRouter = router({
   }),
 
   /**
-   * Get finished products (Madeira - Produto Acabado) from dashboard data.
+   * Get finished products for Embalagem sector.
    * Used by Embalagem (setor 8) to list products for packaging registration.
+   * Supports two categories: "madeira" (Madeira PA) and "bambu" (Importação/Bambu).
    */
-  getFinishedProducts: publicProcedure.query(async () => {
+  getFinishedProducts: publicProcedure
+    .input(z.object({ categoria: z.enum(["madeira", "bambu"]).optional() }).optional())
+    .query(async ({ input }) => {
     const db = await getDb();
     if (!db) return [];
-    // Get products from stock_items that belong to the "Madeira - Produto Acabado" card.
-    // This card shows items classified as grupo="industrializacao" in stockProcessor:
-    //   - superGrupoCodigo = "05" (Industrialização: varetas G:06, espetos G:07, palitos G:08)
-    //   - superGrupoCodigo = "16" AND grupoCodigo IN ("18", "19") (Madeira serrada/pinus)
+    const categoria = input?.categoria || "madeira";
+    
+    let whereClause;
+    if (categoria === "bambu") {
+      // Bambu/Importação: superGrupoCodigo = "12" (Importação revenda: bambu, fibra)
+      whereClause = eq(stockItems.superGrupoCodigo, "12");
+    } else {
+      // Madeira PA: superGrupoCodigo = "05" OR ("16" AND grupoCodigo IN ("18","19"))
+      whereClause = or(
+        eq(stockItems.superGrupoCodigo, "05"),
+        and(
+          eq(stockItems.superGrupoCodigo, "16"),
+          inArray(stockItems.grupoCodigo, ["18", "19"])
+        )
+      );
+    }
+    
     const rows = await db
       .select({
         codigoItem: stockItems.codigoItem,
@@ -393,15 +409,7 @@ export const productionRouter = router({
         unidadeMedida: stockItems.unidadeMedida,
       })
       .from(stockItems)
-      .where(
-        or(
-          eq(stockItems.superGrupoCodigo, "05"),
-          and(
-            eq(stockItems.superGrupoCodigo, "16"),
-            inArray(stockItems.grupoCodigo, ["18", "19"])
-          )
-        )
-      )
+      .where(whereClause)
       .orderBy(stockItems.descricaoItem);
     
     // Deduplicate by codigoItem (same product may appear in multiple stock locations)
