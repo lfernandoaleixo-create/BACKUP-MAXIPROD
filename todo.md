@@ -2610,3 +2610,8 @@
 - [x] PirografiaSector: mostrar seletor Bambu/Madeira, lista de produtos e registros para todos (somente leitura)
 - [x] EmbalagemSector: mostrar lista de produtos e busca para todos (somente leitura)
 - [x] Campos de entrada (nome, quantidade, botão salvar) desabilitados para não-Maria
+
+## Pirografia: Visualização Aberta para Não-Maria (15/04/2026)
+- [x] Fernando, Bruno e Guilherme devem ver campos de preenchimento (nome pirografado, quantidade, tipo de produto) abertos em modo somente leitura
+- [x] Não precisam clicar para ver — visualização geral já aberta (formulário completo com campos desabilitados)
+- [x] Maria mantém o fluxo interativo atual (editável)

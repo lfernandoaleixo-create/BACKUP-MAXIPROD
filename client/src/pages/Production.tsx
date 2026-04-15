@@ -2334,10 +2334,41 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
                                 </div>
                               </div>
                             )}
-                            {/* Read-only: show product is selected but no form */}
+                            {/* Read-only: show full form fields disabled for non-Maria */}
                             {isSelected && !canEdit && (
-                              <div className="ml-4 mt-1 mb-2 bg-slate-50 rounded-lg border border-slate-200 p-3">
-                                <p className="text-xs text-slate-400 italic">Somente visualização — apenas Maria pode registrar pirografia</p>
+                              <div className="ml-4 mt-1 mb-2 space-y-2 bg-slate-50 rounded-lg border border-slate-200 p-3">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Visualização do formulário</span>
+                                </div>
+                                {/* Material */}
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${product.materialOrigem === "bambu" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                                    {product.materialOrigem === "bambu" ? "🎋 Bambu" : "🪵 Madeira"}
+                                  </span>
+                                  <span className="text-xs text-slate-500 truncate">{product.descricaoItem}</span>
+                                </div>
+                                {/* Nome pirografado - disabled */}
+                                <div className="flex items-center gap-2">
+                                  <Flame className="w-4 h-4 text-orange-400 shrink-0" />
+                                  <span className="text-xs text-slate-400 shrink-0 whitespace-nowrap">Nome pirografado:</span>
+                                  <div className="flex-1 text-sm text-slate-400 border border-slate-200 rounded-md px-2 py-1.5 bg-slate-100 cursor-not-allowed">
+                                    Ex: João Silva
+                                  </div>
+                                </div>
+                                {/* Quantidade - disabled */}
+                                <div className="flex items-center gap-2">
+                                  <Package className="w-4 h-4 text-slate-300 shrink-0" />
+                                  <span className="text-xs text-slate-400 shrink-0">Qtd:</span>
+                                  <div className="w-20 text-right text-sm text-slate-400 border border-slate-200 rounded-md px-2 py-1.5 bg-slate-100 tabular-nums cursor-not-allowed">
+                                    0
+                                  </div>
+                                  <span className="text-xs text-slate-400">cx</span>
+                                  <div className="ml-auto px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-slate-300 text-white text-xs font-medium cursor-not-allowed shrink-0">
+                                    <Save className="w-3.5 h-3.5" />
+                                    Salvar
+                                  </div>
+                                </div>
+                                <p className="text-[10px] text-slate-400 italic pt-1">Somente Maria pode registrar pirografia</p>
                               </div>
                             )}
                           </div>
