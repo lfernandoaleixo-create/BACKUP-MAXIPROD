@@ -2728,3 +2728,4 @@
 - [x] KPI Estoque Total: mostrar apenas produtos de importação (revenda + MP), excluir industrialização (madeira) da contagem de produtos e totais
 - [x] Investigar e corrigir divergência KPI PO (13.989 cx) vs seção Pedidos de Compra (9.639 cx) — causa: produto 00058 (kg) usava poUn em vez de totalCx. Fix: poCxVal sempre usa totalCx. Ambos agora mostram 9.639 cx
 - [x] Card Alertas na Industrialização Madeira: ajustar altura para ficar igual aos outros KPI cards (h-full no KPICard e no wrapper)
+- [x] PO 00058: na tabela de estoque poCx = 4500 kg (150 cx × 30kg), KPI PO usa poLotes (9.639 cx), POOverviewCard usa poLotes (9.639 cx). Projetado = 320 + 4500 = 4820 kg. 16 testes passando.

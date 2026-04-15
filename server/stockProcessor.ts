@@ -613,10 +613,11 @@ export async function processStockData(): Promise<void> {
       : null;
     // Disponível = Estoque - Pedidos (em caixas)
     const disponivelCxVal = estoqueCxVal !== null ? estoqueCxVal - (pedidosCxVal ?? 0) : null;
-    // PO em caixas/sacos (espelho fiel do Maxiprod) — NUNCA converter para kg/un
-    // O Maxiprod mostra POs em quantidade de embalagem (caixas/sacos), não em unidades
-    const poCxVal = poCx || null;
-    // Projetado = Disponível + PO
+    // Para produtos kg (ex: Vareta Apito PCT 20KG): PO na tabela de estoque deve ser em kg
+    // (150 cx × 30kg = 4500 kg) para somar com estoque/disponível que já está em kg.
+    // Os poLotes mantêm quantidade em caixas (como chega da China) para a seção POs.
+    const poCxVal = isKg ? poUn : (poCx || null);
+    // Projetado = Disponível + PO (ambos na mesma unidade: kg para isKg, cx para outros)
     const projetadoCxVal = disponivelCxVal !== null ? disponivelCxVal + (poCxVal ?? 0) : null;
     
     processed.push({

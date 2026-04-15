@@ -3306,7 +3306,15 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const totalEstoqueCx = importItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
   const totalPedidosCx = importItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
   const totalDisponivelCx = importItems.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0);
-  const totalPOCx = importItems.reduce((sum, i) => sum + (i.poCx ?? 0), 0);
+  // KPI PO: somar em caixas usando poLotes (quantidade original da PO)
+  // Para produtos kg (ex: 00058), poCx está em kg para a tabela, mas o KPI deve mostrar caixas
+  const totalPOCx = importItems.reduce((sum, i) => {
+    if (i.poLotes && i.poLotes.length > 0) {
+      return sum + i.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0);
+    }
+    return sum + (i.poCx ?? 0);
+  }, 0);
+  // Projetado usa poCx (que já está na unidade correta do estoque: kg para kg, cx para cx)
   const totalProjetadoCx = importItems.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
 
   // Madeira KPI totals (Madeira card + Semi Pronto + Aguardando Escolha)
