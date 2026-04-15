@@ -2493,3 +2493,8 @@
 - [x] Somatório total sempre em sacos (saco direto + caixa convertida)
 - [x] Ícone "Olho" visível para todos com card brilhante/neon mostrando fator de conversão e cálculo
 - [x] Fatores de conversão padrão (1:1) prontos para atualização posterior
+
+## Ajustes Layout Caixa/Saco (15/04/2026 - Parte 13)
+- [x] Colunas caixa e saco mais estreitas
+- [x] Somatório total à direita de cada medida (caixa convertida + saco = total em sacos)
+- [x] Preview de conversão: ao preencher caixa, mostrar "= X sacos" na coluna da medida

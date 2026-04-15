@@ -1244,23 +1244,29 @@ function ExpandableMachineRow({
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Produção por {variantLabel}</p>
             </div>
             {dualUnit ? (
-              /* ─── Dual unit layout: caixa + saco por medida ─── */
-              <div className="space-y-2">
+              /* ─── Dual unit layout: caixa + saco + total por medida ─── */
+              <div className="space-y-1.5">
                 {/* Header labels */}
-                <div className="grid grid-cols-[100px_1fr_32px_1fr_32px] gap-1.5 items-center px-1">
+                <div className="grid grid-cols-[90px_80px_22px_40px_80px_22px_1fr] gap-1 items-center px-1">
                   <span />
-                  <span className="text-[10px] font-semibold text-amber-600 uppercase text-center">Caixa</span>
+                  <span className="text-[9px] font-bold text-amber-600 uppercase text-center">Caixa</span>
                   <span />
-                  <span className="text-[10px] font-semibold text-blue-600 uppercase text-center">Saco</span>
                   <span />
+                  <span className="text-[9px] font-bold text-blue-600 uppercase text-center">Saco</span>
+                  <span />
+                  <span className="text-[9px] font-bold text-emerald-600 uppercase text-right pr-1">Total</span>
                 </div>
                 {variantOptions.map(opt => {
                   const cxVal = getVariantValue(`${opt.value}_cx`);
                   const sacoVal = getVariantValue(`${opt.value}_saco`);
+                  const cxNum = cxVal !== "" ? parseFloat(cxVal.replace(",", ".")) : 0;
+                  const sacoNum = sacoVal !== "" ? parseFloat(sacoVal.replace(",", ".")) : 0;
+                  const cxConverted = !isNaN(cxNum) && cxNum > 0 ? convertCxToSaco(opt.value, cxNum) : 0;
+                  const lineTotal = (!isNaN(sacoNum) ? sacoNum : 0) + cxConverted;
                   return (
-                    <div key={opt.value} className="grid grid-cols-[100px_1fr_32px_1fr_32px] gap-1.5 items-center">
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold shrink-0 ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
-                        <VariantIcon className="w-3.5 h-3.5 shrink-0" />
+                    <div key={opt.value} className="grid grid-cols-[90px_80px_22px_40px_80px_22px_1fr] gap-1 items-center">
+                      <div className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[11px] font-semibold shrink-0 ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
+                        <VariantIcon className="w-3 h-3 shrink-0" />
                         <span className="truncate">{opt.label}</span>
                       </div>
                       <input
@@ -1269,14 +1275,29 @@ function ExpandableMachineRow({
                         placeholder="0" disabled={!canEdit}
                         className={`w-full text-right text-sm font-medium border border-amber-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-amber-50/30'}`}
                       />
-                      <span className="text-[9px] text-amber-500 font-medium text-center">cx</span>
+                      <span className="text-[8px] text-amber-500 font-medium text-center">cx</span>
+                      {/* Preview conversão caixa→saco */}
+                      <div className="text-center">
+                        {cxConverted > 0 ? (
+                          <span className="text-[9px] text-violet-500 font-semibold">≈{Math.round(cxConverted)}s</span>
+                        ) : (
+                          <span className="text-[9px] text-slate-300">—</span>
+                        )}
+                      </div>
                       <input
                         type="text" inputMode="decimal" value={sacoVal}
                         onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_saco`, e.target.value)}
                         placeholder="0" disabled={!canEdit}
                         className={`w-full text-right text-sm font-medium border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-blue-50/30'}`}
                       />
-                      <span className="text-[9px] text-blue-500 font-medium text-center">saco</span>
+                      <span className="text-[8px] text-blue-500 font-medium text-center">sc</span>
+                      {/* Total da medida em sacos */}
+                      <div className="text-right pr-1">
+                        <span className={`text-sm font-bold tabular-nums ${lineTotal > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>
+                          {lineTotal > 0 ? Math.round(lineTotal).toLocaleString('pt-BR') : '0'}
+                        </span>
+                        <span className="text-[8px] text-slate-400 ml-0.5">sc</span>
+                      </div>
                     </div>
                   );
                 })}
