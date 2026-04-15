@@ -36,7 +36,8 @@ const WOOD_TYPE_OPTIONS = [
 
 // ─── Medidas por setor ───
 // Vareteira (setor 2): todas 3,8x + 3,5x200/250/350
-const VARETEIRA_MEASURE_OPTIONS = [
+// Vareteira: medidas base (3,8x) para máquinas 1-4
+const VARETEIRA_BASE_OPTIONS = [
   { value: "3.8x150mm", label: "3,8x150mm", color: "#0ea5e9", bgClass: "bg-sky-50", textClass: "text-sky-800", borderClass: "border-sky-300" },
   { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
   { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
@@ -44,10 +45,15 @@ const VARETEIRA_MEASURE_OPTIONS = [
   { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
   { value: "3.8x300mm", label: "3,8x300mm", color: "#84cc16", bgClass: "bg-lime-50", textClass: "text-lime-800", borderClass: "border-lime-300" },
   { value: "3.8x350mm", label: "3,8x350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
+];
+// Vareteira: medidas extras (3,5x) apenas para máquina 5
+const VARETEIRA_EXTRA_35_OPTIONS = [
   { value: "3.5x200mm", label: "3,5x200mm", color: "#f97316", bgClass: "bg-orange-50", textClass: "text-orange-800", borderClass: "border-orange-300" },
   { value: "3.5x250mm", label: "3,5x250mm", color: "#ef4444", bgClass: "bg-red-50", textClass: "text-red-800", borderClass: "border-red-300" },
   { value: "3.5x350mm", label: "3,5x350mm", color: "#ec4899", bgClass: "bg-pink-50", textClass: "text-pink-800", borderClass: "border-pink-300" },
 ];
+// Vareteira completa (máquina 5): base + extras
+const VARETEIRA_MEASURE_OPTIONS = [...VARETEIRA_BASE_OPTIONS, ...VARETEIRA_EXTRA_35_OPTIONS];
 
 // Seletora de Toco (setor 3): sem 150/300/350, 3,8x nas restantes + 3,5x200/250
 const SELETORA_TOCO_MEASURE_OPTIONS = [
@@ -170,11 +176,14 @@ function hasMeasureFeatures(ordem: number) { return ordem === 2 || ordem === 3 |
 function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2 || ordem === 3 || ordem === 4 || ordem === 5 || ordem === 6 || ordem === 7 || ordem === 9; }
 
 // Get the FIXED variant options for a sector (always all shown)
-function getVariantOptions(sectorOrdem: number) {
+function getVariantOptions(sectorOrdem: number, machineOrdem?: number) {
   if (isMultilamina(sectorOrdem)) return WOOD_TYPE_OPTIONS;
   if (isPirografar(sectorOrdem)) return PIROGRAFAR_TYPE_OPTIONS;
   if (isPonteira(sectorOrdem)) return PONTEIRA_MEASURE_OPTIONS;
-  if (sectorOrdem === 2) return VARETEIRA_MEASURE_OPTIONS;
+  if (sectorOrdem === 2) {
+    // Vareteira: máquina 5 tem medidas extras 3,5x; máquinas 1-4 só 3,8x
+    return machineOrdem === 5 ? VARETEIRA_MEASURE_OPTIONS : VARETEIRA_BASE_OPTIONS;
+  }
   if (sectorOrdem === 3) return SELETORA_TOCO_MEASURE_OPTIONS;
   if (sectorOrdem === 4) return SELECAO_AUTO_MEASURE_OPTIONS;
   if (sectorOrdem === 5) return SELECAO_VISUAL_MEASURE_OPTIONS;
@@ -377,7 +386,8 @@ export default function Production() {
       }
       const dualUnit = isDualUnitSector(sector.ordem);
       for (const machine of sector.machines) {
-        for (const opt of variantOpts) {
+        const machineVariantOpts = getVariantOptions(sector.ordem, machine.ordem);
+        for (const opt of machineVariantOpts) {
           if (dualUnit) {
             // Dual unit: saco direto + caixa convertida
             const sacoKey = `${sectorId}-${machine.id}-${opt.value}_saco`;
@@ -447,12 +457,12 @@ export default function Production() {
   };
 
   // Save for expandable sectors - sends ALL variant options or simple upsert if no variants
-  const handleVariantSave = (sectorId: number, machineId: number | null, sectorOrdem: number) => {
+  const handleVariantSave = (sectorId: number, machineId: number | null, sectorOrdem: number, machineOrdem?: number) => {
     const machineKey = `${sectorId}-${machineId || "null"}`;
     const status = statusValues[machineKey] || getEntryStatus(sectorId, machineId);
     const comment = commentValues[machineKey] !== undefined ? commentValues[machineKey] : getEntryComment(sectorId, machineId);
 
-    const variantOpts = getVariantOptions(sectorOrdem);
+    const variantOpts = getVariantOptions(sectorOrdem, machineOrdem);
 
     // Setores expandíveis sem variantes (6, 7, 9): usar upsertEntry simples com status
     if (variantOpts.length === 0) {
@@ -555,7 +565,7 @@ export default function Production() {
         const machineKey = `${sector.id}-${machine.id || "null"}`;
 
         if (expandable) {
-          const variantOpts = getVariantOptions(sector.ordem);
+          const variantOpts = getVariantOptions(sector.ordem, machine.ordem);
           const status = statusValues[machineKey] || getEntryStatus(sector.id, machine.id);
           const comment = commentValues[machineKey] !== undefined ? commentValues[machineKey] : getEntryComment(sector.id, machine.id);
 
@@ -751,8 +761,8 @@ export default function Production() {
   };
 
   // Compute live total for a machine from all fixed variant fields (or simple edit value if no variants)
-  const getMachineLiveTotal = (sectorId: number, machineId: number | null, sectorOrdem: number): number => {
-    const variantOpts = getVariantOptions(sectorOrdem);
+  const getMachineLiveTotal = (sectorId: number, machineId: number | null, sectorOrdem: number, machineOrdem?: number): number => {
+    const variantOpts = getVariantOptions(sectorOrdem, machineOrdem);
     if (variantOpts.length === 0) {
       // No variants: use simple edit value
       const val = getEditValue(sectorId, machineId);
@@ -918,15 +928,6 @@ export default function Production() {
                       <div className="flex-1 text-left">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold text-slate-800">{sector.ordem}. {sector.nome}</span>
-                          {isDualUnitSector(sector.ordem) && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setShowConversionModal(true); }}
-                              className="w-7 h-7 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-300/50 hover:shadow-violet-400/70 hover:scale-110 transition-all duration-200"
-                              title="Ver fatores de conversão"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                          )}
                         </div>
                         <div className="text-xs text-slate-400 mt-0.5">
                           {hasMachines ? `${sector.quantidadeEquipamentos} ${sector.tipoEquipamento === "mesa" ? "mesas" : "máquinas"}` : "Sem equipamento"}
@@ -956,7 +957,7 @@ export default function Production() {
                                     isSaving={savingKeys.has(`${sector.id}-${machine.id}`)}
                                     currentStatus={getStatusValue(sector.id, machine.id)}
                                     currentComment={getCommentValue(sector.id, machine.id)}
-                                    liveTotal={getMachineLiveTotal(sector.id, machine.id, sector.ordem)}
+                                    liveTotal={getMachineLiveTotal(sector.id, machine.id, sector.ordem, machine.ordem)}
                                     changed={hasChanges(sector.id, machine.id)}
                                     currentVal={getEditValue(sector.id, machine.id)}
                                     getVariantValue={(v) => getVariantEditValue(sector.id, machine.id, v)}
@@ -967,8 +968,9 @@ export default function Production() {
                                     selectedStatuses={getSelectedStatuses(sector.id, machine.id)}
                                     onSetVariantValue={(v, val) => setVariantEditValue(`${sector.id}-${machine.id}-${v}`, val)}
                                     onSetComment={(v) => setCommentValue(sector.id, machine.id, v)}
-                                    onSave={() => handleVariantSave(sector.id, machine.id, sector.ordem)}
+                                    onSave={() => handleVariantSave(sector.id, machine.id, sector.ordem, machine.ordem)}
                                     canEdit={canEdit}
+                                    onShowConversion={() => setShowConversionModal(true)}
                                   />
                                 );
                               }
@@ -1144,6 +1146,7 @@ interface ExpandableMachineRowProps {
   onSetComment: (v: string) => void;
   onSave: () => void;
   canEdit?: boolean;
+  onShowConversion?: () => void;
 }
 
 function ExpandableMachineRow({
@@ -1151,10 +1154,10 @@ function ExpandableMachineRow({
   currentStatus, currentComment, liveTotal, changed,
   currentVal, getVariantValue, onToggleMachine, onToggleComment, onToggleStatus,
   selectedStatuses, onSetValue, onSetVariantValue, onSetComment, onSave,
-  canEdit = true,
+  canEdit = true, onShowConversion,
 }: ExpandableMachineRowProps) {
   const hasComment = currentComment.trim().length > 0;
-  const variantOptions = getVariantOptions(sector.ordem);
+  const variantOptions = getVariantOptions(sector.ordem, machine.ordem);
   const variantLabel = getVariantLabel(sector.ordem);
   const VariantIcon = getVariantIcon(sector.ordem);
   const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
@@ -1287,12 +1290,21 @@ function ExpandableMachineRow({
             <div className="flex items-center gap-2 mb-3">
               <VariantIcon className="w-3.5 h-3.5 text-slate-500" />
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Produção por {variantLabel}</p>
+              {isDualUnitSector(sector.ordem) && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onShowConversion?.(); }}
+                  className="w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-violet-300/50 hover:shadow-violet-400/70 hover:scale-110 transition-all duration-200 ml-auto"
+                  title="Ver fatores de conversão"
+                >
+                  <Eye className="w-3 h-3" />
+                </button>
+              )}
             </div>
             {dualUnit ? (
               /* ─── Dual unit layout: caixa + saco + total por medida ─── */
               <div className="space-y-1.5">
                 {/* Header labels */}
-                <div className="grid grid-cols-[90px_80px_22px_40px_80px_22px_1fr] gap-1 items-center px-1">
+                <div className="grid grid-cols-[110px_70px_22px_36px_70px_22px_1fr] gap-1 items-center px-1">
                   <span />
                   <span className="text-[9px] font-bold text-amber-600 uppercase text-center">Caixa</span>
                   <span />
@@ -1309,10 +1321,10 @@ function ExpandableMachineRow({
                   const cxConverted = !isNaN(cxNum) && cxNum > 0 ? convertCxToSaco(opt.value, cxNum) : 0;
                   const lineTotal = (!isNaN(sacoNum) ? sacoNum : 0) + cxConverted;
                   return (
-                    <div key={opt.value} className="grid grid-cols-[90px_80px_22px_40px_80px_22px_1fr] gap-1 items-center">
-                      <div className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[11px] font-semibold shrink-0 ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
+                    <div key={opt.value} className="grid grid-cols-[110px_70px_22px_36px_70px_22px_1fr] gap-1 items-center">
+                      <div className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[10px] font-semibold shrink-0 whitespace-nowrap ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
                         <VariantIcon className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{opt.label}</span>
+                        <span>{opt.label}</span>
                       </div>
                       <input
                         type="text" inputMode="decimal" value={cxVal}

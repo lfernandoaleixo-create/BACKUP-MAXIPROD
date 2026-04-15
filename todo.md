@@ -2506,3 +2506,8 @@
 - [x] Seleção Visual (5): adicionar 3,8x na frente + adicionar 3,5x200mm
 - [x] Ponteira (7): adicionar 3,8x na frente de todas
 - [x] Embalagem (8): seletor Madeira/Bambu com 2 categorias de produtos do estoque
+
+## Ajustes Visuais e Medidas (15/04/2026 - Parte 15)
+- [x] Expandir badges das medidas para mostrar nome completo (sem truncar)
+- [x] Mover olho roxo para ao lado do título "PRODUÇÃO POR MEDIDA DE MADEIRA"
+- [x] Vareteira (2): medidas 3,5x200/250/350 apenas na Máquina 5, máquinas 1-4 só com 3,8x
