@@ -26,6 +26,9 @@ interface MaxiprodAutoVerifierProps {
   empresaNome?: string;
   bancoNome?: string;
   contaNumero?: string;
+  // Filtros de status e forma de cobrança
+  statusFilter?: "TODOS" | "VENCIDO" | "A_VENCER";
+  formaFilter?: "TODOS" | "PIX" | "Boleto" | "Cheque" | "Depósito" | "Dinheiro";
 }
 
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br";
@@ -280,6 +283,8 @@ export default function MaxiprodAutoVerifier({
   empresaNome,
   bancoNome,
   contaNumero,
+  statusFilter,
+  formaFilter,
 }: MaxiprodAutoVerifierProps) {
   const [showResult, setShowResult] = useState(false);
 
@@ -293,14 +298,16 @@ export default function MaxiprodAutoVerifier({
 
   useEffect(() => { ensureAnimationStyles(); }, []);
 
-  // Auto-query Maxiprod via backend (inclui filtros de empresa/conta para recebiveis)
+  // Auto-query Maxiprod via backend (inclui filtros de empresa/conta/status/forma para recebiveis)
   const queryInput = useMemo(() => {
-    const base: { section: VerifySection; startDate: string; endDate: string; empresaNome?: string; bancoNome?: string; contaNumero?: string } = { section, startDate, endDate };
+    const base: { section: VerifySection; startDate: string; endDate: string; empresaNome?: string; bancoNome?: string; contaNumero?: string; statusFilter?: "TODOS" | "VENCIDO" | "A_VENCER"; formaFilter?: "TODOS" | "PIX" | "Boleto" | "Cheque" | "Depósito" | "Dinheiro" } = { section, startDate, endDate };
     if (empresaNome) base.empresaNome = empresaNome;
     if (bancoNome) base.bancoNome = bancoNome;
     if (contaNumero) base.contaNumero = contaNumero;
+    if (statusFilter && statusFilter !== "TODOS") base.statusFilter = statusFilter;
+    if (formaFilter && formaFilter !== "TODOS") base.formaFilter = formaFilter;
     return base;
-  }, [section, startDate, endDate, empresaNome, bancoNome, contaNumero]);
+  }, [section, startDate, endDate, empresaNome, bancoNome, contaNumero, statusFilter, formaFilter]);
 
   const { data: cpData, isLoading: cpLoading, error: cpError } = trpc.financial.getMaxiprodContraprova.useQuery(
     queryInput,

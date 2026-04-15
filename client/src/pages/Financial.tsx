@@ -786,13 +786,24 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
 
       {/* Items list */}
       {visibleItems.length > 0 && (
-        <div className="space-y-1">
+        <div className="divide-y divide-slate-200/80">
           {visibleItems.map((item: any, idx: number) => {
             const itemId = String(item.maxiprodId || idx);
             const isChecked = selectedIds.has(itemId);
+            const hasSecondary = item.referenteA || item.vencimentoOriginal;
             return (
-              <div key={item.maxiprodId || idx} className={`text-xs leading-5 ${calcMode && isChecked ? 'bg-violet-50 rounded px-1 -mx-1' : ''}`}>
-                <div className="flex items-center gap-x-1.5">
+              <div
+                key={item.maxiprodId || idx}
+                className={`py-2.5 px-1 transition-colors ${
+                  calcMode && isChecked
+                    ? 'bg-violet-50/80'
+                    : idx % 2 === 0
+                      ? 'bg-transparent'
+                      : 'bg-slate-50/40'
+                } hover:bg-slate-100/60`}
+              >
+                {/* Main row: checkbox + name + date + value */}
+                <div className="flex items-center gap-x-2">
                   {calcMode && (
                     <Checkbox
                       checked={isChecked}
@@ -800,23 +811,51 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                       className="w-3.5 h-3.5 shrink-0 border-violet-400 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
                     />
                   )}
-                  <span className="text-slate-600 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.fornecedor || item.referenteA || "—"}</span>
-                  <span className="text-slate-400 whitespace-nowrap text-right shrink-0" style={{ width: '60px', fontVariantNumeric: 'tabular-nums', fontSize: '10px' }}>{formatDate(item.vencimento)}</span>
-                  <span className={`font-semibold whitespace-nowrap text-right shrink-0 ${calcMode && isChecked ? 'text-violet-700' : 'text-slate-700'}`} style={{ width: '78px', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.valor)}</span>
+                  <span className="text-[13px] font-medium text-slate-700 truncate min-w-0" style={{ flex: '1 1 0' }}>
+                    {item.fornecedor || item.referenteA || "—"}
+                  </span>
+                  <span
+                    className="text-[11px] text-slate-400 whitespace-nowrap text-right shrink-0"
+                    style={{ width: '72px', fontVariantNumeric: 'tabular-nums' }}
+                  >
+                    {formatDate(item.vencimento)}
+                  </span>
+                  <span
+                    className={`text-[13px] font-bold whitespace-nowrap text-right shrink-0 ${
+                      calcMode && isChecked ? 'text-violet-700' : isPagar ? 'text-red-700' : 'text-emerald-700'
+                    }`}
+                    style={{ width: '90px', fontVariantNumeric: 'tabular-nums' }}
+                  >
+                    {formatCurrency(item.valor)}
+                  </span>
                 </div>
-                <div className="flex items-center gap-x-1.5 pl-0.5 mt-0.5">
-                  {item.referenteA && (
-                    <span className="text-[10px] text-slate-400 truncate min-w-0" style={{ flex: '1 1 0' }}>{item.referenteA}</span>
-                  )}
-                  {item.vencimentoOriginal && (
-                    <span className={`text-[9px] font-medium whitespace-nowrap shrink-0 ${item.vencimentoOriginal !== item.vencimento ? 'text-orange-500' : 'text-slate-400'}`} title="Vencimento Original do boleto">
-                      Venc. Orig. {formatDate(item.vencimentoOriginal)}
-                    </span>
-                  )}
-                </div>
+                {/* Secondary row: referenteA + vencimento original */}
+                {hasSecondary && (
+                  <div className="flex items-center gap-x-2 mt-0.5" style={{ paddingLeft: calcMode ? '22px' : '0' }}>
+                    {item.referenteA && (
+                      <span className="text-[10.5px] text-slate-400 truncate min-w-0 italic" style={{ flex: '1 1 0' }}>
+                        {item.referenteA}
+                      </span>
+                    )}
+                    {item.vencimentoOriginal && (
+                      <span
+                        className={`text-[10px] font-medium whitespace-nowrap shrink-0 ${
+                          item.vencimentoOriginal !== item.vencimento ? 'text-orange-500' : 'text-slate-400'
+                        }`}
+                        title="Vencimento Original do boleto"
+                      >
+                        Venc. Orig. {formatDate(item.vencimentoOriginal)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Annotations */}
                 {item.anotacoes && (
-                  <div className="mt-0.5 pl-0.5">
-                    <span className="inline-flex items-center text-[10px] font-bold text-pink-800 bg-pink-100 border border-pink-300 px-1.5 py-0.5 rounded" style={{ wordBreak: 'break-word' }}>
+                  <div className="mt-1" style={{ paddingLeft: calcMode ? '22px' : '0' }}>
+                    <span
+                      className="inline-flex items-center text-[10px] font-bold text-pink-800 bg-pink-100 border border-pink-300 px-1.5 py-0.5 rounded"
+                      style={{ wordBreak: 'break-word' }}
+                    >
                       📌 {item.anotacoes}
                     </span>
                   </div>

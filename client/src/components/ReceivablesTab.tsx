@@ -838,7 +838,7 @@ function ContaFiltersAndTable({
           <MaxiprodAutoVerifier
             onClose={() => setShowVerifyModal(false)}
             title="Conferencia: Contas a Receber"
-            subtitle={`${empresaNome} - ${mesLabel} - ${contaLabel}`}
+            subtitle={`${empresaNome} - ${mesLabel} - ${contaLabel}${hasActiveFilters ? ` (${filterDescription})` : ''}`}
             section="recebiveis"
             startDate={sDate}
             endDate={eDate}
@@ -846,6 +846,8 @@ function ContaFiltersAndTable({
             empresaNome={empresaNomeFull}
             bancoNome={bancoNome}
             contaNumero={contaNumero}
+            statusFilter={statusFilter}
+            formaFilter={formaFilter}
           />
         );
       })()}

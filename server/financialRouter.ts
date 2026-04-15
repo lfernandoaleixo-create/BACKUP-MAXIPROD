@@ -4327,13 +4327,16 @@ ${acoesTexto}
       empresaNome: z.string().optional(),
       bancoNome: z.string().optional(),
       contaNumero: z.string().optional(),
+      // Filtros de status e forma de cobrança (usados na seção "recebiveis")
+      statusFilter: z.enum(["TODOS", "VENCIDO", "A_VENCER"]).optional(),
+      formaFilter: z.enum(["TODOS", "PIX", "Boleto", "Cheque", "Depósito", "Dinheiro"]).optional(),
     }))
     .query(async ({ input }) => {
       try {
-        const { section, startDate, endDate, empresaNome, bancoNome, contaNumero } = input;
+        const { section, startDate, endDate, empresaNome, bancoNome, contaNumero, statusFilter, formaFilter } = input;
 
-        // Cache em memória com TTL de 5 minutos (inclui filtros de empresa/conta)
-        const cacheKey = `${section}:${startDate}:${endDate}:${empresaNome || ''}:${bancoNome || ''}:${contaNumero || ''}`;
+        // Cache em memória com TTL de 5 minutos (inclui filtros de empresa/conta/status/forma)
+        const cacheKey = `${section}:${startDate}:${endDate}:${empresaNome || ''}:${bancoNome || ''}:${contaNumero || ''}:${statusFilter || ''}:${formaFilter || ''}`;
         const cached = contraprovaCache.get(cacheKey);
         if (cached && Date.now() - cached.timestamp < CONTRAPROVA_CACHE_TTL) {
           console.log(`[getMaxiprodContraprova] Cache hit: ${cacheKey}`);
@@ -4524,13 +4527,22 @@ ${acoesTexto}
             conditions.push(eq(accountsReceivable.contaNumero, contaNumero));
           }
 
+          // Filtrar por forma de cobrança (se fornecido e não "TODOS")
+          if (formaFilter && formaFilter !== "TODOS") {
+            // Mapear categoria para prefixo LIKE no banco
+            const formaPrefix = formaFilter === "Depósito" ? "DEP" : formaFilter.toUpperCase();
+            conditions.push(sql`UPPER(${accountsReceivable.formaCobranca}) LIKE ${formaPrefix + '%'}`);
+          }
+
           // Usar mesma lógica do getReceivablesByBank: valorAReceber = valorLiquido - valorRecebidoLiquido, excluir <= 0
           const rows = await db.select({
             valorLiquido: accountsReceivable.valorLiquido,
             valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+            vencimentoData: accountsReceivable.vencimentoData,
           }).from(accountsReceivable)
             .where(and(...conditions));
 
+          const today = new Date().toISOString().substring(0, 10);
           let total = 0;
           let count = 0;
           for (const row of rows) {
@@ -4538,6 +4550,13 @@ ${acoesTexto}
             const valorPago = Number(row.valorRecebidoLiquido) || 0;
             const valorAReceber = valorOriginal - valorPago;
             if (valorAReceber > 0) {
+              // Aplicar filtro de status (vencido/a_vencer)
+              if (statusFilter && statusFilter !== "TODOS") {
+                const vencDate = (row.vencimentoData || "").substring(0, 10);
+                const isOverdue = vencDate < today;
+                if (statusFilter === "VENCIDO" && !isOverdue) continue;
+                if (statusFilter === "A_VENCER" && isOverdue) continue;
+              }
               total += valorAReceber;
               count++;
             }
@@ -4548,6 +4567,8 @@ ${acoesTexto}
           if (empresaNome) filterParts.push(empresaNome);
           if (bancoNome) filterParts.push(bancoNome);
           if (contaNumero) filterParts.push(`Cc ${contaNumero}`);
+          if (statusFilter && statusFilter !== "TODOS") filterParts.push(statusFilter === "VENCIDO" ? "Vencidos" : "A Vencer");
+          if (formaFilter && formaFilter !== "TODOS") filterParts.push(formaFilter);
           const filterLabel = filterParts.length > 0 ? ` (${filterParts.join(' · ')})` : '';
 
           return cacheAndReturn({

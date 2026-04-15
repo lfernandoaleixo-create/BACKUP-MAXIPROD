@@ -2630,3 +2630,33 @@
 - [x] Registrar cada baixa no stockEditHistory como tipo "baixa_pedido"
 - [x] Nunca deixar estoque negativo (Math.max(0, ...))
 - [x] 15 testes automatizados passando (baixaAutomatica.test.ts)
+
+## Passo 1: Verificar Baixa Automática (15/04/2026)
+- [ ] Verificar se a lógica de baixa automática está integrada corretamente no fluxo de sync
+- [ ] Testar cenário: pedidos diminuem → estoque reduz automaticamente
+
+## Passo 2: Tela de Histórico de Pirografia (15/04/2026)
+- [ ] Criar seção/aba de Histórico de Pirografia
+- [ ] Ranking dos nomes mais pirografados (top nomes por quantidade)
+- [ ] Ranking dos produtos mais pirografados (top produtos por quantidade)
+- [ ] Filtro por período (data início/fim)
+- [ ] Mostrar totais e estatísticas gerais
+
+## Passo 3: Corrigir Contraprova Maxiprod nos Recebíveis (15/04/2026)
+- [ ] Bug: contraprova com Maxiprod não usa os mesmos filtros selecionados na Manus (período, empresa, etc.)
+- [ ] Quando usuário clica no olho (contraprova), passar os filtros ativos para a query do Maxiprod
+- [ ] Comparar valor filtrado da Manus com valor filtrado do Maxiprod (mesmos critérios)
+
+## Fix: Contraprova Maxiprod Recebiveis - Usar Mesmos Filtros (15/04/2026)
+- [x] Backend: Adicionar campos statusFilter e formaFilter ao input da getMaxiprodContraprova
+- [x] Backend: Aplicar filtro de status (VENCIDO = isOverdue, A_VENCER = !isOverdue) na query de recebiveis
+- [x] Backend: Aplicar filtro de forma de cobranca (PIX, Boleto, Cheque, Deposito, Dinheiro) na query
+- [x] Frontend MaxiprodAutoVerifier: Adicionar props statusFilter e formaFilter
+- [x] Frontend ReceivablesTab: Passar statusFilter e formaFilter ao MaxiprodAutoVerifier
+- [ ] Testes para contraprova com filtros de status e forma
+
+## Melhorar Visual das Listas de Pagamentos/Recebimentos (15/04/2026)
+- [x] Adicionar linhas separadoras entre cada item da lista
+- [x] Alinhar colunas (nome, data, valor) de forma consistente
+- [x] Formatação profissional e limpa para facilitar leitura
+- [x] Aplicar em ambas as listas (recebimentos e contas pagas)
