@@ -2703,3 +2703,4 @@
 - [x] Investigar divergência de ~R$ 2M entre dashboard e API no Total A Pagar (causada por vencidos antes do cutoff)
 - [x] Excluir vencidos/inadimplentes na contraprova de contas a pagar (mesma lógica do receber)
 - [x] Garantir que conferências automáticas batam todo dia (lógica persistida no código, usa cutoff dinâmico)
+- [x] Investigar divergência persistente de ~R$ 1.94M no contas a pagar (causa: dashboard mostra 10 meses, contraprova buscava até 2099; fix: limitar endDate ao 10º mês)

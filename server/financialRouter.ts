@@ -4458,8 +4458,9 @@ ${acoesTexto}
         }
 
         // contas_receber_mes - total de contas a receber em um mês específico (estado EMITIDO)
-        // REGRA: Excluir inadimplentes (vencidos antes do cutoff de conciliação bancária)
-        // para alinhar com o getMonthlyBreakdown que só mostra a partir do dia seguinte à conciliação
+        // REGRA 1: Excluir inadimplentes (vencidos antes do cutoff de conciliação bancária)
+        // REGRA 2: Limitar endDate ao mesmo range do getMonthlyBreakdown (10 meses)
+        // para alinhar com o dashboard que só mostra 10 meses a partir do corrente
         if (section === "contas_receber_mes") {
           const db = await getDb();
           if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
@@ -4472,6 +4473,15 @@ ${acoesTexto}
           // usar o effectiveStartDate para excluir inadimplentes (vencidos antes da conciliação)
           const adjustedStartDate = startDate < effectiveStartDate ? effectiveStartDate : startDate;
 
+          // REGRA 2: Se endDate é muito distante (ex: 2099-12-31 para "total geral"),
+          // limitar ao último dia do 10º mês do getMonthlyBreakdown.
+          // O dashboard soma apenas 10 meses (mês corrente + 9 futuros).
+          const todayBR = getTodayBR();
+          const [curY, curM] = todayBR.split('-').map(Number);
+          const lastMonthOfBreakdown = new Date(curY, curM - 1 + 10, 0); // último dia do 10º mês
+          const maxEndDate = `${lastMonthOfBreakdown.getFullYear()}-${String(lastMonthOfBreakdown.getMonth() + 1).padStart(2, '0')}-${String(lastMonthOfBreakdown.getDate()).padStart(2, '0')}`;
+          const adjustedEndDate = endDate > maxEndDate ? maxEndDate : endDate;
+
           const result = await db.select({
             total: sql<number>`COALESCE(SUM(CAST(${accountsReceivable.valorLiquido} AS DECIMAL(15,2)) - CAST(COALESCE(${accountsReceivable.valorRecebidoLiquido}, '0') AS DECIMAL(15,2))), 0)`,
             count: sql<number>`COUNT(*)`,
@@ -4480,21 +4490,23 @@ ${acoesTexto}
               eq(accountsReceivable.estado, 'EMITIDO'),
               inArray(accountsReceivable.tipo, ['TITULO', 'RECEITA', 'ADIANTAMENTO']),
               gte(accountsReceivable.vencimentoData, adjustedStartDate),
-              lte(accountsReceivable.vencimentoData, endDate + "T23:59:59"),
+              lte(accountsReceivable.vencimentoData, adjustedEndDate + "T23:59:59"),
             ));
 
           const inadLabel = startDate < effectiveStartDate ? ` (excl. inadimplentes até ${cutoff})` : '';
+          const rangeLabel = endDate > maxEndDate ? ` até ${maxEndDate}` : '';
 
           return cacheAndReturn({
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
-            label: `${result[0]?.count || 0} títulos a receber no período${inadLabel}`,
+            label: `${result[0]?.count || 0} títulos a receber no período${inadLabel}${rangeLabel}`,
           });
         }
 
         // contas_pagar_mes - total de contas a pagar em um mês específico (estado EMITIDO)
-        // REGRA: Excluir vencidos antes do cutoff de conciliação bancária
-        // para alinhar com o getMonthlyBreakdown que só mostra a partir do dia seguinte à conciliação
+        // REGRA 1: Excluir vencidos antes do cutoff de conciliação bancária
+        // REGRA 2: Limitar endDate ao mesmo range do getMonthlyBreakdown (10 meses)
+        // para alinhar com o dashboard que só mostra 10 meses a partir do corrente
         if (section === "contas_pagar_mes") {
           const db = await getDb();
           if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
@@ -4507,6 +4519,15 @@ ${acoesTexto}
           // usar o effectiveStartDate para excluir vencidos (contas vencidas antes da conciliação)
           const adjustedStartDate = startDate < effectiveStartDate ? effectiveStartDate : startDate;
 
+          // REGRA 2: Se endDate é muito distante (ex: 2099-12-31 para "total geral"),
+          // limitar ao último dia do 10º mês do getMonthlyBreakdown.
+          // O dashboard soma apenas 10 meses (mês corrente + 9 futuros).
+          const todayBR = getTodayBR();
+          const [curY, curM] = todayBR.split('-').map(Number);
+          const lastMonthOfBreakdown = new Date(curY, curM - 1 + 10, 0); // último dia do 10º mês
+          const maxEndDate = `${lastMonthOfBreakdown.getFullYear()}-${String(lastMonthOfBreakdown.getMonth() + 1).padStart(2, '0')}-${String(lastMonthOfBreakdown.getDate()).padStart(2, '0')}`;
+          const adjustedEndDate = endDate > maxEndDate ? maxEndDate : endDate;
+
           const result = await db.select({
             total: sql<number>`COALESCE(SUM(CAST(${accountsPayable.valorLiquido} AS DECIMAL(15,2)) - CAST(COALESCE(${accountsPayable.valorPagoLiquido}, '0') AS DECIMAL(15,2))), 0)`,
             count: sql<number>`COUNT(*)`,
@@ -4514,15 +4535,16 @@ ${acoesTexto}
             .where(and(
               eq(accountsPayable.estado, 'EMITIDO'),
               gte(accountsPayable.vencimentoData, adjustedStartDate),
-              lte(accountsPayable.vencimentoData, endDate + "T23:59:59"),
+              lte(accountsPayable.vencimentoData, adjustedEndDate + "T23:59:59"),
             ));
 
           const vencLabel = startDate < effectiveStartDate ? ` (excl. vencidos até ${cutoff})` : '';
+          const rangeLabel = endDate > maxEndDate ? ` até ${maxEndDate}` : '';
 
           return cacheAndReturn({
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
-            label: `${result[0]?.count || 0} contas a pagar no período${vencLabel}`,
+            label: `${result[0]?.count || 0} contas a pagar no período${vencLabel}${rangeLabel}`,
           });
         }
 
