@@ -2556,3 +2556,20 @@
 - [x] Backend endpoint getStockAutoFeedReport no productionRouter
 - [x] Frontend modal com tabela comparativa e resumo de divergências
 - [x] 5 testes automatizados para o relatório de auto-feed
+
+## Ajuste Cards Expandíveis Madeira (15/04/2026)
+- [x] Madeira PA: remover colunas PO (Compra) e Projetado
+- [x] Madeira PA: adicionar mini-cards Rojão e Apito no lugar (3 linhas: Estoque, Pedidos, Disponível)
+- [x] Semi Pronto: remover colunas PO (Compra) e Projetado, alargar cards restantes
+- [x] Aguardando Escolha: remover colunas PO (Compra) e Projetado, alargar cards restantes
+
+## Produção - Label Fator Conversão + Botão OK (15/04/2026)
+- [x] Adicionar texto "(Fator de Conversão)" ao lado do ícone do olho roxo na aba Produção
+- [x] Adicionar botão "OK" ao lado de cada campo de preenchimento na aba Produção para confirmar entrada (SimpleMachineRow, ExpandableMachineRow single/triple unit)
+
+## Fix Tabela Madeira PA - Nomes Cortados e Grupo (15/04/2026)
+- [x] Fix produto 00354A e outros com nome cortado/truncado na tabela Madeira PA
+- [x] Coluna Grupo: mostrar "Industrialização/Madeira" completo em roxo, quebrar texto se necessário (sem "...")
+- [x] Layout responsivo alinhado para computador e tablet
+- [x] Trocar abreviação "sc" por "sacos" na coluna Total da aba Produção
+- [x] Centralizar badges de medida no centro do card na coluna MEDIDA da aba Produção (todos os setores)

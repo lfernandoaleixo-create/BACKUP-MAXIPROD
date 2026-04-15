@@ -385,8 +385,8 @@ function GrupoBadge({ grupo, subgrupo }: { grupo: string; subgrupo: string }) {
   const Icon = style.icon;
   const subLabel = SUBGRUPO_LABELS[subgrupo];
   return (
-    <Badge className={`${style.bg} ${style.text} text-xs border-0 max-w-full truncate whitespace-nowrap`} title={`${style.label}${subLabel ? ` / ${subLabel}` : ""}`}>
-      <Icon className="w-3 h-3 mr-1 flex-shrink-0" /><span className="truncate">{style.label}{subLabel ? ` / ${subLabel}` : ""}</span>
+    <Badge className={`${style.bg} ${style.text} text-[11px] border-0 max-w-full whitespace-normal text-center leading-tight py-1 px-2`} title={`${style.label}${subLabel ? ` / ${subLabel}` : ""}`}>
+      <Icon className="w-3 h-3 mr-1 flex-shrink-0" /><span className="break-words">{style.label}{subLabel ? `/${subLabel}` : ""}</span>
     </Badge>
   );
 }
@@ -2495,61 +2495,52 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid grid-cols-3 gap-4 mt-4 ml-16">
-          {/* CAIXAS */}
-          <div className="bg-white rounded-xl px-5 py-4 border border-slate-200 shadow-sm">
-            <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider mb-3">CAIXAS (CX)</p>
-            <div className="space-y-2">
+        <div className="hidden sm:grid grid-cols-5 gap-3 mt-4 ml-16">
+          <div className="bg-teal-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
+            <p className="text-base font-extrabold text-teal-700">{formatNumber(paEstoqueCx)} <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-orange-50/80 rounded-lg px-3 py-2">
+            <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
+            <p className={`text-base font-extrabold ${paPedidosCx > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(paPedidosCx)} <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className={`rounded-lg px-3 py-2 ${paDisponivelCx < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
+            <p className={`text-[10px] font-semibold uppercase tracking-wider ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
+            <p className={`text-base font-extrabold ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx)} <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          {/* ROJÃO mini-card */}
+          <div className="bg-blue-50/80 rounded-lg px-3 py-2 border border-blue-200">
+            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-0.5">Rojão (dz)</p>
+            <div className="space-y-0">
               <div className="flex justify-between items-baseline">
-                <span className="text-sm text-slate-500 font-semibold">Estoque</span>
-                <span className="text-lg font-extrabold text-emerald-600">{formatNumber(paEstoqueCx)} cx</span>
+                <span className="text-[9px] text-slate-500 font-semibold">Estoque</span>
+                <span className="text-xs font-extrabold text-blue-700">{formatNumber(paEstoqueDz)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-sm text-orange-500 font-bold">Pedidos</span>
-                <span className={`text-lg font-extrabold ${paPedidosCx > 0 ? 'text-orange-500' : 'text-slate-400'}`}>{formatNumber(paPedidosCx)} cx</span>
+                <span className="text-[9px] text-orange-500 font-semibold">Pedidos</span>
+                <span className={`text-xs font-extrabold ${paPedidosDz > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosDz)}</span>
               </div>
-              <div className="h-px bg-slate-200" />
               <div className="flex justify-between items-baseline">
-                <span className={`text-sm font-extrabold ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
-                <span className={`text-2xl font-black ${paDisponivelCx < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelCx)} cx</span>
+                <span className={`text-[9px] font-bold ${paDisponivelDz < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Dispon.</span>
+                <span className={`text-xs font-black ${paDisponivelDz < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelDz)}</span>
               </div>
             </div>
           </div>
-          {/* DÚZIAS */}
-          <div className="bg-white rounded-xl px-5 py-4 border border-slate-200 shadow-sm">
-            <p className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-3">ROJÃO 7X1000 (DZ)</p>
-            <div className="space-y-2">
+          {/* APITO mini-card */}
+          <div className="bg-purple-50/80 rounded-lg px-3 py-2 border border-purple-200">
+            <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider mb-0.5">Apito (kg)</p>
+            <div className="space-y-0">
               <div className="flex justify-between items-baseline">
-                <span className="text-sm text-slate-500 font-semibold">Estoque</span>
-                <span className="text-lg font-extrabold text-emerald-600">{formatNumber(paEstoqueDz)} dz</span>
+                <span className="text-[9px] text-slate-500 font-semibold">Estoque</span>
+                <span className="text-xs font-extrabold text-purple-700">{formatNumber(paEstoqueKg)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-sm text-orange-500 font-bold">Pedidos</span>
-                <span className={`text-lg font-extrabold ${paPedidosDz > 0 ? 'text-orange-500' : 'text-slate-400'}`}>{formatNumber(paPedidosDz)} dz</span>
-              </div>
-              <div className="h-px bg-slate-200" />
-              <div className="flex justify-between items-baseline">
-                <span className={`text-sm font-extrabold ${paDisponivelDz < 0 ? 'text-red-600' : 'text-blue-600'}`}>Disponível</span>
-                <span className={`text-2xl font-black ${paDisponivelDz < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelDz)} dz</span>
-              </div>
-            </div>
-          </div>
-          {/* KG */}
-          <div className="bg-white rounded-xl px-5 py-4 border border-slate-200 shadow-sm">
-            <p className="text-xs text-purple-600 font-bold uppercase tracking-wider mb-3">VARETA APITO 3,0X350 (KG)</p>
-            <div className="space-y-2">
-              <div className="flex justify-between items-baseline">
-                <span className="text-sm text-slate-500 font-semibold">Estoque</span>
-                <span className="text-lg font-extrabold text-emerald-600">{formatNumber(paEstoqueKg)} kg</span>
+                <span className="text-[9px] text-orange-500 font-semibold">Pedidos</span>
+                <span className={`text-xs font-extrabold ${paPedidosKg > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(paPedidosKg)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-sm text-orange-500 font-bold">Pedidos</span>
-                <span className={`text-lg font-extrabold ${paPedidosKg > 0 ? 'text-orange-500' : 'text-slate-400'}`}>{formatNumber(paPedidosKg)} kg</span>
-              </div>
-              <div className="h-px bg-slate-200" />
-              <div className="flex justify-between items-baseline">
-                <span className={`text-sm font-extrabold ${paDisponivelKg < 0 ? 'text-red-600' : 'text-purple-600'}`}>Disponível</span>
-                <span className={`text-2xl font-black ${paDisponivelKg < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelKg)} kg</span>
+                <span className={`text-[9px] font-bold ${paDisponivelKg < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Dispon.</span>
+                <span className={`text-xs font-black ${paDisponivelKg < 0 ? 'text-red-700' : 'text-slate-800'}`}>{formatNumber(paDisponivelKg)}</span>
               </div>
             </div>
           </div>
@@ -2578,14 +2569,14 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
           </div>
           <div className="bg-white rounded-lg">
             <div className="overflow-x-auto">
-              <table className="w-full text-[13px]" style={{ tableLayout: 'fixed' }}>
+              <table className="w-full text-[13px]">
                 <thead className="bg-slate-50 border-b border-slate-200 sticky top-[48px] z-20 shadow-sm">
                   <tr>
-                    <th className="px-2 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('descricaoItem')}>
+                    <th className="px-2 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" style={{ minWidth: '180px', width: '25%' }} onClick={() => handleMadeiraSort('descricaoItem')}>
                       <div className="flex items-center gap-1">Produto <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
-                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Un/Cx</th>
-                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Grupo</th>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ width: '50px' }}>Un/Cx</th>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-purple-600 uppercase tracking-wider" style={{ minWidth: '110px', width: '12%' }}>Grupo</th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-green-700 uppercase tracking-wider bg-green-50/60 border-x border-green-200 whitespace-nowrap">Estoque Manual</th>
                     <th className="w-7 py-2.5 px-0.5"></th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('pedidosCx')}>
@@ -2899,30 +2890,22 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
-          <div className="bg-teal-50/80 rounded-lg px-3 py-2">
+        <div className="hidden sm:grid grid-cols-4 gap-4 mt-4 ml-16">
+          <div className="bg-teal-50/80 rounded-lg px-4 py-2.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-base font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-orange-50/80 rounded-lg px-3 py-2">
+          <div className="bg-orange-50/80 rounded-lg px-4 py-2.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-emerald-50/80 rounded-lg px-3 py-2">
+          <div className="bg-emerald-50/80 rounded-lg px-4 py-2.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
-            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-emerald-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-blue-50/80 rounded-lg px-3 py-2">
-            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">PO (Compra)</p>
-            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
-          </div>
-          <div className="bg-indigo-50/80 rounded-lg px-3 py-2">
-            <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Projetado</p>
-            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
-          </div>
-          <div className="bg-slate-50/80 rounded-lg px-3 py-2">
+          <div className="bg-slate-50/80 rounded-lg px-4 py-2.5">
             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
-            <p className="text-base font-extrabold text-slate-700">{parentItems.length}</p>
+            <p className="text-lg font-extrabold text-slate-700">{parentItems.length}</p>
           </div>
         </div>
       </div>
@@ -2948,10 +2931,6 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
                   <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Produto</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-amber-600 uppercase">Estoque (cx)</th>
                   <th className="w-8 py-2 px-1"></th>
-                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Pedidos</th>
-                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Disponível</th>
-                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">PO</th>
-                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Projetado</th>
                 </tr>
               </thead>
               <tbody>
@@ -2979,10 +2958,6 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
                           <History className="w-3.5 h-3.5 text-slate-400 hover:text-amber-600" />
                         </button>
                       </td>
-                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
-                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
-                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
-                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
                     </tr>
                   );
                 })}
@@ -3119,30 +3094,22 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
-          <div className="bg-teal-50/80 rounded-lg px-3 py-2">
+        <div className="hidden sm:grid grid-cols-4 gap-4 mt-4 ml-16">
+          <div className="bg-teal-50/80 rounded-lg px-4 py-2.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-base font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-orange-50/80 rounded-lg px-3 py-2">
+          <div className="bg-orange-50/80 rounded-lg px-4 py-2.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-emerald-50/80 rounded-lg px-3 py-2">
+          <div className="bg-emerald-50/80 rounded-lg px-4 py-2.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
-            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-emerald-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-blue-50/80 rounded-lg px-3 py-2">
-            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">PO (Compra)</p>
-            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
-          </div>
-          <div className="bg-indigo-50/80 rounded-lg px-3 py-2">
-            <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Projetado</p>
-            <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
-          </div>
-          <div className="bg-slate-50/80 rounded-lg px-3 py-2">
+          <div className="bg-slate-50/80 rounded-lg px-4 py-2.5">
             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
-            <p className="text-base font-extrabold text-slate-700">{parentItems.length}</p>
+            <p className="text-lg font-extrabold text-slate-700">{parentItems.length}</p>
           </div>
         </div>
       </div>
@@ -3170,8 +3137,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
                   <th className="w-8 py-2 px-1"></th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Pedidos</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Disponível</th>
-                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">PO</th>
-                  <th className="text-right py-2 px-2 text-xs font-semibold text-slate-400 uppercase">Projetado</th>
+
                 </tr>
               </thead>
               <tbody>
@@ -3199,10 +3165,6 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
                           <History className="w-3.5 h-3.5 text-slate-400 hover:text-purple-600" />
                         </button>
                       </td>
-                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
-                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
-                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
-                      <td className="py-2 px-2 text-right text-sm text-slate-300">0</td>
                     </tr>
                   );
                 })}
