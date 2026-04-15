@@ -63,6 +63,8 @@ import {
   Pencil,
   ShieldAlert,
   Scale,
+  FileText,
+  ClipboardCheck,
 } from "lucide-react";
 import {
   Dialog,
@@ -2195,6 +2197,113 @@ function MadeiraValorizacaoCard({
   );
 }
 
+/* --- Auto-Feed Report Modal --- */
+function AutoFeedReportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { data, isLoading } = trpc.production.getStockAutoFeedReport.useQuery(undefined, { enabled: open });
+  const [filterDivergent, setFilterDivergent] = useState(false);
+
+  const report = data?.report || [];
+  const dataLabel = data?.data || new Date().toISOString().slice(0, 10);
+  const filtered = filterDivergent ? report.filter(r => !r.bateu || r.embaladoHoje > 0 || r.alteracoes.length > 0) : report.filter(r => r.embaladoHoje > 0 || r.alteracoes.length > 0);
+  const totalEmbalado = report.reduce((s, r) => s + r.embaladoHoje, 0);
+  const totalDivergentes = report.filter(r => !r.bateu && (r.embaladoHoje > 0 || r.alteracoes.length > 0)).length;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-emerald-600" />
+            Conferência Auto-feed Embalagem → Estoque
+          </DialogTitle>
+          <DialogDescription>
+            Relatório de {new Date(dataLabel + "T12:00:00").toLocaleDateString("pt-BR")} — Verifica se o estoque bate com o preenchimento da Embalagem
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+            <span className="ml-3 text-slate-500">Carregando relatório...</span>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {/* Summary */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 text-center">
+                <p className="text-[10px] text-emerald-600 font-semibold uppercase">Produtos Embalados</p>
+                <p className="text-xl font-extrabold text-emerald-700">{filtered.length}</p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-center">
+                <p className="text-[10px] text-blue-600 font-semibold uppercase">Total Embalado</p>
+                <p className="text-xl font-extrabold text-blue-700">{formatNumber(totalEmbalado)} cx</p>
+              </div>
+              <div className={`${totalDivergentes > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} border rounded-lg px-4 py-2.5 text-center`}>
+                <p className={`text-[10px] font-semibold uppercase ${totalDivergentes > 0 ? 'text-red-600' : 'text-green-600'}`}>Divergências</p>
+                <p className={`text-xl font-extrabold ${totalDivergentes > 0 ? 'text-red-700' : 'text-green-700'}`}>{totalDivergentes}</p>
+              </div>
+            </div>
+
+            {/* Filter toggle */}
+            <div className="flex items-center gap-3 mb-3">
+              <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer">
+                <input type="checkbox" checked={filterDivergent} onChange={(e) => setFilterDivergent(e.target.checked)} className="rounded border-slate-300" />
+                Mostrar apenas divergências
+              </label>
+              <span className="text-[10px] text-slate-400">{filtered.length} de {report.length} produtos</span>
+            </div>
+
+            {/* Table */}
+            <div className="flex-1 overflow-auto rounded-lg border border-slate-200">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th className="text-left py-2.5 px-3 text-xs text-slate-500 font-semibold">Produto</th>
+                    <th className="text-right py-2.5 px-3 text-xs text-slate-500 font-semibold">Ontem</th>
+                    <th className="text-right py-2.5 px-3 text-xs text-emerald-600 font-semibold">+ Embalado</th>
+                    <th className="text-right py-2.5 px-3 text-xs text-blue-600 font-semibold">= Esperado</th>
+                    <th className="text-right py-2.5 px-3 text-xs text-slate-700 font-semibold">Atual</th>
+                    <th className="text-center py-2.5 px-3 text-xs text-slate-500 font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={6} className="text-center py-12 text-slate-400"><CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-40" /><p className="text-sm">Nenhum produto embalado hoje</p></td></tr>
+                  ) : filtered.map(r => (
+                    <tr key={r.codigoItem} className={`border-b border-slate-100 hover:bg-slate-50/50 ${!r.bateu ? 'bg-red-50/30' : ''}`}>
+                      <td className="py-2 px-3">
+                        <p className="text-xs font-medium text-slate-700 truncate max-w-[200px]">{r.descricaoItem}</p>
+                        <p className="text-[10px] text-slate-400">{r.codigoItem}</p>
+                      </td>
+                      <td className="py-2 px-3 text-right font-semibold text-slate-600 text-xs">{formatNumber(r.estoqueOntem)}</td>
+                      <td className="py-2 px-3 text-right font-bold text-emerald-600 text-xs">{r.embaladoHoje > 0 ? `+${formatNumber(r.embaladoHoje)}` : '—'}</td>
+                      <td className="py-2 px-3 text-right font-semibold text-blue-600 text-xs">{formatNumber(r.esperado)}</td>
+                      <td className="py-2 px-3 text-right font-bold text-slate-800 text-xs">{formatNumber(r.estoqueAtual)}</td>
+                      <td className="py-2 px-3 text-center">
+                        {r.bateu ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="w-3 h-3" /> OK
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                            <AlertTriangle className="w-3 h-3" /> {formatNumber(r.estoqueAtual - r.esperado)}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-[10px] text-slate-400 mt-3 text-center">Fórmula: Estoque Ontem + Embalado Hoje = Estoque Esperado. Se Atual ≠ Esperado, há divergência (edição manual ou outro ajuste).</p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /* --- Madeira PA Card (estoque editável com senha e histórico - SOMENTE AUMENTO) --- */
 function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySalesData }: {
   items: StockItem[];
@@ -3326,6 +3435,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
 
   // Alertas: produtos com estoque < pedidos dos últimos 30 dias
   const [showAlertasPanel, setShowAlertasPanel] = useState(false);
+  const [showAutoFeedReport, setShowAutoFeedReport] = useState(false);
 
   const madeiraAlertas = useMemo(() => {
     return parentOnlyMadeira.filter(i => {
@@ -3712,13 +3822,27 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           theme="orange"
         />
         <KPICard
-          label="Disponível - Caixas"
+          label="Disponível"
           value={`${formatNumber(estoqueCaixas - pedidosCaixas)} cx`}
           sub="Estoque - Pedidos (cx)"
           icon={Boxes}
           theme="emerald"
         />
-        {/* Card Dúzias expandido: Estoque, Pedidos, Disponível */}
+        <KPICard
+          label="Semi Pronto"
+          value={`${formatNumber(semiProntoTotal)} cx`}
+          sub="Estoque semi pronto"
+          icon={Hammer}
+          theme="blue"
+        />
+        <KPICard
+          label="Aguardando Escolha"
+          value={`${formatNumber(aguardandoTotal)} cx`}
+          sub="Estoque aguardando"
+          icon={Clock}
+          theme="indigo"
+        />
+        {/* Card Rojão expandido: Estoque, Pedidos, Disponível */}
         <div className="rounded-xl border bg-white p-3 shadow-sm" style={{ borderTop: '3px solid #22c55e' }}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Rojão 7x1000 (dz)</span>
@@ -3742,44 +3866,6 @@ function DashboardContent({ items }: { items: StockItem[] }) {
             </div>
           </div>
         </div>
-        {/* Card Kg expandido: Estoque, Pedidos, Disponível */}
-        <div className="rounded-xl border bg-white p-3 shadow-sm" style={{ borderTop: '3px solid #6366f1' }}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider">Vareta Apito 3,0x350 (kg)</span>
-            <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
-              <Scale className="w-4 h-4 text-indigo-600" />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-baseline">
-              <span className="text-[10px] text-slate-500 font-semibold">Estoque</span>
-              <span className="text-sm font-extrabold text-indigo-700">{formatNumber(estoqueKg)} kg</span>
-            </div>
-            <div className="flex justify-between items-baseline">
-              <span className="text-[10px] text-orange-500 font-semibold">Pedidos</span>
-              <span className={`text-sm font-extrabold ${pedidosKg > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(pedidosKg)} kg</span>
-            </div>
-            <div className="h-px bg-slate-100" />
-            <div className="flex justify-between items-baseline">
-              <span className={`text-[10px] font-bold ${disponivelKg < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</span>
-              <span className={`text-base font-extrabold ${disponivelKg < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(disponivelKg)} kg</span>
-            </div>
-          </div>
-        </div>
-        <KPICard
-          label="Semi Pronto"
-          value={`${formatNumber(semiProntoTotal)} cx`}
-          sub="Estoque semi pronto"
-          icon={Hammer}
-          theme="blue"
-        />
-        <KPICard
-          label="Aguardando Escolha"
-          value={`${formatNumber(aguardandoTotal)} cx`}
-          sub="Estoque aguardando"
-          icon={Clock}
-          theme="indigo"
-        />
         <div onClick={() => madeiraAlertas.length > 0 && setShowAlertasPanel(p => !p)} className={madeiraAlertas.length > 0 ? "cursor-pointer" : ""}>
           <KPICard
             label="Alertas"
@@ -3790,6 +3876,20 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           />
         </div>
       </div>
+
+      {/* Botão discreto de conferência auto-feed */}
+      <div className="flex justify-end mt-1">
+        <button
+          onClick={() => setShowAutoFeedReport(true)}
+          className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-emerald-600 transition-colors font-medium px-2 py-1 rounded-md hover:bg-emerald-50"
+        >
+          <ClipboardCheck className="w-3.5 h-3.5" />
+          Conferência Auto-feed
+        </button>
+      </div>
+
+      {/* Modal de Conferência Auto-feed */}
+      {showAutoFeedReport && <AutoFeedReportModal open={showAutoFeedReport} onClose={() => setShowAutoFeedReport(false)} />}
 
       {/* Painel de Alertas de Produção */}
       {madeiraAlertas.length > 0 && showAlertasPanel && (

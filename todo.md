@@ -2547,3 +2547,12 @@
 - [x] Auto-feed: quando Maria preencher Embalagem (setor 5) na Produção, alimentar automaticamente o estoque de Madeira - Produto Acabado
 - [x] Hoje (15/04) é o último dia de preenchimento manual; a partir de amanhã, estoque alimentado automaticamente pela Produção → Embalagem
 - [x] Testes automatizados para as novas funcionalidades (20 testes passando) (20 testes passando)
+
+## Cards Madeira + Relatório Conferência Auto-feed (15/04/2026)
+- [x] Criar relatório de conferência do auto-feed: botão discreto mostrando estoque ontem, qty embalagem, estoque atual por produto
+- [x] Remover card Vareta de Apito da seção Industrialização Madeira
+- [x] Reordenar cards: Estoque, Pedidos, Disponível, Semi Pronto, Aguardando Escolha, Rojão, Alertas
+- [x] Todos os cards em uma única linha
+- [x] Backend endpoint getStockAutoFeedReport no productionRouter
+- [x] Frontend modal com tabela comparativa e resumo de divergências
+- [x] 5 testes automatizados para o relatório de auto-feed

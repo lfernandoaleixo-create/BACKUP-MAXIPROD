@@ -493,4 +493,144 @@ export const productionRouter = router({
     }
     return products;
   }),
+
+  /**
+   * Relatório de conferência do auto-feed Embalagem → Estoque Madeira PA.
+   * Para cada produto de madeira, mostra:
+   * - Estoque de ontem (valor anterior no histórico)
+   * - Quantidade embalada hoje (soma dos lançamentos de Embalagem)
+   * - Estoque atual
+   * - Se bate (estoque_ontem + embalado_hoje == estoque_atual)
+   */
+  getStockAutoFeedReport: publicProcedure
+    .input(z.object({
+      data: z.string().optional(), // YYYY-MM-DD, default = hoje
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { report: [], data: "" };
+
+      // Data alvo (default = hoje)
+      const hoje = input?.data || new Date().toISOString().slice(0, 10);
+      
+      // 1. Buscar todos os produtos de Madeira PA (mesma lógica do getFinishedProducts)
+      const prodRows = await db
+        .select({
+          codigoItem: stockItems.codigoItem,
+          descricaoItem: stockItems.descricaoItem,
+          unidadeMedida: stockItems.unidadeMedida,
+        })
+        .from(stockItems)
+        .where(
+          or(
+            eq(stockItems.superGrupoCodigo, "05"),
+            and(
+              eq(stockItems.superGrupoCodigo, "16"),
+              inArray(stockItems.grupoCodigo, ["18", "19"])
+            )
+          )
+        )
+        .orderBy(stockItems.descricaoItem);
+
+      // Deduplicate
+      const seen = new Set<string>();
+      const products: Array<{ codigoItem: string; descricaoItem: string; unidadeMedida: string }> = [];
+      for (const row of prodRows) {
+        if (!seen.has(row.codigoItem)) {
+          seen.add(row.codigoItem);
+          products.push({
+            codigoItem: row.codigoItem,
+            descricaoItem: row.descricaoItem || row.codigoItem,
+            unidadeMedida: row.unidadeMedida || "cx",
+          });
+        }
+      }
+
+      // 2. Buscar estoque atual de Madeira PA
+      const stockRows = await db.select().from(madeiraStock);
+      const stockMap = new Map<string, number>();
+      for (const s of stockRows) {
+        stockMap.set(s.codigoItem, parseFloat(String(s.quantidade)) || 0);
+      }
+
+      // 3. Buscar histórico de edições de hoje (para calcular estoque de ontem)
+      // Pegar todas as alterações de hoje feitas pela Produção
+      const startOfDay = new Date(hoje + "T00:00:00.000Z");
+      const endOfDay = new Date(hoje + "T23:59:59.999Z");
+      const historyRows = await db.select()
+        .from(stockEditHistory)
+        .where(and(
+          eq(stockEditHistory.card, "madeira"),
+          gte(stockEditHistory.createdAt, startOfDay),
+          lte(stockEditHistory.createdAt, endOfDay),
+        ))
+        .orderBy(stockEditHistory.createdAt);
+
+      // Para cada produto, pegar o valorAnterior da PRIMEIRA alteração do dia = estoque de ontem
+      const estoqueOntemMap = new Map<string, number>();
+      const alteracoesHojeMap = new Map<string, Array<{ de: number; para: number; operador: string; hora: string }>>(); 
+      for (const h of historyRows) {
+        if (!estoqueOntemMap.has(h.codigoItem)) {
+          estoqueOntemMap.set(h.codigoItem, parseFloat(String(h.valorAnterior)) || 0);
+        }
+        const arr = alteracoesHojeMap.get(h.codigoItem) || [];
+        arr.push({
+          de: parseFloat(String(h.valorAnterior)) || 0,
+          para: parseFloat(String(h.valorNovo)) || 0,
+          operador: h.operador,
+          hora: h.createdAt ? new Date(h.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "",
+        });
+        alteracoesHojeMap.set(h.codigoItem, arr);
+      }
+
+      // 4. Buscar lançamentos de Embalagem de hoje
+      // Embalagem = setor com tipoEquipamento = "nenhum"
+      const embalagemSectors = await db.select().from(productionSectors).where(eq(productionSectors.tipoEquipamento, "nenhum"));
+      const embalagemSectorIds = embalagemSectors.map(s => s.id);
+
+      let embalagemEntries: Array<{ tipoMadeira: string | null; quantidade: string }> = [];
+      if (embalagemSectorIds.length > 0) {
+        embalagemEntries = await db.select({
+          tipoMadeira: productionEntries.tipoMadeira,
+          quantidade: productionEntries.quantidade,
+        })
+        .from(productionEntries)
+        .where(and(
+          inArray(productionEntries.sectorId, embalagemSectorIds),
+          eq(productionEntries.data, hoje),
+        ));
+      }
+
+      // Somar embalagem por codigoItem (tipoMadeira = codigoItem na embalagem)
+      const embalagemMap = new Map<string, number>();
+      for (const e of embalagemEntries) {
+        if (e.tipoMadeira) {
+          embalagemMap.set(e.tipoMadeira, (embalagemMap.get(e.tipoMadeira) || 0) + (parseFloat(String(e.quantidade)) || 0));
+        }
+      }
+
+      // 5. Montar relatório
+      const report = products.map(p => {
+        const estoqueAtual = stockMap.get(p.codigoItem) || 0;
+        const estoqueOntem = estoqueOntemMap.has(p.codigoItem) ? estoqueOntemMap.get(p.codigoItem)! : estoqueAtual;
+        const embaladoHoje = embalagemMap.get(p.codigoItem) || 0;
+        const alteracoes = alteracoesHojeMap.get(p.codigoItem) || [];
+        const esperado = estoqueOntem + embaladoHoje;
+        const bateu = Math.abs(estoqueAtual - esperado) < 0.01;
+
+        return {
+          codigoItem: p.codigoItem,
+          descricaoItem: p.descricaoItem,
+          unidadeMedida: p.unidadeMedida,
+          estoqueOntem,
+          embaladoHoje,
+          estoqueAtual,
+          esperado,
+          bateu,
+          alteracoes,
+        };
+      });
+
+      return { report, data: hoje };
+    }),
 });
