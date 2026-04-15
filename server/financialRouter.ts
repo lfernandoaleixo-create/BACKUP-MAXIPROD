@@ -2974,7 +2974,15 @@ export const financialRouter = router({
               vencido: m.vencido,
               aVencer: m.aVencer,
               contas: Object.values(m.contas)
-                .sort((a, b) => b.total - a.total)
+                .sort((a, b) => {
+                  // Ordem fixa por nome do banco (alfabética) — não muda entre meses
+                  const nameA = (a.bancoNome || '').toUpperCase();
+                  const nameB = (b.bancoNome || '').toUpperCase();
+                  if (nameA < nameB) return -1;
+                  if (nameA > nameB) return 1;
+                  // Desempate por número da conta
+                  return (a.contaNumero || '').localeCompare(b.contaNumero || '');
+                })
                 .map(conta => ({
                   bancoNome: conta.bancoNome,
                   contaNumero: conta.contaNumero,

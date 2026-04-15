@@ -1361,17 +1361,24 @@ function ExpandableMachineRow({
             </div>
             {dualUnit ? (
               /* ─── Triple unit layout: cx peq + cx grande + saco + total por medida ─── */
-              <div className="space-y-1.5">
-                {/* Header labels */}
-                <div className="grid grid-cols-[110px_60px_20px_60px_20px_60px_20px_1fr] gap-1 items-center px-1">
-                  <span />
-                  <span className="text-[8px] font-bold text-orange-500 uppercase text-center">Cx Peq</span>
-                  <span />
-                  <span className="text-[8px] font-bold text-amber-500 uppercase text-center">Cx Grande</span>
-                  <span />
-                  <span className="text-[8px] font-bold text-blue-600 uppercase text-center">Saco</span>
-                  <span />
-                  <span className="text-[8px] font-bold text-emerald-600 uppercase text-right pr-1">Total</span>
+              <div className="space-y-2">
+                {/* Header labels — full width, professional */}
+                <div className="grid grid-cols-[minmax(120px,1.5fr)_1fr_1fr_1fr_minmax(80px,0.8fr)] gap-2 items-end px-2 pb-2 border-b border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Medida</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[11px] font-bold text-orange-600 uppercase tracking-wider leading-tight text-center">Caixa</span>
+                    <span className="text-[11px] font-bold text-orange-600 uppercase tracking-wider leading-tight text-center">Pequena</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider leading-tight text-center">Caixa</span>
+                    <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider leading-tight text-center">Grande</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[12px] font-bold text-blue-700 uppercase tracking-wider text-center">Saco</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[12px] font-bold text-emerald-700 uppercase tracking-wider text-center">Total</span>
+                  </div>
                 </div>
                 {variantOptions.map(opt => {
                   const cxpVal = getVariantValue(`${opt.value}_cxp`);
@@ -1384,41 +1391,51 @@ function ExpandableMachineRow({
                   const cxgConverted = !isNaN(cxgNum) && cxgNum > 0 ? convertCxgToSaco(opt.value, cxgNum) : 0;
                   const lineTotal = (!isNaN(sacoNum) ? sacoNum : 0) + cxpConverted + cxgConverted;
                   return (
-                    <div key={opt.value} className="grid grid-cols-[110px_60px_20px_60px_20px_60px_20px_1fr] gap-1 items-center">
-                      <div className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-[10px] font-semibold shrink-0 whitespace-nowrap ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
-                        <VariantIcon className="w-3 h-3 shrink-0" />
+                    <div key={opt.value} className="grid grid-cols-[minmax(120px,1.5fr)_1fr_1fr_1fr_minmax(80px,0.8fr)] gap-2 items-center px-2 py-1.5 rounded-lg hover:bg-slate-50/60 transition-colors">
+                      {/* Measure badge — bigger, more visible */}
+                      <div className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 text-[13px] font-bold shrink-0 whitespace-nowrap shadow-sm ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`}>
+                        <VariantIcon className="w-4 h-4 shrink-0" />
                         <span>{opt.label}</span>
                       </div>
                       {/* Caixa Pequena */}
-                      <input
-                        type="text" inputMode="decimal" value={cxpVal}
-                        onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_cxp`, e.target.value)}
-                        placeholder="0" disabled={!canEdit}
-                        className={`w-full text-right text-sm font-medium border border-orange-200 rounded-lg px-1.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-orange-50/30'}`}
-                      />
-                      <span className="text-[7px] text-orange-400 font-medium text-center">cp</span>
+                      <div className="flex flex-col items-center gap-0.5">
+                        <input
+                          type="text" inputMode="decimal" value={cxpVal}
+                          onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_cxp`, e.target.value)}
+                          placeholder="0" disabled={!canEdit}
+                          className={`w-full text-center text-base font-bold border-2 border-orange-200 rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-orange-50/40 text-slate-900'}`}
+                        />
+                        {!isNaN(cxpNum) && cxpNum > 0 && (
+                          <span className="text-[10px] text-orange-500 font-semibold">{`\u2248 ${Math.round(cxpConverted)} sacos`}</span>
+                        )}
+                      </div>
                       {/* Caixa Grande */}
-                      <input
-                        type="text" inputMode="decimal" value={cxgVal}
-                        onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_cxg`, e.target.value)}
-                        placeholder="0" disabled={!canEdit}
-                        className={`w-full text-right text-sm font-medium border border-amber-200 rounded-lg px-1.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-amber-50/30'}`}
-                      />
-                      <span className="text-[7px] text-amber-500 font-medium text-center">cg</span>
+                      <div className="flex flex-col items-center gap-0.5">
+                        <input
+                          type="text" inputMode="decimal" value={cxgVal}
+                          onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_cxg`, e.target.value)}
+                          placeholder="0" disabled={!canEdit}
+                          className={`w-full text-center text-base font-bold border-2 border-amber-200 rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-amber-50/40 text-slate-900'}`}
+                        />
+                        {!isNaN(cxgNum) && cxgNum > 0 && (
+                          <span className="text-[10px] text-amber-600 font-semibold">{`\u2248 ${Math.round(cxgConverted)} sacos`}</span>
+                        )}
+                      </div>
                       {/* Saco */}
-                      <input
-                        type="text" inputMode="decimal" value={sacoVal}
-                        onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_saco`, e.target.value)}
-                        placeholder="0" disabled={!canEdit}
-                        className={`w-full text-right text-sm font-medium border border-blue-200 rounded-lg px-1.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-blue-50/30'}`}
-                      />
-                      <span className="text-[7px] text-blue-500 font-medium text-center">sc</span>
+                      <div className="flex flex-col items-center">
+                        <input
+                          type="text" inputMode="decimal" value={sacoVal}
+                          onChange={(e) => canEdit && onSetVariantValue(`${opt.value}_saco`, e.target.value)}
+                          placeholder="0" disabled={!canEdit}
+                          className={`w-full text-center text-base font-bold border-2 border-blue-200 rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-blue-50/40 text-slate-900'}`}
+                        />
+                      </div>
                       {/* Total da medida em sacos */}
-                      <div className="text-right pr-1">
-                        <span className={`text-sm font-bold tabular-nums ${lineTotal > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>
+                      <div className="flex items-center justify-center gap-1.5 bg-emerald-50 rounded-xl py-2.5 px-3 border-2 border-emerald-200 shadow-sm">
+                        <span className={`text-base font-extrabold tabular-nums ${lineTotal > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>
                           {lineTotal > 0 ? Math.round(lineTotal).toLocaleString('pt-BR') : '0'}
                         </span>
-                        <span className="text-[7px] text-slate-400 ml-0.5">sc</span>
+                        <span className={`text-[11px] font-bold ${lineTotal > 0 ? 'text-emerald-500' : 'text-slate-400'}`}>sc</span>
                       </div>
                     </div>
                   );

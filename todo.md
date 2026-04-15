@@ -2526,3 +2526,8 @@
 ## Bloqueio de Datas Futuras na Produção (15/04/2026 - Parte 18)
 - [x] Bloquear preenchimento para datas futuras na aba Produção (apenas dia atual e retroativos permitidos)
 - [x] Exibir aviso quando Maria selecionar data futura
+
+## Ordem Fixa dos Bancos no Faturamento (15/04/2026 - Parte 19)
+- [x] Fixar ordem dos bancos para ser sempre a mesma independente dos valores (não ordenar por valor)
+- [x] Redesign colunas 3-col (Caixa Pequena, Caixa Grande, Saco) nos setores 2-3-4: nomes completos sem abreviação, números pretos e maiores, labels visíveis, medidas mais vistosas, preencher todo o card, layout profissional
+- [x] Fix ordenação de bancos: ordem fixa alfabética em vez de por valor (já implementado no backend)
