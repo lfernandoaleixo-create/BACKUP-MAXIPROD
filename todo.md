@@ -2720,3 +2720,4 @@
 - [x] Substituir "fat." por "faturamento" (palavra completa)
 - [x] Fluxo de Caixa: aumentar tamanho da fonte nos cards (A Receber, A Pagar, Saldo)
 - [x] Criar seção IMPORTAÇÃO no dashboard de Estoque (mesmo estilo da INDUSTRIALIZAÇÃO MADEIRA, abaixo do card de sync, antes do estoque geral)
+- [x] Desfazer seção IMPORTAÇÃO do dashboard de Estoque (ficou errado, misturou estoque)

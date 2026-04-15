@@ -65,7 +65,6 @@ import {
   Scale,
   FileText,
   ClipboardCheck,
-  Globe,
 } from "lucide-react";
 import {
   Dialog,
@@ -3641,55 +3640,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       {/* PO Overview Card */}
       <POOverviewCard items={items} />
 
-      {/* ═══ SEÇÃO IMPORTAÇÃO ═══ */}
-      <div className="mt-10 mb-5">
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent" />
-          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-5 py-2">
-            <Globe className="w-5 h-5 text-blue-700" />
-            <span className="text-sm font-bold text-blue-800 uppercase tracking-wider">Importação</span>
-          </div>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent" />
-        </div>
-        <p className="text-center text-xs text-slate-400 mt-2">Produtos Importados (Revenda) + Matéria-Prima (Importação)</p>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-        <KPICard
-          label="Estoque Total"
-          value={`${formatNumber(revendaItems.concat(mpItems).reduce((s, i) => s + (i.estoqueCx ?? 0), 0))} cx`}
-          sub={`${parentOnlyRevenda.length + parentOnlyMP.length} produtos`}
-          icon={Globe}
-          theme="teal"
-        />
-        <KPICard
-          label="Pedidos (Venda)"
-          value={`${formatNumber(revendaItems.concat(mpItems).reduce((s, i) => s + (i.pedidosCx ?? 0), 0))} cx`}
-          sub="Aprovados + A aprovar"
-          icon={ShoppingCart}
-          theme="orange"
-        />
-        <KPICard
-          label="Disponível"
-          value={`${formatNumber(revendaItems.concat(mpItems).reduce((s, i) => s + (i.disponivelCx ?? 0), 0))} cx`}
-          sub="Estoque - Pedidos"
-          icon={CheckCircle2}
-          theme="emerald"
-        />
-        <KPICard
-          label="PO (A Receber)"
-          value={`${formatNumber(revendaItems.concat(mpItems).reduce((s, i) => s + (i.poCx ?? 0), 0))} cx`}
-          sub="Pedidos de compra"
-          icon={Ship}
-          theme="blue"
-        />
-        <KPICard
-          label="Projetado"
-          value={`${formatNumber(revendaItems.concat(mpItems).reduce((s, i) => s + ((i.disponivelCx ?? 0) + (i.poCx ?? 0)), 0))} cx`}
-          sub="Disponível + PO"
-          icon={TrendingUp}
-          theme="indigo"
-        />
-      </div>
+
 
       {/* Valuation summary card + Financial toggle */}
       {(() => {
