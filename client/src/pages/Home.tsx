@@ -2482,7 +2482,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                 <h3 className="text-lg font-bold text-slate-800">Madeira - Produto Acabado</h3>
                 <span className="text-sm font-extrabold text-green-700 bg-green-100 border border-green-300 px-3 py-1 rounded-full">{parentItems.length} itens</span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque manual (somente aumento)</p>
+              <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque (somente aumento)</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -2577,7 +2577,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                     </th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ width: '50px' }}>Un/Cx</th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-purple-600 uppercase tracking-wider" style={{ minWidth: '110px', width: '12%' }}>Grupo</th>
-                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-green-700 uppercase tracking-wider bg-green-50/60 border-x border-green-200 whitespace-nowrap">Estoque Manual</th>
+                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-green-700 uppercase tracking-wider bg-green-50/60 border-x border-green-200 whitespace-nowrap">Estoque</th>
                     <th className="w-7 py-2.5 px-0.5"></th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('pedidosCx')}>
                       <div className="flex items-center justify-center gap-1">Pedidos <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'pedidosCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
@@ -2626,7 +2626,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                   {filtered.map((item) => {
                     const manualQty = madeiraStockMap.get(item.codigoItem) || 0;
                     const isEditing = editingItem === item.codigoItem;
-                    // Disponível p/ Venda = Estoque Manual - Pedidos de Venda
+                    // Disponível p/ Venda = Estoque - Pedidos de Venda
                     const pedidosVal = item.pedidosCx ?? item.pedidosUn;
                     const disponivelManual = manualQty - pedidosVal;
                     const isNegative = disponivelManual < 0;
@@ -2647,7 +2647,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                         <td className="px-1.5 py-2 text-center">
                           <GrupoBadge grupo={item.grupo} subgrupo={item.subgrupo} />
                         </td>
-                        {/* Estoque Manual */}
+                        {/* Estoque */}
                         <td className="px-1.5 py-2 text-center bg-green-50/40 border-x border-green-200">
                           {isEditing ? (
                             <input ref={inputRef} type="number" min="0" value={editValue}
@@ -2672,7 +2672,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                             {item.pedidosCx !== null ? `${formatNumber(item.pedidosCx)} ${getUnit(item, true)}` : `${formatNumber(item.pedidosUn)} ${getUnit(item, false)}`}
                           </span>
                         </td>
-                        {/* Disponível = Estoque Manual - Pedidos */}
+                        {/* Disponível = Estoque - Pedidos */}
                         <td className="px-1.5 py-2 text-center bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap">
                           <span className={`font-bold text-[13px] ${isNegative ? 'text-red-600' : isZero ? 'text-amber-600' : 'text-emerald-700'}`}>
                             {formatNumber(disponivelManual)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}
@@ -2877,7 +2877,7 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
                 <h3 className="text-lg font-bold text-slate-800">Madeira Semi Pronto</h3>
                 <span className="text-sm font-extrabold text-blue-700 bg-blue-100 border border-blue-300 px-3 py-1 rounded-full">{parentItems.length} itens</span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque manual</p>
+              <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -3312,7 +3312,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     return aguardandoKPI.items.reduce((sum, sp) => sum + (parseFloat(String(sp.quantidade)) || 0), 0);
   }, [aguardandoKPI]);
 
-  // Mapas de estoque manual para Semi Pronto e Aguardando (para valorização)
+  // Mapas de estoque para Semi Pronto e Aguardando (para valorização)
   const semiProntoMapKPI = useMemo(() => {
     const map = new Map<string, number>();
     if (semiProntoKPI?.items) {
@@ -3337,7 +3337,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const ROJAO_CODE = "00129";
   const VARETA_APITO_CODE = "00223";
 
-  // Mapa de estoque manual para KPIs (sincronizado com MadeiraPACard)
+  // Mapa de estoque para KPIs (sincronizado com MadeiraPACard)
   const madeiraStockMapKPI = useMemo(() => {
     const map = new Map<string, number>();
     if (madeiraStockKPI?.items) {
@@ -3361,7 +3361,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const negativos = items.filter((i) => (i.disponivelCx ?? i.disponivelUn) < 0).length;
 
   // Disponível separado: Caixas (tudo exceto Rojão e Vareta Apito) e Dúzias (apenas Rojão 00129)
-  // Usa estoque manual em vez de estoqueCx do Maxiprod
+  // Usa estoque em vez de estoqueCx do Maxiprod
   const disponivelCaixas = useMemo(() => {
     return parentOnlyMadeira
       .filter(i => i.codigoItem !== ROJAO_CODE && i.codigoItem !== VARETA_APITO_CODE && !i.isKgProduct)

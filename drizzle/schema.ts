@@ -793,7 +793,7 @@ export type AuthCompletion = typeof authCompletion.$inferSelect;
 export type InsertAuthCompletion = typeof authCompletion.$inferInsert;
 
 /**
- * Estoque manual de produtos semi prontos (madeira).
+ * Estoque de produtos semi prontos (madeira).
  * Puramente informativo - sem relação com outros dados do sistema.
  * Operadores preenchem manualmente a quantidade em estoque.
  */
@@ -808,7 +808,7 @@ export type SemiProntoStock = typeof semiProntoStock.$inferSelect;
 export type InsertSemiProntoStock = typeof semiProntoStock.$inferInsert;
 
 /**
- * Estoque manual de produtos aguardando escolha (madeira).
+ * Estoque de produtos aguardando escolha (madeira).
  * Puramente informativo - sem relação com outros dados do sistema.
  * Operadores preenchem manualmente a quantidade em estoque.
  */
@@ -915,8 +915,8 @@ export type ReceivableProtestConfig = typeof receivableProtestConfig.$inferSelec
 export type InsertReceivableProtestConfig = typeof receivableProtestConfig.$inferInsert;
 
 /**
- * Estoque manual de Madeira - Produto Acabado.
- * Operadores preenchem manualmente. Só pode AUMENTAR (redução apenas por venda/sync).
+ * Estoque de Madeira - Produto Acabado.
+ * Operadores preenchem. Só pode AUMENTAR (redução apenas por venda/sync automático).
  */
 export const madeiraStock = mysqlTable("madeira_stock", {
   id: int("id").autoincrement().primaryKey(),

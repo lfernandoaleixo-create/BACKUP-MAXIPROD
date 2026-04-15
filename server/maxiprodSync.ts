@@ -7,7 +7,7 @@
  */
 import { ENV } from "./_core/env";
 import { getDb } from "./db";
-import { stockItems, orderItems, scraperStatus, salesOrders } from "../drizzle/schema";
+import { stockItems, orderItems, scraperStatus, salesOrders, madeiraStock, stockEditHistory } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { processStockData } from "./stockProcessor";
 
@@ -389,6 +389,24 @@ async function saveAllData(
 
   updateProgress({ percent: 90, details: "Atualizando pedidos" });
 
+  // ═══ BAIXA AUTOMÁTICA: Snapshot dos pedidos ANTES de deletar ═══
+  const previousOrdersByCode = new Map<string, number>();
+  try {
+    const currentOrders = await db.select({
+      codigoItem: orderItems.codigoItem,
+      quantidade: orderItems.quantidade,
+      estadoNota: orderItems.estadoNota,
+    }).from(orderItems);
+    for (const order of currentOrders) {
+      if (!order.codigoItem) continue;
+      if (order.estadoNota === "Digitação" || order.estadoNota === "Digitacao" || order.estadoNota === "Cancelado") continue;
+      const qty = parseFloat(String(order.quantidade)) || 0;
+      previousOrdersByCode.set(order.codigoItem, (previousOrdersByCode.get(order.codigoItem) || 0) + qty);
+    }
+  } catch (e) {
+    console.warn(`[Baixa Automática] Erro ao capturar snapshot anterior:`, e);
+  }
+
   // Save order items
   await db.delete(orderItems);
   if (orderData.length > 0) {
@@ -440,6 +458,52 @@ async function saveAllData(
     }));
     for (let i = 0; i < rows.length; i += 50) {
       await db.insert(salesOrders).values(rows.slice(i, i + 50));
+    }
+  }
+
+  // ═══ BAIXA AUTOMÁTICA: Comparar pedidos anteriores vs novos e aplicar delta ═══
+  if (previousOrdersByCode.size > 0) {
+    try {
+      const newOrdersByCode = new Map<string, number>();
+      const newRows = orderData.map((item: any) => ({
+        codigoItem: item.CodItem || item.CodigoItem || "",
+        quantidade: String(item.Quantidade || 0),
+        estadoNota: item.EstadoNotaFiscalDecodificado || "",
+      }));
+      for (const order of newRows) {
+        if (!order.codigoItem) continue;
+        if (order.estadoNota === "Digitação" || order.estadoNota === "Digitacao" || order.estadoNota === "Cancelado") continue;
+        const qty = parseFloat(order.quantidade) || 0;
+        newOrdersByCode.set(order.codigoItem, (newOrdersByCode.get(order.codigoItem) || 0) + qty);
+      }
+      for (const [code, previousQty] of Array.from(previousOrdersByCode.entries())) {
+        const newQty = newOrdersByCode.get(code) || 0;
+        const delta = previousQty - newQty;
+        if (delta > 0) {
+          const existing = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, code));
+          if (existing.length > 0) {
+            const currentStock = parseFloat(String(existing[0].quantidade)) || 0;
+            const newStock = Math.max(0, currentStock - delta);
+            if (newStock !== currentStock) {
+              await db.insert(stockEditHistory).values({
+                card: "madeira",
+                codigoItem: code,
+                descricaoItem: `Baixa automática: pedidos diminuíram de ${previousQty} para ${newQty} cx (delta: -${delta})`,
+                valorAnterior: String(currentStock),
+                valorNovo: String(newStock),
+                operador: "Sistema (Baixa Automática)",
+                tipo: "baixa_pedido",
+              });
+              await db.update(madeiraStock)
+                .set({ quantidade: String(newStock), updatedBy: "Sistema (Baixa Automática)" })
+                .where(eq(madeiraStock.codigoItem, code));
+              console.log(`[Baixa Automática] ${code}: estoque ${currentStock} → ${newStock} (delta: -${delta})`);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`[Baixa Automática] Erro:`, e);
     }
   }
 

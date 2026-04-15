@@ -2615,3 +2615,18 @@
 - [x] Fernando, Bruno e Guilherme devem ver campos de preenchimento (nome pirografado, quantidade, tipo de produto) abertos em modo somente leitura
 - [x] Não precisam clicar para ver — visualização geral já aberta (formulário completo com campos desabilitados)
 - [x] Maria mantém o fluxo interativo atual (editável)
+
+## Renomear "Estoque Manual" para "Estoque" (15/04/2026)
+- [x] Renomear "Estoque Manual" para "Estoque" em toda a interface (cards, tabelas, headers, descrições)
+- [x] Remover referência a "manual" já que será alimentado automaticamente pela aba Produção
+
+## Lógica de Baixa Automática no Estoque (15/04/2026)
+- [x] Quando pedidos diminuem no Maxiprod (baixa/entrega), subtrair mesma quantidade do estoque
+- [x] Exemplo: pedido 250cx, entregues 60cx → estoque reduz 60cx, pedidos ficam 190cx
+- [x] Se todas 250cx entregues e dadas baixa → pedidos = 0, estoque reduzido em 250cx = disponível
+- [x] Monitorar variação de pedidos por produto entre sincronizações do Maxiprod
+- [x] Guardar snapshot dos pedidos anteriores para calcular delta
+- [x] Implementado em maxiprodGraphQL.ts e maxiprodSync.ts
+- [x] Registrar cada baixa no stockEditHistory como tipo "baixa_pedido"
+- [x] Nunca deixar estoque negativo (Math.max(0, ...))
+- [x] 15 testes automatizados passando (baixaAutomatica.test.ts)

@@ -22,6 +22,8 @@ import {
   bankAccounts,
   bankTransactions,
   paidAccountsMonthly,
+  madeiraStock,
+  stockEditHistory,
 } from "../drizzle/schema";
 import { eq, sql, inArray, and, ne } from "drizzle-orm";
 import { processStockData } from "./stockProcessor";
@@ -806,6 +808,29 @@ async function saveAllData(
 
   updateProgress({ step: "Salvando dados...", percent: 85, details: "Atualizando estoque" });
 
+  // ═══ BAIXA AUTOMÁTICA: Snapshot dos pedidos ANTES de deletar ═══
+  // Calcula total de pedidos (em caixas) por codigoItem dos order_items atuais
+  // Apenas pedidos que reservam estoque (exclui Digitação e Cancelado)
+  const previousOrdersByCode = new Map<string, number>();
+  try {
+    const currentOrders = await db.select({
+      codigoItem: orderItems.codigoItem,
+      quantidade: orderItems.quantidade,
+      estadoNota: orderItems.estadoNota,
+    }).from(orderItems);
+    
+    for (const order of currentOrders) {
+      if (!order.codigoItem) continue;
+      // Excluir Digitação e Cancelado (mesma regra do stockProcessor)
+      if (order.estadoNota === "Digitação" || order.estadoNota === "Digitacao" || order.estadoNota === "Cancelado") continue;
+      const qty = parseFloat(String(order.quantidade)) || 0;
+      previousOrdersByCode.set(order.codigoItem, (previousOrdersByCode.get(order.codigoItem) || 0) + qty);
+    }
+    console.log(`[Baixa Automática] Snapshot anterior: ${previousOrdersByCode.size} itens com pedidos`);
+  } catch (e) {
+    console.warn(`[Baixa Automática] Erro ao capturar snapshot anterior:`, e);
+  }
+
   // Usar transação atômica para evitar dados inconsistentes durante a sincronização
   await db.transaction(async (tx) => {
     // Save stock items
@@ -848,6 +873,69 @@ async function saveAllData(
   });
 
   console.log(`[GraphQL Sync] Dados de estoque/pedidos salvos atomicamente: ${stockData.length} est, ${orderData.length} ped, ${poData.length} po, ${salesData.length} vnd`);
+
+  // ═══ BAIXA AUTOMÁTICA: Comparar pedidos anteriores vs novos e aplicar delta no estoque ═══
+  if (previousOrdersByCode.size > 0) {
+    try {
+      // Calcular novos totais de pedidos por codigoItem (dos dados recém-inseridos)
+      const newOrdersByCode = new Map<string, number>();
+      for (const order of orderData) {
+        const code = order.codigoItem;
+        if (!code) continue;
+        // Excluir Digitação e Cancelado (mesma regra)
+        if (order.estadoNota === "Digitação" || order.estadoNota === "Digitacao" || order.estadoNota === "Cancelado") continue;
+        const qty = parseFloat(String(order.quantidade)) || 0;
+        newOrdersByCode.set(code, (newOrdersByCode.get(code) || 0) + qty);
+      }
+
+      // Para cada item que tinha pedidos antes, verificar se diminuiu
+      let totalDeductions = 0;
+      let itemsDeducted = 0;
+      for (const [code, previousQty] of Array.from(previousOrdersByCode.entries())) {
+        const newQty = newOrdersByCode.get(code) || 0;
+        const delta = previousQty - newQty; // positivo = pedidos diminuíram = entrega
+        
+        if (delta > 0) {
+          // Pedidos diminuíram → subtrair do estoque da Madeira PA
+          const existing = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, code));
+          if (existing.length > 0) {
+            const currentStock = parseFloat(String(existing[0].quantidade)) || 0;
+            const newStock = Math.max(0, currentStock - delta); // nunca ficar negativo
+            
+            if (newStock !== currentStock) {
+              // Registrar histórico da baixa automática
+              await db.insert(stockEditHistory).values({
+                card: "madeira",
+                codigoItem: code,
+                descricaoItem: `Baixa automática: pedidos diminuíram de ${previousQty} para ${newQty} cx (delta: -${delta})`,
+                valorAnterior: String(currentStock),
+                valorNovo: String(newStock),
+                operador: "Sistema (Baixa Automática)",
+                tipo: "baixa_pedido",
+              });
+              
+              // Atualizar estoque
+              await db.update(madeiraStock)
+                .set({ quantidade: String(newStock), updatedBy: "Sistema (Baixa Automática)" })
+                .where(eq(madeiraStock.codigoItem, code));
+              
+              totalDeductions += delta;
+              itemsDeducted++;
+              console.log(`[Baixa Automática] ${code}: estoque ${currentStock} → ${newStock} (pedidos: ${previousQty} → ${newQty}, delta: -${delta})`);
+            }
+          }
+        }
+      }
+      
+      if (itemsDeducted > 0) {
+        console.log(`[Baixa Automática] Total: ${itemsDeducted} itens com baixa, ${totalDeductions} caixas deduzidas do estoque`);
+      } else {
+        console.log(`[Baixa Automática] Nenhuma baixa necessária nesta sincronização`);
+      }
+    } catch (e) {
+      console.error(`[Baixa Automática] Erro ao processar baixas:`, e);
+    }
+  }
 
   updateProgress({ percent: 95, details: "Processando dashboard" });
 
