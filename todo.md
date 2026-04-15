@@ -2723,3 +2723,4 @@
 - [x] Desfazer seção IMPORTAÇÃO do dashboard de Estoque (ficou errado, misturou estoque)
 - [x] Adicionar apenas título decorativo "Importação" entre card de conexão Maxiprod e os KPIs de estoque (sem mexer em números)
 - [x] Investigar e corrigir KPI "Pedidos (Venda)" que subiu demais (2.987 → 7.510 cx) - fix: usar quantidade direta para fator=1, pedidosUn/unitsPerBox para fator>1. Total corrigido: 2.511 cx
+- [x] Corrigir Disponível e Projetado nos KPIs: Disponível = Estoque - Pedidos (corrigido), Projetado = Disponível + PO. Resultado: Est 19.501 - Ped 2.511 = Disp 16.990 + PO 13.989 = Proj 30.979

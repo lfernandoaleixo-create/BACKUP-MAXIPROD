@@ -606,7 +606,17 @@ export async function processStockData(): Promise<void> {
     // Para isKgProduct: estoqueCx/pedidosCx/disponivelCx já estão em kg (dividido por fator).
     // PO já vem em kg via fator de importação (poUn). Então poCx = poUn e projetadoCx = disponivelCx + poUn.
     const isKg = item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem);
-    const disponivelCxVal = unitsPerBox ? Math.floor(disponivelUn / unitsPerBox) : null;
+    const estoqueCxVal = unitsPerBox ? Math.floor(itemUn / unitsPerBox) : null;
+    const pedidosCxVal = orderData
+      ? (unitsPerBox && unitsPerBox !== 1
+          ? Math.ceil(pedidosUn / unitsPerBox)
+          : Math.ceil(orderData.totalCx))
+      : null;
+    // Disponível = Estoque - Pedidos (em caixas)
+    const disponivelCxVal = estoqueCxVal !== null ? estoqueCxVal - (pedidosCxVal ?? 0) : null;
+    const poCxVal = isKg ? poUn : (poCx || null);
+    // Projetado = Disponível + PO
+    const projetadoCxVal = disponivelCxVal !== null ? disponivelCxVal + (poCxVal ?? 0) : null;
     
     processed.push({
       codigoItem: item.codigoItem,
@@ -617,24 +627,20 @@ export async function processStockData(): Promise<void> {
       descricaoGrupo: item.descricaoGrupo || "",
       empresaDona: item.empresaDona || "",
       estoqueUn: itemUn,
-      estoqueCx: unitsPerBox ? Math.floor(itemUn / unitsPerBox) : null,
+      estoqueCx: estoqueCxVal,
       unidadesPorCaixa: unitsPerBox,
       pedidosUn,
-      pedidosCx: orderData
-        ? (unitsPerBox && unitsPerBox !== 1
-            ? Math.ceil(pedidosUn / unitsPerBox)   // produto com fator real: converter de un para cx
-            : Math.ceil(orderData.totalCx))          // fator=1: quantidade direta já é em caixas
-        : null,
+      pedidosCx: pedidosCxVal,
       pedidosPorCliente,
       disponivelUn,
       disponivelCx: disponivelCxVal,
-      poCx: isKg ? poUn : (poCx || null),
+      poCx: poCxVal,
       poUn,
       poEntregas: poData ? Array.from(poData.entregas) : [],
       poFornecedores: poData ? Array.from(poData.fornecedores) : [],
       poLotes: poData ? aggregateLotes(poData.lotes) : [],
       projetadoUn,
-      projetadoCx: isKg ? (disponivelCxVal !== null ? disponivelCxVal + poUn : null) : (disponivelCxVal !== null ? disponivelCxVal + (poCx || 0) : null),
+      projetadoCx: projetadoCxVal,
       segmento: classifySegment(item.descricaoItem),
       grupo: baseClassification.grupo,
       subgrupo: finalSubgrupo,
