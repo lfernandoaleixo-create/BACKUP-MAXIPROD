@@ -435,21 +435,24 @@ export async function processStockData(): Promise<void> {
   }
   
   // ─── Build order map by codigoItem (apenas pedidos que RESERVAM estoque) ───
-  const orderByCode = new Map<string, { totalUn: number; items: typeof reservingOrders }>();
+  const orderByCode = new Map<string, { totalUn: number; totalCx: number; items: typeof reservingOrders }>();
   for (const order of reservingOrders) {
     const code = order.codigoItem;
     if (!code) continue;
-    const existing = orderByCode.get(code) || { totalUn: 0, items: [] };
+    const existing = orderByCode.get(code) || { totalUn: 0, totalCx: 0, items: [] };
     existing.items.push(order);
+    
+    // Acumular quantidade direta (caixas/unidade de venda) para pedidosCx
+    const qtyCx = parseFloat(order.quantidade);
+    existing.totalCx += qtyCx;
     
     const qtyUnEstoque = order.quantidadeUnEstoque ? parseFloat(order.quantidadeUnEstoque) : 0;
     if (qtyUnEstoque > 0) {
       existing.totalUn += qtyUnEstoque;
     } else {
-      const qty = parseFloat(order.quantidade);
       const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
       const unitsPerBox = fator > 0 ? fator : extractUnitsPerBox(order.descricao);
-      existing.totalUn += unitsPerBox ? qty * unitsPerBox : qty;
+      existing.totalUn += unitsPerBox ? qtyCx * unitsPerBox : qtyCx;
     }
     orderByCode.set(code, existing);
   }
@@ -617,7 +620,11 @@ export async function processStockData(): Promise<void> {
       estoqueCx: unitsPerBox ? Math.floor(itemUn / unitsPerBox) : null,
       unidadesPorCaixa: unitsPerBox,
       pedidosUn,
-      pedidosCx: unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null,
+      pedidosCx: orderData
+        ? (unitsPerBox && unitsPerBox !== 1
+            ? Math.ceil(pedidosUn / unitsPerBox)   // produto com fator real: converter de un para cx
+            : Math.ceil(orderData.totalCx))          // fator=1: quantidade direta já é em caixas
+        : null,
       pedidosPorCliente,
       disponivelUn,
       disponivelCx: disponivelCxVal,
@@ -708,17 +715,29 @@ export async function processStockData(): Promise<void> {
       estoqueCx: unitsPerBox ? 0 : null,
       unidadesPorCaixa: unitsPerBox,
       pedidosUn,
-      pedidosCx: unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null,
+      pedidosCx: orderData
+        ? (unitsPerBox && unitsPerBox !== 1
+            ? Math.ceil(pedidosUn / unitsPerBox)
+            : Math.ceil(orderData.totalCx))
+        : null,
       pedidosPorCliente,
       disponivelUn,
-      disponivelCx: unitsPerBox ? Math.floor(disponivelUn / unitsPerBox) : null,
+      disponivelCx: (() => {
+        if (!orderData) return unitsPerBox ? Math.floor(disponivelUn / unitsPerBox) : null;
+        const pedCx = unitsPerBox && unitsPerBox !== 1 ? Math.ceil(pedidosUn / unitsPerBox) : Math.ceil(orderData.totalCx);
+        return Math.floor(0 - pedCx);
+      })(),
       poCx: poCx || null,
       poUn,
       poEntregas: Array.from(poData.entregas),
       poFornecedores: Array.from(poData.fornecedores),
       poLotes: aggregateLotes(poData.lotes),
       projetadoUn,
-      projetadoCx: unitsPerBox ? (Math.floor(disponivelUn / unitsPerBox) + (poCx || 0)) : null,
+      projetadoCx: (() => {
+        if (!orderData) return unitsPerBox ? (Math.floor(disponivelUn / unitsPerBox) + (poCx || 0)) : null;
+        const pedCx = unitsPerBox && unitsPerBox !== 1 ? Math.ceil(pedidosUn / unitsPerBox) : Math.ceil(orderData.totalCx);
+        return Math.floor(0 - pedCx) + (poCx || 0);
+      })(),
       segmento: classifySegment(descricaoItem),
       ...classifyGrupoFromDesc(descricaoItem, poData.lotes[0]?.referenciaPO),
       isKgProduct: isKgBasedProduct(poItem.unidadeMedidaEstoque || poItem.unidadeMedida || "", poItem.descricaoItem || poItem.descricao || ""),
