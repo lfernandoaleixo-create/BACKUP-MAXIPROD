@@ -3292,7 +3292,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const mpItems = useMemo(() => items.filter((i) => i.grupo === "importacao_mp"), [items]);
 
   // Contagem apenas de pais (excluindo variações filhas)
-  const parentOnlyItems = useMemo(() => items.filter(i => !i.isChild), [items]);
+  // KPI geral conta apenas importação (revenda + MP), exclui industrialização (madeira)
+  const parentOnlyItems = useMemo(() => items.filter(i => !i.isChild && i.grupo !== "industrializacao"), [items]);
   const parentOnlyEstoque = useMemo(() => estoqueItems.filter(i => !i.isChild), [estoqueItems]);
   const parentOnlyEncomenda = useMemo(() => encomendaItems.filter(i => !i.isChild), [encomendaItems]);
   const parentOnlyMadeira = useMemo(() => madeiraItems.filter(i => !i.isChild), [madeiraItems]);
@@ -3300,11 +3301,13 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const parentOnlyIndust = useMemo(() => industItems.filter(i => !i.isChild), [industItems]);
   const parentOnlyMP = useMemo(() => mpItems.filter(i => !i.isChild), [mpItems]);
 
-  const totalEstoqueCx = items.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
-  const totalPedidosCx = items.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
-  const totalDisponivelCx = items.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0);
-  const totalPOCx = items.reduce((sum, i) => sum + (i.poCx ?? 0), 0);
-  const totalProjetadoCx = items.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
+  // Totais gerais: apenas importação (revenda + MP), exclui industrialização (madeira)
+  const importItems = useMemo(() => items.filter(i => i.grupo !== "industrializacao"), [items]);
+  const totalEstoqueCx = importItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
+  const totalPedidosCx = importItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
+  const totalDisponivelCx = importItems.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0);
+  const totalPOCx = importItems.reduce((sum, i) => sum + (i.poCx ?? 0), 0);
+  const totalProjetadoCx = importItems.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
 
   // Madeira KPI totals (Madeira card + Semi Pronto + Aguardando Escolha)
   const semiProntoTotal = useMemo(() => {
