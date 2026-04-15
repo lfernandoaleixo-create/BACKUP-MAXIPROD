@@ -2632,15 +2632,15 @@
 - [x] 15 testes automatizados passando (baixaAutomatica.test.ts)
 
 ## Passo 1: Verificar Baixa Automática (15/04/2026)
-- [ ] Verificar se a lógica de baixa automática está integrada corretamente no fluxo de sync
-- [ ] Testar cenário: pedidos diminuem → estoque reduz automaticamente
+- [x] Verificar se a lógica de baixa automática está integrada corretamente no fluxo de sync
+- [x] Testar cenário: pedidos diminuem → estoque reduz automaticamente (24 testes passando)
 
 ## Passo 2: Tela de Histórico de Pirografia (15/04/2026)
-- [ ] Criar seção/aba de Histórico de Pirografia
-- [ ] Ranking dos nomes mais pirografados (top nomes por quantidade)
-- [ ] Ranking dos produtos mais pirografados (top produtos por quantidade)
-- [ ] Filtro por período (data início/fim)
-- [ ] Mostrar totais e estatísticas gerais
+- [x] Criar seção/aba de Histórico de Pirografia
+- [x] Ranking dos nomes mais pirografados (top nomes por quantidade)
+- [x] Ranking dos produtos mais pirografados (top produtos por quantidade)
+- [x] Filtro por período (data início/fim)
+- [x] Mostrar totais e estatísticas gerais
 
 ## Passo 3: Corrigir Contraprova Maxiprod nos Recebíveis (15/04/2026)
 - [ ] Bug: contraprova com Maxiprod não usa os mesmos filtros selecionados na Manus (período, empresa, etc.)
@@ -2660,3 +2660,22 @@
 - [x] Alinhar colunas (nome, data, valor) de forma consistente
 - [x] Formatação profissional e limpa para facilitar leitura
 - [x] Aplicar em ambas as listas (recebimentos e contas pagas)
+
+## Histórico de Pirografia (15/04/2026)
+- [x] Backend: endpoint para listar registros de pirografia com filtro por período (já existia getPirografiaHistory)
+- [x] Backend: endpoint para ranking de nomes mais pirografados (já existia em getPirografiaHistory)
+- [x] Backend: endpoint para ranking de produtos mais usados por quantidade (já existia em getPirografiaHistory)
+- [x] Frontend: tela de Histórico de Pirografia na aba Produção
+- [x] Frontend: filtro por período (data início/fim)
+- [x] Frontend: ranking de nomes pirografados com contagem
+- [x] Frontend: ranking de produtos mais usados
+- [ ] Testes automatizados para endpoints de histórico de pirografia
+
+## Testes da Baixa Automática de Estoque (15/04/2026)
+- [x] Testes automatizados para validar baixa automática quando pedidos diminuem no Maxiprod (24 testes)
+- [x] Verificar lógica de baixa_pedido no stockEditHistory
+
+## Testes da Contraprova com Filtros (15/04/2026)
+- [x] Testes para contraprova aplicando statusFilter (VENCIDO/A_VENCER)
+- [x] Testes para contraprova aplicando formaFilter (Boleto/Cheque/PIX)
+- [x] Testes para contraprova com filtros combinados

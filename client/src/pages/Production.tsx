@@ -261,7 +261,7 @@ export default function Production() {
   const [statusValues, setStatusValues] = useState<Record<string, string>>({});
   const [commentValues, setCommentValues] = useState<Record<string, string>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<"lancamento" | "historico">("lancamento");
+  const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia">("lancamento");
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [showConversionModal, setShowConversionModal] = useState(false);
 
@@ -862,6 +862,9 @@ export default function Production() {
             <button onClick={() => setViewMode("historico")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "historico" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <History className="w-4 h-4" /> Histórico
             </button>
+            <button onClick={() => setViewMode("pirografia")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "pirografia" ? "bg-orange-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
+              <Flame className="w-4 h-4" /> Pirografia
+            </button>
           </div>
         </div>
 
@@ -1061,8 +1064,10 @@ export default function Production() {
 
 
           </>
-        ) : (
+        ) : viewMode === "historico" ? (
           <HistoryView sectors={sectors || []} weekRange={weekRange} weeklySummary={weeklySummary || []} selectedDate={selectedDate} />
+        ) : (
+          <PirografiaHistoryView />
         )}
       </div>
 
@@ -2494,6 +2499,207 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PIROGRAFIA HISTORY VIEW - Ranking de nomes e produtos pirografados
+   ═══════════════════════════════════════════════════════════ */
+function PirografiaHistoryView() {
+  const today = new Date().toISOString().slice(0, 10);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const [dataInicio, setDataInicio] = useState(thirtyDaysAgo);
+  const [dataFim, setDataFim] = useState(today);
+
+  const { data, isLoading } = trpc.production.getPirografiaHistory.useQuery({
+    dataInicio,
+    dataFim,
+  });
+
+  const formatQty = (n: number) => n % 1 === 0 ? String(n) : n.toFixed(1);
+
+  // Quick period presets
+  const setPreset = (days: number) => {
+    const end = new Date();
+    const start = new Date(Date.now() - days * 86400000);
+    setDataInicio(start.toISOString().slice(0, 10));
+    setDataFim(end.toISOString().slice(0, 10));
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header + Period Filter */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Flame className="w-5 h-5 text-orange-500" />
+              Histórico de Pirografia
+            </h2>
+            <p className="text-sm text-slate-500 mt-0.5">Ranking de nomes e produtos mais pirografados</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => setPreset(7)} className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">7 dias</button>
+            <button onClick={() => setPreset(30)} className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">30 dias</button>
+            <button onClick={() => setPreset(90)} className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">90 dias</button>
+            <button onClick={() => setPreset(365)} className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">1 ano</button>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 mt-4">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-slate-500">De:</label>
+            <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-slate-500">Até:</label>
+            <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          </div>
+        </div>
+      </div>
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+          <span className="ml-2 text-sm text-slate-500">Carregando histórico...</span>
+        </div>
+      )}
+
+      {/* Summary Card */}
+      {data && !isLoading && (
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-5">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-orange-700 tabular-nums">{formatQty(data.total)}</div>
+              <div className="text-xs text-orange-600 font-medium mt-0.5">Caixas Pirografadas</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-amber-700 tabular-nums">{data.topNomes.length}</div>
+              <div className="text-xs text-amber-600 font-medium mt-0.5">Nomes Diferentes</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-yellow-700 tabular-nums">{data.topProdutos.length}</div>
+              <div className="text-xs text-yellow-600 font-medium mt-0.5">Produtos Usados</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rankings Grid */}
+      {data && !isLoading && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Nomes */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
+              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <Type className="w-4 h-4 text-orange-500" />
+                Top Nomes Pirografados
+              </h3>
+            </div>
+            {data.topNomes.length === 0 ? (
+              <div className="text-center py-8 text-sm text-slate-400">Nenhum registro no período</div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {data.topNomes.map((item, idx) => {
+                  const maxQty = data.topNomes[0]?.quantidade || 1;
+                  const pct = (item.quantidade / maxQty) * 100;
+                  return (
+                    <div key={item.nome} className="px-5 py-3 hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          idx === 0 ? 'bg-orange-100 text-orange-700' :
+                          idx === 1 ? 'bg-amber-100 text-amber-700' :
+                          idx === 2 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-slate-100 text-slate-500'
+                        }`}>
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-slate-700 truncate">{item.nome}</div>
+                          <div className="mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 ml-2">
+                          <div className="text-sm font-bold text-slate-700 tabular-nums">{formatQty(item.quantidade)} cx</div>
+                          <div className="text-[10px] text-slate-400">{item.registros} reg.</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Top Produtos */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
+              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <Package className="w-4 h-4 text-teal-500" />
+                Top Produtos Pirografados
+              </h3>
+            </div>
+            {data.topProdutos.length === 0 ? (
+              <div className="text-center py-8 text-sm text-slate-400">Nenhum registro no período</div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {data.topProdutos.map((item, idx) => {
+                  const maxQty = data.topProdutos[0]?.quantidade || 1;
+                  const pct = (item.quantidade / maxQty) * 100;
+                  const matColor = item.materialOrigem === "bambu" ? "emerald" : "amber";
+                  return (
+                    <div key={`${item.codigoItem}-${item.materialOrigem}`} className="px-5 py-3 hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          idx === 0 ? 'bg-teal-100 text-teal-700' :
+                          idx === 1 ? 'bg-cyan-100 text-cyan-700' :
+                          idx === 2 ? 'bg-sky-100 text-sky-700' :
+                          'bg-slate-100 text-slate-500'
+                        }`}>
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-slate-700 truncate">{item.descricaoItem}</span>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                              matColor === "emerald" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                            }`}>
+                              {item.materialOrigem === "bambu" ? "BAMBU" : "MADEIRA"}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">Cód: {item.codigoItem}</div>
+                          <div className="mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-500 ${
+                              matColor === "emerald" ? "bg-gradient-to-r from-emerald-400 to-teal-400" : "bg-gradient-to-r from-amber-400 to-yellow-400"
+                            }`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 ml-2">
+                          <div className="text-sm font-bold text-slate-700 tabular-nums">{formatQty(item.quantidade)} cx</div>
+                          <div className="text-[10px] text-slate-400">{item.registros} reg.</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {data && !isLoading && data.total === 0 && (
+        <div className="text-center py-12">
+          <Flame className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Nenhum registro de pirografia encontrado no período selecionado.</p>
+          <p className="text-xs text-slate-400 mt-1">Tente ampliar o intervalo de datas.</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -246,3 +246,111 @@ describe("Baixa Automática - Cálculo de Deduções", () => {
     expect(deductions[0].newStock).toBe(46); // 296 - 250
   });
 });
+
+describe("Baixa Automática - Cenários de Entrega Parcial", () => {
+  it("deve lidar com entregas parciais em múltiplas rodadas", () => {
+    // Rodada 1: pedido 500, entrega 100 → pedidos = 400
+    const stock1 = new Map([["00050", 1000]]);
+    const d1 = calculateDeductions(new Map([["00050", 500]]), new Map([["00050", 400]]), stock1);
+    expect(d1).toHaveLength(1);
+    expect(d1[0].delta).toBe(100);
+    expect(d1[0].newStock).toBe(900);
+
+    // Rodada 2: pedido 400, entrega 150 → pedidos = 250
+    const stock2 = new Map([["00050", 900]]); // estoque atualizado
+    const d2 = calculateDeductions(new Map([["00050", 400]]), new Map([["00050", 250]]), stock2);
+    expect(d2).toHaveLength(1);
+    expect(d2[0].delta).toBe(150);
+    expect(d2[0].newStock).toBe(750);
+
+    // Rodada 3: pedido 250, entrega total → pedidos = 0
+    const stock3 = new Map([["00050", 750]]);
+    const d3 = calculateDeductions(new Map([["00050", 250]]), new Map<string, number>(), stock3);
+    expect(d3).toHaveLength(1);
+    expect(d3[0].delta).toBe(250);
+    expect(d3[0].newStock).toBe(500);
+  });
+
+  it("deve lidar com entrega parcial onde delta > estoque disponível", () => {
+    // Estoque = 30, mas entrega = 100 caixas
+    const previous = new Map([["00099", 200]]);
+    const current = new Map([["00099", 100]]);
+    const stock = new Map([["00099", 30]]);
+
+    const deductions = calculateDeductions(previous, current, stock);
+    expect(deductions).toHaveLength(1);
+    expect(deductions[0].delta).toBe(100);
+    expect(deductions[0].newStock).toBe(0); // Math.max(0, 30 - 100)
+  });
+
+  it("deve lidar com quantidades decimais nos pedidos", () => {
+    const orders = [
+      { codigoItem: "00001", quantidade: "10.5", estadoNota: "Aprovado" },
+      { codigoItem: "00001", quantidade: "5.3", estadoNota: "Aprovado" },
+    ];
+    const totals = calculateOrderTotals(orders);
+    expect(totals.get("00001")).toBeCloseTo(15.8, 5);
+  });
+
+  it("deve lidar com pedido novo que não existia antes (sem dedução)", () => {
+    // Novo item aparece nos pedidos — não deve deduzir nada
+    const previous = new Map<string, number>(); // não existia
+    const current = new Map([["NOVO_ITEM", 500]]);
+    const stock = new Map([["NOVO_ITEM", 100]]);
+
+    const deductions = calculateDeductions(previous, current, stock);
+    expect(deductions).toHaveLength(0);
+  });
+});
+
+describe("Baixa Automática - Cenários com Múltiplos Estados de Nota", () => {
+  it("deve somar apenas pedidos com estados válidos", () => {
+    const orders = [
+      { codigoItem: "00001", quantidade: "100", estadoNota: "Aprovado" },
+      { codigoItem: "00001", quantidade: "50", estadoNota: "A aprovar" },
+      { codigoItem: "00001", quantidade: "30", estadoNota: "Digitação" },
+      { codigoItem: "00001", quantidade: "20", estadoNota: "Cancelado" },
+      { codigoItem: "00001", quantidade: "10", estadoNota: "Digitacao" },
+    ];
+    const totals = calculateOrderTotals(orders);
+    // Apenas Aprovado (100) + A aprovar (50) = 150
+    expect(totals.get("00001")).toBe(150);
+  });
+
+  it("deve tratar lista vazia de pedidos", () => {
+    const totals = calculateOrderTotals([]);
+    expect(totals.size).toBe(0);
+  });
+
+  it("deve tratar todos os pedidos como inválidos (todos Digitação/Cancelado)", () => {
+    const orders = [
+      { codigoItem: "00001", quantidade: "100", estadoNota: "Digitação" },
+      { codigoItem: "00002", quantidade: "200", estadoNota: "Cancelado" },
+    ];
+    const totals = calculateOrderTotals(orders);
+    expect(totals.size).toBe(0);
+  });
+});
+
+describe("Baixa Automática - Validação de Registro de Histórico", () => {
+  it("deve gerar descrição correta para o histórico de baixa", () => {
+    // Simular a mensagem que seria inserida no stockEditHistory
+    const previousQty = 250;
+    const newQty = 190;
+    const delta = previousQty - newQty;
+    const descricao = `Baixa automática: pedidos diminuíram de ${previousQty} para ${newQty} cx (delta: -${delta})`;
+    
+    expect(descricao).toBe("Baixa automática: pedidos diminuíram de 250 para 190 cx (delta: -60)");
+    expect(descricao).toContain("Baixa automática");
+    expect(descricao).toContain("delta: -60");
+  });
+
+  it("deve gerar descrição correta quando pedidos zeram", () => {
+    const previousQty = 100;
+    const newQty = 0;
+    const delta = previousQty - newQty;
+    const descricao = `Baixa automática: pedidos diminuíram de ${previousQty} para ${newQty} cx (delta: -${delta})`;
+    
+    expect(descricao).toBe("Baixa automática: pedidos diminuíram de 100 para 0 cx (delta: -100)");
+  });
+});

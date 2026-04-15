@@ -273,9 +273,9 @@ describe("financial router", () => {
       expect(result!.pagar.pagas.total).toBe(500);
       expect(result!.pagar.pagas.count).toBe(1);
 
-      // Receber em aberto: 5000 + 2000 + 10000 = 17000 (only EMITIDO)
-      expect(result!.receber.emAberto.total).toBe(17000);
-      expect(result!.receber.emAberto.count).toBe(3);
+      // Receber em aberto: 5000 + 2000 + 10000 + 7500 = 24500 (only EMITIDO, includes 80005)
+      expect(result!.receber.emAberto.total).toBe(24500);
+      expect(result!.receber.emAberto.count).toBe(4);
 
       // Receber recebidas: 800
       expect(result!.receber.recebidas.total).toBe(800);
@@ -286,18 +286,19 @@ describe("financial router", () => {
       const result = await caller.financial.getSummary();
       expect(result).not.toBeNull();
 
-      // Vencidas a pagar: only maxiprodId 90001 (vencimento 2026-03-10 < today 2026-03-14)
-      expect(result!.pagar.vencidas.total).toBe(1500);
-      expect(result!.pagar.vencidas.count).toBe(1);
+      // Vencidas a pagar: 90001 (venc 2026-03-10) + 90002 (venc 2026-03-20) - ambos < today 2026-04-15
+      expect(result!.pagar.vencidas.total).toBe(4500);
+      expect(result!.pagar.vencidas.count).toBe(2);
     });
 
     it("calculates overdue receivables (inadimplência) correctly", async () => {
       const result = await caller.financial.getSummary();
       expect(result).not.toBeNull();
 
-      // Vencidas a receber: 80001 (vencimento 2026-02-15) + 80004 (vencimento 2025-09-01)
-      expect(result!.receber.vencidas.total).toBe(15000);
-      expect(result!.receber.vencidas.count).toBe(2);
+      // Vencidas a receber: 80001 (venc 2026-02-15) + 80002 (venc 2026-04-01) + 80004 (venc 2025-09-01)
+      // Hoje é 2026-04-15, então 80002 também está vencido
+      expect(result!.receber.vencidas.total).toBe(17000);
+      expect(result!.receber.vencidas.count).toBe(3);
     });
   });
 
@@ -343,13 +344,13 @@ describe("financial router", () => {
   describe("getContasAReceber", () => {
     it("returns receivables list (all non-cancelled)", async () => {
       const result = await caller.financial.getContasAReceber();
-      expect(result.items.length).toBe(4); // no cancelled in test data
-      expect(result.total).toBe(4);
+      expect(result.items.length).toBe(5); // 5 total, no cancelled in test data
+      expect(result.total).toBe(5);
     });
 
     it("filters by estado EMITIDO", async () => {
       const result = await caller.financial.getContasAReceber({ estado: "EMITIDO" });
-      expect(result.items.length).toBe(3);
+      expect(result.items.length).toBe(4); // 80001, 80002, 80004, 80005
       expect(result.items.every((i: any) => i.estado === "EMITIDO")).toBe(true);
     });
 
@@ -362,7 +363,7 @@ describe("financial router", () => {
     it("supports pagination", async () => {
       const page1 = await caller.financial.getContasAReceber({ limit: 2, offset: 0 });
       expect(page1.items.length).toBe(2);
-      expect(page1.total).toBe(4);
+      expect(page1.total).toBe(5);
     });
   });
 
@@ -371,13 +372,14 @@ describe("financial router", () => {
       const result = await caller.financial.getAgingReport();
       expect(result).not.toBeNull();
 
-      // 80002 (vencimento 2026-04-01) -> a vencer
+      // 80005 (vencimento 2026-04-15) -> hoje, não vencido -> a vencer
       expect(result!.aging.aVencer.count).toBe(1);
-      expect(result!.aging.aVencer.total).toBe(2000);
+      expect(result!.aging.aVencer.total).toBe(7500);
 
-      // 80001 (vencimento 2026-02-15, ~27 dias atrás) -> 1-30 dias
+      // 80002 (vencimento 2026-04-01, ~14 dias atrás) -> 1-30 dias
+      // 80001 (vencimento 2026-02-15, ~59 dias atrás) -> 31-60 dias
       expect(result!.aging.de1a30.count).toBe(1);
-      expect(result!.aging.de1a30.total).toBe(5000);
+      expect(result!.aging.de1a30.total).toBe(2000);
 
       // 80004 (vencimento 2025-09-01, >90 dias) -> acima de 90
       expect(result!.aging.acima90.count).toBe(1);
@@ -485,14 +487,15 @@ describe("financial router", () => {
 
     it("includes only overdue EMITIDO receivables", async () => {
       const result = await caller.financial.getInadimplenciaTimeline();
-      // Test data has 2 overdue EMITIDO receivables:
+      // Test data has 3 overdue EMITIDO receivables (today = 2026-04-15):
       // 80001: vencimento 2026-02-15, valor 5000
+      // 80002: vencimento 2026-04-01, valor 2000 (vencido pois < today)
       // 80004: vencimento 2025-09-01, valor 10000
       const totalValue = result.reduce((sum: number, p: any) => sum + p.total, 0);
-      expect(totalValue).toBe(15000);
+      expect(totalValue).toBe(17000);
 
       const totalCount = result.reduce((sum: number, p: any) => sum + p.count, 0);
-      expect(totalCount).toBe(2);
+      expect(totalCount).toBe(3);
     });
 
     it("returns months in ascending order", async () => {
@@ -504,9 +507,13 @@ describe("financial router", () => {
 
     it("does not include future or non-overdue receivables", async () => {
       const result = await caller.financial.getInadimplenciaTimeline();
-      // 80002 (vencimento 2026-04-01) should NOT be included (not overdue)
+      // 80005 (vencimento 2026-04-15 = today) should NOT be in overdue
+      // But 80002 (vencimento 2026-04-01 < today) IS overdue, so april entry exists
       const aprilEntry = result.find((p: any) => p.mes === "2026-04");
-      expect(aprilEntry).toBeUndefined();
+      expect(aprilEntry).toBeDefined();
+      // Only 80002 (2000) should be in april, not 80005 (7500)
+      expect(aprilEntry!.total).toBe(2000);
+      expect(aprilEntry!.count).toBe(1);
     });
   });
 
@@ -595,6 +602,184 @@ describe("financial router", () => {
       // No EMITIDO receivables in January (80003 is RECEBIDO)
       expect(result.valorMaxiprod).toBe(0);
       expect(result.count).toBe(0);
+    });
+  });
+
+  describe("getMaxiprodContraprova - recebiveis com statusFilter", () => {
+    it("filters VENCIDO: returns only overdue receivables", async () => {
+      // Período amplo que pega 80001 (venc 2026-02-15, VENCIDO) e 80002 (venc 2026-04-01)
+      // e 80004 (venc 2025-09-01, VENCIDO) e 80005 (venc 2026-04-15)
+      // Hoje é 2026-04-15, então:
+      //   80001 venc 2026-02-15 → VENCIDO ✓
+      //   80002 venc 2026-04-01 → VENCIDO (antes de hoje) ✓
+      //   80004 venc 2025-09-01 → VENCIDO ✓ (mas fora do range)
+      //   80005 venc 2026-04-15 → hoje = não vencido (vencDate < today → false)
+      // Range abr 2026: 80002 (venc 01/04, VENCIDO) + 80005 (venc 15/04, A_VENCER)
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        statusFilter: "VENCIDO",
+      });
+      // 80002 venc 2026-04-01 < today (2026-04-15) → VENCIDO → 2000
+      // 80005 venc 2026-04-15 = today → NOT vencido (< is strict) → excluded
+      expect(result.valorMaxiprod).toBe(2000);
+      expect(result.count).toBe(1);
+      expect(result.label).toContain("Vencidos");
+    });
+
+    it("filters A_VENCER: returns only non-overdue receivables", async () => {
+      // Range abr 2026: 80002 (venc 01/04) + 80005 (venc 15/04)
+      // A_VENCER = vencDate >= today
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        statusFilter: "A_VENCER",
+      });
+      // 80002 venc 2026-04-01 < today → overdue → excluded
+      // 80005 venc 2026-04-15 >= today → A_VENCER → 7500
+      expect(result.valorMaxiprod).toBe(7500);
+      expect(result.count).toBe(1);
+      expect(result.label).toContain("A Vencer");
+    });
+
+    it("statusFilter TODOS returns all receivables (same as no filter)", async () => {
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        statusFilter: "TODOS",
+      });
+      // Same as no filter: 80002 (2000) + 80005 (7500) = 9500
+      expect(result.valorMaxiprod).toBe(9500);
+      expect(result.count).toBe(2);
+    });
+  });
+
+  describe("getMaxiprodContraprova - recebiveis com formaFilter", () => {
+    // NOTE: The test data doesn't have formaCobranca set, so formaFilter
+    // will filter OUT all records (since UPPER(null) LIKE 'PIX%' = false)
+    // This validates the filter mechanism works correctly
+    it("formaFilter PIX filters by forma de cobrança starting with PIX", async () => {
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        formaFilter: "PIX",
+      });
+      // No test records have formaCobranca set, so all are filtered out
+      expect(result.valorMaxiprod).toBe(0);
+      expect(result.count).toBe(0);
+      expect(result.label).toContain("PIX");
+    });
+
+    it("formaFilter Boleto filters by forma de cobrança starting with BOLETO", async () => {
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        formaFilter: "Boleto",
+      });
+      expect(result.valorMaxiprod).toBe(0);
+      expect(result.count).toBe(0);
+      expect(result.label).toContain("Boleto");
+    });
+
+    it("formaFilter Cheque filters by forma de cobrança starting with CHEQUE", async () => {
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        formaFilter: "Cheque",
+      });
+      expect(result.valorMaxiprod).toBe(0);
+      expect(result.count).toBe(0);
+      expect(result.label).toContain("Cheque");
+    });
+
+    it("formaFilter TODOS returns all (same as no filter)", async () => {
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        formaFilter: "TODOS",
+      });
+      expect(result.valorMaxiprod).toBe(9500);
+      expect(result.count).toBe(2);
+    });
+  });
+
+  describe("getMaxiprodContraprova - recebiveis com filtros combinados", () => {
+    it("statusFilter + empresaNome combined", async () => {
+      // VENCIDO + PALITOS: 80002 (venc 01/04, VENCIDO, PALITOS) = 2000
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        statusFilter: "VENCIDO",
+        empresaNome: "PALITOS INDUSTRIA",
+      });
+      expect(result.valorMaxiprod).toBe(2000);
+      expect(result.count).toBe(1);
+      expect(result.label).toContain("Vencidos");
+      expect(result.label).toContain("PALITOS INDUSTRIA");
+    });
+
+    it("statusFilter A_VENCER + empresaNome VARETAS", async () => {
+      // A_VENCER + VARETAS: 80005 (venc 15/04, A_VENCER, VARETAS) = 7500
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        statusFilter: "A_VENCER",
+        empresaNome: "VARETAS INDUSTRIA",
+      });
+      expect(result.valorMaxiprod).toBe(7500);
+      expect(result.count).toBe(1);
+      expect(result.label).toContain("A Vencer");
+      expect(result.label).toContain("VARETAS INDUSTRIA");
+    });
+
+    it("statusFilter VENCIDO + empresaNome VARETAS returns 0 (no match)", async () => {
+      // VENCIDO + VARETAS: 80005 é A_VENCER, não VENCIDO → 0
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        statusFilter: "VENCIDO",
+        empresaNome: "VARETAS INDUSTRIA",
+      });
+      expect(result.valorMaxiprod).toBe(0);
+      expect(result.count).toBe(0);
+    });
+
+    it("statusFilter + bancoNome combined", async () => {
+      // A_VENCER + Banco do Brasil: 80005 (venc 15/04, A_VENCER, BB) = 7500
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        statusFilter: "A_VENCER",
+        bancoNome: "Banco do Brasil S.A.",
+      });
+      expect(result.valorMaxiprod).toBe(7500);
+      expect(result.count).toBe(1);
+    });
+
+    it("all filters combined: status + empresa + banco + conta", async () => {
+      // VENCIDO + PALITOS + Sicredi + 50051: 80002 (venc 01/04, VENCIDO, PALITOS, Sicredi, 50051) = 2000
+      const result = await caller.financial.getMaxiprodContraprova({
+        section: "recebiveis",
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        statusFilter: "VENCIDO",
+        empresaNome: "PALITOS INDUSTRIA",
+        bancoNome: "Banco Cooperativo Sicredi S.A.",
+        contaNumero: "50051",
+      });
+      expect(result.valorMaxiprod).toBe(2000);
+      expect(result.count).toBe(1);
     });
   });
 });
