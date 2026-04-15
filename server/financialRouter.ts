@@ -4458,9 +4458,19 @@ ${acoesTexto}
         }
 
         // contas_receber_mes - total de contas a receber em um mês específico (estado EMITIDO)
+        // REGRA: Excluir inadimplentes (vencidos antes do cutoff de conciliação bancária)
+        // para alinhar com o getMonthlyBreakdown que só mostra a partir do dia seguinte à conciliação
         if (section === "contas_receber_mes") {
           const db = await getDb();
           if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          // Mesma lógica do getMonthlyBreakdown: o mês corrente começa no dia seguinte à conciliação
+          const cutoff = getPreviousBusinessDay();
+          const effectiveStartDate = addDaysStr(cutoff, 1); // dia seguinte à última conciliação
+
+          // Se o startDate solicitado é anterior ao effectiveStartDate (ex: 2020-01-01 para total geral),
+          // usar o effectiveStartDate para excluir inadimplentes (vencidos antes da conciliação)
+          const adjustedStartDate = startDate < effectiveStartDate ? effectiveStartDate : startDate;
 
           const result = await db.select({
             total: sql<number>`COALESCE(SUM(CAST(${accountsReceivable.valorLiquido} AS DECIMAL(15,2)) - CAST(COALESCE(${accountsReceivable.valorRecebidoLiquido}, '0') AS DECIMAL(15,2))), 0)`,
@@ -4469,14 +4479,16 @@ ${acoesTexto}
             .where(and(
               eq(accountsReceivable.estado, 'EMITIDO'),
               inArray(accountsReceivable.tipo, ['TITULO', 'RECEITA', 'ADIANTAMENTO']),
-              gte(accountsReceivable.vencimentoData, startDate),
+              gte(accountsReceivable.vencimentoData, adjustedStartDate),
               lte(accountsReceivable.vencimentoData, endDate + "T23:59:59"),
             ));
+
+          const inadLabel = startDate < effectiveStartDate ? ` (excl. inadimplentes até ${cutoff})` : '';
 
           return cacheAndReturn({
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
-            label: `${result[0]?.count || 0} títulos a receber no período`,
+            label: `${result[0]?.count || 0} títulos a receber no período${inadLabel}`,
           });
         }
 

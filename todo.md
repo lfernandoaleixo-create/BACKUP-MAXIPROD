@@ -2694,3 +2694,7 @@
 - [x] Apito permanece roxo
 - [x] Card Produtos em cinza com número em preto
 - [x] Estender cards em comprimento para ocupar melhor o espaço (como Bambu)
+
+## Corrigir Contraprova Contas a Receber (15/04/2026)
+- [x] Descontar inadimplentes na contraprova ao comparar com Maxiprod (API)
+- [x] Investigar diferença de ~R$ 610k entre dashboard e API (causada por inadimplentes incluídos na contraprova)
