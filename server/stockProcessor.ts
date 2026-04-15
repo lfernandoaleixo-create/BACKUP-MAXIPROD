@@ -603,8 +603,7 @@ export async function processStockData(): Promise<void> {
       }
     }
     
-    // Para isKgProduct: estoqueCx/pedidosCx/disponivelCx já estão em kg (dividido por fator).
-    // PO já vem em kg via fator de importação (poUn). Então poCx = poUn e projetadoCx = disponivelCx + poUn.
+    // isKg: produtos vendidos em kg (ex: PCT 20KG)
     const isKg = item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem);
     const estoqueCxVal = unitsPerBox ? Math.floor(itemUn / unitsPerBox) : null;
     const pedidosCxVal = orderData
@@ -614,7 +613,9 @@ export async function processStockData(): Promise<void> {
       : null;
     // Disponível = Estoque - Pedidos (em caixas)
     const disponivelCxVal = estoqueCxVal !== null ? estoqueCxVal - (pedidosCxVal ?? 0) : null;
-    const poCxVal = isKg ? poUn : (poCx || null);
+    // PO em caixas/sacos (espelho fiel do Maxiprod) — NUNCA converter para kg/un
+    // O Maxiprod mostra POs em quantidade de embalagem (caixas/sacos), não em unidades
+    const poCxVal = poCx || null;
     // Projetado = Disponível + PO
     const projetadoCxVal = disponivelCxVal !== null ? disponivelCxVal + (poCxVal ?? 0) : null;
     

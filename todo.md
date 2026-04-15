@@ -2726,3 +2726,5 @@
 - [x] Corrigir Disponível e Projetado nos KPIs: Disponível = Estoque - Pedidos (corrigido), Projetado = Disponível + PO. Resultado: Est 19.501 - Ped 2.511 = Disp 16.990 + PO 13.989 = Proj 30.979
 - [x] Aba Produção: desabilitar soma automática no estoque da Madeira (produto acabado) - manter registro no histórico mas NÃO somar no estoque. Flag MADEIRA_STOCK_AUTO_FEED_DISABLED = true em upsertEntry e batchUpsertEntries.
 - [x] KPI Estoque Total: mostrar apenas produtos de importação (revenda + MP), excluir industrialização (madeira) da contagem de produtos e totais
+- [x] Investigar e corrigir divergência KPI PO (13.989 cx) vs seção Pedidos de Compra (9.639 cx) — causa: produto 00058 (kg) usava poUn em vez de totalCx. Fix: poCxVal sempre usa totalCx. Ambos agora mostram 9.639 cx
+- [x] Card Alertas na Industrialização Madeira: ajustar altura para ficar igual aos outros KPI cards (h-full no KPICard e no wrapper)

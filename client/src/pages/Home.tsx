@@ -420,7 +420,7 @@ function KPICard({ label, value, sub, icon: Icon, theme, onClick }: {
 }) {
   const s = kpiStyles[theme];
   return (
-    <div className={`group relative bg-white rounded-xl border border-slate-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
+    <div className={`group relative bg-white rounded-xl border border-slate-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 h-full ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
       <div className={`h-1 ${s.bar}`} />
       <div className="px-4 py-3.5">
         <div className="flex items-start justify-between mb-3">
@@ -3847,7 +3847,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
             </div>
           </div>
         </div>
-        <div onClick={() => madeiraAlertas.length > 0 && setShowAlertasPanel(p => !p)} className={madeiraAlertas.length > 0 ? "cursor-pointer" : ""}>
+        <div onClick={() => madeiraAlertas.length > 0 && setShowAlertasPanel(p => !p)} className={`h-full ${madeiraAlertas.length > 0 ? "cursor-pointer" : ""}`}>
           <KPICard
             label="Alertas"
             value={madeiraAlertas.length > 0 ? `${madeiraAlertas.length}` : "Nenhum"}

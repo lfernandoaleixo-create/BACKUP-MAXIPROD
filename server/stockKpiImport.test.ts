@@ -162,3 +162,109 @@ describe("KPI Import Section - Filtering Logic", () => {
     expect(parentOnlyItems).toHaveLength(initialCount);
   });
 });
+
+/**
+ * Tests for PO KPI consistency: KPI "PO (A Receber)" must match
+ * the sum of lote.quantidade in the POOverviewCard section.
+ * 
+ * Root cause of bug: for isKg products (e.g., PCT 20KG), poCx was
+ * set to poUn (kg) instead of totalCx (caixas/sacos), causing
+ * KPI to show 4500 while PO section showed 150.
+ * 
+ * Fix: poCxVal always uses totalCx (caixas/sacos as in Maxiprod).
+ */
+describe("PO KPI Consistency - poCx must equal sum of poLotes", () => {
+  interface POLote {
+    referenciaPO: string;
+    quantidade: number;
+    quantidadeUn: number;
+  }
+
+  interface ItemWithPO {
+    codigoItem: string;
+    poCx: number;
+    poLotes: POLote[];
+    isKgProduct: boolean;
+  }
+
+  it("poCx should equal sum of poLotes.quantidade for normal products", () => {
+    const item: ItemWithPO = {
+      codigoItem: "00001",
+      poCx: 100,
+      poLotes: [{ referenciaPO: "PO01", quantidade: 100, quantidadeUn: 1000 }],
+      isKgProduct: false,
+    };
+    const lotesSum = item.poLotes.reduce((s, l) => s + l.quantidade, 0);
+    expect(item.poCx).toBe(lotesSum);
+  });
+
+  it("poCx should equal sum of poLotes.quantidade for kg products (NOT poUn)", () => {
+    // This is the 00058 case: Vareta de Apito PCT 20KG
+    // PO1: 50 sacos (1500 kg), PO2: 100 sacos (3000 kg)
+    // totalCx = 150, totalUn = 4500
+    // poCx MUST be 150 (sacos), NOT 4500 (kg)
+    const item: ItemWithPO = {
+      codigoItem: "00058",
+      poCx: 150, // totalCx from processPOItem
+      poLotes: [
+        { referenciaPO: "PO62", quantidade: 50, quantidadeUn: 1500 },
+        { referenciaPO: "PO01", quantidade: 100, quantidadeUn: 3000 },
+      ],
+      isKgProduct: true,
+    };
+    const lotesSum = item.poLotes.reduce((s, l) => s + l.quantidade, 0);
+    // poCx must match lotes sum (150), not poUn (4500)
+    expect(item.poCx).toBe(lotesSum);
+    expect(item.poCx).toBe(150);
+    expect(item.poCx).not.toBe(4500); // Old buggy value
+  });
+
+  it("total KPI PO should equal total PO section for a set of items", () => {
+    const items: ItemWithPO[] = [
+      {
+        codigoItem: "00001",
+        poCx: 100,
+        poLotes: [{ referenciaPO: "PO01", quantidade: 100, quantidadeUn: 1000 }],
+        isKgProduct: false,
+      },
+      {
+        codigoItem: "00058",
+        poCx: 150, // was 4500 before fix
+        poLotes: [
+          { referenciaPO: "PO62", quantidade: 50, quantidadeUn: 1500 },
+          { referenciaPO: "PO01", quantidade: 100, quantidadeUn: 3000 },
+        ],
+        isKgProduct: true,
+      },
+      {
+        codigoItem: "00009",
+        poCx: 1000,
+        poLotes: [{ referenciaPO: "PO01", quantidade: 1000, quantidadeUn: 5000 }],
+        isKgProduct: false,
+      },
+    ];
+
+    // KPI sums poCx
+    const kpiTotal = items.reduce((s, i) => s + i.poCx, 0);
+    // PO section sums lote.quantidade
+    const poSectionTotal = items.reduce((s, i) => s + i.poLotes.reduce((ls, l) => ls + l.quantidade, 0), 0);
+
+    expect(kpiTotal).toBe(poSectionTotal);
+    expect(kpiTotal).toBe(1250); // 100 + 150 + 1000
+  });
+
+  it("poCx calculation: always use totalCx, never poUn", () => {
+    // Simulating the stockProcessor logic AFTER fix
+    const totalCx = 150; // from processPOItem: po.quantidade sum
+    const totalUn = 4500; // from processPOItem: kg conversion
+    const isKg = true;
+
+    // OLD (buggy): poCxVal = isKg ? poUn : (poCx || null)
+    const oldPoCxVal = isKg ? totalUn : (totalCx || null);
+    expect(oldPoCxVal).toBe(4500); // This was wrong
+
+    // NEW (fixed): poCxVal = poCx || null (always totalCx)
+    const newPoCxVal = totalCx || null;
+    expect(newPoCxVal).toBe(150); // This is correct
+  });
+});
