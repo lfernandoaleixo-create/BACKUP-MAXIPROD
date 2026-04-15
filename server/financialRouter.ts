@@ -4493,9 +4493,19 @@ ${acoesTexto}
         }
 
         // contas_pagar_mes - total de contas a pagar em um mês específico (estado EMITIDO)
+        // REGRA: Excluir vencidos antes do cutoff de conciliação bancária
+        // para alinhar com o getMonthlyBreakdown que só mostra a partir do dia seguinte à conciliação
         if (section === "contas_pagar_mes") {
           const db = await getDb();
           if (!db) return { valorMaxiprod: 0, count: 0, label: "Banco indisponível" };
+
+          // Mesma lógica do getMonthlyBreakdown: o mês corrente começa no dia seguinte à conciliação
+          const cutoff = getPreviousBusinessDay();
+          const effectiveStartDate = addDaysStr(cutoff, 1); // dia seguinte à última conciliação
+
+          // Se o startDate solicitado é anterior ao effectiveStartDate (ex: 2020-01-01 para total geral),
+          // usar o effectiveStartDate para excluir vencidos (contas vencidas antes da conciliação)
+          const adjustedStartDate = startDate < effectiveStartDate ? effectiveStartDate : startDate;
 
           const result = await db.select({
             total: sql<number>`COALESCE(SUM(CAST(${accountsPayable.valorLiquido} AS DECIMAL(15,2)) - CAST(COALESCE(${accountsPayable.valorPagoLiquido}, '0') AS DECIMAL(15,2))), 0)`,
@@ -4503,14 +4513,16 @@ ${acoesTexto}
           }).from(accountsPayable)
             .where(and(
               eq(accountsPayable.estado, 'EMITIDO'),
-              gte(accountsPayable.vencimentoData, startDate),
+              gte(accountsPayable.vencimentoData, adjustedStartDate),
               lte(accountsPayable.vencimentoData, endDate + "T23:59:59"),
             ));
+
+          const vencLabel = startDate < effectiveStartDate ? ` (excl. vencidos até ${cutoff})` : '';
 
           return cacheAndReturn({
             valorMaxiprod: Number(result[0]?.total || 0),
             count: Number(result[0]?.count || 0),
-            label: `${result[0]?.count || 0} contas a pagar no período`,
+            label: `${result[0]?.count || 0} contas a pagar no período${vencLabel}`,
           });
         }
 

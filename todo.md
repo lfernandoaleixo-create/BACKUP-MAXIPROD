@@ -2698,3 +2698,8 @@
 ## Corrigir Contraprova Contas a Receber (15/04/2026)
 - [x] Descontar inadimplentes na contraprova ao comparar com Maxiprod (API)
 - [x] Investigar diferença de ~R$ 610k entre dashboard e API (causada por inadimplentes incluídos na contraprova)
+
+## Corrigir Contraprova Contas a Pagar (15/04/2026)
+- [x] Investigar divergência de ~R$ 2M entre dashboard e API no Total A Pagar (causada por vencidos antes do cutoff)
+- [x] Excluir vencidos/inadimplentes na contraprova de contas a pagar (mesma lógica do receber)
+- [x] Garantir que conferências automáticas batam todo dia (lógica persistida no código, usa cutoff dinâmico)
