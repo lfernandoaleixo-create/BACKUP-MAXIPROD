@@ -2704,3 +2704,13 @@
 - [x] Excluir vencidos/inadimplentes na contraprova de contas a pagar (mesma lógica do receber)
 - [x] Garantir que conferências automáticas batam todo dia (lógica persistida no código, usa cutoff dinâmico)
 - [x] Investigar divergência persistente de ~R$ 1.94M no contas a pagar (causa: dashboard mostra 10 meses, contraprova buscava até 2099; fix: limitar endDate ao 10º mês)
+
+## Melhorias Consulta de Cliente + Contas Pagas (15/04/2026)
+- [x] Remover "S/N" dos pedidos na consulta de cliente - mostrar número do pedido real
+- [x] Mostrar todos os números de NFs vinculadas a cada pedido
+- [x] Adicionar filtros profissionais: Em Aberto / Pago / Todos
+- [x] Ordenação por vencimento (próximos a vencer primeiro até últimos)
+- [x] Puxar títulos detalhados do Maxiprod para cada cliente (informações padronizadas)
+- [x] Card sofisticado e moderno para a consulta de cliente
+- [x] Contas Pagas: puxar todos os dados completos (fornecedor sem "-", descrição, anotações)
+- [x] Contas Pagas: garantir que todos os fornecedores apareçam (não faltar nenhum)

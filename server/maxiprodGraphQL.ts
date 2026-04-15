@@ -2072,15 +2072,37 @@ export async function syncPaidAccountsSnapshots(): Promise<void> {
 export async function fetchPaidAccountsDetails(startDate: string, endDate: string): Promise<{
   descricao: string;
   fornecedor: string;
+  fornecedorApelido: string;
+  observacoes: string;
+  anotacoes: string;
   valorPagoLiquido: number;
+  valorOriginal: number;
   liquidacaoData: string;
   vencimentoData: string;
+  documento: string;
+  parcela: string;
+  tipo: string;
+  empresaNome: string;
 }[]> {
   try {
     const startISO = `${startDate}T00:00:00.000-03:00`;
     const endISO = `${endDate}T23:59:59.999-03:00`;
 
-    let allItems: { descricao: string; fornecedor: string; valorPagoLiquido: number; liquidacaoData: string; vencimentoData: string }[] = [];
+    let allItems: {
+      descricao: string;
+      fornecedor: string;
+      fornecedorApelido: string;
+      observacoes: string;
+      anotacoes: string;
+      valorPagoLiquido: number;
+      valorOriginal: number;
+      liquidacaoData: string;
+      vencimentoData: string;
+      documento: string;
+      parcela: string;
+      tipo: string;
+      empresaNome: string;
+    }[] = [];
     let excludedBaixaCount = 0;
     let skip = 0;
     const take = 1000;
@@ -2114,6 +2136,8 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
             parcela
             parcelasQuantidadeTotal
             liquidacaoConta { codigoEstruturado }
+            empresa { nomeFantasia }
+            tarefasEAnotacoes { items { descricao } }
           }
         }
       }`);
@@ -2137,13 +2161,38 @@ export async function fetchPaidAccountsDetails(startDate: string, endDate: strin
           parts.push(`Parcela ${item.parcela}/${item.parcelasQuantidadeTotal}`);
         }
         if (parts.length === 0 && item.observacoes) parts.push(item.observacoes);
+
+        // Fornecedor: prioridade razaoSocial > nomeFantasia > apelido
+        const fornecedorRazao = item.fornecedor?.razaoSocial || '';
+        const fornecedorNome = item.fornecedor?.nomeFantasia || '';
+        const fornecedorApelido = item.fornecedor?.apelido || '';
+        const fornecedor = fornecedorRazao || fornecedorNome || fornecedorApelido || item.referenteA || item.observacoes || 'Sem identificação';
+
+        // Anotações
+        const anotacoes = (item.tarefasEAnotacoes?.items || [])
+          .map((a: any) => a.descricao)
+          .filter(Boolean)
+          .join(' | ');
+
+        // Parcela
+        const parcelaStr = item.parcela && item.parcelasQuantidadeTotal
+          ? `${item.parcela}/${item.parcelasQuantidadeTotal}`
+          : '';
         
         allItems.push({
           descricao: parts.join(' | ') || '-',
-          fornecedor: item.fornecedor?.razaoSocial || item.fornecedor?.nomeFantasia || '-',
+          fornecedor,
+          fornecedorApelido,
+          observacoes: item.observacoes || '',
+          anotacoes,
           valorPagoLiquido: item.valorPagoLiquido || 0,
+          valorOriginal: item.valorOriginal || 0,
           liquidacaoData: item.liquidacaoData?.slice(0, 10) || '-',
           vencimentoData: item.vencimentoData?.slice(0, 10) || '-',
+          documento: item.documentoVinculadoNumero || '',
+          parcela: parcelaStr,
+          tipo: item.tipo || '',
+          empresaNome: item.empresa?.nomeFantasia || '',
         });
       }
 

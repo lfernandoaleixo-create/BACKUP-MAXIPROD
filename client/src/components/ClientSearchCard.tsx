@@ -4,9 +4,10 @@
  * 4 cards de status: Em Digitação, A Aprovar, Aprovado (A Faturar), Faturado
  * Cores: Faturado=verde, Aprovado(A Faturar)=amarelo alaranjado, A Aprovar=laranja, Em Digitação=cinza
  * Títulos: EMITIDO = em aberto (aguardando pagamento), RECEBIDO = já pago
+ * Filtros profissionais: Em Aberto / Pago / Todos com ordenação por vencimento
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   Search,
@@ -33,6 +34,11 @@ import {
   Edit3,
   ClipboardCheck,
   Receipt,
+  Filter,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Hash,
 } from "lucide-react";
 
 function formatCurrency(value: number): string {
@@ -47,11 +53,25 @@ function formatDate(dateStr: string): string {
   return dateStr;
 }
 
+function daysUntil(dateStr: string): number | null {
+  if (!dateStr) return null;
+  const clean = dateStr.includes("T") ? dateStr.split("T")[0] : dateStr;
+  const target = new Date(clean + "T12:00:00");
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+type TituloFilter = "todos" | "aberto" | "pago";
+type TituloSort = "vencimento_asc" | "vencimento_desc" | "valor_desc" | "valor_asc";
+
 export function ClientSearchCard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [tituloFilter, setTituloFilter] = useState<TituloFilter>("todos");
+  const [tituloSort, setTituloSort] = useState<TituloSort>("vencimento_asc");
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     orders: true,
     receivables: true,
@@ -92,6 +112,8 @@ export function ClientSearchCard() {
     setSelectedClient(null);
     setSearchQuery("");
     setExpanded(false);
+    setTituloFilter("todos");
+    setTituloSort("vencimento_asc");
   };
 
   const handleSelectClient = (clientName: string) => {
@@ -99,8 +121,71 @@ export function ClientSearchCard() {
     setSearchQuery("");
     setShowDropdown(false);
     setExpanded(true);
+    setTituloFilter("todos");
+    setTituloSort("vencimento_asc");
     inputRef.current?.blur();
   };
+
+  // Filter and sort grouped receivables
+  const filteredReceivables = useMemo(() => {
+    if (!clientSummary?.groupedReceivables) return [];
+    let groups = [...clientSummary.groupedReceivables];
+
+    // Filter
+    if (tituloFilter === "aberto") {
+      groups = groups.filter(g => {
+        const allRecebido = g.titulos.every(t => t.estado === "RECEBIDO");
+        return !allRecebido; // Keep groups that have at least one non-RECEBIDO
+      });
+    } else if (tituloFilter === "pago") {
+      groups = groups.filter(g => {
+        const allRecebido = g.titulos.every(t => t.estado === "RECEBIDO");
+        return allRecebido && g.isFaturado;
+      });
+    }
+
+    // Sort
+    groups.sort((a, b) => {
+      // Get earliest vencimento from each group
+      const getVenc = (g: typeof groups[0]) => {
+        const dates = g.titulos.map(t => t.vencimento).filter(Boolean);
+        if (dates.length === 0) return "9999-12-31";
+        return dates.sort()[0];
+      };
+      const getValor = (g: typeof groups[0]) => g.valorTotalGrupo;
+
+      switch (tituloSort) {
+        case "vencimento_asc":
+          return getVenc(a).localeCompare(getVenc(b));
+        case "vencimento_desc":
+          return getVenc(b).localeCompare(getVenc(a));
+        case "valor_desc":
+          return getValor(b) - getValor(a);
+        case "valor_asc":
+          return getValor(a) - getValor(b);
+        default:
+          return 0;
+      }
+    });
+
+    return groups;
+  }, [clientSummary?.groupedReceivables, tituloFilter, tituloSort]);
+
+  // Count by filter
+  const filterCounts = useMemo(() => {
+    if (!clientSummary?.groupedReceivables) return { todos: 0, aberto: 0, pago: 0 };
+    const all = clientSummary.groupedReceivables;
+    const aberto = all.filter(g => !g.titulos.every(t => t.estado === "RECEBIDO")).length;
+    const pago = all.filter(g => g.titulos.every(t => t.estado === "RECEBIDO") && g.isFaturado).length;
+    return { todos: all.length, aberto, pago };
+  }, [clientSummary?.groupedReceivables]);
+
+  // Totals for filtered
+  const filteredTotals = useMemo(() => {
+    const total = filteredReceivables.reduce((s, g) => s + g.valorTotalGrupo, 0);
+    const parcelas = filteredReceivables.reduce((s, g) => s + g.parcelas, 0);
+    return { total, parcelas, groups: filteredReceivables.length };
+  }, [filteredReceivables]);
 
   const summaryText = clientSummary
     ? `${clientSummary.orders.totalPedidos} pedidos | ${formatCurrency(clientSummary.orders.valorTotalPedidos)}`
@@ -436,7 +521,7 @@ export function ClientSearchCard() {
                 )}
               </SectionCard>
 
-              {/* Títulos (Contas a Receber) */}
+              {/* Títulos (Contas a Receber) - with professional filters */}
               <SectionCard
                 title="Títulos (Contas a Receber)"
                 icon={<FileText className="h-4 w-4 text-amber-600" />}
@@ -444,34 +529,83 @@ export function ClientSearchCard() {
                 expanded={expandedSections.titles}
                 onToggle={() => toggleSection("titles")}
               >
-                {/* Legenda explicativa */}
-                <div className="mb-3 p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-[11px] text-slate-500">
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                      <strong className="text-amber-700">EMITIDO</strong> = Título em aberto, aguardando pagamento
+                {/* Professional Filter Bar */}
+                <div className="mb-3 space-y-2">
+                  {/* Filter tabs */}
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-1">
+                      <Filter className="h-3.5 w-3.5 text-slate-400 mr-1" />
+                      <button
+                        onClick={() => setTituloFilter("todos")}
+                        className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                          tituloFilter === "todos"
+                            ? "bg-slate-700 text-white shadow-sm"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        }`}
+                      >
+                        Todos ({filterCounts.todos})
+                      </button>
+                      <button
+                        onClick={() => setTituloFilter("aberto")}
+                        className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                          tituloFilter === "aberto"
+                            ? "bg-amber-600 text-white shadow-sm"
+                            : "bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200"
+                        }`}
+                      >
+                        Em Aberto ({filterCounts.aberto})
+                      </button>
+                      <button
+                        onClick={() => setTituloFilter("pago")}
+                        className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+                          tituloFilter === "pago"
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200"
+                        }`}
+                      >
+                        Pagos ({filterCounts.pago})
+                      </button>
                     </div>
+
+                    {/* Sort selector */}
                     <div className="flex items-center gap-1.5">
-                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                      <strong className="text-emerald-700">RECEBIDO</strong> = Título pago/recebido
+                      <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
+                      <select
+                        value={tituloSort}
+                        onChange={(e) => setTituloSort(e.target.value as TituloSort)}
+                        className="text-xs bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                      >
+                        <option value="vencimento_asc">Vencimento (mais próximo primeiro)</option>
+                        <option value="vencimento_desc">Vencimento (mais distante primeiro)</option>
+                        <option value="valor_desc">Maior valor primeiro</option>
+                        <option value="valor_asc">Menor valor primeiro</option>
+                      </select>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Receipt className="h-3 w-3 text-slate-400" />
-                      Cada boleto = 1 título (parcela)
-                    </div>
+                  </div>
+
+                  {/* Summary bar */}
+                  <div className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 text-[11px]">
+                    <span className="text-slate-500">
+                      <strong className="text-slate-700">{filteredTotals.groups}</strong> documento{filteredTotals.groups !== 1 ? 's' : ''} | <strong className="text-slate-700">{filteredTotals.parcelas}</strong> título{filteredTotals.parcelas !== 1 ? 's' : ''}
+                    </span>
+                    <span className="font-bold text-slate-700">{formatCurrency(filteredTotals.total)}</span>
                   </div>
                 </div>
 
-                {clientSummary.groupedReceivables && clientSummary.groupedReceivables.length > 0 ? (
+                {filteredReceivables.length > 0 ? (
                   <div className="space-y-2">
-                    {clientSummary.groupedReceivables.map((group, gIdx) => (
+                    {filteredReceivables.map((group, gIdx) => (
                       <TituloGroupCard key={gIdx} group={group} />
                     ))}
                   </div>
-                ) : clientSummary.orders.pedidosFaturados > 0 ? (
+                ) : clientSummary.orders.pedidosFaturados > 0 && tituloFilter === "todos" ? (
                   <div className="text-center py-4">
                     <p className="text-xs text-amber-600 font-medium">Pedido faturado encontrado, mas sem títulos vinculados.</p>
                     <p className="text-[10px] text-slate-400 mt-1">Os títulos podem ainda não ter sido gerados no Maxiprod ou estão vinculados a outro nome de cliente.</p>
+                  </div>
+                ) : tituloFilter !== "todos" ? (
+                  <div className="text-center py-4">
+                    <p className="text-xs text-slate-400">Nenhum título encontrado com o filtro selecionado.</p>
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 text-center py-4">Nenhum título encontrado para este cliente.</p>
@@ -666,7 +800,7 @@ function SectionCard({
   );
 }
 
-/* Card expansível que agrupa títulos do mesmo documento/pedido */
+/* Card expansível que agrupa títulos do mesmo documento/pedido - REDESENHADO */
 function TituloGroupCard({ group }: {
   group: {
     documento: string;
@@ -698,25 +832,26 @@ function TituloGroupCard({ group }: {
   const [expanded, setExpanded] = useState(false);
 
   // Determine overall status of the group
-  // Regra: se o pedido NÃO foi faturado, o estado é sempre "Em Aberto"
-  // Só pode mostrar "Pago" se o pedido foi faturado E todos os títulos foram recebidos
   const allRecebido = group.titulos.every(t => t.estado === "RECEBIDO");
   const someEmitido = group.titulos.some(t => t.estado === "EMITIDO");
   const pedidoFaturado = group.isFaturado === true;
   
   let groupStatus: "RECEBIDO" | "EMITIDO" | "MISTO";
   if (!pedidoFaturado) {
-    // Pedido não faturado: sempre "Em Aberto" independente do estado dos títulos
     groupStatus = "EMITIDO";
   } else {
-    // Pedido faturado: usar estado real dos títulos
     groupStatus = allRecebido ? "RECEBIDO" : someEmitido ? "EMITIDO" : "MISTO";
   }
 
   // Get banco info from first titulo that has it
   const bancoInfo = group.titulos.find(t => t.bancoNome)?.bancoNome || "";
 
-  const formaPagamento = bancoInfo ? "Boleto Bancário" : "Outros";
+  // Get earliest vencimento for "days until" badge
+  const earliestVenc = group.titulos
+    .filter(t => t.estado === "EMITIDO" && t.vencimento)
+    .map(t => t.vencimento)
+    .sort()[0];
+  const daysUntilVenc = earliestVenc ? daysUntil(earliestVenc) : null;
 
   // Colors based on status
   const statusColor = groupStatus === "RECEBIDO"
@@ -737,6 +872,39 @@ function TituloGroupCard({ group }: {
     ? "Em Aberto"
     : "Parcial";
 
+  // Build document label - NEVER show S/N
+  const buildDocLabel = () => {
+    const parts: React.ReactNode[] = [];
+    
+    if (group.isPedido && group.pedidoNumero) {
+      parts.push(<span key="ped" className="text-slate-700">Pedido <strong>{group.pedidoNumero}</strong></span>);
+    } else if (group.isPedido && group.documento) {
+      parts.push(<span key="ped" className="text-slate-700">Pedido <strong>{group.documento}</strong></span>);
+    } else if (group.documento) {
+      parts.push(<span key="doc" className="text-slate-700">Doc <strong>{group.documento}</strong></span>);
+    } else {
+      // Instead of S/N, show the first titulo's NF or a descriptive label
+      const firstNf = group.titulos.find(t => t.nfNumero || t.documento)?.nfNumero || group.titulos.find(t => t.documento)?.documento;
+      if (firstNf) {
+        parts.push(<span key="nf" className="text-slate-700">Doc <strong>{firstNf}</strong></span>);
+      } else {
+        parts.push(<span key="titulo" className="text-slate-500 italic">Título avulso</span>);
+      }
+    }
+
+    // Add NF links
+    if (group.nfVinculada && group.nfVinculada.length > 0) {
+      parts.push(
+        <span key="arrow" className="text-slate-400 mx-1">&rarr;</span>,
+        <span key="nfs" className="text-emerald-600 font-medium">
+          NF {group.nfVinculada.join(", ")}
+        </span>
+      );
+    }
+
+    return parts;
+  };
+
   return (
     <div className={`rounded-lg border ${statusColor} overflow-hidden transition-all`}>
       {/* Header - clickable to expand */}
@@ -744,17 +912,11 @@ function TituloGroupCard({ group }: {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between p-3 hover:bg-white/50 transition-colors"
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
           <div className="flex items-center gap-2 shrink-0">
             <FileText className={`h-4 w-4 ${groupStatus === "RECEBIDO" ? "text-emerald-600" : "text-amber-600"}`} />
-            <span className="font-mono text-sm font-semibold text-slate-700">
-              {group.documento ? (
-                group.isPedido && group.pedidoNumero
-                  ? <>Pedido {group.pedidoNumero}{group.nfVinculada && group.nfVinculada.length > 0 && <span className="text-emerald-600 font-normal"> → NF {group.nfVinculada.join(", ")}</span>}</>
-                  : group.isPedido
-                  ? <>Pedido {group.documento}{group.nfVinculada && group.nfVinculada.length > 0 && <span className="text-emerald-600 font-normal"> → NF {group.nfVinculada.join(", ")}</span>}</>
-                  : <>Doc {group.documento}</>
-              ) : "S/N"}
+            <span className="font-mono text-sm font-semibold">
+              {buildDocLabel()}
             </span>
           </div>
           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusBadgeColor}`}>
@@ -776,11 +938,24 @@ function TituloGroupCard({ group }: {
               {bancoInfo.replace("Banco ", "").replace(" S.A.", "").substring(0, 20)}
             </span>
           )}
+          {/* Days until vencimento badge */}
+          {groupStatus === "EMITIDO" && daysUntilVenc !== null && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1 ${
+              daysUntilVenc < 0 ? "bg-red-100 text-red-700" :
+              daysUntilVenc <= 7 ? "bg-orange-100 text-orange-700" :
+              daysUntilVenc <= 30 ? "bg-yellow-100 text-yellow-700" :
+              "bg-slate-100 text-slate-600"
+            }`}>
+              <Clock className="h-2.5 w-2.5" />
+              {daysUntilVenc < 0 ? `${Math.abs(daysUntilVenc)}d atraso` :
+               daysUntilVenc === 0 ? "Vence hoje" :
+               `${daysUntilVenc}d`}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-4 shrink-0">
           <div className="text-right">
             <div className="text-sm font-bold text-slate-800">{formatCurrency(group.valorTotalGrupo)}</div>
-
           </div>
           {expanded
             ? <ChevronUp className="h-4 w-4 text-slate-400" />
@@ -794,7 +969,7 @@ function TituloGroupCard({ group }: {
         <div className="border-t border-slate-200 bg-white">
           <div className="px-3 pt-2 pb-1 flex items-center gap-2 text-xs text-slate-500">
             <CreditCard className="h-3 w-3" />
-            <span>Forma: <strong className="text-slate-700">{formaPagamento}</strong></span>
+            <span>Forma: <strong className="text-slate-700">{bancoInfo ? "Boleto Bancário" : "Outros"}</strong></span>
             {bancoInfo && (
               <>
                 <span className="text-slate-300">|</span>
@@ -808,6 +983,7 @@ function TituloGroupCard({ group }: {
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 text-[11px]">
                   <th className="text-left py-1.5 px-3">Título</th>
+                  <th className="text-left py-1.5 px-3">NF/Doc</th>
                   <th className="text-left py-1.5 px-3">Emissão</th>
                   <th className="text-left py-1.5 px-3">Vencimento</th>
                   <th className="text-left py-1.5 px-3">Liquidação</th>
@@ -816,32 +992,51 @@ function TituloGroupCard({ group }: {
                 </tr>
               </thead>
               <tbody>
-                {group.titulos.map((t, tIdx) => (
-                  <tr key={tIdx} className={`border-b border-slate-100 last:border-0 ${
-                    t.estado === "RECEBIDO" ? "bg-emerald-50/30 hover:bg-emerald-50" : "hover:bg-slate-50"
-                  }`}>
-                    <td className="py-1.5 px-3 text-xs text-slate-600">
-                      {t.parcela && t.totalParcelas ? `${t.parcela}/${t.totalParcelas}` : t.parcela || "Única"}
-                    </td>
-                    <td className="py-1.5 px-3 text-xs text-slate-600">{formatDate(t.emissao)}</td>
-                    <td className="py-1.5 px-3 text-xs text-slate-600 font-medium">{formatDate(t.vencimento)}</td>
-                    <td className="py-1.5 px-3 text-xs text-slate-600">{t.liquidacao ? formatDate(t.liquidacao) : "-"}</td>
-                    <td className="py-1.5 px-3 text-right text-xs font-medium text-slate-700">{formatCurrency(t.valorOriginal)}</td>
-                    <td className="py-1.5 px-3">
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                        (!pedidoFaturado)
-                          ? "bg-amber-100 text-amber-700"
-                          : t.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700"
-                          : t.estado === "EMITIDO" ? "bg-amber-100 text-amber-700"
-                          : "bg-red-100 text-red-700"
+                {group.titulos
+                  .sort((a, b) => (a.vencimento || "").localeCompare(b.vencimento || ""))
+                  .map((t, tIdx) => {
+                    const days = t.estado === "EMITIDO" ? daysUntil(t.vencimento) : null;
+                    return (
+                      <tr key={tIdx} className={`border-b border-slate-100 last:border-0 ${
+                        t.estado === "RECEBIDO" ? "bg-emerald-50/30 hover:bg-emerald-50" : "hover:bg-slate-50"
                       }`}>
-                        {(!pedidoFaturado)
-                          ? "Em Aberto"
-                          : t.estado === "RECEBIDO" ? "Pago" : t.estado === "EMITIDO" ? "Em Aberto" : t.estado}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                        <td className="py-1.5 px-3 text-xs text-slate-600">
+                          {t.parcela && t.totalParcelas ? `${t.parcela}/${t.totalParcelas}` : t.parcela || "Única"}
+                        </td>
+                        <td className="py-1.5 px-3 text-xs text-slate-600 font-mono">
+                          {t.nfNumero || t.documento || "-"}
+                        </td>
+                        <td className="py-1.5 px-3 text-xs text-slate-600">{formatDate(t.emissao)}</td>
+                        <td className="py-1.5 px-3 text-xs font-medium">
+                          <span className={`${
+                            days !== null && days < 0 ? "text-red-600" :
+                            days !== null && days <= 7 ? "text-orange-600" :
+                            "text-slate-600"
+                          }`}>
+                            {formatDate(t.vencimento)}
+                          </span>
+                          {days !== null && days < 0 && (
+                            <span className="ml-1 text-[9px] text-red-500 font-normal">({Math.abs(days)}d atraso)</span>
+                          )}
+                        </td>
+                        <td className="py-1.5 px-3 text-xs text-slate-600">{t.liquidacao ? formatDate(t.liquidacao) : "-"}</td>
+                        <td className="py-1.5 px-3 text-right text-xs font-medium text-slate-700">{formatCurrency(t.valorOriginal)}</td>
+                        <td className="py-1.5 px-3">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                            (!pedidoFaturado)
+                              ? "bg-amber-100 text-amber-700"
+                              : t.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700"
+                              : t.estado === "EMITIDO" ? "bg-amber-100 text-amber-700"
+                              : "bg-red-100 text-red-700"
+                          }`}>
+                            {(!pedidoFaturado)
+                              ? "Em Aberto"
+                              : t.estado === "RECEBIDO" ? "Pago" : t.estado === "EMITIDO" ? "Em Aberto" : t.estado}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>

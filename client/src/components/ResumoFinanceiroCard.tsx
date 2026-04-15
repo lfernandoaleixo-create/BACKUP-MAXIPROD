@@ -1855,9 +1855,18 @@ function SalesDetailTable({ startDate, endDate }: { startDate: string; endDate: 
 
 interface PaidItem {
   fornecedor: string;
+  fornecedorApelido: string;
   descricao: string;
+  observacoes: string;
+  anotacoes: string;
   liquidacaoData: string;
+  vencimentoData: string;
   valorPagoLiquido: number;
+  valorOriginal: number;
+  documento: string;
+  parcela: string;
+  tipo: string;
+  empresaNome: string;
 }
 
 function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: string }) {
@@ -1867,10 +1876,26 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
   );
 
   const { sortField, sortDir, handleSort } = useSort("valorPagoLiquido", "desc");
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  const [searchFilter, setSearchFilter] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    let items = [...data] as PaidItem[];
+    if (searchFilter.trim()) {
+      const q = searchFilter.toLowerCase();
+      items = items.filter(i =>
+        i.fornecedor.toLowerCase().includes(q) ||
+        i.descricao.toLowerCase().includes(q) ||
+        i.observacoes?.toLowerCase().includes(q) ||
+        i.documento?.toLowerCase().includes(q)
+      );
+    }
+    return items;
+  }, [data, searchFilter]);
 
   const sorted = useMemo(() => {
-    if (!data) return [];
-    const items = [...data] as PaidItem[];
+    const items = [...filtered];
     items.sort((a, b) => {
       let cmp = 0;
       switch (sortField) {
@@ -1883,6 +1908,9 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
         case "liquidacaoData":
           cmp = a.liquidacaoData.localeCompare(b.liquidacaoData);
           break;
+        case "vencimentoData":
+          cmp = a.vencimentoData.localeCompare(b.vencimentoData);
+          break;
         case "valorPagoLiquido":
         default:
           cmp = a.valorPagoLiquido - b.valorPagoLiquido;
@@ -1891,7 +1919,7 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
       return sortDir === "asc" ? cmp : -cmp;
     });
     return items;
-  }, [data, sortField, sortDir]);
+  }, [filtered, sortField, sortDir]);
 
   if (isLoading) {
     return (
@@ -1911,36 +1939,126 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
   }
 
   return (
-    <div className="mt-2 border border-slate-200 rounded-lg overflow-hidden">
-      <div className="max-h-64 overflow-y-auto">
-        <table className="w-full text-xs">
-          <thead className="bg-red-50 sticky top-0">
-            <tr>
-              <SortHeader label="Fornecedor" field="fornecedor" currentField={sortField} currentDir={sortDir} onSort={handleSort} colorClass="text-red-700" />
-              <SortHeader label="Descricao" field="descricao" currentField={sortField} currentDir={sortDir} onSort={handleSort} colorClass="text-red-700" />
-              <SortHeader label="Liquidacao" field="liquidacaoData" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="center" colorClass="text-red-700" />
-              <SortHeader label="Valor Pago" field="valorPagoLiquido" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="right" colorClass="text-red-700" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {sorted.map((item, idx) => (
-              <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                <td className="px-3 py-1.5 font-medium text-slate-700 max-w-[180px] truncate" title={item.fornecedor}>{item.fornecedor}</td>
-                <td className="px-3 py-1.5 text-slate-600 max-w-[200px] truncate" title={item.descricao}>{item.descricao}</td>
-                <td className="px-3 py-1.5 text-center text-slate-500">{formatDate(item.liquidacaoData)}</td>
-                <td className="px-3 py-1.5 text-right font-semibold text-red-600">{formatCurrency(item.valorPagoLiquido)}</td>
+    <div className="mt-2 space-y-2">
+      {/* Search filter */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Buscar fornecedor, descri\u00e7\u00e3o ou documento..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            className="w-full h-7 pl-7 pr-3 text-[11px] bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/20 text-slate-700 placeholder:text-slate-400"
+          />
+          <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        </div>
+        <span className="text-[10px] text-slate-400 shrink-0">
+          {sorted.length} de {data.length} contas
+        </span>
+      </div>
+
+      <div className="border border-slate-200 rounded-lg overflow-hidden">
+        <div className="max-h-[400px] overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-red-50 sticky top-0 z-10">
+              <tr>
+                <SortHeader label="Fornecedor" field="fornecedor" currentField={sortField} currentDir={sortDir} onSort={handleSort} colorClass="text-red-700" />
+                <SortHeader label="Descri\u00e7\u00e3o" field="descricao" currentField={sortField} currentDir={sortDir} onSort={handleSort} colorClass="text-red-700" />
+                <SortHeader label="Vencimento" field="vencimentoData" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="center" colorClass="text-red-700" />
+                <SortHeader label="Liquida\u00e7\u00e3o" field="liquidacaoData" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="center" colorClass="text-red-700" />
+                <SortHeader label="Valor Pago" field="valorPagoLiquido" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="right" colorClass="text-red-700" />
+                <th className="px-2 py-1.5 text-red-700 text-[10px] font-semibold w-8"></th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot className="bg-red-50 border-t border-red-200">
-            <tr>
-              <td colSpan={3} className="px-3 py-2 font-bold text-red-800">Total ({sorted.length} contas)</td>
-              <td className="px-3 py-2 text-right font-bold text-red-800">
-                {formatCurrency(sorted.reduce((sum, i) => sum + i.valorPagoLiquido, 0))}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {sorted.map((item, idx) => (
+                <>
+                  <tr
+                    key={`row-${idx}`}
+                    className={`hover:bg-slate-50 transition-colors cursor-pointer ${
+                      expandedRow === idx ? "bg-red-50/50" : ""
+                    }`}
+                    onClick={() => setExpandedRow(expandedRow === idx ? null : idx)}
+                  >
+                    <td className="px-3 py-1.5 font-medium text-slate-700 max-w-[200px]" title={item.fornecedor}>
+                      <div className="truncate">{item.fornecedor}</div>
+                      {item.fornecedorApelido && item.fornecedorApelido !== item.fornecedor && (
+                        <div className="text-[9px] text-slate-400 truncate">{item.fornecedorApelido}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-1.5 text-slate-600 max-w-[220px]">
+                      <div className="truncate" title={item.descricao}>{item.descricao}</div>
+                      {item.parcela && (
+                        <span className="text-[9px] text-blue-500">Parcela {item.parcela}</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-1.5 text-center text-slate-500">{formatDate(item.vencimentoData)}</td>
+                    <td className="px-3 py-1.5 text-center text-slate-500">{formatDate(item.liquidacaoData)}</td>
+                    <td className="px-3 py-1.5 text-right font-semibold text-red-600">{formatCurrency(item.valorPagoLiquido)}</td>
+                    <td className="px-2 py-1.5 text-center">
+                      <svg className={`w-3 h-3 text-slate-400 transition-transform ${expandedRow === idx ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </td>
+                  </tr>
+                  {expandedRow === idx && (
+                    <tr key={`detail-${idx}`}>
+                      <td colSpan={6} className="px-4 py-2 bg-red-50/30 border-b border-red-100">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
+                          {item.documento && (
+                            <div>
+                              <span className="text-slate-400 block">Documento</span>
+                              <span className="text-slate-700 font-medium">{item.documento}</span>
+                            </div>
+                          )}
+                          {item.tipo && (
+                            <div>
+                              <span className="text-slate-400 block">Tipo</span>
+                              <span className="text-slate-700 font-medium">{item.tipo}</span>
+                            </div>
+                          )}
+                          {item.valorOriginal > 0 && item.valorOriginal !== item.valorPagoLiquido && (
+                            <div>
+                              <span className="text-slate-400 block">Valor Original</span>
+                              <span className="text-slate-700 font-medium">{formatCurrency(item.valorOriginal)}</span>
+                            </div>
+                          )}
+                          {item.empresaNome && (
+                            <div>
+                              <span className="text-slate-400 block">Empresa</span>
+                              <span className="text-slate-700 font-medium">{item.empresaNome}</span>
+                            </div>
+                          )}
+                          {item.observacoes && (
+                            <div className="col-span-2">
+                              <span className="text-slate-400 block">Observa\u00e7\u00f5es</span>
+                              <span className="text-slate-700">{item.observacoes}</span>
+                            </div>
+                          )}
+                          {item.anotacoes && (
+                            <div className="col-span-2">
+                              <span className="text-slate-400 block">Anota\u00e7\u00f5es</span>
+                              <span className="text-slate-700">{item.anotacoes}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+            </tbody>
+            <tfoot className="bg-red-50 border-t border-red-200">
+              <tr>
+                <td colSpan={4} className="px-3 py-2 font-bold text-red-800">Total ({sorted.length} contas)</td>
+                <td className="px-3 py-2 text-right font-bold text-red-800">
+                  {formatCurrency(sorted.reduce((sum, i) => sum + i.valorPagoLiquido, 0))}
+                </td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </div>
   );
