@@ -2685,3 +2685,12 @@
 - [x] Labels (Estoque, Pedidos, Disponível) e valores em preto
 - [x] Mini-cards Rojão e Apito: labels e valores todos em roxo
 - [x] Não abreviar 'Dispon.' nos mini-cards Rojão e Apito (usar 'Disponível')
+
+## Reorganização Layout KPI Cards + Correção Cor Rojão (15/04/2026)
+- [x] Alinhar colunas verticalmente: Estoque/Pedidos/Disponível/Produtos entre os 3 cards
+- [x] Madeira PA: grid 6 colunas (Estoque, Pedidos, Disponível, Rojão estreito, Apito estreito, Produtos)
+- [x] Semi Pronto e Aguardando: grid com mesmas proporções para alinhar com Madeira PA
+- [x] Corrigir cor do mini-card Rojão: de roxo para azul (bg-blue, text-blue)
+- [x] Apito permanece roxo
+- [x] Card Produtos em cinza com número em preto
+- [x] Estender cards em comprimento para ocupar melhor o espaço (como Bambu)

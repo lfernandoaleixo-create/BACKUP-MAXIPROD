@@ -2495,7 +2495,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid grid-cols-5 gap-3 mt-4 ml-16">
+        <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
           <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
             <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(paEstoqueCx)} <span className="text-xs font-semibold">cx</span></p>
@@ -2508,27 +2508,27 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
             <p className={`text-lg font-extrabold mt-1 ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          {/* ROJÃO mini-card */}
-          <div className="bg-purple-50/80 rounded-lg px-3 py-3.5 border border-purple-200">
-            <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider mb-0.5">Rojão (dz)</p>
+          {/* ROJÃO mini-card - AZUL */}
+          <div className="bg-blue-50/80 rounded-lg px-2.5 py-3 border border-blue-200">
+            <p className="text-[9px] text-blue-600 font-bold uppercase tracking-wider mb-0.5">Rojão (dz)</p>
             <div className="space-y-0">
               <div className="flex justify-between items-baseline">
-                <span className="text-[9px] text-purple-600 font-semibold">Estoque</span>
-                <span className="text-xs font-extrabold text-purple-700">{formatNumber(paEstoqueDz)}</span>
+                <span className="text-[9px] text-blue-600 font-semibold">Estoque</span>
+                <span className="text-xs font-extrabold text-blue-700">{formatNumber(paEstoqueDz)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[9px] text-purple-600 font-semibold">Pedidos</span>
-                <span className={`text-xs font-extrabold ${paPedidosDz > 0 ? 'text-purple-700' : 'text-slate-400'}`}>{formatNumber(paPedidosDz)}</span>
+                <span className="text-[9px] text-blue-600 font-semibold">Pedidos</span>
+                <span className={`text-xs font-extrabold ${paPedidosDz > 0 ? 'text-blue-700' : 'text-slate-400'}`}>{formatNumber(paPedidosDz)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className={`text-[9px] font-bold ${paDisponivelDz < 0 ? 'text-red-600' : 'text-purple-600'}`}>Disponível</span>
-                <span className={`text-xs font-black ${paDisponivelDz < 0 ? 'text-red-700' : 'text-purple-700'}`}>{formatNumber(paDisponivelDz)}</span>
+                <span className={`text-[9px] font-bold ${paDisponivelDz < 0 ? 'text-red-600' : 'text-blue-600'}`}>Disponível</span>
+                <span className={`text-xs font-black ${paDisponivelDz < 0 ? 'text-red-700' : 'text-blue-700'}`}>{formatNumber(paDisponivelDz)}</span>
               </div>
             </div>
           </div>
-          {/* APITO mini-card */}
-          <div className="bg-purple-50/80 rounded-lg px-3 py-3.5 border border-purple-200">
-            <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider mb-0.5">Apito (kg)</p>
+          {/* APITO mini-card - ROXO */}
+          <div className="bg-purple-50/80 rounded-lg px-2.5 py-3 border border-purple-200">
+            <p className="text-[9px] text-purple-600 font-bold uppercase tracking-wider mb-0.5">Apito (kg)</p>
             <div className="space-y-0">
               <div className="flex justify-between items-baseline">
                 <span className="text-[9px] text-purple-600 font-semibold">Estoque</span>
@@ -2543,6 +2543,11 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                 <span className={`text-xs font-black ${paDisponivelKg < 0 ? 'text-red-700' : 'text-purple-700'}`}>{formatNumber(paDisponivelKg)}</span>
               </div>
             </div>
+          </div>
+          {/* PRODUTOS card */}
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5">
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
+            <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
         </div>
       </div>
@@ -2890,22 +2895,24 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-<div className="hidden sm:grid grid-cols-4 gap-3 mt-4 ml-16">
-           <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
-             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-             <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
-           </div>
-           <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
-             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-             <p className="text-lg font-extrabold text-slate-400 mt-1">0 <span className="text-xs font-semibold">cx</span></p>
+<div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
+          <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
+            <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
+            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-emerald-50/80 rounded-lg px-4 py-3.5">
+          <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
+            <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
+            <p className="text-lg font-extrabold text-slate-400 mt-1">0 <span className="text-xs font-semibold">cx</span></p>
+          </div>
+          <div className="bg-emerald-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
             <p className="text-lg font-extrabold text-emerald-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-slate-50/80 rounded-lg px-4 py-3.5">
-            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
-            <p className="text-lg font-extrabold text-slate-700 mt-1">{parentItems.length}</p>
+          <div />
+          <div />
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5">
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
+            <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
         </div>
       </div>
@@ -3094,22 +3101,24 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid grid-cols-4 gap-4 mt-4 ml-16">
-          <div className="bg-teal-50/80 rounded-lg px-4 py-2.5">
+        <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
+          <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-lg font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-orange-50/80 rounded-lg px-4 py-2.5">
+          <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className="text-lg font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-slate-400 mt-1">0 <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-emerald-50/80 rounded-lg px-4 py-2.5">
+          <div className="bg-emerald-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
-            <p className="text-lg font-extrabold text-emerald-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-emerald-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-slate-50/80 rounded-lg px-4 py-2.5">
-            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
-            <p className="text-lg font-extrabold text-slate-700">{parentItems.length}</p>
+          <div />
+          <div />
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5">
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
+            <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
         </div>
       </div>
