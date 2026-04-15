@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory } from "../drizzle/schema";
+import { productionSectors, productionMachines, productionEntries, dashboardData, stockItems, madeiraStock, stockEditHistory, pirografiaEntries } from "../drizzle/schema";
 import { eq, and, or, sql, desc, gte, lte, inArray } from "drizzle-orm";
 
 /** Status válidos para máquinas de produção */
@@ -632,5 +632,326 @@ export const productionRouter = router({
       });
 
       return { report, data: hoje };
+    }),
+
+  // ═══════════════════════════════════════════════════════════
+  // PIROGRAFIA (Setor 9 - Máquina Pirografar)
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Listar produtos disponíveis para pirografia (Bambu + Madeira).
+   * Puxa do estoque real (stock_items) ambas as categorias.
+   */
+  getPirografiaProducts: publicProcedure
+    .input(z.object({ categoria: z.enum(["bambu", "madeira", "todos"]).optional() }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const categoria = input?.categoria || "todos";
+
+      let whereClause;
+      if (categoria === "bambu") {
+        whereClause = eq(stockItems.superGrupoCodigo, "12");
+      } else if (categoria === "madeira") {
+        whereClause = or(
+          eq(stockItems.superGrupoCodigo, "05"),
+          and(
+            eq(stockItems.superGrupoCodigo, "16"),
+            inArray(stockItems.grupoCodigo, ["18", "19"])
+          )
+        );
+      } else {
+        // todos: Bambu + Madeira
+        whereClause = or(
+          eq(stockItems.superGrupoCodigo, "12"),
+          eq(stockItems.superGrupoCodigo, "05"),
+          and(
+            eq(stockItems.superGrupoCodigo, "16"),
+            inArray(stockItems.grupoCodigo, ["18", "19"])
+          )
+        );
+      }
+
+      const rows = await db
+        .select({
+          codigoItem: stockItems.codigoItem,
+          descricaoItem: stockItems.descricaoItem,
+          unidadeMedida: stockItems.unidadeMedida,
+          superGrupoCodigo: stockItems.superGrupoCodigo,
+        })
+        .from(stockItems)
+        .where(whereClause)
+        .orderBy(stockItems.descricaoItem);
+
+      // Deduplicate and classify
+      const seen = new Set<string>();
+      const products: Array<{ codigoItem: string; descricaoItem: string; unidadeMedida: string; materialOrigem: string }> = [];
+      for (const row of rows) {
+        if (!seen.has(row.codigoItem)) {
+          seen.add(row.codigoItem);
+          const isBambu = row.superGrupoCodigo === "12";
+          products.push({
+            codigoItem: row.codigoItem,
+            descricaoItem: row.descricaoItem || row.codigoItem,
+            unidadeMedida: row.unidadeMedida || "cx",
+            materialOrigem: isBambu ? "bambu" : "madeira",
+          });
+        }
+      }
+      return products;
+    }),
+
+  /**
+   * Salvar um registro de pirografia.
+   * Cada registro = 1 produto + 1 nome pirografado + quantidade em 1 máquina em 1 dia.
+   */
+  savePirografiaEntry: publicProcedure
+    .input(z.object({
+      sectorId: z.number(),
+      machineId: z.number(),
+      data: z.string(),
+      codigoItem: z.string(),
+      descricaoItem: z.string().optional(),
+      materialOrigem: z.enum(["bambu", "madeira"]),
+      nomePirografado: z.string().min(1),
+      quantidade: z.number().min(0),
+      observacoes: z.string().optional(),
+      lancadoPor: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const result = await db.insert(pirografiaEntries).values({
+        sectorId: input.sectorId,
+        machineId: input.machineId,
+        data: input.data,
+        codigoItem: input.codigoItem,
+        descricaoItem: input.descricaoItem || null,
+        materialOrigem: input.materialOrigem,
+        nomePirografado: input.nomePirografado,
+        quantidade: String(input.quantidade),
+        observacoes: input.observacoes || null,
+        lancadoPor: input.lancadoPor || null,
+      });
+
+      // Também registrar na production_entries para manter o total do setor consistente
+      // Usa tipoMadeira = materialOrigem para compatibilidade com o sistema existente
+      const entryKey = `piro_${input.machineId}_${input.codigoItem}_${input.nomePirografado}`;
+      // Somar ao total existente da máquina/dia para o mesmo material
+      const existingPE = await db.select().from(productionEntries)
+        .where(and(
+          eq(productionEntries.sectorId, input.sectorId),
+          eq(productionEntries.machineId, input.machineId),
+          eq(productionEntries.data, input.data),
+          eq(productionEntries.tipoMadeira, input.materialOrigem),
+        ))
+        .limit(1);
+
+      if (existingPE.length > 0) {
+        const oldQty = parseFloat(String(existingPE[0].quantidade)) || 0;
+        await db.update(productionEntries)
+          .set({
+            quantidade: String(oldQty + input.quantidade),
+            lancadoPor: input.lancadoPor || null,
+          })
+          .where(eq(productionEntries.id, existingPE[0].id));
+      } else {
+        await db.insert(productionEntries).values({
+          sectorId: input.sectorId,
+          machineId: input.machineId,
+          data: input.data,
+          quantidade: String(input.quantidade),
+          status: "producao_normal",
+          tipoMadeira: input.materialOrigem,
+          lancadoPor: input.lancadoPor || null,
+        });
+      }
+
+      return { id: result[0].insertId, action: "created" };
+    }),
+
+  /**
+   * Atualizar um registro de pirografia existente.
+   */
+  updatePirografiaEntry: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      nomePirografado: z.string().min(1).optional(),
+      quantidade: z.number().min(0).optional(),
+      observacoes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const existing = await db.select().from(pirografiaEntries).where(eq(pirografiaEntries.id, input.id)).limit(1);
+      if (existing.length === 0) throw new Error("Entry not found");
+
+      const oldQty = parseFloat(String(existing[0].quantidade)) || 0;
+      const newQty = input.quantidade !== undefined ? input.quantidade : oldQty;
+      const qtyDiff = newQty - oldQty;
+
+      const updates: Record<string, any> = {};
+      if (input.nomePirografado !== undefined) updates.nomePirografado = input.nomePirografado;
+      if (input.quantidade !== undefined) updates.quantidade = String(input.quantidade);
+      if (input.observacoes !== undefined) updates.observacoes = input.observacoes;
+
+      await db.update(pirografiaEntries).set(updates).where(eq(pirografiaEntries.id, input.id));
+
+      // Atualizar production_entries se a quantidade mudou
+      if (qtyDiff !== 0) {
+        const entry = existing[0];
+        const pe = await db.select().from(productionEntries)
+          .where(and(
+            eq(productionEntries.sectorId, entry.sectorId),
+            eq(productionEntries.machineId, entry.machineId),
+            eq(productionEntries.data, entry.data),
+            eq(productionEntries.tipoMadeira, entry.materialOrigem),
+          ))
+          .limit(1);
+        if (pe.length > 0) {
+          const peQty = parseFloat(String(pe[0].quantidade)) || 0;
+          await db.update(productionEntries)
+            .set({ quantidade: String(Math.max(0, peQty + qtyDiff)) })
+            .where(eq(productionEntries.id, pe[0].id));
+        }
+      }
+
+      return { success: true };
+    }),
+
+  /**
+   * Deletar um registro de pirografia.
+   */
+  deletePirografiaEntry: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const existing = await db.select().from(pirografiaEntries).where(eq(pirografiaEntries.id, input.id)).limit(1);
+      if (existing.length === 0) throw new Error("Entry not found");
+
+      const entry = existing[0];
+      const qty = parseFloat(String(entry.quantidade)) || 0;
+
+      // Subtrair do production_entries
+      if (qty > 0) {
+        const pe = await db.select().from(productionEntries)
+          .where(and(
+            eq(productionEntries.sectorId, entry.sectorId),
+            eq(productionEntries.machineId, entry.machineId),
+            eq(productionEntries.data, entry.data),
+            eq(productionEntries.tipoMadeira, entry.materialOrigem),
+          ))
+          .limit(1);
+        if (pe.length > 0) {
+          const peQty = parseFloat(String(pe[0].quantidade)) || 0;
+          const newPeQty = Math.max(0, peQty - qty);
+          if (newPeQty > 0) {
+            await db.update(productionEntries)
+              .set({ quantidade: String(newPeQty) })
+              .where(eq(productionEntries.id, pe[0].id));
+          } else {
+            await db.delete(productionEntries).where(eq(productionEntries.id, pe[0].id));
+          }
+        }
+      }
+
+      await db.delete(pirografiaEntries).where(eq(pirografiaEntries.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Buscar registros de pirografia por dia e/ou máquina.
+   * Retorna todos os registros detalhados (produto, nome, quantidade).
+   */
+  getPirografiaEntries: publicProcedure
+    .input(z.object({
+      data: z.string(),
+      machineId: z.number().optional(),
+      sectorId: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const conditions = [eq(pirografiaEntries.data, input.data)];
+      if (input.machineId) conditions.push(eq(pirografiaEntries.machineId, input.machineId));
+      if (input.sectorId) conditions.push(eq(pirografiaEntries.sectorId, input.sectorId));
+
+      return db.select().from(pirografiaEntries)
+        .where(and(...conditions))
+        .orderBy(pirografiaEntries.machineId, desc(pirografiaEntries.createdAt));
+    }),
+
+  /**
+   * Histórico de pirografia: nomes mais pirografados e produtos mais pirografados.
+   * Para analytics futuras.
+   */
+  getPirografiaHistory: publicProcedure
+    .input(z.object({
+      dataInicio: z.string().optional(),
+      dataFim: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { topNomes: [], topProdutos: [], total: 0 };
+
+      const conditions: any[] = [];
+      if (input?.dataInicio) conditions.push(gte(pirografiaEntries.data, input.dataInicio));
+      if (input?.dataFim) conditions.push(lte(pirografiaEntries.data, input.dataFim));
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      // Top nomes pirografados
+      const topNomes = await db.select({
+        nomePirografado: pirografiaEntries.nomePirografado,
+        totalQuantidade: sql<string>`SUM(${pirografiaEntries.quantidade})`,
+        totalRegistros: sql<number>`COUNT(*)`,
+      })
+        .from(pirografiaEntries)
+        .where(whereClause)
+        .groupBy(pirografiaEntries.nomePirografado)
+        .orderBy(sql`SUM(${pirografiaEntries.quantidade}) DESC`)
+        .limit(50);
+
+      // Top produtos pirografados
+      const topProdutos = await db.select({
+        codigoItem: pirografiaEntries.codigoItem,
+        descricaoItem: sql<string>`MAX(${pirografiaEntries.descricaoItem})`,
+        materialOrigem: pirografiaEntries.materialOrigem,
+        totalQuantidade: sql<string>`SUM(${pirografiaEntries.quantidade})`,
+        totalRegistros: sql<number>`COUNT(*)`,
+      })
+        .from(pirografiaEntries)
+        .where(whereClause)
+        .groupBy(pirografiaEntries.codigoItem, pirografiaEntries.materialOrigem)
+        .orderBy(sql`SUM(${pirografiaEntries.quantidade}) DESC`)
+        .limit(50);
+
+      // Total geral
+      const totalRows = await db.select({
+        total: sql<string>`COALESCE(SUM(${pirografiaEntries.quantidade}), 0)`,
+      })
+        .from(pirografiaEntries)
+        .where(whereClause);
+
+      return {
+        topNomes: topNomes.map(n => ({
+          nome: n.nomePirografado,
+          quantidade: parseFloat(String(n.totalQuantidade)) || 0,
+          registros: n.totalRegistros,
+        })),
+        topProdutos: topProdutos.map(p => ({
+          codigoItem: p.codigoItem,
+          descricaoItem: String(p.descricaoItem || p.codigoItem),
+          materialOrigem: p.materialOrigem,
+          quantidade: parseFloat(String(p.totalQuantidade)) || 0,
+          registros: p.totalRegistros,
+        })),
+        total: parseFloat(String(totalRows[0]?.total)) || 0,
+      };
     }),
 });

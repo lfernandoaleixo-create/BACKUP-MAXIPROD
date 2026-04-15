@@ -2890,14 +2890,14 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid grid-cols-4 gap-4 mt-4 ml-16">
-          <div className="bg-teal-50/80 rounded-lg px-4 py-2.5">
-            <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-lg font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
-          </div>
-          <div className="bg-orange-50/80 rounded-lg px-4 py-2.5">
-            <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className="text-lg font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
+<div className="hidden sm:grid grid-cols-4 gap-3 mt-4 ml-16">
+           <div className="bg-teal-50/80 rounded-lg px-3 py-2">
+             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
+             <p className="text-base font-extrabold text-teal-700">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+           </div>
+           <div className="bg-orange-50/80 rounded-lg px-3 py-2">
+             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
+             <p className="text-base font-extrabold text-slate-400">0 <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-emerald-50/80 rounded-lg px-4 py-2.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>

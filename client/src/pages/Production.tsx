@@ -16,7 +16,7 @@ import {
   Factory, ChevronDown, ChevronRight, ChevronUp, Save, Calendar, BarChart3,
   ArrowLeft, ArrowRight, Loader2, Cog, Eye, Package, Box, Zap, Scissors,
   Layers, Printer, History, AlertTriangle, Wrench, Ban, CheckCircle2, Clock,
-  MessageSquare, TreePine, Ruler, Search, X, Plus, Pencil, Trash2,
+  MessageSquare, TreePine, Ruler, Search, X, Plus, Pencil, Trash2, Flame, Type,
 } from "lucide-react";
 
 // ─── Status options ───
@@ -184,12 +184,13 @@ function isPirografar(ordem: number) { return ordem === 9; }
 function isPonteira(ordem: number) { return ordem === 7; }
 function isFlowPack(ordem: number) { return ordem === 6; }
 function hasMeasureFeatures(ordem: number) { return ordem === 2 || ordem === 3 || ordem === 4 || ordem === 5 || ordem === 6; }
-function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2 || ordem === 3 || ordem === 4 || ordem === 5 || ordem === 6 || ordem === 7 || ordem === 9; }
+function hasExpandableFeatures(ordem: number) { return ordem === 1 || ordem === 2 || ordem === 3 || ordem === 4 || ordem === 5 || ordem === 6 || ordem === 7; }
 
 // Get the FIXED variant options for a sector (always all shown)
 function getVariantOptions(sectorOrdem: number, machineOrdem?: number) {
   if (isMultilamina(sectorOrdem)) return WOOD_TYPE_OPTIONS;
-  if (isPirografar(sectorOrdem)) return PIROGRAFAR_TYPE_OPTIONS;
+  // Pirografar agora usa componente dedicado PirografiaMachinePanel
+  if (isPirografar(sectorOrdem)) return [];
   if (isPonteira(sectorOrdem)) return PONTEIRA_MEASURE_OPTIONS;
   if (isFlowPack(sectorOrdem)) return FLOWPACK_MEASURE_OPTIONS;
   if (sectorOrdem === 2) {
@@ -931,11 +932,11 @@ export default function Production() {
                 const Icon = getSectorIcon(sector.ordem);
                 return (
                   <div key={sector.id} className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => toggleSector(sector.id)}>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: (sector.cor || "#6b7280") + "20" }}>
+                    <div className="flex items-start gap-1.5 mb-1">
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
                         <Icon className="w-3.5 h-3.5" style={{ color: sector.cor || "#6b7280" }} />
                       </div>
-                      <span className="text-[10px] font-semibold text-slate-500 uppercase truncate leading-tight">{sector.nome}</span>
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase leading-tight break-words hyphens-auto" style={{ wordBreak: 'break-word' }}>{sector.nome}</span>
                     </div>
                     <div className="text-lg font-bold text-slate-800 tabular-nums">{fmtNum(total, sector.unidadeMedida === "m³" ? 3 : 0)}</div>
                     <div className="text-[10px] text-slate-400">{isDualUnitSector(sector.ordem) ? "sacos produzidos" : sector.unidadeLabel}</div>
@@ -983,7 +984,14 @@ export default function Production() {
 
                     {isExpanded && (
                       <div className="border-t border-slate-100 bg-slate-50/50">
-                        {hasMachines ? (
+                        {isPirografar(sector.ordem) && hasMachines ? (
+                          <PirografiaSector
+                            sector={sector}
+                            selectedDate={selectedDate}
+                            canEdit={canEdit && !isFutureDate}
+                            operatorName={operator?.name || "Desconhecido"}
+                          />
+                        ) : hasMachines ? (
                           <div className="divide-y divide-slate-100">
                             {sector.machines.map((machine: any) => {
                               if (expandable) {
@@ -1901,6 +1909,456 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
       {!canEdit && registeredProducts.length === 0 && (
         <div className="text-center py-4 text-sm text-slate-400">Nenhum produto registrado neste dia</div>
       )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PIROGRAFIA SECTOR (setor 9) - Registro detalhado de pirografia
+   Seletor de produto (Bambu/Madeira), nome pirografado, quantidade
+   ═══════════════════════════════════════════════════════════ */
+interface PirografiaSectorProps {
+  sector: any;
+  selectedDate: string;
+  canEdit: boolean;
+  operatorName: string;
+}
+
+function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: PirografiaSectorProps) {
+  const [categoria, setCategoria] = useState<"bambu" | "madeira">("bambu");
+  const [search, setSearch] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<{ codigoItem: string; descricaoItem: string; unidadeMedida: string; materialOrigem: string } | null>(null);
+  const [nomePirografado, setNomePirografado] = useState("");
+  const [qty, setQty] = useState("");
+  const [selectedMachineId, setSelectedMachineId] = useState<number | null>(null);
+  const [expandedMachines, setExpandedMachines] = useState<Set<number>>(new Set());
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editQty, setEditQty] = useState("");
+  const [editNome, setEditNome] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const utils = trpc.useUtils();
+
+  const { data: products, isLoading: loadingProducts } = trpc.production.getPirografiaProducts.useQuery({ categoria });
+  const { data: entries } = trpc.production.getPirografiaEntries.useQuery({
+    data: selectedDate,
+    sectorId: sector.id,
+  });
+
+  const saveMutation = trpc.production.savePirografiaEntry.useMutation({
+    onSuccess: () => {
+      setIsSaving(false);
+      setSelectedProduct(null);
+      setNomePirografado("");
+      setQty("");
+      setSearch("");
+      utils.production.getPirografiaEntries.invalidate();
+      utils.production.getEntries.invalidate();
+      utils.production.getDailySummary.invalidate();
+      utils.production.getWeeklySummary.invalidate();
+      toast.success("Pirografia registrada!");
+    },
+    onError: (err: any) => {
+      setIsSaving(false);
+      toast.error("Erro: " + err.message);
+    },
+  });
+
+  const updateMutation = trpc.production.updatePirografiaEntry.useMutation({
+    onSuccess: () => {
+      setEditingId(null);
+      setEditQty("");
+      setEditNome("");
+      utils.production.getPirografiaEntries.invalidate();
+      utils.production.getEntries.invalidate();
+      utils.production.getDailySummary.invalidate();
+      utils.production.getWeeklySummary.invalidate();
+      toast.success("Registro atualizado!");
+    },
+    onError: (err: any) => toast.error("Erro: " + err.message),
+  });
+
+  const deleteMutation = trpc.production.deletePirografiaEntry.useMutation({
+    onSuccess: () => {
+      utils.production.getPirografiaEntries.invalidate();
+      utils.production.getEntries.invalidate();
+      utils.production.getDailySummary.invalidate();
+      utils.production.getWeeklySummary.invalidate();
+      toast.success("Registro removido!");
+    },
+    onError: (err: any) => toast.error("Erro: " + err.message),
+  });
+
+  // Group entries by machine
+  const entriesByMachine = useMemo(() => {
+    const map: Record<number, any[]> = {};
+    if (!entries) return map;
+    for (const e of entries) {
+      if (!map[e.machineId]) map[e.machineId] = [];
+      map[e.machineId].push(e);
+    }
+    return map;
+  }, [entries]);
+
+  // Machine total
+  const getMachineTotal = (machineId: number) => {
+    const machineEntries = entriesByMachine[machineId] || [];
+    return machineEntries.reduce((sum: number, e: any) => sum + (parseFloat(String(e.quantidade)) || 0), 0);
+  };
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    const q = search.toLowerCase().trim();
+    if (!q) return products;
+    return products.filter((p: any) =>
+      p.descricaoItem.toLowerCase().includes(q) || p.codigoItem.toLowerCase().includes(q)
+    );
+  }, [products, search]);
+
+  const handleSave = () => {
+    if (!selectedProduct || !selectedMachineId) {
+      toast.error("Selecione uma máquina e um produto");
+      return;
+    }
+    if (!nomePirografado.trim()) {
+      toast.error("Digite o nome pirografado");
+      return;
+    }
+    const quantidade = qty !== "" ? parseFloat(qty.replace(",", ".")) : 0;
+    if (isNaN(quantidade) || quantidade <= 0) {
+      toast.error("Digite uma quantidade válida");
+      return;
+    }
+    setIsSaving(true);
+    saveMutation.mutate({
+      sectorId: sector.id,
+      machineId: selectedMachineId,
+      data: selectedDate,
+      codigoItem: selectedProduct.codigoItem,
+      descricaoItem: selectedProduct.descricaoItem,
+      materialOrigem: selectedProduct.materialOrigem as "bambu" | "madeira",
+      nomePirografado: nomePirografado.trim(),
+      quantidade,
+      lancadoPor: operatorName,
+    });
+  };
+
+  const handleUpdate = (id: number) => {
+    const quantidade = editQty !== "" ? parseFloat(editQty.replace(",", ".")) : undefined;
+    if (quantidade !== undefined && (isNaN(quantidade) || quantidade < 0)) {
+      toast.error("Quantidade inválida");
+      return;
+    }
+    if (editNome !== undefined && !editNome.trim()) {
+      toast.error("Nome não pode ficar vazio");
+      return;
+    }
+    updateMutation.mutate({
+      id,
+      quantidade,
+      nomePirografado: editNome.trim() || undefined,
+    });
+  };
+
+  const toggleMachineExpand = (machineId: number) => {
+    setExpandedMachines(prev => {
+      const n = new Set(prev);
+      if (n.has(machineId)) n.delete(machineId); else n.add(machineId);
+      return n;
+    });
+  };
+
+  const machines = sector.machines || [];
+
+  return (
+    <div className="px-4 py-3 space-y-3">
+      {/* Machine accordion */}
+      {machines.map((machine: any) => {
+        const machineTotal = getMachineTotal(machine.id);
+        const machineEntries = entriesByMachine[machine.id] || [];
+        const isExpanded = expandedMachines.has(machine.id);
+
+        return (
+          <div key={machine.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            {/* Machine header */}
+            <div
+              onClick={() => toggleMachineExpand(machine.id)}
+              className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center shrink-0">
+                <Flame className="w-4 h-4 text-orange-600" />
+              </div>
+              <span className="text-sm font-semibold text-slate-700 flex-1">{machine.nome}</span>
+
+              {/* Entry badges summary */}
+              {machineEntries.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                    {machineEntries.length} registro{machineEntries.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+
+              <div className="text-right shrink-0 w-16">
+                <div className="text-sm font-bold tabular-nums text-orange-700">{machineTotal > 0 ? machineTotal : 0}</div>
+                <div className="text-[9px] text-slate-400">caixa</div>
+              </div>
+              {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />}
+            </div>
+
+            {/* Expanded content */}
+            {isExpanded && (
+              <div className="border-t border-slate-100 px-4 py-3 space-y-3">
+                {/* Registered entries for this machine */}
+                {machineEntries.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Registros do dia</span>
+                    <div className="space-y-1.5">
+                      {machineEntries.map((entry: any) => {
+                        const isEditing = editingId === entry.id;
+                        const matColor = entry.materialOrigem === "bambu" ? "emerald" : "amber";
+                        return (
+                          <div key={entry.id} className={`rounded-lg px-3 py-2 border transition-all ${matColor === "emerald" ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <div className="flex items-start justify-between">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-xs font-mono" style={{ color: matColor === "emerald" ? "#059669" : "#d97706" }}>{entry.codigoItem}</div>
+                                    <div className="text-sm text-slate-700 truncate">{entry.descricaoItem || entry.codigoItem}</div>
+                                  </div>
+                                  <button onClick={() => { setEditingId(null); setEditQty(""); setEditNome(""); }} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-200 text-slate-400 shrink-0 ml-2">
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Type className="w-4 h-4 text-slate-400 shrink-0" />
+                                  <span className="text-xs text-slate-500 shrink-0">Nome:</span>
+                                  <input
+                                    type="text"
+                                    value={editNome}
+                                    onChange={(e) => setEditNome(e.target.value)}
+                                    className="flex-1 text-sm font-medium border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                                  <span className="text-xs text-slate-500 shrink-0">Qtd:</span>
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={editQty}
+                                    onChange={(e) => setEditQty(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter") handleUpdate(entry.id); if (e.key === "Escape") { setEditingId(null); setEditQty(""); setEditNome(""); } }}
+                                    autoFocus
+                                    className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 tabular-nums bg-white"
+                                  />
+                                  <span className="text-xs text-slate-400">cx</span>
+                                  <button
+                                    onClick={() => handleUpdate(entry.id)}
+                                    disabled={updateMutation.isPending}
+                                    className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                                  >
+                                    {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${matColor === "emerald" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                                      {entry.materialOrigem === "bambu" ? "🎋 Bambu" : "🪵 Madeira"}
+                                    </span>
+                                    <span className="text-xs font-mono text-slate-400">{entry.codigoItem}</span>
+                                  </div>
+                                  <div className="text-sm text-slate-700 truncate mt-0.5" title={entry.descricaoItem}>{entry.descricaoItem || entry.codigoItem}</div>
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <Flame className="w-3 h-3 text-orange-500" />
+                                    <span className="text-xs font-semibold text-orange-700">{entry.nomePirografado}</span>
+                                  </div>
+                                </div>
+                                <span className={`text-sm font-bold px-2.5 py-1 rounded-full shrink-0 tabular-nums ${matColor === "emerald" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                                  {parseFloat(String(entry.quantidade))} cx
+                                </span>
+                                {canEdit && (
+                                  <button
+                                    onClick={() => { setEditingId(entry.id); setEditQty(String(parseFloat(String(entry.quantidade)))); setEditNome(entry.nomePirografado); }}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-orange-100 text-orange-600 transition-colors shrink-0"
+                                    title="Editar"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                {canEdit && (
+                                  <button
+                                    onClick={() => deleteMutation.mutate({ id: entry.id })}
+                                    disabled={deleteMutation.isPending}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-100 text-red-400 hover:text-red-600 transition-colors shrink-0"
+                                    title="Remover"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add new entry form - only if canEdit */}
+                {canEdit && (
+                  <div className="space-y-3">
+                    {machineEntries.length > 0 && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <div className="flex-1 h-px bg-slate-200" />
+                        <span className="text-xs text-slate-400">Novo registro</span>
+                        <div className="flex-1 h-px bg-slate-200" />
+                      </div>
+                    )}
+
+                    {/* Category selector */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setCategoria("bambu"); setSearch(""); setSelectedProduct(null); }}
+                        className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+                          categoria === "bambu"
+                            ? "bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm shadow-emerald-100"
+                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span className="flex items-center justify-center gap-1.5">
+                          <span className="text-sm">🎋</span> Bambu
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => { setCategoria("madeira"); setSearch(""); setSelectedProduct(null); }}
+                        className={`flex-1 py-2 px-3 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
+                          categoria === "madeira"
+                            ? "bg-amber-50 border-amber-400 text-amber-800 shadow-sm shadow-amber-100"
+                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span className="flex items-center justify-center gap-1.5">
+                          <span className="text-sm">🪵</span> Madeira
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Product search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder={`Buscar produto ${categoria === "bambu" ? "de bambu" : "de madeira"}...`}
+                        className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                      />
+                      {search && (
+                        <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
+                          <X className="w-3 h-3 text-slate-500" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Product list */}
+                    {loadingProducts ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                      </div>
+                    ) : (
+                      <div className="max-h-[200px] overflow-y-auto space-y-1 -mx-1 px-1">
+                        {filteredProducts.map((product: any) => {
+                          const isSelected = selectedProduct?.codigoItem === product.codigoItem;
+                          return (
+                            <div key={product.codigoItem}>
+                              <button
+                                onClick={() => {
+                                  if (isSelected) { setSelectedProduct(null); } else {
+                                    setSelectedProduct(product);
+                                    setSelectedMachineId(machine.id);
+                                    setQty("");
+                                  }
+                                }}
+                                className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-3 ${
+                                  isSelected
+                                    ? "bg-orange-50 border border-orange-300 ring-1 ring-orange-200"
+                                    : "bg-white border border-slate-100 hover:bg-slate-50"
+                                }`}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-mono text-slate-400">{product.codigoItem}</div>
+                                  <div className="text-sm text-slate-700 truncate">{product.descricaoItem}</div>
+                                </div>
+                                {isSelected ? <ChevronDown className="w-4 h-4 text-orange-600 shrink-0" /> : <Plus className="w-4 h-4 text-slate-300 shrink-0" />}
+                              </button>
+
+                              {/* Expanded: name + quantity input */}
+                              {isSelected && (
+                                <div className="ml-4 mt-1 mb-2 space-y-2 bg-white rounded-lg border border-slate-200 p-3">
+                                  {/* Nome pirografado */}
+                                  <div className="flex items-center gap-2">
+                                    <Flame className="w-4 h-4 text-orange-500 shrink-0" />
+                                    <span className="text-xs text-slate-500 shrink-0 whitespace-nowrap">Nome pirografado:</span>
+                                    <input
+                                      type="text"
+                                      value={nomePirografado}
+                                      onChange={(e) => setNomePirografado(e.target.value)}
+                                      placeholder="Ex: João Silva"
+                                      className="flex-1 text-sm font-medium border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                                    />
+                                  </div>
+                                  {/* Quantidade */}
+                                  <div className="flex items-center gap-2">
+                                    <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span className="text-xs text-slate-500 shrink-0">Qtd:</span>
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={qty}
+                                      onChange={(e) => setQty(e.target.value)}
+                                      onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+                                      placeholder="0"
+                                      className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 tabular-nums bg-white"
+                                    />
+                                    <span className="text-xs text-slate-400">cx</span>
+                                    <button
+                                      onClick={handleSave}
+                                      disabled={isSaving}
+                                      className="ml-auto px-3 py-1.5 rounded-lg flex items-center gap-1.5 bg-orange-600 text-white text-xs font-medium hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                                    >
+                                      {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                      Salvar
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {filteredProducts.length === 0 && search && (
+                          <div className="text-center py-4 text-sm text-slate-400">Nenhum produto encontrado</div>
+                        )}
+                        {filteredProducts.length === 0 && !search && (
+                          <div className="text-center py-4 text-sm text-slate-400">Nenhum produto disponível</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Read-only empty state */}
+                {!canEdit && machineEntries.length === 0 && (
+                  <div className="text-center py-4 text-sm text-slate-400">Nenhum registro neste dia</div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -1102,3 +1102,27 @@ export const discountSelectionHistory = mysqlTable("discount_selection_history",
 });
 export type DiscountSelectionHistory = typeof discountSelectionHistory.$inferSelect;
 export type InsertDiscountSelectionHistory = typeof discountSelectionHistory.$inferInsert;
+
+
+/**
+ * Registros de pirografia (Máquina Pirografar - setor 9).
+ * Cada registro = 1 produto pirografado com nome do cliente em 1 máquina em 1 dia.
+ * Armazena produto (Bambu ou Madeira), nome pirografado, quantidade, para histórico futuro.
+ */
+export const pirografiaEntries = mysqlTable("pirografia_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  sectorId: int("sectorId").notNull(), // FK para production_sectors (setor 9)
+  machineId: int("machineId").notNull(), // FK para production_machines (Máquina 1, 2, 3)
+  data: varchar("data", { length: 10 }).notNull(), // YYYY-MM-DD (dia do lançamento)
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull(), // Código do produto pirografado (do estoque Bambu ou Madeira)
+  descricaoItem: text("descricaoItem"), // Descrição do produto (snapshot no momento do registro)
+  materialOrigem: varchar("materialOrigem", { length: 20 }).notNull(), // "bambu" ou "madeira"
+  nomePirografado: varchar("nomePirografado", { length: 300 }).notNull(), // Nome do cliente gravado no palito
+  quantidade: decimal("quantidade", { precision: 18, scale: 5 }).notNull(), // Quantidade pirografada (caixas)
+  observacoes: text("observacoes"), // Observações adicionais
+  lancadoPor: varchar("lancadoPor", { length: 200 }), // Nome do operador que lançou
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PirografiaEntry = typeof pirografiaEntries.$inferSelect;
+export type InsertPirografiaEntry = typeof pirografiaEntries.$inferInsert;

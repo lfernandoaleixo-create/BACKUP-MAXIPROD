@@ -2573,3 +2573,26 @@
 - [x] Layout responsivo alinhado para computador e tablet
 - [x] Trocar abreviação "sc" por "sacos" na coluna Total da aba Produção
 - [x] Centralizar badges de medida no centro do card na coluna MEDIDA da aba Produção (todos os setores)
+- [ ] Cards Madeira PA/Semi Pronto/Aguardando: reduzir padding/altura para ficar slim como Bambu (Rojão e Apito mantêm)
+
+## Fix Divergência Conferência Maxiprod Recebíveis (15/04/2026)
+- [ ] Investigar por que API Maxiprod retorna R$ 260.645 vs Maxiprod real R$ 218.396 para mesma conta
+- [ ] Provável causa: query inclui títulos já conciliados/baixados ou usa campo errado (bruto vs líquido a receber)
+- [ ] Corrigir query para usar exatamente o mesmo cálculo que o Maxiprod usa na tela de Contas a Receber
+- [ ] Garantir que valores batam em tempo real sem divergência
+
+## Fix Nomes Cortados nos Cards de Produção (15/04/2026)
+- [x] Corrigir nomes truncados nos cards de setores de produção (SELETORAS T..., SELEÇÃO AUT..., SELEÇÃO VIS..., MÁQUINA PIR...)
+- [x] Permitir quebra de texto para mostrar nome completo, mantendo layout em linha única de cards
+
+## Máquina Pirografar - Redesign com Registro Completo (15/04/2026)
+- [x] Criar tabela no banco para registros de pirografia (produto, nome pirografado, quantidade, máquina, data, operador)
+- [x] Endpoint backend para listar produtos do estoque Bambu e Madeira (para seletor)
+- [x] Endpoint backend para salvar registro de pirografia
+- [x] Endpoint backend para buscar histórico de pirografia (futuro: nomes e produtos mais pirografados)
+- [x] UI: Seletor de produto puxando automaticamente do estoque Bambu e Madeira
+- [x] UI: Campo "Nome Pirografado" para registrar o nome do cliente gravado no palito
+- [x] UI: Campo de quantidade (caixas pirografadas)
+- [x] UI: Registro por máquina (Máquina 1, 2, 3)
+- [x] Tudo registrado no banco para histórico futuro
+- [x] Testes automatizados para endpoints de pirografia (17 testes passando)

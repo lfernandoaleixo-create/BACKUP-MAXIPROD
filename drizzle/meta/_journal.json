@@ -505,6 +505,13 @@
       "when": 1776107157504,
       "tag": "0071_brown_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "5",
+      "when": 1776259362967,
+      "tag": "0072_easy_the_phantom",
+      "breakpoints": true
     }
   ]
 }
