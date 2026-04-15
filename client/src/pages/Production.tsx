@@ -828,6 +828,7 @@ export default function Production() {
   }, [selectedDate]);
 
   const isToday = selectedDate === getTodayBR();
+  const isFutureDate = selectedDate > getTodayBR();
 
   if (loadingSectors) {
     return (
@@ -882,7 +883,7 @@ export default function Production() {
           <button onClick={() => { setSelectedDate(getTodayBR()); resetEditState(); }} className="ml-auto text-xs text-teal-600 hover:text-teal-700 font-medium px-2 py-1 rounded hover:bg-teal-50 transition-colors">
             Ir para Hoje
           </button>
-          {viewMode === "lancamento" && canEdit && (
+          {viewMode === "lancamento" && canEdit && !isFutureDate && (
             <button
               onClick={handleSaveAllDay}
               disabled={isSavingAll || !hasAnyChanges}
@@ -901,8 +902,18 @@ export default function Production() {
           )}
         </div>
 
+        {/* Banner de data futura - bloqueia edição */}
+        {isFutureDate && viewMode === "lancamento" && (
+          <div className="flex items-center gap-2 mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+            <p className="text-sm text-red-600">
+              <span className="font-semibold">Data futura selecionada!</span> Não é possível registrar produção para datas futuras. Selecione o dia de hoje ou uma data anterior.
+            </p>
+          </div>
+        )}
+
         {/* Banner somente leitura para operadores que não são Maria */}
-        {!canEdit && viewMode === "lancamento" && (
+        {!canEdit && !isFutureDate && viewMode === "lancamento" && (
           <div className="flex items-center gap-2 mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
             <Eye className="w-4 h-4 text-amber-600 shrink-0" />
             <p className="text-sm text-amber-700">
@@ -998,7 +1009,7 @@ export default function Production() {
                                     onSetVariantValue={(v, val) => setVariantEditValue(`${sector.id}-${machine.id}-${v}`, val)}
                                     onSetComment={(v) => setCommentValue(sector.id, machine.id, v)}
                                     onSave={() => handleVariantSave(sector.id, machine.id, sector.ordem, machine.ordem)}
-                                    canEdit={canEdit}
+                                    canEdit={canEdit && !isFutureDate}
                                     onShowConversion={() => setShowConversionModal(true)}
                                   />
                                 );
@@ -1018,7 +1029,7 @@ export default function Production() {
                                   onSetValue={(v) => setEditValue(sector.id, machine.id, v)}
                                   onSetComment={(v) => setCommentValue(sector.id, machine.id, v)}
                                   onSave={() => handleSimpleSave(sector.id, machine.id)}
-                                  canEdit={canEdit}
+                                  canEdit={canEdit && !isFutureDate}
                                 />
                               );
                             })}
@@ -1030,7 +1041,7 @@ export default function Production() {
                             entries={entries || []}
                             savingKeys={savingKeys}
                             onSaveProduct={handleEmbalagemSave}
-                            canEdit={canEdit}
+                            canEdit={canEdit && !isFutureDate}
                           />
                         )}
                       </div>

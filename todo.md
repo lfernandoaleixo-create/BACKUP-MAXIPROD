@@ -2522,3 +2522,7 @@
 - [x] Atualizar card do olho para mostrar fatores de ambos os tipos de caixa em ordem crescente
 - [x] Atualizar backend (salvamento) para suportar 3 tipos de registro por medida (_cxp, _cxg, _saco)
 - [x] Fatores reais aplicados: 3,8x180(0.5cp), 3,8x200(0.6cp/0.8cg), 3,8x220(0.5cp/0.7cg), 3,8x250(0.8cg), 3,8x350(0.4cp/0.6cg), 3,5x200(0.6cp/0.8cg)
+
+## Bloqueio de Datas Futuras na Produção (15/04/2026 - Parte 18)
+- [x] Bloquear preenchimento para datas futuras na aba Produção (apenas dia atual e retroativos permitidos)
+- [x] Exibir aviso quando Maria selecionar data futura
