@@ -425,7 +425,9 @@ export const appRouter = router({
     }),
 
     /**
-     * Update madeira stock - ONLY INCREASE allowed (decrease only by sales/sync)
+     * Update madeira stock.
+     * Maria tem permissão para aumentar E reduzir manualmente.
+     * Outros operadores só podem aumentar (redução bloqueada).
      */
     updateMadeiraStock: publicProcedure
       .input(z.object({
@@ -442,8 +444,14 @@ export const appRouter = router({
         const existing = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, input.codigoItem));
         const valorAnterior = existing.length > 0 ? parseFloat(String(existing[0].quantidade)) : 0;
         
-        // RULE: Madeira PA stock can only INCREASE manually
-        if (input.quantidade < valorAnterior) {
+        // Operadores autorizados a reduzir estoque de Madeira PA
+        const REDUCTION_ALLOWED_OPERATORS = ["Maria", "Guilherme", "Fernando"];
+        const canReduce = REDUCTION_ALLOWED_OPERATORS.some(
+          op => input.operatorName.toLowerCase() === op.toLowerCase()
+        );
+        
+        // RULE: Redução só permitida para operadores autorizados
+        if (input.quantidade < valorAnterior && !canReduce) {
           // Record attempted reduction
           await db.insert(stockEditHistory).values({
             card: "madeira",

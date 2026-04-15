@@ -2541,3 +2541,9 @@
 - [x] Frontend: ReceivablesTab passa empresa/banco/conta ao MaxiprodAutoVerifier
 - [x] Cache key inclui filtros de empresa/conta para evitar colisão
 - [x] Testes: 7 testes para getMaxiprodContraprova recebiveis (com/sem filtros, combinados, sem resultados)
+
+## Estoque Madeira - Permissão Maria + Auto-feed Embalagem (15/04/2026)
+- [x] Dar permissão para Maria editar manualmente o estoque de Madeira (Produto Acabado) - sem bloqueio de redução
+- [x] Auto-feed: quando Maria preencher Embalagem (setor 5) na Produção, alimentar automaticamente o estoque de Madeira - Produto Acabado
+- [x] Hoje (15/04) é o último dia de preenchimento manual; a partir de amanhã, estoque alimentado automaticamente pela Produção → Embalagem
+- [x] Testes automatizados para as novas funcionalidades (20 testes passando) (20 testes passando)

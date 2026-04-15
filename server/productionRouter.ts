@@ -233,6 +233,22 @@ export const productionRouter = router({
       // 2. Determine which tipoMadeira values are being saved now
       const newVariants = new Set(input.entries.map(e => e.tipoMadeira || null));
 
+      // ─── Embalagem auto-feed: verificar se é setor Embalagem para atualizar estoque ───
+      const STOCK_CUTOFF_DATE = "2026-04-15";
+      let isEmbalagemSector = false;
+      if (input.machineId === null && input.data >= STOCK_CUTOFF_DATE) {
+        const sectorRows = await db.select().from(productionSectors).where(eq(productionSectors.id, input.sectorId)).limit(1);
+        isEmbalagemSector = sectorRows.length > 0 && sectorRows[0].tipoEquipamento === "nenhum";
+      }
+
+      // Build map of old quantities by tipoMadeira (codigoItem) for stock diff calculation
+      const oldQtyMap = new Map<string, number>();
+      for (const old of allExisting) {
+        if (old.tipoMadeira) {
+          oldQtyMap.set(old.tipoMadeira, (oldQtyMap.get(old.tipoMadeira) || 0) + parseFloat(String(old.quantidade)));
+        }
+      }
+
       // 3. Delete old entries whose tipoMadeira is NOT in the new set
       for (const old of allExisting) {
         const oldVariant = old.tipoMadeira || null;
@@ -288,6 +304,56 @@ export const productionRouter = router({
             lancadoPor: entry.lancadoPor || null,
           });
           results.push({ tipoMadeira: entry.tipoMadeira || null, action: "created" });
+        }
+      }
+
+      // ─── Embalagem auto-feed: calcular diff e atualizar estoque Madeira PA ───
+      if (isEmbalagemSector) {
+        // Build map of new quantities by tipoMadeira (codigoItem)
+        const newQtyMap = new Map<string, number>();
+        for (const entry of input.entries) {
+          if (entry.tipoMadeira) {
+            newQtyMap.set(entry.tipoMadeira, (newQtyMap.get(entry.tipoMadeira) || 0) + entry.quantidade);
+          }
+        }
+
+        // Combine all codigoItems from old and new
+        const allCodigos = Array.from(new Set([...Array.from(oldQtyMap.keys()), ...Array.from(newQtyMap.keys())]));
+        const lancadoPor = input.entries[0]?.lancadoPor || "Sistema";
+
+        for (const codigoItem of allCodigos) {
+          const oldQty = oldQtyMap.get(codigoItem) || 0;
+          const newQty = newQtyMap.get(codigoItem) || 0;
+          const diff = newQty - oldQty;
+
+          if (diff !== 0) {
+            const stockRows = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, codigoItem));
+            const currentStock = stockRows.length > 0 ? parseFloat(String(stockRows[0].quantidade)) : 0;
+            const newStock = Math.max(0, currentStock + diff);
+
+            await db.insert(stockEditHistory).values({
+              card: "madeira",
+              codigoItem,
+              descricaoItem: null,
+              valorAnterior: String(currentStock),
+              valorNovo: String(newStock),
+              operador: `Produção (${lancadoPor})`,
+              tipo: "alteracao",
+            });
+
+            await db.insert(madeiraStock)
+              .values({
+                codigoItem,
+                quantidade: String(newStock),
+                updatedBy: `Produção (${lancadoPor})`,
+              })
+              .onDuplicateKeyUpdate({
+                set: {
+                  quantidade: sql`${String(newStock)}`,
+                  updatedBy: `Produção (${lancadoPor})`,
+                },
+              });
+          }
         }
       }
 

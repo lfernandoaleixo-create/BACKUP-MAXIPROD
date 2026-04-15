@@ -59,22 +59,22 @@ describe("getMadeiraStock", () => {
   });
 });
 
-describe("updateMadeiraStock - increase only", () => {
-  it("allows increasing stock from 0 to 10", async () => {
+describe("updateMadeiraStock - permissões de redução", () => {
+  it("allows increasing stock from 0 to 10 (any operator)", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.dashboard.updateMadeiraStock({
       codigoItem: TEST_CODE,
       quantidade: 10,
-      operatorName: "Maria",
+      operatorName: "Erica",
       descricaoItem: "Test Product",
     });
 
     expect(result.success).toBe(true);
   });
 
-  it("allows increasing stock from 10 to 20", async () => {
+  it("allows increasing stock from 10 to 20 (any operator)", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
 
@@ -88,7 +88,7 @@ describe("updateMadeiraStock - increase only", () => {
     expect(result.success).toBe(true);
   });
 
-  it("blocks decreasing stock from 20 to 5", async () => {
+  it("blocks decreasing stock for unauthorized operators (Marcos)", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
 
@@ -104,9 +104,62 @@ describe("updateMadeiraStock - increase only", () => {
     expect((result as any).operador).toBe("Marcos");
   });
 
+  it("allows Maria to DECREASE stock (authorized operator)", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Stock is at 20, Maria should be able to reduce to 8
+    const result = await caller.dashboard.updateMadeiraStock({
+      codigoItem: TEST_CODE,
+      quantidade: 8,
+      operatorName: "Maria",
+      descricaoItem: "Test Product",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("allows Guilherme to DECREASE stock (authorized operator)", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Stock is at 8, Guilherme should be able to reduce to 3
+    const result = await caller.dashboard.updateMadeiraStock({
+      codigoItem: TEST_CODE,
+      quantidade: 3,
+      operatorName: "Guilherme",
+      descricaoItem: "Test Product",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("allows Fernando to DECREASE stock (authorized operator)", async () => {
+    const ctx = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+
+    // Stock is at 3, Fernando should be able to reduce to 1
+    const result = await caller.dashboard.updateMadeiraStock({
+      codigoItem: TEST_CODE,
+      quantidade: 1,
+      operatorName: "Fernando",
+      descricaoItem: "Test Product",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it("allows keeping the same value (no change)", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
+
+    // Reset to 20 first
+    await caller.dashboard.updateMadeiraStock({
+      codigoItem: TEST_CODE,
+      quantidade: 20,
+      operatorName: "Maria",
+      descricaoItem: "Test Product",
+    });
 
     const result = await caller.dashboard.updateMadeiraStock({
       codigoItem: TEST_CODE,
@@ -118,7 +171,7 @@ describe("updateMadeiraStock - increase only", () => {
     expect(result.success).toBe(true);
   });
 
-  it("stock value is persisted correctly", async () => {
+  it("stock value is persisted correctly after Maria's reduction", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
 
