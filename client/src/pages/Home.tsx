@@ -3486,6 +3486,17 @@ function DashboardContent({ items }: { items: StockItem[] }) {
 
   return (
     <div className="space-y-5">
+      {/* ═══ TÍTULO IMPORTAÇÃO ═══ */}
+      <div className="mb-1">
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent" />
+          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-5 py-2">
+            <Ship className="w-5 h-5 text-blue-700" />
+            <span className="text-sm font-bold text-blue-800 uppercase tracking-wider">Importação</span>
+          </div>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent" />
+        </div>
+      </div>
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KPICard

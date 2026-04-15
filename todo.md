@@ -2721,3 +2721,4 @@
 - [x] Fluxo de Caixa: aumentar tamanho da fonte nos cards (A Receber, A Pagar, Saldo)
 - [x] Criar seção IMPORTAÇÃO no dashboard de Estoque (mesmo estilo da INDUSTRIALIZAÇÃO MADEIRA, abaixo do card de sync, antes do estoque geral)
 - [x] Desfazer seção IMPORTAÇÃO do dashboard de Estoque (ficou errado, misturou estoque)
+- [x] Adicionar apenas título decorativo "Importação" entre card de conexão Maxiprod e os KPIs de estoque (sem mexer em números)
