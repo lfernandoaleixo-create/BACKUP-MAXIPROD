@@ -405,10 +405,31 @@ function DailyChart({ data, mode, period, comparison }: {
   const lastLatest = comparison?.lastMonth?.length ? comparison.lastMonth[comparison.lastMonth.length - 1] : null;
   const bestLatest = comparison?.bestMonth?.length ? comparison.bestMonth[comparison.bestMonth.length - 1] : null;
 
+  // --- Médias diárias ---
+  // Mês atual: total / dias corridos até hoje
+  const currentTotal = currentLatest?.cumulative ?? 0;
+  const currentDays = todayDay; // dias corridos no mês atual
+  const currentAvg = currentDays > 0 ? currentTotal / currentDays : 0;
+
+  // Mês anterior: total / dias do mês completo
+  const lastTotal = lastLatest?.cumulative ?? 0;
+  const lastDays = comparison?.lastMonth?.length ?? 0;
+  const lastAvg = lastDays > 0 ? lastTotal / lastDays : 0;
+
+  // Melhor mês: total / dias do mês completo
+  const bestTotal = bestLatest?.cumulative ?? 0;
+  const bestDays = comparison?.bestMonth?.length ?? 0;
+  const bestAvg = bestDays > 0 ? bestTotal / bestDays : 0;
+
+  // Percentual da média atual vs melhor e anterior
+  const pctVsBest = bestAvg > 0 ? ((currentAvg / bestAvg) * 100) : 0;
+  const pctVsLast = lastAvg > 0 ? ((currentAvg / lastAvg) * 100) : 0;
+
   return (
     <div className="relative">
       {/* Legend for lines */}
       {showLines && (
+        <>
         <div className="flex flex-wrap gap-6 mb-3">
           <div className="flex items-center gap-2">
             <div className="w-6 h-[3px] bg-teal-500 rounded" />
@@ -428,6 +449,64 @@ function DailyChart({ data, mode, period, comparison }: {
             </div>
           )}
         </div>
+
+        {/* --- Painel de Médias Diárias --- */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {/* Mês Atual */}
+          <div className="relative bg-gradient-to-br from-teal-50 to-white border border-teal-200/60 rounded-xl p-4 overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-teal-600" />
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-teal-600/80">Média Diária Atual</span>
+              <span className="text-[9px] text-teal-500 bg-teal-100/60 px-1.5 py-0.5 rounded-full font-medium">{currentDays} dias</span>
+            </div>
+            <div className="text-xl font-extrabold text-teal-800 tracking-tight">{formatCurrencyFull(currentAvg)}</div>
+            <div className="flex items-center gap-2 mt-2">
+              {pctVsBest > 0 && (
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                  pctVsBest >= 100 ? 'bg-emerald-100 text-emerald-700' : pctVsBest >= 80 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+                }`}>
+                  {pctVsBest.toFixed(0)}% do melhor
+                </span>
+              )}
+              {pctVsLast > 0 && (
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                  pctVsLast >= 100 ? 'bg-emerald-100 text-emerald-700' : pctVsLast >= 80 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+                }`}>
+                  {pctVsLast.toFixed(0)}% do anterior
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Mês Anterior */}
+          <div className="relative bg-gradient-to-br from-blue-50 to-white border border-blue-200/60 rounded-xl p-4 overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600" />
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600/80">Média Diária Anterior</span>
+              <span className="text-[9px] text-blue-500 bg-blue-100/60 px-1.5 py-0.5 rounded-full font-medium">{lastDays} dias</span>
+            </div>
+            <div className="text-xl font-extrabold text-blue-800 tracking-tight">{formatCurrencyFull(lastAvg)}</div>
+            <div className="mt-2">
+              <span className="text-[10px] text-blue-500 font-medium">Total: {formatCurrencyFull(lastTotal)}</span>
+            </div>
+          </div>
+
+          {/* Melhor Mês */}
+          {comparison?.bestMonth && comparison.bestMonth.length > 0 && (
+            <div className="relative bg-gradient-to-br from-amber-50 to-white border border-amber-200/60 rounded-xl p-4 overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-amber-600" />
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600/80">Média Diária Melhor</span>
+                <span className="text-[9px] text-amber-500 bg-amber-100/60 px-1.5 py-0.5 rounded-full font-medium">{bestDays} dias</span>
+              </div>
+              <div className="text-xl font-extrabold text-amber-800 tracking-tight">{formatCurrencyFull(bestAvg)}</div>
+              <div className="mt-2">
+                <span className="text-[10px] text-amber-500 font-medium">Total: {formatCurrencyFull(bestTotal)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+        </>
       )}
 
       <div className="overflow-x-auto">
