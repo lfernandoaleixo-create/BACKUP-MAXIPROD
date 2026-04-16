@@ -2800,4 +2800,8 @@
 - [x] Estoque Madeira PA: regra variação — pedido de variação já debita do mãe, faturamento desconta da variação (não desconta 2x) — já implementado no stockProcessor
 - [x] Estoque Madeira PA: regra sem variação — Estoque - Pedidos = Disponível; faturamento desconta do estoque — já implementado no stockProcessor
 
-- [x] Inadimplência: Decisão de Cobrança deve ser puxada do Maxiprod para TODOS os clientes inadimplentes (campo decisaoCobranca no DB, sincronizado via camposAdicionais do cliente no GraphQL, com fallback para mapa por nome)
+- [x] Inadimplência: Decisão de Cobrança deve ser puxada do Maxiprod para TODOS os clientes inadimplentes (campo decisaoCobranca no DB, sincronizado via campoAdicionalEspecifico do cliente no GraphQL, com fallback para mapa por nome)
+
+## REGRA PERMANENTE: Decisão de Cobrança (NUNCA PERDER)
+- [x] Documentar no código: Decisão de Cobrança vem do campo "SITUAÇÃO" dentro do grupo "COBRANÇA" nos campos adicionais do cadastro de Clientes no Maxiprod (Clientes → Editar empresa → campos adicionais do grupo COBRANÇA → SITUAÇÃO). Valores: "COM PROTESTO" / "SEM PROTESTO". Duas fontes: (1) fetchAccountsReceivable via cliente.campoAdicionalEspecifico, (2) fetchCobrancaDecisionMap via empresas.campoAdicionalEspecifico. NUNCA remover essa funcionalidade.
+- [x] BUG CRÍTICO: Cobranças registradas pelo responsável NÃO estavam sendo salvas — causa: sync usava DELETE+INSERT gerando novos IDs, quebrando referências em collection_actions. Corrigido: sync agora usa UPSERT por maxiprodId (ON DUPLICATE KEY UPDATE), preservando IDs. Registros órfãos antigos limpos.

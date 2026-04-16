@@ -9,13 +9,18 @@ import { describe, it, expect } from "vitest";
 /**
  * Replica a lógica de extractDecisaoCobranca do maxiprodGraphQL.ts
  * para testar isoladamente sem importar o módulo inteiro (que tem side-effects)
+ * 
+ * REGRA PERMANENTE:
+ * O campo "SITUAÇÃO" está no grupo "COBRANÇA" dos campos adicionais do cadastro de Clientes no Maxiprod.
+ * No GraphQL, usa-se `campoAdicionalEspecifico` (NÃO `camposAdicionais`).
+ * O tipo é `EmpresaCampoAdicionalEspecifico` com campos { descricao, valor }.
  */
 function extractDecisaoCobranca(cliente: any): string | null {
-  if (!cliente?.camposAdicionais) return null;
-  const camposAdicionais = cliente.camposAdicionais;
-  if (!Array.isArray(camposAdicionais)) return null;
+  // campoAdicionalEspecifico é o campo correto (tipo EmpresaCampoAdicionalEspecifico)
+  const campos = cliente?.campoAdicionalEspecifico;
+  if (!campos || !Array.isArray(campos)) return null;
 
-  const situacaoCampo = camposAdicionais.find((c: any) => {
+  const situacaoCampo = campos.find((c: any) => {
     const desc = (c.descricao || "").toUpperCase().trim();
     return desc === "SITUAÇÃO" || desc === "SITUACAO" || desc.includes("SITUA");
   });
@@ -29,7 +34,7 @@ describe("extractDecisaoCobranca", () => {
     const cliente = {
       nomeFantasia: "Empresa Teste",
       razaoSocial: "Empresa Teste Ltda",
-      camposAdicionais: [
+      campoAdicionalEspecifico: [
         { descricao: "SITUAÇÃO", valor: "COM PROTESTO" },
         { descricao: "OUTRO_CAMPO", valor: "abc" },
       ],
@@ -41,7 +46,7 @@ describe("extractDecisaoCobranca", () => {
     const cliente = {
       nomeFantasia: "Empresa B",
       razaoSocial: "Empresa B Ltda",
-      camposAdicionais: [
+      campoAdicionalEspecifico: [
         { descricao: "SITUAÇÃO", valor: "SEM PROTESTO" },
       ],
     };
@@ -52,23 +57,23 @@ describe("extractDecisaoCobranca", () => {
     expect(extractDecisaoCobranca(null)).toBeNull();
   });
 
-  it("deve retornar null quando cliente não tem camposAdicionais", () => {
+  it("deve retornar null quando cliente não tem campoAdicionalEspecifico", () => {
     const cliente = { nomeFantasia: "Teste", razaoSocial: "Teste Ltda" };
     expect(extractDecisaoCobranca(cliente)).toBeNull();
   });
 
-  it("deve retornar null quando camposAdicionais é array vazio", () => {
+  it("deve retornar null quando campoAdicionalEspecifico é array vazio", () => {
     const cliente = {
       nomeFantasia: "Teste",
-      camposAdicionais: [],
+      campoAdicionalEspecifico: [],
     };
     expect(extractDecisaoCobranca(cliente)).toBeNull();
   });
 
-  it("deve retornar null quando campo SITUAÇÃO não existe nos camposAdicionais", () => {
+  it("deve retornar null quando campo SITUAÇÃO não existe nos campoAdicionalEspecifico", () => {
     const cliente = {
       nomeFantasia: "Teste",
-      camposAdicionais: [
+      campoAdicionalEspecifico: [
         { descricao: "CNPJ", valor: "12345" },
         { descricao: "TELEFONE", valor: "11999" },
       ],
@@ -79,17 +84,17 @@ describe("extractDecisaoCobranca", () => {
   it("deve retornar null quando valor do campo SITUAÇÃO é vazio", () => {
     const cliente = {
       nomeFantasia: "Teste",
-      camposAdicionais: [
+      campoAdicionalEspecifico: [
         { descricao: "SITUAÇÃO", valor: "" },
       ],
     };
     expect(extractDecisaoCobranca(cliente)).toBeNull();
   });
 
-  it("deve retornar null quando valor do campo SITUAÇÃO é null", () => {
+  it("deve retornar null quando valor do campo SITUAÇÃO é null (cliente sem decisão preenchida)", () => {
     const cliente = {
       nomeFantasia: "Teste",
-      camposAdicionais: [
+      campoAdicionalEspecifico: [
         { descricao: "SITUAÇÃO", valor: null },
       ],
     };
@@ -99,7 +104,7 @@ describe("extractDecisaoCobranca", () => {
   it("deve funcionar com descricao 'SITUACAO' (sem acento)", () => {
     const cliente = {
       nomeFantasia: "Teste",
-      camposAdicionais: [
+      campoAdicionalEspecifico: [
         { descricao: "SITUACAO", valor: "COM PROTESTO" },
       ],
     };
@@ -109,7 +114,7 @@ describe("extractDecisaoCobranca", () => {
   it("deve funcionar com descricao contendo 'SITUA' (match parcial)", () => {
     const cliente = {
       nomeFantasia: "Teste",
-      camposAdicionais: [
+      campoAdicionalEspecifico: [
         { descricao: "Situação do Cliente", valor: "SEM PROTESTO" },
       ],
     };
@@ -119,11 +124,24 @@ describe("extractDecisaoCobranca", () => {
   it("deve fazer trim no valor retornado", () => {
     const cliente = {
       nomeFantasia: "Teste",
-      camposAdicionais: [
+      campoAdicionalEspecifico: [
         { descricao: "SITUAÇÃO", valor: "  COM PROTESTO  " },
       ],
     };
     expect(extractDecisaoCobranca(cliente)).toBe("COM PROTESTO");
+  });
+
+  it("NÃO deve usar camposAdicionais (tipo errado - EmpresaCampoAdicionalValor)", () => {
+    // camposAdicionais tem estrutura diferente (valorTexto, valorNumero, etc.)
+    // e NÃO tem campos descricao/valor
+    const cliente = {
+      nomeFantasia: "Teste",
+      camposAdicionais: [
+        { descricao: "SITUAÇÃO", valor: "COM PROTESTO" },
+      ],
+      // sem campoAdicionalEspecifico
+    };
+    expect(extractDecisaoCobranca(cliente)).toBeNull();
   });
 });
 

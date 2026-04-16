@@ -947,7 +947,7 @@ async function fetchAccountsReceivable(): Promise<any[]> {
         observacoes
         documentoVinculadoNumero
         bloqueado
-        cliente { nomeFantasia razaoSocial camposAdicionais { descricao valor } }
+        cliente { nomeFantasia razaoSocial campoAdicionalEspecifico { descricao valor } }
         centroDeCustos { id }
         conta { id descricao }
         formaDeCobranca { id meioDePagamento banco { descricao } contaNumero agenciaCodigo pixChave carteira }
@@ -1040,7 +1040,7 @@ function buildFormaCobrancaDesc(fc: any): string | null {
  * Transform contas a receber data
  */
 function transformAccountsReceivable(items: any[]): any[] {
-  return items.map(item => ({
+  const result = items.map(item => ({
     maxiprodId: item.id,
     estado: item.estado || "",
     tipo: item.tipo || null,
@@ -1073,19 +1073,27 @@ function transformAccountsReceivable(items: any[]): any[] {
     anotacoes: (item.tarefasEAnotacoes || []).map((a: any) => a.descricao).filter(Boolean).join(' | ') || null,
     decisaoCobranca: extractDecisaoCobranca(item.cliente),
   }));
+  return result;
 }
 
 /**
- * Extrai a decisão de cobrança dos campos adicionais do cliente no Maxiprod.
- * O campo "SITUAÇÃO" contém valores como "COM PROTESTO" ou "SEM PROTESTO".
+ * REGRA PERMANENTE - NUNCA REMOVER:
+ * Extrai a decisão de cobrança do campo "SITUAÇÃO" dentro do grupo "COBRANÇA"
+ * nos campos adicionais do cadastro de Clientes no Maxiprod.
+ * Caminho no Maxiprod: Clientes → Editar empresa → campos adicionais do grupo COBRANÇA → SITUAÇÃO
+ * Valores possíveis: "COM PROTESTO" ou "SEM PROTESTO"
+ * 
+ * No GraphQL, usa-se `campoAdicionalEspecifico` (NÃO `camposAdicionais`).
+ * O tipo é `EmpresaCampoAdicionalEspecifico` com campos { descricao, valor }.
  */
 function extractDecisaoCobranca(cliente: any): string | null {
-  if (!cliente?.camposAdicionais) return null;
-  const camposAdicionais = cliente.camposAdicionais;
-  if (!Array.isArray(camposAdicionais)) return null;
+  // campoAdicionalEspecifico é o campo correto (tipo EmpresaCampoAdicionalEspecifico)
+  // camposAdicionais é um tipo diferente (EmpresaCampoAdicionalValor) e NÃO tem descricao/valor
+  const campos = cliente?.campoAdicionalEspecifico;
+  if (!campos || !Array.isArray(campos)) return null;
   
-  // Procurar campo com descricao "SITUAÇÃO" ou "SITUACAO"
-  const situacaoCampo = camposAdicionais.find((c: any) => {
+  // Procurar campo com descricao "SITUAÇÃO" (grupo COBRANÇA no Maxiprod)
+  const situacaoCampo = campos.find((c: any) => {
     const desc = (c.descricao || '').toUpperCase().trim();
     return desc === 'SITUA\u00c7\u00c3O' || desc === 'SITUACAO' || desc.includes('SITUA');
   });
@@ -1262,25 +1270,58 @@ async function saveFinancialData(
         console.log(`[GraphQL Sync] ${disappearedRecIds.length} contas a receber marcadas como RECEBIDO (desapareceram da API)`);
       }
       
-      // Deletar contas EMITIDO existentes (serão substituídas)
-      await tx.delete(accountsReceivable).where(eq(accountsReceivable.estado, 'EMITIDO'));
+      // UPSERT por maxiprodId: preserva o `id` auto-increment para não quebrar
+      // referências em collection_actions e collection_daily_actions.
+      // REGRA PERMANENTE: NUNCA usar DELETE+INSERT para accounts_receivable,
+      // pois isso gera novos IDs e quebra as cobranças registradas.
       
-      // Deletar RECEBIDO que voltaram na API como EMITIDO (conciliação bancária revertida)
-      // Isso evita duplicatas quando um título marcado como RECEBIDO reaparece na API
-      if (newReceivableIds.size > 0) {
-        const newIdsArray = Array.from(newReceivableIds);
-        for (let i = 0; i < newIdsArray.length; i += 200) {
-          const batch = newIdsArray.slice(i, i + 200);
-          await tx.delete(accountsReceivable)
-            .where(inArray(accountsReceivable.maxiprodId, batch));
-        }
-      }
-      
+      // 1. Marcar EMITIDO que não vieram mais da API como desaparecidos (já feito acima)
+      // 2. Upsert dos dados frescos (INSERT ON DUPLICATE KEY UPDATE)
       if (uniqueReceivable.length > 0) {
         for (let i = 0; i < uniqueReceivable.length; i += 200) {
-          await tx.insert(accountsReceivable).values(uniqueReceivable.slice(i, i + 200));
+          const batch = uniqueReceivable.slice(i, i + 200);
+          await tx.insert(accountsReceivable).values(batch)
+            .onDuplicateKeyUpdate({
+              set: {
+                estado: sql`VALUES(estado)`,
+                tipo: sql`VALUES(tipo)`,
+                valorOriginal: sql`VALUES(valorOriginal)`,
+                valorLiquido: sql`VALUES(valorLiquido)`,
+                valorRetido: sql`VALUES(valorRetido)`,
+                valorDeDesconto: sql`VALUES(valorDeDesconto)`,
+                valorDeAcrescimo: sql`VALUES(valorDeAcrescimo)`,
+                valorRecebidoLiquido: sql`VALUES(valorRecebidoLiquido)`,
+                emissaoData: sql`VALUES(emissaoData)`,
+                vencimentoData: sql`VALUES(vencimentoData)`,
+                vencimentoOriginalData: sql`VALUES(vencimentoOriginalData)`,
+                liquidacaoData: sql`VALUES(liquidacaoData)`,
+                referenteA: sql`VALUES(referenteA)`,
+                parcela: sql`VALUES(parcela)`,
+                parcelasQuantidadeTotal: sql`VALUES(parcelasQuantidadeTotal)`,
+                observacoes: sql`VALUES(observacoes)`,
+                documentoVinculadoNumero: sql`VALUES(documentoVinculadoNumero)`,
+                bloqueado: sql`VALUES(bloqueado)`,
+                cliente: sql`VALUES(cliente)`,
+                centroDeCustosId: sql`VALUES(centroDeCustosId)`,
+                contaId: sql`VALUES(contaId)`,
+                bancoNome: sql`VALUES(bancoNome)`,
+                contaNumero: sql`VALUES(contaNumero)`,
+                agencia: sql`VALUES(agencia)`,
+                formaCobranca: sql`VALUES(formaCobranca)`,
+                formaCobrancaId: sql`VALUES(formaCobrancaId)`,
+                empresaId: sql`VALUES(empresaId)`,
+                empresaNome: sql`VALUES(empresaNome)`,
+                anotacoes: sql`VALUES(anotacoes)`,
+                decisaoCobranca: sql`VALUES(decisaoCobranca)`,
+                collectedAt: sql`NOW()`,
+              },
+            });
         }
       }
+      
+      // 3. Deletar EMITIDO que não vieram mais da API (já marcados como RECEBIDO acima)
+      // Não precisamos deletar nada — os disappeared já foram marcados como RECEBIDO
+      // e os que vieram da API foram atualizados via upsert
     }
   });
 

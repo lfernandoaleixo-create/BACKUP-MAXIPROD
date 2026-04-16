@@ -339,7 +339,7 @@ export type InsertAccountPayable = typeof accountsPayable.$inferInsert;
  */
 export const accountsReceivable = mysqlTable("accounts_receivable", {
   id: int("id").autoincrement().primaryKey(),
-  maxiprodId: bigint("maxiprodId", { mode: "number" }).notNull(),
+  maxiprodId: bigint("maxiprodId", { mode: "number" }).notNull().unique(),
   estado: varchar("estado", { length: 30 }).notNull(), // EMITIDO, RECEBIDO, CANCELADO, DIGITACAO, etc.
   tipo: varchar("tipo", { length: 50 }), // TITULO, RECEITA, ADIANTAMENTO, etc.
   valorOriginal: decimal("valorOriginal", { precision: 18, scale: 2 }),
