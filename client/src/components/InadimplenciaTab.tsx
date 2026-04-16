@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
-import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download, Lock, Loader2, FileDown, Filter, Check, CheckCircle2, XCircle, Circle, ListChecks } from "lucide-react";
+import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download, Lock, Loader2, FileDown, Filter, Check, CheckCircle2, XCircle, Circle, ListChecks, Pencil, Save, RotateCcw } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -2447,78 +2447,285 @@ function HistoryDialog({ title, onClose }: {
             </div>
           </TabsContent>
 
-          {/* ---- Tab: Histórico Completo ---- */}
-          <TabsContent value="history" className="flex-1 overflow-hidden flex flex-col mt-2">
-            <div className="flex items-center justify-end mb-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportHistoryPDF}
-                disabled={isLoading || !history || history.length === 0}
-                className="text-xs gap-1.5"
-              >
-                <FileDown className="w-3.5 h-3.5" />
-                PDF do Histórico
-              </Button>
-            </div>
-
-            <div className="overflow-y-auto flex-1 space-y-2 pr-1">
-              {isLoading && (
-                <div className="py-8 text-center text-slate-400">
-                  <div className="animate-spin w-6 h-6 border-2 border-slate-300 border-t-blue-600 rounded-full mx-auto mb-2" />
-                  Carregando...
-                </div>
-              )}
-
-              {!isLoading && (!history || history.length === 0) && (
-                <div className="py-8 text-center text-slate-400">
-                  <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>Nenhuma ação registrada ainda</p>
-                </div>
-              )}
-
-              {history && history.map((action: any, i: number) => {
-                const isAutomatic = action.isAutomatic;
-                const isSemContato = action.actionType === "sem_contato";
-                return (
-                  <div
-                    key={action.id || i}
-                    className={`rounded-lg border p-3 ${
-                      isSemContato
-                        ? "bg-red-50 border-red-200"
-                        : isAutomatic
-                        ? "bg-slate-50 border-slate-200"
-                        : "bg-green-50 border-green-200"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                          isSemContato
-                            ? "bg-red-100 text-red-700"
-                            : "bg-green-100 text-green-700"
-                        }`}>
-                          {ACTION_TYPE_LABELS[action.actionType] || action.actionType}
-                        </span>
-                        <span className="text-xs text-slate-500">
-                          {formatDate(action.actionDate)}
-                        </span>
-                      </div>
-                      <span className={`text-xs font-medium ${isAutomatic ? "text-slate-400" : "text-blue-600"}`}>
-                        {action.operatorName}
-                      </span>
-                    </div>
-                    {action.notes && (
-                      <p className="text-sm text-slate-700 mt-1.5">{action.notes}</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </TabsContent>
+          {/* ---- Tab: Histórico Completo (com edição) ---- */}
+          <HistoryTabContent
+            title={title}
+            history={history}
+            isLoading={isLoading}
+            exportHistoryPDF={exportHistoryPDF}
+          />
         </Tabs>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ---- Tab de Histórico com Edição Inline ---- */
+function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
+  title: Title;
+  history: any[] | undefined;
+  isLoading: boolean;
+  exportHistoryPDF: () => void;
+}) {
+  const { operator } = useOperator();
+  const utils = trpc.useUtils();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editType, setEditType] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [showEditsFor, setShowEditsFor] = useState<number | null>(null);
+
+  const editMutation = trpc.financial.editDailyAction.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(`Ação editada com sucesso! (${data.editsCount} alteração(s) registrada(s))`);
+        utils.financial.getCollectionHistory.invalidate({ receivableId: title.id });
+        utils.financial.getCollectionChecklist.invalidate({ receivableId: title.id });
+        utils.financial.getActionEditHistory.invalidate({ receivableId: title.id });
+        setEditingId(null);
+      }
+    },
+    onError: () => toast.error("Erro ao editar ação"),
+  });
+
+  const { data: editHistory } = trpc.financial.getActionEditHistory.useQuery(
+    { receivableId: title.id },
+    { enabled: true }
+  );
+
+  const startEdit = (action: any) => {
+    setEditingId(action.id);
+    setEditType(action.actionType);
+    setEditNotes(action.notes || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditType("");
+    setEditNotes("");
+  };
+
+  const saveEdit = () => {
+    if (!editingId || !operator?.name) return;
+    editMutation.mutate({
+      dailyActionId: editingId,
+      actionType: editType,
+      notes: editNotes,
+      editedBy: operator.name,
+    });
+  };
+
+  // Contar edições por ação
+  const editsCountMap = useMemo(() => {
+    const map = new Map<number, number>();
+    if (editHistory?.edits) {
+      for (const e of editHistory.edits) {
+        map.set(e.dailyActionId, (map.get(e.dailyActionId) || 0) + 1);
+      }
+    }
+    return map;
+  }, [editHistory]);
+
+  const ACTION_TYPES_OPTIONS = [
+    { value: "ligacao", label: "Ligação" },
+    { value: "whatsapp", label: "WhatsApp" },
+    { value: "email", label: "E-mail" },
+    { value: "visita", label: "Visita" },
+    { value: "sem_contato", label: "Sem Contato" },
+    { value: "acordo", label: "Acordo" },
+    { value: "promessa", label: "Promessa" },
+    { value: "negociacao", label: "Negociação" },
+    { value: "protesto", label: "Protesto" },
+    { value: "outro", label: "Outro" },
+  ];
+
+  return (
+    <TabsContent value="history" className="flex-1 overflow-hidden flex flex-col mt-2">
+      <div className="flex items-center justify-between mb-2">
+        {editHistory && editHistory.edits.length > 0 && (
+          <span className="text-[10px] text-amber-600 flex items-center gap-1">
+            <Pencil className="w-3 h-3" />
+            {editHistory.edits.length} edição(s) registrada(s)
+          </span>
+        )}
+        <div className="flex-1" />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={exportHistoryPDF}
+          disabled={isLoading || !history || history.length === 0}
+          className="text-xs gap-1.5"
+        >
+          <FileDown className="w-3.5 h-3.5" />
+          PDF do Histórico
+        </Button>
+      </div>
+
+      <div className="overflow-y-auto flex-1 space-y-2 pr-1">
+        {isLoading && (
+          <div className="py-8 text-center text-slate-400">
+            <div className="animate-spin w-6 h-6 border-2 border-slate-300 border-t-blue-600 rounded-full mx-auto mb-2" />
+            Carregando...
+          </div>
+        )}
+
+        {!isLoading && (!history || history.length === 0) && (
+          <div className="py-8 text-center text-slate-400">
+            <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>Nenhuma ação registrada ainda</p>
+          </div>
+        )}
+
+        {history && history.map((action: any, i: number) => {
+          const isAutomatic = action.isAutomatic;
+          const isSemContato = action.actionType === "sem_contato";
+          const isEditing = editingId === action.id;
+          const editCount = editsCountMap.get(action.id) || 0;
+          const actionEdits = editHistory?.edits?.filter((e: any) => e.dailyActionId === action.id) || [];
+
+          return (
+            <div
+              key={action.id || i}
+              className={`rounded-lg border p-3 ${
+                isEditing
+                  ? "bg-amber-50 border-amber-300 ring-2 ring-amber-200"
+                  : isSemContato
+                  ? "bg-red-50 border-red-200"
+                  : isAutomatic
+                  ? "bg-slate-50 border-slate-200"
+                  : "bg-green-50 border-green-200"
+              }`}
+            >
+              {isEditing ? (
+                /* ---- Modo Edição ---- */
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-700 flex items-center gap-1">
+                      <Pencil className="w-3.5 h-3.5" />
+                      Editando ação de {formatDate(action.actionDate)}
+                    </span>
+                    <button onClick={cancelEdit} className="text-slate-400 hover:text-slate-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Tipo de Ação</label>
+                    <select
+                      value={editType}
+                      onChange={(e) => setEditType(e.target.value)}
+                      className="w-full text-sm border border-amber-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    >
+                      {ACTION_TYPES_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Observações</label>
+                    <textarea
+                      value={editNotes}
+                      onChange={(e) => setEditNotes(e.target.value)}
+                      rows={2}
+                      className="w-full text-sm border border-amber-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                      placeholder="Observações da ação..."
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={cancelEdit} className="text-xs">
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={saveEdit}
+                      disabled={editMutation.isPending}
+                      className="text-xs gap-1 bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      {editMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                      Salvar Edição
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                /* ---- Modo Visualização ---- */
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        isSemContato
+                          ? "bg-red-100 text-red-700"
+                          : "bg-green-100 text-green-700"
+                      }`}>
+                        {ACTION_TYPE_LABELS[action.actionType] || action.actionType}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {formatDate(action.actionDate)}
+                      </span>
+                      {editCount > 0 && (
+                        <button
+                          onClick={() => setShowEditsFor(showEditsFor === action.id ? null : action.id)}
+                          className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full hover:bg-amber-100 flex items-center gap-0.5"
+                          title="Ver histórico de edições"
+                        >
+                          <Pencil className="w-2.5 h-2.5" />
+                          {editCount}x editado
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-medium ${isAutomatic ? "text-slate-400" : "text-blue-600"}`}>
+                        {action.operatorName}
+                      </span>
+                      {!isAutomatic && action.id && (
+                        <button
+                          onClick={() => startEdit(action)}
+                          className="text-slate-400 hover:text-amber-600 transition-colors p-0.5 rounded hover:bg-amber-50"
+                          title="Editar esta ação"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {action.notes && (
+                    <p className="text-sm text-slate-700 mt-1.5">{action.notes}</p>
+                  )}
+
+                  {/* Histórico de edições expandido */}
+                  {showEditsFor === action.id && actionEdits.length > 0 && (
+                    <div className="mt-2 border-t border-amber-200 pt-2 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-700 flex items-center gap-1">
+                        <RotateCcw className="w-3 h-3" />
+                        Histórico de edições
+                      </span>
+                      {actionEdits.map((edit: any, idx: number) => (
+                        <div key={edit.id || idx} className="text-[10px] bg-amber-50 border border-amber-100 rounded px-2 py-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-amber-800">
+                              {edit.fieldChanged === "actionType" ? "Tipo" : "Observações"} alterado por <span className="font-bold">{edit.editedBy}</span>
+                            </span>
+                            <span className="text-amber-500">
+                              {edit.editedAt ? new Date(edit.editedAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-red-500 line-through">
+                              {edit.fieldChanged === "actionType" ? (ACTION_TYPE_LABELS[edit.oldValue] || edit.oldValue) : (edit.oldValue || "(vazio)")}
+                            </span>
+                            <span className="text-slate-400">→</span>
+                            <span className="text-emerald-600 font-medium">
+                              {edit.fieldChanged === "actionType" ? (ACTION_TYPE_LABELS[edit.newValue] || edit.newValue) : (edit.newValue || "(vazio)")}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </TabsContent>
   );
 }
 

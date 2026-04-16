@@ -2198,9 +2198,19 @@ function MadeiraConfigInput({ codigoItem, field, visibilityData, placeholder, pr
 function MadeiraVisibilityPanel() {
   const { data: dashData } = trpc.dashboard.getData.useQuery();
   const { data: visibilityData, isLoading: visLoading } = trpc.settings.getMadeiraVisibility.useQuery();
+  const { data: autoPricesData } = trpc.settings.getMadeiraAutoPrices.useQuery();
   const utils = trpc.useUtils();
   const { operator } = useOperator();
   const [searchTerm, setSearchTerm] = useState("");
+
+  const autoFillMutation = trpc.settings.autoFillMadeiraPrices.useMutation({
+    onSuccess: (data) => {
+      utils.settings.getMadeiraVisibility.invalidate();
+      utils.settings.getMadeiraAutoPrices.invalidate();
+      toast.success(`Preços atualizados! ${data.updated} produtos preenchidos, ${data.skipped} já tinham preço, ${data.noSales} sem vendas.`);
+    },
+    onError: () => toast.error("Erro ao preencher preços"),
+  });
 
   const setBulkVisibility = trpc.settings.setBulkMadeiraVisibility.useMutation({
     onSuccess: () => {
@@ -2297,15 +2307,30 @@ function MadeiraVisibilityPanel() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input
-            placeholder="Buscar por código ou descrição..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
+        {/* Auto-fill prices button + Search */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Buscar por código ou descrição..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <button
+            onClick={() => autoFillMutation.mutate()}
+            disabled={autoFillMutation.isPending}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+            title="Preencher automaticamente R$/CX com a média das últimas 5 vendas para produtos sem preço"
+          >
+            {autoFillMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <DollarSign className="w-4 h-4" />
+            )}
+            Auto-preencher Preços
+          </button>
         </div>
       </div>
 
@@ -2387,6 +2412,15 @@ function MadeiraVisibilityPanel() {
                         prefix="R$ "
                         type="money"
                       />
+                      {/* Mostrar preço sugerido se não tem preço definido */}
+                      {(() => {
+                        const hasPrice = visibilityData?.items?.some((r: any) => r.codigoItem === item.codigoItem && r.precoCaixa != null && parseFloat(r.precoCaixa) > 0);
+                        const autoPrice = autoPricesData?.prices?.[item.codigoItem];
+                        if (!hasPrice && autoPrice) {
+                          return <span className="text-[10px] text-blue-400" title={`Média de ${autoPrice.salesCount} vendas`}>sugest: R$ {autoPrice.avgPrice.toFixed(2)}</span>;
+                        }
+                        return null;
+                      })()}
                     </td>
                     <td className="px-3 py-2.5 text-center">
                       <MadeiraConfigInput

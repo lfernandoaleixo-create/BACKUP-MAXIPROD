@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
@@ -5234,5 +5234,91 @@ ${acoesTexto}
         .orderBy(desc(discountSelectionHistory.createdAt))
         .limit(input.limit);
       return rows;
+    }),
+
+  /**
+   * Editar uma ação de cobrança diária (tipo de ação e/ou notas).
+   * Registra todas as alterações na tabela de auditoria (collection_action_edits).
+   */
+  editDailyAction: publicProcedure
+    .input(z.object({
+      dailyActionId: z.number(),
+      actionType: z.string().optional(),
+      notes: z.string().optional(),
+      editedBy: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+
+      // Buscar a ação atual
+      const [current] = await db.select().from(collectionDailyActions)
+        .where(eq(collectionDailyActions.id, input.dailyActionId))
+        .limit(1);
+
+      if (!current) return { success: false, error: "Ação não encontrada" };
+
+      const edits: Array<{ field: string; oldValue: string | null; newValue: string | null }> = [];
+
+      // Verificar mudanças no tipo de ação
+      if (input.actionType !== undefined && input.actionType !== current.actionType) {
+        edits.push({
+          field: "actionType",
+          oldValue: current.actionType,
+          newValue: input.actionType,
+        });
+      }
+
+      // Verificar mudanças nas notas
+      if (input.notes !== undefined && input.notes !== current.notes) {
+        edits.push({
+          field: "notes",
+          oldValue: current.notes || null,
+          newValue: input.notes || null,
+        });
+      }
+
+      if (edits.length === 0) return { success: true, message: "Nenhuma alteração detectada" };
+
+      // Registrar cada alteração na tabela de auditoria
+      for (const edit of edits) {
+        await db.insert(collectionActionEdits).values({
+          dailyActionId: input.dailyActionId,
+          receivableId: current.receivableId,
+          fieldChanged: edit.field,
+          oldValue: edit.oldValue,
+          newValue: edit.newValue,
+          editedBy: input.editedBy,
+        });
+      }
+
+      // Aplicar as alterações na ação
+      const updates: Record<string, any> = {};
+      if (input.actionType !== undefined) updates.actionType = input.actionType;
+      if (input.notes !== undefined) updates.notes = input.notes;
+
+      await db.update(collectionDailyActions)
+        .set(updates)
+        .where(eq(collectionDailyActions.id, input.dailyActionId));
+
+      return { success: true, editsCount: edits.length };
+    }),
+
+  /**
+   * Obter histórico de edições de ações de cobrança para um título.
+   */
+  getActionEditHistory: publicProcedure
+    .input(z.object({
+      receivableId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { edits: [] };
+
+      const rows = await db.select().from(collectionActionEdits)
+        .where(eq(collectionActionEdits.receivableId, input.receivableId))
+        .orderBy(desc(collectionActionEdits.editedAt));
+
+      return { edits: rows };
     }),
 });

@@ -1165,3 +1165,21 @@ export const pirografiaEntries = mysqlTable("pirografia_entries", {
 });
 export type PirografiaEntry = typeof pirografiaEntries.$inferSelect;
 export type InsertPirografiaEntry = typeof pirografiaEntries.$inferInsert;
+
+/**
+ * Auditoria de edições em ações de cobrança diárias.
+ * Toda vez que o vendedor editar uma ação (tipo ou notas), o registro original é preservado aqui.
+ * Campos: o que era antes, o que mudou, quem editou e quando.
+ */
+export const collectionActionEdits = mysqlTable("collection_action_edits", {
+  id: int("id").autoincrement().primaryKey(),
+  dailyActionId: int("dailyActionId").notNull(), // FK para collection_daily_actions.id
+  receivableId: int("receivableId").notNull(), // FK para accounts_receivable.id (para facilitar queries)
+  fieldChanged: varchar("fieldChanged", { length: 30 }).notNull(), // "actionType" | "notes"
+  oldValue: text("oldValue"), // Valor anterior
+  newValue: text("newValue"), // Valor novo
+  editedBy: varchar("editedBy", { length: 200 }).notNull(), // Nome do operador que editou
+  editedAt: timestamp("editedAt").defaultNow().notNull(), // Quando editou
+});
+export type CollectionActionEdit = typeof collectionActionEdits.$inferSelect;
+export type InsertCollectionActionEdit = typeof collectionActionEdits.$inferInsert;

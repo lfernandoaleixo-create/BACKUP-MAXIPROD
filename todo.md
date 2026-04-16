@@ -2823,3 +2823,10 @@
 - [x] Checklist roteiro cobrança: exportação PDF com roteiro completo e detalhes para vendedor
 - [x] Checklist roteiro cobrança: incluir passo a passo completo (acertos e erros) no documento de tomada de decisão (dia 7+)
 - [x] Checklist roteiro cobrança: 9 testes automatizados (cascata de erros, dias futuros, ações manuais, campos obrigatórios)
+- [x] Edição de ações de cobrança: permitir Thiago editar tipo de ação (ligação→whatsapp, etc.) e notas
+- [x] Edição de ações de cobrança: tabela de auditoria registrando antes/depois, quem editou e quando
+- [x] Edição de ações de cobrança: UI de edição no modal de Histórico com botão de editar em cada ação
+- [x] Edição de ações de cobrança: testes automatizados para endpoint de edição e registro de auditoria (7 testes)
+- [x] Madeira PA valorização: investigar por que maioria dos produtos não tem preço médio preenchido (causa: preço nunca era calculado automaticamente para madeira)
+- [x] Madeira PA valorização: buscar NFs e pedidos de venda de TODOS os produtos de madeira no Maxiprod (49 de 50 têm vendas)
+- [x] Madeira PA valorização: preencher automaticamente R$/CX para todos os produtos com histórico de vendas (botão Auto-preencher Preços + preço sugerido inline)

@@ -2,7 +2,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { appSettings, salesTargets, productSegmentOverrides, salesOrders, dashboardData, productVisibility, productClassification, productPricing, productVariants, operators, operatorGranularPermissions, madeiraVisibility } from "../drizzle/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 
 // Default admin password (can be changed via settings)
 const DEFAULT_ADMIN_PASSWORD = "240288";
@@ -932,4 +932,104 @@ export const settingsRouter = router({
       }
       return { success: true };
     }),
+
+  /**
+   * Auto-preencher preços de Madeira PA a partir da média das últimas 5 vendas por codigoItem.
+   * Busca no sales_orders (excluindo Digitação), calcula média das últimas 5 vendas,
+   * e atualiza precoCaixa para todos os 3 cards de cada produto.
+   * Só preenche se o produto NÃO tiver preço manual já definido.
+   */
+  autoFillMadeiraPrices: publicProcedure.mutation(async () => {
+    const db = await getDb();
+    if (!db) return { success: false, updated: 0, skipped: 0, noSales: 0 };
+
+    // 1. Buscar todos os códigos distintos de madeira
+    const allMadeira = await db.select({ codigoItem: madeiraVisibility.codigoItem }).from(madeiraVisibility);
+    const distinctCodes = Array.from(new Set(allMadeira.map(r => r.codigoItem)));
+
+    // 2. Buscar códigos que já têm preço manual (não sobrescrever)
+    const withPrice = await db.select({ codigoItem: madeiraVisibility.codigoItem, precoCaixa: madeiraVisibility.precoCaixa })
+      .from(madeiraVisibility)
+      .where(sql`${madeiraVisibility.precoCaixa} IS NOT NULL AND ${madeiraVisibility.precoCaixa} > 0`);
+    const codesWithPrice = new Set(withPrice.map(r => r.codigoItem));
+
+    // 3. Para cada código sem preço, buscar últimas 5 vendas
+    let updated = 0;
+    let skipped = 0;
+    let noSales = 0;
+
+    for (const code of distinctCodes) {
+      if (codesWithPrice.has(code)) {
+        skipped++;
+        continue;
+      }
+
+      // Buscar últimas 5 vendas deste produto (excluindo Digitação e valor 0)
+      const sales = await db
+        .select({ valorUnitario: salesOrders.valorUnitario })
+        .from(salesOrders)
+        .where(and(
+          eq(salesOrders.codigoItem, code),
+          sql`${salesOrders.valorUnitario} > 0`,
+          sql`(${salesOrders.estadoNota} IS NULL OR UPPER(${salesOrders.estadoNota}) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))`
+        ))
+        .orderBy(desc(salesOrders.dataEmissao))
+        .limit(5);
+
+      if (sales.length === 0) {
+        noSales++;
+        continue;
+      }
+
+      // Calcular média
+      const values = sales.map(s => parseFloat(String(s.valorUnitario)));
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      const roundedAvg = Math.round(avg * 100) / 100;
+
+      // Atualizar precoCaixa para todos os 3 cards deste produto
+      await db.update(madeiraVisibility)
+        .set({ precoCaixa: String(roundedAvg) })
+        .where(eq(madeiraVisibility.codigoItem, code));
+
+      updated++;
+    }
+
+    return { success: true, updated, skipped, noSales };
+  }),
+
+  /**
+   * Obter preços automáticos de Madeira PA (média últimas 5 vendas por codigoItem).
+   * Retorna mapa codigoItem -> { avgPrice, salesCount } para uso no frontend.
+   */
+  getMadeiraAutoPrices: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { prices: {} };
+
+    // Buscar todos os códigos distintos de madeira
+    const allMadeira = await db.select({ codigoItem: madeiraVisibility.codigoItem }).from(madeiraVisibility);
+    const distinctCodes = Array.from(new Set(allMadeira.map(r => r.codigoItem)));
+
+    const prices: Record<string, { avgPrice: number; salesCount: number }> = {};
+
+    for (const code of distinctCodes) {
+      const sales = await db
+        .select({ valorUnitario: salesOrders.valorUnitario })
+        .from(salesOrders)
+        .where(and(
+          eq(salesOrders.codigoItem, code),
+          sql`${salesOrders.valorUnitario} > 0`,
+          sql`(${salesOrders.estadoNota} IS NULL OR UPPER(${salesOrders.estadoNota}) NOT IN ('DIGITAÇÃO', 'DIGITACAO'))`
+        ))
+        .orderBy(desc(salesOrders.dataEmissao))
+        .limit(5);
+
+      if (sales.length > 0) {
+        const values = sales.map(s => parseFloat(String(s.valorUnitario)));
+        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+        prices[code] = { avgPrice: Math.round(avg * 100) / 100, salesCount: sales.length };
+      }
+    }
+
+    return { prices };
+  }),
 });
