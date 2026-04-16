@@ -65,8 +65,17 @@ function exportInadimplenciaPDF(
   protestConfigsMap: Record<number, any> | undefined,
 ) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
+  const pageW = doc.internal.pageSize.getWidth();  // 297mm
+  const pageH = doc.internal.pageSize.getHeight(); // 210mm
+
+  // Force landscape display & print: set PDF viewer preferences
+  doc.setProperties({
+    title: "Relatório de Inadimplência - Grupo Fox",
+    subject: "Gestão de Inadimplência",
+    creator: "Grupo Fox Dashboard",
+  });
+  // Set display mode: fullwidth, single page, landscape
+  doc.setDisplayMode("fullwidth", "single");
 
   const STATUS_LABELS: Record<string, string> = {
     pendente: "Pendente", contatado: "Contatado", em_negociacao: "Em Negociação",
@@ -118,26 +127,26 @@ function exportInadimplenciaPDF(
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("GRUPO FOX", 12, 10);
+    doc.text("GRUPO FOX", 6, 10);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(220, 200, 200);
-    doc.text("Relatório de Inadimplência", 50, 10);
+    doc.text("Relatório de Inadimplência", 44, 10);
 
     // Right side: date + totals
     doc.setFontSize(7.5);
     doc.setTextColor(200, 180, 180);
-    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, pageW - 12, 8, { align: "right" });
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, pageW - 6, 8, { align: "right" });
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.text(`${sorted.length} títulos  |  ${uniqueClients} clientes  |  ${formatCurrency(stats.total)}`, pageW - 12, 14, { align: "right" });
+    doc.text(`${sorted.length} títulos  |  ${uniqueClients} clientes  |  ${formatCurrency(stats.total)}`, pageW - 6, 14, { align: "right" });
 
     // Subtitle line
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(200, 180, 180);
-    doc.text("Ordenado por dias de atraso (mais antigos primeiro)", 12, 18);
+    doc.text("Ordenado por dias de atraso (mais antigos primeiro)", 6, 18);
   }
 
   // Only draw full summary on first page
@@ -153,11 +162,11 @@ function exportInadimplenciaPDF(
     { label: "90+ DIAS", min: 91, max: 99999, color: [153, 27, 27] as [number, number, number] },
   ];
 
-  const boxW = (pageW - 24 - 4 * 4) / 5; // equal width, 4px gaps
+  const boxW = (pageW - 12 - 4 * 4) / 5; // equal width, 4px gaps, 6mm margins
   agingRanges.forEach((r, i) => {
     const count = sorted.filter(t => t.diasAtraso >= r.min && t.diasAtraso <= r.max).length;
     const total = sorted.filter(t => t.diasAtraso >= r.min && t.diasAtraso <= r.max).reduce((s, t) => s + t.valorAReceber, 0);
-    const x = 12 + i * (boxW + 4);
+    const x = 6 + i * (boxW + 4);
     doc.setFillColor(r.color[0], r.color[1], r.color[2]);
     doc.roundedRect(x, y0, boxW, 14, 1.5, 1.5, "F");
     doc.setTextColor(255, 255, 255);
@@ -182,10 +191,10 @@ function exportInadimplenciaPDF(
     { key: "juridico", label: "JURÍDICO", bg: [254, 226, 226] as [number, number, number], text: [185, 28, 28] as [number, number, number] },
   ];
 
-  const sBoxW = (pageW - 24 - 5 * 4) / 6;
+  const sBoxW = (pageW - 12 - 5 * 4) / 6; // 6mm margins
   statusDefs.forEach((s, i) => {
     const sc = statusCounts[s.key] || { count: 0, total: 0 };
-    const x = 12 + i * (sBoxW + 4);
+    const x = 6 + i * (sBoxW + 4);
     // Border
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
@@ -242,16 +251,16 @@ function exportInadimplenciaPDF(
     },
     bodyStyles: { fontSize: 6.5, cellPadding: 2, lineColor: [230, 230, 230], lineWidth: 0.2, halign: "center" },
     columnStyles: {
-      0: { cellWidth: 58, halign: "left" },   // CLIENTE
+      0: { cellWidth: 60, halign: "left" },   // CLIENTE (+2)
       1: { cellWidth: 30, halign: "center" }, // NF / PARCELA
       2: { cellWidth: 30, halign: "center" }, // VENDEDOR
       3: { cellWidth: 30, halign: "center" }, // FORMA DE COBRANÇA
-      4: { cellWidth: 32, halign: "center" }, // DECISÃO DE COBRANÇA
+      4: { cellWidth: 33, halign: "center" }, // DECISÃO DE COBRANÇA (+1)
       5: { cellWidth: 24, halign: "right", fontStyle: "bold" }, // VALOR
       6: { cellWidth: 24, halign: "center" }, // VENCIMENTO
       7: { cellWidth: 15, halign: "center" }, // ATRASO
       8: { cellWidth: 22, halign: "center" }, // STATUS
-      9: { cellWidth: 16, halign: "center" }, // EMPRESA
+      9: { cellWidth: 17, halign: "center" }, // EMPRESA (+1)
     },
     didParseCell: (data: any) => {
       if (data.section === "body") {
@@ -303,7 +312,7 @@ function exportInadimplenciaPDF(
         }
       }
     },
-    margin: { left: 8, right: 8, top: 28 },
+    margin: { left: 6, right: 6, top: 28, bottom: 10 },
     didDrawPage: (data: any) => {
       // Repeat mini header on subsequent pages
       if (data.pageNumber > 1) {
@@ -314,12 +323,12 @@ function exportInadimplenciaPDF(
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
-        doc.text("GRUPO FOX \u2014 Inadimplência", 12, 9);
+        doc.text("GRUPO FOX \u2014 Inadimpl\u00eancia", 6, 9);
         doc.setFontSize(7.5);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(200, 180, 180);
-        doc.text(`${sorted.length} títulos  |  ${formatCurrency(stats.total)}`, 12, 14.5);
-        doc.text(`Página ${data.pageNumber}`, pageW - 12, 9, { align: "right" });
+        doc.text(`${sorted.length} t\u00edtulos  |  ${formatCurrency(stats.total)}`, 6, 14.5);
+        doc.text(`Página ${data.pageNumber}`, pageW - 6, 9, { align: "right" });
       }
 
       // Footer
