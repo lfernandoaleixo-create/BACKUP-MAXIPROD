@@ -2735,3 +2735,4 @@
 - [x] KPI Projetado na Importação corrigido: totalDisponivelCx + totalPOCx = 18.187 + 9.639 = 27.826 cx
 - [x] KPIs Disponível e Projetado corrigidos: Disponível = totalEstoqueCx - totalPedidosCx = 16.996. Projetado = 16.996 + 9.639 = 26.635
 - [x] Adicionado painel de médias diárias no gráfico Evolução Diária: 3 cards (atual, anterior, melhor) com média diária, badges de % vs melhor/anterior, gradientes e layout sofisticado
+- [x] Botão de exportação PDF da lista de inadimplentes: header vermelho, boxes de aging, tabela 11 colunas, cores condicionais, footer com paginação

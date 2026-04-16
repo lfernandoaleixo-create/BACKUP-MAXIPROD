@@ -2,7 +2,9 @@ import { useState, useMemo, useEffect } from "react";
 import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
-import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download, Lock, Loader2 } from "lucide-react";
+import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download, Lock, Loader2, FileDown } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -54,6 +56,174 @@ function formatDate(d: string) {
   if (!d) return "-";
   const [y, m, day] = d.split("-");
   return `${day}/${m}/${y}`;
+}
+
+/* ---- PDF Export ---- */
+function exportInadimplenciaPDF(
+  titles: Title[],
+  stats: { total: number; count: number },
+  protestConfigsMap: Record<number, any> | undefined,
+) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+
+  const STATUS_LABELS: Record<string, string> = {
+    pendente: "Pendente", contatado: "Contatado", em_negociacao: "Em Negociação",
+    promessa: "Promessa Pgto", protestado: "Protestado", juridico: "Jurídico",
+  };
+
+  // ── Header ──
+  doc.setFillColor(127, 29, 29); // red-900
+  doc.rect(0, 0, pageW, 28, "F");
+  // Accent line
+  doc.setFillColor(239, 68, 68); // red-500
+  doc.rect(0, 28, pageW, 1.5, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(15);
+  doc.setFont("helvetica", "bold");
+  doc.text("GRUPO FOX \u2014 Relat\u00f3rio de Inadimpl\u00eancia", 14, 12);
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")} | Total: ${titles.length} t\u00edtulos vencidos`, 14, 19);
+  doc.text(`Valor total em aberto: ${formatCurrency(stats.total)}`, 14, 24.5);
+
+  // ── Summary boxes ──
+  const y0 = 34;
+  const boxW = 52;
+  const gap = 6;
+
+  // Aging breakdown
+  const agingRanges = [
+    { label: "1-15 dias", min: 1, max: 15, color: [245, 158, 11] as [number, number, number] },
+    { label: "16-30 dias", min: 16, max: 30, color: [249, 115, 22] as [number, number, number] },
+    { label: "31-60 dias", min: 31, max: 60, color: [239, 68, 68] as [number, number, number] },
+    { label: "61-90 dias", min: 61, max: 90, color: [220, 38, 38] as [number, number, number] },
+    { label: "90+ dias", min: 91, max: 99999, color: [153, 27, 27] as [number, number, number] },
+  ];
+
+  agingRanges.forEach((r, i) => {
+    const count = titles.filter(t => t.diasAtraso >= r.min && t.diasAtraso <= r.max).length;
+    const total = titles.filter(t => t.diasAtraso >= r.min && t.diasAtraso <= r.max).reduce((s, t) => s + t.valorAReceber, 0);
+    const x = 14 + i * (boxW + gap);
+    doc.setFillColor(r.color[0], r.color[1], r.color[2]);
+    doc.roundedRect(x, y0, boxW, 16, 2, 2, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text(r.label.toUpperCase(), x + 3, y0 + 5);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${count} t\u00edt. \u2022 ${formatCurrency(total)}`, x + 3, y0 + 12);
+  });
+
+  // ── Table ──
+  const tableData = titles.map(t => {
+    const status = t.cobranca?.status || "pendente";
+    const statusLabel = STATUS_LABELS[status] || status;
+    const protestConfig = protestConfigsMap?.[t.id];
+    let protestLabel = "\u2014";
+    if (protestConfig) {
+      protestLabel = protestConfig.protestType === "automatico" ? "Protesto Auto" : "N\u00e3o Protestar";
+    }
+    return [
+      t.cliente,
+      `${t.documento || "-"}${t.parcela ? " \u2022 " + t.parcela : ""}`,
+      t.vendedor || "\u2014",
+      t.formaCobranca || "\u2014",
+      t.decisaoCobranca || "\u2014",
+      protestLabel,
+      formatCurrency(t.valorAReceber),
+      formatDate(t.vencimento),
+      `${t.diasAtraso}d`,
+      statusLabel,
+      t.empresa || "\u2014",
+    ];
+  });
+
+  autoTable(doc, {
+    startY: y0 + 22,
+    head: [["Cliente", "Doc/Parcela", "Vendedor", "Forma Cobr.", "Decis\u00e3o Cobr.", "Protesto", "Valor", "Vencimento", "Atraso", "Status", "Empresa"]],
+    body: tableData,
+    theme: "grid",
+    headStyles: {
+      fillColor: [127, 29, 29],
+      textColor: [255, 255, 255],
+      fontSize: 7,
+      fontStyle: "bold",
+      cellPadding: 2,
+    },
+    bodyStyles: { fontSize: 6.5, cellPadding: 1.5 },
+    columnStyles: {
+      0: { cellWidth: 52 },
+      1: { cellWidth: 22 },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 18 },
+      4: { cellWidth: 28 },
+      5: { cellWidth: 22 },
+      6: { cellWidth: 22, halign: "right", fontStyle: "bold" },
+      7: { cellWidth: 20, halign: "center" },
+      8: { cellWidth: 14, halign: "center" },
+      9: { cellWidth: 22, halign: "center" },
+      10: { cellWidth: 20 },
+    },
+    alternateRowStyles: { fillColor: [254, 242, 242] }, // red-50
+    didParseCell: (data: any) => {
+      if (data.section === "body") {
+        // Atraso column color
+        if (data.column.index === 8) {
+          const dias = parseInt(data.cell.raw);
+          if (dias > 60) {
+            data.cell.styles.textColor = [153, 27, 27];
+            data.cell.styles.fontStyle = "bold";
+          } else if (dias > 30) {
+            data.cell.styles.textColor = [220, 38, 38];
+          } else if (dias > 15) {
+            data.cell.styles.textColor = [249, 115, 22];
+          } else {
+            data.cell.styles.textColor = [245, 158, 11];
+          }
+        }
+        // Status column color
+        if (data.column.index === 9) {
+          const val = data.cell.raw;
+          if (val === "Protestado" || val === "Jur\u00eddico") {
+            data.cell.styles.textColor = [220, 38, 38];
+            data.cell.styles.fontStyle = "bold";
+          } else if (val === "Promessa Pgto") {
+            data.cell.styles.textColor = [5, 150, 105];
+          } else if (val === "Em Negocia\u00e7\u00e3o") {
+            data.cell.styles.textColor = [245, 158, 11];
+          }
+        }
+        // Protesto column
+        if (data.column.index === 5) {
+          if (data.cell.raw === "Protesto Auto") {
+            data.cell.styles.textColor = [249, 115, 22];
+            data.cell.styles.fontStyle = "bold";
+          } else if (data.cell.raw === "N\u00e3o Protestar") {
+            data.cell.styles.textColor = [37, 99, 235];
+          }
+        }
+      }
+    },
+    margin: { left: 8, right: 8 },
+    didDrawPage: (data: any) => {
+      // Footer on each page
+      const pageCount = doc.getNumberOfPages();
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text(
+        `P\u00e1gina ${data.pageNumber} de ${pageCount} | GRUPO FOX - Gest\u00e3o de Inadimpl\u00eancia`,
+        pageW / 2,
+        pageH - 6,
+        { align: "center" }
+      );
+    },
+  });
+
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  doc.save(`Inadimplencia_GrupoFox_${dateStr}.pdf`);
 }
 
 function getAgingColor(dias: number) {
@@ -445,6 +615,14 @@ export default function InadimplenciaTab() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportInadimplenciaPDF(filteredTitles, stats, protestConfigsMap)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02]"
+            title="Exportar lista de inadimplentes em PDF"
+          >
+            <FileDown className="w-4 h-4" />
+            <span>Exportar PDF</span>
+          </button>
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
