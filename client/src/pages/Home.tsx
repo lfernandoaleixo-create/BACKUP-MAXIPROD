@@ -2321,6 +2321,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
   const [showHistory, setShowHistory] = useState(false);
   const [historyItem, setHistoryItem] = useState<{ codigo: string; descricao: string } | undefined>(undefined);
   const [showSalesColumns, setShowSalesColumns] = useState(false);
+  const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: madeiraStockData } = trpc.dashboard.getMadeiraStock.useQuery(undefined, {
@@ -2637,12 +2638,39 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                     const isNegative = disponivelManual < 0;
                     const isZero = disponivelManual === 0;
                     const projetadoManual = disponivelManual + (item.poCx ?? 0);
+                    const hasVariants = item.isParent && item.variants && item.variants.length > 0;
+                    const isExpanded = expandedParents.has(item.codigoItem);
+                    const toggleExpand = () => {
+                      setExpandedParents(prev => {
+                        const next = new Set(prev);
+                        if (next.has(item.codigoItem)) next.delete(item.codigoItem);
+                        else next.add(item.codigoItem);
+                        return next;
+                      });
+                    };
                     return (
-                      <tr key={item.codigoItem} className={`hover:bg-slate-50 transition-colors ${isNegative ? 'bg-red-50/50' : isZero ? 'bg-amber-50/30' : ''}`}>
+                      <React.Fragment key={item.codigoItem}>
+                      <tr className={`hover:bg-slate-50 transition-colors ${isNegative ? 'bg-red-50/50' : isZero ? 'bg-amber-50/30' : ''}`}>
                         {/* Produto */}
                         <td className="px-2 py-2">
-                          <div className="font-medium text-slate-800 text-[13px] break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</div>
-                          <div className="text-[11px] text-slate-400 mt-0.5">Cod: {item.codigoItem}</div>
+                          <div className="flex items-start gap-1">
+                            {hasVariants && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleExpand(); }}
+                                className="mt-0.5 flex-shrink-0 w-4 h-4 rounded flex items-center justify-center text-green-600 hover:bg-green-100 transition-colors"
+                                title={isExpanded ? 'Ocultar variações' : 'Expandir variações'}
+                              >
+                                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              </button>
+                            )}
+                            <div>
+                              <div className="font-medium text-slate-800 text-[13px] break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</div>
+                              <div className="text-[11px] text-slate-400 mt-0.5">
+                                Cod: {item.codigoItem}
+                                {hasVariants && <span className="ml-2 text-green-500 font-medium">· {item.variants!.length} variaç{item.variants!.length > 1 ? 'ões' : 'ão'}</span>}
+                              </div>
+                            </div>
+                          </div>
                         </td>
                         {/* Un/Cx */}
                         <td className="px-1.5 py-2 text-[13px] text-slate-600 text-center whitespace-nowrap">
@@ -2752,6 +2780,50 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                           })()}
                         </td>
                       </tr>
+                      {/* Sub-linhas de variações (expandidas) */}
+                      {hasVariants && isExpanded && item.variants!.map((variant) => (
+                        <tr key={`${item.codigoItem}-${variant.codigoItem}`} className="bg-green-50/30 border-l-4 border-green-300">
+                          <td className="px-2 py-1 pl-8">
+                            <span className="text-slate-600 text-xs">
+                              └ {variant.descricaoItem}
+                            </span>
+                            <div className="text-[10px] text-slate-400 ml-3">
+                              {variant.codigoItem} · Fator: {variant.conversionFactor}x
+                            </div>
+                          </td>
+                          <td className="px-1.5 py-1 text-xs text-slate-500 text-center whitespace-nowrap">
+                            {variant.unidadesPorCaixa ? formatNumber(variant.unidadesPorCaixa) : '—'}
+                          </td>
+                          <td className="px-1.5 py-1 text-center">
+                            <span className="text-[9px] text-green-500 font-medium">Variação</span>
+                          </td>
+                          <td className="px-1.5 py-1 text-center bg-green-50/40 border-x border-green-200">
+                            <span className="text-xs text-slate-400">—</span>
+                          </td>
+                          <td className="py-1 px-0.5"></td>
+                          <td className="px-1.5 py-1 text-center whitespace-nowrap">
+                            <span className={`text-xs font-semibold ${(variant.pedidosCx ?? variant.pedidosUn) > 0 ? 'text-orange-500' : 'text-slate-400'}`}>
+                              {variant.pedidosCx !== null ? `${formatNumber(variant.pedidosCx)} ${getUnit(variant as any, true)}` : `${formatNumber(variant.pedidosUn)} un`}
+                            </span>
+                          </td>
+                          <td className="px-1.5 py-1 text-center bg-emerald-50/40 border-x border-emerald-100">
+                            <span className="text-xs text-slate-400">—</span>
+                          </td>
+                          {showSalesColumns && monthlySalesData?.months && (
+                            <>
+                              <td className="px-1 py-1 bg-blue-50/30 border-x border-blue-200"></td>
+                              <td className="px-1 py-1 bg-blue-50/30 border-x border-blue-200"></td>
+                              <td className="px-1 py-1 bg-blue-50/30 border-x border-blue-200"></td>
+                              <td className="px-1 py-1 bg-indigo-100/40 border-x border-indigo-200"></td>
+                              <td className="px-1 py-1 bg-purple-100/40 border-x border-purple-200"></td>
+                              <td className="px-1 py-1 bg-emerald-100/40 border-x border-emerald-200"></td>
+                            </>
+                          )}
+                          <td className="px-1.5 py-1"></td>
+                          <td className="px-1.5 py-1"></td>
+                        </tr>
+                      ))}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
