@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect } from "react";
 import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
-import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download, Lock, Loader2, FileDown, Filter, Check } from "lucide-react";
+import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download, Lock, Loader2, FileDown, Filter, Check, CheckCircle2, XCircle, Circle, ListChecks } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -2013,7 +2014,10 @@ function HistoryDialog({ title, onClose }: {
   onClose: () => void;
 }) {
   const { data: history, isLoading } = trpc.financial.getCollectionHistory.useQuery({ receivableId: title.id });
+  const { data: checklist, isLoading: checklistLoading } = trpc.financial.getCollectionChecklist.useQuery({ receivableId: title.id });
+  const [activeTab, setActiveTab] = useState("checklist");
 
+  // ---- PDF do Histórico ----
   function exportHistoryPDF() {
     if (!history || history.length === 0) return;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [297, 210] });
@@ -2022,8 +2026,6 @@ function HistoryDialog({ title, onClose }: {
     const margin = 8;
     const usableW = pageW - margin * 2;
     let y = margin;
-
-    // Header
     doc.setFillColor(30, 41, 59);
     doc.rect(0, 0, pageW, 28, "F");
     doc.setFont("helvetica", "bold");
@@ -2037,8 +2039,6 @@ function HistoryDialog({ title, onClose }: {
     doc.setFontSize(8);
     doc.text(`Gerado em: ${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, pageW - margin, 12, { align: "right" });
     y = 34;
-
-    // Client info box
     doc.setFillColor(248, 250, 252);
     doc.roundedRect(margin, y, usableW, 18, 2, 2, "F");
     doc.setFont("helvetica", "bold");
@@ -2051,8 +2051,6 @@ function HistoryDialog({ title, onClose }: {
     const infoLine = `${title.referenteA || ""} | Valor: ${formatCurrency(title.valorAReceber)} | Vencimento: ${formatDate(title.vencimento)} | Atraso: ${title.diasAtraso} dias | Vendedor: ${title.vendedor || "—"}`;
     doc.text(infoLine, margin + 4, y + 14);
     y += 24;
-
-    // Table
     const cols = [
       { header: "DATA", width: 30 },
       { header: "TIPO", width: 35 },
@@ -2060,8 +2058,6 @@ function HistoryDialog({ title, onClose }: {
       { header: "STATUS", width: 30 },
       { header: "OBSERVAÇÕES", width: usableW - 30 - 35 - 45 - 30 },
     ];
-
-    // Table header
     doc.setFillColor(30, 41, 59);
     doc.rect(margin, y, usableW, 8, "F");
     doc.setFont("helvetica", "bold");
@@ -2073,18 +2069,14 @@ function HistoryDialog({ title, onClose }: {
       colX += col.width;
     }
     y += 8;
-
-    // Table rows
     doc.setFontSize(7);
     for (let i = 0; i < history.length; i++) {
       const action: any = history[i];
       const isSemContato = action.actionType === "sem_contato";
       const rowH = 7;
-
       if (y + rowH > pageH - 15) {
         doc.addPage([297, 210], "landscape");
         y = margin;
-        // Repeat header
         doc.setFillColor(30, 41, 59);
         doc.rect(margin, y, usableW, 8, "F");
         doc.setFont("helvetica", "bold");
@@ -2097,51 +2089,171 @@ function HistoryDialog({ title, onClose }: {
         }
         y += 8;
       }
-
-      // Alternating bg
-      if (isSemContato) {
-        doc.setFillColor(254, 242, 242);
-      } else if (i % 2 === 0) {
-        doc.setFillColor(255, 255, 255);
-      } else {
-        doc.setFillColor(248, 250, 252);
-      }
+      if (isSemContato) doc.setFillColor(254, 242, 242);
+      else if (i % 2 === 0) doc.setFillColor(255, 255, 255);
+      else doc.setFillColor(248, 250, 252);
       doc.rect(margin, y, usableW, rowH, "F");
-
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7);
       doc.setTextColor(30, 41, 59);
       colX = margin;
-
-      // Data
       doc.text(formatDate(action.actionDate), colX + cols[0].width / 2, y + 4.5, { align: "center" });
       colX += cols[0].width;
-
-      // Tipo
       const tipoLabel = ACTION_TYPE_LABELS[action.actionType] || action.actionType;
       if (isSemContato) doc.setTextColor(185, 28, 28);
       else doc.setTextColor(21, 128, 61);
       doc.setFont("helvetica", "bold");
       doc.text(tipoLabel, colX + cols[1].width / 2, y + 4.5, { align: "center" });
       colX += cols[1].width;
-
-      // Responsável
       doc.setTextColor(30, 41, 59);
       doc.setFont("helvetica", "normal");
       doc.text(action.operatorName || "—", colX + cols[2].width / 2, y + 4.5, { align: "center" });
       colX += cols[2].width;
-
-      // Status
       const statusLabel = action.isAutomatic ? "Automático" : "Manual";
       doc.text(statusLabel, colX + cols[3].width / 2, y + 4.5, { align: "center" });
       colX += cols[3].width;
-
-      // Observações
       const notes = action.notes || "—";
       const truncNotes = notes.length > 80 ? notes.substring(0, 77) + "..." : notes;
       doc.text(truncNotes, colX + 2, y + 4.5);
-
       y += rowH;
+    }
+    const totalPages = doc.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Página ${p} de ${totalPages} | GRUPO FOX — Histórico de Cobrança | ${now.toLocaleDateString("pt-BR")}`, pageW / 2, pageH - 5, { align: "center" });
+    }
+    doc.save(`Historico_Cobranca_${title.cliente.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30)}_${now.toISOString().split("T")[0]}.pdf`);
+    toast.success("PDF do histórico exportado!");
+  }
+
+  // ---- PDF do Checklist do Roteiro ----
+  function exportChecklistPDF() {
+    if (!checklist || !checklist.steps || checklist.steps.length === 0) return;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageW = 210;
+    const pageH = 297;
+    const margin = 12;
+    const usableW = pageW - margin * 2;
+    let y = margin;
+    const now = new Date();
+
+    // Header
+    doc.setFillColor(30, 41, 59);
+    doc.rect(0, 0, pageW, 32, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.text("GRUPO FOX", margin, 14);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text("Checklist do Roteiro de Cobrança", margin, 23);
+    doc.setFontSize(8);
+    doc.text(`Gerado em: ${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, pageW - margin, 14, { align: "right" });
+    y = 40;
+
+    // Client info box
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, y, usableW, 22, 2, 2, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(30, 41, 59);
+    doc.text(checklist.cliente || title.cliente, margin + 4, y + 8);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Valor: ${formatCurrency(checklist.valorAReceber ?? 0)} | Vencimento: ${formatDate(checklist.vencimento ?? "")} | Atraso: ${checklist.diasAtraso ?? 0} dias`, margin + 4, y + 15);
+    y += 28;
+
+    // Summary badges
+    const verdes = checklist.steps.filter((s: any) => s.status === "verde").length;
+    const vermelhos = checklist.steps.filter((s: any) => s.status === "vermelho").length;
+    const pendentes = checklist.steps.filter((s: any) => s.status === "pendente").length;
+    const futuros = checklist.steps.filter((s: any) => s.status === "futuro").length;
+
+    // Summary row
+    const badgeW = usableW / 4;
+    const badges = [
+      { label: "Realizados", count: verdes, r: 34, g: 197, b: 94 },
+      { label: "Falhas", count: vermelhos, r: 239, g: 68, b: 68 },
+      { label: "Pendentes", count: pendentes, r: 59, g: 130, b: 246 },
+      { label: "Futuros", count: futuros, r: 148, g: 163, b: 184 },
+    ];
+    for (let i = 0; i < badges.length; i++) {
+      const bx = margin + i * badgeW;
+      doc.setFillColor(badges[i].r, badges[i].g, badges[i].b);
+      doc.roundedRect(bx + 1, y, badgeW - 2, 14, 2, 2, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.text(String(badges[i].count), bx + badgeW / 2, y + 7, { align: "center" });
+      doc.setFontSize(7);
+      doc.text(badges[i].label, bx + badgeW / 2, y + 12, { align: "center" });
+    }
+    y += 20;
+
+    // Steps
+    for (const step of checklist.steps as any[]) {
+      if (y + 28 > pageH - 15) {
+        doc.addPage();
+        y = margin;
+      }
+
+      // Status color bar
+      const statusColors: Record<string, [number, number, number]> = {
+        verde: [34, 197, 94],
+        vermelho: [239, 68, 68],
+        pendente: [59, 130, 246],
+        futuro: [148, 163, 184],
+      };
+      const [cr, cg, cb] = statusColors[step.status] || [148, 163, 184];
+
+      // Step card
+      const stepH = 20 + (step.acoes && step.acoes.length > 0 ? step.acoes.length * 5 : 0);
+      doc.setFillColor(cr, cg, cb);
+      doc.roundedRect(margin, y, 4, stepH, 1, 1, "F");
+      doc.setFillColor(250, 250, 250);
+      doc.roundedRect(margin + 4, y, usableW - 4, stepH, 0, 0, "F");
+      doc.setDrawColor(230, 230, 230);
+      doc.roundedRect(margin, y, usableW, stepH, 1, 1, "S");
+
+      // Status icon text
+      const statusIcon = step.status === "verde" ? "[OK]" : step.status === "vermelho" ? "[X]" : step.status === "pendente" ? "[...]" : "[--]";
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(cr, cg, cb);
+      doc.text(statusIcon, margin + 8, y + 6);
+
+      // Label
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(10);
+      doc.text(step.label, margin + 22, y + 6);
+
+      // Date
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(formatDate(step.data), pageW - margin - 4, y + 6, { align: "right" });
+
+      // Motivo
+      doc.setFontSize(8);
+      doc.setTextColor(cr, cg, cb);
+      doc.text(step.motivo, margin + 22, y + 13);
+
+      // Ações realizadas
+      if (step.acoes && step.acoes.length > 0) {
+        let ay = y + 18;
+        for (const acao of step.acoes) {
+          doc.setFontSize(7);
+          doc.setTextColor(71, 85, 105);
+          const aLabel = ACTION_TYPE_LABELS[acao.tipo] || acao.tipo;
+          doc.text(`${acao.hora} — ${aLabel} (${acao.operador})${acao.notas ? " — " + acao.notas.substring(0, 60) : ""}`, margin + 22, ay);
+          ay += 5;
+        }
+      }
+
+      y += stepH + 3;
     }
 
     // Footer
@@ -2150,94 +2262,261 @@ function HistoryDialog({ title, onClose }: {
       doc.setPage(p);
       doc.setFontSize(7);
       doc.setTextColor(148, 163, 184);
-      doc.text(`Página ${p} de ${totalPages} | GRUPO FOX — Histórico de Cobrança | ${now.toLocaleDateString("pt-BR")}`, pageW / 2, pageH - 5, { align: "center" });
+      doc.text(`Página ${p} de ${totalPages} | GRUPO FOX — Checklist do Roteiro de Cobrança | ${now.toLocaleDateString("pt-BR")}`, pageW / 2, pageH - 8, { align: "center" });
     }
 
-    doc.save(`Historico_Cobranca_${title.cliente.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30)}_${now.toISOString().split("T")[0]}.pdf`);
-    toast.success("PDF do histórico exportado!");
+    doc.save(`Checklist_Cobranca_${title.cliente.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30)}_${now.toISOString().split("T")[0]}.pdf`);
+    toast.success("PDF do checklist exportado!");
   }
+
+  // Status icon helper
+  function StatusIcon({ status }: { status: string }) {
+    switch (status) {
+      case "verde": return <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />;
+      case "vermelho": return <XCircle className="w-5 h-5 text-red-500 shrink-0" />;
+      case "pendente": return <Circle className="w-5 h-5 text-blue-500 animate-pulse shrink-0" />;
+      case "futuro": return <Circle className="w-5 h-5 text-slate-300 shrink-0" />;
+      default: return <Circle className="w-5 h-5 text-slate-300 shrink-0" />;
+    }
+  }
+
+  function statusBg(status: string) {
+    switch (status) {
+      case "verde": return "bg-emerald-50 border-emerald-200";
+      case "vermelho": return "bg-red-50 border-red-200";
+      case "pendente": return "bg-blue-50 border-blue-200";
+      case "futuro": return "bg-slate-50 border-slate-200";
+      default: return "bg-slate-50 border-slate-200";
+    }
+  }
+
+  function statusTextColor(status: string) {
+    switch (status) {
+      case "verde": return "text-emerald-700";
+      case "vermelho": return "text-red-700";
+      case "pendente": return "text-blue-700";
+      case "futuro": return "text-slate-400";
+      default: return "text-slate-400";
+    }
+  }
+
+  // Checklist summary
+  const verdes = checklist?.steps?.filter((s: any) => s.status === "verde").length || 0;
+  const vermelhos = checklist?.steps?.filter((s: any) => s.status === "vermelho").length || 0;
+  const pendentes = checklist?.steps?.filter((s: any) => s.status === "pendente").length || 0;
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5 text-emerald-600" />
             Histórico de Cobrança
           </DialogTitle>
-          <div className="flex items-center gap-2 pt-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportHistoryPDF}
-              disabled={isLoading || !history || history.length === 0}
-              className="text-xs gap-1.5"
-            >
-              <FileDown className="w-3.5 h-3.5" />
-              Exportar PDF
-            </Button>
-          </div>
         </DialogHeader>
-        <div className="space-y-3 flex-1 overflow-hidden">
-          <div className="bg-slate-50 rounded-lg p-3">
-            <div className="font-semibold text-sm">{title.cliente}</div>
-            <div className="text-xs text-slate-500">{title.referenteA} · {formatCurrency(title.valorAReceber)} · {title.diasAtraso}d atraso</div>
-          </div>
 
-          <div className="overflow-y-auto max-h-[50vh] space-y-2 pr-1">
-            {isLoading && (
-              <div className="py-8 text-center text-slate-400">
-                <div className="animate-spin w-6 h-6 border-2 border-slate-300 border-t-blue-600 rounded-full mx-auto mb-2" />
-                Carregando...
+        {/* Client info */}
+        <div className="bg-slate-50 rounded-lg p-3">
+          <div className="font-semibold text-sm">{title.cliente}</div>
+          <div className="text-xs text-slate-500">{title.referenteA} · {formatCurrency(title.valorAReceber)} · {title.diasAtraso}d atraso</div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="checklist" className="gap-1.5 text-xs">
+              <ListChecks className="w-3.5 h-3.5" />
+              Roteiro (7 dias)
+              {!checklistLoading && checklist?.steps && (
+                <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  vermelhos > 0 ? "bg-red-100 text-red-700" : verdes === 7 ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
+                }`}>
+                  {verdes}/7
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="gap-1.5 text-xs">
+              <History className="w-3.5 h-3.5" />
+              Histórico
+              {!isLoading && history && (
+                <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  {history.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ---- Tab: Checklist do Roteiro ---- */}
+          <TabsContent value="checklist" className="flex-1 overflow-hidden flex flex-col mt-2">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                {!checklistLoading && checklist?.steps && (
+                  <>
+                    <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> {verdes}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-red-600 font-medium">
+                      <XCircle className="w-3.5 h-3.5" /> {vermelhos}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-blue-600 font-medium">
+                      <Circle className="w-3.5 h-3.5" /> {pendentes}
+                    </span>
+                  </>
+                )}
               </div>
-            )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportChecklistPDF}
+                disabled={checklistLoading || !checklist?.steps || checklist.steps.length === 0}
+                className="text-xs gap-1.5"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                PDF do Roteiro
+              </Button>
+            </div>
 
-            {!isLoading && (!history || history.length === 0) && (
-              <div className="py-8 text-center text-slate-400">
-                <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p>Nenhuma ação registrada ainda</p>
-              </div>
-            )}
+            <div className="overflow-y-auto flex-1 space-y-2 pr-1">
+              {checklistLoading && (
+                <div className="py-8 text-center text-slate-400">
+                  <div className="animate-spin w-6 h-6 border-2 border-slate-300 border-t-emerald-600 rounded-full mx-auto mb-2" />
+                  Carregando roteiro...
+                </div>
+              )}
 
-            {history && history.map((action: any, i: number) => {
-              const isAutomatic = action.isAutomatic;
-              const isSemContato = action.actionType === "sem_contato";
-              return (
+              {!checklistLoading && (!checklist?.steps || checklist.steps.length === 0) && (
+                <div className="py-8 text-center text-slate-400">
+                  <ListChecks className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Nenhum roteiro disponível</p>
+                  <p className="text-xs mt-1">O roteiro é calculado a partir da data de vencimento do título</p>
+                </div>
+              )}
+
+              {checklist?.steps && (checklist.steps as any[]).map((step: any) => (
                 <div
-                  key={action.id || i}
-                  className={`rounded-lg border p-3 ${
-                    isSemContato
-                      ? "bg-red-50 border-red-200"
-                      : isAutomatic
-                      ? "bg-slate-50 border-slate-200"
-                      : "bg-green-50 border-green-200"
+                  key={step.dia}
+                  className={`rounded-lg border p-3 transition-all ${statusBg(step.status)} ${
+                    step.isToday ? "ring-2 ring-blue-400 ring-offset-1" : ""
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        isSemContato
-                          ? "bg-red-100 text-red-700"
-                          : "bg-green-100 text-green-700"
-                      }`}>
-                        {ACTION_TYPE_LABELS[action.actionType] || action.actionType}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {formatDate(action.actionDate)}
+                  <div className="flex items-start gap-3">
+                    <div className="pt-0.5">
+                      <StatusIcon status={step.status} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm text-slate-800">{step.label}</span>
+                          {step.isToday && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500 text-white animate-pulse">
+                              HOJE
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-slate-400 shrink-0">{formatDate(step.data)}</span>
+                      </div>
+
+                      {/* Descrição do passo */}
+                      <p className="text-xs text-slate-500 mt-0.5">{step.descricao}</p>
+
+                      {/* Motivo do status */}
+                      <p className={`text-xs font-medium mt-1 ${statusTextColor(step.status)}`}>
+                        {step.motivo}
+                      </p>
+
+                      {/* Ações realizadas */}
+                      {step.acoes && step.acoes.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {step.acoes.map((acao: any, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2 text-xs bg-white/60 rounded px-2 py-1">
+                              <span className="font-medium text-slate-600">{acao.hora}</span>
+                              <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] ${
+                                acao.tipo === "sem_contato" ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
+                              }`}>
+                                {ACTION_TYPE_LABELS[acao.tipo] || acao.tipo}
+                              </span>
+                              <span className="text-slate-500">{acao.operador}</span>
+                              {acao.notas && <span className="text-slate-400 truncate">— {acao.notas}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* ---- Tab: Histórico Completo ---- */}
+          <TabsContent value="history" className="flex-1 overflow-hidden flex flex-col mt-2">
+            <div className="flex items-center justify-end mb-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportHistoryPDF}
+                disabled={isLoading || !history || history.length === 0}
+                className="text-xs gap-1.5"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                PDF do Histórico
+              </Button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 space-y-2 pr-1">
+              {isLoading && (
+                <div className="py-8 text-center text-slate-400">
+                  <div className="animate-spin w-6 h-6 border-2 border-slate-300 border-t-blue-600 rounded-full mx-auto mb-2" />
+                  Carregando...
+                </div>
+              )}
+
+              {!isLoading && (!history || history.length === 0) && (
+                <div className="py-8 text-center text-slate-400">
+                  <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Nenhuma ação registrada ainda</p>
+                </div>
+              )}
+
+              {history && history.map((action: any, i: number) => {
+                const isAutomatic = action.isAutomatic;
+                const isSemContato = action.actionType === "sem_contato";
+                return (
+                  <div
+                    key={action.id || i}
+                    className={`rounded-lg border p-3 ${
+                      isSemContato
+                        ? "bg-red-50 border-red-200"
+                        : isAutomatic
+                        ? "bg-slate-50 border-slate-200"
+                        : "bg-green-50 border-green-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          isSemContato
+                            ? "bg-red-100 text-red-700"
+                            : "bg-green-100 text-green-700"
+                        }`}>
+                          {ACTION_TYPE_LABELS[action.actionType] || action.actionType}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {formatDate(action.actionDate)}
+                        </span>
+                      </div>
+                      <span className={`text-xs font-medium ${isAutomatic ? "text-slate-400" : "text-blue-600"}`}>
+                        {action.operatorName}
                       </span>
                     </div>
-                    <span className={`text-xs font-medium ${isAutomatic ? "text-slate-400" : "text-blue-600"}`}>
-                      {action.operatorName}
-                    </span>
+                    {action.notes && (
+                      <p className="text-sm text-slate-700 mt-1.5">{action.notes}</p>
+                    )}
                   </div>
-                  {action.notes && (
-                    <p className="text-sm text-slate-700 mt-1.5">{action.notes}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
@@ -2451,6 +2730,7 @@ function CollectionDocumentDialog({ receivableId, onClose }: {
   onClose: () => void;
 }) {
   const { data: doc, isLoading } = trpc.financial.getCollectionDocument.useQuery({ receivableId });
+  const { data: checklist } = trpc.financial.getCollectionChecklist.useQuery({ receivableId });
   const markViewed = trpc.financial.markDocumentViewed.useMutation();
 
   // Marcar como visualizado ao abrir
@@ -2527,8 +2807,64 @@ Documento para Tomada de Decisão
               </div>
             </div>
 
-            {/* Histórico de ações resumido */}
-            {doc.acoesCobanca && Array.isArray(doc.acoesCobanca) && (
+            {/* Checklist do Roteiro de Cobrança (7 dias) */}
+            {checklist?.steps && checklist.steps.length > 0 && (
+              <div className="border border-slate-200 rounded-lg p-3">
+                <h4 className="text-xs font-bold text-slate-600 uppercase mb-2 flex items-center gap-2">
+                  <ListChecks className="w-4 h-4" />
+                  Roteiro de Cobrança (7 dias)
+                </h4>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {checklist.steps.filter((s: any) => s.status === "verde").length} realizados
+                  </span>
+                  <span className="flex items-center gap-1 text-xs text-red-600 font-medium">
+                    <XCircle className="w-3.5 h-3.5" /> {checklist.steps.filter((s: any) => s.status === "vermelho").length} falhas
+                  </span>
+                  <span className="flex items-center gap-1 text-xs text-blue-600 font-medium">
+                    <Circle className="w-3.5 h-3.5" /> {checklist.steps.filter((s: any) => s.status === "pendente").length} pendentes
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {(checklist.steps as any[]).map((step: any) => {
+                    const bgClass = step.status === "verde" ? "bg-emerald-50 border-emerald-200" :
+                      step.status === "vermelho" ? "bg-red-50 border-red-200" :
+                      step.status === "pendente" ? "bg-blue-50 border-blue-200" : "bg-slate-50 border-slate-200";
+                    const textClass = step.status === "verde" ? "text-emerald-700" :
+                      step.status === "vermelho" ? "text-red-700" :
+                      step.status === "pendente" ? "text-blue-700" : "text-slate-400";
+                    const icon = step.status === "verde" ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> :
+                      step.status === "vermelho" ? <XCircle className="w-4 h-4 text-red-500 shrink-0" /> :
+                      step.status === "pendente" ? <Circle className="w-4 h-4 text-blue-500 shrink-0" /> :
+                      <Circle className="w-4 h-4 text-slate-300 shrink-0" />;
+                    return (
+                      <div key={step.dia} className={`flex items-start gap-2 text-xs px-2.5 py-2 rounded-lg border ${bgClass}`}>
+                        <div className="pt-0.5">{icon}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-slate-800">{step.label}</span>
+                            <span className="text-slate-400 shrink-0">{formatDate(step.data)}</span>
+                          </div>
+                          <p className={`font-medium mt-0.5 ${textClass}`}>{step.motivo}</p>
+                          {step.acoes && step.acoes.length > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {step.acoes.map((acao: any, idx: number) => (
+                                <div key={idx} className="text-slate-500">
+                                  {acao.hora} — {ACTION_TYPE_LABELS[acao.tipo] || acao.tipo} ({acao.operador}){acao.notas ? ` — ${acao.notas}` : ""}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Histórico de ações resumido (fallback se checklist não disponível) */}
+            {(!checklist?.steps || checklist.steps.length === 0) && doc.acoesCobanca && Array.isArray(doc.acoesCobanca) && (
               <div className="border border-slate-200 rounded-lg p-3">
                 <h4 className="text-xs font-bold text-slate-600 uppercase mb-2">Ações de Cobrança Realizadas</h4>
                 <div className="space-y-1">

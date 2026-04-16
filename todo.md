@@ -2815,3 +2815,11 @@
 - [ ] Redesenhar relatório de exportação de vendas: layout profissional, sofisticado e moderno, com cards de médias diárias atualizados, números maiores e em negrito
 - [x] Guia de cobrança: removido passo "Salve prints do WhatsApp e cópia do e-mail como comprovante"
 - [x] Guia de cobrança: corrigido texto — telefone para de vibrar com 1 ação (removidas referências a "AMBAS" e "duas ações")
+- [x] Promover gestao@grupo-fox.com para admin (mesmas permissões de proprietário) — role atualizado de 'user' para 'admin' no banco
+- [x] GitHub: orientado proprietário a conectar via UI do Manus (Settings → GitHub → Conectar)
+- [x] Checklist roteiro cobrança: endpoint backend para calcular progresso dos 7 dias por título
+- [x] Checklist roteiro cobrança: checklist visual no modal de Histórico (verde=feito, vermelho=não feito, cascata de erros)
+- [x] Checklist roteiro cobrança: dias de espera (2,4,6) ticam verde automaticamente se dia anterior foi cumprido
+- [x] Checklist roteiro cobrança: exportação PDF com roteiro completo e detalhes para vendedor
+- [x] Checklist roteiro cobrança: incluir passo a passo completo (acertos e erros) no documento de tomada de decisão (dia 7+)
+- [x] Checklist roteiro cobrança: 9 testes automatizados (cascata de erros, dias futuros, ações manuais, campos obrigatórios)

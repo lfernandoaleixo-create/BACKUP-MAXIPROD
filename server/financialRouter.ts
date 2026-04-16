@@ -3365,6 +3365,167 @@ export const financialRouter = router({
     }),
 
   /**
+   * Checklist do roteiro de cobrança (7 dias)
+   * Calcula o progresso de cada dia baseado nas ações registradas.
+   * Dias de ação: 1, 3, 5 (devem ter registro manual).
+   * Dias de espera: 2, 4 (verdes se dia anterior foi cumprido).
+   * Dia 6: preparação. Dia 7+: decisão de protesto.
+   * Se um dia de ação não foi cumprido, ele e todos os dias seguintes ficam vermelhos (cascata).
+   */
+  getCollectionChecklist: publicProcedure
+    .input(z.object({ receivableId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { steps: [], startDate: null };
+
+      // Buscar o título
+      const [rec] = await db.select().from(accountsReceivable).where(eq(accountsReceivable.id, input.receivableId)).limit(1);
+      if (!rec) return { steps: [], startDate: null };
+
+      // Buscar ação de cobrança (para cobrancaStartedAt)
+      const [action] = await db.select().from(collectionActions).where(eq(collectionActions.receivableId, input.receivableId)).limit(1);
+      const startDate = action?.cobrancaStartedAt || null;
+
+      // Buscar todas as ações diárias
+      const dailyActions = await db
+        .select()
+        .from(collectionDailyActions)
+        .where(eq(collectionDailyActions.receivableId, input.receivableId))
+        .orderBy(collectionDailyActions.actionDate);
+
+      // Calcular data de vencimento e hoje
+      const vencDate = (rec.vencimentoData || "").split("T")[0];
+      const now = new Date();
+      const brNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const todayStr = brNow.toISOString().split("T")[0];
+      const diasAtraso = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
+
+      // Definir os 7 dias do roteiro
+      const roteiro = [
+        { dia: 1, label: "Dia 1 — WhatsApp + E-mail", tipo: "acao", descricao: "Enviar WhatsApp e e-mail formal de cobrança" },
+        { dia: 2, label: "Dia 2 — Intervalo", tipo: "espera", descricao: "Dia de espera. Verificar se cliente respondeu" },
+        { dia: 3, label: "Dia 3 — Ligação + E-mail", tipo: "acao", descricao: "Fazer ligação telefônica e enviar e-mail" },
+        { dia: 4, label: "Dia 4 — Intervalo", tipo: "espera", descricao: "Dia de espera. Verificar promessas de pagamento" },
+        { dia: 5, label: "Dia 5 — Ligação + E-mail (Último)", tipo: "acao", descricao: "Ligação e e-mail FINAL com aviso de protesto" },
+        { dia: 6, label: "Dia 6 — Preparação", tipo: "espera", descricao: "Revisar histórico e preparar documentação" },
+        { dia: 7, label: "Dia 7+ — Decisão de Protesto", tipo: "decisao", descricao: "Decisão: Com Protesto (Cartório) ou Não Protestar" },
+      ];
+
+      // Calcular a data de cada dia do roteiro
+      const vencMs = new Date(vencDate).getTime();
+
+      // Mapear ações por data
+      const actionsByDate: Record<string, typeof dailyActions> = {};
+      for (const a of dailyActions) {
+        if (!actionsByDate[a.actionDate]) actionsByDate[a.actionDate] = [];
+        actionsByDate[a.actionDate].push(a);
+      }
+
+      let hasCascadeError = false;
+
+      const steps = roteiro.map(step => {
+        const stepDate = new Date(vencMs + step.dia * 86400000).toISOString().split("T")[0];
+        const isFuture = stepDate > todayStr;
+        const isToday = stepDate === todayStr;
+        const actionsOnDay = actionsByDate[stepDate] || [];
+        const manualActions = actionsOnDay.filter(a => !a.isAutomatic && a.actionType !== "sem_contato");
+        const autoSemContato = actionsOnDay.filter(a => a.actionType === "sem_contato");
+
+        let status: "verde" | "vermelho" | "pendente" | "futuro" = "futuro";
+        let motivo = "";
+        let acoes: Array<{ tipo: string; notas: string; operador: string; hora: string }> = [];
+
+        // Mapear ações realizadas
+        for (const a of actionsOnDay) {
+          acoes.push({
+            tipo: a.actionType,
+            notas: a.notes || "",
+            operador: a.operatorName,
+            hora: a.createdAt ? new Date(a.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "",
+          });
+        }
+
+        if (isFuture) {
+          status = "futuro";
+          motivo = "Dia ainda não chegou";
+        } else if (hasCascadeError) {
+          // Cascata: se um dia anterior falhou, este também é vermelho
+          status = "vermelho";
+          if (step.tipo === "acao" && manualActions.length > 0) {
+            // Ação foi feita mas está em cascata de erro
+            motivo = "Ação realizada, mas roteiro comprometido por falha anterior";
+          } else if (step.tipo === "espera") {
+            motivo = "Roteiro comprometido por falha em dia anterior";
+          } else {
+            motivo = step.tipo === "acao" ? "Nenhuma ação registrada (roteiro já comprometido)" : "Roteiro comprometido por falha anterior";
+          }
+        } else if (step.tipo === "acao") {
+          // Dia de ação: precisa ter pelo menos 1 ação manual
+          if (manualActions.length > 0) {
+            status = "verde";
+            motivo = `Ação realizada: ${manualActions.map(a => {
+              const labels: Record<string, string> = { ligacao: "Ligação", whatsapp: "WhatsApp", email: "E-mail", visita: "Visita" };
+              return labels[a.actionType] || a.actionType;
+            }).join(", ")}`;
+          } else if (isToday) {
+            status = "pendente";
+            motivo = "Ação pendente para hoje";
+          } else {
+            // Dia passou sem ação → vermelho + cascata
+            status = "vermelho";
+            hasCascadeError = true;
+            if (autoSemContato.length > 0) {
+              motivo = "NENHUMA AÇÃO registrada (marcado automaticamente como sem contato)";
+            } else {
+              motivo = "NENHUMA AÇÃO registrada neste dia";
+            }
+          }
+        } else if (step.tipo === "espera") {
+          // Dia de espera: verde se dia anterior de ação foi cumprido
+          if (isToday) {
+            status = "verde";
+            motivo = "Dia de espera (aguardando próximo dia de ação)";
+          } else {
+            status = "verde";
+            motivo = "Dia de espera cumprido";
+          }
+        } else if (step.tipo === "decisao") {
+          // Dia 7+: verificar se há decisão
+          if (isToday || isFuture) {
+            status = diasAtraso >= 7 ? "pendente" : "futuro";
+            motivo = diasAtraso >= 7 ? "Decisão de protesto pendente" : "Dia ainda não chegou";
+          } else {
+            // Verificar se há documento/decisão
+            status = "verde";
+            motivo = "Dia de decisão alcançado";
+          }
+        }
+
+        return {
+          dia: step.dia,
+          label: step.label,
+          tipo: step.tipo,
+          descricao: step.descricao,
+          data: stepDate,
+          status,
+          motivo,
+          acoes,
+          isToday,
+          isFuture,
+        };
+      });
+
+      return {
+        steps,
+        startDate,
+        vencimento: vencDate,
+        diasAtraso,
+        cliente: rec.cliente || "",
+        valorAReceber: Number(rec.valorLiquido) - Number(rec.valorRecebidoLiquido),
+      };
+    }),
+
+  /**
    * Buscar ações de hoje para múltiplos títulos (batch)
    * Usado para determinar quais telefones devem piscar
    * REGRA: telefone vibra APENAS nos dias 1, 3 e 5 após vencimento
