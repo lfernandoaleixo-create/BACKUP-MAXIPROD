@@ -242,16 +242,16 @@ function exportInadimplenciaPDF(
     },
     bodyStyles: { fontSize: 6.5, cellPadding: 2, lineColor: [230, 230, 230], lineWidth: 0.2, halign: "center" },
     columnStyles: {
-      0: { cellWidth: 55, halign: "left" },
-      1: { cellWidth: 28, halign: "center" },
-      2: { cellWidth: 28, halign: "center" },
-      3: { cellWidth: 28, halign: "center" },
-      4: { cellWidth: 30, halign: "center" },
-      5: { cellWidth: 22, halign: "right", fontStyle: "bold" },
-      6: { cellWidth: 22, halign: "center" },
-      7: { cellWidth: 14, halign: "center" },
-      8: { cellWidth: 22, halign: "center" },
-      9: { cellWidth: 22, halign: "center" },
+      0: { cellWidth: 58, halign: "left" },   // CLIENTE
+      1: { cellWidth: 30, halign: "center" }, // NF / PARCELA
+      2: { cellWidth: 30, halign: "center" }, // VENDEDOR
+      3: { cellWidth: 30, halign: "center" }, // FORMA DE COBRANÇA
+      4: { cellWidth: 32, halign: "center" }, // DECISÃO DE COBRANÇA
+      5: { cellWidth: 24, halign: "right", fontStyle: "bold" }, // VALOR
+      6: { cellWidth: 24, halign: "center" }, // VENCIMENTO
+      7: { cellWidth: 15, halign: "center" }, // ATRASO
+      8: { cellWidth: 22, halign: "center" }, // STATUS
+      9: { cellWidth: 16, halign: "center" }, // EMPRESA
     },
     didParseCell: (data: any) => {
       if (data.section === "body") {

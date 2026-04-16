@@ -2746,3 +2746,5 @@
 - [x] Consulta cliente: alinhar layout da lista de documentos (Em Aberto, 1 título, tempo de atraso todos alinhados)
 - [x] PDF Inadimplência: renomear coluna Doc/Parcela para mostrar "NF · Parcela X/Y" mais claro
 - [x] PDF Inadimplência: centralizar todos os textos no meio das colunas
+- [ ] BUG: Conferência Contas a Pagar retorna R$ 0,00 do Maxiprod (API) - valores mês a mês zerados
+- [x] PDF Inadimplência: ajustar para modo paisagem perfeito, pronto para impressão deitada
