@@ -14,6 +14,7 @@ import { resetDailyPaymentAuthorizations, checkAndResetOnStartup } from "./payme
 
 let scheduledTask: ScheduledTask | null = null;
 let dailyResetTask: ScheduledTask | null = null;
+let dailyCollectionTask: ScheduledTask | null = null;
 
 // Start the business-hours sync scheduler
 // Runs every 5 minutes, Monday-Friday, 7:00-17:55 (Brasilia time)
@@ -89,6 +90,25 @@ export function startScheduler(): void {
     console.error(`[Scheduler] Startup auth reset check failed: ${err.message}`);
   });
 
+  // Daily collection job: alertas de cobrança às 7h (Brasília), seg-sex
+  if (!dailyCollectionTask) {
+    dailyCollectionTask = schedule("0 7 * * 1-5", async () => {
+      console.log(`[Scheduler] Starting daily collection job at ${new Date().toISOString()}`);
+      try {
+        // Import dynamically to avoid circular dependencies
+        const { appRouter } = await import("./routers");
+        const caller = appRouter.createCaller({ user: null, req: { protocol: "https", headers: {} } as any, res: { clearCookie: () => {} } as any });
+        const result = await caller.financial.runDailyCollectionJob();
+        console.log(`[Scheduler] Collection job completed: ${result.semContatoCount} sem_contato, ${result.protestadoCount} protestado, ${result.documentoCount} documentos, ${result.alertCount} alertas`);
+      } catch (error: any) {
+        console.error(`[Scheduler] Collection job failed: ${error.message}`);
+      }
+    }, {
+      timezone: "America/Sao_Paulo",
+    });
+    console.log("[Scheduler] Daily collection job: 7h seg-sex (America/Sao_Paulo)");
+  }
+
   // Daily reset of payment authorizations at midnight (00:00) Brasilia time, every day
   if (!dailyResetTask) {
     dailyResetTask = schedule("0 0 * * *", async () => {
@@ -119,6 +139,11 @@ export function stopScheduler(): void {
     dailyResetTask.stop();
     dailyResetTask = null;
     console.log("[Scheduler] Daily reset task stopped");
+  }
+  if (dailyCollectionTask) {
+    dailyCollectionTask.stop();
+    dailyCollectionTask = null;
+    console.log("[Scheduler] Daily collection task stopped");
   }
 }
 

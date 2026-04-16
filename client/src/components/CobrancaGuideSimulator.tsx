@@ -8,6 +8,8 @@ import {
 
 /* ---- Types ---- */
 interface GuideStep {
+  /** Numeração do item: "1", "1.1", "2", "3", "3.1", etc. */
+  itemNumber: string;
   title: string;
   description: string;
   icon: typeof Phone;
@@ -17,6 +19,8 @@ interface GuideStep {
   details?: string[];
   highlight?: boolean;
   dayLabel?: string;
+  /** Se é sub-item (1.1, 3.1, etc.) — indentado visualmente */
+  isSubItem?: boolean;
 }
 
 interface CobrancaGuideSimulatorProps {
@@ -34,6 +38,7 @@ const formatCurrency = (v: number) =>
 function getCobrancaSteps(): GuideStep[] {
   return [
     {
+      itemNumber: "1",
       title: "Dia 1 — WhatsApp + E-mail (Registro Formal)",
       description: "No 1º dia após o vencimento, o responsável pela cobrança deve enviar uma mensagem de cobrança via WhatsApp e um e-mail formal. Ambos servem como registro formal da cobrança.",
       icon: MessageCircle,
@@ -46,27 +51,28 @@ function getCobrancaSteps(): GuideStep[] {
         "📱 Enviar mensagem de cobrança via WhatsApp para o cliente",
         "📧 Enviar e-mail formal de cobrança com dados do título (valor, vencimento, referência)",
         "O WhatsApp e o e-mail servem como REGISTRO FORMAL da cobrança",
-        "Registre ambas as ações no sistema: tipo 'WhatsApp' + tipo 'E-mail'",
-        "O telefone só para de vibrar quando AMBAS as ações forem registradas",
         "Salve prints do WhatsApp e cópia do e-mail como comprovante",
       ],
     },
     {
+      itemNumber: "1.1",
       title: "Registrar Contato do Dia 1",
       description: "Ao clicar no telefone, registre as duas ações realizadas: WhatsApp e E-mail. Isso fica salvo no histórico do título como prova formal.",
       icon: CheckCircle2,
       iconColor: "text-emerald-600",
       bgColor: "bg-emerald-50",
       borderColor: "border-emerald-300",
+      isSubItem: true,
       details: [
         "Registre o WhatsApp: tipo 'WhatsApp', resumo da mensagem enviada",
         "Registre o E-mail: tipo 'E-mail', resumo do conteúdo enviado",
         "Ambos ficam salvos com data, hora e operador responsável",
-        "O histórico completo fica visível no ícone de relógio (🕐)",
+        "O telefone só para de vibrar quando AMBAS as ações forem registradas",
         "Esses registros servem como prova formal em caso de protesto ou ação judicial",
       ],
     },
     {
+      itemNumber: "2",
       title: "Dia 2 — Intervalo",
       description: "No dia 2 o telefone não vibra. É um dia de espera. Mas se as ações do dia 1 não foram registradas, o telefone continua vibrando!",
       icon: Clock,
@@ -77,11 +83,11 @@ function getCobrancaSteps(): GuideStep[] {
       details: [
         "Se as ações do dia 1 foram registradas: telefone fica cinza (idle)",
         "Se as ações do dia 1 NÃO foram registradas: telefone continua piscando!",
-        "Ações pendentes de dias anteriores não desaparecem",
         "Aproveite para verificar se o cliente respondeu ao WhatsApp ou e-mail",
       ],
     },
     {
+      itemNumber: "3",
       title: "Dia 3 — Ligação + E-mail (2º Contato)",
       description: "No 3º dia, o telefone volta a vibrar. O responsável deve fazer uma LIGAÇÃO telefônica e enviar um novo e-mail de cobrança. A ligação é mais incisiva que o WhatsApp.",
       icon: Phone,
@@ -96,16 +102,17 @@ function getCobrancaSteps(): GuideStep[] {
         "Na ligação: cobrar o pagamento, ouvir justificativas, negociar prazo se necessário",
         "Se o cliente fez promessa de pagamento, registre a data e valor prometido",
         "Registre AMBAS as ações: tipo 'Ligação' + tipo 'E-mail'",
-        "O e-mail serve como registro formal complementar à ligação",
       ],
     },
     {
+      itemNumber: "3.1",
       title: "Alterar Status do Título",
       description: "Após cada contato, atualize o status do título para refletir a situação atual da cobrança.",
       icon: CheckCircle2,
       iconColor: "text-indigo-600",
       bgColor: "bg-indigo-50",
       borderColor: "border-indigo-300",
+      isSubItem: true,
       details: [
         "Pendente → status inicial, sem ação",
         "Contatado → cliente foi contatado mas sem definição",
@@ -116,6 +123,7 @@ function getCobrancaSteps(): GuideStep[] {
       ],
     },
     {
+      itemNumber: "4",
       title: "Dia 4 — Intervalo",
       description: "Dia de espera entre cobranças. Verifique se há pendências dos dias anteriores.",
       icon: Clock,
@@ -130,6 +138,7 @@ function getCobrancaSteps(): GuideStep[] {
       ],
     },
     {
+      itemNumber: "5",
       title: "Dia 5 — Ligação + E-mail (Último Contato)",
       description: "Último dia de cobrança antes da decisão de protesto. O responsável deve fazer uma LIGAÇÃO final e enviar o último e-mail formal, informando sobre o possível protesto.",
       icon: Phone,
@@ -144,10 +153,10 @@ function getCobrancaSteps(): GuideStep[] {
         "Na ligação: ser firme, informar consequências do protesto (SPC/Serasa)",
         "Registre AMBAS as ações: tipo 'Ligação' + tipo 'E-mail'",
         "Este é o ÚLTIMO contato antes da decisão de protesto no dia 7",
-        "O e-mail final serve como notificação formal pré-protesto",
       ],
     },
     {
+      itemNumber: "6",
       title: "Dia 6 — Preparação",
       description: "Dia de preparação antes da decisão de protesto. Revise o histórico completo de contatos.",
       icon: FileText,
@@ -163,6 +172,7 @@ function getCobrancaSteps(): GuideStep[] {
       ],
     },
     {
+      itemNumber: "7",
       title: "Dia 7+ — Decisão de Protesto",
       description: "A partir do dia 7, o sistema exige uma decisão: Com Protesto (Cartório) ou Não Protestar (com plano de ação).",
       icon: Gavel,
@@ -181,12 +191,14 @@ function getCobrancaSteps(): GuideStep[] {
       ],
     },
     {
+      itemNumber: "7.1",
       title: "Consultar Histórico",
       description: "Todo o histórico de contatos, mudanças de status e decisões fica salvo e pode ser consultado a qualquer momento.",
       icon: History,
       iconColor: "text-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-300",
+      isSubItem: true,
       details: [
         "Clique no ícone de relógio (🕐) para ver todo o histórico",
         "Cada entrada mostra: data, tipo de contato (WhatsApp/E-mail/Ligação), resumo e operador",
@@ -196,6 +208,7 @@ function getCobrancaSteps(): GuideStep[] {
       ],
     },
     {
+      itemNumber: "✓",
       title: "Resumo da Régua de Cobrança",
       description: "Visão geral completa do processo de cobrança do Grupo Fox — com canais formais definidos por dia.",
       icon: Shield,
@@ -323,7 +336,7 @@ export default function CobrancaGuideSimulator({
 
         {/* Main content area */}
         <div className="px-6 py-4 flex-shrink-0">
-          <div className={`${step.bgColor} rounded-xl border-2 ${step.borderColor} overflow-hidden`}>
+          <div className={`${step.bgColor} rounded-xl border-2 ${step.borderColor} overflow-hidden ${step.isSubItem ? "ml-6" : ""}`}>
             {/* Day label */}
             {step.dayLabel && (
               <div className={`px-4 py-1.5 ${step.highlight ? "bg-red-200/60" : "bg-white/60"} border-b ${step.borderColor}`}>
@@ -334,7 +347,7 @@ export default function CobrancaGuideSimulator({
             )}
 
             <div className="p-5">
-              {/* Step title with icon */}
+              {/* Step title with icon and item number */}
               <div className="flex items-start gap-3 mb-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                   step.highlight ? "bg-red-600 shadow-md shadow-red-500/30" : "bg-white shadow-sm"
@@ -343,6 +356,7 @@ export default function CobrancaGuideSimulator({
                 </div>
                 <div>
                   <h4 className={`font-bold text-base ${step.highlight ? "text-red-800" : "text-slate-800"}`}>
+                    <span className="text-slate-400 font-mono mr-1.5">{step.itemNumber}.</span>
                     {step.title}
                   </h4>
                   <p className="text-sm text-slate-600 mt-1 leading-relaxed">{step.description}</p>
@@ -370,7 +384,7 @@ export default function CobrancaGuideSimulator({
             <p className="text-xs text-slate-400">
               Passo {currentStep + 1} de {steps.length}
             </p>
-            <p className="text-xs text-slate-500 font-medium">{step.title}</p>
+            <p className="text-xs text-slate-500 font-medium">{step.itemNumber}. {step.title}</p>
           </div>
           <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
             <div
@@ -388,6 +402,8 @@ export default function CobrancaGuideSimulator({
                 key={idx}
                 onClick={() => handleStepClick(idx)}
                 className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-left transition-all text-xs ${
+                  s.isSubItem ? "pl-8" : ""
+                } ${
                   idx === currentStep
                     ? "bg-red-600/30 border border-red-500/50 text-red-200"
                     : idx < currentStep
@@ -395,11 +411,11 @@ export default function CobrancaGuideSimulator({
                     : "text-slate-600 hover:bg-slate-800"
                 }`}
               >
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold ${
+                <div className={`min-w-[28px] h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold px-1 ${
                   idx === currentStep ? "bg-red-500 text-white" :
                   idx < currentStep ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"
                 }`}>
-                  {idx < currentStep ? "✓" : idx + 1}
+                  {idx < currentStep ? "✓" : s.itemNumber}
                 </div>
                 <span className="truncate">{s.title}</span>
                 {s.dayLabel && (

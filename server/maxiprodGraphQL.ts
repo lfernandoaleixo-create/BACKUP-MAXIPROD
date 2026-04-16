@@ -24,6 +24,8 @@ import {
   paidAccountsMonthly,
   madeiraStock,
   stockEditHistory,
+  collectionActions,
+  resolvedReceivables,
 } from "../drizzle/schema";
 import { eq, sql, inArray, and, ne } from "drizzle-orm";
 import { processStockData } from "./stockProcessor";
@@ -808,28 +810,9 @@ async function saveAllData(
 
   updateProgress({ step: "Salvando dados...", percent: 85, details: "Atualizando estoque" });
 
-  // ═══ BAIXA AUTOMÁTICA: Snapshot dos pedidos ANTES de deletar ═══
-  // Calcula total de pedidos (em caixas) por codigoItem dos order_items atuais
-  // Apenas pedidos que reservam estoque (exclui Digitação e Cancelado)
-  const previousOrdersByCode = new Map<string, number>();
-  try {
-    const currentOrders = await db.select({
-      codigoItem: orderItems.codigoItem,
-      quantidade: orderItems.quantidade,
-      estadoNota: orderItems.estadoNota,
-    }).from(orderItems);
-    
-    for (const order of currentOrders) {
-      if (!order.codigoItem) continue;
-      // Excluir Digitação e Cancelado (mesma regra do stockProcessor)
-      if (order.estadoNota === "Digitação" || order.estadoNota === "Digitacao" || order.estadoNota === "Cancelado") continue;
-      const qty = parseFloat(String(order.quantidade)) || 0;
-      previousOrdersByCode.set(order.codigoItem, (previousOrdersByCode.get(order.codigoItem) || 0) + qty);
-    }
-    console.log(`[Baixa Automática] Snapshot anterior: ${previousOrdersByCode.size} itens com pedidos`);
-  } catch (e) {
-    console.warn(`[Baixa Automática] Erro ao capturar snapshot anterior:`, e);
-  }
+  // ═══ BAIXA AUTOMÁTICA: DESATIVADA em 16/04/2026 ═══
+  // Snapshot de pedidos anteriores não é mais necessário pois a baixa automática foi desativada.
+  // O estoque agora é controlado manualmente e, a partir de 17/04/2026, pela produção da Maria.
 
   // Usar transação atômica para evitar dados inconsistentes durante a sincronização
   await db.transaction(async (tx) => {
@@ -874,68 +857,12 @@ async function saveAllData(
 
   console.log(`[GraphQL Sync] Dados de estoque/pedidos salvos atomicamente: ${stockData.length} est, ${orderData.length} ped, ${poData.length} po, ${salesData.length} vnd`);
 
-  // ═══ BAIXA AUTOMÁTICA: Comparar pedidos anteriores vs novos e aplicar delta no estoque ═══
-  if (previousOrdersByCode.size > 0) {
-    try {
-      // Calcular novos totais de pedidos por codigoItem (dos dados recém-inseridos)
-      const newOrdersByCode = new Map<string, number>();
-      for (const order of orderData) {
-        const code = order.codigoItem;
-        if (!code) continue;
-        // Excluir Digitação e Cancelado (mesma regra)
-        if (order.estadoNota === "Digitação" || order.estadoNota === "Digitacao" || order.estadoNota === "Cancelado") continue;
-        const qty = parseFloat(String(order.quantidade)) || 0;
-        newOrdersByCode.set(code, (newOrdersByCode.get(code) || 0) + qty);
-      }
-
-      // Para cada item que tinha pedidos antes, verificar se diminuiu
-      let totalDeductions = 0;
-      let itemsDeducted = 0;
-      for (const [code, previousQty] of Array.from(previousOrdersByCode.entries())) {
-        const newQty = newOrdersByCode.get(code) || 0;
-        const delta = previousQty - newQty; // positivo = pedidos diminuíram = entrega
-        
-        if (delta > 0) {
-          // Pedidos diminuíram → subtrair do estoque da Madeira PA
-          const existing = await db.select().from(madeiraStock).where(eq(madeiraStock.codigoItem, code));
-          if (existing.length > 0) {
-            const currentStock = parseFloat(String(existing[0].quantidade)) || 0;
-            const newStock = Math.max(0, currentStock - delta); // nunca ficar negativo
-            
-            if (newStock !== currentStock) {
-              // Registrar histórico da baixa automática
-              await db.insert(stockEditHistory).values({
-                card: "madeira",
-                codigoItem: code,
-                descricaoItem: `Baixa automática: pedidos diminuíram de ${previousQty} para ${newQty} cx (delta: -${delta})`,
-                valorAnterior: String(currentStock),
-                valorNovo: String(newStock),
-                operador: "Sistema (Baixa Automática)",
-                tipo: "baixa_pedido",
-              });
-              
-              // Atualizar estoque
-              await db.update(madeiraStock)
-                .set({ quantidade: String(newStock), updatedBy: "Sistema (Baixa Automática)" })
-                .where(eq(madeiraStock.codigoItem, code));
-              
-              totalDeductions += delta;
-              itemsDeducted++;
-              console.log(`[Baixa Automática] ${code}: estoque ${currentStock} → ${newStock} (pedidos: ${previousQty} → ${newQty}, delta: -${delta})`);
-            }
-          }
-        }
-      }
-      
-      if (itemsDeducted > 0) {
-        console.log(`[Baixa Automática] Total: ${itemsDeducted} itens com baixa, ${totalDeductions} caixas deduzidas do estoque`);
-      } else {
-        console.log(`[Baixa Automática] Nenhuma baixa necessária nesta sincronização`);
-      }
-    } catch (e) {
-      console.error(`[Baixa Automática] Erro ao processar baixas:`, e);
-    }
-  }
+  // ═══ BAIXA AUTOMÁTICA: DESATIVADA em 16/04/2026 por solicitação do usuário ═══
+  // A produção não deve dar baixa automática em produtos sem autorização.
+  // Até 16/04/2026 o estoque é preenchido manualmente.
+  // A partir de 17/04/2026 o estoque será calculado pelo que a Maria preencher na produção.
+  // O bloco de baixa automática foi removido intencionalmente.
+  console.log(`[Baixa Automática] DESATIVADA — estoque não será alterado automaticamente`);
 
   updateProgress({ percent: 95, details: "Processando dashboard" });
 
@@ -1255,8 +1182,59 @@ async function saveFinancialData(
         .filter(id => !newReceivableIds.has(id));
       
       if (disappearedRecIds.length > 0) {
+        // === REGRA: Salvar títulos com cobrança registrada em resolved_receivables ===
+        // Buscar os títulos que vão desaparecer e verificar se têm collectionActions
         for (let i = 0; i < disappearedRecIds.length; i += 200) {
           const batch = disappearedRecIds.slice(i, i + 200);
+          
+          // Buscar dados completos dos títulos que vão ser marcados como RECEBIDO
+          const disappearedTitles = await tx.select()
+            .from(accountsReceivable)
+            .where(inArray(accountsReceivable.maxiprodId, batch));
+          
+          // Buscar IDs dos títulos que têm collectionActions
+          const titleIds = disappearedTitles.map(t => t.id);
+          if (titleIds.length > 0) {
+            const actionsForTitles = await tx.select()
+              .from(collectionActions)
+              .where(inArray(collectionActions.receivableId, titleIds));
+            
+            const actionsMap = new Map<number, typeof actionsForTitles[0]>();
+            for (const a of actionsForTitles) {
+              actionsMap.set(a.receivableId, a);
+            }
+            
+            // Para cada título com cobrança registrada, salvar em resolved_receivables
+            for (const title of disappearedTitles) {
+              const action = actionsMap.get(title.id);
+              if (action) {
+                const valorOriginal = Number(title.valorLiquido) || 0;
+                const valorPago = Number(title.valorRecebidoLiquido) || 0;
+                const valorAReceber = valorOriginal - valorPago;
+                const vencDate = (title.vencimentoData || "").split("T")[0];
+                const diasAtraso = Math.floor((new Date(today).getTime() - new Date(vencDate).getTime()) / 86400000);
+                const contatos = (action.contatoHistorico as any[] || []);
+                
+                await tx.insert(resolvedReceivables).values({
+                  receivableId: title.id,
+                  maxiprodId: title.maxiprodId,
+                  cliente: title.cliente || "Sem nome",
+                  valorOriginal: String(valorOriginal),
+                  valorAReceber: String(valorAReceber),
+                  vencimentoData: vencDate,
+                  documento: title.documentoVinculadoNumero || null,
+                  empresa: title.empresaNome || null,
+                  vendedor: null, // vendedor será preenchido depois se necessário
+                  diasAtrasoNaResolucao: Math.max(0, diasAtraso),
+                  statusCobranca: action.status,
+                  totalContatos: contatos.length,
+                });
+                console.log(`[GraphQL Sync] Título RESOLVIDO salvo: ${title.cliente} - R$ ${valorAReceber.toFixed(2)} (${diasAtraso} dias atraso)`);
+              }
+            }
+          }
+          
+          // Marcar como RECEBIDO
           await tx.update(accountsReceivable)
             .set({ estado: 'RECEBIDO', liquidacaoData: today })
             .where(inArray(accountsReceivable.maxiprodId, batch));

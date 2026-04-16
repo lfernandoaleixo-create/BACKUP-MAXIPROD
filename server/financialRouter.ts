@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
@@ -3115,6 +3115,7 @@ export const financialRouter = router({
             observacoes: action.observacoes,
             contatoHistorico: (action.contatoHistorico || []) as Array<{data: string; tipo: string; resumo: string; usuario?: string}>,
             updatedAt: action.updatedAt?.toISOString() || "",
+            cobrancaStartedAt: action.cobrancaStartedAt || null,
           } : null,
         };
       }).filter(t => t.valorAReceber > 0);
@@ -3232,6 +3233,8 @@ export const financialRouter = router({
           resumo: input.novoContato.resumo,
         }] : [];
 
+        // Salvar data de início da cobrança (YYYY-MM-DD) para rastrear quando a cobrança foi startada
+        const today = new Date().toISOString().split('T')[0];
         await db.insert(collectionActions).values({
           receivableId: input.receivableId,
           status: input.status || "pendente",
@@ -3240,6 +3243,7 @@ export const financialRouter = router({
           lembreteData: input.lembreteData || null,
           observacoes: input.observacoes || null,
           contatoHistorico: hist,
+          cobrancaStartedAt: today,
         });
       }
 
@@ -4265,7 +4269,90 @@ ${acoesTexto}
         }
       }
 
-      return { success: true, semContatoCount, protestadoCount, documentoCount };
+      // === NOTIFICAÇÕES DE COBRANÇA para Thiago, Flavio e Guilherme ===
+      // Alertar sobre títulos que precisam de cobrança hoje (regra 1,3,5 dias)
+      const COBRANCA_RULE_START = "2026-04-16";
+      const alertTitles: Array<{ cliente: string; diasAtraso: number; valor: number; receivableId: number }> = [];
+
+      for (const rec of overdueReceivables) {
+        if (!rec.vencimentoData) continue;
+        const vencStr = (rec.vencimentoData as string).split('T')[0];
+        const vencDate2 = new Date(vencStr + 'T12:00:00');
+        const diffMs2 = brDate.getTime() - vencDate2.getTime();
+        const diasAtraso2 = Math.floor(diffMs2 / (1000 * 60 * 60 * 24));
+        if (diasAtraso2 < 1) continue;
+
+        // Verificar se segue a régua de vibração
+        const existingAction = await db
+          .select()
+          .from(collectionActions)
+          .where(eq(collectionActions.receivableId, rec.id))
+          .limit(1);
+        const startedAt = existingAction.length > 0 ? existingAction[0].cobrancaStartedAt : null;
+
+        // Só alerta se: (1) tem cobrancaStartedAt >= data de corte, OU (2) 1 dia de atraso sem cobrança
+        const followsRule = (startedAt && startedAt >= COBRANCA_RULE_START) || (!existingAction.length && diasAtraso2 === 1);
+        if (!followsRule) continue;
+
+        // Verificar se hoje é dia de cobrança (1, 3 ou 5)
+        const isCollDay = COLLECTION_DAYS.includes(diasAtraso2);
+        if (!isCollDay) continue;
+
+        // Verificar se já teve ação hoje
+        const todayActions = await db
+          .select()
+          .from(collectionDailyActions)
+          .where(
+            and(
+              eq(collectionDailyActions.receivableId, rec.id),
+              eq(collectionDailyActions.actionDate, todayStr),
+              eq(collectionDailyActions.isAutomatic, false)
+            )
+          );
+        if (todayActions.length > 0) continue;
+
+        const valorAReceber2 = (Number(rec.valorLiquido) || 0) - (Number(rec.valorRecebidoLiquido) || 0);
+        if (valorAReceber2 > 0) {
+          alertTitles.push({
+            cliente: rec.cliente || "Sem nome",
+            diasAtraso: diasAtraso2,
+            valor: valorAReceber2,
+            receivableId: rec.id,
+          });
+        }
+      }
+
+      // Criar notificação consolidada se houver títulos pendentes
+      if (alertTitles.length > 0) {
+        const totalValor = alertTitles.reduce((sum, t) => sum + t.valor, 0);
+        const valorFormatted2 = totalValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const clientesList = alertTitles.slice(0, 10).map(t => 
+          `\u2022 ${t.cliente} (Dia ${t.diasAtraso}, ${t.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`
+        ).join('\n');
+        const moreText = alertTitles.length > 10 ? `\n... e mais ${alertTitles.length - 10} títulos` : '';
+
+        try {
+          const { createNotification } = await import("./notificationRouter");
+          await createNotification({
+            type: "cobranca_alerta",
+            title: `\ud83d\udea8 COBRAN\u00c7A: ${alertTitles.length} título(s) precisam de a\u00e7\u00e3o hoje!`,
+            message: `Thiago, Flavio e Guilherme: ${alertTitles.length} título(s) estão no dia de cobrança hoje (total: ${valorFormatted2}).\n\n${clientesList}${moreText}\n\nAcesse a aba Inadimplência para registrar as ações de cobrança.`,
+            severity: "warning",
+            metadata: {
+              alertDate: todayStr,
+              totalTitles: alertTitles.length,
+              totalValor,
+              titles: alertTitles.slice(0, 20),
+              destinatarios: ["Thiago", "Flavio", "Guilherme"],
+            },
+          });
+          console.log(`[DailyJob] Cobranca alert created for ${alertTitles.length} titles`);
+        } catch (err) {
+          console.error("[DailyJob] Failed to create cobranca alert:", err);
+        }
+      }
+
+      return { success: true, semContatoCount, protestadoCount, documentoCount, alertCount: alertTitles.length };
     }),
 
   /**
@@ -4311,6 +4398,49 @@ ${acoesTexto}
   getSnapshotDates: publicProcedure.query(async () => {
     return getSnapshotDates();
   }),
+
+  /**
+   * Listar títulos resolvidos (pagos) que tinham cobrança registrada.
+   * Para o card "Pagos/Resolvidos" na aba Inadimplência.
+   */
+  getResolvedTitles: publicProcedure
+    .input(z.object({
+      limit: z.number().default(50),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { titles: [], stats: { total: 0, count: 0, valorTotal: 0 } };
+
+      const rows = await db.select()
+        .from(resolvedReceivables)
+        .orderBy(desc(resolvedReceivables.resolvedAt))
+        .limit(input?.limit || 50);
+
+      let valorTotal = 0;
+      const titles = rows.map(row => {
+        const valor = Number(row.valorAReceber) || 0;
+        valorTotal += valor;
+        return {
+          id: row.id,
+          cliente: row.cliente,
+          valorAReceber: valor,
+          valorOriginal: Number(row.valorOriginal) || 0,
+          vencimento: (row.vencimentoData || "").split("T")[0],
+          documento: row.documento || "",
+          empresa: row.empresa || "",
+          vendedor: row.vendedor || "",
+          diasAtrasoNaResolucao: row.diasAtrasoNaResolucao,
+          statusCobranca: row.statusCobranca || "pendente",
+          totalContatos: row.totalContatos,
+          resolvedAt: row.resolvedAt?.toISOString() || "",
+        };
+      });
+
+      return {
+        titles,
+        stats: { total: titles.length, count: titles.length, valorTotal },
+      };
+    }),
 
   /**
    * Contraprova Maxiprod - Consulta valores em tempo real da API GraphQL

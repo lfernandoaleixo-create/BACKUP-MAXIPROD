@@ -865,6 +865,14 @@ export const collectionActions = mysqlTable("collection_actions", {
     resumo: string;
     usuario?: string;
   }>>().default([]),
+  /**
+   * Data em que a cobrança foi "startada" para este título.
+   * Registrada automaticamente quando o título entra com 1 dia de atraso.
+   * Títulos que já tinham >2 dias antes de 2026-04-16 NÃO têm este campo preenchido
+   * e portanto NÃO vibram no padrão 1,3,5.
+   * Formato: YYYY-MM-DD
+   */
+  cobrancaStartedAt: varchar("cobrancaStartedAt", { length: 10 }),
   updatedBy: varchar("updatedBy", { length: 200 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -913,6 +921,34 @@ export const receivableProtestConfig = mysqlTable("receivable_protest_config", {
 });
 export type ReceivableProtestConfig = typeof receivableProtestConfig.$inferSelect;
 export type InsertReceivableProtestConfig = typeof receivableProtestConfig.$inferInsert;
+
+/**
+ * Títulos resolvidos (pagos) que tinham registro de cobrança.
+ * Quando um título vencido com collectionActions é marcado como RECEBIDO (pago),
+ * um registro é criado aqui para manter o histórico visível no card "Pagos/Resolvidos".
+ * REGRA: Títulos com cobrança registrada NUNCA desaparecem da lista de inadimplência
+ * até serem pagos. Quando pagos, aparecem no card de resolvidos.
+ */
+export const resolvedReceivables = mysqlTable("resolved_receivables", {
+  id: int("id").autoincrement().primaryKey(),
+  receivableId: int("receivableId").notNull(), // FK para accounts_receivable.id
+  maxiprodId: bigint("maxiprodId", { mode: "number" }).notNull(),
+  cliente: varchar("cliente", { length: 300 }).notNull(),
+  valorOriginal: decimal("valorOriginal", { precision: 18, scale: 2 }).notNull(),
+  valorAReceber: decimal("valorAReceber", { precision: 18, scale: 2 }).notNull(), // valor que estava pendente
+  vencimentoData: varchar("vencimentoData", { length: 50 }),
+  documento: varchar("documento", { length: 100 }),
+  empresa: varchar("empresa", { length: 100 }),
+  vendedor: varchar("vendedor", { length: 200 }),
+  diasAtrasoNaResolucao: int("diasAtrasoNaResolucao").notNull().default(0),
+  // Dados de cobrança que foram registrados
+  statusCobranca: varchar("statusCobranca", { length: 30 }),
+  totalContatos: int("totalContatos").notNull().default(0),
+  resolvedAt: timestamp("resolvedAt").defaultNow().notNull(), // data que saiu da inadimplência
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ResolvedReceivable = typeof resolvedReceivables.$inferSelect;
+export type InsertResolvedReceivable = typeof resolvedReceivables.$inferInsert;
 
 /**
  * Estoque de Madeira - Produto Acabado.

@@ -1,0 +1,1 @@
+ALTER TABLE `collection_actions` ADD `cobrancaStartedAt` varchar(10);

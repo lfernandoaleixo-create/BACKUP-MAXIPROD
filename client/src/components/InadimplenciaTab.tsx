@@ -431,6 +431,7 @@ type Title = {
     observacoes: string | null;
     contatoHistorico: Array<{ data: string; tipo: string; resumo: string; usuario?: string }>;
     updatedAt: string;
+    cobrancaStartedAt: string | null;
   } | null;
 };
 
@@ -613,6 +614,10 @@ export default function InadimplenciaTab() {
     sortBy,
     sortDir,
   });
+
+  // Buscar títulos resolvidos (pagos que tinham cobrança)
+  const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery();
+  const [showResolved, setShowResolved] = useState(false);
 
   const upsertAction = trpc.financial.upsertCollectionAction.useMutation({
     onSuccess: () => refetch(),
@@ -804,14 +809,39 @@ export default function InadimplenciaTab() {
     return !!collectionDocsMap?.[title.id];
   }
 
+  // Data de corte: 16/04/2026 - a partir desta data a regra de vibração 1,3,5 está ativa
+  const COBRANCA_RULE_START = "2026-04-16";
+
+  // Verificar se o título segue a regra de vibração 1,3,5
+  // Só vibra se: (1) tem cobrancaStartedAt >= data de corte, OU (2) entrou com 1 dia de atraso a partir de hoje
+  function shouldFollowVibrateRule(title: Title): boolean {
+    const startedAt = title.cobranca?.cobrancaStartedAt;
+    if (startedAt && startedAt >= COBRANCA_RULE_START) return true;
+    // Títulos novos com 1 dia de atraso que ainda não têm cobrança registrada
+    // também devem vibrar (serão startados quando o primeiro contato for feito)
+    if (!title.cobranca && title.diasAtraso === 1) return true;
+    // Se não tem cobrancaStartedAt (título antigo), não vibra
+    if (!startedAt) return false;
+    return false;
+  }
+
   // Cor do telefone baseada no estado
-  // REGRA: vibra nos dias 1/3/5 e NÃO PARA até que ação seja registrada
+  // REGRA: vibra nos dias 1/3/5 APENAS para títulos que seguem a régua (a partir de 16/04/2026)
+  // Títulos antigos (>2 dias antes de hoje sem cobrancaStartedAt) NÃO vibram
   function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" | "document" {
     if (title.diasAtraso < 1) return "idle";
     // Se tem documento gerado (dia 7+ não protestar) - mostrar documento
     if (hasCollectionDocument(title)) return "document";
     // Se precisa plano de ação urgente
     if (needsActionPlan(title)) return "urgent";
+
+    // REGRA DIFERENCIADA: só vibra se o título segue a régua 1,3,5
+    if (!shouldFollowVibrateRule(title)) {
+      // Título antigo - não vibra, mas mostra se tem ação hoje
+      if (todayActionsMap?.[title.id]) return "done";
+      return "idle";
+    }
+
     // Se tem ações pendentes de dias anteriores - continua vibrando!
     if (hasPendingActions(title)) return "blink";
     // Se hoje é dia de cobrança (1, 3 ou 5)
@@ -1009,6 +1039,62 @@ export default function InadimplenciaTab() {
           );
         })}
       </div>
+
+      {/* Card de Pagos/Resolvidos */}
+      {resolvedData && resolvedData.titles.length > 0 && (
+        <div className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50 overflow-hidden">
+          <button
+            onClick={() => setShowResolved(!showResolved)}
+            className="w-full flex items-center justify-between p-4 hover:bg-emerald-100/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-md">
+                <ShieldCheck className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-emerald-900 font-bold text-sm flex items-center gap-2">
+                  Pagos / Resolvidos
+                  <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{resolvedData.stats.count}</span>
+                </h3>
+                <p className="text-emerald-700 text-xs">Clientes que pagaram e saíram da inadimplência • {formatCurrency(resolvedData.stats.valorTotal)} recuperados</p>
+              </div>
+            </div>
+            {showResolved ? <ChevronUp className="w-5 h-5 text-emerald-600" /> : <ChevronDown className="w-5 h-5 text-emerald-600" />}
+          </button>
+          {showResolved && (
+            <div className="border-t border-emerald-200 divide-y divide-emerald-100">
+              {resolvedData.titles.map((t) => (
+                <div key={t.id} className="flex items-center justify-between px-4 py-3 hover:bg-emerald-50/80">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{t.cliente}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                        {t.documento && <span>NF {t.documento}</span>}
+                        {t.empresa && <span>• {t.empresa}</span>}
+                        <span>• {t.totalContatos} contato{t.totalContatos !== 1 ? 's' : ''} registrado{t.totalContatos !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-emerald-700">{formatCurrency(t.valorAReceber)}</p>
+                      <p className="text-[10px] text-slate-500">Venc: {t.vencimento ? new Date(t.vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-emerald-600 font-medium">Resolvido em</p>
+                      <p className="text-xs font-semibold text-emerald-800">{t.resolvedAt ? new Date(t.resolvedAt).toLocaleDateString('pt-BR') : '-'}</p>
+                      <p className="text-[10px] text-slate-500">{t.diasAtrasoNaResolucao}d de atraso</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Busca */}
       <div className="flex flex-col gap-3">
@@ -1383,24 +1469,24 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
 
   if (state === "urgent") {
     return (
-      <button onClick={onClick} title="URGENTE: Plano de ação obrigatório!" className={`${baseClasses} text-red-600 bg-red-50 hover:bg-red-100 animate-pulse`}>
-        <Phone className="w-3.5 h-3.5" />
+      <button onClick={onClick} title="URGENTE: Plano de ação obrigatório!" className={`${baseClasses} text-red-600 bg-red-100 hover:bg-red-200 border-2 border-red-400 phone-urgent`}>
+        <Phone className="w-4 h-4" />
       </button>
     );
   }
 
   if (state === "document") {
     return (
-      <button onClick={onClick} title="Documento de cobrança gerado - Clique para ver" className={`${baseClasses} text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300 animate-pulse`}>
-       <FileText className="w-3.5 h-3.5" />
+      <button onClick={onClick} title="Documento de cobrança gerado - Clique para ver" className={`${baseClasses} text-amber-700 bg-amber-100 hover:bg-amber-200 border-2 border-amber-400 phone-document`}>
+       <FileText className="w-4 h-4" />
       </button>
     );
   }
 
-  // blink
+  // blink — vibração intensa para chamar atenção
   return (
-    <button onClick={onClick} title="Ação de cobrança necessária! Não para até registrar ação." className={`${baseClasses} text-blue-600 hover:bg-blue-100 animate-pulse`}>
-      <Phone className="w-3.5 h-3.5" />
+    <button onClick={onClick} title="AÇÃO DE COBRANÇA NECESSÁRIA! Clique para registrar." className={`${baseClasses} text-red-600 bg-red-50 hover:bg-red-100 border-2 border-red-300 phone-vibrating`}>
+      <Phone className="w-4 h-4" />
     </button>
   );
 }

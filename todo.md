@@ -2775,3 +2775,16 @@
 - [x] PDF Inadimplência: decisão de cobrança exibe label mapeado
 
 - [x] REGRA PERMANENTE: Histórico de produção registrado pela Maria NUNCA pode ser apagado em hipótese alguma
+
+- [x] Guia de cobrança: reestruturar numeração — dia 1=item 1, sub-itens 1.1, dia 2=item 2, dia 3=item 3, etc.
+- [x] Guia de cobrança: melhorar animação do telefone para chamar MUITA atenção do responsável
+- [x] Vibração: regra 1,3,5 dias para novos inadimplentes (a partir de hoje) e 1 dia de atraso
+- [x] Vibração: inadimplentes com >2 dias de atraso antigos NÃO vibram (tratamento diferente)
+- [x] Salvar no banco a data de início da cobrança (primeiro dia que foi startado)
+- [x] Notificações Manus: alertar Thiago, Flavio e Guilherme quando houver necessidade de cobrança (1 dia de vencimento + novos com 1,3,5 dias)
+
+- [x] Produção/Estoque: Desativar baixa automática de estoque pela produção — produção NÃO deve dar baixa em produtos sem autorização
+- [x] Produção/Estoque: Até hoje (16/04) estoque é preenchido manualmente; a partir de amanhã (17/04) estoque será calculado pelo que a Maria preencher na produção
+
+- [x] Inadimplência: clientes com registro de cobrança ou qualquer alteração NUNCA desaparecem da lista (só saem quando pagam)
+- [x] Inadimplência: card de "Pagos/Resolvidos" mostrando clientes que pagaram e saíram, com nome e data de saída
