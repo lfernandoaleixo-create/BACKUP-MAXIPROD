@@ -70,69 +70,148 @@ function exportInadimplenciaPDF(
 
   const STATUS_LABELS: Record<string, string> = {
     pendente: "Pendente", contatado: "Contatado", em_negociacao: "Em Negociação",
-    promessa: "Promessa Pgto", protestado: "Protestado", juridico: "Jurídico",
+    promessa: "Promessa de Pgto", protestado: "Protestado", juridico: "Jurídico",
   };
 
-  // ── Header ──
-  doc.setFillColor(127, 29, 29); // red-900
-  doc.rect(0, 0, pageW, 28, "F");
-  // Accent line
-  doc.setFillColor(239, 68, 68); // red-500
-  doc.rect(0, 28, pageW, 1.5, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(15);
-  doc.setFont("helvetica", "bold");
-  doc.text("GRUPO FOX \u2014 Relat\u00f3rio de Inadimpl\u00eancia", 14, 12);
-  doc.setFontSize(8.5);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")} | Total: ${titles.length} t\u00edtulos vencidos`, 14, 19);
-  doc.text(`Valor total em aberto: ${formatCurrency(stats.total)}`, 14, 24.5);
+  // Sort by diasAtraso descending (oldest first)
+  const sorted = [...titles].sort((a, b) => b.diasAtraso - a.diasAtraso);
 
-  // ── Summary boxes ──
-  const y0 = 34;
-  const boxW = 52;
-  const gap = 6;
+  // ── Row color gradient: oldest (dark red) → newest (light yellow) ──
+  const maxDias = Math.max(...sorted.map(t => t.diasAtraso), 1);
+  function getRowGradient(dias: number): [number, number, number] {
+    const ratio = Math.min(dias / maxDias, 1);
+    // From warm yellow [255,251,235] (ratio=0) to deep red [254,226,226] (ratio=1)
+    if (ratio < 0.2) return [255, 251, 235]; // amber-50
+    if (ratio < 0.4) return [255, 243, 224]; // orange-50
+    if (ratio < 0.6) return [254, 242, 242]; // red-50
+    if (ratio < 0.8) return [254, 226, 226]; // red-100
+    return [254, 202, 202]; // red-200
+  }
 
-  // Aging breakdown
-  const agingRanges = [
-    { label: "1-15 dias", min: 1, max: 15, color: [245, 158, 11] as [number, number, number] },
-    { label: "16-30 dias", min: 16, max: 30, color: [249, 115, 22] as [number, number, number] },
-    { label: "31-60 dias", min: 31, max: 60, color: [239, 68, 68] as [number, number, number] },
-    { label: "61-90 dias", min: 61, max: 90, color: [220, 38, 38] as [number, number, number] },
-    { label: "90+ dias", min: 91, max: 99999, color: [153, 27, 27] as [number, number, number] },
-  ];
+  // ── Status counts for header ──
+  const statusCounts: Record<string, { count: number; total: number }> = {};
+  for (const s of ["pendente", "contatado", "em_negociacao", "promessa", "protestado", "juridico"]) {
+    statusCounts[s] = { count: 0, total: 0 };
+  }
+  for (const t of sorted) {
+    const st = t.cobranca?.status || "pendente";
+    if (!statusCounts[st]) statusCounts[st] = { count: 0, total: 0 };
+    statusCounts[st].count++;
+    statusCounts[st].total += t.valorAReceber;
+  }
 
-  agingRanges.forEach((r, i) => {
-    const count = titles.filter(t => t.diasAtraso >= r.min && t.diasAtraso <= r.max).length;
-    const total = titles.filter(t => t.diasAtraso >= r.min && t.diasAtraso <= r.max).reduce((s, t) => s + t.valorAReceber, 0);
-    const x = 14 + i * (boxW + gap);
-    doc.setFillColor(r.color[0], r.color[1], r.color[2]);
-    doc.roundedRect(x, y0, boxW, 16, 2, 2, "F");
+  // ── Unique clients count ──
+  const uniqueClients = new Set(sorted.map(t => t.cliente)).size;
+
+  // ══════════ PAGE 1 HEADER ══════════
+  function drawHeader(startPage: boolean) {
+    // Dark gradient header
+    doc.setFillColor(55, 15, 15);
+    doc.rect(0, 0, pageW, 22, "F");
+    // Accent gradient line
+    doc.setFillColor(220, 38, 38);
+    doc.rect(0, 22, pageW, 1.2, "F");
+    doc.setFillColor(249, 115, 22);
+    doc.rect(0, 23.2, pageW, 0.8, "F");
+
+    // Title
     doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("GRUPO FOX", 12, 10);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(220, 200, 200);
+    doc.text("Relatório de Inadimplência", 50, 10);
+
+    // Right side: date + totals
+    doc.setFontSize(7.5);
+    doc.setTextColor(200, 180, 180);
+    doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, pageW - 12, 8, { align: "right" });
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${sorted.length} títulos  |  ${uniqueClients} clientes  |  ${formatCurrency(stats.total)}`, pageW - 12, 14, { align: "right" });
+
+    // Subtitle line
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text(r.label.toUpperCase(), x + 3, y0 + 5);
-    doc.setFontSize(10);
+    doc.setTextColor(200, 180, 180);
+    doc.text("Ordenado por dias de atraso (mais antigos primeiro)", 12, 18);
+  }
+
+  // Only draw full summary on first page
+  drawHeader(true);
+
+  // ── Aging boxes ──
+  const y0 = 28;
+  const agingRanges = [
+    { label: "1-15 DIAS", min: 1, max: 15, color: [245, 158, 11] as [number, number, number] },
+    { label: "16-30 DIAS", min: 16, max: 30, color: [249, 115, 22] as [number, number, number] },
+    { label: "31-60 DIAS", min: 31, max: 60, color: [239, 68, 68] as [number, number, number] },
+    { label: "61-90 DIAS", min: 61, max: 90, color: [220, 38, 38] as [number, number, number] },
+    { label: "90+ DIAS", min: 91, max: 99999, color: [153, 27, 27] as [number, number, number] },
+  ];
+
+  const boxW = (pageW - 24 - 4 * 4) / 5; // equal width, 4px gaps
+  agingRanges.forEach((r, i) => {
+    const count = sorted.filter(t => t.diasAtraso >= r.min && t.diasAtraso <= r.max).length;
+    const total = sorted.filter(t => t.diasAtraso >= r.min && t.diasAtraso <= r.max).reduce((s, t) => s + t.valorAReceber, 0);
+    const x = 12 + i * (boxW + 4);
+    doc.setFillColor(r.color[0], r.color[1], r.color[2]);
+    doc.roundedRect(x, y0, boxW, 14, 1.5, 1.5, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6.5);
     doc.setFont("helvetica", "bold");
-    doc.text(`${count} t\u00edt. \u2022 ${formatCurrency(total)}`, x + 3, y0 + 12);
+    doc.text(r.label, x + 3, y0 + 5);
+    doc.setFontSize(8.5);
+    doc.text(`${count} tít.`, x + 3, y0 + 11);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text(formatCurrency(total), x + boxW - 3, y0 + 11, { align: "right" });
   });
 
-  // ── Table ──
-  const tableData = titles.map(t => {
+  // ── Status boxes ──
+  const y1 = y0 + 17;
+  const statusDefs = [
+    { key: "pendente", label: "PENDENTE", bg: [241, 245, 249] as [number, number, number], text: [71, 85, 105] as [number, number, number] },
+    { key: "contatado", label: "CONTATADO", bg: [219, 234, 254] as [number, number, number], text: [29, 78, 216] as [number, number, number] },
+    { key: "em_negociacao", label: "EM NEGOCIAÇÃO", bg: [254, 243, 199] as [number, number, number], text: [180, 83, 9] as [number, number, number] },
+    { key: "promessa", label: "PROMESSA PGTO", bg: [209, 250, 229] as [number, number, number], text: [4, 120, 87] as [number, number, number] },
+    { key: "protestado", label: "PROTESTADO", bg: [255, 237, 213] as [number, number, number], text: [194, 65, 12] as [number, number, number] },
+    { key: "juridico", label: "JURÍDICO", bg: [254, 226, 226] as [number, number, number], text: [185, 28, 28] as [number, number, number] },
+  ];
+
+  const sBoxW = (pageW - 24 - 5 * 4) / 6;
+  statusDefs.forEach((s, i) => {
+    const sc = statusCounts[s.key] || { count: 0, total: 0 };
+    const x = 12 + i * (sBoxW + 4);
+    // Border
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.setFillColor(s.bg[0], s.bg[1], s.bg[2]);
+    doc.roundedRect(x, y1, sBoxW, 12, 1.5, 1.5, "FD");
+    doc.setTextColor(s.text[0], s.text[1], s.text[2]);
+    doc.setFontSize(5.5);
+    doc.setFont("helvetica", "bold");
+    doc.text(s.label, x + 2, y1 + 4);
+    doc.setFontSize(7.5);
+    doc.text(`${sc.count}`, x + 2, y1 + 9.5);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
+    doc.text(formatCurrency(sc.total), x + sBoxW - 2, y1 + 9.5, { align: "right" });
+  });
+
+  // ── Table (without Protesto column) ──
+  const tableData = sorted.map(t => {
     const status = t.cobranca?.status || "pendente";
     const statusLabel = STATUS_LABELS[status] || status;
-    const protestConfig = protestConfigsMap?.[t.id];
-    let protestLabel = "\u2014";
-    if (protestConfig) {
-      protestLabel = protestConfig.protestType === "automatico" ? "Protesto Auto" : "N\u00e3o Protestar";
-    }
     return [
       t.cliente,
       `${t.documento || "-"}${t.parcela ? " \u2022 " + t.parcela : ""}`,
       t.vendedor || "\u2014",
       t.formaCobranca || "\u2014",
       t.decisaoCobranca || "\u2014",
-      protestLabel,
       formatCurrency(t.valorAReceber),
       formatDate(t.vencimento),
       `${t.diasAtraso}d`,
@@ -142,38 +221,47 @@ function exportInadimplenciaPDF(
   });
 
   autoTable(doc, {
-    startY: y0 + 22,
-    head: [["Cliente", "Doc/Parcela", "Vendedor", "Forma Cobr.", "Decis\u00e3o Cobr.", "Protesto", "Valor", "Vencimento", "Atraso", "Status", "Empresa"]],
+    startY: y1 + 16,
+    head: [["CLIENTE", "DOC/PARCELA", "VENDEDOR", "FORMA DE COBRANÇA", "DECISÃO DE COBRANÇA", "VALOR", "VENCIMENTO", "ATRASO", "STATUS", "EMPRESA"]],
     body: tableData,
     theme: "grid",
+    rowPageBreak: "avoid",
     headStyles: {
-      fillColor: [127, 29, 29],
+      fillColor: [55, 15, 15],
       textColor: [255, 255, 255],
-      fontSize: 7,
+      fontSize: 6.5,
       fontStyle: "bold",
-      cellPadding: 2,
+      cellPadding: 2.5,
+      halign: "center",
     },
-    bodyStyles: { fontSize: 6.5, cellPadding: 1.5 },
+    bodyStyles: { fontSize: 6.5, cellPadding: 2, lineColor: [230, 230, 230], lineWidth: 0.2 },
     columnStyles: {
-      0: { cellWidth: 52 },
+      0: { cellWidth: 55 },
       1: { cellWidth: 22 },
-      2: { cellWidth: 28 },
-      3: { cellWidth: 18 },
-      4: { cellWidth: 28 },
-      5: { cellWidth: 22 },
-      6: { cellWidth: 22, halign: "right", fontStyle: "bold" },
-      7: { cellWidth: 20, halign: "center" },
-      8: { cellWidth: 14, halign: "center" },
-      9: { cellWidth: 22, halign: "center" },
-      10: { cellWidth: 20 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 28 },
+      4: { cellWidth: 32 },
+      5: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+      6: { cellWidth: 22, halign: "center" },
+      7: { cellWidth: 16, halign: "center" },
+      8: { cellWidth: 22, halign: "center" },
+      9: { cellWidth: 22 },
     },
-    alternateRowStyles: { fillColor: [254, 242, 242] }, // red-50
     didParseCell: (data: any) => {
       if (data.section === "body") {
-        // Atraso column color
-        if (data.column.index === 8) {
-          const dias = parseInt(data.cell.raw);
-          if (dias > 60) {
+        const rowIdx = data.row.index;
+        const dias = sorted[rowIdx]?.diasAtraso || 0;
+
+        // Row gradient background by aging
+        const bg = getRowGradient(dias);
+        data.cell.styles.fillColor = bg;
+
+        // Atraso column (index 7)
+        if (data.column.index === 7) {
+          if (dias > 90) {
+            data.cell.styles.textColor = [127, 29, 29];
+            data.cell.styles.fontStyle = "bold";
+          } else if (dias > 60) {
             data.cell.styles.textColor = [153, 27, 27];
             data.cell.styles.fontStyle = "bold";
           } else if (dias > 30) {
@@ -181,44 +269,66 @@ function exportInadimplenciaPDF(
           } else if (dias > 15) {
             data.cell.styles.textColor = [249, 115, 22];
           } else {
-            data.cell.styles.textColor = [245, 158, 11];
+            data.cell.styles.textColor = [180, 130, 20];
           }
         }
-        // Status column color
-        if (data.column.index === 9) {
-          const val = data.cell.raw;
-          if (val === "Protestado" || val === "Jur\u00eddico") {
-            data.cell.styles.textColor = [220, 38, 38];
-            data.cell.styles.fontStyle = "bold";
-          } else if (val === "Promessa Pgto") {
-            data.cell.styles.textColor = [5, 150, 105];
-          } else if (val === "Em Negocia\u00e7\u00e3o") {
-            data.cell.styles.textColor = [245, 158, 11];
-          }
-        }
-        // Protesto column
+        // Valor column (index 5) - red for high values
         if (data.column.index === 5) {
-          if (data.cell.raw === "Protesto Auto") {
-            data.cell.styles.textColor = [249, 115, 22];
+          const val = sorted[rowIdx]?.valorAReceber || 0;
+          if (val > 5000) {
+            data.cell.styles.textColor = [153, 27, 27];
+          } else if (val > 2000) {
+            data.cell.styles.textColor = [220, 38, 38];
+          }
+        }
+        // Status column (index 8)
+        if (data.column.index === 8) {
+          const val = data.cell.raw;
+          if (val === "Protestado" || val === "Jurídico") {
+            data.cell.styles.textColor = [185, 28, 28];
             data.cell.styles.fontStyle = "bold";
-          } else if (data.cell.raw === "N\u00e3o Protestar") {
-            data.cell.styles.textColor = [37, 99, 235];
+          } else if (val === "Promessa de Pgto") {
+            data.cell.styles.textColor = [4, 120, 87];
+          } else if (val === "Em Negociação") {
+            data.cell.styles.textColor = [180, 83, 9];
+          } else if (val === "Contatado") {
+            data.cell.styles.textColor = [29, 78, 216];
           }
         }
       }
     },
-    margin: { left: 8, right: 8 },
+    margin: { left: 8, right: 8, top: 28 },
     didDrawPage: (data: any) => {
-      // Footer on each page
+      // Repeat mini header on subsequent pages
+      if (data.pageNumber > 1) {
+        doc.setFillColor(55, 15, 15);
+        doc.rect(0, 0, pageW, 18, "F");
+        doc.setFillColor(220, 38, 38);
+        doc.rect(0, 18, pageW, 0.8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text("GRUPO FOX \u2014 Inadimplência", 12, 9);
+        doc.setFontSize(7.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(200, 180, 180);
+        doc.text(`${sorted.length} títulos  |  ${formatCurrency(stats.total)}`, 12, 14.5);
+        doc.text(`Página ${data.pageNumber}`, pageW - 12, 9, { align: "right" });
+      }
+
+      // Footer
       const pageCount = doc.getNumberOfPages();
-      doc.setFontSize(7);
-      doc.setTextColor(148, 163, 184);
+      doc.setFontSize(6.5);
+      doc.setTextColor(160, 160, 160);
       doc.text(
-        `P\u00e1gina ${data.pageNumber} de ${pageCount} | GRUPO FOX - Gest\u00e3o de Inadimpl\u00eancia`,
+        `Página ${data.pageNumber} de ${pageCount}  |  GRUPO FOX \u2014 Gestão de Inadimplência  |  ${new Date().toLocaleDateString("pt-BR")}`,
         pageW / 2,
-        pageH - 6,
+        pageH - 5,
         { align: "center" }
       );
+      // Bottom accent line
+      doc.setFillColor(220, 38, 38);
+      doc.rect(0, pageH - 2, pageW, 2, "F");
     },
   });
 

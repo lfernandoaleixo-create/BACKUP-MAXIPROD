@@ -2736,3 +2736,9 @@
 - [x] KPIs Disponível e Projetado corrigidos: Disponível = totalEstoqueCx - totalPedidosCx = 16.996. Projetado = 16.996 + 9.639 = 26.635
 - [x] Adicionado painel de médias diárias no gráfico Evolução Diária: 3 cards (atual, anterior, melhor) com média diária, badges de % vs melhor/anterior, gradientes e layout sofisticado
 - [x] Botão de exportação PDF da lista de inadimplentes: header vermelho, boxes de aging, tabela 11 colunas, cores condicionais, footer com paginação
+- [x] PDF Inadimplência: evitar corte de nomes entre páginas (rowPageBreak: 'avoid')
+- [x] PDF Inadimplência: adicionar KPIs de status no cabeçalho (Pendente, Contatado, Em Negociação, etc.)
+- [x] PDF Inadimplência: gradiente de cores por antiguidade (vermelho escuro → amarelo claro)
+- [x] PDF Inadimplência: renomear "Decisão Cobr." para "DECISÃO DE COBRANÇA" sem abreviação
+- [x] PDF Inadimplência: remover coluna Protesto apenas no PDF exportado
+- [x] PDF Inadimplência: layout mais profissional e sofisticado
