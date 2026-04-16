@@ -203,12 +203,18 @@ function exportInadimplenciaPDF(
   });
 
   // ── Table (without Protesto column) ──
+  // Build NF/Parcela column: "NF 206 \u2022 Parcela 2/3" or "NF 206" or "Parcela 2/3" or "—"
   const tableData = sorted.map(t => {
     const status = t.cobranca?.status || "pendente";
     const statusLabel = STATUS_LABELS[status] || status;
+    // Build document + parcela label
+    const docParts: string[] = [];
+    if (t.documento) docParts.push(`NF ${t.documento}`);
+    if (t.parcela) docParts.push(`Parcela ${t.parcela}`);
+    const docLabel = docParts.length > 0 ? docParts.join(" \u2022 ") : "\u2014";
     return [
       t.cliente,
-      `${t.documento || "-"}${t.parcela ? " \u2022 " + t.parcela : ""}`,
+      docLabel,
       t.vendedor || "\u2014",
       t.formaCobranca || "\u2014",
       t.decisaoCobranca || "\u2014",
@@ -222,7 +228,7 @@ function exportInadimplenciaPDF(
 
   autoTable(doc, {
     startY: y1 + 16,
-    head: [["CLIENTE", "DOC/PARCELA", "VENDEDOR", "FORMA DE COBRANÇA", "DECISÃO DE COBRANÇA", "VALOR", "VENCIMENTO", "ATRASO", "STATUS", "EMPRESA"]],
+    head: [["CLIENTE", "NF / PARCELA", "VENDEDOR", "FORMA DE COBRAN\u00c7A", "DECIS\u00c3O DE COBRAN\u00c7A", "VALOR", "VENCIMENTO", "ATRASO", "STATUS", "EMPRESA"]],
     body: tableData,
     theme: "grid",
     rowPageBreak: "avoid",
@@ -234,18 +240,18 @@ function exportInadimplenciaPDF(
       cellPadding: 2.5,
       halign: "center",
     },
-    bodyStyles: { fontSize: 6.5, cellPadding: 2, lineColor: [230, 230, 230], lineWidth: 0.2 },
+    bodyStyles: { fontSize: 6.5, cellPadding: 2, lineColor: [230, 230, 230], lineWidth: 0.2, halign: "center" },
     columnStyles: {
-      0: { cellWidth: 55 },
-      1: { cellWidth: 22 },
-      2: { cellWidth: 30 },
-      3: { cellWidth: 28 },
-      4: { cellWidth: 32 },
-      5: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+      0: { cellWidth: 55, halign: "left" },
+      1: { cellWidth: 28, halign: "center" },
+      2: { cellWidth: 28, halign: "center" },
+      3: { cellWidth: 28, halign: "center" },
+      4: { cellWidth: 30, halign: "center" },
+      5: { cellWidth: 22, halign: "right", fontStyle: "bold" },
       6: { cellWidth: 22, halign: "center" },
-      7: { cellWidth: 16, halign: "center" },
+      7: { cellWidth: 14, halign: "center" },
       8: { cellWidth: 22, halign: "center" },
-      9: { cellWidth: 22 },
+      9: { cellWidth: 22, halign: "center" },
     },
     didParseCell: (data: any) => {
       if (data.section === "body") {

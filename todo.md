@@ -2742,3 +2742,7 @@
 - [x] PDF Inadimplência: renomear "Decisão Cobr." para "DECISÃO DE COBRANÇA" sem abreviação
 - [x] PDF Inadimplência: remover coluna Protesto apenas no PDF exportado
 - [x] PDF Inadimplência: layout mais profissional e sofisticado
+- [x] Consulta cliente: substituir "Título avulso" por NF ou Pedido (nome correto do documento)
+- [x] Consulta cliente: alinhar layout da lista de documentos (Em Aberto, 1 título, tempo de atraso todos alinhados)
+- [x] PDF Inadimplência: renomear coluna Doc/Parcela para mostrar "NF · Parcela X/Y" mais claro
+- [x] PDF Inadimplência: centralizar todos os textos no meio das colunas

@@ -800,7 +800,7 @@ function SectionCard({
   );
 }
 
-/* Card expansível que agrupa títulos do mesmo documento/pedido - REDESENHADO */
+/* Card expansível que agrupa títulos do mesmo documento/pedido - REDESENHADO com grid alinhado */
 function TituloGroupCard({ group }: {
   group: {
     documento: string;
@@ -872,7 +872,7 @@ function TituloGroupCard({ group }: {
     ? "Em Aberto"
     : "Parcial";
 
-  // Build document label - NEVER show S/N
+  // Build document label - show NF, Pedido, or referência (NEVER "Título avulso")
   const buildDocLabel = () => {
     const parts: React.ReactNode[] = [];
     
@@ -881,14 +881,17 @@ function TituloGroupCard({ group }: {
     } else if (group.isPedido && group.documento) {
       parts.push(<span key="ped" className="text-slate-700">Pedido <strong>{group.documento}</strong></span>);
     } else if (group.documento) {
-      parts.push(<span key="doc" className="text-slate-700">Doc <strong>{group.documento}</strong></span>);
+      // Se o documento é um número, mostrar como NF
+      parts.push(<span key="doc" className="text-slate-700">NF <strong>{group.documento}</strong></span>);
     } else {
-      // Instead of S/N, show the first titulo's NF or a descriptive label
-      const firstNf = group.titulos.find(t => t.nfNumero || t.documento)?.nfNumero || group.titulos.find(t => t.documento)?.documento;
-      if (firstNf) {
-        parts.push(<span key="nf" className="text-slate-700">Doc <strong>{firstNf}</strong></span>);
+      // Sem documento vinculado - buscar referência dos títulos
+      const firstRef = group.titulos.find(t => t.referente)?.referente;
+      if (firstRef) {
+        // Truncar referência longa e mostrar de forma limpa
+        const refClean = firstRef.length > 50 ? firstRef.substring(0, 47) + "..." : firstRef;
+        parts.push(<span key="ref" className="text-slate-600 text-xs" style={{ fontStyle: 'normal' }}>{refClean}</span>);
       } else {
-        parts.push(<span key="titulo" className="text-slate-500 italic">Título avulso</span>);
+        parts.push(<span key="titulo" className="text-slate-500">Título s/nº</span>);
       }
     }
 
@@ -907,61 +910,70 @@ function TituloGroupCard({ group }: {
 
   return (
     <div className={`rounded-lg border ${statusColor} overflow-hidden transition-all`}>
-      {/* Header - clickable to expand */}
+      {/* Header - clickable to expand - GRID ALINHADO */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-3 hover:bg-white/50 transition-colors"
+        className="w-full p-3 hover:bg-white/50 transition-colors"
       >
-        <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
-          <div className="flex items-center gap-2 shrink-0">
-            <FileText className={`h-4 w-4 ${groupStatus === "RECEBIDO" ? "text-emerald-600" : "text-amber-600"}`} />
-            <span className="font-mono text-sm font-semibold">
+        <div className="grid items-center gap-2" style={{ gridTemplateColumns: 'auto 1fr auto auto auto auto auto' }}>
+          {/* Col 1: Icon + Doc label */}
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className={`h-4 w-4 shrink-0 ${groupStatus === "RECEBIDO" ? "text-emerald-600" : "text-amber-600"}`} />
+            <span className="font-mono text-sm font-semibold truncate">
               {buildDocLabel()}
             </span>
           </div>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusBadgeColor}`}>
+
+          {/* Col 2: spacer */}
+          <div />
+
+          {/* Col 3: Status badge - fixed width */}
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap text-center ${statusBadgeColor}`} style={{ minWidth: '60px' }}>
             {statusLabel}
           </span>
-          {group.parcelas > 1 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
-              {group.parcelas} título{group.parcelas > 1 ? 's' : ''} (boletos)
-            </span>
-          )}
-          {group.parcelas === 1 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
-              1 título
-            </span>
-          )}
-          {bancoInfo && (
+
+          {/* Col 4: Parcelas badge - fixed width */}
+          <span className="text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap text-center bg-slate-100 text-slate-600" style={{ minWidth: '55px' }}>
+            {group.parcelas} título{group.parcelas > 1 ? 's' : ''}
+          </span>
+
+          {/* Col 5: Days badge - fixed width */}
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium whitespace-nowrap text-center flex items-center justify-center gap-1 ${
+            groupStatus !== "EMITIDO" || daysUntilVenc === null ? "invisible" :
+            daysUntilVenc < 0 ? "bg-red-100 text-red-700" :
+            daysUntilVenc <= 7 ? "bg-orange-100 text-orange-700" :
+            daysUntilVenc <= 30 ? "bg-yellow-100 text-yellow-700" :
+            "bg-slate-100 text-slate-600"
+          }`} style={{ minWidth: '65px' }}>
+            <Clock className="h-2.5 w-2.5" />
+            {daysUntilVenc !== null && daysUntilVenc < 0 ? `${Math.abs(daysUntilVenc)}d atraso` :
+             daysUntilVenc === 0 ? "Vence hoje" :
+             daysUntilVenc !== null ? `${daysUntilVenc}d` : ""}
+          </span>
+
+          {/* Col 6: Value - fixed width right-aligned */}
+          <div className="text-right" style={{ minWidth: '100px' }}>
+            <span className="text-sm font-bold text-slate-800">{formatCurrency(group.valorTotalGrupo)}</span>
+          </div>
+
+          {/* Col 7: Chevron */}
+          <div className="flex items-center justify-center" style={{ width: '20px' }}>
+            {expanded
+              ? <ChevronUp className="h-4 w-4 text-slate-400" />
+              : <ChevronDown className="h-4 w-4 text-slate-400" />
+            }
+          </div>
+        </div>
+
+        {/* Banco info row (secondary) */}
+        {bancoInfo && (
+          <div className="flex items-center gap-1 mt-1 ml-6">
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium flex items-center gap-1">
               <Landmark className="h-2.5 w-2.5" />
-              {bancoInfo.replace("Banco ", "").replace(" S.A.", "").substring(0, 20)}
+              {bancoInfo.replace("Banco ", "").replace(" S.A.", "").substring(0, 25)}
             </span>
-          )}
-          {/* Days until vencimento badge */}
-          {groupStatus === "EMITIDO" && daysUntilVenc !== null && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1 ${
-              daysUntilVenc < 0 ? "bg-red-100 text-red-700" :
-              daysUntilVenc <= 7 ? "bg-orange-100 text-orange-700" :
-              daysUntilVenc <= 30 ? "bg-yellow-100 text-yellow-700" :
-              "bg-slate-100 text-slate-600"
-            }`}>
-              <Clock className="h-2.5 w-2.5" />
-              {daysUntilVenc < 0 ? `${Math.abs(daysUntilVenc)}d atraso` :
-               daysUntilVenc === 0 ? "Vence hoje" :
-               `${daysUntilVenc}d`}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="text-right">
-            <div className="text-sm font-bold text-slate-800">{formatCurrency(group.valorTotalGrupo)}</div>
           </div>
-          {expanded
-            ? <ChevronUp className="h-4 w-4 text-slate-400" />
-            : <ChevronDown className="h-4 w-4 text-slate-400" />
-          }
-        </div>
+        )}
       </button>
 
       {/* Expanded content - individual parcelas/títulos */}
@@ -982,8 +994,9 @@ function TituloGroupCard({ group }: {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 text-[11px]">
-                  <th className="text-left py-1.5 px-3">Título</th>
+                  <th className="text-left py-1.5 px-3">Parcela</th>
                   <th className="text-left py-1.5 px-3">NF/Doc</th>
+                  <th className="text-left py-1.5 px-3">Referência</th>
                   <th className="text-left py-1.5 px-3">Emissão</th>
                   <th className="text-left py-1.5 px-3">Vencimento</th>
                   <th className="text-left py-1.5 px-3">Liquidação</th>
@@ -1005,6 +1018,9 @@ function TituloGroupCard({ group }: {
                         </td>
                         <td className="py-1.5 px-3 text-xs text-slate-600 font-mono">
                           {t.nfNumero || t.documento || "-"}
+                        </td>
+                        <td className="py-1.5 px-3 text-xs text-slate-500 max-w-[200px] truncate" title={t.referente || ""}>
+                          {t.referente ? (t.referente.length > 35 ? t.referente.substring(0, 32) + "..." : t.referente) : "-"}
                         </td>
                         <td className="py-1.5 px-3 text-xs text-slate-600">{formatDate(t.emissao)}</td>
                         <td className="py-1.5 px-3 text-xs font-medium">
