@@ -2788,3 +2788,7 @@
 
 - [x] Inadimplência: clientes com registro de cobrança ou qualquer alteração NUNCA desaparecem da lista (só saem quando pagam)
 - [x] Inadimplência: card de "Pagos/Resolvidos" mostrando clientes que pagaram e saíram, com nome e data de saída
+
+- [x] Flow Pack: adicionar seção "Produção por Medida de Fibra" com medida 3,0x200mm abaixo da seção de Madeira em todas as 5 máquinas
+
+- [x] Vendas: colocar informações do gráfico acumulado (Acum. Atual, Anterior, Melhor) dentro dos cards de Média Diária correspondentes

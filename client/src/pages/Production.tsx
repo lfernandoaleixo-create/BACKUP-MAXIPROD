@@ -122,6 +122,11 @@ const FLOWPACK_MEASURE_OPTIONS = [
   { value: "3.5x200mm", label: "3,5x200mm", color: "#f97316", bgClass: "bg-orange-50", textClass: "text-orange-800", borderClass: "border-orange-300" },
 ];
 
+// ─── Measure options (Flow Pack Fibra) - always shown ───
+const FLOWPACK_FIBRA_OPTIONS = [
+  { value: "fibra_3.0x200mm", label: "3,0x200mm", color: "#8b5cf6", bgClass: "bg-violet-50", textClass: "text-violet-800", borderClass: "border-violet-300" },
+];
+
 // ─── Measure options (Ponteira) - always shown ───
 const PONTEIRA_MEASURE_OPTIONS = [
   { value: "3.8x180mm", label: "3,8x180mm", color: "#06b6d4", bgClass: "bg-cyan-50", textClass: "text-cyan-800", borderClass: "border-cyan-300" },
@@ -489,9 +494,12 @@ export default function Production() {
     const comment = commentValues[machineKey] !== undefined ? commentValues[machineKey] : getEntryComment(sectorId, machineId);
 
     const variantOpts = getVariantOptions(sectorOrdem, machineOrdem);
+    // Flow Pack also has fibra options
+    const fibraOpts = isFlowPack(sectorOrdem) ? FLOWPACK_FIBRA_OPTIONS : [];
+    const allVariantOpts = [...variantOpts, ...fibraOpts];
 
-    // Setores expandíveis sem variantes (6, 7, 9): usar upsertEntry simples com status
-    if (variantOpts.length === 0) {
+    // Setores expansíveis sem variantes (6, 7, 9): usar upsertEntry simples com status
+    if (allVariantOpts.length === 0) {
       const val = editValues[machineKey];
       const quantidade = val !== undefined && val !== "" ? parseFloat(val.replace(",", ".")) : 0;
       if (isNaN(quantidade) || quantidade < 0) { toast.error("Valor inválido"); return; }
@@ -505,7 +513,7 @@ export default function Production() {
 
     const batchEntries: any[] = [];
     const dualUnit = isDualUnitSector(sectorOrdem);
-    for (const opt of variantOpts) {
+    for (const opt of allVariantOpts) {
       if (dualUnit) {
         // Triple unit: salvar 3 registros por medida (cx pequena, cx grande e saco)
         const suffixLabels = { "_cxp": "cx pequena", "_cxg": "cx grande", "_saco": "saco" };
@@ -790,7 +798,10 @@ export default function Production() {
   // Compute live total for a machine from all fixed variant fields (or simple edit value if no variants)
   const getMachineLiveTotal = (sectorId: number, machineId: number | null, sectorOrdem: number, machineOrdem?: number): number => {
     const variantOpts = getVariantOptions(sectorOrdem, machineOrdem);
-    if (variantOpts.length === 0) {
+    // Flow Pack also has fibra options
+    const fibraOpts = isFlowPack(sectorOrdem) ? FLOWPACK_FIBRA_OPTIONS : [];
+    const allOpts = [...variantOpts, ...fibraOpts];
+    if (allOpts.length === 0) {
       // No variants: use simple edit value
       const val = getEditValue(sectorId, machineId);
       if (val !== "") {
@@ -801,7 +812,7 @@ export default function Production() {
     }
     let total = 0;
     const dualUnit = isDualUnitSector(sectorOrdem);
-    for (const opt of variantOpts) {
+    for (const opt of allOpts) {
       if (dualUnit) {
         const sacoVal = getVariantEditValue(sectorId, machineId, `${opt.value}_saco`);
         const cxpVal = getVariantEditValue(sectorId, machineId, `${opt.value}_cxp`);
@@ -1234,8 +1245,10 @@ function ExpandableMachineRow({
 
   // Build per-variant display for badges (only show variants with value > 0)
   const dualUnit = isDualUnitSector(sector.ordem);
+  const fibraOptions = isFlowPack(sector.ordem) ? FLOWPACK_FIBRA_OPTIONS : [];
+  const allDisplayOptions = [...variantOptions, ...fibraOptions];
   const variantDisplay: { label: string; value: number; unit: string; bgClass: string; textClass: string; borderClass: string }[] = [];
-  for (const opt of variantOptions) {
+  for (const opt of allDisplayOptions) {
     if (dualUnit) {
       const sacoVal = getVariantValue(`${opt.value}_saco`);
       const cxpVal = getVariantValue(`${opt.value}_cxp`);
@@ -1480,6 +1493,37 @@ function ExpandableMachineRow({
                 })}
               </div>
             )}
+
+            {/* ─── Flow Pack: Seção de Fibra (abaixo da Madeira) ─── */}
+            {isFlowPack(sector.ordem) && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Flame className="w-3.5 h-3.5 text-violet-500" />
+                  <p className="text-xs font-semibold text-violet-500 uppercase tracking-wider">Produção por Medida de Fibra</p>
+                </div>
+                <div className={`grid gap-2 grid-cols-1 sm:grid-cols-2`}>
+                  {FLOWPACK_FIBRA_OPTIONS.map(opt => {
+                    const val = getVariantValue(opt.value);
+                    return (
+                      <div key={opt.value} className="flex items-center gap-2">
+                        <div className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border-2 text-[13px] font-bold shadow-sm ${opt.bgClass} ${opt.textClass} ${opt.borderClass}`} style={{ minWidth: "120px" }}>
+                          <Flame className="w-3.5 h-3.5 shrink-0" />
+                          <span>{opt.label}</span>
+                        </div>
+                        <input
+                          type="text" inputMode="decimal" value={val}
+                          onChange={(e) => canEdit && onSetVariantValue(opt.value, e.target.value)}
+                          placeholder="0" disabled={!canEdit}
+                          className={`flex-1 min-w-0 w-20 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-white'}`}
+                        />
+                        <span className="text-[10px] text-slate-400 shrink-0 w-8">{sector.unidadeMedida}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {canEdit && changed && (
               <div className="flex justify-end mt-3">
                 <button onClick={onSave} disabled={isSaving}
