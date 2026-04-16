@@ -2899,6 +2899,16 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
     return total;
   }, [parentItems, semiProntoMap]);
 
+  const totalPedidos = useMemo(() => {
+    let total = 0;
+    for (const item of parentItems) {
+      total += item.pedidosCx ?? item.pedidosUn;
+    }
+    return total;
+  }, [parentItems]);
+
+  const totalDisponivel = totalEstoque - totalPedidos;
+
   const handleStartEdit = useCallback((codigoItem: string) => {
     if (!currentOperator) {
       setPendingEditItem(codigoItem);
@@ -2974,11 +2984,11 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
           </div>
           <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className="text-lg font-extrabold text-slate-400 mt-1">0 <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-emerald-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
-            <p className="text-lg font-extrabold text-emerald-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
@@ -3008,14 +3018,18 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
                   <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Produto</th>
                   <th className="text-right py-2 px-2 text-xs font-semibold text-amber-600 uppercase">Estoque (cx)</th>
                   <th className="w-8 py-2 px-1"></th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-orange-600 uppercase">Pedidos</th>
+                  <th className="text-right py-2 px-2 text-xs font-semibold text-emerald-600 uppercase">Disponível</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((item) => {
                   const qty = semiProntoMap.get(item.codigoItem) || 0;
                   const isEditing = editingItem === item.codigoItem;
+                  const pedidosVal = item.pedidosCx ?? item.pedidosUn;
+                  const disponivel = qty - pedidosVal;
                   return (
-                    <tr key={item.codigoItem} className="border-b border-slate-100 hover:bg-slate-50/50">
+                    <tr key={item.codigoItem} className={`border-b border-slate-100 hover:bg-slate-50/50 ${disponivel < 0 ? 'bg-red-50/50' : ''}`}>
                       <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>
 <td className="py-2 px-2 text-sm text-slate-700 break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</td>
                        <td className="py-2 px-2 text-right">
@@ -3034,6 +3048,16 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
                           className="p-1 rounded hover:bg-amber-50 transition-colors" title="Histórico deste item">
                           <History className="w-3.5 h-3.5 text-slate-400 hover:text-amber-600" />
                         </button>
+                      </td>
+                      <td className="py-2 px-2 text-right">
+                        <span className={`text-sm font-semibold ${pedidosVal > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
+                          {formatNumber(pedidosVal)}
+                        </span>
+                      </td>
+                      <td className="py-2 px-2 text-right">
+                        <span className={`text-sm font-bold ${disponivel < 0 ? 'text-red-600' : disponivel === 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                          {formatNumber(disponivel)}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -3102,6 +3126,16 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
     }
     return total;
   }, [parentItems, aguardandoMap]);
+
+  const totalPedidos = useMemo(() => {
+    let total = 0;
+    for (const item of parentItems) {
+      total += item.pedidosCx ?? item.pedidosUn;
+    }
+    return total;
+  }, [parentItems]);
+
+  const totalDisponivel = totalEstoque - totalPedidos;
 
   const handleStartEdit = useCallback((codigoItem: string) => {
     if (!currentOperator) {
@@ -3178,11 +3212,11 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
           </div>
           <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className="text-lg font-extrabold text-slate-400 mt-1">0 <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-emerald-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
-            <p className="text-lg font-extrabold text-emerald-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
@@ -3221,8 +3255,10 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
                 {filtered.map((item) => {
                   const qty = aguardandoMap.get(item.codigoItem) || 0;
                   const isEditing = editingItem === item.codigoItem;
+                  const pedidosVal = item.pedidosCx ?? item.pedidosUn;
+                  const disponivel = qty - pedidosVal;
                   return (
-                    <tr key={item.codigoItem} className="border-b border-slate-100 hover:bg-slate-50/50">
+                    <tr key={item.codigoItem} className={`border-b border-slate-100 hover:bg-slate-50/50 ${disponivel < 0 ? 'bg-red-50/50' : ''}`}>
                       <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>
                       <td className="py-2 px-2 text-sm text-slate-700 break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</td>
                       <td className="py-2 px-2 text-right">
@@ -3241,6 +3277,16 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
                           className="p-1 rounded hover:bg-purple-50 transition-colors" title="Histórico deste item">
                           <History className="w-3.5 h-3.5 text-slate-400 hover:text-purple-600" />
                         </button>
+                      </td>
+                      <td className="py-2 px-2 text-right">
+                        <span className={`text-sm font-semibold ${pedidosVal > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
+                          {formatNumber(pedidosVal)}
+                        </span>
+                      </td>
+                      <td className="py-2 px-2 text-right">
+                        <span className={`text-sm font-bold ${disponivel < 0 ? 'text-red-600' : disponivel === 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                          {formatNumber(disponivel)}
+                        </span>
                       </td>
                     </tr>
                   );
