@@ -2167,18 +2167,22 @@ function HistoryDialog({ title, onClose }: {
     y += 28;
 
     // Summary badges
-    const verdes = checklist.steps.filter((s: any) => s.status === "verde").length;
-    const vermelhos = checklist.steps.filter((s: any) => s.status === "vermelho").length;
-    const pendentes = checklist.steps.filter((s: any) => s.status === "pendente").length;
-    const futuros = checklist.steps.filter((s: any) => s.status === "futuro").length;
+    const pdfVerdes = checklist.steps.filter((s: any) => s.status === "verde").length;
+    const pdfDispensados = checklist.steps.filter((s: any) => s.status === "dispensado").length;
+    const pdfVermelhos = checklist.steps.filter((s: any) => s.status === "vermelho").length;
+    const pdfPendentes = checklist.steps.filter((s: any) => s.status === "pendente").length;
+    const pdfFuturos = checklist.steps.filter((s: any) => s.status === "futuro").length;
 
     // Summary row
-    const badgeW = usableW / 4;
+    const hasDis = pdfDispensados > 0;
+    const badgeCols = hasDis ? 5 : 4;
+    const badgeW = usableW / badgeCols;
     const badges = [
-      { label: "Realizados", count: verdes, r: 34, g: 197, b: 94 },
-      { label: "Falhas", count: vermelhos, r: 239, g: 68, b: 68 },
-      { label: "Pendentes", count: pendentes, r: 59, g: 130, b: 246 },
-      { label: "Futuros", count: futuros, r: 148, g: 163, b: 184 },
+      { label: "Realizados", count: pdfVerdes, r: 34, g: 197, b: 94 },
+      ...(hasDis ? [{ label: "Dispensados", count: pdfDispensados, r: 245, g: 158, b: 11 }] : []),
+      { label: "Falhas", count: pdfVermelhos, r: 239, g: 68, b: 68 },
+      { label: "Pendentes", count: pdfPendentes, r: 59, g: 130, b: 246 },
+      { label: "Futuros", count: pdfFuturos, r: 148, g: 163, b: 184 },
     ];
     for (let i = 0; i < badges.length; i++) {
       const bx = margin + i * badgeW;
@@ -2203,6 +2207,7 @@ function HistoryDialog({ title, onClose }: {
       // Status color bar
       const statusColors: Record<string, [number, number, number]> = {
         verde: [34, 197, 94],
+        dispensado: [245, 158, 11],
         vermelho: [239, 68, 68],
         pendente: [59, 130, 246],
         futuro: [148, 163, 184],
@@ -2219,7 +2224,7 @@ function HistoryDialog({ title, onClose }: {
       doc.roundedRect(margin, y, usableW, stepH, 1, 1, "S");
 
       // Status icon text
-      const statusIcon = step.status === "verde" ? "[OK]" : step.status === "vermelho" ? "[X]" : step.status === "pendente" ? "[...]" : "[--]";
+      const statusIcon = step.status === "verde" ? "[OK]" : step.status === "dispensado" ? "[~]" : step.status === "vermelho" ? "[X]" : step.status === "pendente" ? "[...]" : "[--]";
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(cr, cg, cb);
@@ -2273,6 +2278,7 @@ function HistoryDialog({ title, onClose }: {
   function StatusIcon({ status }: { status: string }) {
     switch (status) {
       case "verde": return <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />;
+      case "dispensado": return <CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" />;
       case "vermelho": return <XCircle className="w-5 h-5 text-red-500 shrink-0" />;
       case "pendente": return <Circle className="w-5 h-5 text-blue-500 animate-pulse shrink-0" />;
       case "futuro": return <Circle className="w-5 h-5 text-slate-300 shrink-0" />;
@@ -2283,6 +2289,7 @@ function HistoryDialog({ title, onClose }: {
   function statusBg(status: string) {
     switch (status) {
       case "verde": return "bg-emerald-50 border-emerald-200";
+      case "dispensado": return "bg-amber-50 border-amber-200";
       case "vermelho": return "bg-red-50 border-red-200";
       case "pendente": return "bg-blue-50 border-blue-200";
       case "futuro": return "bg-slate-50 border-slate-200";
@@ -2293,6 +2300,7 @@ function HistoryDialog({ title, onClose }: {
   function statusTextColor(status: string) {
     switch (status) {
       case "verde": return "text-emerald-700";
+      case "dispensado": return "text-amber-700";
       case "vermelho": return "text-red-700";
       case "pendente": return "text-blue-700";
       case "futuro": return "text-slate-400";
@@ -2300,10 +2308,11 @@ function HistoryDialog({ title, onClose }: {
     }
   }
 
-  // Checklist summary
-  const verdes = checklist?.steps?.filter((s: any) => s.status === "verde").length || 0;
+  // Checklist summary — dispensados contam como "verde" para o progresso
+  const verdes = checklist?.steps?.filter((s: any) => s.status === "verde" || s.status === "dispensado").length || 0;
   const vermelhos = checklist?.steps?.filter((s: any) => s.status === "vermelho").length || 0;
   const pendentes = checklist?.steps?.filter((s: any) => s.status === "pendente").length || 0;
+  const dispensados = checklist?.steps?.filter((s: any) => s.status === "dispensado").length || 0;
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
@@ -2352,8 +2361,13 @@ function HistoryDialog({ title, onClose }: {
                 {!checklistLoading && checklist?.steps && (
                   <>
                     <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> {verdes}
+                      <CheckCircle2 className="w-3.5 h-3.5" /> {verdes - dispensados}
                     </span>
+                    {dispensados > 0 && (
+                      <span className="flex items-center gap-1 text-xs text-amber-600 font-medium" title="Dispensados (sistema iniciou em 16/04)">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {dispensados}
+                      </span>
+                    )}
                     <span className="flex items-center gap-1 text-xs text-red-600 font-medium">
                       <XCircle className="w-3.5 h-3.5" /> {vermelhos}
                     </span>
@@ -3025,6 +3039,11 @@ Documento para Tomada de Decisão
                   <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5" /> {checklist.steps.filter((s: any) => s.status === "verde").length} realizados
                   </span>
+                  {checklist.steps.filter((s: any) => s.status === "dispensado").length > 0 && (
+                    <span className="flex items-center gap-1 text-xs text-amber-600 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> {checklist.steps.filter((s: any) => s.status === "dispensado").length} dispensados
+                    </span>
+                  )}
                   <span className="flex items-center gap-1 text-xs text-red-600 font-medium">
                     <XCircle className="w-3.5 h-3.5" /> {checklist.steps.filter((s: any) => s.status === "vermelho").length} falhas
                   </span>
@@ -3035,12 +3054,15 @@ Documento para Tomada de Decisão
                 <div className="space-y-1.5">
                   {(checklist.steps as any[]).map((step: any) => {
                     const bgClass = step.status === "verde" ? "bg-emerald-50 border-emerald-200" :
+                      step.status === "dispensado" ? "bg-amber-50 border-amber-200" :
                       step.status === "vermelho" ? "bg-red-50 border-red-200" :
                       step.status === "pendente" ? "bg-blue-50 border-blue-200" : "bg-slate-50 border-slate-200";
                     const textClass = step.status === "verde" ? "text-emerald-700" :
+                      step.status === "dispensado" ? "text-amber-700" :
                       step.status === "vermelho" ? "text-red-700" :
                       step.status === "pendente" ? "text-blue-700" : "text-slate-400";
                     const icon = step.status === "verde" ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> :
+                      step.status === "dispensado" ? <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" /> :
                       step.status === "vermelho" ? <XCircle className="w-4 h-4 text-red-500 shrink-0" /> :
                       step.status === "pendente" ? <Circle className="w-4 h-4 text-blue-500 shrink-0" /> :
                       <Circle className="w-4 h-4 text-slate-300 shrink-0" />;

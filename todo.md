@@ -2834,3 +2834,6 @@
 - [x] Produção → Madeira PA: investigar estrutura dos dados de produção e como se relacionam com produtos de madeira
 - [x] Produção → Madeira PA: implementar lógica de atualização automática do estoque ao registrar produção (flag reativada)
 - [x] Produção → Madeira PA: testes automatizados para a integração produção→estoque (6 testes passando)
+- [x] Checklist cobrança: títulos com dias anteriores ao início do sistema (16/04/2026) devem ser dispensados (verde) em vez de falha (vermelho)
+- [x] Checklist cobrança: sem cascata de erros para dias anteriores ao início do sistema
+- [x] Checklist cobrança: ajustar frontend para exibir "Dispensado — sistema iniciou em 16/04" em vez de "NENHUMA AÇÃO registrada"

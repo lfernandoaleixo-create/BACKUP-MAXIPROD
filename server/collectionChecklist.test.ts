@@ -102,35 +102,20 @@ describe("getCollectionChecklist", () => {
     expect(result.diasAtraso).toBeGreaterThanOrEqual(10);
   });
 
-  it("should mark all action days as vermelho when no actions registered (cascade)", async () => {
+  it("should mark all action days as dispensado when no actions registered and all days before system start", async () => {
     // testId is overdue 10 days with no actions registered
+    // All 7 days of the roteiro fall before 2026-04-16 (system start)
+    // so they should all be 'dispensado' instead of 'vermelho'
     const result = await caller.financial.getCollectionChecklist({ receivableId: testId });
 
-    // Dia 1 (acao) should be vermelho (no action registered, day passed)
-    const dia1 = result.steps.find((s: any) => s.dia === 1);
-    expect(dia1).toBeDefined();
-    expect(dia1!.status).toBe("vermelho");
-
-    // Dia 3 (acao) should also be vermelho (cascade from dia 1)
-    const dia3 = result.steps.find((s: any) => s.dia === 3);
-    expect(dia3).toBeDefined();
-    expect(dia3!.status).toBe("vermelho");
-
-    // Dia 5 (acao) should also be vermelho (cascade)
-    const dia5 = result.steps.find((s: any) => s.dia === 5);
-    expect(dia5).toBeDefined();
-    expect(dia5!.status).toBe("vermelho");
-
-    // Wait days (2, 4, 6) should also be vermelho (cascade)
-    const dia2 = result.steps.find((s: any) => s.dia === 2);
-    expect(dia2!.status).toBe("vermelho");
-    const dia4 = result.steps.find((s: any) => s.dia === 4);
-    expect(dia4!.status).toBe("vermelho");
-    const dia6 = result.steps.find((s: any) => s.dia === 6);
-    expect(dia6!.status).toBe("vermelho");
+    // All days should be dispensado (vencimento ~10 days ago, all roteiro days before system start)
+    for (const step of result.steps as any[]) {
+      expect(step.status).toBe("dispensado");
+      expect(step.motivo).toContain("Dispensado");
+    }
   });
 
-  it("should mark dia 1 as verde when manual action is registered on that date", async () => {
+  it("should mark dia 1 as dispensado with retroactive action note when action registered before system start", async () => {
     const db = await getDb();
     if (!db) return;
 
@@ -139,7 +124,7 @@ describe("getCollectionChecklist", () => {
     const vencDate = (rec.vencimentoData || "").split("T")[0];
     const dia1Date = new Date(new Date(vencDate).getTime() + 1 * 86400000).toISOString().split("T")[0];
 
-    // Insert a manual action on dia 1
+    // Insert a manual action on dia 1 (before system start)
     await db.insert(collectionDailyActions).values({
       receivableId: testId,
       actionDate: dia1Date,
@@ -151,30 +136,26 @@ describe("getCollectionChecklist", () => {
 
     const result = await caller.financial.getCollectionChecklist({ receivableId: testId });
     const dia1 = result.steps.find((s: any) => s.dia === 1);
-    expect(dia1!.status).toBe("verde");
+    // Before system start, so dispensado (even with action)
+    expect(dia1!.status).toBe("dispensado");
+    expect(dia1!.motivo).toContain("retroativamente");
     expect(dia1!.acoes.length).toBeGreaterThanOrEqual(1);
     expect(dia1!.acoes[0].tipo).toBe("whatsapp");
 
-    // Dia 2 (espera) should be verde (no cascade error yet)
+    // Dia 2 (espera, also before system start) should be dispensado
     const dia2 = result.steps.find((s: any) => s.dia === 2);
-    expect(dia2!.status).toBe("verde");
+    expect(dia2!.status).toBe("dispensado");
   });
 
-  it("should cascade error from dia 3 when no action on dia 3", async () => {
-    // Dia 1 has action (from previous test), dia 3 has no action
+  it("should NOT cascade error from dispensado days", async () => {
+    // All days are before system start, so all should be dispensado
+    // No cascade of vermelho from dispensado days
     const result = await caller.financial.getCollectionChecklist({ receivableId: testId });
 
-    // Dia 3 should be vermelho (no action)
-    const dia3 = result.steps.find((s: any) => s.dia === 3);
-    expect(dia3!.status).toBe("vermelho");
-
-    // Dia 4 should be vermelho (cascade from dia 3)
-    const dia4 = result.steps.find((s: any) => s.dia === 4);
-    expect(dia4!.status).toBe("vermelho");
-
-    // Dia 5 should be vermelho (cascade)
-    const dia5 = result.steps.find((s: any) => s.dia === 5);
-    expect(dia5!.status).toBe("vermelho");
+    // No step should be vermelho (all are dispensado because before system start)
+    for (const step of result.steps as any[]) {
+      expect(step.status).not.toBe("vermelho");
+    }
   });
 
   it("should show acoes details in step when actions exist", async () => {
@@ -195,15 +176,60 @@ describe("getCollectionChecklist", () => {
 
     const result = await caller.financial.getCollectionChecklist({ receivableId: newRec.id });
 
-    // Dia 1 should be pendente or vermelho (today or past)
+    // Dia 1 should be pendente, vermelho, or dispensado (today, past, or before system start)
     const dia1 = result.steps.find((s: any) => s.dia === 1);
-    expect(["pendente", "vermelho"]).toContain(dia1!.status);
+    expect(["pendente", "vermelho", "dispensado"]).toContain(dia1!.status);
 
     // Dias 2-7 should be futuro
     for (let d = 2; d <= 7; d++) {
       const step = result.steps.find((s: any) => s.dia === d);
       expect(step!.status).toBe("futuro");
     }
+
+    // Clean up
+    await db.delete(accountsReceivable).where(eq(accountsReceivable.id, newRec.id));
+  });
+
+  it("should mark days before system start (16/04/2026) as dispensado, not vermelho", async () => {
+    const db = await getDb();
+    if (!db) return;
+
+    // Create a receivable with vencimento on 2026-04-14 (2 days before system start)
+    // So dia 1 = 2026-04-15 (before system start), dia 2 = 2026-04-16 (system start day)
+    const vencStr = "2026-04-14T00:00:00";
+    const [newRec] = await db.insert(accountsReceivable).values({
+      maxiprodId: 88800 + Math.floor(Math.random() * 10000),
+      estado: "EMITIDO",
+      tipo: "TITULO",
+      valorOriginal: "500.00",
+      valorLiquido: "500.00",
+      valorRetido: "0.00",
+      valorDeDesconto: "0.00",
+      valorDeAcrescimo: "0.00",
+      valorRecebidoLiquido: "0.00",
+      emissaoData: "2026-01-01T00:00:00",
+      vencimentoData: vencStr,
+      vencimentoOriginalData: vencStr,
+      referenteA: "DISPENSADO TEST ref. NF 888",
+      parcela: 1,
+      parcelasQuantidadeTotal: 1,
+      cliente: "CLIENTE DISPENSADO TEST",
+      empresaNome: "PALITOS INDUSTRIA",
+    } as any).$returningId();
+
+    const result = await caller.financial.getCollectionChecklist({ receivableId: newRec.id });
+
+    // Dia 1 = 2026-04-15 (before system start) should be dispensado
+    const dia1 = result.steps.find((s: any) => s.dia === 1);
+    expect(dia1!.status).toBe("dispensado");
+    expect(dia1!.motivo).toContain("Dispensado");
+    expect(dia1!.motivo).toContain("16/04");
+
+    // Dia 2 = 2026-04-16 (system start day) should NOT be dispensado
+    // It should be verde (espera day, no cascade from dispensado)
+    const dia2 = result.steps.find((s: any) => s.dia === 2);
+    expect(dia2!.status).not.toBe("dispensado");
+    expect(dia2!.status).not.toBe("vermelho"); // No cascade from dispensado
 
     // Clean up
     await db.delete(accountsReceivable).where(eq(accountsReceivable.id, newRec.id));
@@ -239,7 +265,7 @@ describe("getCollectionChecklist", () => {
       expect(step).toHaveProperty("acoes");
       expect(step).toHaveProperty("isToday");
       expect(step).toHaveProperty("isFuture");
-      expect(["verde", "vermelho", "pendente", "futuro"]).toContain(step.status);
+      expect(["verde", "vermelho", "pendente", "futuro", "dispensado"]).toContain(step.status);
       expect(["acao", "espera", "decisao"]).toContain(step.tipo);
     }
   });

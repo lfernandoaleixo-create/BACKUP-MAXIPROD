@@ -3423,15 +3423,21 @@ export const financialRouter = router({
 
       let hasCascadeError = false;
 
+      // Data de início do sistema de cobrança (16/04/2026).
+      // Dias do roteiro ANTERIORES a esta data são dispensados (verde)
+      // porque não havia processo de cobrança ativo.
+      const SISTEMA_COBRANCA_INICIO = "2026-04-16";
+
       const steps = roteiro.map(step => {
         const stepDate = new Date(vencMs + step.dia * 86400000).toISOString().split("T")[0];
         const isFuture = stepDate > todayStr;
         const isToday = stepDate === todayStr;
+        const isBeforeSystemStart = stepDate < SISTEMA_COBRANCA_INICIO;
         const actionsOnDay = actionsByDate[stepDate] || [];
         const manualActions = actionsOnDay.filter(a => !a.isAutomatic && a.actionType !== "sem_contato");
         const autoSemContato = actionsOnDay.filter(a => a.actionType === "sem_contato");
 
-        let status: "verde" | "vermelho" | "pendente" | "futuro" = "futuro";
+        let status: "verde" | "vermelho" | "pendente" | "futuro" | "dispensado" = "futuro";
         let motivo = "";
         let acoes: Array<{ tipo: string; notas: string; operador: string; hora: string }> = [];
 
@@ -3445,7 +3451,16 @@ export const financialRouter = router({
           });
         }
 
-        if (isFuture) {
+        // Dias anteriores ao início do sistema: dispensados (sem falha, sem cascata)
+        if (isBeforeSystemStart && !isFuture) {
+          status = "dispensado";
+          if (manualActions.length > 0) {
+            motivo = `Dispensado (sistema iniciou em 16/04) — ação registrada retroativamente`;
+          } else {
+            motivo = `Dispensado — sistema de cobrança iniciou em 16/04/2026`;
+          }
+          // NÃO ativa cascata de erro para dias dispensados
+        } else if (isFuture) {
           status = "futuro";
           motivo = "Dia ainda não chegou";
         } else if (hasCascadeError) {
