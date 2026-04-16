@@ -256,12 +256,15 @@ export const productionRouter = router({
         }
       }
 
-      // 3. Delete old entries whose tipoMadeira is NOT in the new set
+      // 3. Soft-delete old entries whose tipoMadeira is NOT in the new set
+      // REGRA: NUNCA apagar histórico de produção. Setar quantidade para 0 em vez de deletar.
       for (const old of allExisting) {
         const oldVariant = old.tipoMadeira || null;
         if (!newVariants.has(oldVariant)) {
-          await db.delete(productionEntries).where(eq(productionEntries.id, old.id));
-          results.push({ tipoMadeira: oldVariant, action: "deleted" });
+          await db.update(productionEntries)
+            .set({ quantidade: "0", observacoes: "[REMOVIDO]" })
+            .where(eq(productionEntries.id, old.id));
+          results.push({ tipoMadeira: oldVariant, action: "soft-deleted" });
         }
       }
 
@@ -376,7 +379,10 @@ export const productionRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      await db.delete(productionEntries).where(eq(productionEntries.id, input.id));
+      // REGRA: NUNCA apagar histórico de produção. Soft-delete: setar quantidade para 0.
+      await db.update(productionEntries)
+        .set({ quantidade: "0", observacoes: "[REMOVIDO]" })
+        .where(eq(productionEntries.id, input.id));
       return { success: true };
     }),
 
@@ -847,7 +853,7 @@ export const productionRouter = router({
       const entry = existing[0];
       const qty = parseFloat(String(entry.quantidade)) || 0;
 
-      // Subtrair do production_entries
+      // Subtrair do production_entries (NUNCA deletar, apenas reduzir quantidade)
       if (qty > 0) {
         const pe = await db.select().from(productionEntries)
           .where(and(
@@ -860,17 +866,17 @@ export const productionRouter = router({
         if (pe.length > 0) {
           const peQty = parseFloat(String(pe[0].quantidade)) || 0;
           const newPeQty = Math.max(0, peQty - qty);
-          if (newPeQty > 0) {
-            await db.update(productionEntries)
-              .set({ quantidade: String(newPeQty) })
-              .where(eq(productionEntries.id, pe[0].id));
-          } else {
-            await db.delete(productionEntries).where(eq(productionEntries.id, pe[0].id));
-          }
+          // REGRA: NUNCA apagar histórico de produção. Setar quantidade para 0 em vez de deletar.
+          await db.update(productionEntries)
+            .set({ quantidade: String(newPeQty) })
+            .where(eq(productionEntries.id, pe[0].id));
         }
       }
 
-      await db.delete(pirografiaEntries).where(eq(pirografiaEntries.id, input.id));
+      // REGRA: NUNCA apagar histórico de pirografia. Soft-delete: setar quantidade para 0.
+      await db.update(pirografiaEntries)
+        .set({ quantidade: "0", observacoes: "[REMOVIDO]" })
+        .where(eq(pirografiaEntries.id, input.id));
       return { success: true };
     }),
 

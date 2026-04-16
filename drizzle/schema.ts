@@ -930,7 +930,7 @@ export type InsertMadeiraStock = typeof madeiraStock.$inferInsert;
 
 /**
  * Histórico de edições manuais de estoque (Madeira PA, Semi Pronto, Aguardando Escolha).
- * Mantém últimos 15 dias de alterações.
+ * REGRA: NUNCA apagar registros. Histórico permanente e imutável.
  */
 export const stockEditHistory = mysqlTable("stock_edit_history", {
   id: int("id").autoincrement().primaryKey(),
@@ -1068,6 +1068,7 @@ export type InsertProductionMachine = typeof productionMachines.$inferInsert;
 /**
  * Lançamentos diários de produção por setor e máquina.
  * Cada registro = produção de 1 máquina/mesa em 1 dia.
+ * REGRA: NUNCA apagar registros. Soft-delete: setar quantidade para 0 e observacoes para "[REMOVIDO]".
  */
 export const productionEntries = mysqlTable("production_entries", {
   id: int("id").autoincrement().primaryKey(),
@@ -1108,6 +1109,7 @@ export type InsertDiscountSelectionHistory = typeof discountSelectionHistory.$in
  * Registros de pirografia (Máquina Pirografar - setor 9).
  * Cada registro = 1 produto pirografado com nome do cliente em 1 máquina em 1 dia.
  * Armazena produto (Bambu ou Madeira), nome pirografado, quantidade, para histórico futuro.
+ * REGRA: NUNCA apagar registros. Soft-delete: setar quantidade para 0 e observacoes para "[REMOVIDO]".
  */
 export const pirografiaEntries = mysqlTable("pirografia_entries", {
   id: int("id").autoincrement().primaryKey(),

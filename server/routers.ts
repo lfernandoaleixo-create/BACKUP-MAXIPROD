@@ -493,7 +493,8 @@ export const appRouter = router({
       }),
 
     /**
-     * Get stock edit history for a specific card (last 15 days)
+     * Get stock edit history for a specific card.
+     * REGRA: NUNCA apagar histórico. Retorna todo o histórico disponível (sem filtro de data).
      */
     getStockEditHistory: publicProcedure
       .input(z.object({
@@ -504,10 +505,7 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) return { history: [] };
         
-        const fifteenDaysAgo = new Date();
-        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-        
-        const conditions = [eq(stockEditHistory.card, input.card), gte(stockEditHistory.createdAt, fifteenDaysAgo)];
+        const conditions = [eq(stockEditHistory.card, input.card)];
         if (input.codigoItem) {
           conditions.push(eq(stockEditHistory.codigoItem, input.codigoItem));
         }
@@ -515,7 +513,7 @@ export const appRouter = router({
         const rows = await db.select().from(stockEditHistory)
           .where(and(...conditions))
           .orderBy(desc(stockEditHistory.createdAt))
-          .limit(200);
+          .limit(500);
         
         return { history: rows };
       }),

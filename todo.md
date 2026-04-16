@@ -2773,3 +2773,5 @@
 - [x] Categorizar filtro Forma de Cobrança: PIX, Boleto, Depósito, Cheque, Dinheiro (em vez de strings brutas do banco)
 - [x] Filtro Decisão de Cobrança: mapear "COM PROTESTO" → "Com Protesto (Cartório)", "SEM PROTESTO" → "Sem Protesto"
 - [x] PDF Inadimplência: decisão de cobrança exibe label mapeado
+
+- [x] REGRA PERMANENTE: Histórico de produção registrado pela Maria NUNCA pode ser apagado em hipótese alguma
