@@ -427,29 +427,8 @@ function DailyChart({ data, mode, period, comparison }: {
 
   return (
     <div className="relative">
-      {/* Legend for lines */}
       {showLines && (
         <>
-        <div className="flex flex-wrap gap-6 mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-[3px] bg-teal-500 rounded" />
-            <span className="text-sm font-medium text-teal-700">Acum. Atual ({comparison?.currentMonthLabel})</span>
-            {currentLatest && <span className="text-sm text-teal-600 font-bold">{formatCurrencyFull(currentLatest.cumulative)}</span>}
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-[3px] bg-blue-600 rounded" />
-            <span className="text-sm font-medium text-blue-700">Anterior ({comparison?.lastMonthLabel})</span>
-            {lastLatest && <span className="text-sm text-blue-600 font-bold">{formatCurrencyFull(lastLatest.cumulative)}</span>}
-          </div>
-          {comparison?.bestMonth && comparison.bestMonth.length > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-[3px] bg-amber-600 rounded border-t border-dashed border-amber-600" />
-              <span className="text-sm font-medium text-amber-700">Melhor ({comparison?.bestMonthLabel})</span>
-              {bestLatest && <span className="text-sm text-amber-600 font-bold">{formatCurrencyFull(bestLatest.cumulative)}</span>}
-            </div>
-          )}
-        </div>
-
         {/* --- Painel de Médias Diárias --- */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           {/* Mês Atual */}
@@ -458,21 +437,17 @@ function DailyChart({ data, mode, period, comparison }: {
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-teal-100/30 rounded-full blur-2xl" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal-600/70">Média Diária Atual</span>
-                <span className="text-[9px] text-teal-600 bg-teal-100/80 px-2 py-0.5 rounded-full font-semibold">{currentDays} dias</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal-600/70">Média diária do mês atual</span>
+                <span className="text-[9px] text-teal-600 bg-teal-100/80 px-2 py-0.5 rounded-full font-semibold">Total de {currentDays} dias do mês</span>
               </div>
               <div className="text-2xl font-black text-teal-800 tracking-tight leading-none">{formatCurrencyFull(currentAvg)}</div>
               <div className="mt-3 pt-3 border-t border-teal-100/80 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-medium text-teal-500/80 uppercase tracking-wide">Total do Mês</span>
-                  <span className="text-sm font-bold text-teal-700">{formatCurrencyFull(currentTotal)}</span>
-                </div>
-                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <div className="w-4 h-[2px] bg-teal-500 rounded" />
-                    <span className="text-[10px] font-medium text-teal-500/80 uppercase tracking-wide">Acum. Atual ({comparison?.currentMonthLabel})</span>
+                    <span className="text-xs font-medium text-teal-600 uppercase tracking-wide">Acum. Atual ({comparison?.currentMonthLabel})</span>
                   </div>
-                  <span className="text-xs font-bold text-teal-600">{currentLatest ? formatCurrencyFull(currentLatest.cumulative) : 'R$ 0'}</span>
+                  <span className="text-sm font-bold text-teal-700">{currentLatest ? formatCurrencyFull(currentLatest.cumulative) : 'R$ 0'}</span>
                 </div>
               </div>
             </div>
@@ -484,21 +459,17 @@ function DailyChart({ data, mode, period, comparison }: {
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-100/30 rounded-full blur-2xl" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-600/70">Média Diária Anterior</span>
-                <span className="text-[9px] text-blue-600 bg-blue-100/80 px-2 py-0.5 rounded-full font-semibold">{lastDays} dias</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-600/70">Média diária do mês anterior</span>
+                <span className="text-[9px] text-blue-600 bg-blue-100/80 px-2 py-0.5 rounded-full font-semibold">Total de {lastDays} dias do mês</span>
               </div>
               <div className="text-2xl font-black text-blue-800 tracking-tight leading-none">{formatCurrencyFull(lastAvg)}</div>
               <div className="mt-3 pt-3 border-t border-blue-100/80 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-medium text-blue-500/80 uppercase tracking-wide">Total do Mês</span>
-                  <span className="text-sm font-bold text-blue-700">{formatCurrencyFull(lastTotal)}</span>
-                </div>
-                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <div className="w-4 h-[2px] bg-blue-600 rounded" />
-                    <span className="text-[10px] font-medium text-blue-500/80 uppercase tracking-wide">Anterior ({comparison?.lastMonthLabel})</span>
+                    <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Anterior ({comparison?.lastMonthLabel})</span>
                   </div>
-                  <span className="text-xs font-bold text-blue-600">{lastLatest ? formatCurrencyFull(lastLatest.cumulative) : 'R$ 0'}</span>
+                  <span className="text-sm font-bold text-blue-700">{lastLatest ? formatCurrencyFull(lastLatest.cumulative) : 'R$ 0'}</span>
                 </div>
               </div>
             </div>
@@ -511,21 +482,17 @@ function DailyChart({ data, mode, period, comparison }: {
               <div className="absolute -top-6 -right-6 w-24 h-24 bg-amber-100/30 rounded-full blur-2xl" />
               <div className="relative">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-600/70">Média Diária Melhor</span>
-                  <span className="text-[9px] text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full font-semibold">{bestDays} dias</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-600/70">Média diária do melhor mês de vendas</span>
+                  <span className="text-[9px] text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full font-semibold">Total de {bestDays} dias do mês</span>
                 </div>
                 <div className="text-2xl font-black text-amber-800 tracking-tight leading-none">{formatCurrencyFull(bestAvg)}</div>
                 <div className="mt-3 pt-3 border-t border-amber-100/80 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-medium text-amber-500/80 uppercase tracking-wide">Total do Mês</span>
-                    <span className="text-sm font-bold text-amber-700">{formatCurrencyFull(bestTotal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <div className="w-4 h-[2px] bg-amber-600 rounded" />
-                      <span className="text-[10px] font-medium text-amber-500/80 uppercase tracking-wide">Melhor ({comparison?.bestMonthLabel})</span>
+                      <span className="text-xs font-medium text-amber-600 uppercase tracking-wide">Melhor ({comparison?.bestMonthLabel})</span>
                     </div>
-                    <span className="text-xs font-bold text-amber-600">{bestLatest ? formatCurrencyFull(bestLatest.cumulative) : 'R$ 0'}</span>
+                    <span className="text-sm font-bold text-amber-700">{bestLatest ? formatCurrencyFull(bestLatest.cumulative) : 'R$ 0'}</span>
                   </div>
                 </div>
               </div>

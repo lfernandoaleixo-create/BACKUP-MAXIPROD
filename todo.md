@@ -2807,3 +2807,8 @@
 - [x] BUG CRÍTICO: Cobranças registradas pelo responsável NÃO estavam sendo salvas — causa: sync usava DELETE+INSERT gerando novos IDs, quebrando referências em collection_actions. Corrigido: sync agora usa UPSERT por maxiprodId (ON DUPLICATE KEY UPDATE), preservando IDs. Registros órfãos antigos limpos.
 - [x] BUG: Variações do estoque da Madeira PA não apareciam — MadeiraPACard não tinha lógica de expansão. Adicionado expandedParents, botão expandir/colapsar, e sub-linhas de variações (9 pais com variações, seguindo padrão do card Bambu)
 - [x] BUG: Madeira Semi-Pronto — colunas Pedidos e Disponível estavam vazias. Adicionado cálculo dinâmico de pedidos e disponível em ambos os cards (Semi-Pronto e Aguardando Escolha), incluindo KPIs no header e valores nas linhas da tabela
+- [x] Cards média diária: remover legenda externa (escritos fora dos cards)
+- [x] Cards média diária: remover linha "Total do Mês" de cada card
+- [x] Cards média diária: aumentar letra dos textos após travessão (de text-[10px] para text-xs e de text-xs para text-sm)
+- [x] Cards média diária: renomear títulos (Verde: "Média diária do mês atual", Azul: "Média diária do mês anterior", Amarelado: "Média diária do melhor mês de vendas")
+- [x] Cards média diária: trocar badge "X dias" por "Total de X dias do mês"
