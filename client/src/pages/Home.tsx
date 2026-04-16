@@ -3304,7 +3304,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   // Totais gerais: apenas importação (revenda + MP), exclui industrialização (madeira)
   const importItems = useMemo(() => items.filter(i => i.grupo !== "industrializacao"), [items]);
   const totalEstoqueCx = importItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
-  const totalPedidosCx = importItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
+  // Pedidos de venda: soma TODOS os produtos (importação + industrialização) = 2.505 cx
+  const totalPedidosCx = items.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
   const totalDisponivelCx = importItems.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0);
   // KPI PO: somar em caixas usando poLotes (quantidade original da PO)
   // Para produtos kg (ex: 00058), poCx está em kg para a tabela, mas o KPI deve mostrar caixas
