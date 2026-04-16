@@ -483,7 +483,7 @@ function DailyChart({ data, mode, period, comparison }: {
               <div className="relative">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-600/70">Média diária do melhor mês de vendas</span>
-                  <span className="text-[9px] text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full font-semibold">Total de {bestDays} dias do mês</span>
+                  <span className="text-[9px] text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">Total de {bestDays} dias do mês</span>
                 </div>
                 <div className="text-2xl font-black text-amber-800 tracking-tight leading-none">{formatCurrencyFull(bestAvg)}</div>
                 <div className="mt-3 pt-3 border-t border-amber-100/80 space-y-1.5">
