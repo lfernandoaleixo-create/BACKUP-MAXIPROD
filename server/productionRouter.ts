@@ -137,10 +137,8 @@ export const productionRouter = router({
       }
 
       // ─── Embalagem (setor sem máquina) com data >= 15/04/2026 alimenta estoque Madeira PA ───
-      // ⚠️ AUTO-FEED DESABILITADO: estoque Madeira PA em modo MANUAL por solicitação do Guilherme.
-      // A produção continua sendo registrada no histórico, mas NÃO altera o estoque automaticamente.
-      // Para reativar: remover o flag MADEIRA_STOCK_AUTO_FEED_DISABLED abaixo.
-      const MADEIRA_STOCK_AUTO_FEED_DISABLED = true; // ← Mudar para false para reativar
+      // AUTO-FEED REATIVADO em 16/04/2026: lançamentos de produção da Maria alimentam estoque Madeira PA automaticamente.
+      const MADEIRA_STOCK_AUTO_FEED_DISABLED = false; // Reativado por solicitação do Guilherme
       const STOCK_CUTOFF_DATE = "2026-04-15";
       if (
         input.machineId === null &&
@@ -167,12 +165,12 @@ export const productionRouter = router({
               codigoItem,
               descricaoItem: null,
               valorAnterior: String(currentStock),
-              valorNovo: MADEIRA_STOCK_AUTO_FEED_DISABLED ? `${String(newStock)} (não aplicado - manual)` : String(newStock),
+              valorNovo: String(newStock),
               operador: `Produção (${input.lancadoPor || "Sistema"})`,
               tipo: "alteracao",
             });
 
-            // Upsert stock - SÓ se auto-feed estiver habilitado
+            // Upsert stock
             if (!MADEIRA_STOCK_AUTO_FEED_DISABLED) {
               await db.insert(madeiraStock)
                 .values({
@@ -239,8 +237,8 @@ export const productionRouter = router({
       const newVariants = new Set(input.entries.map(e => e.tipoMadeira || null));
 
       // ─── Embalagem auto-feed: verificar se é setor Embalagem para atualizar estoque ───
-      // ⚠️ AUTO-FEED DESABILITADO: estoque Madeira PA em modo MANUAL por solicitação do Guilherme.
-      const BATCH_MADEIRA_STOCK_AUTO_FEED_DISABLED = true; // ← Mudar para false para reativar
+      // AUTO-FEED REATIVADO em 16/04/2026: lançamentos de produção da Maria alimentam estoque Madeira PA automaticamente.
+      const BATCH_MADEIRA_STOCK_AUTO_FEED_DISABLED = false; // Reativado por solicitação do Guilherme
       const STOCK_CUTOFF_DATE = "2026-04-15";
       let isEmbalagemSector = false;
       if (input.machineId === null && input.data >= STOCK_CUTOFF_DATE) {
@@ -347,12 +345,12 @@ export const productionRouter = router({
               codigoItem,
               descricaoItem: null,
               valorAnterior: String(currentStock),
-              valorNovo: BATCH_MADEIRA_STOCK_AUTO_FEED_DISABLED ? `${String(newStock)} (não aplicado - manual)` : String(newStock),
+              valorNovo: String(newStock),
               operador: `Produção (${lancadoPor})`,
               tipo: "alteracao",
             });
 
-            // Upsert stock - SÓ se auto-feed estiver habilitado
+            // Upsert stock
             if (!BATCH_MADEIRA_STOCK_AUTO_FEED_DISABLED) {
               await db.insert(madeiraStock)
                 .values({

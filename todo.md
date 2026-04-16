@@ -2830,3 +2830,7 @@
 - [x] Madeira PA valorização: investigar por que maioria dos produtos não tem preço médio preenchido (causa: preço nunca era calculado automaticamente para madeira)
 - [x] Madeira PA valorização: buscar NFs e pedidos de venda de TODOS os produtos de madeira no Maxiprod (49 de 50 têm vendas)
 - [x] Madeira PA valorização: preencher automaticamente R$/CX para todos os produtos com histórico de vendas (botão Auto-preencher Preços + preço sugerido inline)
+- [x] Produção → Madeira PA: lançamentos de produção da Maria devem alimentar automaticamente o estoque de Madeira - Produto Acabado (auto-feed reativado)
+- [x] Produção → Madeira PA: investigar estrutura dos dados de produção e como se relacionam com produtos de madeira
+- [x] Produção → Madeira PA: implementar lógica de atualização automática do estoque ao registrar produção (flag reativada)
+- [x] Produção → Madeira PA: testes automatizados para a integração produção→estoque (6 testes passando)
