@@ -2750,3 +2750,18 @@
 - [x] PDF Inadimplência: ajustar para modo paisagem perfeito, pronto para impressão deitada
 - [x] PDF Inadimplência: sair salvo em modo paisagem real (como lâmina de slide), ocupando folha inteira, uma página por folha
 - [x] PDF Inadimplência: garantir que salve em paisagem real reconhecido pelo macOS Preview (como lâmina de slide)
+- [ ] BUG: Erro no histórico da aba Produção (senha Fernando)
+- [x] Dashboard financeiro: criar seletor de mês como filtro (além do seletor de data diário)
+- [x] Inadimplência: filtro multi-seleção por vendedor
+- [x] Inadimplência: filtro multi-seleção por forma de cobrança
+- [x] Inadimplência: filtro multi-seleção por decisão de cobrança
+- [x] Sistema de cobrança: criar tabela collection_actions no banco (histórico de ações por cliente) (já existia)
+- [x] Sistema de cobrança: backend tRPC - CRUD de ações de cobrança (adicionar, listar, editar, excluir) (já existia)
+- [x] Sistema de cobrança: frontend - painel de histórico de cobrança por cliente (expandível na tabela) (já existia)
+- [x] Sistema de cobrança: export PDF do histórico de cobrança de um cliente
+- [x] Fluxo automático: telefone azul dia 1, cobrança dia 3, dia 5 (indicadores visuais) (já existia)
+- [x] Fluxo automático: card vendedor dia 7 com documento para decisão (protesto/outra ação) (já existia)
+- [x] Fluxo automático: clientes 2-7 dias - alerta Thiago para perguntar ao vendedor (já existia)
+- [x] Fluxo automático: relatório vendedor dia 7 (apenas para clientes que entram a partir de hoje) (já existia)
+- [x] Notificação: card na aba inadimplência quando decisão de cobrança não preenchida (Guilherme/Fernando/Vitória)
+- [x] Cards média diária Vendas: remover badges % do card verde, mover Total para dentro dos cards, visual profissional

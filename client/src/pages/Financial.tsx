@@ -2070,6 +2070,57 @@ export default function Financial() {
 
   // Seletor de mês
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [monthSelectorDate, setMonthSelectorDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+
+  const monthSelectorLabel = useMemo(() => {
+    const [y, m] = monthSelectorDate.split("-");
+    const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    return `${months[parseInt(m) - 1]} / ${y}`;
+  }, [monthSelectorDate]);
+
+  const isCurrentMonthSelected = useMemo(() => {
+    const now = new Date();
+    return monthSelectorDate === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  }, [monthSelectorDate]);
+
+  function changeMonthSelector(delta: number) {
+    const [y, m] = monthSelectorDate.split("-").map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    setMonthSelectorDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+
+  function goToCurrentMonth() {
+    const now = new Date();
+    setMonthSelectorDate(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+  }
+
+  // Dados filtrados pelo mês selecionado no seletor
+  const monthSelectorRange = useMemo(() => {
+    const [y, m] = monthSelectorDate.split("-").map(Number);
+    const firstDay = new Date(y, m - 1, 1);
+    const lastDay = new Date(y, m, 0);
+    const now = new Date();
+    const isCurrentMonth = y === now.getFullYear() && m === (now.getMonth() + 1);
+    const fromDay = isCurrentMonth
+      ? `${y}-${String(m).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+      : `${y}-${String(m).padStart(2, "0")}-01`;
+    return {
+      from: fromDay,
+      to: `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`,
+    };
+  }, [monthSelectorDate]);
+
+  const { data: selectorMonthPagar, isLoading: loadingSelectorPagar } = trpc.financial.getContasAPagar.useQuery(
+    { estado: "EMITIDO", dateFrom: monthSelectorRange.from, dateTo: monthSelectorRange.to, limit: 500, sortBy: "vencimentoData", sortDir: "asc" },
+    { enabled: activeTab === "visao-geral" }
+  );
+  const { data: selectorMonthReceber, isLoading: loadingSelectorReceber } = trpc.financial.getContasAReceber.useQuery(
+    { estado: "EMITIDO", dateFrom: monthSelectorRange.from, dateTo: monthSelectorRange.to, limit: 500, sortBy: "vencimentoData", sortDir: "asc" },
+    { enabled: activeTab === "visao-geral" }
+  );
   const [showCharts, setShowCharts] = useState(false);
   const showReceberChart = showCharts;
   const showPagarChart = showCharts;
@@ -2221,6 +2272,59 @@ export default function Financial() {
               />
             )}
             <ConnectionStatusCard />
+
+            {/* Seletor de Mês */}
+            <div className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm">
+              <CalendarDays className="w-5 h-5 text-teal-600" />
+              <button onClick={() => changeMonthSelector(-1)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
+                <ArrowLeft className="w-4 h-4 text-slate-600" />
+              </button>
+              <div className="flex items-center gap-2">
+                <input
+                  type="month"
+                  value={monthSelectorDate}
+                  onChange={(e) => setMonthSelectorDate(e.target.value)}
+                  className="text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <span className="text-sm text-slate-500 font-medium">
+                  {monthSelectorLabel}
+                  {isCurrentMonthSelected && <span className="ml-1.5 text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full font-semibold">Mês Atual</span>}
+                </span>
+              </div>
+              <button onClick={() => changeMonthSelector(1)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
+                <ChevronRight className="w-4 h-4 text-slate-600" />
+              </button>
+              {!isCurrentMonthSelected && (
+                <button onClick={goToCurrentMonth} className="ml-auto text-xs text-teal-600 hover:text-teal-700 font-medium px-2 py-1 rounded hover:bg-teal-50 transition-colors">
+                  Ir para Mês Atual
+                </button>
+              )}
+              {/* Resumo do mês selecionado */}
+              <div className="ml-auto flex items-center gap-4">
+                {loadingSelectorReceber || loadingSelectorPagar ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-xs text-slate-500">Receber:</span>
+                      <span className="text-xs font-bold text-emerald-700">
+                        {formatCurrency(selectorMonthReceber?.items?.reduce((s: number, i: any) => s + (i.valorAReceber || 0), 0) ?? 0)}
+                      </span>
+                      <span className="text-[10px] text-slate-400">({selectorMonthReceber?.total ?? 0})</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <TrendingDown className="w-3.5 h-3.5 text-red-600" />
+                      <span className="text-xs text-slate-500">Pagar:</span>
+                      <span className="text-xs font-bold text-red-700">
+                        {formatCurrency(selectorMonthPagar?.items?.reduce((s: number, i: any) => s + (i.valorAReceber || i.valorAPagar || 0), 0) ?? 0)}
+                      </span>
+                      <span className="text-[10px] text-slate-400">({selectorMonthPagar?.total ?? 0})</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
 
             {/* Resumo Financeiro (Faturamento + Vendas vs Contas Pagas) */}
             {hasGranularAccess("fin.verResumoFinanceiro") && <ResumoFinanceiroCard />}

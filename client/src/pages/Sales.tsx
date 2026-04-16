@@ -453,55 +453,60 @@ function DailyChart({ data, mode, period, comparison }: {
         {/* --- Painel de Médias Diárias --- */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           {/* Mês Atual */}
-          <div className="relative bg-gradient-to-br from-teal-50 to-white border border-teal-200/60 rounded-xl p-4 overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-teal-600" />
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-teal-600/80">Média Diária Atual</span>
-              <span className="text-[9px] text-teal-500 bg-teal-100/60 px-1.5 py-0.5 rounded-full font-medium">{currentDays} dias</span>
-            </div>
-            <div className="text-xl font-extrabold text-teal-800 tracking-tight">{formatCurrencyFull(currentAvg)}</div>
-            <div className="flex items-center gap-2 mt-2">
-              {pctVsBest > 0 && (
-                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                  pctVsBest >= 100 ? 'bg-emerald-100 text-emerald-700' : pctVsBest >= 80 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
-                }`}>
-                  {pctVsBest.toFixed(0)}% do melhor
-                </span>
-              )}
-              {pctVsLast > 0 && (
-                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                  pctVsLast >= 100 ? 'bg-emerald-100 text-emerald-700' : pctVsLast >= 80 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
-                }`}>
-                  {pctVsLast.toFixed(0)}% do anterior
-                </span>
-              )}
+          <div className="relative bg-gradient-to-br from-teal-50 via-white to-teal-50/30 border border-teal-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-400 via-emerald-500 to-teal-600" />
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-teal-100/30 rounded-full blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal-600/70">Média Diária Atual</span>
+                <span className="text-[9px] text-teal-600 bg-teal-100/80 px-2 py-0.5 rounded-full font-semibold">{currentDays} dias</span>
+              </div>
+              <div className="text-2xl font-black text-teal-800 tracking-tight leading-none">{formatCurrencyFull(currentAvg)}</div>
+              <div className="mt-3 pt-3 border-t border-teal-100/80">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-medium text-teal-500/80 uppercase tracking-wide">Total do Mês</span>
+                  <span className="text-sm font-bold text-teal-700">{formatCurrencyFull(currentTotal)}</span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Mês Anterior */}
-          <div className="relative bg-gradient-to-br from-blue-50 to-white border border-blue-200/60 rounded-xl p-4 overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600" />
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600/80">Média Diária Anterior</span>
-              <span className="text-[9px] text-blue-500 bg-blue-100/60 px-1.5 py-0.5 rounded-full font-medium">{lastDays} dias</span>
-            </div>
-            <div className="text-xl font-extrabold text-blue-800 tracking-tight">{formatCurrencyFull(lastAvg)}</div>
-            <div className="mt-2">
-              <span className="text-[10px] text-blue-500 font-medium">Total: {formatCurrencyFull(lastTotal)}</span>
+          <div className="relative bg-gradient-to-br from-blue-50 via-white to-blue-50/30 border border-blue-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-600" />
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-100/30 rounded-full blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-600/70">Média Diária Anterior</span>
+                <span className="text-[9px] text-blue-600 bg-blue-100/80 px-2 py-0.5 rounded-full font-semibold">{lastDays} dias</span>
+              </div>
+              <div className="text-2xl font-black text-blue-800 tracking-tight leading-none">{formatCurrencyFull(lastAvg)}</div>
+              <div className="mt-3 pt-3 border-t border-blue-100/80">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-medium text-blue-500/80 uppercase tracking-wide">Total do Mês</span>
+                  <span className="text-sm font-bold text-blue-700">{formatCurrencyFull(lastTotal)}</span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Melhor Mês */}
           {comparison?.bestMonth && comparison.bestMonth.length > 0 && (
-            <div className="relative bg-gradient-to-br from-amber-50 to-white border border-amber-200/60 rounded-xl p-4 overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-amber-600" />
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600/80">Média Diária Melhor</span>
-                <span className="text-[9px] text-amber-500 bg-amber-100/60 px-1.5 py-0.5 rounded-full font-medium">{bestDays} dias</span>
-              </div>
-              <div className="text-xl font-extrabold text-amber-800 tracking-tight">{formatCurrencyFull(bestAvg)}</div>
-              <div className="mt-2">
-                <span className="text-[10px] text-amber-500 font-medium">Total: {formatCurrencyFull(bestTotal)}</span>
+            <div className="relative bg-gradient-to-br from-amber-50 via-white to-amber-50/30 border border-amber-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+              <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600" />
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-amber-100/30 rounded-full blur-2xl" />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-600/70">Média Diária Melhor</span>
+                  <span className="text-[9px] text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full font-semibold">{bestDays} dias</span>
+                </div>
+                <div className="text-2xl font-black text-amber-800 tracking-tight leading-none">{formatCurrencyFull(bestAvg)}</div>
+                <div className="mt-3 pt-3 border-t border-amber-100/80">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-medium text-amber-500/80 uppercase tracking-wide">Total do Mês</span>
+                    <span className="text-sm font-bold text-amber-700">{formatCurrencyFull(bestTotal)}</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}

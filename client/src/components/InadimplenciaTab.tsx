@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import React from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
-import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download, Lock, Loader2, FileDown } from "lucide-react";
+import { Search, Phone, MessageCircle, Mail, User, Calendar, AlertTriangle, Clock, FileText, ChevronDown, ChevronUp, ChevronRight, X, Users, DollarSign, History, Shield, ShieldAlert, ShieldCheck, Send, ExternalLink, Download, Lock, Loader2, FileDown, Filter, Check } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -409,12 +409,95 @@ type Title = {
   } | null;
 };
 
+/* ---- Multi-Select Filter Dropdown ---- */
+function MultiSelectFilter({ label, options, selected, onChange }: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function toggle(val: string) {
+    if (selected.includes(val)) {
+      onChange(selected.filter(v => v !== val));
+    } else {
+      onChange([...selected, val]);
+    }
+  }
+
+  if (options.length === 0) return null;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+          selected.length > 0
+            ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm"
+            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+        }`}
+      >
+        <Filter className="w-3 h-3" />
+        {label}
+        {selected.length > 0 && (
+          <span className="bg-blue-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{selected.length}</span>
+        )}
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1 max-h-64 overflow-y-auto">
+          {selected.length > 0 && (
+            <button
+              onClick={() => onChange([])}
+              className="w-full px-3 py-1.5 text-left text-xs text-red-500 hover:bg-red-50 font-medium border-b border-slate-100"
+            >
+              Limpar seleção ({selected.length})
+            </button>
+          )}
+          {options.map(opt => {
+            const isSelected = selected.includes(opt);
+            return (
+              <button
+                key={opt}
+                onClick={() => toggle(opt)}
+                className={`w-full px-3 py-2 text-left text-xs flex items-center gap-2 transition-colors ${
+                  isSelected ? "bg-blue-50 text-blue-700 font-medium" : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                  isSelected ? "bg-blue-600 border-blue-600" : "border-slate-300"
+                }`}>
+                  {isSelected && <Check className="w-3 h-3 text-white" />}
+                </div>
+                <span className="truncate">{opt}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function InadimplenciaTab() {
   const { operator, hasGranularAccess } = useOperator();
   const canCobranca = hasGranularAccess("fin.cobranca");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [agingFilter, setAgingFilter] = useState<string | null>(null);
+  const [vendedorFilter, setVendedorFilter] = useState<string[]>([]);
+  const [formaCobrancaFilter, setFormaCobrancaFilter] = useState<string[]>([]);
+  const [decisaoCobrancaFilter, setDecisaoCobrancaFilter] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"titulos" | "clientes">("titulos");
   const [sortBy, setSortBy] = useState<"valor" | "dias" | "cliente" | "vencimento">("dias");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -567,13 +650,49 @@ export default function InadimplenciaTab() {
     },
   });
 
-  // Filtro por faixa de atraso
+  // Extrair opções únicas para os filtros
+  const vendedorOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of titles) {
+      if (t.vendedor && t.vendedor.trim()) set.add(t.vendedor.trim());
+    }
+    return Array.from(set).sort();
+  }, [titles]);
+
+  const formaCobrancaOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of titles) {
+      if (t.formaCobranca && t.formaCobranca.trim()) set.add(t.formaCobranca.trim());
+    }
+    return Array.from(set).sort();
+  }, [titles]);
+
+  const decisaoCobrancaOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of titles) {
+      if (t.decisaoCobranca && t.decisaoCobranca.trim() && t.decisaoCobranca !== '\u2014') set.add(t.decisaoCobranca.trim());
+    }
+    return Array.from(set).sort();
+  }, [titles]);
+
+  // Filtro por faixa de atraso + vendedor + forma cobrança + decisão cobrança
   const filteredTitles = useMemo(() => {
-    if (!agingFilter) return titles;
-    const range = AGING_RANGES.find(r => r.key === agingFilter);
-    if (!range) return titles;
-    return titles.filter(t => t.diasAtraso >= range.min && t.diasAtraso <= range.max);
-  }, [titles, agingFilter]);
+    let result = titles;
+    if (agingFilter) {
+      const range = AGING_RANGES.find(r => r.key === agingFilter);
+      if (range) result = result.filter(t => t.diasAtraso >= range.min && t.diasAtraso <= range.max);
+    }
+    if (vendedorFilter.length > 0) {
+      result = result.filter(t => vendedorFilter.includes(t.vendedor?.trim() || ''));
+    }
+    if (formaCobrancaFilter.length > 0) {
+      result = result.filter(t => formaCobrancaFilter.includes(t.formaCobranca?.trim() || ''));
+    }
+    if (decisaoCobrancaFilter.length > 0) {
+      result = result.filter(t => decisaoCobrancaFilter.includes(t.decisaoCobranca?.trim() || ''));
+    }
+    return result;
+  }, [titles, agingFilter, vendedorFilter, formaCobrancaFilter, decisaoCobrancaFilter]);
 
   // Status counts
   const statusCounts = useMemo(() => {
@@ -788,10 +907,14 @@ export default function InadimplenciaTab() {
         </div>
       </div>
 
-      {/* Alerta Vitória - Decisão de Cobrança */}
-      {isVitoria && titles.length > 0 && (() => {
+      {/* Alerta Decisão de Cobrança - Guilherme, Fernando, Vitória */}
+      {(() => {
+        const alertOperators = ["Guilherme", "Fernando", "Vitoria", "Vitória"];
+        const isAlertOperator = operator && alertOperators.includes(operator.name);
+        if (!isAlertOperator || titles.length === 0) return null;
         const semDecisao = titles.filter(t => !t.decisaoCobranca || t.decisaoCobranca.trim() === '' || t.decisaoCobranca === '—');
         if (semDecisao.length === 0) return null;
+        const operatorFirstName = operator!.name.split(' ')[0];
         return (
           <div className="rounded-xl border-2 border-amber-400 bg-gradient-to-r from-amber-50 via-amber-100 to-orange-50 p-4 shadow-lg" style={{ animation: 'pulse 2s ease-in-out infinite' }}>
             <div className="flex items-start gap-3">
@@ -800,16 +923,18 @@ export default function InadimplenciaTab() {
               </div>
               <div className="flex-1">
                 <h3 className="text-amber-900 font-bold text-sm flex items-center gap-2">
-                  Atenção, Vitória!
+                  Atenção, {operatorFirstName}!
                   <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">{semDecisao.length} pendente{semDecisao.length > 1 ? 's' : ''}</span>
                 </h3>
                 <p className="text-amber-800 text-xs mt-1">
                   Existem <strong>{semDecisao.length} título{semDecisao.length > 1 ? 's' : ''}</strong> sem decisão de cobrança preenchida no Maxiprod.
-                  Vendas feitas a partir de hoje sem decisão preenchida são de sua responsabilidade.
+                  Clientes inadimplentes a partir de hoje sem decisão preenchida precisam de atenção imediata.
                 </p>
-                <p className="text-amber-700 text-[10px] mt-1.5">
-                  Clique no ícone <Eye className="w-3 h-3 inline text-amber-600" /> ao lado de cada título sem decisão para ver o passo a passo de como preencher.
-                </p>
+                {isVitoria && (
+                  <p className="text-amber-700 text-[10px] mt-1.5">
+                    Clique no ícone <Eye className="w-3 h-3 inline text-amber-600" /> ao lado de cada título sem decisão para ver o passo a passo de como preencher.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -859,31 +984,80 @@ export default function InadimplenciaTab() {
       </div>
 
       {/* Busca */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por cliente, documento, referência ou vendedor..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-              <X className="w-4 h-4" />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar por cliente, documento, referência ou vendedor..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          {(statusFilter !== "todos" || agingFilter || vendedorFilter.length > 0 || formaCobrancaFilter.length > 0 || decisaoCobrancaFilter.length > 0) && (
+            <button
+              onClick={() => { setStatusFilter("todos"); setAgingFilter(null); setVendedorFilter([]); setFormaCobrancaFilter([]); setDecisaoCobrancaFilter([]); }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200 shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+              Limpar filtros
             </button>
           )}
         </div>
-        {(statusFilter !== "todos" || agingFilter) && (
-          <button
-            onClick={() => { setStatusFilter("todos"); setAgingFilter(null); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 text-slate-600 text-sm hover:bg-slate-200"
-          >
-            <X className="w-3.5 h-3.5" />
-            Limpar filtros
-          </button>
-        )}
+
+        {/* Filtros multi-seleção */}
+        <div className="flex flex-wrap gap-2">
+          <MultiSelectFilter
+            label="Vendedor"
+            options={vendedorOptions}
+            selected={vendedorFilter}
+            onChange={setVendedorFilter}
+          />
+          <MultiSelectFilter
+            label="Forma Cobr."
+            options={formaCobrancaOptions}
+            selected={formaCobrancaFilter}
+            onChange={setFormaCobrancaFilter}
+          />
+          <MultiSelectFilter
+            label="Decisão Cobr."
+            options={decisaoCobrancaOptions}
+            selected={decisaoCobrancaFilter}
+            onChange={setDecisaoCobrancaFilter}
+          />
+          {/* Badges dos filtros ativos */}
+          {vendedorFilter.map(v => (
+            <span key={`v-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+              {v}
+              <button onClick={() => setVendedorFilter(f => f.filter(x => x !== v))} className="hover:text-blue-900">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+          {formaCobrancaFilter.map(v => (
+            <span key={`fc-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
+              {v}
+              <button onClick={() => setFormaCobrancaFilter(f => f.filter(x => x !== v))} className="hover:text-emerald-900">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+          {decisaoCobrancaFilter.map(v => (
+            <span key={`dc-${v}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+              {v}
+              <button onClick={() => setDecisaoCobrancaFilter(f => f.filter(x => x !== v))} className="hover:text-amber-900">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Vista por Cliente */}
@@ -1727,6 +1901,149 @@ function HistoryDialog({ title, onClose }: {
 }) {
   const { data: history, isLoading } = trpc.financial.getCollectionHistory.useQuery({ receivableId: title.id });
 
+  function exportHistoryPDF() {
+    if (!history || history.length === 0) return;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [297, 210] });
+    const pageW = 297;
+    const pageH = 210;
+    const margin = 8;
+    const usableW = pageW - margin * 2;
+    let y = margin;
+
+    // Header
+    doc.setFillColor(30, 41, 59);
+    doc.rect(0, 0, pageW, 28, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text("GRUPO FOX", margin, 12);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Histórico de Cobrança", margin, 19);
+    const now = new Date();
+    doc.setFontSize(8);
+    doc.text(`Gerado em: ${now.toLocaleDateString("pt-BR")} ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, pageW - margin, 12, { align: "right" });
+    y = 34;
+
+    // Client info box
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, y, usableW, 18, 2, 2, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59);
+    doc.text(title.cliente, margin + 4, y + 7);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    const infoLine = `${title.referenteA || ""} | Valor: ${formatCurrency(title.valorAReceber)} | Vencimento: ${formatDate(title.vencimento)} | Atraso: ${title.diasAtraso} dias | Vendedor: ${title.vendedor || "—"}`;
+    doc.text(infoLine, margin + 4, y + 14);
+    y += 24;
+
+    // Table
+    const cols = [
+      { header: "DATA", width: 30 },
+      { header: "TIPO", width: 35 },
+      { header: "RESPONSÁVEL", width: 45 },
+      { header: "STATUS", width: 30 },
+      { header: "OBSERVAÇÕES", width: usableW - 30 - 35 - 45 - 30 },
+    ];
+
+    // Table header
+    doc.setFillColor(30, 41, 59);
+    doc.rect(margin, y, usableW, 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(255, 255, 255);
+    let colX = margin;
+    for (const col of cols) {
+      doc.text(col.header, colX + col.width / 2, y + 5.5, { align: "center" });
+      colX += col.width;
+    }
+    y += 8;
+
+    // Table rows
+    doc.setFontSize(7);
+    for (let i = 0; i < history.length; i++) {
+      const action: any = history[i];
+      const isSemContato = action.actionType === "sem_contato";
+      const rowH = 7;
+
+      if (y + rowH > pageH - 15) {
+        doc.addPage([297, 210], "landscape");
+        y = margin;
+        // Repeat header
+        doc.setFillColor(30, 41, 59);
+        doc.rect(margin, y, usableW, 8, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.setTextColor(255, 255, 255);
+        colX = margin;
+        for (const col of cols) {
+          doc.text(col.header, colX + col.width / 2, y + 5.5, { align: "center" });
+          colX += col.width;
+        }
+        y += 8;
+      }
+
+      // Alternating bg
+      if (isSemContato) {
+        doc.setFillColor(254, 242, 242);
+      } else if (i % 2 === 0) {
+        doc.setFillColor(255, 255, 255);
+      } else {
+        doc.setFillColor(248, 250, 252);
+      }
+      doc.rect(margin, y, usableW, rowH, "F");
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(30, 41, 59);
+      colX = margin;
+
+      // Data
+      doc.text(formatDate(action.actionDate), colX + cols[0].width / 2, y + 4.5, { align: "center" });
+      colX += cols[0].width;
+
+      // Tipo
+      const tipoLabel = ACTION_TYPE_LABELS[action.actionType] || action.actionType;
+      if (isSemContato) doc.setTextColor(185, 28, 28);
+      else doc.setTextColor(21, 128, 61);
+      doc.setFont("helvetica", "bold");
+      doc.text(tipoLabel, colX + cols[1].width / 2, y + 4.5, { align: "center" });
+      colX += cols[1].width;
+
+      // Responsável
+      doc.setTextColor(30, 41, 59);
+      doc.setFont("helvetica", "normal");
+      doc.text(action.operatorName || "—", colX + cols[2].width / 2, y + 4.5, { align: "center" });
+      colX += cols[2].width;
+
+      // Status
+      const statusLabel = action.isAutomatic ? "Automático" : "Manual";
+      doc.text(statusLabel, colX + cols[3].width / 2, y + 4.5, { align: "center" });
+      colX += cols[3].width;
+
+      // Observações
+      const notes = action.notes || "—";
+      const truncNotes = notes.length > 80 ? notes.substring(0, 77) + "..." : notes;
+      doc.text(truncNotes, colX + 2, y + 4.5);
+
+      y += rowH;
+    }
+
+    // Footer
+    const totalPages = doc.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Página ${p} de ${totalPages} | GRUPO FOX — Histórico de Cobrança | ${now.toLocaleDateString("pt-BR")}`, pageW / 2, pageH - 5, { align: "center" });
+    }
+
+    doc.save(`Historico_Cobranca_${title.cliente.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30)}_${now.toISOString().split("T")[0]}.pdf`);
+    toast.success("PDF do histórico exportado!");
+  }
+
   return (
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
@@ -1735,6 +2052,18 @@ function HistoryDialog({ title, onClose }: {
             <History className="w-5 h-5 text-emerald-600" />
             Histórico de Cobrança
           </DialogTitle>
+          <div className="flex items-center gap-2 pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportHistoryPDF}
+              disabled={isLoading || !history || history.length === 0}
+              className="text-xs gap-1.5"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              Exportar PDF
+            </Button>
+          </div>
         </DialogHeader>
         <div className="space-y-3 flex-1 overflow-hidden">
           <div className="bg-slate-50 rounded-lg p-3">
