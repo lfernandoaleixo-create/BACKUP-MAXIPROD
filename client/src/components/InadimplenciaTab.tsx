@@ -234,7 +234,7 @@ function exportInadimplenciaPDF(
       docLabel,
       t.vendedor || "\u2014",
       t.formaCobranca || "\u2014",
-      t.decisaoCobranca || "\u2014",
+      getDecisaoLabel(t.decisaoCobranca) || "\u2014",
       formatCurrency(t.valorAReceber),
       formatDate(t.vencimento),
       `${t.diasAtraso}d`,
@@ -357,6 +357,31 @@ function exportInadimplenciaPDF(
 
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   doc.save(`Inadimplencia_GrupoFox_${dateStr}.pdf`);
+}
+
+// Helper: categorizar forma de cobrança bruta em label limpo
+function getFormaCobrancaCategory(desc: string): string {
+  if (!desc) return "";
+  const d = desc.toUpperCase();
+  if (d.startsWith("PIX")) return "PIX";
+  if (d.startsWith("BOLETO")) return "Boleto";
+  if (d.startsWith("CHEQUE")) return "Cheque";
+  if (d.startsWith("DEP\u00d3SITO") || d.startsWith("DEPOSITO")) return "Dep\u00f3sito";
+  if (d.startsWith("DINHEIRO")) return "Dinheiro";
+  if (desc.trim()) {
+    const first = desc.trim().split(" ")[0];
+    return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+  }
+  return "";
+}
+
+// Helper: mapear decisão de cobrança para label de exibição
+function getDecisaoLabel(raw: string): string {
+  if (!raw) return "";
+  const u = raw.toUpperCase().trim();
+  if (u === "COM PROTESTO") return "Com Protesto (Cart\u00f3rio)";
+  if (u === "SEM PROTESTO") return "Sem Protesto";
+  return raw.trim();
 }
 
 function getAgingColor(dias: number) {
@@ -662,7 +687,8 @@ export default function InadimplenciaTab() {
   const formaCobrancaOptions = useMemo(() => {
     const set = new Set<string>();
     for (const t of titles) {
-      if (t.formaCobranca && t.formaCobranca.trim()) set.add(t.formaCobranca.trim());
+      const cat = getFormaCobrancaCategory(t.formaCobranca || "");
+      if (cat) set.add(cat);
     }
     return Array.from(set).sort();
   }, [titles]);
@@ -670,7 +696,8 @@ export default function InadimplenciaTab() {
   const decisaoCobrancaOptions = useMemo(() => {
     const set = new Set<string>();
     for (const t of titles) {
-      if (t.decisaoCobranca && t.decisaoCobranca.trim() && t.decisaoCobranca !== '\u2014') set.add(t.decisaoCobranca.trim());
+      const label = getDecisaoLabel(t.decisaoCobranca || "");
+      if (label) set.add(label);
     }
     return Array.from(set).sort();
   }, [titles]);
@@ -686,10 +713,10 @@ export default function InadimplenciaTab() {
       result = result.filter(t => vendedorFilter.includes(t.vendedor?.trim() || ''));
     }
     if (formaCobrancaFilter.length > 0) {
-      result = result.filter(t => formaCobrancaFilter.includes(t.formaCobranca?.trim() || ''));
+      result = result.filter(t => formaCobrancaFilter.includes(getFormaCobrancaCategory(t.formaCobranca || '')));
     }
     if (decisaoCobrancaFilter.length > 0) {
-      result = result.filter(t => decisaoCobrancaFilter.includes(t.decisaoCobranca?.trim() || ''));
+      result = result.filter(t => decisaoCobrancaFilter.includes(getDecisaoLabel(t.decisaoCobranca || '')));
     }
     return result;
   }, [titles, agingFilter, vendedorFilter, formaCobrancaFilter, decisaoCobrancaFilter]);
@@ -820,7 +847,7 @@ export default function InadimplenciaTab() {
     const config = protestConfigsMap?.[title.id];
     if (!config) return null;
     if (config.protestType === "automatico") {
-      return { label: "Protesto Auto", color: "bg-orange-100 text-orange-700 border-orange-300" };
+      return { label: "Com Protesto", color: "bg-orange-100 text-orange-700 border-orange-300" };
     }
     return { label: "Não Protestar", color: "bg-blue-100 text-blue-700 border-blue-300" };
   }
@@ -1478,7 +1505,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                 ? 'bg-orange-100 text-orange-700 border-orange-300'
                 : 'bg-blue-100 text-blue-700 border-blue-300'
             }`}>
-              {title.decisaoCobranca}
+              {getDecisaoLabel(title.decisaoCobranca)}
             </span>
           ) : (isVitoria && onOpenDecisaoTutorial) ? (
             <button
@@ -1647,7 +1674,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
                 ? 'bg-orange-100 text-orange-700 border-orange-300'
                 : 'bg-blue-100 text-blue-700 border-blue-300'
             }`}>
-              {title.decisaoCobranca}
+              {getDecisaoLabel(title.decisaoCobranca)}
             </span>
           ) : (isVitoria && onOpenDecisaoTutorial) ? (
             <button
@@ -2264,7 +2291,7 @@ function ActionDialog({ title, onClose, onSave, isSaving, protestConfig, onSetPr
                 }`}
               >
                 <ShieldAlert className="w-4 h-4 mx-auto mb-1" />
-                Protesto Automático
+                Com Protesto (Cartório)
                 <div className="text-[10px] mt-0.5 opacity-70">Vai p/ cartório no dia 7</div>
               </button>
               <button

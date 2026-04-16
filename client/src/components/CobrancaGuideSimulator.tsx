@@ -164,7 +164,7 @@ function getCobrancaSteps(): GuideStep[] {
     },
     {
       title: "Dia 7+ — Decisão de Protesto",
-      description: "A partir do dia 7, o sistema exige uma decisão: Protesto Automático ou Não Protestar (com plano de ação).",
+      description: "A partir do dia 7, o sistema exige uma decisão: Com Protesto (Cartório) ou Não Protestar (com plano de ação).",
       icon: Gavel,
       iconColor: "text-red-700",
       bgColor: "bg-red-100",
@@ -172,7 +172,7 @@ function getCobrancaSteps(): GuideStep[] {
       dayLabel: "DIA 7+",
       highlight: true,
       details: [
-        "Opção 1: PROTESTO AUTOMÁTICO — título é encaminhado para protesto em cartório",
+        "Opção 1: COM PROTESTO (CARTÓRIO) — título é encaminhado para protesto em cartório",
         "Opção 2: NÃO PROTESTAR — obrigatório criar um Plano de Ação justificando",
         "O Plano de Ação deve explicar por que não protestar e qual a estratégia",
         "Se escolher 'Não Protestar', um documento de cobrança é gerado automaticamente",
@@ -210,7 +210,7 @@ function getCobrancaSteps(): GuideStep[] {
         "⏸️ Dia 4 → Intervalo",
         "📞📧 Dia 5 → Ligação + E-mail (último contato, aviso de protesto)",
         "📋 Dia 6 → Preparação para decisão (revisão dos 6 registros formais)",
-        "⚖️ Dia 7+ → Decisão: Protesto Automático ou Plano de Ação",
+        "⚖️ Dia 7+ → Decisão: Com Protesto (Cartório) ou Plano de Ação",
         "📊 Tudo fica salvo no histórico do título como prova formal",
       ],
     },

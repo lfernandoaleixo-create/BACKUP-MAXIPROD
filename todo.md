@@ -2765,3 +2765,11 @@
 - [x] Fluxo automático: relatório vendedor dia 7 (apenas para clientes que entram a partir de hoje) (já existia)
 - [x] Notificação: card na aba inadimplência quando decisão de cobrança não preenchida (Guilherme/Fernando/Vitória)
 - [x] Cards média diária Vendas: remover badges % do card verde, mover Total para dentro dos cards, visual profissional
+- [ ] Reverter seletor de data da Visão Geral do Financeiro (voltar como estava)
+- [ ] Filtro Decisão Cobrança: adicionar opção "Protesto Automático (Cartório)" sem abreviar
+- [ ] Filtro Forma Cobrança: simplificar para categorias (PIX, Boleto, Depósito, etc.) em vez de detalhes bancários
+
+- [x] Trocar "Protesto Automático" por "Com Protesto (Cartório)" em todos os locais (InadimplenciaTab, CobrancaGuideSimulator, ActionDialog)
+- [x] Categorizar filtro Forma de Cobrança: PIX, Boleto, Depósito, Cheque, Dinheiro (em vez de strings brutas do banco)
+- [x] Filtro Decisão de Cobrança: mapear "COM PROTESTO" → "Com Protesto (Cartório)", "SEM PROTESTO" → "Sem Protesto"
+- [x] PDF Inadimplência: decisão de cobrança exibe label mapeado
