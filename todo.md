@@ -2812,3 +2812,6 @@
 - [x] Cards média diária: aumentar letra dos textos após travessão (de text-[10px] para text-xs e de text-xs para text-sm)
 - [x] Cards média diária: renomear títulos (Verde: "Média diária do mês atual", Azul: "Média diária do mês anterior", Amarelado: "Média diária do melhor mês de vendas")
 - [x] Cards média diária: trocar badge "X dias" por "Total de X dias do mês"
+- [ ] Redesenhar relatório de exportação de vendas: layout profissional, sofisticado e moderno, com cards de médias diárias atualizados, números maiores e em negrito
+- [x] Guia de cobrança: removido passo "Salve prints do WhatsApp e cópia do e-mail como comprovante"
+- [x] Guia de cobrança: corrigido texto — telefone para de vibrar com 1 ação (removidas referências a "AMBAS" e "duas ações")
