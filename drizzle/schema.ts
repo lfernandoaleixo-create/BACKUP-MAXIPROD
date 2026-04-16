@@ -369,6 +369,7 @@ export const accountsReceivable = mysqlTable("accounts_receivable", {
   formaCobranca: varchar("formaCobranca", { length: 500 }), // Descrição completa da forma de cobrança (ex: "PIX Banco Cooperativo Sicredi...")
   formaCobrancaId: bigint("formaCobrancaId", { mode: "number" }), // ID da FormaDeCobranca no Maxiprod
   anotacoes: text("anotacoes"), // Anotações do Maxiprod (tarefasEAnotacoes.descricao concatenadas)
+  decisaoCobranca: varchar("decisaoCobranca", { length: 200 }), // Decisão de cobrança do cliente (COM PROTESTO / SEM PROTESTO) - campo adicional "SITUAÇÃO" do Maxiprod
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 

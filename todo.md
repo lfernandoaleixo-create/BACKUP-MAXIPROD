@@ -2766,7 +2766,7 @@
 - [x] Notificação: card na aba inadimplência quando decisão de cobrança não preenchida (Guilherme/Fernando/Vitória)
 - [x] Cards média diária Vendas: remover badges % do card verde, mover Total para dentro dos cards, visual profissional
 - [ ] Reverter seletor de data da Visão Geral do Financeiro (voltar como estava)
-- [ ] Filtro Decisão Cobrança: adicionar opção "Protesto Automático (Cartório)" sem abreviar
+- [x] Filtro Decisão Cobrança: adicionar opção "Protesto Automático (Cartório)" sem abreviar (já renomeado para "Com Protesto (Cartório)")
 - [ ] Filtro Forma Cobrança: simplificar para categorias (PIX, Boleto, Depósito, etc.) em vez de detalhes bancários
 
 - [x] Trocar "Protesto Automático" por "Com Protesto (Cartório)" em todos os locais (InadimplenciaTab, CobrancaGuideSimulator, ActionDialog)
@@ -2799,3 +2799,5 @@
 - [x] Estoque Madeira PA: mapear 12 produtos mãe e suas variações conforme lista do usuário (16 variações inseridas no banco)
 - [x] Estoque Madeira PA: regra variação — pedido de variação já debita do mãe, faturamento desconta da variação (não desconta 2x) — já implementado no stockProcessor
 - [x] Estoque Madeira PA: regra sem variação — Estoque - Pedidos = Disponível; faturamento desconta do estoque — já implementado no stockProcessor
+
+- [x] Inadimplência: Decisão de Cobrança deve ser puxada do Maxiprod para TODOS os clientes inadimplentes (campo decisaoCobranca no DB, sincronizado via camposAdicionais do cliente no GraphQL, com fallback para mapa por nome)

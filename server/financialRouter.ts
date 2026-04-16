@@ -3082,7 +3082,9 @@ export const financialRouter = router({
         const action = actionsMap[row.id];
         const vendedor = graphqlMap[row.cliente || ""] || "";
         const clienteName = (row.cliente || "").trim();
-        const decisaoCobranca = cobrancaMap[clienteName] || cobrancaMap[clienteName.toUpperCase()] || "";
+        // Prioridade: campo direto do DB (sincronizado do Maxiprod via camposAdicionais do cliente)
+        // Fallback: mapa de decisão por nome (fetchCobrancaDecisionMap)
+        const decisaoCobranca = (row as any).decisaoCobranca || cobrancaMap[clienteName] || cobrancaMap[clienteName.toUpperCase()] || "";
 
         return {
           id: row.id,

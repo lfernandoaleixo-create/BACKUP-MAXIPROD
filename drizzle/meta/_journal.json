@@ -526,6 +526,13 @@
       "when": 1776351307754,
       "tag": "0074_breezy_stellaris",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "5",
+      "when": 1776360315395,
+      "tag": "0075_elite_bulldozer",
+      "breakpoints": true
     }
   ]
 }

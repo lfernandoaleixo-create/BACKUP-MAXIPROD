@@ -947,7 +947,7 @@ async function fetchAccountsReceivable(): Promise<any[]> {
         observacoes
         documentoVinculadoNumero
         bloqueado
-        cliente { nomeFantasia razaoSocial }
+        cliente { nomeFantasia razaoSocial camposAdicionais { descricao valor } }
         centroDeCustos { id }
         conta { id descricao }
         formaDeCobranca { id meioDePagamento banco { descricao } contaNumero agenciaCodigo pixChave carteira }
@@ -1071,7 +1071,27 @@ function transformAccountsReceivable(items: any[]): any[] {
     empresaId: item.minhaEmpresaId || null,
     empresaNome: getCompanyName(item.minhaEmpresaId),
     anotacoes: (item.tarefasEAnotacoes || []).map((a: any) => a.descricao).filter(Boolean).join(' | ') || null,
+    decisaoCobranca: extractDecisaoCobranca(item.cliente),
   }));
+}
+
+/**
+ * Extrai a decisão de cobrança dos campos adicionais do cliente no Maxiprod.
+ * O campo "SITUAÇÃO" contém valores como "COM PROTESTO" ou "SEM PROTESTO".
+ */
+function extractDecisaoCobranca(cliente: any): string | null {
+  if (!cliente?.camposAdicionais) return null;
+  const camposAdicionais = cliente.camposAdicionais;
+  if (!Array.isArray(camposAdicionais)) return null;
+  
+  // Procurar campo com descricao "SITUAÇÃO" ou "SITUACAO"
+  const situacaoCampo = camposAdicionais.find((c: any) => {
+    const desc = (c.descricao || '').toUpperCase().trim();
+    return desc === 'SITUA\u00c7\u00c3O' || desc === 'SITUACAO' || desc.includes('SITUA');
+  });
+  
+  if (!situacaoCampo || !situacaoCampo.valor) return null;
+  return String(situacaoCampo.valor).trim() || null;
 }
 
 /**
