@@ -2732,3 +2732,4 @@
 - [x] Investigar queda Pedidos (Venda) de ~2.505 para 1.314 cx — NÃO É BUG: antes somava todos (2.505), agora soma só importação (1.314). Madeira = 1.191 cx excluída corretamente.
 - [x] KPI PO (A Receber) corrigido para 9.639 cx (poLotes em caixas). Resync forçado. Demais KPIs mantidos (Pedidos 2.505, Estoque 19.501, 150 produtos)
 - [x] KPI Pedidos (Venda) na seção Importação corrigido para usar items (todos) = 2.505 cx em vez de importItems = 1.314 cx
+- [x] KPI Projetado na Importação corrigido: totalDisponivelCx + totalPOCx = 18.187 + 9.639 = 27.826 cx

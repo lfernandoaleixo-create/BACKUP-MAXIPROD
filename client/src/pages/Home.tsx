@@ -3315,8 +3315,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     }
     return sum + (i.poCx ?? 0);
   }, 0);
-  // Projetado usa poCx (que já está na unidade correta do estoque: kg para kg, cx para cx)
-  const totalProjetadoCx = importItems.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
+  // Projetado = Disponível (importação) + PO (caixas via poLotes) = 18.187 + 9.639 = 27.826
+  const totalProjetadoCx = totalDisponivelCx + totalPOCx;
 
   // Madeira KPI totals (Madeira card + Semi Pronto + Aguardando Escolha)
   const semiProntoTotal = useMemo(() => {
