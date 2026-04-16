@@ -2749,3 +2749,4 @@
 - [ ] BUG: Conferência Contas a Pagar retorna R$ 0,00 do Maxiprod (API) - valores mês a mês zerados
 - [x] PDF Inadimplência: ajustar para modo paisagem perfeito, pronto para impressão deitada
 - [x] PDF Inadimplência: sair salvo em modo paisagem real (como lâmina de slide), ocupando folha inteira, uma página por folha
+- [x] PDF Inadimplência: garantir que salve em paisagem real reconhecido pelo macOS Preview (como lâmina de slide)

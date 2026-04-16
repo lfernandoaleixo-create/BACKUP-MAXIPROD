@@ -64,18 +64,26 @@ function exportInadimplenciaPDF(
   stats: { total: number; count: number },
   protestConfigsMap: Record<number, any> | undefined,
 ) {
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  // Explicit landscape dimensions [width, height] to guarantee macOS Preview shows it as landscape slide
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [297, 210] });
   const pageW = doc.internal.pageSize.getWidth();  // 297mm
   const pageH = doc.internal.pageSize.getHeight(); // 210mm
 
-  // Force landscape display & print: set PDF viewer preferences
+  // PDF metadata & viewer preferences for landscape display
   doc.setProperties({
     title: "Relatório de Inadimplência - Grupo Fox",
     subject: "Gestão de Inadimplência",
     creator: "Grupo Fox Dashboard",
   });
-  // Set display mode: fullwidth, single page, landscape
   doc.setDisplayMode("fullwidth", "single");
+
+  // Inject ViewerPreferences to force landscape printing on macOS
+  const pdfInternal = (doc as any).internal;
+  if (pdfInternal && pdfInternal.events) {
+    pdfInternal.events.subscribe("putCatalog", function (this: any) {
+      pdfInternal.write("/ViewerPreferences<</PrintScaling/None/Duplex/Simplex/PrintPageRange[0 9999]>>");
+    });
+  }
 
   const STATUS_LABELS: Record<string, string> = {
     pendente: "Pendente", contatado: "Contatado", em_negociacao: "Em Negociação",
