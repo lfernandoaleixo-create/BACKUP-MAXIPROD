@@ -2792,3 +2792,10 @@
 - [x] Flow Pack: adicionar seção "Produção por Medida de Fibra" com medida 3,0x200mm abaixo da seção de Madeira em todas as 5 máquinas
 
 - [x] Vendas: colocar informações do gráfico acumulado (Acum. Atual, Anterior, Melhor) dentro dos cards de Média Diária correspondentes
+
+- [x] BUG: Pedido 155 com NF 2253 faturado ontem não aparece nos faturados dos últimos 30 dias na aba Faturamento (causa: pré-filtro de 90 dias excluía pedidos com emissão antiga; ampliado para 365 dias)
+
+- [x] Estoque Madeira PA: criar sistema de produtos mãe/variação expansível (como no Bambu)
+- [x] Estoque Madeira PA: mapear 12 produtos mãe e suas variações conforme lista do usuário (16 variações inseridas no banco)
+- [x] Estoque Madeira PA: regra variação — pedido de variação já debita do mãe, faturamento desconta da variação (não desconta 2x) — já implementado no stockProcessor
+- [x] Estoque Madeira PA: regra sem variação — Estoque - Pedidos = Disponível; faturamento desconta do estoque — já implementado no stockProcessor

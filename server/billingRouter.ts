@@ -240,11 +240,12 @@ export const billingRouter = router({
         } catch { return d; }
       };
 
-      // Billed: janela ampla de 90 dias para capturar pedidos com emissão antiga mas faturamento recente
+      // Billed: janela ampla de 365 dias para capturar pedidos com emissão antiga mas faturamento recente
+      // Exemplo: pedido 155 emitido em dez/2025 mas faturado (NF 2253) em abr/2026
       // O filtro final de 30 dias será aplicado usando a data da NF (quando disponível) ou data de emissão (fallback)
       const now = new Date();
-      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-      ninetyDaysAgo.setHours(0, 0, 0, 0);
+      const preFilterDaysAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      preFilterDaysAgo.setHours(0, 0, 0, 0);
       
       const billedItems = allItems.filter(i => {
         if (i.estadoItem !== "Faturado") return false;
@@ -254,7 +255,7 @@ export const billingRouter = router({
         if (!isAprovadoOuFaturado(i.estadoNota)) return false;
         try {
           const itemDate = new Date(i.dataEmissao);
-          return itemDate >= ninetyDaysAgo;
+          return itemDate >= preFilterDaysAgo;
         } catch { return false; }
       });
 
