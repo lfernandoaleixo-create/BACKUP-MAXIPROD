@@ -34,6 +34,7 @@ import {
   ShieldCheck,
   Pencil,
   DollarSign,
+  CalendarRange,
 } from "lucide-react";
 import {
   Dialog,
@@ -1165,26 +1166,34 @@ function ContaFiltersAndTable({
 /* ============================================================
    Sicoob Palitos - Limite para Troca de Títulos
    ============================================================ */
-function SicoobLimiteCard() {
+/* ---- Card genérico Sicoob Palitos (reutilizável) ---- */
+function SicoobInfoCard({ title, subtitle, icon: Icon, colorScheme, queryHook, mutationHook }: {
+  title: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  colorScheme: { border: string; bg: string; iconFrom: string; iconTo: string; iconShadow: string; text: string; textMuted: string; btnBg: string; btnHover: string; inputBorder: string; inputText: string; decoA: string; decoB: string };
+  queryHook: () => { data?: { valor: number | null; updatedBy: string | null; updatedAt: string | null } | null | undefined; isLoading: boolean };
+  mutationHook: (opts: { onSuccess: () => void; onError: (err: any) => void }) => { mutate: (input: { valor: number; operatorName: string }) => void; isPending: boolean };
+}) {
   const { operator } = useOperator();
   const isFlavio = operator?.name === "Flavio";
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
-  const limiteQuery = trpc.settings.getSicoobLimite.useQuery();
+  const query = queryHook();
   const utils = trpc.useUtils();
-  const updateMutation = trpc.settings.updateSicoobLimite.useMutation({
+  const mutation = mutationHook({
     onSuccess: () => {
-      utils.settings.getSicoobLimite.invalidate();
+      utils.settings.invalidate();
       setEditing(false);
-      toast.success("Limite atualizado com sucesso!");
+      toast.success("Valor atualizado com sucesso!");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err: any) => toast.error(err.message),
   });
 
-  const valor = limiteQuery.data?.valor;
-  const updatedBy = limiteQuery.data?.updatedBy;
-  const updatedAt = limiteQuery.data?.updatedAt;
+  const valor = query.data?.valor;
+  const updatedBy = query.data?.updatedBy;
+  const updatedAt = query.data?.updatedAt;
 
   function startEditing() {
     setInputValue(valor != null ? String(valor) : "");
@@ -1197,7 +1206,7 @@ function SicoobLimiteCard() {
       toast.error("Valor inválido");
       return;
     }
-    updateMutation.mutate({ valor: parsed, operatorName: operator!.name });
+    mutation.mutate({ valor: parsed, operatorName: operator!.name });
   }
 
   function formatUpdatedAt(iso: string) {
@@ -1207,85 +1216,126 @@ function SicoobLimiteCard() {
     } catch { return iso; }
   }
 
+  const c = colorScheme;
+
   return (
-    <div className="mx-3 my-3">
-      <div className="relative overflow-hidden rounded-xl border-2 border-green-300 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 shadow-lg">
-        {/* Background decoration */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-200/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+    <div className={`relative overflow-hidden rounded-lg border ${c.border} ${c.bg} px-3 py-2.5 shadow-sm`}>
+      <div className={`absolute top-0 right-0 w-24 h-24 ${c.decoA} rounded-full blur-3xl -translate-y-1/2 translate-x-1/2`} />
+      <div className={`absolute bottom-0 left-0 w-16 h-16 ${c.decoB} rounded-full blur-3xl translate-y-1/2 -translate-x-1/2`} />
 
-        <div className="relative z-10">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
-                <DollarSign className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h4 className="text-green-800 font-bold text-sm">Limite disponível para troca de títulos</h4>
-                <p className="text-green-600/70 text-[10px] font-medium">Sicoob Palitos</p>
-              </div>
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-2">
+            <div className={`w-7 h-7 rounded-md bg-gradient-to-br ${c.iconFrom} ${c.iconTo} flex items-center justify-center shadow-md ${c.iconShadow}`}>
+              <Icon className="w-4 h-4 text-white" />
             </div>
-            {isFlavio && !editing && (
-              <button
-                onClick={startEditing}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-all shadow-md hover:shadow-lg"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Editar
-              </button>
-            )}
-          </div>
-
-          {/* Value display */}
-          {editing ? (
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600 font-bold text-sm">R$</span>
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="0,00"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-green-300 bg-white text-lg font-bold text-green-800 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSave();
-                    if (e.key === "Escape") setEditing(false);
-                  }}
-                />
-              </div>
-              <button
-                onClick={handleSave}
-                disabled={updateMutation.isPending}
-                className="px-4 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition-all shadow-md disabled:opacity-50"
-              >
-                {updateMutation.isPending ? "..." : "Salvar"}
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="px-3 py-2.5 rounded-lg border-2 border-green-300 text-green-700 font-medium text-sm hover:bg-green-100 transition-all"
-              >
-                Cancelar
-              </button>
-            </div>
-          ) : (
             <div>
-              <div className="text-3xl font-extrabold text-green-800 tracking-tight">
-                {valor != null ? formatCurrency(valor) : (
-                  <span className="text-green-400 text-lg font-medium italic">Não definido</span>
-                )}
-              </div>
-              {updatedBy && updatedAt && (
-                <p className="text-[11px] text-green-600/60 mt-1.5 font-medium">
-                  Atualizado por {updatedBy} em {formatUpdatedAt(updatedAt)}
-                </p>
-              )}
+              <h4 className={`${c.text} font-bold text-xs leading-tight`}>{title}</h4>
+              <p className={`${c.textMuted} text-[9px] font-medium`}>{subtitle}</p>
             </div>
+          </div>
+          {isFlavio && !editing && (
+            <button
+              onClick={startEditing}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md ${c.btnBg} ${c.btnHover} text-white text-[10px] font-bold transition-all shadow-sm hover:shadow-md`}
+            >
+              <Pencil className="w-3 h-3" />
+              Editar
+            </button>
           )}
         </div>
+
+        {editing ? (
+          <div className="flex items-center gap-1.5">
+            <div className="relative flex-1">
+              <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${c.text} font-bold text-xs`}>R$</span>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="0,00"
+                className={`w-full pl-8 pr-3 py-1.5 rounded-md border ${c.inputBorder} bg-white text-sm font-bold ${c.inputText} focus:ring-2 focus:ring-opacity-50`}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSave();
+                  if (e.key === "Escape") setEditing(false);
+                }}
+              />
+            </div>
+            <button
+              onClick={handleSave}
+              disabled={mutation.isPending}
+              className={`px-3 py-1.5 rounded-md ${c.btnBg} ${c.btnHover} text-white font-bold text-xs transition-all shadow-sm disabled:opacity-50`}
+            >
+              {mutation.isPending ? "..." : "Salvar"}
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className={`px-2 py-1.5 rounded-md border ${c.inputBorder} ${c.text} font-medium text-xs hover:opacity-80 transition-all`}
+            >
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className={`text-2xl font-extrabold ${c.text} tracking-tight`}>
+              {valor != null ? formatCurrency(valor) : (
+                <span className={`${c.textMuted} text-sm font-medium italic`}>Não definido</span>
+              )}
+            </div>
+            {updatedBy && updatedAt && (
+              <p className={`text-[10px] ${c.textMuted} mt-0.5 font-medium`}>
+                Atualizado por {updatedBy} em {formatUpdatedAt(updatedAt)}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+const GREEN_SCHEME = {
+  border: 'border-green-300', bg: 'bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50',
+  iconFrom: 'from-green-500', iconTo: 'to-emerald-600', iconShadow: 'shadow-green-500/30',
+  text: 'text-green-800', textMuted: 'text-green-600/60',
+  btnBg: 'bg-green-600', btnHover: 'hover:bg-green-700',
+  inputBorder: 'border-green-300', inputText: 'text-green-800',
+  decoA: 'bg-green-200/30', decoB: 'bg-emerald-200/30',
+};
+
+const BLUE_SCHEME = {
+  border: 'border-blue-300', bg: 'bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50',
+  iconFrom: 'from-blue-500', iconTo: 'to-sky-600', iconShadow: 'shadow-blue-500/30',
+  text: 'text-blue-800', textMuted: 'text-blue-600/60',
+  btnBg: 'bg-blue-600', btnHover: 'hover:bg-blue-700',
+  inputBorder: 'border-blue-300', inputText: 'text-blue-800',
+  decoA: 'bg-blue-200/30', decoB: 'bg-sky-200/30',
+};
+
+function SicoobDescontoSemanalCard() {
+  return (
+    <SicoobInfoCard
+      title="Valor previsto de liberação para desconto na semana"
+      subtitle="Sicoob Palitos"
+      icon={CalendarRange}
+      colorScheme={BLUE_SCHEME}
+      queryHook={() => trpc.settings.getSicoobDescontoSemanal.useQuery()}
+      mutationHook={(opts) => trpc.settings.updateSicoobDescontoSemanal.useMutation(opts)}
+    />
+  );
+}
+
+function SicoobLimiteCard() {
+  return (
+    <SicoobInfoCard
+      title="Limite disponível para troca de títulos"
+      subtitle="Sicoob Palitos"
+      icon={DollarSign}
+      colorScheme={GREEN_SCHEME}
+      queryHook={() => trpc.settings.getSicoobLimite.useQuery()}
+      mutationHook={(opts) => trpc.settings.updateSicoobLimite.useMutation(opts)}
+    />
   );
 }
 
@@ -1680,9 +1730,12 @@ export default function ReceivablesTab() {
                                   </div>
                                 </button>
 
-                                {/* Card Limite Sicoob Palitos - aparece apenas na conta Sicoob da empresa PALITOS */}
+                                {/* Cards Sicoob Palitos - aparecem apenas na conta Sicoob da empresa PALITOS */}
                                 {isContaOpen && bankShort === "Sicoob" && shortEmpresaName(emp.nome) === "PALITOS" && (
-                                  <SicoobLimiteCard />
+                                  <div className="mx-3 my-2 space-y-2">
+                                    <SicoobDescontoSemanalCard />
+                                    <SicoobLimiteCard />
+                                  </div>
                                 )}
 
                                 {/* Filtros + Card + Tabela DENTRO da conta bancária */}

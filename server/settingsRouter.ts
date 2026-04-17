@@ -1070,4 +1070,39 @@ export const settingsRouter = router({
       });
       return { success: true };
     }),
+
+  /**
+   * Get Sicoob Palitos "Valor previsto de liberação para desconto na semana"
+   */
+  getSicoobDescontoSemanal: publicProcedure.query(async () => {
+    const data = await getSetting("sicoob_desconto_semanal");
+    if (!data) return { valor: null, updatedBy: null, updatedAt: null };
+    return {
+      valor: data.valor as number | null,
+      updatedBy: data.updatedBy as string | null,
+      updatedAt: data.updatedAt as string | null,
+    };
+  }),
+
+  /**
+   * Update Sicoob Palitos "Valor previsto de liberação para desconto na semana"
+   * Only operator "Flavio" can update this value.
+   */
+  updateSicoobDescontoSemanal: publicProcedure
+    .input(z.object({
+      valor: z.number().min(0, "Valor deve ser positivo"),
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      if (input.operatorName !== "Flavio") {
+        throw new Error("Apenas o operador Flávio pode atualizar este valor.");
+      }
+      const now = new Date().toISOString();
+      await setSetting("sicoob_desconto_semanal", {
+        valor: input.valor,
+        updatedBy: input.operatorName,
+        updatedAt: now,
+      });
+      return { success: true };
+    }),
 });

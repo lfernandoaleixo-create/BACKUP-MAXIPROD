@@ -2874,3 +2874,5 @@
 - [x] Telefone só para de vibrar quando TODAS as ações do passo forem ticadas conforme guia de cobrança
 - [x] Corrigir fuso horário de 3h (UTC→BRT) nos registros de cobrança
 - [x] Sincronizar 7 bolinhas do roteiro com checklist: verde=cumprido, vermelho=falha, piscando vermelho=ação pendente
+- [x] Card "Valor previsto de liberação para desconto na semana" na Sicoob Palitos (editável pelo Flávio)
+- [x] Reduzir espessura dos cards de limite/valor previsto na Sicoob Palitos
