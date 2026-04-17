@@ -2873,3 +2873,4 @@
 - [x] Múltiplas opções simultâneas na ação de cobrança (ligar + email + whatsapp etc.)
 - [x] Telefone só para de vibrar quando TODAS as ações do passo forem ticadas conforme guia de cobrança
 - [x] Corrigir fuso horário de 3h (UTC→BRT) nos registros de cobrança
+- [x] Sincronizar 7 bolinhas do roteiro com checklist: verde=cumprido, vermelho=falha, piscando vermelho=ação pendente

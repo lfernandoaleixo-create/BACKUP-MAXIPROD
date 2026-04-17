@@ -5820,6 +5820,169 @@ ${acoesTexto}
     }),
 
   /**
+   * Sincronizar bolinhas manuais com o checklist do histórico.
+   * Para cada título:
+   * - Se o step do checklist está "verde" → bolinha verde (se ainda não estava marcada)
+   * - Se o step do checklist está "vermelho" → bolinha vermelha (se ainda não estava marcada)
+   * - Se o step do checklist está "dispensado" → bolinha verde (dispensado = OK)
+   * - Se o step do checklist está "pendente" ou "futuro" → não altera
+   * NUNCA sobrescreve bolinhas já marcadas (preserva dados existentes).
+   */
+  syncTicksFromChecklist: publicProcedure
+    .input(z.object({ receivableIds: z.array(z.number()) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db || input.receivableIds.length === 0) return { synced: 0 };
+
+      // Buscar todos os ticks atuais
+      const allTicks = await db.select().from(collectionManualTicks)
+        .where(inArray(collectionManualTicks.receivableId, input.receivableIds))
+        .orderBy(asc(collectionManualTicks.step));
+
+      const ticksByRec: Record<number, Record<number, typeof allTicks[0]>> = {};
+      for (const t of allTicks) {
+        if (!ticksByRec[t.receivableId]) ticksByRec[t.receivableId] = {};
+        ticksByRec[t.receivableId][t.step] = t;
+      }
+
+      // Para cada título, calcular o checklist e sincronizar
+      let synced = 0;
+      const now = new Date();
+      const brNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const todayStr = brNow.toISOString().split('T')[0];
+      const SISTEMA_COBRANCA_INICIO_SYNC = '2026-04-16';
+
+      for (const recId of input.receivableIds) {
+        const tickMap = ticksByRec[recId] || {};
+
+        // Buscar dados do título
+        const [rec] = await db.select({
+          id: accountsReceivable.id,
+          vencimentoData: accountsReceivable.vencimentoData,
+        }).from(accountsReceivable).where(eq(accountsReceivable.id, recId)).limit(1);
+        if (!rec || !rec.vencimentoData) continue;
+
+        // Buscar ação de cobrança
+        const [action] = await db.select({ cobrancaStartedAt: collectionActions.cobrancaStartedAt })
+          .from(collectionActions)
+          .where(eq(collectionActions.receivableId, recId))
+          .limit(1);
+
+        const vencDate = (rec.vencimentoData || '').split('T')[0];
+        const dia1Original = addDaysStr(vencDate, 1);
+        const isLegacy = dia1Original < SISTEMA_COBRANCA_INICIO_SYNC;
+
+        // Se é legado e não tem cobrancaStartedAt, pular
+        if (isLegacy && !action?.cobrancaStartedAt) continue;
+
+        const baseDateStr = isLegacy
+          ? (action?.cobrancaStartedAt
+              ? addDaysStr(action.cobrancaStartedAt, -1)
+              : addDaysStr(SISTEMA_COBRANCA_INICIO_SYNC, -1))
+          : vencDate;
+
+        // Buscar ações diárias para calcular status do checklist
+        const dailyActions = await db.select()
+          .from(collectionDailyActions)
+          .where(eq(collectionDailyActions.receivableId, recId))
+          .orderBy(collectionDailyActions.actionDate);
+
+        const actionsByDate: Record<string, typeof dailyActions> = {};
+        for (const a of dailyActions) {
+          if (!actionsByDate[a.actionDate]) actionsByDate[a.actionDate] = [];
+          actionsByDate[a.actionDate].push(a);
+        }
+
+        let hasCascadeError = false;
+
+        for (let step = 1; step <= 7; step++) {
+          const existingTick = tickMap[step];
+          // NUNCA sobrescrever bolinhas já marcadas
+          if (existingTick?.ticked) continue;
+
+          const stepDate = addBusinessDaysStr(baseDateStr, step);
+          const isFuture = stepDate > todayStr;
+          const isToday = stepDate === todayStr;
+          const isBeforeSystem = stepDate < SISTEMA_COBRANCA_INICIO_SYNC;
+
+          const actionsOnDay = actionsByDate[stepDate] || [];
+          const manualActions = actionsOnDay.filter(a => !a.isAutomatic && a.actionType !== 'sem_contato');
+
+          // Calcular status do step (mesma lógica do getCollectionChecklist)
+          let status: 'verde' | 'vermelho' | 'pendente' | 'futuro' | 'dispensado' = 'futuro';
+          const isAcao = [1, 3, 5].includes(step);
+          const isEspera = [2, 4, 6].includes(step);
+
+          if (isBeforeSystem && !isFuture) {
+            status = 'dispensado';
+          } else if (isFuture) {
+            status = 'futuro';
+          } else if (hasCascadeError) {
+            status = 'vermelho';
+          } else if (isAcao) {
+            if (manualActions.length > 0) {
+              status = 'verde';
+            } else if (isToday) {
+              status = 'pendente';
+            } else {
+              status = 'vermelho';
+              hasCascadeError = true;
+            }
+          } else if (isEspera) {
+            status = 'verde';
+          } else {
+            // Decisão (step 7)
+            if (isToday || isFuture) {
+              status = 'pendente';
+            } else {
+              status = 'verde';
+            }
+          }
+
+          // Sincronizar bolinha baseado no status
+          let newTickStatus: 'green' | 'red' | null = null;
+          if (status === 'verde' || status === 'dispensado') {
+            newTickStatus = 'green';
+          } else if (status === 'vermelho') {
+            newTickStatus = 'red';
+          }
+          // pendente e futuro: não marcar
+
+          if (newTickStatus) {
+            if (existingTick) {
+              await db.update(collectionManualTicks)
+                .set({ ticked: true, tickedBy: 'SYNC', tickedAt: Date.now(), tickStatus: newTickStatus })
+                .where(eq(collectionManualTicks.id, existingTick.id));
+            } else {
+              await db.insert(collectionManualTicks).values({
+                receivableId: recId,
+                step,
+                ticked: true,
+                tickedBy: 'SYNC',
+                tickedAt: Date.now(),
+                tickStatus: newTickStatus,
+              });
+            }
+
+            await db.insert(collectionManualTickHistory).values({
+              receivableId: recId,
+              step,
+              action: newTickStatus === 'red' ? 'sync_red' : 'sync_green',
+              operatorName: 'SYNC',
+              reason: `Sincronizado automaticamente com checklist (status: ${status})`,
+            });
+
+            synced++;
+            // Atualizar tickMap local para próximas iterações
+            tickMap[step] = { id: 0, receivableId: recId, step, ticked: true, tickedBy: 'SYNC', tickedAt: Date.now(), tickStatus: newTickStatus, createdAt: Date.now() };
+          }
+        }
+      }
+
+      return { synced };
+    }),
+
+  /**
    * Histórico de ticagem manual de um título
    */
   getManualTickHistory: publicProcedure

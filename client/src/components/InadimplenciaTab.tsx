@@ -680,11 +680,26 @@ export default function InadimplenciaTab() {
       }
     },
   });
+
+  // Sincronizar bolinhas com checklist automaticamente
+  const syncTicks = trpc.financial.syncTicksFromChecklist.useMutation({
+    onSuccess: (data) => {
+      if (data.synced > 0) {
+        refetchManualTicks();
+      }
+    },
+  });
+
   const checkedOverdueRef = React.useRef(false);
   React.useEffect(() => {
     if (canManualTick && receivableIds.length > 0 && !checkedOverdueRef.current) {
       checkedOverdueRef.current = true;
-      checkOverdue.mutate({ receivableIds });
+      // Primeiro sincroniza bolinhas com checklist, depois verifica overdue
+      syncTicks.mutateAsync({ receivableIds }).then(() => {
+        checkOverdue.mutate({ receivableIds });
+      }).catch(() => {
+        checkOverdue.mutate({ receivableIds });
+      });
     }
   }, [canManualTick, receivableIds.length]);
 
@@ -694,6 +709,10 @@ export default function InadimplenciaTab() {
       refetchTodayActions();
       refetchPendingActions();
       refetch();
+      // Após registrar ação, sincronizar bolinhas com checklist
+      syncTicks.mutateAsync({ receivableIds }).then(() => {
+        refetchManualTicks();
+      }).catch(() => {});
       toast.success("Ação de cobrança registrada!");
     },
   });
@@ -1382,6 +1401,7 @@ export default function InadimplenciaTab() {
                   }
                 }}
                 isToggling={toggleTick.isPending}
+                pendingDays={pendingActionsMap?.[title.id]?.pendingDays || []}
               />
             ))}
           </div>
@@ -1554,7 +1574,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
 }
 
 /* ---- Componente TitleRow (vista por título) ---- */
-function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true, isVitoria = false, onOpenDecisaoTutorial, canManualTick = false, manualTicks = [], onToggleTick, isToggling = false }: {
+function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true, isVitoria = false, onOpenDecisaoTutorial, canManualTick = false, manualTicks = [], onToggleTick, isToggling = false, pendingDays = [] }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -1577,6 +1597,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   manualTicks?: Array<{ step: number; ticked: boolean; tickedBy: string | null; tickedAt: number | null; tickStatus: string | null }>;
   onToggleTick?: (step: number, ticked: boolean, tickStatus?: 'green' | 'red') => void;
   isToggling?: boolean;
+  pendingDays?: number[];
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
   const hasHistorico = title.cobranca?.contatoHistorico && title.cobranca.contatoHistorico.length > 0;
@@ -1778,6 +1799,10 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                     const tickedBy = tick?.tickedBy || null;
                     const isActionStep = [1,3,5].includes(step);
                     const isDecisionStep = step === 7;
+                    // Bolinha pisca vermelho quando: telefone vibrando (blink) e este step de ação está pendente
+                    // pendingDays contém os dias de cobrança (1,3,5) que estão pendentes
+                    // steps 1,3,5 correspondem aos dias de cobrança 1,3,5
+                    const isPendingBlink = phoneState === 'blink' && !isTicked && isActionStep && pendingDays.includes(step);
 
                     return (
                       <div key={step} className="relative flex items-center">
@@ -1813,17 +1838,20 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                               className="flex flex-col items-center gap-0.5 group"
                             >
                               <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                                isRed
-                                  ? 'bg-red-500 border-red-600 text-white shadow-sm shadow-red-200 cursor-not-allowed'
-                                  : isGreen
-                                    ? isDecisionStep
-                                      ? 'bg-blue-500 border-blue-600 text-white shadow-sm shadow-blue-200'
-                                      : 'bg-emerald-500 border-emerald-600 text-white shadow-sm shadow-emerald-200'
-                                    : canTickStep
-                                      ? 'bg-white border-slate-300 group-hover:border-emerald-400 group-hover:bg-emerald-50 group-hover:shadow-sm cursor-pointer'
-                                      : 'bg-slate-50 border-slate-200 cursor-not-allowed'
+                                isPendingBlink
+                                  ? 'bg-red-100 border-red-400 text-red-600 animate-pulse shadow-sm shadow-red-300 cursor-pointer'
+                                  : isRed
+                                    ? 'bg-red-500 border-red-600 text-white shadow-sm shadow-red-200 cursor-not-allowed'
+                                    : isGreen
+                                      ? isDecisionStep
+                                        ? 'bg-blue-500 border-blue-600 text-white shadow-sm shadow-blue-200'
+                                        : 'bg-emerald-500 border-emerald-600 text-white shadow-sm shadow-emerald-200'
+                                      : canTickStep
+                                        ? 'bg-white border-slate-300 group-hover:border-emerald-400 group-hover:bg-emerald-50 group-hover:shadow-sm cursor-pointer'
+                                        : 'bg-slate-50 border-slate-200 cursor-not-allowed'
                               }`}>
-                                {isRed ? <XCircle className="w-3.5 h-3.5" /> :
+                                {isPendingBlink ? <Phone className="w-3.5 h-3.5 animate-bounce" /> :
+                                 isRed ? <XCircle className="w-3.5 h-3.5" /> :
                                  isGreen ? <Check className="w-3.5 h-3.5" /> : (
                                   <span className={`text-[9px] font-bold ${
                                     canTickStep ? 'text-slate-400 group-hover:text-emerald-500' : 'text-slate-300'
@@ -1831,6 +1859,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                                 )}
                               </div>
                               <span className={`text-[8px] leading-none font-medium whitespace-nowrap ${
+                                isPendingBlink ? 'text-red-600 animate-pulse font-bold' :
                                 isRed ? 'text-red-600' :
                                 isGreen ? 'text-emerald-600' :
                                 canTickStep ? 'text-slate-500' : 'text-slate-300'
@@ -1847,7 +1876,8 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                             {isGreen && tickedBy && (
                               <p className="text-emerald-600 mt-0.5">✓ {tickedBy} — {tickedDate}</p>
                             )}
-                            {!isTicked && canTickStep && <p className="text-blue-600 mt-0.5">Clique para marcar</p>}
+                            {isPendingBlink && <p className="text-red-600 mt-0.5 font-bold animate-pulse">⚠ AÇÃO PENDENTE — Registre a cobrança!</p>}
+                            {!isTicked && canTickStep && !isPendingBlink && <p className="text-blue-600 mt-0.5">Clique para marcar</p>}
                             {!isTicked && !canTickStep && <p className="text-slate-400 mt-0.5">Complete o passo anterior</p>}
                           </TooltipContent>
                         </Tooltip>
