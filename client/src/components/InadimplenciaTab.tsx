@@ -1357,9 +1357,9 @@ export default function InadimplenciaTab() {
                 onOpenDecisaoTutorial={(cn, vn) => setDecisaoTutorialData({ clienteName: cn, vendedorName: vn })}
                 canManualTick={!!canManualTick}
                 manualTicks={manualTicksMap?.[title.id] || []}
-                onToggleTick={(step, ticked) => {
+                onToggleTick={(step, ticked, tickStatus) => {
                   if (operator) {
-                    toggleTick.mutate({ receivableId: title.id, step, ticked, operatorName: operator.name });
+                    toggleTick.mutate({ receivableId: title.id, step, ticked, operatorName: operator.name, tickStatus: tickStatus || 'green' });
                   }
                 }}
                 isToggling={toggleTick.isPending}
@@ -1556,7 +1556,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   onOpenDecisaoTutorial?: (clienteName: string, vendedorName: string) => void;
   canManualTick?: boolean;
   manualTicks?: Array<{ step: number; ticked: boolean; tickedBy: string | null; tickedAt: number | null; tickStatus: string | null }>;
-  onToggleTick?: (step: number, ticked: boolean) => void;
+  onToggleTick?: (step: number, ticked: boolean, tickStatus?: 'green' | 'red') => void;
   isToggling?: boolean;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
@@ -1573,6 +1573,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   const redCount = useMemo(() => manualTicks.filter(t => t.tickStatus === 'red').length, [manualTicks]);
   const greenCount = useMemo(() => manualTicks.filter(t => t.ticked && t.tickStatus !== 'red').length, [manualTicks]);
   const hasRedTicks = redCount > 0;
+  const [tickChoiceStep, setTickChoiceStep] = useState<{ recId: number; step: number } | null>(null);
 
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
@@ -1760,7 +1761,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                     const isDecisionStep = step === 7;
 
                     return (
-                      <React.Fragment key={step}>
+                      <div key={step} className="relative flex items-center">
                         {/* Connector line between steps */}
                         {idx > 0 && (
                           <div className={`h-0.5 flex-1 min-w-[8px] max-w-[20px] rounded-full transition-colors ${
@@ -1783,7 +1784,8 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                                 if (isTicked && canUntick) {
                                   onToggleTick?.(step, false);
                                 } else if (!isTicked && canTickStep) {
-                                  onToggleTick?.(step, true);
+                                  // Mostrar opção verde ou vermelho
+                                  setTickChoiceStep({ recId: title.id, step });
                                 } else if (!isTicked && !canTickStep) {
                                   toast.error(`Complete o passo ${step - 1} antes`);
                                 }
@@ -1830,7 +1832,41 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                             {!isTicked && !canTickStep && <p className="text-slate-400 mt-0.5">Complete o passo anterior</p>}
                           </TooltipContent>
                         </Tooltip>
-                      </React.Fragment>
+                        {/* Popover de escolha verde/vermelho */}
+                        {tickChoiceStep?.recId === title.id && tickChoiceStep?.step === step && (
+                          <div className="absolute z-50 mt-1 bg-white rounded-lg shadow-xl border border-slate-200 p-2 flex gap-2 animate-in fade-in slide-in-from-top-1" style={{ top: '100%', left: '50%', transform: 'translateX(-50%)' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleTick?.(step, true, 'green');
+                                setTickChoiceStep(null);
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-semibold transition-colors"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Cumprido
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleTick?.(step, true, 'red');
+                                setTickChoiceStep(null);
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-semibold transition-colors"
+                            >
+                              <XCircle className="w-3.5 h-3.5" /> Falha
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTickChoiceStep(null);
+                              }}
+                              className="px-2 py-1.5 rounded-md hover:bg-slate-100 text-slate-400 text-xs transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </TooltipProvider>

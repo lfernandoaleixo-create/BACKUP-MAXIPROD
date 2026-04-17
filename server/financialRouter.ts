@@ -5457,6 +5457,7 @@ ${acoesTexto}
       step: z.number().min(1).max(7),
       ticked: z.boolean(),
       operatorName: z.string(),
+      tickStatus: z.enum(['green', 'red']).optional().default('green'),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -5504,7 +5505,7 @@ ${acoesTexto}
         const now = Date.now();
         if (existing) {
           await db.update(collectionManualTicks)
-            .set({ ticked: true, tickedBy: input.operatorName, tickedAt: now, tickStatus: 'green' })
+            .set({ ticked: true, tickedBy: input.operatorName, tickedAt: now, tickStatus: input.tickStatus })
             .where(eq(collectionManualTicks.id, existing.id));
         } else {
           await db.insert(collectionManualTicks).values({
@@ -5513,7 +5514,7 @@ ${acoesTexto}
             ticked: true,
             tickedBy: input.operatorName,
             tickedAt: now,
-            tickStatus: 'green',
+            tickStatus: input.tickStatus,
           });
         }
 
@@ -5521,9 +5522,40 @@ ${acoesTexto}
         await db.insert(collectionManualTickHistory).values({
           receivableId: input.receivableId,
           step: input.step,
-          action: "tick",
+          action: input.tickStatus === 'red' ? 'manual_red' : 'tick',
           operatorName: input.operatorName,
+          reason: input.tickStatus === 'red' ? 'Marcado como falha manualmente' : undefined,
         });
+
+        // AUTO-TICK INTERVALO: se ticou uma Ação (ímpar), ticar automaticamente o Intervalo seguinte (par)
+        const isAcao = input.step % 2 === 1 && input.step < 7; // steps 1,3,5 são Ações
+        if (isAcao && input.tickStatus === 'green') {
+          const nextStep = input.step + 1;
+          const existingNext = tickMap[nextStep];
+          if (!existingNext || !existingNext.ticked) {
+            if (existingNext) {
+              await db.update(collectionManualTicks)
+                .set({ ticked: true, tickedBy: 'SISTEMA', tickedAt: now, tickStatus: 'green' })
+                .where(eq(collectionManualTicks.id, existingNext.id));
+            } else {
+              await db.insert(collectionManualTicks).values({
+                receivableId: input.receivableId,
+                step: nextStep,
+                ticked: true,
+                tickedBy: 'SISTEMA',
+                tickedAt: now,
+                tickStatus: 'green',
+              });
+            }
+            await db.insert(collectionManualTickHistory).values({
+              receivableId: input.receivableId,
+              step: nextStep,
+              action: 'tick',
+              operatorName: 'SISTEMA',
+              reason: `Intervalo auto-ticado (Ação ${Math.ceil(input.step / 2)} cumprida)`,
+            });
+          }
+        }
       } else {
         // CONTROLE RÍGIDO: não pode desmarcar bolinha vermelha
         const existingStep = tickMap[input.step];

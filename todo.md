@@ -2861,3 +2861,5 @@
 - [x] Remover cobranças e bolinhas dos clientes com 3d+ de atraso (start só no primeiro contato manual)
 - [x] Corrigir checkOverdueTicks para não marcar vermelho indevidamente (operador tem o dia inteiro para ticar)
 - [x] Garantir que clientes com 3d+ de atraso nunca vibram telefone vermelho
+- [x] Bolinhas: Intervalo fica verde automaticamente quando Ação anterior é verde
+- [x] Bolinhas: dar opção de marcar verde ou vermelho manualmente (não apenas verde)
