@@ -2855,3 +2855,4 @@
 - [x] Cobrança 1,3,5 dias: para clientes com 3+ dias de atraso, só dar start quando Thiago fizer o primeiro contato
 - [x] Relógio do histórico (checklist): start da Ação 1 só quando for feito o primeiro contato, seguindo guia de cobrança
 - [x] Investigar cobranças de ontem (16/04) que foram "desmarcadas" — receivableIds órfãos após re-sync do Maxiprod
+- [x] Migrar cobranças do Thiago de ontem (16/04) dos IDs antigos para os novos IDs do Maxiprod — remarcar status, ações diárias, cobrancaStartedAt
