@@ -2856,3 +2856,8 @@
 - [x] Relógio do histórico (checklist): start da Ação 1 só quando for feito o primeiro contato, seguindo guia de cobrança
 - [x] Investigar cobranças de ontem (16/04) que foram "desmarcadas" — receivableIds órfãos após re-sync do Maxiprod
 - [x] Migrar cobranças do Thiago de ontem (16/04) dos IDs antigos para os novos IDs do Maxiprod — remarcar status, ações diárias, cobrancaStartedAt
+- [x] Ticar bolinha 1 verde nos clientes com 2d de atraso (ação tomada ontem pelo Thiago)
+- [x] Remover cobranças automáticas dos clientes com 1d de atraso (Thiago marca manualmente)
+- [x] Remover cobranças e bolinhas dos clientes com 3d+ de atraso (start só no primeiro contato manual)
+- [x] Corrigir checkOverdueTicks para não marcar vermelho indevidamente (operador tem o dia inteiro para ticar)
+- [x] Garantir que clientes com 3d+ de atraso nunca vibram telefone vermelho

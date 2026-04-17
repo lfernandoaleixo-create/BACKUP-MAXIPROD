@@ -5600,24 +5600,36 @@ ${acoesTexto}
           let shouldBeRed = false;
 
           if (step === 1) {
-            // Step 1 só fica vermelho se a cobrança já iniciou e o dia passou
-            // Buscar cobrancaStartedAt do receivable
+            // Step 1 só fica vermelho se a cobrança já iniciou e o dia de início
+            // já passou COMPLETAMENTE (pelo menos 2 dias atrás, pois o operador
+            // tem o dia inteiro do cobrancaStartedAt para ticar)
             const [action] = await db.select({ cobrancaStartedAt: collectionActions.cobrancaStartedAt })
               .from(collectionActions)
               .where(eq(collectionActions.receivableId, recId))
               .limit(1);
             if (action?.cobrancaStartedAt) {
-              // Se a cobrança iniciou antes de hoje, step 1 deveria ter sido ticado
-              if (action.cobrancaStartedAt < todayStr) {
+              // O operador tem até o final do dia cobrancaStartedAt para ticar step 1
+              // Então só marca vermelho se cobrancaStartedAt < ontem (ou seja, 2+ dias atrás)
+              const yesterday = new Date(brNow);
+              yesterday.setDate(yesterday.getDate() - 1);
+              const yesterdayStr = yesterday.toISOString().split('T')[0];
+              if (action.cobrancaStartedAt < yesterdayStr) {
                 shouldBeRed = true;
               }
             }
           } else {
-            // Steps 2+: se o step anterior foi ticado e foi há mais de 1 dia
+            // Steps 2+: o operador tem o dia SEGUINTE ao step anterior para ticar
+            // Só marca vermelho se já se passaram 2+ dias desde o step anterior
             const prev = tickMap[step - 1];
             if (prev?.ticked && prev.tickedAt) {
-              const prevDate = new Date(prev.tickedAt - 3 * 60 * 60 * 1000).toISOString().split('T')[0];
-              if (prevDate < todayStr) {
+              const prevDate = new Date(prev.tickedAt - 3 * 60 * 60 * 1000);
+              const prevDateStr = prevDate.toISOString().split('T')[0];
+              // O operador tem até o final do dia seguinte ao prevDate para ticar
+              // Então só marca vermelho se prevDate < ontem (2+ dias atrás)
+              const yesterday = new Date(brNow);
+              yesterday.setDate(yesterday.getDate() - 1);
+              const yesterdayStr = yesterday.toISOString().split('T')[0];
+              if (prevDateStr < yesterdayStr) {
                 shouldBeRed = true;
               }
             }
