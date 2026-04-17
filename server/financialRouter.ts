@@ -3470,10 +3470,15 @@ export const financialRouter = router({
       // Data de início do sistema de cobrança
       const SISTEMA_COBRANCA_INICIO = "2026-04-16";
 
-      // Verificar se é um título "legado" (já estava vencido há 2+ dias quando o sistema começou)
-      // Ou seja: vencimento + 1 dia < data de início do sistema → dia 1 do roteiro original cai antes do sistema
+      // Verificar se é um título "legado":
+      // 1) Já estava vencido há 2+ dias quando o sistema começou (dia1 original < início do sistema)
+      // 2) OU tem 2+ dias úteis de atraso e ainda NÃO teve primeiro contato registrado
+      //    → Esses entram como "aguardando primeiro contato" com bolinhas zeradas e sem telefone
       const dia1Original = new Date(new Date(vencDate).getTime() + 1 * 86400000).toISOString().split("T")[0];
-      const isLegacyTitle = dia1Original < SISTEMA_COBRANCA_INICIO;
+      const isOriginalLegacy = dia1Original < SISTEMA_COBRANCA_INICIO;
+      const businessDaysOverdueLocal = diasAtraso > 0 ? countBusinessDays(vencDate, todayStr) : 0;
+      const is2PlusDaysNoStart = businessDaysOverdueLocal >= 2 && !startDate;
+      const isLegacyTitle = isOriginalLegacy || is2PlusDaysNoStart;
 
       // Para títulos legados: roteiro deslocado a partir da data de início do sistema
       // Em vez de contar a partir do vencimento, conta a partir de 16/04/2026
@@ -3508,12 +3513,15 @@ export const financialRouter = router({
 
       // Base para cálculo de dias úteis:
       // Para títulos legados com start: base = dia anterior ao primeiro contato (para que dia 1 = primeiro contato)
-      // Para títulos legados sem start: base = dia anterior ao início do sistema
+      // Para títulos legados sem start (original): base = dia anterior ao início do sistema
+      // Para títulos 2+ dias sem start: base = dia anterior a hoje (roteiro começará quando fizer 1º contato)
       // Para títulos normais: base = data de vencimento (dia 1 = 1 dia útil após vencimento)
       const baseDateStr = isLegacyTitle
         ? (legacyHasStarted
             ? addDaysStr(legacyStartDate!, -1) // dia anterior ao primeiro contato
-            : addDaysStr(SISTEMA_COBRANCA_INICIO, -1)) // dia anterior ao início do sistema
+            : (isOriginalLegacy
+                ? addDaysStr(SISTEMA_COBRANCA_INICIO, -1) // dia anterior ao início do sistema
+                : addDaysStr(todayStr, -1))) // dia anterior a hoje (para 2+ dias sem start)
         : vencDate;
 
       // Pré-calcular as datas de cada step usando DIAS ÚTEIS
@@ -3547,6 +3555,8 @@ export const financialRouter = router({
         let acoes: Array<{ tipo: string; notas: string; operador: string; hora: string }> = [];
 
         // Títulos legados sem primeiro contato: todos os steps ficam como 'futuro'
+        // Isso se aplica tanto a títulos originalmente legados (dia1 < sistema) quanto
+        // a títulos com 2+ dias de atraso sem cobrancaStartedAt
         if (legacyNotStarted) {
           status = step.dia === 1 ? "pendente" : "futuro";
           motivo = step.dia === 1
@@ -3772,6 +3782,15 @@ export const financialRouter = router({
 
         // Título cujo dia 1 útil já passou: só vibra se dia1 é hoje ou futuro
         if (dia1Str < todayStr) continue;
+
+        // Títulos com 2+ dias úteis de atraso sem primeiro contato: NUNCA vibra
+        // (aguardando primeiro contato manual do Thiago)
+        if (businessDaysOverdue >= 2) {
+          // Verificar se tem collectionAction com cobrancaStartedAt
+          const [ca] = await db.select({ cobrancaStartedAt: collectionActions.cobrancaStartedAt })
+            .from(collectionActions).where(eq(collectionActions.receivableId, rec.id)).limit(1);
+          if (!ca?.cobrancaStartedAt) continue;
+        }
 
         const pendingDays: number[] = [];
         const actionDates = actionsByRecId[rec.id] || new Set();

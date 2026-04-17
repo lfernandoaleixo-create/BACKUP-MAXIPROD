@@ -2882,3 +2882,5 @@
 - [x] Contas do Fernando: ticks NÃO devem persistir de um dia pro outro, deve ticar manualmente todos os dias
 - [x] Bug: Botão "Registrar Ação" de cobrança não funciona (E-mail/WhatsApp não registra ao clicar)
 - [x] URGENTE: Restaurar dados de cobrança do Thiago na aba Inadimplência que foram perdidos durante o reset
+- [x] Títulos 2+ dias atraso: entram como "aguardando primeiro contato", bolinhas zeradas, telefone NUNCA toca
+- [x] Títulos 1 dia atraso: fluxo normal, Thiago registra ação, roteiro 1,3,5, telefone pode vibrar
