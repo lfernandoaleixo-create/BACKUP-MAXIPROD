@@ -2878,3 +2878,4 @@
 - [x] Reduzir espessura dos cards de limite/valor previsto na Sicoob Palitos
 - [x] Corrigir vibração do telefone e ações pendentes para usar dias úteis (pular sábados, domingos e feriados)
 - [x] Mini-chat dentro dos 2 cards Sicoob Palitos (Desconto Semanal e Limite) para troca de mensagens entre Flávio e operadores
+- [x] Madeira Produto Acabado: abater pedidos de variação do estoque mãe e criar estoque virtual na variação (evitar baixa dupla)

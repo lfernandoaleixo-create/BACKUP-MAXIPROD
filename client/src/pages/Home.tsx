@@ -137,6 +137,8 @@ interface StockItem {
     pedidosUn: number;
     pedidosPorCliente: PedidoCliente[];
     unidadesPorCaixa: number | null;
+    estoqueUn?: number;
+    estoqueCx?: number | null;
   }[];
   variantConversionFactor?: number | null;
   // Pedidos próprios do pai (antes de somar variações)
@@ -1166,7 +1168,18 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                           <span className="text-[9px] text-teal-500 font-medium">Variação</span>
                         </td>
                         <td className="px-2 py-1.5">
-                          <span className="text-xs text-slate-400">—</span>
+                          {variant.estoqueCx != null && variant.estoqueCx > 0 ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="text-xs font-semibold text-teal-600 cursor-help">
+                                  {formatNumber(variant.estoqueCx)} {getUnit(variant as any, true)}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent><p className="text-xs">Estoque reservado da variação (abatido do produto mãe)</p></TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
                         </td>
                         <td className="px-2 py-1.5">
                           <span className={`text-xs font-semibold ${(variant.pedidosCx ?? variant.pedidosUn) > 0 ? 'text-orange-500' : 'text-slate-400'}`}>
@@ -1174,7 +1187,18 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                           </span>
                         </td>
                         <td className="px-2 py-1.5 bg-emerald-50/40 border-x border-emerald-100">
-                          <span className="text-xs text-slate-400">—</span>
+                          {variant.estoqueCx != null && variant.estoqueCx > 0 && (variant.pedidosCx ?? 0) > 0 ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={`text-xs font-semibold ${(variant.estoqueCx - (variant.pedidosCx ?? 0)) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                  {formatNumber(variant.estoqueCx - (variant.pedidosCx ?? 0))} {getUnit(variant as any, true)}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent><p className="text-xs">Disponível da variação = Estoque reservado - Pedidos</p></TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
                         </td>
                         <td className="px-2 py-1.5">
                           <span className="text-xs text-slate-400">—</span>
@@ -2798,7 +2822,18 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                             <span className="text-[9px] text-green-500 font-medium">Variação</span>
                           </td>
                           <td className="px-1.5 py-1 text-center bg-green-50/40 border-x border-green-200">
-                            <span className="text-xs text-slate-400">—</span>
+                            {variant.estoqueCx != null && variant.estoqueCx > 0 ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="text-xs font-semibold text-teal-600 cursor-help">
+                                    {formatNumber(variant.estoqueCx)} {getUnit(variant as any, true)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent><p className="text-xs">Estoque reservado da variação (abatido do produto mãe)</p></TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
+                            )}
                           </td>
                           <td className="py-1 px-0.5"></td>
                           <td className="px-1.5 py-1 text-center whitespace-nowrap">
@@ -2807,7 +2842,18 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                             </span>
                           </td>
                           <td className="px-1.5 py-1 text-center bg-emerald-50/40 border-x border-emerald-100">
-                            <span className="text-xs text-slate-400">—</span>
+                            {variant.estoqueCx != null && variant.estoqueCx > 0 && (variant.pedidosCx ?? 0) > 0 ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className={`text-xs font-semibold ${(variant.estoqueCx - (variant.pedidosCx ?? 0)) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                    {formatNumber(variant.estoqueCx - (variant.pedidosCx ?? 0))} {getUnit(variant as any, true)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent><p className="text-xs">Disponível da variação = Estoque reservado - Pedidos</p></TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
+                            )}
                           </td>
                           {showSalesColumns && monthlySalesData?.months && (
                             <>

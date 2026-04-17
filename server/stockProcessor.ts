@@ -55,6 +55,8 @@ interface VariantChild {
   pedidosUn: number;
   pedidosPorCliente: PedidoCliente[];
   unidadesPorCaixa: number | null;
+  estoqueUn: number; // estoque real da variação (ou virtual para Madeira Acabado)
+  estoqueCx: number | null; // estoque em caixas
 }
 
 interface ProcessedItem {
@@ -786,19 +788,40 @@ export async function processStockData(): Promise<void> {
       const childPedidosUn = childItem.pedidosUn;
       const parentUnitsPerBox = parent.unidadesPorCaixa || 1;
       
-      // REGRA DE BAIXA DUPLA (10/04/2026):
-      // Produtos ZECA (código termina em "Z"): comportamento original - sempre debitar do pai
-      // Outros produtos: se a variação TEM estoque próprio (estoqueUn > 0), a fiscal já
-      // deu baixa no Maxiprod, então NÃO debitar do pai (evita baixa dupla).
-      // Se a variação NÃO tem estoque próprio (estoqueUn === 0), debitar do pai normalmente.
+      // REGRA DE BAIXA DUPLA (17/04/2026 - atualizada):
+      // 1. Produtos ZECA (código termina em "Z"): sempre debitar do pai
+      // 2. Madeira Produto Acabado (grupo=industrializacao, subgrupo=madeira):
+      //    SEMPRE debitar pedidos da variação do estoque mãe.
+      //    Criar "estoque virtual" na variação = quantidade dos pedidos.
+      //    Quando o pedido sair (faturar), desconta da variação (evita baixa dupla).
+      // 3. Outros produtos: se a variação TEM estoque próprio (estoqueUn > 0), a fiscal já
+      //    deu baixa no Maxiprod, então NÃO debitar do pai (evita baixa dupla).
+      //    Se a variação NÃO tem estoque próprio (estoqueUn === 0), debitar do pai normalmente.
       const isZecaChild = child.childCode.toUpperCase().endsWith('Z');
       const childHasOwnStock = childItem.estoqueUn > 0;
+      const isMadeiraAcabado = parent.grupo === "industrializacao" && parent.subgrupo === "madeira";
       
-      if (isZecaChild || !childHasOwnStock) {
+      // Estoque da variação: real do Maxiprod ou virtual (pedidos) para Madeira Acabado
+      let variantEstoqueUn = childItem.estoqueUn;
+      let variantEstoqueCx = childItem.estoqueCx;
+      
+      if (isMadeiraAcabado) {
+        // MADEIRA PRODUTO ACABADO: sempre abater do mãe
+        extraPedidosUn += childPedidosUn * child.conversionFactor;
+        // Criar estoque virtual na variação = quantidade dos pedidos
+        // (o Maxiprod já criou a variação com as configurações, mas o estoque
+        // ainda está no mãe até o faturamento)
+        if (childItem.estoqueUn === 0 && childPedidosUn > 0) {
+          variantEstoqueUn = childPedidosUn;
+          variantEstoqueCx = childItem.unidadesPorCaixa
+            ? Math.floor(childPedidosUn / childItem.unidadesPorCaixa)
+            : null;
+        }
+      } else if (isZecaChild || !childHasOwnStock) {
         // ZECA ou variação sem estoque próprio: debitar pedidos do pai (comportamento original)
         extraPedidosUn += childPedidosUn * child.conversionFactor;
       }
-      // Se variação NÃO-ZECA tem estoque próprio: NÃO somar ao pai
+      // Se variação NÃO-ZECA/NÃO-Madeira tem estoque próprio: NÃO somar ao pai
       // Os pedidos já foram debitados do estoque da variação pela fiscal
       
       // Agregar pedidos por cliente do filho
@@ -812,6 +835,8 @@ export async function processStockData(): Promise<void> {
         pedidosUn: childItem.pedidosUn,
         pedidosPorCliente: childPedidosPorCliente,
         unidadesPorCaixa: childItem.unidadesPorCaixa,
+        estoqueUn: variantEstoqueUn,
+        estoqueCx: variantEstoqueCx,
       });
     }
     
