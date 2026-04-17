@@ -3553,7 +3553,7 @@ export const financialRouter = router({
             tipo: a.actionType,
             notas: a.notes || "",
             operador: a.operatorName,
-            hora: a.createdAt ? new Date(a.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "",
+            hora: a.createdAt ? new Date(a.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "",
           });
         }
 
@@ -3673,9 +3673,13 @@ export const financialRouter = router({
             eq(collectionDailyActions.isAutomatic, false)
           )
         );
-      const map: Record<number, boolean> = {};
+      // Retorna os tipos de ação registrados hoje para cada título
+      const map: Record<number, string[]> = {};
       for (const a of actions) {
-        map[a.receivableId] = true;
+        if (!map[a.receivableId]) map[a.receivableId] = [];
+        if (!map[a.receivableId].includes(a.actionType)) {
+          map[a.receivableId].push(a.actionType);
+        }
       }
       return map;
     }),
@@ -3714,11 +3718,22 @@ export const financialRouter = router({
           )
         );
 
-      // Agrupar ações por receivableId e data
+      // Ações obrigatórias por dia de cobrança (conforme guia)
+      const REQUIRED_ACTIONS_BY_DAY: Record<number, string[]> = {
+        1: ["whatsapp", "email"],
+        3: ["ligacao", "email"],
+        5: ["ligacao", "email"],
+      };
+
+      // Agrupar ações por receivableId e data, com tipos de ação
       const actionsByRecId: Record<number, Set<string>> = {};
+      const actionTypesByRecIdDate: Record<string, Set<string>> = {};
       for (const a of allActions) {
         if (!actionsByRecId[a.receivableId]) actionsByRecId[a.receivableId] = new Set();
         actionsByRecId[a.receivableId].add(a.actionDate);
+        const key = `${a.receivableId}_${a.actionDate}`;
+        if (!actionTypesByRecIdDate[key]) actionTypesByRecIdDate[key] = new Set();
+        actionTypesByRecIdDate[key].add(a.actionType);
       }
 
       const SISTEMA_COBRANCA_INICIO_PENDING = '2026-04-16';
@@ -3750,17 +3765,46 @@ export const financialRouter = router({
             const collectionDate = new Date(vencDate);
             collectionDate.setDate(collectionDate.getDate() + day);
             const collDateStr = collectionDate.toISOString().split('T')[0];
-            // Verificar se teve ação nesse dia OU em qualquer dia posterior até hoje
-            let hasAction = false;
-            const actionDatesArr = Array.from(actionDates);
-            for (let ai = 0; ai < actionDatesArr.length; ai++) {
-              if (actionDatesArr[ai] >= collDateStr) {
-                hasAction = true;
-                break;
+            // Verificar se TODAS as ações obrigatórias do dia foram registradas
+            const requiredActions = REQUIRED_ACTIONS_BY_DAY[day] || [];
+            if (requiredActions.length > 0) {
+              // Verificar se todas as ações obrigatórias foram feitas nesse dia ou posterior
+              let allRequiredDone = true;
+              for (const reqAction of requiredActions) {
+                let found = false;
+                // Verificar nesse dia e em dias posteriores até hoje
+                const actionDatesArr = Array.from(actionDates);
+                for (const aDate of actionDatesArr) {
+                  if (aDate >= collDateStr) {
+                    const key = `${rec.id}_${aDate}`;
+                    const typesOnDate = actionTypesByRecIdDate[key];
+                    if (typesOnDate && typesOnDate.has(reqAction)) {
+                      found = true;
+                      break;
+                    }
+                  }
+                }
+                if (!found) {
+                  allRequiredDone = false;
+                  break;
+                }
               }
-            }
-            if (!hasAction) {
-              pendingDays.push(day);
+              if (!allRequiredDone) {
+                pendingDays.push(day);
+              }
+            } else {
+              // Dia sem regra específica: qualquer ação basta
+              let hasAction = false;
+              const actionDatesArr = Array.from(actionDates);
+              for (let ai = 0; ai < actionDatesArr.length; ai++) {
+                if (actionDatesArr[ai] >= collDateStr) {
+                  hasAction = true;
+                  break;
+                }
+              }
+              if (!hasAction) {
+                pendingDays.push(day);
+              }
             }
           }
         }
@@ -3779,7 +3823,7 @@ export const financialRouter = router({
   registerCollectionAction: publicProcedure
     .input(z.object({
       receivableId: z.number(),
-      actionType: z.enum(["ligacao", "whatsapp", "email", "visita", "outro"]),
+      actionTypes: z.array(z.enum(["ligacao", "whatsapp", "email", "visita", "outro"])).min(1),
       operatorName: z.string(),
       notes: z.string().optional(),
     }))
@@ -3789,14 +3833,17 @@ export const financialRouter = router({
       const now = new Date();
       const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
       const todayStr = brDate.toISOString().split('T')[0];
-      await db.insert(collectionDailyActions).values({
-        receivableId: input.receivableId,
-        actionDate: todayStr,
-        actionType: input.actionType,
-        operatorName: input.operatorName,
-        notes: input.notes || null,
-        isAutomatic: false,
-      });
+      // Registrar cada tipo de ação separadamente
+      for (const actionType of input.actionTypes) {
+        await db.insert(collectionDailyActions).values({
+          receivableId: input.receivableId,
+          actionDate: todayStr,
+          actionType,
+          operatorName: input.operatorName,
+          notes: input.notes || null,
+          isAutomatic: false,
+        });
+      }
       // Atualizar status na collectionActions para "contatado" se estava "pendente"
       const existing = await db
         .select()

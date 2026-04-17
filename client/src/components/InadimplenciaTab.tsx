@@ -860,9 +860,27 @@ export default function InadimplenciaTab() {
     return false;
   }
 
+  // Ações obrigatórias por dia de cobrança (conforme guia)
+  // Dia 1: WhatsApp + Email | Dia 3: Ligação + Email | Dia 5: Ligação + Email
+  const REQUIRED_ACTIONS_BY_DAY: Record<number, string[]> = {
+    1: ["whatsapp", "email"],
+    3: ["ligacao", "email"],
+    5: ["ligacao", "email"],
+  };
+
+  // Verificar se TODAS as ações obrigatórias do dia foram registradas
+  function hasAllRequiredActions(title: Title): boolean {
+    const todayTypes = todayActionsMap?.[title.id]; // agora é string[] ou undefined
+    if (!todayTypes || todayTypes.length === 0) return false;
+    const required = REQUIRED_ACTIONS_BY_DAY[title.diasAtraso];
+    if (!required) return todayTypes.length > 0; // dia sem regra específica: qualquer ação basta
+    return required.every(r => todayTypes.includes(r));
+  }
+
   // Cor do telefone baseada no estado
   // REGRA: vibra nos dias 1/3/5 APENAS para títulos que seguem a régua (a partir de 16/04/2026)
   // Títulos antigos (>2 dias antes de hoje sem cobrancaStartedAt) NÃO vibram
+  // REGRA NOVA: telefone só para de vibrar quando TODAS as ações obrigatórias do dia forem registradas
   function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" | "document" {
     if (title.diasAtraso < 1) return "idle";
     // Se tem documento gerado (dia 7+ não protestar) - mostrar documento
@@ -873,7 +891,8 @@ export default function InadimplenciaTab() {
     // REGRA DIFERENCIADA: só vibra se o título segue a régua 1,3,5
     if (!shouldFollowVibrateRule(title)) {
       // Título antigo - não vibra, mas mostra se tem ação hoje
-      if (todayActionsMap?.[title.id]) return "done";
+      const todayTypes = todayActionsMap?.[title.id];
+      if (todayTypes && todayTypes.length > 0) return "done";
       return "idle";
     }
 
@@ -881,12 +900,12 @@ export default function InadimplenciaTab() {
     if (hasPendingActions(title)) return "blink";
     // Se hoje é dia de cobrança (1, 3 ou 5)
     if (isCollectionDay(title)) {
-      const hasActionToday = todayActionsMap?.[title.id] || false;
-      if (hasActionToday) return "done";
-      return "blink"; // Dia de cobrança sem ação - vibra!
+      if (hasAllRequiredActions(title)) return "done";
+      return "blink"; // Dia de cobrança sem TODAS as ações obrigatórias - vibra!
     }
     // Dia que não é de cobrança e sem pendentes
-    if (todayActionsMap?.[title.id]) return "done";
+    const todayTypes = todayActionsMap?.[title.id];
+    if (todayTypes && todayTypes.length > 0) return "done";
     return "idle";
   }
 
@@ -2110,7 +2129,7 @@ function TitleDetails({ title }: { title: Title }) {
                   <Icon className="w-3.5 h-3.5 mt-0.5 text-slate-400 shrink-0" />
                   <div>
                     <span className="text-xs text-slate-400">
-                      {new Date(c.data).toLocaleDateString("pt-BR")} {new Date(c.data).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      {new Date(c.data).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} {new Date(c.data).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
                     </span>
                     <span className="text-xs text-slate-500 ml-1">({tipoInfo?.label || c.tipo})</span>
                     {c.usuario && <span className="text-xs text-blue-500 ml-1">· {c.usuario}</span>}
@@ -2140,10 +2159,10 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
   title: Title;
   operatorName: string;
   onClose: () => void;
-  onSave: (data: { receivableId: number; actionType: "ligacao" | "whatsapp" | "email" | "visita" | "outro"; operatorName: string; notes?: string }) => void;
+  onSave: (data: { receivableId: number; actionTypes: ("ligacao" | "whatsapp" | "email" | "visita" | "outro")[]; operatorName: string; notes?: string }) => void;
   isSaving: boolean;
 }) {
-  const [actionType, setActionType] = useState<"ligacao" | "whatsapp" | "email" | "visita" | "outro">("ligacao");
+  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState("");
 
   const ACTION_TYPES = [
@@ -2153,6 +2172,23 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
     { value: "visita" as const, label: "Visita", icon: User },
     { value: "outro" as const, label: "Outro", icon: Send },
   ];
+
+  // Sugestão automática baseada no dia de atraso (guia de cobrança)
+  const suggestedTypes = useMemo(() => {
+    if (title.diasAtraso === 1) return ["whatsapp", "email"];
+    if (title.diasAtraso === 3) return ["ligacao", "email"];
+    if (title.diasAtraso === 5) return ["ligacao", "email"];
+    return [];
+  }, [title.diasAtraso]);
+
+  function toggleType(value: string) {
+    setSelectedTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
+  }
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
@@ -2174,19 +2210,46 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
             )}
           </div>
 
+          {/* Sugestão do guia de cobrança */}
+          {suggestedTypes.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+              <div className="text-xs font-bold text-amber-800 mb-1 flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Guia de Cobrança — Dia {title.diasAtraso}
+              </div>
+              <div className="text-xs text-amber-700">
+                Ações obrigatórias: <span className="font-bold">{suggestedTypes.map(t => ACTION_TYPES.find(a => a.value === t)?.label).join(" + ")}</span>
+              </div>
+              <div className="text-[10px] text-amber-600 mt-0.5">
+                O telefone só para de vibrar quando TODAS as ações forem registradas.
+              </div>
+            </div>
+          )}
+
           <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase">Tipo de Contato</label>
+            <label className="text-xs font-semibold text-slate-500 uppercase">Tipo de Contato <span className="text-blue-500">(selecione um ou mais)</span></label>
             <div className="grid grid-cols-5 gap-2 mt-1">
               {ACTION_TYPES.map(t => {
                 const Icon = t.icon;
+                const isSelected = selectedTypes.has(t.value);
+                const isSuggested = suggestedTypes.includes(t.value);
                 return (
                   <button
                     key={t.value}
-                    onClick={() => setActionType(t.value)}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all ${
-                      actionType === t.value ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                    onClick={() => toggleType(t.value)}
+                    className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all ${
+                      isSelected
+                        ? "bg-blue-50 border-blue-400 text-blue-700 ring-2 ring-blue-300"
+                        : isSuggested
+                        ? "bg-amber-50 border-amber-300 text-amber-700 hover:border-amber-400"
+                        : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
                     }`}
                   >
+                    {isSelected && (
+                      <div className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                     <Icon className="w-4 h-4" />
                     {t.label}
                   </button>
@@ -2209,27 +2272,36 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
 
           <div className="text-xs text-slate-400">
             Registrando como: <span className="font-semibold text-slate-600">{operatorName}</span>
+            {selectedTypes.size > 0 && (
+              <span className="ml-2 text-blue-600 font-medium">
+                • {selectedTypes.size} tipo(s) selecionado(s)
+              </span>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancelar</button>
             <button
               onClick={() => {
+                if (selectedTypes.size === 0) {
+                  toast.error("Selecione pelo menos um tipo de contato!");
+                  return;
+                }
                 if (!notes.trim()) {
                   toast.error("Preencha as observações da ação!");
                   return;
                 }
                 onSave({
                   receivableId: title.id,
-                  actionType,
+                  actionTypes: Array.from(selectedTypes) as ("ligacao" | "whatsapp" | "email" | "visita" | "outro")[],
                   operatorName,
                   notes: notes.trim(),
                 });
               }}
-              disabled={isSaving || !notes.trim()}
+              disabled={isSaving || !notes.trim() || selectedTypes.size === 0}
               className="px-4 py-2 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {isSaving ? "Registrando..." : "Registrar Ação"}
+              {isSaving ? "Registrando..." : `Registrar ${selectedTypes.size > 0 ? selectedTypes.size + " Ação(s)" : "Ação"}`}
             </button>
           </div>
         </div>
@@ -2979,7 +3051,7 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
                               {edit.fieldChanged === "actionType" ? "Tipo" : "Observações"} alterado por <span className="font-bold">{edit.editedBy}</span>
                             </span>
                             <span className="text-amber-500">
-                              {edit.editedAt ? new Date(edit.editedAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                              {edit.editedAt ? new Date(edit.editedAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : ""}
                             </span>
                           </div>
                           <div className="flex items-center gap-1 mt-0.5">
@@ -3427,8 +3499,8 @@ Documento para Tomada de Decisão
 
             {/* Data de geração */}
             <div className="text-xs text-slate-400 text-center pt-2">
-              Documento gerado em: {doc.createdAt ? new Date(String(doc.createdAt)).toLocaleString('pt-BR') : '-'}
-              {doc.visualizadoEm && ` | Visualizado em: ${new Date(String(doc.visualizadoEm)).toLocaleString('pt-BR')}`}
+              Documento gerado em: {doc.createdAt ? new Date(String(doc.createdAt)).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '-'}
+              {doc.visualizadoEm && ` | Visualizado em: ${new Date(String(doc.visualizadoEm)).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`}
             </div>
           </div>
         )}

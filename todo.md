@@ -2870,3 +2870,6 @@
 - [x] Relatório de vendas do comercial: ajustar PDF para caber em 1 única página (reduzir cards, gráfico compacto, layout profissional)
 - [x] Card "Limite disponível para troca de títulos" na aba Sicoob Palitos (editável apenas por Flávio)
 - [x] Permitir Fernando, Bruno e Gilson verem tudo que Thiago, Flavio e Guilherme enxergam na aba Inadimplência
+- [x] Múltiplas opções simultâneas na ação de cobrança (ligar + email + whatsapp etc.)
+- [x] Telefone só para de vibrar quando TODAS as ações do passo forem ticadas conforme guia de cobrança
+- [x] Corrigir fuso horário de 3h (UTC→BRT) nos registros de cobrança
