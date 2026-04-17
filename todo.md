@@ -2885,3 +2885,4 @@
 - [x] Títulos 2+ dias atraso: entram como "aguardando primeiro contato", bolinhas zeradas, telefone NUNCA toca
 - [x] Títulos 1 dia atraso: fluxo normal, Thiago registra ação, roteiro 1,3,5, telefone pode vibrar
 - [x] TODOS os títulos 2+ dias: resetar collectionActions/dailyActions/manualTicks, zerar bolinhas, sem telefone, aguardando primeiro contato
+- [x] Bolinhas automáticas: preencher automaticamente com base no registro de ações no histórico

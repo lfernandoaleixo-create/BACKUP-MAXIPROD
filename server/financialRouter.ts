@@ -3879,16 +3879,29 @@ export const financialRouter = router({
           isAutomatic: false,
         });
       }
-      // Atualizar status na collectionActions para "contatado" se estava "pendente"
+      // Atualizar ou criar collectionAction
       const existing = await db
         .select()
         .from(collectionActions)
         .where(eq(collectionActions.receivableId, input.receivableId));
-      if (existing.length > 0 && existing[0].status === "pendente") {
+      if (existing.length > 0) {
+        // Atualizar status para "contatado" e definir cobrancaStartedAt se ainda não tinha
+        const updates: Record<string, any> = { status: "contatado", updatedBy: input.operatorName };
+        if (!existing[0].cobrancaStartedAt) {
+          updates.cobrancaStartedAt = todayStr;
+        }
         await db
           .update(collectionActions)
-          .set({ status: "contatado", updatedBy: input.operatorName })
+          .set(updates)
           .where(eq(collectionActions.receivableId, input.receivableId));
+      } else {
+        // Primeiro contato: criar collectionAction com cobrancaStartedAt = hoje
+        await db.insert(collectionActions).values({
+          receivableId: input.receivableId,
+          status: "contatado",
+          cobrancaStartedAt: todayStr,
+          updatedBy: input.operatorName,
+        });
       }
       return { success: true };
     }),
