@@ -2863,3 +2863,7 @@
 - [x] Garantir que clientes com 3d+ de atraso nunca vibram telefone vermelho
 - [x] Bolinhas: Intervalo fica verde automaticamente quando Ação anterior é verde
 - [x] Bolinhas: dar opção de marcar verde ou vermelho manualmente (não apenas verde)
+- [x] Dar acesso à senha Flavio para fazer cobranças (mesmo nível do Thiago) — já estava configurado
+- [x] Dar acesso Thiago e Flavio para ticar bolinhas de ações-intervalo — já estava configurado
+- [x] Ações em dias úteis: se cair sábado/domingo/feriado, empurrar para próximo dia útil
+- [x] REGRA ABSOLUTA: jamais desmarcar cobrança já realizada, independente de qualquer comando

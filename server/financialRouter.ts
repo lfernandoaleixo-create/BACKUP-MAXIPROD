@@ -375,6 +375,26 @@ function adjustWeekendStr(dateStr: string): string {
   return dateStr;
 }
 
+/** Avança N dias úteis a partir de uma data YYYY-MM-DD (pula sábado, domingo e feriados) */
+function addBusinessDaysStr(dateStr: string, businessDays: number): string {
+  let current = dateStr;
+  let remaining = businessDays;
+  while (remaining > 0) {
+    current = addDaysStr(current, 1);
+    if (isBusinessDay(current)) remaining--;
+  }
+  return current;
+}
+
+/** Retorna o próximo dia útil (se já for útil, retorna ele mesmo) */
+function nextBusinessDay(dateStr: string): string {
+  let current = dateStr;
+  while (!isBusinessDay(current)) {
+    current = addDaysStr(current, 1);
+  }
+  return current;
+}
+
 /**
  * Mapeamento estadoConfiguravel -> grupo (mesma lógica do salesRouter)
  * Usado para filtrar inadimplência por grupo de produto
@@ -3258,12 +3278,36 @@ export const financialRouter = router({
 
   /**
    * Deletar ação de cobrança (resetar título)
+   * PROTEÇÃO ABSOLUTA: Não permite deletar se já houver ações diárias registradas
+   * ou bolinhas manuais ticadas. Cobranças realizadas NUNCA podem ser desmarcadas.
    */
   deleteCollectionAction: publicProcedure
     .input(z.object({ receivableId: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) return { success: false };
+
+      // Verificar se há ações diárias registradas
+      const dailyActions = await db.select({ id: collectionDailyActions.id })
+        .from(collectionDailyActions)
+        .where(eq(collectionDailyActions.receivableId, input.receivableId))
+        .limit(1);
+      if (dailyActions.length > 0) {
+        throw new Error('Não é possível resetar: já existem ações de cobrança registradas para este título.');
+      }
+
+      // Verificar se há bolinhas manuais ticadas
+      const ticks = await db.select({ id: collectionManualTicks.id })
+        .from(collectionManualTicks)
+        .where(and(
+          eq(collectionManualTicks.receivableId, input.receivableId),
+          eq(collectionManualTicks.ticked, true)
+        ))
+        .limit(1);
+      if (ticks.length > 0) {
+        throw new Error('Não é possível resetar: já existem bolinhas de roteiro marcadas para este título.');
+      }
+
       await db.delete(collectionActions).where(eq(collectionActions.receivableId, input.receivableId));
       return { success: true };
     }),
@@ -3441,14 +3485,24 @@ export const financialRouter = router({
       // Para títulos normais: base de cálculo é a data de vencimento
       const legacyStartDate = startDate || null; // cobrancaStartedAt = data do primeiro contato
       const legacyHasStarted = isLegacyTitle && !!legacyStartDate;
-      const baseDate = isLegacyTitle ? (legacyStartDate || SISTEMA_COBRANCA_INICIO) : vencDate;
-      const baseMs = isLegacyTitle
-        ? (legacyHasStarted
-            ? new Date(legacyStartDate!).getTime() - 86400000 // -1 dia para que dia 1 = data do primeiro contato
-            : new Date(SISTEMA_COBRANCA_INICIO).getTime() - 86400000)
-        : new Date(vencDate).getTime();
-      const vencMs = new Date(vencDate).getTime();
       const legacyNotStarted = isLegacyTitle && !legacyHasStarted;
+
+      // Base para cálculo de dias úteis:
+      // Para títulos legados com start: base = dia anterior ao primeiro contato (para que dia 1 = primeiro contato)
+      // Para títulos legados sem start: base = dia anterior ao início do sistema
+      // Para títulos normais: base = data de vencimento (dia 1 = 1 dia útil após vencimento)
+      const baseDateStr = isLegacyTitle
+        ? (legacyHasStarted
+            ? addDaysStr(legacyStartDate!, -1) // dia anterior ao primeiro contato
+            : addDaysStr(SISTEMA_COBRANCA_INICIO, -1)) // dia anterior ao início do sistema
+        : vencDate;
+
+      // Pré-calcular as datas de cada step usando DIAS ÚTEIS
+      // step.dia indica quantos dias úteis após a base
+      const stepDates: Record<number, string> = {};
+      for (const step of roteiro) {
+        stepDates[step.dia] = addBusinessDaysStr(baseDateStr, step.dia);
+      }
 
       // Mapear ações por data
       const actionsByDate: Record<string, typeof dailyActions> = {};
@@ -3460,9 +3514,8 @@ export const financialRouter = router({
       let hasCascadeError = false;
 
       const steps = roteiro.map(step => {
-        // Para títulos legados: datas calculadas a partir de baseMs (15/04)
-        // Para títulos normais: datas calculadas a partir de vencMs
-        const stepDate = new Date(baseMs + step.dia * 86400000).toISOString().split("T")[0];
+        // Data do step calculada com DIAS ÚTEIS (pula sábado, domingo e feriados)
+        const stepDate = stepDates[step.dia];
         const isFuture = stepDate > todayStr;
         const isToday = stepDate === todayStr;
         const isBeforeSystemStart = stepDate < SISTEMA_COBRANCA_INICIO;
@@ -5622,46 +5675,61 @@ ${acoesTexto}
         const tickMap: Record<number, typeof ticks[0]> = {};
         for (const t of ticks) tickMap[t.step] = t;
 
+        // Buscar dados do título para calcular datas com dias úteis
+        const [rec] = await db.select({ vencimentoData: accountsReceivable.vencimentoData })
+          .from(accountsReceivable)
+          .where(eq(accountsReceivable.id, recId))
+          .limit(1);
+        if (!rec) continue;
+
+        const [action] = await db.select({ cobrancaStartedAt: collectionActions.cobrancaStartedAt })
+          .from(collectionActions)
+          .where(eq(collectionActions.receivableId, recId))
+          .limit(1);
+
+        const vencDate = (rec.vencimentoData || '').split('T')[0];
+        const SISTEMA_COBRANCA_INICIO_CHECK = '2026-04-16';
+        const dia1Original = addDaysStr(vencDate, 1);
+        const isLegacy = dia1Original < SISTEMA_COBRANCA_INICIO_CHECK;
+
+        // Calcular base para dias úteis (mesma lógica do checklist)
+        const baseDateStr = isLegacy
+          ? (action?.cobrancaStartedAt
+              ? addDaysStr(action.cobrancaStartedAt, -1)
+              : addDaysStr(SISTEMA_COBRANCA_INICIO_CHECK, -1))
+          : vencDate;
+
+        // Se é legado e não tem cobrancaStartedAt, não verificar (aguardando primeiro contato)
+        if (isLegacy && !action?.cobrancaStartedAt) continue;
+
         for (let step = 1; step <= 7; step++) {
           const tick = tickMap[step];
           // Se já está ticado (verde ou vermelho), pular
           if (tick?.ticked) continue;
 
-          // Para step 1: verificar se a cobrança iniciou (cobrancaStartedAt) e o dia já passou
-          // Para steps 2+: verificar se o step anterior foi ticado e o dia já passou
+          // Calcular a data deste step usando DIAS ÚTEIS
+          const stepDate = addBusinessDaysStr(baseDateStr, step);
+
+          // Só marca vermelho se:
+          // 1. O step anterior está ticado (ou é step 1 com cobrança iniciada)
+          // 2. A data do step já passou E o próximo dia útil também já passou
+          //    (operador tem até o final do dia útil do step para ticar)
           let shouldBeRed = false;
 
           if (step === 1) {
-            // Step 1 só fica vermelho se a cobrança já iniciou e o dia de início
-            // já passou COMPLETAMENTE (pelo menos 2 dias atrás, pois o operador
-            // tem o dia inteiro do cobrancaStartedAt para ticar)
-            const [action] = await db.select({ cobrancaStartedAt: collectionActions.cobrancaStartedAt })
-              .from(collectionActions)
-              .where(eq(collectionActions.receivableId, recId))
-              .limit(1);
+            // Step 1: cobrança iniciada e o dia útil do step já passou completamente
             if (action?.cobrancaStartedAt) {
-              // O operador tem até o final do dia cobrancaStartedAt para ticar step 1
-              // Então só marca vermelho se cobrancaStartedAt < ontem (ou seja, 2+ dias atrás)
-              const yesterday = new Date(brNow);
-              yesterday.setDate(yesterday.getDate() - 1);
-              const yesterdayStr = yesterday.toISOString().split('T')[0];
-              if (action.cobrancaStartedAt < yesterdayStr) {
+              const nextBizDay = addBusinessDaysStr(stepDate, 1);
+              if (nextBizDay <= todayStr) {
                 shouldBeRed = true;
               }
             }
           } else {
-            // Steps 2+: o operador tem o dia SEGUINTE ao step anterior para ticar
-            // Só marca vermelho se já se passaram 2+ dias desde o step anterior
+            // Steps 2+: step anterior ticado e o dia útil deste step já passou
             const prev = tickMap[step - 1];
-            if (prev?.ticked && prev.tickedAt) {
-              const prevDate = new Date(prev.tickedAt - 3 * 60 * 60 * 1000);
-              const prevDateStr = prevDate.toISOString().split('T')[0];
-              // O operador tem até o final do dia seguinte ao prevDate para ticar
-              // Então só marca vermelho se prevDate < ontem (2+ dias atrás)
-              const yesterday = new Date(brNow);
-              yesterday.setDate(yesterday.getDate() - 1);
-              const yesterdayStr = yesterday.toISOString().split('T')[0];
-              if (prevDateStr < yesterdayStr) {
+            if (prev?.ticked) {
+              const nextBizDay = addBusinessDaysStr(stepDate, 1);
+              if (nextBizDay <= todayStr) {
                 shouldBeRed = true;
               }
             }
@@ -5690,14 +5758,12 @@ ${acoesTexto}
               step,
               action: 'auto_red',
               operatorName: 'SISTEMA',
-              reason: `Dia passou sem ticagem manual (verificado em ${new Date().toLocaleDateString('pt-BR')})`,
+              reason: `Dia útil passou sem ticagem manual (verificado em ${new Date().toLocaleDateString('pt-BR')})`,
             });
 
             updated++;
-            // Atualizar tickMap para que steps seguintes possam ser verificados
             tickMap[step] = { id: 0, receivableId: recId, step, ticked: true, tickedBy: 'SISTEMA', tickedAt: Date.now(), tickStatus: 'red', createdAt: Date.now() };
           } else {
-            // Se este step não deveria ser vermelho, parar de verificar steps seguintes para este receivable
             break;
           }
         }
