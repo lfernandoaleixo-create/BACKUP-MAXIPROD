@@ -2847,3 +2847,6 @@
 - [x] Inadimplência tabela: ticagem verde manual pelo Thiago com histórico registrado (data/hora, sequência correta)
 - [x] Inadimplência tabela: validar que ticagem segue sequência de dias sem pular
 - [x] Inadimplência tabela: testes automatizados para manual ticks e supressão de vibração de títulos legados (13 testes)
+- [x] Inadimplência: redesenhar layout das 7 bolinhas — card sofisticado, moderno e profissional, sem textos encavalados
+- [x] Inadimplência: remover vibração do telefone para títulos com 3+ dias de atraso A PARTIR DE HOJE (não apenas legados)
+- [x] Inadimplência: remover "CLIENTE TESTE REGRA" da seção de resolvidos (dados de teste confundem)

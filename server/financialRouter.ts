@@ -3122,6 +3122,10 @@ export const financialRouter = router({
         };
       }).filter(t => t.valorAReceber > 0);
 
+      // Filtrar clientes de teste
+      const TEST_CLIENTS = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST'];
+      titles = titles.filter(t => !TEST_CLIENTS.includes(t.cliente.toUpperCase().trim()));
+
       // Filtro de busca
       if (input?.search) {
         const s = input.search.toUpperCase();
@@ -3653,6 +3657,10 @@ export const financialRouter = router({
         dia1Original.setDate(dia1Original.getDate() + 1);
         const dia1Str = dia1Original.toISOString().split('T')[0];
         if (dia1Str < SISTEMA_COBRANCA_INICIO_PENDING) continue;
+
+        // Título com 3+ dias de atraso a partir de HOJE: dia1 < hoje → NÃO vibra
+        // (só vibra para títulos cujo dia1 é hoje ou futuro, ou seja, recém-vencidos)
+        if (dia1Str < todayStr) continue;
 
         const pendingDays: number[] = [];
         const actionDates = actionsByRecId[rec.id] || new Set();
@@ -4628,8 +4636,12 @@ ${acoesTexto}
         .orderBy(desc(resolvedReceivables.resolvedAt))
         .limit(input?.limit || 50);
 
+      // Filtrar clientes de teste
+      const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST'];
+      const filteredRows = rows.filter(row => !TEST_CLIENT_NAMES.includes((row.cliente || '').toUpperCase().trim()));
+
       let valorTotal = 0;
-      const titles = rows.map(row => {
+      const titles = filteredRows.map(row => {
         const valor = Number(row.valorAReceber) || 0;
         valorTotal += valor;
         return {
