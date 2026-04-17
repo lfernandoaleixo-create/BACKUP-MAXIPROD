@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { appSettings, salesTargets, productSegmentOverrides, salesOrders, dashboardData, productVisibility, productClassification, productPricing, productVariants, operators, operatorGranularPermissions, madeiraVisibility } from "../drizzle/schema";
+import { appSettings, salesTargets, productSegmentOverrides, salesOrders, dashboardData, productVisibility, productClassification, productPricing, productVariants, operators, operatorGranularPermissions, madeiraVisibility, sicoobCardMessages } from "../drizzle/schema";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 
 // Default admin password (can be changed via settings)
@@ -1104,5 +1104,45 @@ export const settingsRouter = router({
         updatedAt: now,
       });
       return { success: true };
+    }),
+
+  /**
+   * Get messages for a Sicoob card chat
+   */
+  getCardMessages: publicProcedure
+    .input(z.object({
+      cardKey: z.string(),
+      limit: z.number().min(1).max(100).optional().default(50),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db.select().from(sicoobCardMessages)
+        .where(eq(sicoobCardMessages.cardKey, input.cardKey))
+        .orderBy(desc(sicoobCardMessages.createdAt))
+        .limit(input.limit);
+      return rows.reverse(); // oldest first for chat display
+    }),
+
+  /**
+   * Send a message in a Sicoob card chat
+   * Accessible by Flavio and operators with Sicoob Palitos access
+   */
+  sendCardMessage: publicProcedure
+    .input(z.object({
+      cardKey: z.string(),
+      operatorName: z.string().min(1),
+      message: z.string().min(1).max(500),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [row] = await db.insert(sicoobCardMessages).values({
+        cardKey: input.cardKey,
+        operatorName: input.operatorName,
+        message: input.message,
+        createdAt: Date.now(),
+      });
+      return { success: true, id: row.insertId };
     }),
 });

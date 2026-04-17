@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useOperator } from "@/contexts/OperatorContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -35,6 +35,9 @@ import {
   Pencil,
   DollarSign,
   CalendarRange,
+  MessageCircle,
+  Send,
+  ChevronUp,
 } from "lucide-react";
 import {
   Dialog,
@@ -1295,8 +1298,132 @@ function SicoobInfoCard({ title, subtitle, icon: Icon, colorScheme, queryHook, m
   );
 }
 
-const GREEN_SCHEME = {
-  border: 'border-green-300', bg: 'bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50',
+/** Mini-chat embutido nos cards Sicoob */
+function CardChat({ cardKey, colorScheme: c }: { cardKey: string; colorScheme: typeof GREEN_SCHEME }) {
+  const { operator } = useOperator();
+  const [open, setOpen] = useState(false);
+  const [msg, setMsg] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const utils = trpc.useUtils();
+
+  const { data: messages = [] } = trpc.settings.getCardMessages.useQuery(
+    { cardKey, limit: 50 },
+    { refetchInterval: open ? 8000 : false }
+  );
+
+  const sendMutation = trpc.settings.sendCardMessage.useMutation({
+    onSuccess: () => {
+      utils.settings.getCardMessages.invalidate({ cardKey });
+      setMsg("");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  useEffect(() => {
+    if (open && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, open]);
+
+  function handleSend() {
+    const trimmed = msg.trim();
+    if (!trimmed || !operator) return;
+    sendMutation.mutate({ cardKey, operatorName: operator.name, message: trimmed });
+  }
+
+  function formatTime(ts: number) {
+    return new Date(ts).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      day: "2-digit", month: "2-digit",
+      hour: "2-digit", minute: "2-digit",
+    });
+  }
+
+  const unreadCount = messages.length;
+
+  return (
+    <div className="relative z-10 mt-1.5">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-1.5 text-[10px] font-bold ${c.text} opacity-70 hover:opacity-100 transition-all`}
+      >
+        <MessageCircle className="w-3.5 h-3.5" />
+        Observações {unreadCount > 0 && <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${c.btnBg} text-white`}>{unreadCount}</span>}
+        <ChevronUp className={`w-3 h-3 transition-transform ${open ? '' : 'rotate-180'}`} />
+      </button>
+
+      {open && (
+        <div className={`mt-1.5 rounded-lg border ${c.border} bg-white/80 backdrop-blur-sm shadow-sm`}>
+          <div
+            ref={scrollRef}
+            className="max-h-36 overflow-y-auto px-2.5 py-2 space-y-1.5"
+          >
+            {messages.length === 0 ? (
+              <p className="text-[10px] text-slate-400 italic text-center py-2">Nenhuma observação ainda</p>
+            ) : (
+              messages.map((m: any) => {
+                const isMe = operator?.name === m.operatorName;
+                return (
+                  <div key={m.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                    <div className={`max-w-[85%] px-2.5 py-1.5 rounded-lg text-[11px] leading-snug ${
+                      isMe
+                        ? `${c.btnBg} text-white`
+                        : 'bg-slate-100 text-slate-800'
+                    }`}>
+                      {!isMe && <span className="font-bold text-[10px] block mb-0.5">{m.operatorName}</span>}
+                      {m.message}
+                    </div>
+                    <span className="text-[8px] text-slate-400 mt-0.5 px-1">{formatTime(m.createdAt)}</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {operator && (
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 border-t ${c.border}`}>
+              <input
+                type="text"
+                value={msg}
+                onChange={(e) => setMsg(e.target.value)}
+                placeholder="Escrever observação..."
+                className={`flex-1 text-[11px] px-2.5 py-1.5 rounded-md border ${c.inputBorder} bg-white focus:ring-1 focus:outline-none`}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                maxLength={500}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!msg.trim() || sendMutation.isPending}
+                className={`p-1.5 rounded-md ${c.btnBg} ${c.btnHover} text-white disabled:opacity-40 transition-all`}
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SicoobInfoCardWithChat({ title, subtitle, icon: Icon, colorScheme, queryHook, mutationHook }: {
+  title: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  colorScheme: typeof GREEN_SCHEME;
+  queryHook: () => { data?: { valor: number | null; updatedBy: string | null; updatedAt: string | null } | null | undefined; isLoading: boolean };
+  mutationHook: (opts: { onSuccess: () => void; onError: (err: any) => void }) => { mutate: (input: { valor: number; operatorName: string }) => void; isPending: boolean };
+}) {
+  const cardKey = title.includes("desconto") || title.includes("liberação") ? "sicoob_desconto_semanal" : "sicoob_limite_titulos";
+  return (
+    <div>
+      <SicoobInfoCard title={title} subtitle={subtitle} icon={Icon} colorScheme={colorScheme} queryHook={queryHook} mutationHook={mutationHook} />
+      <CardChat cardKey={cardKey} colorScheme={colorScheme} />
+    </div>
+  );
+}
+
+const GREEN_SCHEME = { border: 'border-green-300', bg: 'bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50',
   iconFrom: 'from-green-500', iconTo: 'to-emerald-600', iconShadow: 'shadow-green-500/30',
   text: 'text-green-800', textMuted: 'text-green-600/60',
   btnBg: 'bg-green-600', btnHover: 'hover:bg-green-700',
@@ -1315,7 +1442,7 @@ const BLUE_SCHEME = {
 
 function SicoobDescontoSemanalCard() {
   return (
-    <SicoobInfoCard
+    <SicoobInfoCardWithChat
       title="Valor previsto de liberação para desconto na semana"
       subtitle="Sicoob Palitos"
       icon={CalendarRange}
@@ -1328,7 +1455,7 @@ function SicoobDescontoSemanalCard() {
 
 function SicoobLimiteCard() {
   return (
-    <SicoobInfoCard
+    <SicoobInfoCardWithChat
       title="Limite disponível para troca de títulos"
       subtitle="Sicoob Palitos"
       icon={DollarSign}

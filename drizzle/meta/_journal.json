@@ -554,6 +554,13 @@
       "when": 1776428988119,
       "tag": "0078_marvelous_gorgon",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "5",
+      "when": 1776442881118,
+      "tag": "0079_burly_imperial_guard",
+      "breakpoints": true
     }
   ]
 }

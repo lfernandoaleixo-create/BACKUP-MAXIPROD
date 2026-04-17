@@ -2877,3 +2877,4 @@
 - [x] Card "Valor previsto de liberação para desconto na semana" na Sicoob Palitos (editável pelo Flávio)
 - [x] Reduzir espessura dos cards de limite/valor previsto na Sicoob Palitos
 - [x] Corrigir vibração do telefone e ações pendentes para usar dias úteis (pular sábados, domingos e feriados)
+- [x] Mini-chat dentro dos 2 cards Sicoob Palitos (Desconto Semanal e Limite) para troca de mensagens entre Flávio e operadores

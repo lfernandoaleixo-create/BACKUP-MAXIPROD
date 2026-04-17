@@ -1215,3 +1215,17 @@ export const collectionManualTickHistory = mysqlTable("collection_manual_tick_hi
   createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 });
 export type CollectionManualTickHistoryRow = typeof collectionManualTickHistory.$inferSelect;
+
+/**
+ * Mensagens de chat dentro dos cards Sicoob Palitos (Desconto Semanal e Limite de Títulos)
+ * Permite que Flávio e operadores com acesso troquem mensagens
+ */
+export const sicoobCardMessages = mysqlTable("sicoob_card_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  cardKey: varchar("card_key", { length: 50 }).notNull(), // "sicoob_desconto_semanal" ou "sicoob_limite_titulos"
+  operatorName: varchar("operator_name", { length: 100 }).notNull(),
+  message: text("message").notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type SicoobCardMessage = typeof sicoobCardMessages.$inferSelect;
+export type InsertSicoobCardMessage = typeof sicoobCardMessages.$inferInsert;
