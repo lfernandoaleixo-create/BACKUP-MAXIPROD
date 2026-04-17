@@ -2881,3 +2881,4 @@
 - [x] Madeira Produto Acabado: abater pedidos de variação do estoque mãe e criar estoque virtual na variação (evitar baixa dupla)
 - [x] Contas do Fernando: ticks NÃO devem persistir de um dia pro outro, deve ticar manualmente todos os dias
 - [x] Bug: Botão "Registrar Ação" de cobrança não funciona (E-mail/WhatsApp não registra ao clicar)
+- [x] URGENTE: Restaurar dados de cobrança do Thiago na aba Inadimplência que foram perdidos durante o reset
