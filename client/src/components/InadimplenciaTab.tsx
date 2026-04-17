@@ -2194,7 +2194,7 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
   onSave: (data: { receivableId: number; actionTypes: ("ligacao" | "whatsapp" | "email" | "visita" | "outro")[]; operatorName: string; notes?: string }) => void;
   isSaving: boolean;
 }) {
-  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
 
   const ACTION_TYPES = [
@@ -2215,10 +2215,8 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
 
   function toggleType(value: string) {
     setSelectedTypes(prev => {
-      const next = new Set(prev);
-      if (next.has(value)) next.delete(value);
-      else next.add(value);
-      return next;
+      if (prev.includes(value)) return prev.filter(v => v !== value);
+      return [...prev, value];
     });
   }
 
@@ -2263,10 +2261,11 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
             <div className="grid grid-cols-5 gap-2 mt-1">
               {ACTION_TYPES.map(t => {
                 const Icon = t.icon;
-                const isSelected = selectedTypes.has(t.value);
+                const isSelected = selectedTypes.includes(t.value);
                 const isSuggested = suggestedTypes.includes(t.value);
                 return (
                   <button
+                    type="button"
                     key={t.value}
                     onClick={() => toggleType(t.value)}
                     className={`relative flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all ${
@@ -2304,18 +2303,19 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
 
           <div className="text-xs text-slate-400">
             Registrando como: <span className="font-semibold text-slate-600">{operatorName}</span>
-            {selectedTypes.size > 0 && (
+            {selectedTypes.length > 0 && (
               <span className="ml-2 text-blue-600 font-medium">
-                • {selectedTypes.size} tipo(s) selecionado(s)
+                • {selectedTypes.length} tipo(s) selecionado(s)
               </span>
             )}
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancelar</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancelar</button>
             <button
+              type="button"
               onClick={() => {
-                if (selectedTypes.size === 0) {
+                if (selectedTypes.length === 0) {
                   toast.error("Selecione pelo menos um tipo de contato!");
                   return;
                 }
@@ -2325,15 +2325,15 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
                 }
                 onSave({
                   receivableId: title.id,
-                  actionTypes: Array.from(selectedTypes) as ("ligacao" | "whatsapp" | "email" | "visita" | "outro")[],
+                  actionTypes: selectedTypes as ("ligacao" | "whatsapp" | "email" | "visita" | "outro")[],
                   operatorName,
                   notes: notes.trim(),
                 });
               }}
-              disabled={isSaving || !notes.trim() || selectedTypes.size === 0}
+              disabled={isSaving || !notes.trim() || selectedTypes.length === 0}
               className="px-4 py-2 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {isSaving ? "Registrando..." : `Registrar ${selectedTypes.size > 0 ? selectedTypes.size + " Ação(s)" : "Ação"}`}
+              {isSaving ? "Registrando..." : `Registrar ${selectedTypes.length > 0 ? selectedTypes.length + " Ação(s)" : "Ação"}`}
             </button>
           </div>
         </div>

@@ -9,17 +9,69 @@
  * Também reseta o status de "conclusão de autorização" (auth_completion)
  * para que o botão de concluir fique disponível novamente no novo dia.
  * 
- * Duas estratégias de reset:
+ * Estratégias de reset:
  * 1. Cron à meia-noite (00:00 BRT) — se o servidor estiver rodando
- * 2. Startup check — ao iniciar o servidor, verifica se há autorizações
- *    de um dia anterior e limpa tudo. Resolve o caso de sandbox hibernar à noite.
+ * 2. Startup check — ao iniciar o servidor, verifica se o último reset foi
+ *    feito hoje (BRT). Se não, limpa tudo. Resolve o caso de sandbox hibernar.
+ * 3. Request-time check — a cada request de getWeekReconciliation, verifica
+ *    se o último reset foi hoje. Se não, limpa antes de retornar dados.
  * 
- * Executado automaticamente à meia-noite (00:00) horário de Brasília
- * E também na inicialização do servidor.
+ * Usa app_settings com chave "payment_auth_last_reset_date" para rastrear
+ * a data do último reset de forma confiável (sem depender de timestamps UTC).
  */
 import { getDb } from "./db";
-import { paymentAuthorizations, authCompletion } from "../drizzle/schema";
-import { sql } from "drizzle-orm";
+import { paymentAuthorizations, authCompletion, appSettings } from "../drizzle/schema";
+import { sql, eq } from "drizzle-orm";
+
+/**
+ * Get today's date in Brasilia timezone (YYYY-MM-DD)
+ */
+function getTodayBRT(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
+/**
+ * Get the date of the last reset from app_settings
+ */
+async function getLastResetDate(db: any): Promise<string | null> {
+  try {
+    const rows = await db.select()
+      .from(appSettings)
+      .where(eq(appSettings.settingKey, "payment_auth_last_reset_date"))
+      .limit(1);
+    if (rows.length > 0 && rows[0].settingValue) {
+      return String(rows[0].settingValue).replace(/"/g, '');
+    }
+  } catch (e: any) {
+    console.log(`[PaymentAuthReset] Could not read last reset date: ${e.message}`);
+  }
+  return null;
+}
+
+/**
+ * Save the date of the last reset to app_settings
+ */
+async function setLastResetDate(db: any, date: string): Promise<void> {
+  try {
+    const existing = await db.select()
+      .from(appSettings)
+      .where(eq(appSettings.settingKey, "payment_auth_last_reset_date"))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      await db.update(appSettings)
+        .set({ settingValue: JSON.stringify(date) })
+        .where(eq(appSettings.settingKey, "payment_auth_last_reset_date"));
+    } else {
+      await db.insert(appSettings).values({
+        settingKey: "payment_auth_last_reset_date",
+        settingValue: JSON.stringify(date),
+      });
+    }
+  } catch (e: any) {
+    console.log(`[PaymentAuthReset] Could not save last reset date: ${e.message}`);
+  }
+}
 
 /**
  * Reset all payment authorizations by deleting all records.
@@ -51,62 +103,51 @@ export async function resetDailyPaymentAuthorizations(): Promise<{ deleted: numb
     console.log(`[PaymentAuthReset] auth_completion reset skipped: ${e.message}`);
   }
 
+  // Save the reset date
+  const todayBRT = getTodayBRT();
+  await setLastResetDate(db, todayBRT);
+
   const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
   if (count > 0) {
-    console.log(`[PaymentAuthReset] Reset completed at ${now}: ${count} autorizações removidas (todos os status)`);
+    console.log(`[PaymentAuthReset] Reset completed at ${now}: ${count} autorizações removidas (todos os status). Last reset date set to ${todayBRT}`);
   } else {
-    console.log(`[PaymentAuthReset] No authorizations to reset at ${now}`);
+    console.log(`[PaymentAuthReset] No authorizations to reset at ${now}. Last reset date set to ${todayBRT}`);
   }
 
   return { deleted: count, date: new Date().toISOString() };
 }
 
 /**
- * Check on server startup if authorizations are from a previous day.
- * If any authorization was created before today (Brasilia time), reset all.
- * This handles the case where the sandbox hibernates overnight and the
- * midnight cron never fires.
+ * Check if a reset is needed for today.
+ * Uses app_settings to track the last reset date reliably.
+ * Returns true if reset was performed, false if not needed.
  */
-export async function checkAndResetOnStartup(): Promise<{ reset: boolean; deleted: number }> {
+export async function checkAndResetIfNeeded(): Promise<{ reset: boolean; deleted: number }> {
   const db = await getDb();
   if (!db) {
-    console.log("[PaymentAuthReset] Database not available on startup, skipping check");
+    console.log("[PaymentAuthReset] Database not available, skipping check");
     return { reset: false, deleted: 0 };
   }
 
-  // Get today's date in Brasilia timezone (YYYY-MM-DD)
-  const todayBRT = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+  const todayBRT = getTodayBRT();
+  const lastResetDate = await getLastResetDate(db);
 
-  // Check if there are any authorizations from before today
-  const existing = await db.select().from(paymentAuthorizations);
-  
-  if (existing.length === 0) {
-    console.log(`[PaymentAuthReset] Startup check: no authorizations found, nothing to reset`);
+  if (lastResetDate === todayBRT) {
+    // Already reset today, nothing to do
     return { reset: false, deleted: 0 };
   }
 
-  // Check if any authorization was created before today
-  const hasStaleAuths = existing.some(auth => {
-    const authDate = new Date(auth.createdAt).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-    return authDate < todayBRT;
-  });
+  // Last reset was on a different day (or never) — reset now
+  console.log(`[PaymentAuthReset] Reset needed: last reset was ${lastResetDate || 'never'}, today is ${todayBRT}`);
+  const result = await resetDailyPaymentAuthorizations();
+  return { reset: true, deleted: result.deleted };
+}
 
-  // Also check auth_completion for stale entries
-  let hasStaleCompletion = false;
-  try {
-    const completions = await db.select().from(authCompletion);
-    hasStaleCompletion = completions.some(c => c.date < todayBRT);
-  } catch (e) {
-    // Table might not exist yet
-  }
-
-  if (hasStaleAuths || hasStaleCompletion) {
-    console.log(`[PaymentAuthReset] Startup check: found stale authorizations from before ${todayBRT}, resetting...`);
-    const result = await resetDailyPaymentAuthorizations();
-    console.log(`[PaymentAuthReset] Startup reset completed: ${result.deleted} autorizações removidas`);
-    return { reset: true, deleted: result.deleted };
-  }
-
-  console.log(`[PaymentAuthReset] Startup check: all ${existing.length} authorizations are from today (${todayBRT}), keeping them`);
-  return { reset: false, deleted: 0 };
+/**
+ * Check on server startup if authorizations need to be reset.
+ * Uses the reliable app_settings-based check.
+ */
+export async function checkAndResetOnStartup(): Promise<{ reset: boolean; deleted: number }> {
+  console.log(`[PaymentAuthReset] Running startup check...`);
+  return checkAndResetIfNeeded();
 }

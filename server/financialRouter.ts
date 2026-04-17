@@ -12,6 +12,7 @@ import { ENV } from "./_core/env";
 import { generateCollectionPdf } from "./generateCollectionPdf";
 import { storagePut } from "./storage";
 import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial, gql } from "./maxiprodGraphQL";
+import { checkAndResetIfNeeded } from "./paymentAuthReset";
 
 // Cache em memória para contraprova Maxiprod (TTL 5 minutos)
 const CONTRAPROVA_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
@@ -1809,6 +1810,10 @@ export const financialRouter = router({
    * Returns 5 day cards with contas a pagar listed and authorization status
    */
   getWeekReconciliation: publicProcedure.query(async () => {
+    // Garantir que autorizações de dias anteriores foram limpas
+    // Isso cobre o caso de sandbox hibernar e o cron de meia-noite não rodar
+    await checkAndResetIfNeeded();
+
     const db = await getDb();
     if (!db) return { days: [], weekLabel: "", vencidas: { items: [], total: 0, count: 0 } };
 
