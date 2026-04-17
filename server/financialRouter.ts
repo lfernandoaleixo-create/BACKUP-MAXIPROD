@@ -3436,14 +3436,19 @@ export const financialRouter = router({
 
       const roteiro = isLegacyTitle ? roteiroDeslocado : roteiroNormal;
 
-      // Para títulos legados: base de cálculo é a data de início do sistema (16/04) - 1 dia
-      // Para que dia 1 = 16/04, dia 2 = 17/04, etc.
+      // Para títulos legados: base de cálculo é a data do PRIMEIRO CONTATO (cobrancaStartedAt)
+      // Se ainda não houve contato, não há roteiro ativo (todos os steps ficam como 'futuro')
       // Para títulos normais: base de cálculo é a data de vencimento
-      const baseDate = isLegacyTitle ? SISTEMA_COBRANCA_INICIO : vencDate;
+      const legacyStartDate = startDate || null; // cobrancaStartedAt = data do primeiro contato
+      const legacyHasStarted = isLegacyTitle && !!legacyStartDate;
+      const baseDate = isLegacyTitle ? (legacyStartDate || SISTEMA_COBRANCA_INICIO) : vencDate;
       const baseMs = isLegacyTitle
-        ? new Date(SISTEMA_COBRANCA_INICIO).getTime() - 86400000 // -1 dia para que dia 1 = 16/04
+        ? (legacyHasStarted
+            ? new Date(legacyStartDate!).getTime() - 86400000 // -1 dia para que dia 1 = data do primeiro contato
+            : new Date(SISTEMA_COBRANCA_INICIO).getTime() - 86400000)
         : new Date(vencDate).getTime();
       const vencMs = new Date(vencDate).getTime();
+      const legacyNotStarted = isLegacyTitle && !legacyHasStarted;
 
       // Mapear ações por data
       const actionsByDate: Record<string, typeof dailyActions> = {};
@@ -3468,6 +3473,26 @@ export const financialRouter = router({
         let status: "verde" | "vermelho" | "pendente" | "futuro" | "dispensado" = "futuro";
         let motivo = "";
         let acoes: Array<{ tipo: string; notas: string; operador: string; hora: string }> = [];
+
+        // Títulos legados sem primeiro contato: todos os steps ficam como 'futuro'
+        if (legacyNotStarted) {
+          status = step.dia === 1 ? "pendente" : "futuro";
+          motivo = step.dia === 1
+            ? "Aguardando primeiro contato para iniciar o roteiro de cobrança"
+            : "Roteiro inicia após o primeiro contato";
+          return {
+            dia: step.dia,
+            label: step.label,
+            tipo: step.tipo,
+            descricao: step.descricao,
+            data: stepDate,
+            status,
+            motivo,
+            acoes,
+            isToday: false,
+            isFuture: true,
+          };
+        }
 
         // Mapear ações realizadas
         for (const a of actionsOnDay) {
@@ -3566,6 +3591,7 @@ export const financialRouter = router({
         cliente: rec.cliente || "",
         valorAReceber: Number(rec.valorLiquido) - Number(rec.valorRecebidoLiquido),
         isLegacyTitle,
+        legacyNotStarted,
         sistemaCobrancaInicio: SISTEMA_COBRANCA_INICIO,
       };
     }),
@@ -5417,10 +5443,13 @@ ${acoesTexto}
     }),
 
   /**
-   * Toggle ticagem manual (tick/untick) com validação de sequência
-   * Regra: não pode ticar step N se step N-1 não está ticado (exceto step 1)
-   * Regra: não pode desticar step N se step N+1 está ticado
-   * Regra: não pode ticar mais de 1 step por dia (sequência de dias)
+   * Toggle ticagem manual (tick/untick) com validação de sequência e controle rígido.
+   * Regras:
+   * - Não pode ticar step N se step N-1 não está ticado (exceto step 1)
+   * - Não pode desticar step N se step N+1 está ticado
+   * - Não pode ticar mais de 1 step por dia (sequência de dias)
+   * - CONTROLE RÍGIDO: bolinha vermelha (tickStatus='red') não pode ser desmarcada
+   * - CONTROLE RÍGIDO: se step anterior é vermelho, próximo step pode ser ticado normalmente
    */
   toggleManualTick: publicProcedure
     .input(z.object({
@@ -5442,6 +5471,12 @@ ${acoesTexto}
       for (const t of currentTicks) tickMap[t.step] = t;
 
       if (input.ticked) {
+        // Não pode ticar step que já é vermelho (falha registrada)
+        const existingStep = tickMap[input.step];
+        if (existingStep?.ticked && existingStep?.tickStatus === 'red') {
+          throw new Error(`Passo ${input.step} já foi marcado como falha (vermelho). Não pode ser alterado.`);
+        }
+
         // Validar sequência: step anterior deve estar ticado (exceto step 1)
         if (input.step > 1) {
           const prev = tickMap[input.step - 1];
@@ -5469,7 +5504,7 @@ ${acoesTexto}
         const now = Date.now();
         if (existing) {
           await db.update(collectionManualTicks)
-            .set({ ticked: true, tickedBy: input.operatorName, tickedAt: now })
+            .set({ ticked: true, tickedBy: input.operatorName, tickedAt: now, tickStatus: 'green' })
             .where(eq(collectionManualTicks.id, existing.id));
         } else {
           await db.insert(collectionManualTicks).values({
@@ -5478,6 +5513,7 @@ ${acoesTexto}
             ticked: true,
             tickedBy: input.operatorName,
             tickedAt: now,
+            tickStatus: 'green',
           });
         }
 
@@ -5489,6 +5525,12 @@ ${acoesTexto}
           operatorName: input.operatorName,
         });
       } else {
+        // CONTROLE RÍGIDO: não pode desmarcar bolinha vermelha
+        const existingStep = tickMap[input.step];
+        if (existingStep?.tickStatus === 'red') {
+          throw new Error(`Passo ${input.step} está marcado como falha (vermelho). Não pode ser desmarcado.`);
+        }
+
         // Untick: validar que steps posteriores não estão ticados
         for (let s = input.step + 1; s <= 7; s++) {
           const next = tickMap[s];
@@ -5500,7 +5542,7 @@ ${acoesTexto}
         const existing = tickMap[input.step];
         if (existing) {
           await db.update(collectionManualTicks)
-            .set({ ticked: false, tickedBy: null, tickedAt: null })
+            .set({ ticked: false, tickedBy: null, tickedAt: null, tickStatus: 'green' })
             .where(eq(collectionManualTicks.id, existing.id));
         }
 
@@ -5514,6 +5556,110 @@ ${acoesTexto}
       }
 
       return { success: true };
+    }),
+
+  /**
+   * Verificar e marcar automaticamente como vermelho os steps que passaram do dia.
+   * Chamado ao carregar a lista de inadimplência para verificar se algum step ficou sem ticar.
+   * Lógica: se o step anterior foi ticado há mais de 1 dia (BR timezone) e o step atual
+   * não foi ticado, marca automaticamente como vermelho.
+   */
+  checkOverdueTicks: publicProcedure
+    .input(z.object({ receivableIds: z.array(z.number()) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db || input.receivableIds.length === 0) return { updated: 0 };
+
+      const allTicks = await db.select().from(collectionManualTicks)
+        .where(inArray(collectionManualTicks.receivableId, input.receivableIds))
+        .orderBy(asc(collectionManualTicks.step));
+
+      const ticksByRec: Record<number, typeof allTicks> = {};
+      for (const t of allTicks) {
+        if (!ticksByRec[t.receivableId]) ticksByRec[t.receivableId] = [];
+        ticksByRec[t.receivableId].push(t);
+      }
+
+      const now = new Date();
+      const brNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const todayStr = brNow.toISOString().split('T')[0];
+      let updated = 0;
+
+      for (const recId of input.receivableIds) {
+        const ticks = ticksByRec[recId] || [];
+        const tickMap: Record<number, typeof ticks[0]> = {};
+        for (const t of ticks) tickMap[t.step] = t;
+
+        for (let step = 1; step <= 7; step++) {
+          const tick = tickMap[step];
+          // Se já está ticado (verde ou vermelho), pular
+          if (tick?.ticked) continue;
+
+          // Para step 1: verificar se a cobrança iniciou (cobrancaStartedAt) e o dia já passou
+          // Para steps 2+: verificar se o step anterior foi ticado e o dia já passou
+          let shouldBeRed = false;
+
+          if (step === 1) {
+            // Step 1 só fica vermelho se a cobrança já iniciou e o dia passou
+            // Buscar cobrancaStartedAt do receivable
+            const [action] = await db.select({ cobrancaStartedAt: collectionActions.cobrancaStartedAt })
+              .from(collectionActions)
+              .where(eq(collectionActions.receivableId, recId))
+              .limit(1);
+            if (action?.cobrancaStartedAt) {
+              // Se a cobrança iniciou antes de hoje, step 1 deveria ter sido ticado
+              if (action.cobrancaStartedAt < todayStr) {
+                shouldBeRed = true;
+              }
+            }
+          } else {
+            // Steps 2+: se o step anterior foi ticado e foi há mais de 1 dia
+            const prev = tickMap[step - 1];
+            if (prev?.ticked && prev.tickedAt) {
+              const prevDate = new Date(prev.tickedAt - 3 * 60 * 60 * 1000).toISOString().split('T')[0];
+              if (prevDate < todayStr) {
+                shouldBeRed = true;
+              }
+            }
+          }
+
+          if (shouldBeRed) {
+            // Marcar como vermelho
+            if (tick) {
+              await db.update(collectionManualTicks)
+                .set({ ticked: true, tickedBy: 'SISTEMA', tickedAt: Date.now(), tickStatus: 'red' })
+                .where(eq(collectionManualTicks.id, tick.id));
+            } else {
+              await db.insert(collectionManualTicks).values({
+                receivableId: recId,
+                step,
+                ticked: true,
+                tickedBy: 'SISTEMA',
+                tickedAt: Date.now(),
+                tickStatus: 'red',
+              });
+            }
+
+            // Registrar no histórico
+            await db.insert(collectionManualTickHistory).values({
+              receivableId: recId,
+              step,
+              action: 'auto_red',
+              operatorName: 'SISTEMA',
+              reason: `Dia passou sem ticagem manual (verificado em ${new Date().toLocaleDateString('pt-BR')})`,
+            });
+
+            updated++;
+            // Atualizar tickMap para que steps seguintes possam ser verificados
+            tickMap[step] = { id: 0, receivableId: recId, step, ticked: true, tickedBy: 'SISTEMA', tickedAt: Date.now(), tickStatus: 'red', createdAt: Date.now() };
+          } else {
+            // Se este step não deveria ser vermelho, parar de verificar steps seguintes para este receivable
+            break;
+          }
+        }
+      }
+
+      return { updated };
     }),
 
   /**

@@ -1196,6 +1196,7 @@ export const collectionManualTicks = mysqlTable("collection_manual_ticks", {
   ticked: boolean("ticked").notNull().default(false),
   tickedBy: varchar("ticked_by", { length: 100 }),
   tickedAt: bigint("ticked_at", { mode: "number" }),
+  tickStatus: varchar("tick_status", { length: 20 }).default("green"), // "green" = manual ok, "red" = falha (dia passou sem ticar)
   createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 });
 export type CollectionManualTick = typeof collectionManualTicks.$inferSelect;
@@ -1208,8 +1209,9 @@ export const collectionManualTickHistory = mysqlTable("collection_manual_tick_hi
   id: int("id").autoincrement().primaryKey(),
   receivableId: int("receivable_id").notNull(),
   step: int("step").notNull(), // 1-7
-  action: varchar("action", { length: 20 }).notNull(), // "tick" ou "untick"
+  action: varchar("action", { length: 20 }).notNull(), // "tick", "untick", "auto_red" (falha automática)
   operatorName: varchar("operator_name", { length: 100 }).notNull(),
+  reason: varchar("reason", { length: 200 }), // motivo da ação (ex: "Dia passou sem ticagem")
   createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 });
 export type CollectionManualTickHistoryRow = typeof collectionManualTickHistory.$inferSelect;

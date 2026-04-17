@@ -672,6 +672,22 @@ export default function InadimplenciaTab() {
     },
   });
 
+  // Verificar automaticamente bolinhas que passaram do dia (controle rígido)
+  const checkOverdue = trpc.financial.checkOverdueTicks.useMutation({
+    onSuccess: (data) => {
+      if (data.updated > 0) {
+        refetchManualTicks();
+      }
+    },
+  });
+  const checkedOverdueRef = React.useRef(false);
+  React.useEffect(() => {
+    if (canManualTick && receivableIds.length > 0 && !checkedOverdueRef.current) {
+      checkedOverdueRef.current = true;
+      checkOverdue.mutate({ receivableIds });
+    }
+  }, [canManualTick, receivableIds.length]);
+
   // Mutation para registrar ação de cobrança diária
   const registerAction = trpc.financial.registerCollectionAction.useMutation({
     onSuccess: () => {
@@ -1539,7 +1555,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   isVitoria?: boolean;
   onOpenDecisaoTutorial?: (clienteName: string, vendedorName: string) => void;
   canManualTick?: boolean;
-  manualTicks?: Array<{ step: number; ticked: boolean; tickedBy: string | null; tickedAt: number | null }>;
+  manualTicks?: Array<{ step: number; ticked: boolean; tickedBy: string | null; tickedAt: number | null; tickStatus: string | null }>;
   onToggleTick?: (step: number, ticked: boolean) => void;
   isToggling?: boolean;
 }) {
@@ -1554,6 +1570,9 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   }, [manualTicks]);
 
   const tickedCount = useMemo(() => manualTicks.filter(t => t.ticked).length, [manualTicks]);
+  const redCount = useMemo(() => manualTicks.filter(t => t.tickStatus === 'red').length, [manualTicks]);
+  const greenCount = useMemo(() => manualTicks.filter(t => t.ticked && t.tickStatus !== 'red').length, [manualTicks]);
+  const hasRedTicks = redCount > 0;
 
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
@@ -1711,13 +1730,13 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
       {/* 7 Bolinhas Manuais — Card elegante abaixo da linha */}
       {canManualTick && (
         <div className="mx-3 mb-2 mt-0.5" onClick={e => e.stopPropagation()}>
-          <div className="bg-gradient-to-r from-slate-50 via-white to-slate-50 rounded-lg border border-slate-200/80 shadow-sm px-4 py-2.5">
+          <div className={`rounded-lg border shadow-sm px-4 py-2.5 ${hasRedTicks ? 'bg-gradient-to-r from-red-50 via-white to-red-50 border-red-200/80' : 'bg-gradient-to-r from-slate-50 via-white to-slate-50 border-slate-200/80'}`}>
             <div className="flex items-center gap-4">
               {/* Label */}
               <div className="flex items-center gap-2 shrink-0">
-                <div className={`w-2 h-2 rounded-full ${tickedCount === 7 ? 'bg-emerald-500' : tickedCount > 0 ? 'bg-amber-400' : 'bg-slate-300'}`} />
-                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Roteiro</span>
-                <span className="text-[10px] font-medium text-slate-400">{tickedCount}/7</span>
+                <div className={`w-2 h-2 rounded-full ${hasRedTicks ? 'bg-red-500' : tickedCount === 7 ? 'bg-emerald-500' : tickedCount > 0 ? 'bg-amber-400' : 'bg-slate-300'}`} />
+                <span className={`text-[10px] font-semibold uppercase tracking-wider ${hasRedTicks ? 'text-red-600' : 'text-slate-500'}`}>Roteiro</span>
+                <span className={`text-[10px] font-medium ${hasRedTicks ? 'text-red-500' : 'text-slate-400'}`}>{tickedCount}/7</span>
               </div>
 
               {/* Divider */}
@@ -1729,9 +1748,12 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                   {[1,2,3,4,5,6,7].map((step, idx) => {
                     const tick = tickMap[step];
                     const isTicked = !!tick?.ticked;
+                    const isRed = tick?.tickStatus === 'red';
+                    const isGreen = isTicked && !isRed;
                     const prevTicked = step === 1 || !!tickMap[step - 1]?.ticked;
                     const canTickStep = !isTicked && prevTicked;
-                    const canUntick = isTicked && (step === 7 || !tickMap[step + 1]?.ticked);
+                    // Não pode desmarcar bolinha vermelha (controle rígido)
+                    const canUntick = isTicked && !isRed && (step === 7 || !tickMap[step + 1]?.ticked);
                     const tickedDate = tick?.tickedAt ? new Date(tick.tickedAt).toLocaleDateString('pt-BR') : null;
                     const tickedBy = tick?.tickedBy || null;
                     const isActionStep = [1,3,5].includes(step);
@@ -1742,8 +1764,11 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                         {/* Connector line between steps */}
                         {idx > 0 && (
                           <div className={`h-0.5 flex-1 min-w-[8px] max-w-[20px] rounded-full transition-colors ${
-                            tickMap[step - 1]?.ticked && isTicked ? 'bg-emerald-400' :
-                            tickMap[step - 1]?.ticked ? 'bg-emerald-200' : 'bg-slate-200'
+                            tickMap[step - 1]?.ticked && isTicked
+                              ? (tickMap[step - 1]?.tickStatus === 'red' || isRed ? 'bg-red-300' : 'bg-emerald-400')
+                              : tickMap[step - 1]?.ticked
+                                ? (tickMap[step - 1]?.tickStatus === 'red' ? 'bg-red-200' : 'bg-emerald-200')
+                                : 'bg-slate-200'
                           }`} />
                         )}
                         <Tooltip>
@@ -1751,6 +1776,10 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                             <button
                               onClick={() => {
                                 if (isToggling) return;
+                                if (isRed) {
+                                  toast.error('Falha registrada. Esta bolinha não pode ser alterada.');
+                                  return;
+                                }
                                 if (isTicked && canUntick) {
                                   onToggleTick?.(step, false);
                                 } else if (!isTicked && canTickStep) {
@@ -1763,31 +1792,38 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                               className="flex flex-col items-center gap-0.5 group"
                             >
                               <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                                isTicked
-                                  ? isDecisionStep
-                                    ? 'bg-blue-500 border-blue-600 text-white shadow-sm shadow-blue-200'
-                                    : 'bg-emerald-500 border-emerald-600 text-white shadow-sm shadow-emerald-200'
-                                  : canTickStep
-                                    ? 'bg-white border-slate-300 group-hover:border-emerald-400 group-hover:bg-emerald-50 group-hover:shadow-sm cursor-pointer'
-                                    : 'bg-slate-50 border-slate-200 cursor-not-allowed'
+                                isRed
+                                  ? 'bg-red-500 border-red-600 text-white shadow-sm shadow-red-200 cursor-not-allowed'
+                                  : isGreen
+                                    ? isDecisionStep
+                                      ? 'bg-blue-500 border-blue-600 text-white shadow-sm shadow-blue-200'
+                                      : 'bg-emerald-500 border-emerald-600 text-white shadow-sm shadow-emerald-200'
+                                    : canTickStep
+                                      ? 'bg-white border-slate-300 group-hover:border-emerald-400 group-hover:bg-emerald-50 group-hover:shadow-sm cursor-pointer'
+                                      : 'bg-slate-50 border-slate-200 cursor-not-allowed'
                               }`}>
-                                {isTicked ? <Check className="w-3.5 h-3.5" /> : (
+                                {isRed ? <XCircle className="w-3.5 h-3.5" /> :
+                                 isGreen ? <Check className="w-3.5 h-3.5" /> : (
                                   <span className={`text-[9px] font-bold ${
                                     canTickStep ? 'text-slate-400 group-hover:text-emerald-500' : 'text-slate-300'
                                   }`}>{step}</span>
                                 )}
                               </div>
                               <span className={`text-[8px] leading-none font-medium whitespace-nowrap ${
-                                isTicked ? 'text-emerald-600' :
+                                isRed ? 'text-red-600' :
+                                isGreen ? 'text-emerald-600' :
                                 canTickStep ? 'text-slate-500' : 'text-slate-300'
                               }`}>
                                 {isDecisionStep ? 'Decisão' : isActionStep ? `Ação ${Math.ceil(step/2)}` : 'Intervalo'}
                               </span>
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="text-xs max-w-[180px]">
+                          <TooltipContent side="top" className="text-xs max-w-[200px]">
                             <p className="font-semibold">{TICK_LABELS[step - 1]}</p>
-                            {isTicked && tickedBy && (
+                            {isRed && (
+                              <p className="text-red-600 mt-0.5 font-medium">✗ FALHA — Dia passou sem ticagem{tickedDate ? ` (${tickedDate})` : ''}</p>
+                            )}
+                            {isGreen && tickedBy && (
                               <p className="text-emerald-600 mt-0.5">✓ {tickedBy} — {tickedDate}</p>
                             )}
                             {!isTicked && canTickStep && <p className="text-blue-600 mt-0.5">Clique para marcar</p>}
@@ -1803,14 +1839,23 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               {/* Progress bar */}
               <div className="w-px h-6 bg-slate-200" />
               <div className="flex items-center gap-2 shrink-0">
-                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      tickedCount === 7 ? 'bg-emerald-500' : tickedCount > 0 ? 'bg-amber-400' : 'bg-slate-200'
-                    }`}
-                    style={{ width: `${(tickedCount / 7) * 100}%` }}
-                  />
+                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+                  {greenCount > 0 && (
+                    <div
+                      className="h-full bg-emerald-500 transition-all duration-500"
+                      style={{ width: `${(greenCount / 7) * 100}%` }}
+                    />
+                  )}
+                  {redCount > 0 && (
+                    <div
+                      className="h-full bg-red-500 transition-all duration-500"
+                      style={{ width: `${(redCount / 7) * 100}%` }}
+                    />
+                  )}
                 </div>
+                {hasRedTicks && (
+                  <span className="text-[9px] font-bold text-red-600">{redCount} falha{redCount > 1 ? 's' : ''}</span>
+                )}
               </div>
             </div>
           </div>
@@ -2548,12 +2593,31 @@ function HistoryDialog({ title, onClose }: {
 
               {/* Card amarelo para títulos legados */}
               {!checklistLoading && (checklist as any)?.isLegacyTitle && (
-                <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-start gap-2">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className={`border rounded-lg p-3 flex items-start gap-2 ${
+                  (checklist as any)?.legacyNotStarted
+                    ? 'bg-blue-50 border-blue-300'
+                    : 'bg-amber-50 border-amber-300'
+                }`}>
+                  {(checklist as any)?.legacyNotStarted
+                    ? <Clock className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                    : <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  }
                   <div>
-                    <p className="text-sm font-semibold text-amber-800">Título Legado</p>
-                    <p className="text-xs text-amber-700 mt-0.5">
-                      Cliente já estava inadimplente quando o sistema de cobrança iniciou em {(checklist as any)?.sistemaCobrancaInicio ? new Date((checklist as any).sistemaCobrancaInicio + 'T12:00:00').toLocaleDateString('pt-BR') : '16/04/2026'}. O roteiro foi ajustado a partir desta data.
+                    <p className={`text-sm font-semibold ${
+                      (checklist as any)?.legacyNotStarted ? 'text-blue-800' : 'text-amber-800'
+                    }`}>
+                      {(checklist as any)?.legacyNotStarted
+                        ? 'Aguardando primeiro contato para iniciar roteiro'
+                        : 'Título já estava com mais de 1 dia de atraso quando o sistema de cobrança começou'
+                      }
+                    </p>
+                    <p className={`text-xs mt-0.5 ${
+                      (checklist as any)?.legacyNotStarted ? 'text-blue-700' : 'text-amber-700'
+                    }`}>
+                      {(checklist as any)?.legacyNotStarted
+                        ? 'O roteiro de cobrança (1,3,5 dias) só inicia quando o primeiro contato for registrado. Faça o contato para dar start no relógio.'
+                        : `O sistema de cobrança iniciou em ${(checklist as any)?.sistemaCobrancaInicio ? new Date((checklist as any).sistemaCobrancaInicio + 'T12:00:00').toLocaleDateString('pt-BR') : '16/04/2026'}. O roteiro foi ajustado a partir da data do primeiro contato.`
+                      }
                     </p>
                   </div>
                 </div>

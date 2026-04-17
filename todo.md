@@ -2850,3 +2850,8 @@
 - [x] Inadimplência: redesenhar layout das 7 bolinhas — card sofisticado, moderno e profissional, sem textos encavalados
 - [x] Inadimplência: remover vibração do telefone para títulos com 3+ dias de atraso A PARTIR DE HOJE (não apenas legados)
 - [x] Inadimplência: remover "CLIENTE TESTE REGRA" da seção de resolvidos (dados de teste confundem)
+- [x] Trocar texto "Título Legado" por "Título já estava com mais de 1 dia de atraso quando o sistema de cobrança começou"
+- [x] Bolinhas: controle rígido — se Thiago esquecer de ticar e o dia passar, bolinha fica vermelha automaticamente, registra no histórico e não pode desmarcar
+- [x] Cobrança 1,3,5 dias: para clientes com 3+ dias de atraso, só dar start quando Thiago fizer o primeiro contato
+- [x] Relógio do histórico (checklist): start da Ação 1 só quando for feito o primeiro contato, seguindo guia de cobrança
+- [x] Investigar cobranças de ontem (16/04) que foram "desmarcadas" — receivableIds órfãos após re-sync do Maxiprod
