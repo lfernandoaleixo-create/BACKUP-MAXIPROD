@@ -1183,3 +1183,33 @@ export const collectionActionEdits = mysqlTable("collection_action_edits", {
 });
 export type CollectionActionEdit = typeof collectionActionEdits.$inferSelect;
 export type InsertCollectionActionEdit = typeof collectionActionEdits.$inferInsert;
+
+/**
+ * Ticagem manual de cobrança — 7 bolinhas por título
+ * Usada por Thiago/Guilherme/Flavio para controle manual do progresso de cobrança.
+ * Cada tick representa um passo: Ação 1, Intervalo, Ação 2, Intervalo, Ação 3, Intervalo, Decisão.
+ */
+export const collectionManualTicks = mysqlTable("collection_manual_ticks", {
+  id: int("id").autoincrement().primaryKey(),
+  receivableId: int("receivable_id").notNull(),
+  step: int("step").notNull(), // 1-7
+  ticked: boolean("ticked").notNull().default(false),
+  tickedBy: varchar("ticked_by", { length: 100 }),
+  tickedAt: bigint("ticked_at", { mode: "number" }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type CollectionManualTick = typeof collectionManualTicks.$inferSelect;
+export type InsertCollectionManualTick = typeof collectionManualTicks.$inferInsert;
+
+/**
+ * Histórico de ticagem manual — registra cada mudança (tick/untick)
+ */
+export const collectionManualTickHistory = mysqlTable("collection_manual_tick_history", {
+  id: int("id").autoincrement().primaryKey(),
+  receivableId: int("receivable_id").notNull(),
+  step: int("step").notNull(), // 1-7
+  action: varchar("action", { length: 20 }).notNull(), // "tick" ou "untick"
+  operatorName: varchar("operator_name", { length: 100 }).notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type CollectionManualTickHistoryRow = typeof collectionManualTickHistory.$inferSelect;

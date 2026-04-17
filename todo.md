@@ -2839,3 +2839,11 @@
 - [x] Checklist cobrança: ajustar frontend para exibir "Dispensado — sistema iniciou em 16/04" em vez de "NENHUMA AÇÃO registrada"
 - [x] Produção: corrigir divergência entre cards de produção (valores corretos) e histórico semanal (valores diferentes) — causa: histórico não aplicava conversão cxp/cxg→saco
 - [x] Produção: garantir que histórico semanal use mesma fonte de dados dos cards (getWeeklySummary agora retorna tipoMadeira + frontend aplica conversão)
+- [x] Checklist cobrança: roteiro deslocado para clientes com 3+ dias de atraso (hoje 17/04) — contar a partir de 16/04 com 1º Cobrança, Intervalo, 2º Cobrança, etc.
+- [x] Checklist cobrança: card amarelo explicativo "Cliente já estava inadimplente quando o sistema começou em 16/04"
+- [x] Checklist cobrança: sem notificação/vibração para clientes com 3+ dias de atraso a partir de hoje
+- [x] Inadimplência tabela: 7 bolinhas manuais ao lado de cada cliente (apenas senhas Thiago/Guilherme/Flavio)
+- [x] Inadimplência tabela: cabeçalho das bolinhas: Ação 1 | Intervalo | Ação 2 | Intervalo | Ação 3 | Intervalo | Decisão
+- [x] Inadimplência tabela: ticagem verde manual pelo Thiago com histórico registrado (data/hora, sequência correta)
+- [x] Inadimplência tabela: validar que ticagem segue sequência de dias sem pular
+- [x] Inadimplência tabela: testes automatizados para manual ticks e supressão de vibração de títulos legados (13 testes)

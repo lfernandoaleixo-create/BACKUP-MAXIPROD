@@ -13,8 +13,11 @@ import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
 import { Eye } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno"];
+const MANUAL_TICK_OPERATORS = ["Thiago", "Guilherme", "Flavio"];
+const TICK_LABELS = ["Ação 1", "Intervalo", "Ação 2", "Intervalo", "Ação 3", "Intervalo", "Decisão"];
 
 const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente", color: "bg-slate-100 text-slate-700 border-slate-300" },
@@ -654,6 +657,21 @@ export default function InadimplenciaTab() {
     { enabled: receivableIds.length > 0 }
   );
 
+  // 7 bolinhas manuais — apenas para operadores autorizados
+  const canManualTick = operator && MANUAL_TICK_OPERATORS.includes(operator.name);
+  const { data: manualTicksMap, refetch: refetchManualTicks } = trpc.financial.getManualTicksBatch.useQuery(
+    { receivableIds },
+    { enabled: !!canManualTick && receivableIds.length > 0 }
+  );
+  const toggleTick = trpc.financial.toggleManualTick.useMutation({
+    onSuccess: () => {
+      refetchManualTicks();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
+  });
+
   // Mutation para registrar ação de cobrança diária
   const registerAction = trpc.financial.registerCollectionAction.useMutation({
     onSuccess: () => {
@@ -1271,7 +1289,7 @@ export default function InadimplenciaTab() {
       {/* Vista por Título */}
       {viewMode === "titulos" && (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="hidden md:grid grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px] bg-slate-50 border-b border-slate-300 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+          <div className={`hidden md:grid ${canManualTick ? 'grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px_minmax(200px,240px)]' : 'grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px]'} bg-slate-50 border-b border-slate-300 text-[11px] font-semibold text-slate-500 uppercase tracking-wide`}>
             <button onClick={() => toggleSort("cliente")} className="flex items-center justify-start gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-300">
               Cliente {sortBy === "cliente" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
@@ -1288,7 +1306,18 @@ export default function InadimplenciaTab() {
               Atraso {sortBy === "dias" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
             <div className="flex items-center justify-center px-3 py-2.5 border-r border-slate-300">Status</div>
-            <div className="flex items-center justify-center px-3 py-2.5">Ações</div>
+            <div className="flex items-center justify-center px-3 py-2.5 border-r border-slate-300">Ações</div>
+            {canManualTick && (
+              <div className="flex items-center justify-center px-1 py-1 border-l border-slate-300">
+                <div className="flex items-center gap-0">
+                  {TICK_LABELS.map((label, i) => (
+                    <div key={i} className="flex items-center justify-center text-[8px] leading-tight text-center px-0.5" style={{ width: `${100/7}%`, minWidth: '26px' }}>
+                      {label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="divide-y divide-slate-100 max-h-[70vh] overflow-y-auto">
@@ -1321,6 +1350,14 @@ export default function InadimplenciaTab() {
                 canCobranca={canCobranca}
                 isVitoria={isVitoria}
                 onOpenDecisaoTutorial={(cn, vn) => setDecisaoTutorialData({ clienteName: cn, vendedorName: vn })}
+                canManualTick={!!canManualTick}
+                manualTicks={manualTicksMap?.[title.id] || []}
+                onToggleTick={(step, ticked) => {
+                  if (operator) {
+                    toggleTick.mutate({ receivableId: title.id, step, ticked, operatorName: operator.name });
+                  }
+                }}
+                isToggling={toggleTick.isPending}
               />
             ))}
           </div>
@@ -1493,7 +1530,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
 }
 
 /* ---- Componente TitleRow (vista por título) ---- */
-function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true, isVitoria = false, onOpenDecisaoTutorial }: {
+function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true, isVitoria = false, onOpenDecisaoTutorial, canManualTick = false, manualTicks = [], onToggleTick, isToggling = false }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -1512,14 +1549,25 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   canCobranca?: boolean;
   isVitoria?: boolean;
   onOpenDecisaoTutorial?: (clienteName: string, vendedorName: string) => void;
+  canManualTick?: boolean;
+  manualTicks?: Array<{ step: number; ticked: boolean; tickedBy: string | null; tickedAt: number | null }>;
+  onToggleTick?: (step: number, ticked: boolean) => void;
+  isToggling?: boolean;
 }) {
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
   const hasHistorico = title.cobranca?.contatoHistorico && title.cobranca.contatoHistorico.length > 0;
 
+  // Build tick map for quick lookup
+  const tickMap = useMemo(() => {
+    const m: Record<number, typeof manualTicks[0]> = {};
+    for (const t of manualTicks) m[t.step] = t;
+    return m;
+  }, [manualTicks]);
+
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px] cursor-pointer hover:bg-white/50 items-center"
+        className={`grid grid-cols-1 ${canManualTick ? 'md:grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px_minmax(200px,240px)]' : 'md:grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px]'} cursor-pointer hover:bg-white/50 items-center`}
         onClick={onToggle}
       >
         {/* Cliente + Referência + Badges */}
@@ -1666,6 +1714,60 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
             {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
         </div>
+
+        {/* 7 Bolinhas Manuais */}
+        {canManualTick && (
+          <div className="flex items-center justify-center gap-1 px-2 py-2 border-l border-slate-200" onClick={e => e.stopPropagation()}>
+            <TooltipProvider delayDuration={200}>
+              {[1,2,3,4,5,6,7].map(step => {
+                const tick = tickMap[step];
+                const isTicked = !!tick?.ticked;
+                const prevTicked = step === 1 || !!tickMap[step - 1]?.ticked;
+                const canTick = !isTicked && prevTicked;
+                const canUntick = isTicked && (step === 7 || !tickMap[step + 1]?.ticked);
+                const tickedDate = tick?.tickedAt ? new Date(tick.tickedAt).toLocaleDateString('pt-BR') : null;
+                const tickedBy = tick?.tickedBy || null;
+
+                return (
+                  <Tooltip key={step}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => {
+                          if (isToggling) return;
+                          if (isTicked && canUntick) {
+                            onToggleTick?.(step, false);
+                          } else if (!isTicked && canTick) {
+                            onToggleTick?.(step, true);
+                          } else if (!isTicked && !canTick) {
+                            toast.error(`Complete o passo ${step - 1} antes`);
+                          }
+                        }}
+                        disabled={isToggling}
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
+                          isTicked
+                            ? 'bg-emerald-500 border-emerald-600 text-white hover:bg-emerald-600'
+                            : canTick
+                              ? 'bg-white border-slate-300 hover:border-emerald-400 hover:bg-emerald-50 cursor-pointer'
+                              : 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed'
+                        }`}
+                      >
+                        {isTicked && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      <p className="font-semibold">{TICK_LABELS[step - 1]}</p>
+                      {isTicked && tickedBy && (
+                        <p className="text-emerald-600">{tickedBy} em {tickedDate}</p>
+                      )}
+                      {!isTicked && canTick && <p className="text-blue-600">Clique para marcar</p>}
+                      {!isTicked && !canTick && <p className="text-slate-400">Complete o passo anterior</p>}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </TooltipProvider>
+          </div>
+        )}
       </div>
 
       {isExpanded && <TitleDetails title={title} />}
@@ -2394,6 +2496,19 @@ function HistoryDialog({ title, onClose }: {
                 <div className="py-8 text-center text-slate-400">
                   <div className="animate-spin w-6 h-6 border-2 border-slate-300 border-t-emerald-600 rounded-full mx-auto mb-2" />
                   Carregando roteiro...
+                </div>
+              )}
+
+              {/* Card amarelo para títulos legados */}
+              {!checklistLoading && (checklist as any)?.isLegacyTitle && (
+                <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800">Título Legado</p>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      Cliente já estava inadimplente quando o sistema de cobrança iniciou em {(checklist as any)?.sistemaCobrancaInicio ? new Date((checklist as any).sistemaCobrancaInicio + 'T12:00:00').toLocaleDateString('pt-BR') : '16/04/2026'}. O roteiro foi ajustado a partir desta data.
+                    </p>
+                  </div>
                 </div>
               )}
 

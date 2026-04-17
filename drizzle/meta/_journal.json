@@ -540,6 +540,13 @@
       "when": 1776368428446,
       "tag": "0076_charming_tyrannus",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "5",
+      "when": 1776425676316,
+      "tag": "0077_elite_tigra",
+      "breakpoints": true
     }
   ]
 }

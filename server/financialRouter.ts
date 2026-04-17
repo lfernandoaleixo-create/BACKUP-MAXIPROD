@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
@@ -3400,8 +3400,17 @@ export const financialRouter = router({
       const todayStr = brNow.toISOString().split("T")[0];
       const diasAtraso = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
 
-      // Definir os 7 dias do roteiro
-      const roteiro = [
+      // Data de início do sistema de cobrança
+      const SISTEMA_COBRANCA_INICIO = "2026-04-16";
+
+      // Verificar se é um título "legado" (já estava vencido há 2+ dias quando o sistema começou)
+      // Ou seja: vencimento + 1 dia < data de início do sistema → dia 1 do roteiro original cai antes do sistema
+      const dia1Original = new Date(new Date(vencDate).getTime() + 1 * 86400000).toISOString().split("T")[0];
+      const isLegacyTitle = dia1Original < SISTEMA_COBRANCA_INICIO;
+
+      // Para títulos legados: roteiro deslocado a partir da data de início do sistema
+      // Em vez de contar a partir do vencimento, conta a partir de 16/04/2026
+      const roteiroNormal = [
         { dia: 1, label: "Dia 1 — WhatsApp + E-mail", tipo: "acao", descricao: "Enviar WhatsApp e e-mail formal de cobrança" },
         { dia: 2, label: "Dia 2 — Intervalo", tipo: "espera", descricao: "Dia de espera. Verificar se cliente respondeu" },
         { dia: 3, label: "Dia 3 — Ligação + E-mail", tipo: "acao", descricao: "Fazer ligação telefônica e enviar e-mail" },
@@ -3411,7 +3420,25 @@ export const financialRouter = router({
         { dia: 7, label: "Dia 7+ — Decisão de Protesto", tipo: "decisao", descricao: "Decisão: Com Protesto (Cartório) ou Não Protestar" },
       ];
 
-      // Calcular a data de cada dia do roteiro
+      const roteiroDeslocado = [
+        { dia: 1, label: "1º Dia de Cobrança — WhatsApp + E-mail", tipo: "acao", descricao: "Enviar WhatsApp e e-mail formal de cobrança" },
+        { dia: 2, label: "Intervalo", tipo: "espera", descricao: "Dia de espera. Verificar se cliente respondeu" },
+        { dia: 3, label: "2º Dia de Cobrança — Ligação + E-mail", tipo: "acao", descricao: "Fazer ligação telefônica e enviar e-mail" },
+        { dia: 4, label: "Intervalo", tipo: "espera", descricao: "Dia de espera. Verificar promessas de pagamento" },
+        { dia: 5, label: "3º Dia de Cobrança — Ligação + E-mail (Último)", tipo: "acao", descricao: "Ligação e e-mail FINAL com aviso de protesto" },
+        { dia: 6, label: "Intervalo", tipo: "espera", descricao: "Revisar histórico e preparar documentação" },
+        { dia: 7, label: "Decisão de Protesto", tipo: "decisao", descricao: "Protesto ou carta de aviso para o vendedor" },
+      ];
+
+      const roteiro = isLegacyTitle ? roteiroDeslocado : roteiroNormal;
+
+      // Para títulos legados: base de cálculo é a data de início do sistema (16/04) - 1 dia
+      // Para que dia 1 = 16/04, dia 2 = 17/04, etc.
+      // Para títulos normais: base de cálculo é a data de vencimento
+      const baseDate = isLegacyTitle ? SISTEMA_COBRANCA_INICIO : vencDate;
+      const baseMs = isLegacyTitle
+        ? new Date(SISTEMA_COBRANCA_INICIO).getTime() - 86400000 // -1 dia para que dia 1 = 16/04
+        : new Date(vencDate).getTime();
       const vencMs = new Date(vencDate).getTime();
 
       // Mapear ações por data
@@ -3423,13 +3450,10 @@ export const financialRouter = router({
 
       let hasCascadeError = false;
 
-      // Data de início do sistema de cobrança (16/04/2026).
-      // Dias do roteiro ANTERIORES a esta data são dispensados (verde)
-      // porque não havia processo de cobrança ativo.
-      const SISTEMA_COBRANCA_INICIO = "2026-04-16";
-
       const steps = roteiro.map(step => {
-        const stepDate = new Date(vencMs + step.dia * 86400000).toISOString().split("T")[0];
+        // Para títulos legados: datas calculadas a partir de baseMs (15/04)
+        // Para títulos normais: datas calculadas a partir de vencMs
+        const stepDate = new Date(baseMs + step.dia * 86400000).toISOString().split("T")[0];
         const isFuture = stepDate > todayStr;
         const isToday = stepDate === todayStr;
         const isBeforeSystemStart = stepDate < SISTEMA_COBRANCA_INICIO;
@@ -3537,6 +3561,8 @@ export const financialRouter = router({
         diasAtraso,
         cliente: rec.cliente || "",
         valorAReceber: Number(rec.valorLiquido) - Number(rec.valorRecebidoLiquido),
+        isLegacyTitle,
+        sistemaCobrancaInicio: SISTEMA_COBRANCA_INICIO,
       };
     }),
 
@@ -3612,6 +3638,8 @@ export const financialRouter = router({
         actionsByRecId[a.receivableId].add(a.actionDate);
       }
 
+      const SISTEMA_COBRANCA_INICIO_PENDING = '2026-04-16';
+
       for (const rec of receivables) {
         if (!rec.vencimentoData) continue;
         const vencStr = (rec.vencimentoData as string).split('T')[0];
@@ -3619,6 +3647,12 @@ export const financialRouter = router({
         const diffMs = brDate.getTime() - vencDate.getTime();
         const diasAtraso = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         if (diasAtraso < 1) continue;
+
+        // Título legado: dia1 original < início do sistema → NÃO vibra
+        const dia1Original = new Date(vencDate);
+        dia1Original.setDate(dia1Original.getDate() + 1);
+        const dia1Str = dia1Original.toISOString().split('T')[0];
+        if (dia1Str < SISTEMA_COBRANCA_INICIO_PENDING) continue;
 
         const pendingDays: number[] = [];
         const actionDates = actionsByRecId[rec.id] || new Set();
@@ -5335,5 +5369,152 @@ ${acoesTexto}
         .orderBy(desc(collectionActionEdits.editedAt));
 
       return { edits: rows };
+    }),
+
+  /**
+   * Obter ticagens manuais de um título (7 bolinhas)
+   */
+  getManualTicks: publicProcedure
+    .input(z.object({ receivableId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { ticks: [] };
+      const rows = await db.select().from(collectionManualTicks)
+        .where(eq(collectionManualTicks.receivableId, input.receivableId))
+        .orderBy(asc(collectionManualTicks.step));
+      return { ticks: rows };
+    }),
+
+  /**
+   * Obter ticagens manuais em batch (para múltiplos títulos)
+   */
+  getManualTicksBatch: publicProcedure
+    .input(z.object({ receivableIds: z.array(z.number()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db || input.receivableIds.length === 0) return {};
+      const rows = await db.select().from(collectionManualTicks)
+        .where(inArray(collectionManualTicks.receivableId, input.receivableIds))
+        .orderBy(asc(collectionManualTicks.step));
+      const map: Record<number, typeof rows> = {};
+      for (const r of rows) {
+        if (!map[r.receivableId]) map[r.receivableId] = [];
+        map[r.receivableId].push(r);
+      }
+      return map;
+    }),
+
+  /**
+   * Toggle ticagem manual (tick/untick) com validação de sequência
+   * Regra: não pode ticar step N se step N-1 não está ticado (exceto step 1)
+   * Regra: não pode desticar step N se step N+1 está ticado
+   * Regra: não pode ticar mais de 1 step por dia (sequência de dias)
+   */
+  toggleManualTick: publicProcedure
+    .input(z.object({
+      receivableId: z.number(),
+      step: z.number().min(1).max(7),
+      ticked: z.boolean(),
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Buscar todos os ticks atuais do título
+      const currentTicks = await db.select().from(collectionManualTicks)
+        .where(eq(collectionManualTicks.receivableId, input.receivableId))
+        .orderBy(asc(collectionManualTicks.step));
+
+      const tickMap: Record<number, typeof currentTicks[0]> = {};
+      for (const t of currentTicks) tickMap[t.step] = t;
+
+      if (input.ticked) {
+        // Validar sequência: step anterior deve estar ticado (exceto step 1)
+        if (input.step > 1) {
+          const prev = tickMap[input.step - 1];
+          if (!prev || !prev.ticked) {
+            throw new Error(`Passo ${input.step - 1} precisa ser concluído antes do passo ${input.step}`);
+          }
+        }
+
+        // Validar que não pula dia: último tick deve ter sido em dia anterior ou antes
+        if (input.step > 1) {
+          const prev = tickMap[input.step - 1];
+          if (prev && prev.tickedAt) {
+            const now = new Date();
+            const brNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+            const todayStr = brNow.toISOString().split('T')[0];
+            const prevDate = new Date(prev.tickedAt - 3 * 60 * 60 * 1000).toISOString().split('T')[0];
+            if (prevDate === todayStr) {
+              throw new Error(`Passo ${input.step - 1} foi concluído hoje. Aguarde o próximo dia para o passo ${input.step}.`);
+            }
+          }
+        }
+
+        // Upsert: criar ou atualizar
+        const existing = tickMap[input.step];
+        const now = Date.now();
+        if (existing) {
+          await db.update(collectionManualTicks)
+            .set({ ticked: true, tickedBy: input.operatorName, tickedAt: now })
+            .where(eq(collectionManualTicks.id, existing.id));
+        } else {
+          await db.insert(collectionManualTicks).values({
+            receivableId: input.receivableId,
+            step: input.step,
+            ticked: true,
+            tickedBy: input.operatorName,
+            tickedAt: now,
+          });
+        }
+
+        // Registrar no histórico
+        await db.insert(collectionManualTickHistory).values({
+          receivableId: input.receivableId,
+          step: input.step,
+          action: "tick",
+          operatorName: input.operatorName,
+        });
+      } else {
+        // Untick: validar que steps posteriores não estão ticados
+        for (let s = input.step + 1; s <= 7; s++) {
+          const next = tickMap[s];
+          if (next && next.ticked) {
+            throw new Error(`Não é possível desmarcar o passo ${input.step} pois o passo ${s} já está marcado.`);
+          }
+        }
+
+        const existing = tickMap[input.step];
+        if (existing) {
+          await db.update(collectionManualTicks)
+            .set({ ticked: false, tickedBy: null, tickedAt: null })
+            .where(eq(collectionManualTicks.id, existing.id));
+        }
+
+        // Registrar no histórico
+        await db.insert(collectionManualTickHistory).values({
+          receivableId: input.receivableId,
+          step: input.step,
+          action: "untick",
+          operatorName: input.operatorName,
+        });
+      }
+
+      return { success: true };
+    }),
+
+  /**
+   * Histórico de ticagem manual de um título
+   */
+  getManualTickHistory: publicProcedure
+    .input(z.object({ receivableId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { history: [] };
+      const rows = await db.select().from(collectionManualTickHistory)
+        .where(eq(collectionManualTickHistory.receivableId, input.receivableId))
+        .orderBy(desc(collectionManualTickHistory.createdAt));
+      return { history: rows };
     }),
 });
