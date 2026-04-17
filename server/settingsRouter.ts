@@ -1032,4 +1032,42 @@ export const settingsRouter = router({
 
     return { prices };
   }),
+
+  /**
+   * Get Sicoob Palitos "Limite disponível para troca de títulos"
+   * Stored in app_settings with key 'sicoob_limite_troca'
+   * Value is { valor: number, updatedBy: string, updatedAt: string }
+   */
+  getSicoobLimite: publicProcedure.query(async () => {
+    const data = await getSetting("sicoob_limite_troca");
+    if (!data) return { valor: null, updatedBy: null, updatedAt: null };
+    return {
+      valor: data.valor as number | null,
+      updatedBy: data.updatedBy as string | null,
+      updatedAt: data.updatedAt as string | null,
+    };
+  }),
+
+  /**
+   * Update Sicoob Palitos "Limite disponível para troca de títulos"
+   * Only operator "Flavio" can update this value.
+   */
+  updateSicoobLimite: publicProcedure
+    .input(z.object({
+      valor: z.number().min(0, "Valor deve ser positivo"),
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      // Only Flavio can update
+      if (input.operatorName !== "Flavio") {
+        throw new Error("Apenas o operador Flávio pode atualizar o limite.");
+      }
+      const now = new Date().toISOString();
+      await setSetting("sicoob_limite_troca", {
+        valor: input.valor,
+        updatedBy: input.operatorName,
+        updatedAt: now,
+      });
+      return { success: true };
+    }),
 });

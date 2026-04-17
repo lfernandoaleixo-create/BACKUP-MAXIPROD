@@ -32,6 +32,8 @@ import {
   Lock,
   CheckCircle2,
   ShieldCheck,
+  Pencil,
+  DollarSign,
 } from "lucide-react";
 import {
   Dialog,
@@ -1161,6 +1163,133 @@ function ContaFiltersAndTable({
 }
 
 /* ============================================================
+   Sicoob Palitos - Limite para Troca de Títulos
+   ============================================================ */
+function SicoobLimiteCard() {
+  const { operator } = useOperator();
+  const isFlavio = operator?.name === "Flavio";
+  const [editing, setEditing] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+
+  const limiteQuery = trpc.settings.getSicoobLimite.useQuery();
+  const utils = trpc.useUtils();
+  const updateMutation = trpc.settings.updateSicoobLimite.useMutation({
+    onSuccess: () => {
+      utils.settings.getSicoobLimite.invalidate();
+      setEditing(false);
+      toast.success("Limite atualizado com sucesso!");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const valor = limiteQuery.data?.valor;
+  const updatedBy = limiteQuery.data?.updatedBy;
+  const updatedAt = limiteQuery.data?.updatedAt;
+
+  function startEditing() {
+    setInputValue(valor != null ? String(valor) : "");
+    setEditing(true);
+  }
+
+  function handleSave() {
+    const parsed = parseFloat(inputValue.replace(/\./g, "").replace(",", "."));
+    if (isNaN(parsed) || parsed < 0) {
+      toast.error("Valor inválido");
+      return;
+    }
+    updateMutation.mutate({ valor: parsed, operatorName: operator!.name });
+  }
+
+  function formatUpdatedAt(iso: string) {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    } catch { return iso; }
+  }
+
+  return (
+    <div className="mx-3 my-3">
+      <div className="relative overflow-hidden rounded-xl border-2 border-green-300 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 shadow-lg">
+        {/* Background decoration */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-200/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
+                <DollarSign className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h4 className="text-green-800 font-bold text-sm">Limite disponível para troca de títulos</h4>
+                <p className="text-green-600/70 text-[10px] font-medium">Sicoob Palitos</p>
+              </div>
+            </div>
+            {isFlavio && !editing && (
+              <button
+                onClick={startEditing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-all shadow-md hover:shadow-lg"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Editar
+              </button>
+            )}
+          </div>
+
+          {/* Value display */}
+          {editing ? (
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600 font-bold text-sm">R$</span>
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="0,00"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border-2 border-green-300 bg-white text-lg font-bold text-green-800 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSave();
+                    if (e.key === "Escape") setEditing(false);
+                  }}
+                />
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={updateMutation.isPending}
+                className="px-4 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition-all shadow-md disabled:opacity-50"
+              >
+                {updateMutation.isPending ? "..." : "Salvar"}
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="px-3 py-2.5 rounded-lg border-2 border-green-300 text-green-700 font-medium text-sm hover:bg-green-100 transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="text-3xl font-extrabold text-green-800 tracking-tight">
+                {valor != null ? formatCurrency(valor) : (
+                  <span className="text-green-400 text-lg font-medium italic">Não definido</span>
+                )}
+              </div>
+              {updatedBy && updatedAt && (
+                <p className="text-[11px] text-green-600/60 mt-1.5 font-medium">
+                  Atualizado por {updatedBy} em {formatUpdatedAt(updatedAt)}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    Main Component
    ============================================================ */
 export default function ReceivablesTab() {
@@ -1550,6 +1679,11 @@ export default function ReceivablesTab() {
                                     {isContaOpen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                                   </div>
                                 </button>
+
+                                {/* Card Limite Sicoob Palitos - aparece apenas na conta Sicoob da empresa PALITOS */}
+                                {isContaOpen && bankShort === "Sicoob" && shortEmpresaName(emp.nome) === "PALITOS" && (
+                                  <SicoobLimiteCard />
+                                )}
 
                                 {/* Filtros + Card + Tabela DENTRO da conta bancária */}
                                 {isContaOpen && contaItems.length > 0 && (
