@@ -15,8 +15,8 @@ import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
 import { Eye } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno"];
-const MANUAL_TICK_OPERATORS = ["Thiago", "Guilherme", "Flavio"];
+const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson"];
+const MANUAL_TICK_OPERATORS = ["Thiago", "Guilherme", "Flavio", "Fernando", "Bruno", "Gilson"];
 const TICK_LABELS = ["Ação 1", "Intervalo", "Ação 2", "Intervalo", "Ação 3", "Intervalo", "Decisão"];
 
 const STATUS_OPTIONS = [
