@@ -148,176 +148,72 @@ async function svgToImage(svgElement: SVGSVGElement): Promise<string | null> {
   } catch { return null; }
 }
 
-// ─── Rounded Rect Helper (with optional colored left border) ─────
+// ─── Rounded Rect Helper ─────────────────────────────────────────
 function drawCard(
   doc: jsPDF,
   x: number, y: number, w: number, h: number,
   opts?: { fill?: [number, number, number]; borderColor?: [number, number, number]; topBar?: [number, number, number]; radius?: number },
 ) {
-  const r = opts?.radius ?? 2;
+  const r = opts?.radius ?? 1.5;
   const fill = opts?.fill ?? C.white;
   doc.setFillColor(...fill);
   doc.roundedRect(x, y, w, h, r, r, "F");
-  // Subtle border
   doc.setDrawColor(...(opts?.borderColor ?? C.slate200));
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.2);
   doc.roundedRect(x, y, w, h, r, r, "S");
-  // Top color bar
   if (opts?.topBar) {
     doc.setFillColor(...opts.topBar);
-    doc.rect(x + 0.5, y, w - 1, 1.2, "F");
+    doc.rect(x + 0.3, y, w - 0.6, 0.8, "F");
   }
 }
 
-// ─── Draw Daily Average Cards ────────────────────────────────────
-function drawDailyAverageCards(
+// ─── Draw compact KPI card (for daily averages) ──────────────────
+function drawMiniCard(
   doc: jsPDF,
-  comparison: ComparisonData | null | undefined,
-  analytics: AnalyticsData,
-  x: number, y: number, totalW: number,
-): number {
-  if (!comparison) return y;
+  x: number, y: number, w: number, h: number,
+  title: string, badgeText: string, bigValue: string, acumLabel: string, acumValue: string,
+  color: [number, number, number], colorDark: [number, number, number], colorLight: [number, number, number],
+) {
+  drawCard(doc, x, y, w, h, { topBar: color });
 
-  const todayDay = new Date().getDate();
-  const currentTotal = comparison.currentMonth?.[comparison.currentMonth.length - 1]?.cumulative ?? 0;
-  const currentDays = todayDay;
-  const currentAvg = currentDays > 0 ? currentTotal / currentDays : 0;
-
-  const lastTotal = comparison.lastMonth?.[comparison.lastMonth.length - 1]?.cumulative ?? 0;
-  const lastDays = comparison.lastMonth?.length ?? 0;
-  const lastAvg = lastDays > 0 ? lastTotal / lastDays : 0;
-
-  const bestTotal = comparison.bestMonth?.[comparison.bestMonth.length - 1]?.cumulative ?? 0;
-  const bestDays = comparison.bestMonth?.length ?? 0;
-  const bestAvg = bestDays > 0 ? bestTotal / bestDays : 0;
-
-  const hasBest = comparison.bestMonth && comparison.bestMonth.length > 0;
-  const cols = hasBest ? 3 : 2;
-  const gap = 4;
-  const cardW = (totalW - gap * (cols - 1)) / cols;
-  const cardH = 28;
-
-  // ── Card 1: Mês Atual (teal/green) ──
-  const c1x = x;
-  drawCard(doc, c1x, y, cardW, cardH, { topBar: C.teal });
-
-  doc.setFontSize(7);
+  doc.setFontSize(5.5);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.teal);
-  doc.text("MEDIA DIARIA DO MES ATUAL", c1x + 4, y + 6);
+  doc.setTextColor(...color);
+  doc.text(title, x + 3, y + 4.5);
 
   // Badge
-  const badgeText1 = `Total de ${currentDays} dias do mes`;
-  const bw1 = doc.getTextWidth(badgeText1) + 4;
-  doc.setFillColor(...C.tealLight);
-  doc.roundedRect(c1x + cardW - bw1 - 4, y + 3, bw1, 5, 1.5, 1.5, "F");
-  doc.setFontSize(5.5);
-  doc.setTextColor(...C.tealDark);
-  doc.text(badgeText1, c1x + cardW - bw1 / 2 - 4, y + 6.3, { align: "center" });
+  const bw = doc.getTextWidth(badgeText) + 3;
+  doc.setFillColor(...colorLight);
+  doc.roundedRect(x + w - bw - 3, y + 2, bw, 4, 1, 1, "F");
+  doc.setFontSize(4.5);
+  doc.setTextColor(...colorDark);
+  doc.text(badgeText, x + w - bw / 2 - 3, y + 4.5, { align: "center" });
 
   // Big number
-  doc.setFontSize(16);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.slate900);
-  doc.text(fmtCurrency(currentAvg), c1x + 4, y + 15);
+  doc.text(bigValue, x + 3, y + 11);
 
-  // Separator line
-  doc.setDrawColor(...C.tealLight);
-  doc.setLineWidth(0.3);
-  doc.line(c1x + 4, y + 18, c1x + cardW - 4, y + 18);
+  // Separator
+  doc.setDrawColor(...colorLight);
+  doc.setLineWidth(0.2);
+  doc.line(x + 3, y + 13, x + w - 3, y + 13);
 
-  // Acumulado line
-  doc.setFillColor(...C.teal);
-  doc.rect(c1x + 4, y + 21, 5, 1, "F");
+  // Acumulado
+  doc.setFillColor(...color);
+  doc.rect(x + 3, y + 15.5, 4, 0.8, "F");
+  doc.setFontSize(5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...color);
+  doc.text(acumLabel, x + 9, y + 16.2);
   doc.setFontSize(6.5);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.teal);
-  doc.text(`Acum. Atual (${comparison.currentMonthLabel || ""})`, c1x + 11, y + 22);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.tealDark);
-  doc.text(fmtCurrency(currentTotal), c1x + cardW - 4, y + 22, { align: "right" });
-
-  // ── Card 2: Mês Anterior (blue) ──
-  const c2x = x + cardW + gap;
-  drawCard(doc, c2x, y, cardW, cardH, { topBar: C.blue });
-
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.blue);
-  doc.text("MEDIA DIARIA DO MES ANTERIOR", c2x + 4, y + 6);
-
-  const badgeText2 = `Total de ${lastDays} dias do mes`;
-  const bw2 = doc.getTextWidth(badgeText2) + 4;
-  doc.setFillColor(...C.blueLight);
-  doc.roundedRect(c2x + cardW - bw2 - 4, y + 3, bw2, 5, 1.5, 1.5, "F");
-  doc.setFontSize(5.5);
-  doc.setTextColor(...C.blueDark);
-  doc.text(badgeText2, c2x + cardW - bw2 / 2 - 4, y + 6.3, { align: "center" });
-
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.slate900);
-  doc.text(fmtCurrency(lastAvg), c2x + 4, y + 15);
-
-  doc.setDrawColor(...C.blueLight);
-  doc.setLineWidth(0.3);
-  doc.line(c2x + 4, y + 18, c2x + cardW - 4, y + 18);
-
-  doc.setFillColor(...C.blue);
-  doc.rect(c2x + 4, y + 21, 5, 1, "F");
-  doc.setFontSize(6.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.blue);
-  doc.text(`Anterior (${comparison.lastMonthLabel || ""})`, c2x + 11, y + 22);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.blueDark);
-  doc.text(fmtCurrency(lastTotal), c2x + cardW - 4, y + 22, { align: "right" });
-
-  // ── Card 3: Melhor Mês (amber) ──
-  if (hasBest) {
-    const c3x = x + (cardW + gap) * 2;
-    drawCard(doc, c3x, y, cardW, cardH, { topBar: C.amber });
-
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...C.amber);
-    doc.text("MEDIA DIARIA DO MELHOR MES", c3x + 4, y + 6);
-
-    const badgeText3 = `Total de ${bestDays} dias do mes`;
-    const bw3 = doc.getTextWidth(badgeText3) + 4;
-    doc.setFillColor(...C.amberLight);
-    doc.roundedRect(c3x + cardW - bw3 - 4, y + 3, bw3, 5, 1.5, 1.5, "F");
-    doc.setFontSize(5.5);
-    doc.setTextColor(...C.amberDark);
-    doc.text(badgeText3, c3x + cardW - bw3 / 2 - 4, y + 6.3, { align: "center" });
-
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...C.slate900);
-    doc.text(fmtCurrency(bestAvg), c3x + 4, y + 15);
-
-    doc.setDrawColor(...C.amberLight);
-    doc.setLineWidth(0.3);
-    doc.line(c3x + 4, y + 18, c3x + cardW - 4, y + 18);
-
-    doc.setFillColor(...C.amber);
-    doc.rect(c3x + 4, y + 21, 5, 1, "F");
-    doc.setFontSize(6.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...C.amber);
-    doc.text(`Melhor (${comparison.bestMonthLabel || ""})`, c3x + 11, y + 22);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...C.amberDark);
-    doc.text(fmtCurrency(bestTotal), c3x + cardW - 4, y + 22, { align: "right" });
-  }
-
-  return y + cardH + 5;
+  doc.setTextColor(...colorDark);
+  doc.text(acumValue, x + w - 3, y + 16.2, { align: "right" });
 }
 
-// ─── Draw Bar+Line Chart ─────────────────────────────────────────
+// ─── Draw Bar+Line Chart (compact) ──────────────────────────────
 function drawChartInPdf(
   doc: jsPDF,
   data: Array<{ day: string; value: number }>,
@@ -330,17 +226,17 @@ function drawChartInPdf(
   const maxVal = Math.max(...data.map(d => d.value), 1);
   const barCount = data.length;
 
-  const leftAxisW = 22;
-  const rightAxisW = comparison ? 22 : 5;
-  const bottomAxisH = 14;
-  const topPad = 10;
+  const leftAxisW = 18;
+  const rightAxisW = comparison ? 18 : 4;
+  const bottomAxisH = 10;
+  const topPad = 4;
 
   const plotX = startX + leftAxisW;
   const plotY = startY + topPad;
   const plotW = chartW - leftAxisW - rightAxisW;
   const plotH = chartH - bottomAxisH - topPad;
 
-  const barWidth = Math.min(8, plotW / barCount * 0.65);
+  const barWidth = Math.min(6, plotW / barCount * 0.6);
   const barGap = (plotW - barWidth * barCount) / Math.max(barCount - 1, 1);
 
   // Y axis grid lines
@@ -348,13 +244,13 @@ function drawChartInPdf(
     const pct = i / 4;
     const gy = plotY + plotH - pct * plotH;
     doc.setDrawColor(...C.slate200);
-    doc.setLineWidth(0.15);
+    doc.setLineWidth(0.1);
     doc.line(plotX, gy, plotX + plotW, gy);
     const val = maxVal * pct;
-    doc.setFontSize(6);
+    doc.setFontSize(5);
     doc.setTextColor(...C.slate400);
     doc.setFont("helvetica", "normal");
-    doc.text(fmtCompact(val), plotX - 3, gy + 1.5, { align: "right" });
+    doc.text(fmtCompact(val), plotX - 2, gy + 1, { align: "right" });
   }
 
   // Right axis labels (cumulative)
@@ -372,10 +268,10 @@ function drawChartInPdf(
       const pct = i / 4;
       const gy = plotY + plotH - pct * plotH;
       const val = maxCumulative * pct;
-      doc.setFontSize(6);
+      doc.setFontSize(5);
       doc.setTextColor(...C.slate400);
       doc.setFont("helvetica", "normal");
-      doc.text(fmtCompact(val), plotX + plotW + 3, gy + 1.5);
+      doc.text(fmtCompact(val), plotX + plotW + 2, gy + 1);
     }
   }
 
@@ -391,34 +287,37 @@ function drawChartInPdf(
   // Bars
   data.forEach((d, i) => {
     const bx = plotX + i * (barWidth + barGap);
-    const barH = d.value > 0 ? Math.max((d.value / maxVal) * plotH, 1) : 0.5;
+    const barH = d.value > 0 ? Math.max((d.value / maxVal) * plotH, 0.5) : 0.3;
     const by = plotY + plotH - barH;
     const weekend = isWeekend(d.day);
 
     doc.setFillColor(...(weekend ? C.weekendBar : C.tealBar));
     doc.rect(bx, by, barWidth, barH, "F");
 
-    if (d.value > 0) {
-      doc.setFontSize(6);
+    // Only show value labels if there's enough space (skip if too many bars)
+    if (d.value > 0 && barCount <= 20) {
+      doc.setFontSize(4.5);
       doc.setTextColor(...C.slate900);
       doc.setFont("helvetica", "bold");
-      doc.text(fmtCompact(d.value), bx + barWidth / 2, by - 2, { align: "center" });
+      doc.text(fmtCompact(d.value), bx + barWidth / 2, by - 1.5, { align: "center" });
     }
 
     const dayNum = d.day.split("-")[2];
-    doc.setFontSize(6);
+    doc.setFontSize(4.5);
     doc.setTextColor(...(weekend ? C.weekendText : C.slate500));
     doc.setFont("helvetica", "bold");
-    doc.text(dayNum, bx + barWidth / 2, plotY + plotH + 5, { align: "center" });
-    doc.setFontSize(5);
-    doc.setTextColor(...(weekend ? C.weekendTextLight : C.slate400));
-    doc.setFont("helvetica", "normal");
-    doc.text(formatWeekday(d.day), bx + barWidth / 2, plotY + plotH + 10, { align: "center" });
+    doc.text(dayNum, bx + barWidth / 2, plotY + plotH + 4, { align: "center" });
+    if (barCount <= 20) {
+      doc.setFontSize(4);
+      doc.setTextColor(...(weekend ? C.weekendTextLight : C.slate400));
+      doc.setFont("helvetica", "normal");
+      doc.text(formatWeekday(d.day), bx + barWidth / 2, plotY + plotH + 7.5, { align: "center" });
+    }
   });
 
   // Bottom axis line
   doc.setDrawColor(...C.slate400);
-  doc.setLineWidth(0.2);
+  doc.setLineWidth(0.15);
   doc.line(plotX, plotY + plotH, plotX + plotW, plotY + plotH);
 
   // Cumulative lines
@@ -441,12 +340,12 @@ function drawChartInPdf(
           let drawn = 0;
           while (drawn < len) {
             const startPct = drawn / len;
-            const endPct = Math.min((drawn + 2) / len, 1);
+            const endPct = Math.min((drawn + 1.5) / len, 1);
             doc.line(
               points[i - 1].x + dx * startPct, points[i - 1].y + dy * startPct,
               points[i - 1].x + dx * endPct, points[i - 1].y + dy * endPct,
             );
-            drawn += 3.5;
+            drawn += 3;
           }
         } else {
           doc.line(points[i - 1].x, points[i - 1].y, points[i].x, points[i].y);
@@ -455,19 +354,19 @@ function drawChartInPdf(
     };
 
     if (comparison!.bestMonth && comparison!.bestMonth.length > 0) {
-      drawLine(buildLinePoints(comparison!.bestMonth), C.amber, 0.5, true);
+      drawLine(buildLinePoints(comparison!.bestMonth), C.amber, 0.4, true);
     }
     if (comparison!.lastMonth && comparison!.lastMonth.length > 0) {
-      drawLine(buildLinePoints(comparison!.lastMonth), C.blue, 0.6, false);
+      drawLine(buildLinePoints(comparison!.lastMonth), C.blue, 0.5, false);
     }
     if (comparison!.currentMonth && comparison!.currentMonth.length > 0) {
       const pts = buildLinePoints(comparison!.currentMonth);
-      drawLine(pts, C.teal, 0.8, false);
+      drawLine(pts, C.teal, 0.7, false);
       const lastPt = pts[pts.length - 1];
       doc.setFillColor(...C.teal);
-      doc.circle(lastPt.x, lastPt.y, 1.2, "F");
+      doc.circle(lastPt.x, lastPt.y, 1, "F");
       doc.setFillColor(...C.white);
-      doc.circle(lastPt.x, lastPt.y, 0.5, "F");
+      doc.circle(lastPt.x, lastPt.y, 0.4, "F");
     }
 
     // Today marker
@@ -475,12 +374,12 @@ function drawChartInPdf(
     if (todayDay <= barCount) {
       const todayX = plotX + (todayDay - 1) * (barWidth + barGap) + barWidth / 2;
       doc.setDrawColor(...C.teal);
-      doc.setLineWidth(0.3);
+      doc.setLineWidth(0.2);
       let dashY = plotY;
       while (dashY < plotY + plotH) {
-        const end = Math.min(dashY + 2, plotY + plotH);
+        const end = Math.min(dashY + 1.5, plotY + plotH);
         doc.line(todayX, dashY, todayX, end);
-        dashY = end + 1.5;
+        dashY = end + 1;
       }
     }
   }
@@ -488,7 +387,7 @@ function drawChartInPdf(
   return startY + chartH;
 }
 
-// ─── Chart Legend (compact, below chart title) ───────────────────
+// ─── Chart Legend (inline, compact) ──────────────────────────────
 function drawChartLegend(
   doc: jsPDF,
   comparison: ComparisonData | null | undefined,
@@ -497,22 +396,22 @@ function drawChartLegend(
   if (!comparison) return y;
 
   let curX = x;
-  const lineY = y + 2;
-  const textY = y + 3;
-  const lineLen = 8;
-  const gap = 6;
+  const lineY = y + 1.5;
+  const textY = y + 2.5;
+  const lineLen = 6;
+  const gap = 4;
 
   if (comparison.currentMonth && comparison.currentMonth.length > 0) {
     doc.setDrawColor(...C.teal);
-    doc.setLineWidth(0.8);
+    doc.setLineWidth(0.7);
     doc.line(curX, lineY, curX + lineLen, lineY);
-    curX += lineLen + 2;
-    doc.setFontSize(6.5);
+    curX += lineLen + 1.5;
+    doc.setFontSize(5.5);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...C.teal);
-    const lbl = `Acum. Atual (${comparison.currentMonthLabel || ""})`;
+    const lbl = `Atual (${comparison.currentMonthLabel || ""})`;
     doc.text(lbl, curX, textY);
-    curX += doc.getTextWidth(lbl) + 2;
+    curX += doc.getTextWidth(lbl) + 1.5;
     const last = comparison.currentMonth[comparison.currentMonth.length - 1];
     if (last) {
       doc.text(fmtCurrency(last.cumulative), curX, textY);
@@ -523,15 +422,15 @@ function drawChartLegend(
 
   if (comparison.lastMonth && comparison.lastMonth.length > 0) {
     doc.setDrawColor(...C.blue);
-    doc.setLineWidth(0.8);
+    doc.setLineWidth(0.7);
     doc.line(curX, lineY, curX + lineLen, lineY);
-    curX += lineLen + 2;
-    doc.setFontSize(6.5);
+    curX += lineLen + 1.5;
+    doc.setFontSize(5.5);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...C.blue);
     const lbl = `Anterior (${comparison.lastMonthLabel || ""})`;
     doc.text(lbl, curX, textY);
-    curX += doc.getTextWidth(lbl) + 2;
+    curX += doc.getTextWidth(lbl) + 1.5;
     const last = comparison.lastMonth[comparison.lastMonth.length - 1];
     if (last) {
       doc.text(fmtCurrency(last.cumulative), curX, textY);
@@ -542,31 +441,31 @@ function drawChartLegend(
 
   if (comparison.bestMonth && comparison.bestMonth.length > 0) {
     doc.setDrawColor(...C.amber);
-    doc.setLineWidth(0.8);
+    doc.setLineWidth(0.7);
     let dx = curX;
     while (dx < curX + lineLen) {
-      const end = Math.min(dx + 1.5, curX + lineLen);
+      const end = Math.min(dx + 1.2, curX + lineLen);
       doc.line(dx, lineY, end, lineY);
-      dx = end + 1;
+      dx = end + 0.8;
     }
-    curX += lineLen + 2;
-    doc.setFontSize(6.5);
+    curX += lineLen + 1.5;
+    doc.setFontSize(5.5);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...C.amber);
     const lbl = `Melhor (${comparison.bestMonthLabel || ""})`;
     doc.text(lbl, curX, textY);
-    curX += doc.getTextWidth(lbl) + 2;
+    curX += doc.getTextWidth(lbl) + 1.5;
     const last = comparison.bestMonth[comparison.bestMonth.length - 1];
     if (last) {
       doc.text(fmtCurrency(last.cumulative), curX, textY);
     }
   }
 
-  return y + 7;
+  return y + 5;
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// ═══  MAIN EXPORT FUNCTION  ══════════════════════════════════════
+// ═══  MAIN EXPORT FUNCTION — SINGLE PAGE  ════════════════════════
 // ═══════════════════════════════════════════════════════════════════
 export async function generateSalesPDF(
   analytics: AnalyticsData,
@@ -577,173 +476,226 @@ export async function generateSalesPDF(
   comparison?: ComparisonData | null,
 ): Promise<void> {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const margin = 12;
-  let y = margin;
+  const pageW = doc.internal.pageSize.getWidth();  // 297mm
+  const pageH = doc.internal.pageSize.getHeight(); // 210mm
+  const margin = 8;
+  let y = 0;
 
   const now = new Date();
   const dateStr = `Gerado em ${now.toLocaleDateString("pt-BR")} as ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 
-  // ═══════════════════════════════════════════════════════════════
-  // PAGE 1: Header + KPIs + Daily Average Cards + Segment Table
-  // ═══════════════════════════════════════════════════════════════
-
-  // ── Thin teal accent line at very top ──
+  // ── Top accent line ──
   doc.setFillColor(...C.teal);
-  doc.rect(0, 0, pageW, 1.5, "F");
-  y = 5;
+  doc.rect(0, 0, pageW, 1.2, "F");
+  y = 3;
 
-  // ── Header Row: Logo + Title + Date ──
+  // ══════════════════════════════════════════════════════════════
+  // HEADER: Logo + Title + Period (compact)
+  // ══════════════════════════════════════════════════════════════
   const logoData = await getLogoBase64();
   if (logoData) {
     try {
-      const logoH = 14;
+      const logoH = 10;
       const logoW = logoH * LOGO_RATIO;
       doc.addImage(logoData, "PNG", margin, y, logoW, logoH);
     } catch { /* skip */ }
   }
 
-  doc.setFontSize(20);
+  doc.setFontSize(16);
   doc.setTextColor(...C.slate900);
   doc.setFont("helvetica", "bold");
-  doc.text("Relatorio de Vendas", margin + 34, y + 6);
+  doc.text("Relatorio de Vendas", margin + 26, y + 5);
 
-  doc.setFontSize(11);
+  doc.setFontSize(9);
   doc.setTextColor(...C.teal);
   doc.setFont("helvetica", "bold");
-  doc.text("Grupo Fox", margin + 34, y + 12);
+  doc.text("Grupo Fox", margin + 26, y + 9.5);
 
   // Period + Filters (right side)
   const filterParts: string[] = [periodLabel];
   if (grupo && grupo !== "all") filterParts.push(`Grupo: ${grupo}`);
   if (crmSegmento && crmSegmento !== "all") filterParts.push(`CRM: ${crmSegmento}`);
 
-  doc.setFontSize(10);
+  doc.setFontSize(8);
   doc.setTextColor(...C.slate700);
   doc.setFont("helvetica", "bold");
-  doc.text(filterParts.join("  |  "), pageW - margin, y + 6, { align: "right" });
+  doc.text(filterParts.join("  |  "), pageW - margin, y + 5, { align: "right" });
 
-  doc.setFontSize(8);
+  doc.setFontSize(6.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.slate400);
-  doc.text(dateStr, pageW - margin, y + 11, { align: "right" });
+  doc.text(dateStr, pageW - margin, y + 9, { align: "right" });
 
-  y += 18;
+  y += 13;
 
-  // ── Separator line ──
+  // Separator
   doc.setDrawColor(...C.slate200);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.2);
   doc.line(margin, y, pageW - margin, y);
-  y += 4;
+  y += 2.5;
 
-  // ═══ KPI PRINCIPAL ═══
+  // ══════════════════════════════════════════════════════════════
+  // KPI PRINCIPAL (compact — single row)
+  // ══════════════════════════════════════════════════════════════
   const kpiTotalW = pageW - margin * 2;
-  const kpiH = 26;
+  const kpiH = 18;
 
-  // Main card background
   drawCard(doc, margin, y, kpiTotalW, kpiH, { fill: C.slate50, topBar: C.teal });
 
   const kpiColW = kpiTotalW / 3;
 
   // ── Valor Total ──
-  doc.setFontSize(7);
+  doc.setFontSize(5.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.slate400);
-  doc.text("VALOR TOTAL DO PERIODO", margin + 6, y + 7);
+  doc.text("VALOR TOTAL DO PERIODO", margin + 4, y + 5);
 
-  doc.setFontSize(22);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.slate900);
-  doc.text(fmtCurrency(analytics.totalValue), margin + 6, y + 17);
+  doc.text(fmtCurrency(analytics.totalValue), margin + 4, y + 12);
 
-  doc.setFontSize(7);
+  doc.setFontSize(5.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.slate500);
   doc.text(
-    `${fmtNumber(analytics.totalOrders)} pedidos  •  ${fmtNumber(analytics.totalClients)} clientes  •  Ticket Medio: ${fmtCurrency(analytics.ticketMedio)}`,
-    margin + 6, y + 22,
+    `${fmtNumber(analytics.totalOrders)} pedidos  •  ${fmtNumber(analytics.totalClients)} clientes  •  Ticket: ${fmtCurrency(analytics.ticketMedio)}`,
+    margin + 4, y + 16,
   );
 
   // ── Faturado ──
   const fX = margin + kpiColW;
-  // Vertical separator
   doc.setDrawColor(...C.slate200);
-  doc.setLineWidth(0.2);
-  doc.line(fX, y + 4, fX, y + kpiH - 4);
+  doc.setLineWidth(0.15);
+  doc.line(fX, y + 3, fX, y + kpiH - 3);
 
-  doc.setFontSize(7);
+  doc.setFontSize(5.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.slate400);
-  doc.text("FATURADO", fX + 6, y + 7);
+  doc.text("FATURADO", fX + 4, y + 5);
 
-  doc.setFontSize(18);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.emerald);
-  doc.text(fmtCurrency(analytics.totalFaturado), fX + 6, y + 16);
+  doc.text(fmtCurrency(analytics.totalFaturado), fX + 4, y + 12);
 
   // Progress bar
-  const barOffX = 6;
-  const barMaxW = kpiColW - barOffX - 10;
+  const barOffX = 4;
+  const barMaxW = kpiColW - barOffX - 8;
   doc.setFillColor(...C.slate200);
-  doc.roundedRect(fX + barOffX, y + 19, barMaxW, 3, 1, 1, "F");
+  doc.roundedRect(fX + barOffX, y + 14, barMaxW, 2, 0.8, 0.8, "F");
   const fPct = Math.min(analytics.totalFaturado / (analytics.totalValue || 1), 1);
-  if (barMaxW * fPct > 0.5) {
+  if (barMaxW * fPct > 0.3) {
     doc.setFillColor(...C.emerald);
-    doc.roundedRect(fX + barOffX, y + 19, barMaxW * fPct, 3, 1, 1, "F");
+    doc.roundedRect(fX + barOffX, y + 14, barMaxW * fPct, 2, 0.8, 0.8, "F");
   }
-  doc.setFontSize(7);
+  doc.setFontSize(5.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.emerald);
-  doc.text(fmtPct(analytics.totalFaturado, analytics.totalValue), fX + barOffX + barMaxW + 2, y + 22);
+  doc.text(fmtPct(analytics.totalFaturado, analytics.totalValue), fX + barOffX + barMaxW + 1.5, y + 16);
 
   // ── A Faturar ──
   const aX = margin + kpiColW * 2;
   doc.setDrawColor(...C.slate200);
-  doc.setLineWidth(0.2);
-  doc.line(aX, y + 4, aX, y + kpiH - 4);
+  doc.setLineWidth(0.15);
+  doc.line(aX, y + 3, aX, y + kpiH - 3);
 
-  doc.setFontSize(7);
+  doc.setFontSize(5.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.slate400);
-  doc.text("A FATURAR", aX + 6, y + 7);
+  doc.text("A FATURAR", aX + 4, y + 5);
 
-  doc.setFontSize(18);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.orange);
-  doc.text(fmtCurrency(analytics.totalAFaturar), aX + 6, y + 16);
+  doc.text(fmtCurrency(analytics.totalAFaturar), aX + 4, y + 12);
 
   doc.setFillColor(...C.slate200);
-  doc.roundedRect(aX + barOffX, y + 19, barMaxW, 3, 1, 1, "F");
+  doc.roundedRect(aX + barOffX, y + 14, barMaxW, 2, 0.8, 0.8, "F");
   const aPct = Math.min(analytics.totalAFaturar / (analytics.totalValue || 1), 1);
-  if (barMaxW * aPct > 0.5) {
+  if (barMaxW * aPct > 0.3) {
     doc.setFillColor(...C.orange);
-    doc.roundedRect(aX + barOffX, y + 19, barMaxW * aPct, 3, 1, 1, "F");
+    doc.roundedRect(aX + barOffX, y + 14, barMaxW * aPct, 2, 0.8, 0.8, "F");
   }
-  doc.setFontSize(7);
+  doc.setFontSize(5.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...C.orange);
-  doc.text(fmtPct(analytics.totalAFaturar, analytics.totalValue), aX + barOffX + barMaxW + 2, y + 22);
+  doc.text(fmtPct(analytics.totalAFaturar, analytics.totalValue), aX + barOffX + barMaxW + 1.5, y + 16);
 
-  y += kpiH + 4;
+  y += kpiH + 2.5;
 
-  // ═══ DAILY AVERAGE CARDS ═══
-  if (comparison && comparison.currentMonth && comparison.currentMonth.length > 0) {
-    y = drawDailyAverageCards(doc, comparison, analytics, margin, y, kpiTotalW);
-  }
-
-  // ═══ SEGMENT TABLE ═══
+  // ══════════════════════════════════════════════════════════════
+  // DAILY AVERAGE CARDS (compact row) + SEGMENT TABLE side by side
+  // ══════════════════════════════════════════════════════════════
+  const hasComparison = comparison && comparison.currentMonth && comparison.currentMonth.length > 0;
   const showCrm = grupo !== "all" && (analytics.byCrmSegmentKPI || []).length > 0;
   const segments = showCrm ? (analytics.byCrmSegmentKPI || []) : (analytics.bySegmentKPI || []);
-  const tableTitle = showCrm ? "Detalhamento por CRM" : "Detalhamento por Segmento";
-  const colLabel = showCrm ? "Segmento CRM" : "Segmento";
 
+  // Layout: Left side = daily average cards stacked, Right side = segment table
+  const leftW = 100;
+  const rightW = kpiTotalW - leftW - 4;
+  const leftX = margin;
+  const rightX = margin + leftW + 4;
+  const sectionStartY = y;
+
+  // ── LEFT: Daily Average Cards ──
+  if (hasComparison) {
+    const todayDay = new Date().getDate();
+    const currentTotal = comparison!.currentMonth?.[comparison!.currentMonth.length - 1]?.cumulative ?? 0;
+    const currentDays = todayDay;
+    const currentAvg = currentDays > 0 ? currentTotal / currentDays : 0;
+
+    const lastTotal = comparison!.lastMonth?.[comparison!.lastMonth.length - 1]?.cumulative ?? 0;
+    const lastDays = comparison!.lastMonth?.length ?? 0;
+    const lastAvg = lastDays > 0 ? lastTotal / lastDays : 0;
+
+    const bestTotal = comparison!.bestMonth?.[comparison!.bestMonth.length - 1]?.cumulative ?? 0;
+    const bestDays = comparison!.bestMonth?.length ?? 0;
+    const bestAvg = bestDays > 0 ? bestTotal / bestDays : 0;
+
+    const hasBest = comparison!.bestMonth && comparison!.bestMonth.length > 0;
+    const miniCardH = 19;
+    const miniGap = 2;
+
+    // Card 1: Mês Atual
+    drawMiniCard(doc, leftX, y, leftW, miniCardH,
+      "MEDIA DIARIA - MES ATUAL", `${currentDays} dias`,
+      fmtCurrency(currentAvg),
+      `Acum. (${comparison!.currentMonthLabel || ""})`, fmtCurrency(currentTotal),
+      C.teal, C.tealDark, C.tealLight,
+    );
+    y += miniCardH + miniGap;
+
+    // Card 2: Mês Anterior
+    drawMiniCard(doc, leftX, y, leftW, miniCardH,
+      "MEDIA DIARIA - MES ANTERIOR", `${lastDays} dias`,
+      fmtCurrency(lastAvg),
+      `Anterior (${comparison!.lastMonthLabel || ""})`, fmtCurrency(lastTotal),
+      C.blue, C.blueDark, C.blueLight,
+    );
+    y += miniCardH + miniGap;
+
+    // Card 3: Melhor Mês (if exists)
+    if (hasBest) {
+      drawMiniCard(doc, leftX, y, leftW, miniCardH,
+        "MEDIA DIARIA - MELHOR MES", `${bestDays} dias`,
+        fmtCurrency(bestAvg),
+        `Melhor (${comparison!.bestMonthLabel || ""})`, fmtCurrency(bestTotal),
+        C.amber, C.amberDark, C.amberLight,
+      );
+      y += miniCardH + miniGap;
+    }
+  }
+
+  // ── RIGHT: Segment Table ──
   if (segments.length > 0) {
-    doc.setFontSize(10);
+    const tableTitle = showCrm ? "Detalhamento por CRM" : "Detalhamento por Segmento";
+    const colLabel = showCrm ? "Segmento CRM" : "Segmento";
+
+    doc.setFontSize(7);
     doc.setTextColor(...C.slate900);
     doc.setFont("helvetica", "bold");
-    doc.text(tableTitle, margin, y + 4);
-    y += 7;
+    doc.text(tableTitle, rightX, sectionStartY + 3);
 
     const tableData = segments
       .sort((a, b) => b.value - a.value)
@@ -764,75 +716,76 @@ export async function generateSalesPDF(
     ]);
 
     autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      head: [[colLabel, "Valor Total", "Faturado", "A Faturar", "% Total"]],
+      startY: sectionStartY + 5,
+      margin: { left: rightX, right: margin },
+      tableWidth: rightW,
+      head: [[colLabel, "Valor Total", "Faturado", "A Faturar", "%"]],
       body: tableData,
       theme: "grid",
       styles: {
         lineColor: C.slate200,
-        lineWidth: 0.2,
+        lineWidth: 0.15,
+        cellPadding: 1.5,
+        fontSize: 6.5,
       },
       headStyles: {
         fillColor: C.slate100,
         textColor: C.slate700,
         fontStyle: "bold",
-        fontSize: 8,
-        cellPadding: 2.5,
+        fontSize: 6.5,
+        cellPadding: 1.5,
       },
       bodyStyles: {
-        fontSize: 8,
-        cellPadding: 2.5,
+        fontSize: 6.5,
+        cellPadding: 1.5,
         textColor: C.slate700,
       },
       columnStyles: {
-        0: { cellWidth: 70, fontStyle: "bold" },
+        0: { cellWidth: rightW * 0.32, fontStyle: "bold" },
         1: { halign: "right" as const, fontStyle: "bold" },
         2: { halign: "right" as const, textColor: C.emerald },
         3: { halign: "right" as const, textColor: C.orange },
-        4: { halign: "right" as const, cellWidth: 22 },
+        4: { halign: "right" as const, cellWidth: 14 },
       },
       didParseCell: (data: any) => {
         if (data.row.index === tableData.length - 1) {
           data.cell.styles.fontStyle = "bold";
           data.cell.styles.fillColor = C.slate100;
           data.cell.styles.textColor = C.slate900;
-          data.cell.styles.fontSize = 9;
+          data.cell.styles.fontSize = 7;
         }
       },
     });
 
-    y = (doc as any).lastAutoTable?.finalY + 4;
+    const tableEndY = (doc as any).lastAutoTable?.finalY ?? sectionStartY + 30;
+    y = Math.max(y, tableEndY) + 3;
+  } else {
+    y += 3;
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // PAGE 2: Chart
-  // ═══════════════════════════════════════════════════════════════
-  doc.addPage();
-  y = margin;
-
-  // Top accent
-  doc.setFillColor(...C.teal);
-  doc.rect(0, 0, pageW, 1.5, "F");
-  y = 5;
-
-  // Chart title
-  doc.setFontSize(12);
+  // ══════════════════════════════════════════════════════════════
+  // CHART: Evolução Diária (fill remaining space)
+  // ══════════════════════════════════════════════════════════════
+  doc.setFontSize(8);
   doc.setTextColor(...C.slate900);
   doc.setFont("helvetica", "bold");
-  doc.text("Evolucao Diaria de Vendas", margin, y + 5);
+  doc.text("Evolucao Diaria de Vendas", margin, y + 3);
 
-  doc.setFontSize(8);
+  doc.setFontSize(6);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.slate400);
-  doc.text(periodLabel, margin + doc.getTextWidth("Evolucao Diaria de Vendas  ") + 6, y + 5);
+  doc.text(periodLabel, margin + doc.getTextWidth("Evolucao Diaria de Vendas  ") + 4, y + 3);
 
-  y += 9;
+  y += 5;
 
   // Legend
-  if (comparison && comparison.currentMonth && comparison.currentMonth.length > 0) {
+  if (hasComparison) {
     y = drawChartLegend(doc, comparison, margin, y);
   }
+
+  // Chart fills remaining space
+  const footerH = 6;
+  const availableChartH = pageH - y - footerH - 2;
 
   // Try SVG capture first
   let chartCaptured = false;
@@ -843,44 +796,39 @@ export async function generateSalesPDF(
       const imgData = await svgToImage(svgEl);
       if (imgData) {
         const imgW = pageW - margin * 2;
-        const availableH = pageH - y - margin - 8;
         const viewBox = svgEl.getAttribute("viewBox");
         let aspectRatio = 320 / 900;
         if (viewBox) {
           const parts = viewBox.split(" ").map(Number);
           if (parts[2] && parts[3]) aspectRatio = parts[3] / parts[2];
         }
-        const imgH = Math.min(imgW * aspectRatio, availableH);
+        const imgH = Math.min(imgW * aspectRatio, availableChartH);
         doc.addImage(imgData, "PNG", margin, y, imgW, imgH);
-        y += imgH + 3;
+        y += imgH + 1;
         chartCaptured = true;
       }
     }
   }
 
-  // Fallback: draw chart
+  // Fallback: draw chart in PDF
   if (!chartCaptured && analytics.byDay.length > 0) {
-    const availableH = pageH - y - margin - 8;
-    const chartH = Math.max(availableH, 50);
+    const chartH = Math.max(availableChartH, 40);
     y = drawChartInPdf(doc, analytics.byDay, comparison, margin, y, pageW - margin * 2, chartH);
-    y += 3;
+    y += 1;
   }
 
-  // ═══ FOOTER on all pages ═══
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
+  // ══════════════════════════════════════════════════════════════
+  // FOOTER
+  // ══════════════════════════════════════════════════════════════
+  // Bottom accent line
+  doc.setFillColor(...C.teal);
+  doc.rect(0, pageH - 1.2, pageW, 1.2, "F");
 
-    // Bottom accent line
-    doc.setFillColor(...C.teal);
-    doc.rect(0, pageH - 1.5, pageW, 1.5, "F");
-
-    doc.setFontSize(7);
-    doc.setTextColor(...C.slate400);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Grupo Fox  •  Relatorio de Vendas  •  ${dateStr}`, margin, pageH - 4);
-    doc.text(`Pagina ${i} de ${totalPages}`, pageW - margin, pageH - 4, { align: "right" });
-  }
+  doc.setFontSize(5.5);
+  doc.setTextColor(...C.slate400);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Grupo Fox  •  Relatorio de Vendas  •  ${dateStr}`, margin, pageH - 3);
+  doc.text("Pagina 1 de 1", pageW - margin, pageH - 3, { align: "right" });
 
   // Save
   const fileName = `vendas_grupo_fox_${now.toISOString().substring(0, 10).replace(/-/g, "")}.pdf`;

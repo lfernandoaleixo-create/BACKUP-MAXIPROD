@@ -2867,3 +2867,4 @@
 - [x] Dar acesso Thiago e Flavio para ticar bolinhas de ações-intervalo — já estava configurado
 - [x] Ações em dias úteis: se cair sábado/domingo/feriado, empurrar para próximo dia útil
 - [x] REGRA ABSOLUTA: jamais desmarcar cobrança já realizada, independente de qualquer comando
+- [x] Relatório de vendas do comercial: ajustar PDF para caber em 1 única página (reduzir cards, gráfico compacto, layout profissional)
