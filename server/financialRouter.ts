@@ -5780,8 +5780,20 @@ ${acoesTexto}
               : addDaysStr(SISTEMA_COBRANCA_INICIO_CHECK, -1))
           : vencDate;
 
-        // Se é legado e não tem cobrancaStartedAt, não verificar (aguardando primeiro contato)
-        if (isLegacy && !action?.cobrancaStartedAt) continue;
+        // Calcular dias úteis de atraso
+        const vencDOvd = new Date(vencDate + 'T12:00:00Z');
+        const todayDOvd = new Date(todayStr + 'T12:00:00Z');
+        let bizDaysOvd = 0;
+        const tmpDOvd = new Date(vencDOvd);
+        while (tmpDOvd < todayDOvd) {
+          tmpDOvd.setDate(tmpDOvd.getDate() + 1);
+          const dowOvd = tmpDOvd.getDay();
+          if (dowOvd !== 0 && dowOvd !== 6) bizDaysOvd++;
+        }
+        const is2PlusDaysNoStartOvd = bizDaysOvd >= 2 && !action?.cobrancaStartedAt;
+
+        // Se é legado OU 2+ dias sem start, não verificar (aguardando primeiro contato)
+        if ((isLegacy && !action?.cobrancaStartedAt) || is2PlusDaysNoStartOvd) continue;
 
         for (let step = 1; step <= 7; step++) {
           const tick = tickMap[step];
@@ -5906,8 +5918,20 @@ ${acoesTexto}
         const dia1Original = addDaysStr(vencDate, 1);
         const isLegacy = dia1Original < SISTEMA_COBRANCA_INICIO_SYNC;
 
-        // Se é legado e não tem cobrancaStartedAt, pular
-        if (isLegacy && !action?.cobrancaStartedAt) continue;
+        // Calcular dias úteis de atraso
+        const vencD = new Date(vencDate + 'T12:00:00Z');
+        const todayD = new Date(todayStr + 'T12:00:00Z');
+        let bizDaysOverdue = 0;
+        const tmpD = new Date(vencD);
+        while (tmpD < todayD) {
+          tmpD.setDate(tmpD.getDate() + 1);
+          const dow = tmpD.getDay();
+          if (dow !== 0 && dow !== 6) bizDaysOverdue++;
+        }
+        const is2PlusDaysNoStart = bizDaysOverdue >= 2 && !action?.cobrancaStartedAt;
+
+        // Se é legado OU 2+ dias sem start, pular sincronização
+        if ((isLegacy && !action?.cobrancaStartedAt) || is2PlusDaysNoStart) continue;
 
         const baseDateStr = isLegacy
           ? (action?.cobrancaStartedAt
