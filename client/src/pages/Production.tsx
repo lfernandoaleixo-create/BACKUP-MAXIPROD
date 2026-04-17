@@ -2468,7 +2468,27 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
     }
     for (const entry of weeklySummary) {
       if (m[entry.sectorId] && m[entry.sectorId][entry.data] !== undefined) {
-        m[entry.sectorId][entry.data] = Number(entry.total);
+        const qty = Number(entry.total);
+        const sector = sectors.find((s: any) => s.id === entry.sectorId);
+        const isDual = sector && isDualUnitSector(sector.ordem);
+        if (isDual && entry.tipoMadeira) {
+          // Apply cxp/cxg → saco conversion for dual-unit sectors
+          const variant = entry.tipoMadeira as string; // e.g. "3.8x200mm_cxg"
+          const parts = variant.split("_");
+          const suffix = parts[parts.length - 1]; // "saco", "cxp", or "cxg"
+          const medida = parts.slice(0, -1).join("_"); // e.g. "3.8x200mm"
+          if (suffix === "cxp") {
+            m[entry.sectorId][entry.data] += convertCxpToSaco(medida, qty);
+          } else if (suffix === "cxg") {
+            m[entry.sectorId][entry.data] += convertCxgToSaco(medida, qty);
+          } else {
+            // "_saco" or no suffix = raw saco count
+            m[entry.sectorId][entry.data] += qty;
+          }
+        } else {
+          // Non dual-unit sectors: sum raw values (no conversion needed)
+          m[entry.sectorId][entry.data] += qty;
+        }
       }
     }
     return m;
@@ -2504,7 +2524,8 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
           <tbody>
             {sectors.map(sector => {
               const Icon = getSectorIcon(sector.ordem);
-              const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
+              const isDual = isDualUnitSector(sector.ordem);
+              const decimals = sector.unidadeMedida === "m\u00b3" ? 3 : isDual ? 1 : 0;
               const weekTotal = weekDays.reduce((sum, day) => sum + (matrix[sector.id]?.[day] || 0), 0);
               return (
                 <tr key={sector.id} className="border-b border-slate-100 hover:bg-slate-50/50">

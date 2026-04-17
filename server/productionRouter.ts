@@ -432,10 +432,13 @@ export const productionRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
+      // Return per-variant rows so the frontend can apply cxp/cxg→saco conversion
+      // for dual-unit sectors (Vareteira, Seletoras Toco, Seleção Automática)
       return db
         .select({
           sectorId: productionEntries.sectorId,
           data: productionEntries.data,
+          tipoMadeira: productionEntries.tipoMadeira,
           total: sql<string>`SUM(${productionEntries.quantidade})`,
           count: sql<number>`COUNT(*)`,
         })
@@ -444,7 +447,7 @@ export const productionRouter = router({
           gte(productionEntries.data, input.dataInicio),
           lte(productionEntries.data, input.dataFim),
         ))
-        .groupBy(productionEntries.sectorId, productionEntries.data)
+        .groupBy(productionEntries.sectorId, productionEntries.data, productionEntries.tipoMadeira)
         .orderBy(productionEntries.data, productionEntries.sectorId);
     }),
 
