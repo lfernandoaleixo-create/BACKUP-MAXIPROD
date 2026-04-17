@@ -395,6 +395,17 @@ function nextBusinessDay(dateStr: string): string {
   return current;
 }
 
+/** Conta quantos dias úteis passaram entre fromDate (exclusivo) e toDate (inclusivo) */
+function countBusinessDays(fromDateStr: string, toDateStr: string): number {
+  let count = 0;
+  let current = addDaysStr(fromDateStr, 1);
+  while (current <= toDateStr) {
+    if (isBusinessDay(current)) count++;
+    current = addDaysStr(current, 1);
+  }
+  return count;
+}
+
 /**
  * Mapeamento estadoConfiguravel -> grupo (mesma lógica do salesRouter)
  * Usado para filtrar inadimplência por grupo de produto
@@ -3099,6 +3110,8 @@ export const financialRouter = router({
         const valorAReceber = valorOriginal - valorPago;
         const vencDate = (row.vencimentoData || "").split("T")[0];
         const diasAtraso = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
+        // Dias ÚTEIS de atraso (pula sábados, domingos e feriados)
+        const businessDaysOverdue = diasAtraso > 0 ? countBusinessDays(vencDate, todayStr) : 0;
         const action = actionsMap[row.id];
         const vendedor = graphqlMap[row.cliente || ""] || "";
         const clienteName = (row.cliente || "").trim();
@@ -3123,6 +3136,7 @@ export const financialRouter = router({
           empresa: row.empresaNome || "",
           banco: row.bancoNome || "",
           diasAtraso,
+          businessDaysOverdue,
           vendedor,
           decisaoCobranca,
           formaCobranca: row.formaCobranca || "",
@@ -3741,30 +3755,27 @@ export const financialRouter = router({
       for (const rec of receivables) {
         if (!rec.vencimentoData) continue;
         const vencStr = (rec.vencimentoData as string).split('T')[0];
-        const vencDate = new Date(vencStr + 'T12:00:00');
-        const diffMs = brDate.getTime() - vencDate.getTime();
-        const diasAtraso = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        if (diasAtraso < 1) continue;
+        const diasAtrasoRaw = Math.floor((brDate.getTime() - new Date(vencStr + 'T12:00:00').getTime()) / 86400000);
+        if (diasAtrasoRaw < 1) continue;
 
-        // Título legado: dia1 original < início do sistema → NÃO vibra
-        const dia1Original = new Date(vencDate);
-        dia1Original.setDate(dia1Original.getDate() + 1);
-        const dia1Str = dia1Original.toISOString().split('T')[0];
+        // Dias úteis de atraso
+        const businessDaysOverdue = countBusinessDays(vencStr, todayStr);
+
+        // Título legado: dia1 útil original < início do sistema → NÃO vibra
+        const dia1Str = addBusinessDaysStr(vencStr, 1);
         if (dia1Str < SISTEMA_COBRANCA_INICIO_PENDING) continue;
 
-        // Título com 3+ dias de atraso a partir de HOJE: dia1 < hoje → NÃO vibra
-        // (só vibra para títulos cujo dia1 é hoje ou futuro, ou seja, recém-vencidos)
+        // Título cujo dia 1 útil já passou: só vibra se dia1 é hoje ou futuro
         if (dia1Str < todayStr) continue;
 
         const pendingDays: number[] = [];
         const actionDates = actionsByRecId[rec.id] || new Set();
 
         for (const day of COLLECTION_DAYS) {
-          if (diasAtraso >= day) {
-            // Calcular a data exata do dia de cobrança
-            const collectionDate = new Date(vencDate);
-            collectionDate.setDate(collectionDate.getDate() + day);
-            const collDateStr = collectionDate.toISOString().split('T')[0];
+          // Usar dias úteis para verificar se o dia de cobrança já chegou
+          if (businessDaysOverdue >= day) {
+            // Calcular a data exata do dia de cobrança usando DIAS ÚTEIS
+            const collDateStr = addBusinessDaysStr(vencStr, day);
             // Verificar se TODAS as ações obrigatórias do dia foram registradas
             const requiredActions = REQUIRED_ACTIONS_BY_DAY[day] || [];
             if (requiredActions.length > 0) {
@@ -4056,9 +4067,8 @@ export const financialRouter = router({
       const acoesSumario: Array<{ dia: number; data: string; tipo: string; realizada: boolean; notas?: string }> = [];
 
       for (const day of COLLECTION_DAYS) {
-        const collDate = new Date(vencDate);
-        collDate.setDate(collDate.getDate() + day);
-        const collDateStr = collDate.toISOString().split('T')[0];
+        // Usar dias úteis para calcular data do step
+        const collDateStr = addBusinessDaysStr(vencStr, day);
 
         // Buscar ação manual nesse dia
         const action = history.find(h => h.actionDate === collDateStr && !h.isAutomatic);
@@ -4325,17 +4335,17 @@ ${acoesTexto}
       for (const rec of overdueReceivables) {
         if (!rec.vencimentoData) continue;
         const vencStr = (rec.vencimentoData as string).split('T')[0];
-        const vencDate = new Date(vencStr + 'T12:00:00');
-        const diffMs = brDate.getTime() - vencDate.getTime();
-        const diasAtraso = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        if (diasAtraso < 1) continue;
+        const diasAtrasoRaw = Math.floor((brDate.getTime() - new Date(vencStr + 'T12:00:00').getTime()) / 86400000);
+        if (diasAtrasoRaw < 1) continue;
+
+        // Dias úteis de atraso
+        const businessDaysOverdue = countBusinessDays(vencStr, todayStr);
 
         // Verificar dias de cobrança que já passaram e registrar sem_contato se necessário
         for (const day of COLLECTION_DAYS) {
-          if (diasAtraso >= day) {
-            const collDate = new Date(vencDate);
-            collDate.setDate(collDate.getDate() + day);
-            const collDateStr = collDate.toISOString().split('T')[0];
+          if (businessDaysOverdue >= day) {
+            // Calcular data do dia de cobrança usando DIAS ÚTEIS
+            const collDateStr = addBusinessDaysStr(vencStr, day);
 
             // Verificar se teve ação manual nesse dia
             const manualActions = await db
@@ -4376,8 +4386,8 @@ ${acoesTexto}
           }
         }
 
-        // Dia 7+: verificar protesto
-        if (diasAtraso >= 7) {
+        // Dia 7+: verificar protesto (7 dias úteis)
+        if (businessDaysOverdue >= 7) {
           const config = await db
             .select()
             .from(receivableProtestConfig)
@@ -4427,9 +4437,8 @@ ${acoesTexto}
 
               const acoesSumario: Array<{ dia: number; data: string; tipo: string; realizada: boolean; notas?: string }> = [];
               for (const day of COLLECTION_DAYS) {
-                const collDate = new Date(vencDate);
-                collDate.setDate(collDate.getDate() + day);
-                const collDateStr = collDate.toISOString().split('T')[0];
+                // Usar dias úteis para calcular data do step
+                const collDateStr = addBusinessDaysStr(vencStr, day);
                 const action = history.find(h => h.actionDate === collDateStr && !h.isAutomatic);
                 acoesSumario.push({
                   dia: day,
@@ -4441,7 +4450,7 @@ ${acoesTexto}
               }
 
               const todayFormatted = brDate.toLocaleDateString('pt-BR');
-              const vencFormatted = vencDate.toLocaleDateString('pt-BR');
+              const vencFormatted = new Date(vencStr + 'T12:00:00').toLocaleDateString('pt-BR');
               const valorFormatted = valorAReceber.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
               const tipoAcaoMap: Record<string, string> = {
@@ -4480,7 +4489,7 @@ Documento gerado automaticamente pelo Sistema Grupo Fox
   Documento:         ${rec.documentoVinculadoNumero || "—"}
   Valor em aberto:   ${valorFormatted}
   Data de vencimento: ${vencFormatted}
-  Dias em atraso:    ${diasAtraso} dias
+  Dias em atraso:    ${diasAtrasoRaw} dias
 
 ──────────────────────────────────────────────────────────
                VENDEDOR(A) RESPONSÁVEL
@@ -4511,7 +4520,7 @@ ${acoesTexto}
 
   Por meio deste documento, informamos que o cliente acima
   mencionado, que está sob sua responsabilidade comercial,
-  encontra-se INADIMPLENTE há ${diasAtraso} dias.
+  encontra-se INADIMPLENTE há ${diasAtrasoRaw} dias.
 
   Conforme o protocolo interno de cobrança da empresa, a
   opção selecionada para este cliente foi "NÃO PROTESTAR
@@ -4560,7 +4569,7 @@ ${acoesTexto}
                   responsavelCobranca: "Thiago",
                   valorTitulo: valorAReceber,
                   vencimentoData: vencStr,
-                  diasAtraso,
+                  diasAtraso: diasAtrasoRaw,
                   documento: rec.documentoVinculadoNumero || null,
                   referenteA: rec.referenteA || null,
                   acoesCobanca: acoesSumario,
@@ -4581,7 +4590,7 @@ ${acoesTexto}
                 vendedor,
                 valorTitulo: String(valorAReceber),
                 vencimentoData: vencStr,
-                diasAtraso,
+                diasAtraso: diasAtrasoRaw,
                 documento: rec.documentoVinculadoNumero || null,
                 acoesCobanca: acoesSumario,
                 documentoTexto,
@@ -4595,14 +4604,14 @@ ${acoesTexto}
                 await createNotification({
                   type: "cobranca_documento",
                   title: `⚠️ Documento de Cobrança - ${rec.cliente}`,
-                  message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtraso} dias em atraso. Cobranças realizadas por Thiago. Solicitamos que defina o próximo passo.`,
+                  message: `Sr(a). ${vendedor}, um documento para tomada de decisão foi gerado para o cliente ${rec.cliente}. Valor: ${valorFormatted}, ${diasAtrasoRaw} dias em atraso. Cobranças realizadas por Thiago. Solicitamos que defina o próximo passo.`,
                   severity: "warning",
                   metadata: {
                     receivableId: rec.id,
                     cliente: rec.cliente,
                     vendedor,
                     valor: valorAReceber,
-                    diasAtraso,
+                    diasAtraso: diasAtrasoRaw,
                   },
                 });
               } catch (err) {
@@ -4623,10 +4632,11 @@ ${acoesTexto}
       for (const rec of overdueReceivables) {
         if (!rec.vencimentoData) continue;
         const vencStr = (rec.vencimentoData as string).split('T')[0];
-        const vencDate2 = new Date(vencStr + 'T12:00:00');
-        const diffMs2 = brDate.getTime() - vencDate2.getTime();
-        const diasAtraso2 = Math.floor(diffMs2 / (1000 * 60 * 60 * 24));
-        if (diasAtraso2 < 1) continue;
+        const diasAtrasoRaw2 = Math.floor((brDate.getTime() - new Date(vencStr + 'T12:00:00').getTime()) / 86400000);
+        if (diasAtrasoRaw2 < 1) continue;
+
+        // Dias úteis de atraso
+        const businessDaysOverdue2 = countBusinessDays(vencStr, todayStr);
 
         // Verificar se segue a régua de vibração
         const existingAction = await db
@@ -4636,12 +4646,12 @@ ${acoesTexto}
           .limit(1);
         const startedAt = existingAction.length > 0 ? existingAction[0].cobrancaStartedAt : null;
 
-        // Só alerta se: (1) tem cobrancaStartedAt >= data de corte, OU (2) 1 dia de atraso sem cobrança
-        const followsRule = (startedAt && startedAt >= COBRANCA_RULE_START) || (!existingAction.length && diasAtraso2 === 1);
+        // Só alerta se: (1) tem cobrancaStartedAt >= data de corte, OU (2) 1 dia útil de atraso sem cobrança
+        const followsRule = (startedAt && startedAt >= COBRANCA_RULE_START) || (!existingAction.length && businessDaysOverdue2 === 1);
         if (!followsRule) continue;
 
-        // Verificar se hoje é dia de cobrança (1, 3 ou 5)
-        const isCollDay = COLLECTION_DAYS.includes(diasAtraso2);
+        // Verificar se hoje é dia de cobrança (1, 3 ou 5 dias úteis)
+        const isCollDay = COLLECTION_DAYS.includes(businessDaysOverdue2);
         if (!isCollDay) continue;
 
         // Verificar se já teve ação hoje
@@ -4661,7 +4671,7 @@ ${acoesTexto}
         if (valorAReceber2 > 0) {
           alertTitles.push({
             cliente: rec.cliente || "Sem nome",
-            diasAtraso: diasAtraso2,
+            diasAtraso: diasAtrasoRaw2,
             valor: valorAReceber2,
             receivableId: rec.id,
           });

@@ -422,6 +422,7 @@ type Title = {
   empresa: string;
   banco: string;
   diasAtraso: number;
+  businessDaysOverdue: number;
   vendedor: string;
   decisaoCobranca: string;
   formaCobranca: string;
@@ -838,9 +839,9 @@ export default function InadimplenciaTab() {
   // DIAS DE COBRANÇA OBRIGATÓRIA: 1, 3 e 5 após vencimento
   const COLLECTION_DAYS = [1, 3, 5];
 
-  // Verificar se hoje é dia de cobrança (1, 3 ou 5 após vencimento)
+  // Verificar se hoje é dia de cobrança (1, 3 ou 5 DIAS ÚTEIS após vencimento)
   function isCollectionDay(title: Title): boolean {
-    return COLLECTION_DAYS.includes(title.diasAtraso);
+    return COLLECTION_DAYS.includes(title.businessDaysOverdue);
   }
 
   // Verificar se tem ações pendentes de dias anteriores
@@ -849,9 +850,9 @@ export default function InadimplenciaTab() {
     return !!pending?.hasPendingAction;
   }
 
-  // Determinar se precisa de plano de ação (dia 7+ e não protestar)
+  // Determinar se precisa de plano de ação (dia 7+ dias úteis e não protestar)
   function needsActionPlan(title: Title): boolean {
-    if (title.diasAtraso < 7) return false;
+    if (title.businessDaysOverdue < 7) return false;
     const config = protestConfigsMap?.[title.id];
     if (!config || config.protestType === "automatico") return false;
     if (!config.actionPlan) return true;
@@ -873,7 +874,7 @@ export default function InadimplenciaTab() {
     if (startedAt && startedAt >= COBRANCA_RULE_START) return true;
     // Títulos novos com 1 dia de atraso que ainda não têm cobrança registrada
     // também devem vibrar (serão startados quando o primeiro contato for feito)
-    if (!title.cobranca && title.diasAtraso === 1) return true;
+    if (!title.cobranca && title.businessDaysOverdue === 1) return true;
     // Se não tem cobrancaStartedAt (título antigo), não vibra
     if (!startedAt) return false;
     return false;
@@ -891,7 +892,7 @@ export default function InadimplenciaTab() {
   function hasAllRequiredActions(title: Title): boolean {
     const todayTypes = todayActionsMap?.[title.id]; // agora é string[] ou undefined
     if (!todayTypes || todayTypes.length === 0) return false;
-    const required = REQUIRED_ACTIONS_BY_DAY[title.diasAtraso];
+    const required = REQUIRED_ACTIONS_BY_DAY[title.businessDaysOverdue];
     if (!required) return todayTypes.length > 0; // dia sem regra específica: qualquer ação basta
     return required.every(r => todayTypes.includes(r));
   }
@@ -901,7 +902,7 @@ export default function InadimplenciaTab() {
   // Títulos antigos (>2 dias antes de hoje sem cobrancaStartedAt) NÃO vibram
   // REGRA NOVA: telefone só para de vibrar quando TODAS as ações obrigatórias do dia forem registradas
   function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" | "document" {
-    if (title.diasAtraso < 1) return "idle";
+    if (title.businessDaysOverdue < 1) return "idle";
     // Se tem documento gerado (dia 7+ não protestar) - mostrar documento
     if (hasCollectionDocument(title)) return "document";
     // Se precisa plano de ação urgente
@@ -928,20 +929,21 @@ export default function InadimplenciaTab() {
     return "idle";
   }
 
-  // Badge Dia X/5 (mostra qual dia de cobrança)
+  // Badge Dia X/5 (mostra qual dia útil de cobrança)
   function getDayBadge(title: Title): string | null {
-    if (title.diasAtraso < 1) return null;
-    if (title.diasAtraso <= 5) {
+    const bd = title.businessDaysOverdue;
+    if (bd < 1) return null;
+    if (bd <= 5) {
       // Mostrar próximo dia de cobrança
-      if (COLLECTION_DAYS.includes(title.diasAtraso)) {
-        return `Dia ${title.diasAtraso} • Cobrança`;
+      if (COLLECTION_DAYS.includes(bd)) {
+        return `Dia ${bd} • Cobrança`;
       }
-      const nextDay = COLLECTION_DAYS.find(d => d > title.diasAtraso);
-      if (nextDay) return `Dia ${title.diasAtraso} • Próx: dia ${nextDay}`;
-      return `Dia ${title.diasAtraso}`;
+      const nextDay = COLLECTION_DAYS.find(d => d > bd);
+      if (nextDay) return `Dia ${bd} • Próx: dia ${nextDay}`;
+      return `Dia ${bd}`;
     }
-    if (title.diasAtraso === 6) return "Dia 6 • Próx: dia 7";
-    if (title.diasAtraso >= 7) return `Dia ${title.diasAtraso} • Prazo esgotado`;
+    if (bd === 6) return "Dia 6 • Próx: dia 7";
+    if (bd >= 7) return `Dia ${bd} • Prazo esgotado`;
     return null;
   }
 
@@ -2205,11 +2207,11 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
 
   // Sugestão automática baseada no dia de atraso (guia de cobrança)
   const suggestedTypes = useMemo(() => {
-    if (title.diasAtraso === 1) return ["whatsapp", "email"];
-    if (title.diasAtraso === 3) return ["ligacao", "email"];
-    if (title.diasAtraso === 5) return ["ligacao", "email"];
+    if (title.businessDaysOverdue === 1) return ["whatsapp", "email"];
+    if (title.businessDaysOverdue === 3) return ["ligacao", "email"];
+    if (title.businessDaysOverdue === 5) return ["ligacao", "email"];
     return [];
-  }, [title.diasAtraso]);
+  }, [title.businessDaysOverdue]);
 
   function toggleType(value: string) {
     setSelectedTypes(prev => {
@@ -2233,9 +2235,9 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <div className="font-semibold text-sm text-slate-800">{title.cliente}</div>
             <div className="text-xs text-slate-500 mt-0.5">{title.referenteA} · {formatCurrency(title.valorAReceber)} · {title.diasAtraso}d atraso</div>
-            {title.diasAtraso >= 1 && title.diasAtraso <= 7 && (
+            {title.businessDaysOverdue >= 1 && title.businessDaysOverdue <= 7 && (
               <div className="mt-1.5 text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded inline-block">
-                Dia {title.diasAtraso}/7 — {7 - title.diasAtraso} dia(s) para protesto
+                Dia {title.businessDaysOverdue}/7 — {7 - title.businessDaysOverdue} dia(s) para protesto
               </div>
             )}
           </div>
@@ -2245,7 +2247,7 @@ function CollectionActionDialog({ title, operatorName, onClose, onSave, isSaving
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5">
               <div className="text-xs font-bold text-amber-800 mb-1 flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                Guia de Cobrança — Dia {title.diasAtraso}
+                Guia de Cobrança — Dia {title.businessDaysOverdue}
               </div>
               <div className="text-xs text-amber-700">
                 Ações obrigatórias: <span className="font-bold">{suggestedTypes.map(t => ACTION_TYPES.find(a => a.value === t)?.label).join(" + ")}</span>

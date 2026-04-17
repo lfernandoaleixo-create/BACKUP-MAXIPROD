@@ -2876,3 +2876,4 @@
 - [x] Sincronizar 7 bolinhas do roteiro com checklist: verde=cumprido, vermelho=falha, piscando vermelho=ação pendente
 - [x] Card "Valor previsto de liberação para desconto na semana" na Sicoob Palitos (editável pelo Flávio)
 - [x] Reduzir espessura dos cards de limite/valor previsto na Sicoob Palitos
+- [x] Corrigir vibração do telefone e ações pendentes para usar dias úteis (pular sábados, domingos e feriados)
