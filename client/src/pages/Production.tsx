@@ -952,7 +952,7 @@ export default function Production() {
                       </div>
                       <span className="text-[10px] font-semibold text-slate-500 uppercase leading-tight break-words hyphens-auto" style={{ wordBreak: 'break-word' }}>{sector.nome}</span>
                     </div>
-                    <div className="text-lg font-bold text-slate-800 tabular-nums">{fmtNum(total, sector.unidadeMedida === "m³" ? 3 : 0)}</div>
+                    <div className="text-lg font-bold text-slate-800 tabular-nums">{fmtNum(total, sector.unidadeMedida === "m³" ? 3 : isDualUnitSector(sector.ordem) ? 1 : 0)}</div>
                     <div className="text-[10px] text-slate-400">{isDualUnitSector(sector.ordem) ? "sacos produzidos" : sector.unidadeLabel}</div>
                   </div>
                 );
@@ -990,7 +990,7 @@ export default function Production() {
                         </div>
                       </div>
                       <div className="text-right mr-3">
-                        <div className="text-lg font-bold tabular-nums" style={{ color: sector.cor || "#6b7280" }}>{fmtNum(total, isDualUnitSector(sector.ordem) ? 0 : decimals)}</div>
+                        <div className="text-lg font-bold tabular-nums" style={{ color: sector.cor || "#6b7280" }}>{fmtNum(total, isDualUnitSector(sector.ordem) ? 1 : decimals)}</div>
                         <div className="text-[10px] text-slate-400">{isDualUnitSector(sector.ordem) ? "saco" : sector.unidadeMedida}</div>
                       </div>
                       {isExpanded ? <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" /> : <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />}
@@ -1317,7 +1317,7 @@ function ExpandableMachineRow({
 
         {/* Total display */}
         <div className="text-right shrink-0 w-20">
-          <div className="text-sm font-bold tabular-nums text-slate-700">{fmtNum(liveTotal, dualUnit ? 0 : decimals)}</div>
+          <div className="text-sm font-bold tabular-nums text-slate-700">{fmtNum(liveTotal, dualUnit ? 1 : decimals)}</div>
           <div className="text-[9px] text-slate-400">{dualUnit ? "saco" : sector.unidadeMedida}</div>
         </div>
 
