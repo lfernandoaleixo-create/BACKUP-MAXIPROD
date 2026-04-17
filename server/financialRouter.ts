@@ -3791,14 +3791,9 @@ export const financialRouter = router({
         // Título cujo dia 1 útil já passou: só vibra se dia1 é hoje ou futuro
         if (dia1Str < todayStr) continue;
 
-        // Títulos com 2+ dias úteis de atraso sem primeiro contato: NUNCA vibra
-        // (aguardando primeiro contato manual do Thiago)
-        if (businessDaysOverdue >= 2) {
-          // Verificar se tem collectionAction com cobrancaStartedAt
-          const [ca] = await db.select({ cobrancaStartedAt: collectionActions.cobrancaStartedAt })
-            .from(collectionActions).where(eq(collectionActions.receivableId, rec.id)).limit(1);
-          if (!ca?.cobrancaStartedAt) continue;
-        }
+        // Títulos com 2+ dias úteis de atraso: NUNCA vibra o telefone
+        // Regra absoluta: independente de já terem sido contatados ou não
+        if (businessDaysOverdue >= 2) continue;
 
         const pendingDays: number[] = [];
         const actionDates = actionsByRecId[rec.id] || new Set();

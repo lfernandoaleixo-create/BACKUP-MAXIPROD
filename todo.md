@@ -2896,3 +2896,4 @@
 - [x] Bolinhas automáticas: preencher automaticamente com base no registro de ações no histórico
 - [x] Bug: bolinhas vermelhas aparecendo em títulos 2+ dias sem primeiro contato - devem ser todas brancas
 - [x] Bug: Intervalo (bolinha 2) não deve ticar junto com Ação 1 - só tica no dia seguinte
+- [x] Telefone NUNCA vibra para títulos com 2+ dias de atraso, mesmo que já tenham sido contatados
