@@ -141,6 +141,14 @@
 > SEM renomear descrições, SEM extrair palavras-chave.
 > O dashboard é um ESPELHO do Maxiprod.
 
+## REGRA FUNDAMENTAL (a partir de 17/04/2026)
+> Os dados de cobrança da inadimplência são SAGRADOS e NUNCA devem ser apagados ou resetados.
+> Isso inclui: collection_actions, collection_daily_actions, collection_manual_ticks, collection_manual_tick_history.
+> Nenhuma operação do sistema (sync, reset, migração, teste) pode deletar ou sobrescrever esses dados.
+> Se precisar alterar a lógica de cobrança, PRESERVAR todos os dados existentes.
+> Testes DEVEM fazer backup/restore desses dados se precisarem manipulá-los.
+> Em caso de dúvida, PERGUNTAR ao usuário antes de qualquer operação destrutiva.
+
 ## Refatoração: Espelho Fiel do Maxiprod
 - [x] Remover processamento de stockProcessor (palavraChave, filtro grupo 20/21, renomear descrições)
 - [x] Sincronização deve gravar exatamente o que a API GraphQL retorna (descrição, código, quantidade)
@@ -2886,3 +2894,5 @@
 - [x] Títulos 1 dia atraso: fluxo normal, Thiago registra ação, roteiro 1,3,5, telefone pode vibrar
 - [x] TODOS os títulos 2+ dias: resetar collectionActions/dailyActions/manualTicks, zerar bolinhas, sem telefone, aguardando primeiro contato
 - [x] Bolinhas automáticas: preencher automaticamente com base no registro de ações no histórico
+- [x] Bug: bolinhas vermelhas aparecendo em títulos 2+ dias sem primeiro contato - devem ser todas brancas
+- [x] Bug: Intervalo (bolinha 2) não deve ticar junto com Ação 1 - só tica no dia seguinte

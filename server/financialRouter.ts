@@ -3516,13 +3516,21 @@ export const financialRouter = router({
       // Para títulos legados sem start (original): base = dia anterior ao início do sistema
       // Para títulos 2+ dias sem start: base = dia anterior a hoje (roteiro começará quando fizer 1º contato)
       // Para títulos normais: base = data de vencimento (dia 1 = 1 dia útil após vencimento)
-      const baseDateStr = isLegacyTitle
-        ? (legacyHasStarted
-            ? addDaysStr(legacyStartDate!, -1) // dia anterior ao primeiro contato
-            : (isOriginalLegacy
-                ? addDaysStr(SISTEMA_COBRANCA_INICIO, -1) // dia anterior ao início do sistema
-                : addDaysStr(todayStr, -1))) // dia anterior a hoje (para 2+ dias sem start)
-        : vencDate;
+      // Regra de base para cálculo do roteiro:
+      // 1. Título com 2+ dias úteis de atraso E com startDate: base = dia anterior ao primeiro contato
+      // 2. Título legado original com start: base = dia anterior ao primeiro contato
+      // 3. Título legado original sem start: base = dia anterior ao início do sistema
+      // 4. Título 2+ dias sem start: base = dia anterior a hoje (roteiro começará quando fizer 1º contato)
+      // 5. Título normal (1 dia): base = data de vencimento
+      const baseDateStr = (businessDaysOverdueLocal >= 2 && startDate)
+        ? addDaysStr(startDate, -1)
+        : isLegacyTitle
+          ? (legacyHasStarted
+              ? addDaysStr(legacyStartDate!, -1)
+              : (isOriginalLegacy
+                  ? addDaysStr(SISTEMA_COBRANCA_INICIO, -1)
+                  : addDaysStr(todayStr, -1)))
+          : vencDate;
 
       // Pré-calcular as datas de cada step usando DIAS ÚTEIS
       // step.dia indica quantos dias úteis após a base
@@ -3631,9 +3639,9 @@ export const financialRouter = router({
             }
           }
         } else if (step.tipo === "espera") {
-          // Dia de espera: verde se dia anterior de ação foi cumprido
+          // Dia de espera: só fica verde quando o dia já PASSOU
           if (isToday) {
-            status = "verde";
+            status = "pendente";
             motivo = "Dia de espera (aguardando próximo dia de ação)";
           } else {
             status = "verde";
@@ -5674,35 +5682,8 @@ ${acoesTexto}
           reason: input.tickStatus === 'red' ? 'Marcado como falha manualmente' : undefined,
         });
 
-        // AUTO-TICK INTERVALO: se ticou uma Ação (ímpar), ticar automaticamente o Intervalo seguinte (par)
-        const isAcao = input.step % 2 === 1 && input.step < 7; // steps 1,3,5 são Ações
-        if (isAcao && input.tickStatus === 'green') {
-          const nextStep = input.step + 1;
-          const existingNext = tickMap[nextStep];
-          if (!existingNext || !existingNext.ticked) {
-            if (existingNext) {
-              await db.update(collectionManualTicks)
-                .set({ ticked: true, tickedBy: 'SISTEMA', tickedAt: now, tickStatus: 'green' })
-                .where(eq(collectionManualTicks.id, existingNext.id));
-            } else {
-              await db.insert(collectionManualTicks).values({
-                receivableId: input.receivableId,
-                step: nextStep,
-                ticked: true,
-                tickedBy: 'SISTEMA',
-                tickedAt: now,
-                tickStatus: 'green',
-              });
-            }
-            await db.insert(collectionManualTickHistory).values({
-              receivableId: input.receivableId,
-              step: nextStep,
-              action: 'tick',
-              operatorName: 'SISTEMA',
-              reason: `Intervalo auto-ticado (Ação ${Math.ceil(input.step / 2)} cumprida)`,
-            });
-          }
-        }
+        // INTERVALO NÃO é mais auto-ticado junto com a Ação.
+        // O Intervalo só fica verde quando o dia dele realmente passar (via syncTicksFromChecklist).
       } else {
         // CONTROLE RÍGIDO: não pode desmarcar bolinha vermelha
         const existingStep = tickMap[input.step];
@@ -5786,13 +5767,6 @@ ${acoesTexto}
         const dia1Original = addDaysStr(vencDate, 1);
         const isLegacy = dia1Original < SISTEMA_COBRANCA_INICIO_CHECK;
 
-        // Calcular base para dias úteis (mesma lógica do checklist)
-        const baseDateStr = isLegacy
-          ? (action?.cobrancaStartedAt
-              ? addDaysStr(action.cobrancaStartedAt, -1)
-              : addDaysStr(SISTEMA_COBRANCA_INICIO_CHECK, -1))
-          : vencDate;
-
         // Calcular dias úteis de atraso
         const vencDOvd = new Date(vencDate + 'T12:00:00Z');
         const todayDOvd = new Date(todayStr + 'T12:00:00Z');
@@ -5803,6 +5777,16 @@ ${acoesTexto}
           const dowOvd = tmpDOvd.getDay();
           if (dowOvd !== 0 && dowOvd !== 6) bizDaysOvd++;
         }
+
+        // Calcular base para dias úteis (mesma lógica do checklist)
+        // Para 2+ dias com start: base = dia anterior ao primeiro contato
+        const baseDateStr = (action?.cobrancaStartedAt && bizDaysOvd >= 2)
+          ? addDaysStr(action.cobrancaStartedAt, -1)
+          : isLegacy
+            ? (action?.cobrancaStartedAt
+                ? addDaysStr(action.cobrancaStartedAt, -1)
+                : addDaysStr(SISTEMA_COBRANCA_INICIO_CHECK, -1))
+            : vencDate;
         const is2PlusDaysNoStartOvd = bizDaysOvd >= 2 && !action?.cobrancaStartedAt;
 
         // Se é legado OU 2+ dias sem start, não verificar (aguardando primeiro contato)
@@ -5946,11 +5930,16 @@ ${acoesTexto}
         // Se é legado OU 2+ dias sem start, pular sincronização
         if ((isLegacy && !action?.cobrancaStartedAt) || is2PlusDaysNoStart) continue;
 
-        const baseDateStr = isLegacy
-          ? (action?.cobrancaStartedAt
-              ? addDaysStr(action.cobrancaStartedAt, -1)
-              : addDaysStr(SISTEMA_COBRANCA_INICIO_SYNC, -1))
-          : vencDate;
+        // Para títulos com 2+ dias úteis E cobrancaStartedAt: roteiro começa a partir do primeiro contato
+        // Para legados com start: roteiro começa a partir do start
+        // Para normais (1 dia): roteiro começa a partir do vencimento
+        const baseDateStr = (action?.cobrancaStartedAt && bizDaysOverdue >= 2)
+          ? addDaysStr(action.cobrancaStartedAt, -1)
+          : isLegacy
+            ? (action?.cobrancaStartedAt
+                ? addDaysStr(action.cobrancaStartedAt, -1)
+                : addDaysStr(SISTEMA_COBRANCA_INICIO_SYNC, -1))
+            : vencDate;
 
         // Buscar ações diárias para calcular status do checklist
         const dailyActions = await db.select()
@@ -6000,7 +5989,12 @@ ${acoesTexto}
               hasCascadeError = true;
             }
           } else if (isEspera) {
-            status = 'verde';
+            // Intervalo só fica verde quando o dia já PASSOU (não no mesmo dia)
+            if (isToday) {
+              status = 'pendente';
+            } else {
+              status = 'verde';
+            }
           } else {
             // Decisão (step 7)
             if (isToday || isFuture) {
