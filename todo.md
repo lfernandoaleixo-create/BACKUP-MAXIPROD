@@ -2897,3 +2897,11 @@
 - [x] Bug: bolinhas vermelhas aparecendo em títulos 2+ dias sem primeiro contato - devem ser todas brancas
 - [x] Bug: Intervalo (bolinha 2) não deve ticar junto com Ação 1 - só tica no dia seguinte
 - [x] Telefone NUNCA vibra para títulos com 2+ dias de atraso, mesmo que já tenham sido contatados
+- [x] Dias de atraso calculados em DIAS ÚTEIS: excluir sábados, domingos E feriados nacionais brasileiros
+- [x] Lista de feriados nacionais brasileiros 2025-2027 (incluindo Tiradentes 22/04)
+- [x] Títulos vencidos em fim de semana/feriado: entram com 0d, sobem para 1d no próximo dia útil
+- [x] LIVRIERI e LATICINIOS: corrigir para 1d de atraso (não 3d), passo 2 Intervalo, sem vibração
+- [x] Guia de cobrança 2+ dias: roteiro SEMPRE começa do início (Ação 1: WhatsApp+Email), nunca forçar Ação 2/3
+- [x] Permissão Guilherme: ticar/desticar bolinhas manualmente (verde/vermelho) a qualquer momento
+- [x] Permissão Guilherme: botão para parar vibração do telefone manualmente
+- [x] SAGRADO: preservar TODAS as ações já registradas pelo Thiago (Status, Histórico, Mensagens, Registros)

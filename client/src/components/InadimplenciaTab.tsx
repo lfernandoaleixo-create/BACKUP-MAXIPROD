@@ -44,12 +44,13 @@ const ACTION_TYPE_LABELS: Record<string, string> = {
   sem_contato: "Sem contato",
 };
 
+// Dias úteis de atraso (exclui fds e feriados)
 const AGING_RANGES = [
-  { key: "1-15", label: "1-15 dias", min: 1, max: 15, color: "bg-amber-50 border-amber-200 text-amber-700" },
-  { key: "16-30", label: "16-30 dias", min: 16, max: 30, color: "bg-orange-50 border-orange-200 text-orange-700" },
-  { key: "31-60", label: "31-60 dias", min: 31, max: 60, color: "bg-red-50 border-red-200 text-red-600" },
-  { key: "61-90", label: "61-90 dias", min: 61, max: 90, color: "bg-red-100 border-red-300 text-red-700" },
-  { key: "90+", label: "90+ dias", min: 91, max: 99999, color: "bg-red-200 border-red-400 text-red-800" },
+  { key: "1-10", label: "1-10 dias úteis", min: 1, max: 10, color: "bg-amber-50 border-amber-200 text-amber-700" },
+  { key: "11-20", label: "11-20 dias úteis", min: 11, max: 20, color: "bg-orange-50 border-orange-200 text-orange-700" },
+  { key: "21-40", label: "21-40 dias úteis", min: 21, max: 40, color: "bg-red-50 border-red-200 text-red-600" },
+  { key: "41-60", label: "41-60 dias úteis", min: 41, max: 60, color: "bg-red-100 border-red-300 text-red-700" },
+  { key: "60+", label: "60+ dias úteis", min: 61, max: 99999, color: "bg-red-200 border-red-400 text-red-800" },
 ];
 
 function formatCurrency(v: number) {
@@ -563,6 +564,23 @@ export default function InadimplenciaTab() {
   const COLLECTION_PASSWORD = "Thiago";
 
   function handlePhoneClick(titleId: number, phoneState: string, hasDocument: boolean, needsPlan: boolean) {
+    // Se Guilherme clica em telefone muted, desmutar; se clica em qualquer outro estado, oferecer mutar
+    const isGuilhermeOp = operator?.name?.toLowerCase().trim() === 'guilherme';
+    if (isGuilhermeOp && phoneState === 'muted') {
+      // Desmutar
+      togglePhoneMute.mutate({ receivableId: titleId, muted: false, operatorName: operator!.name });
+      return;
+    }
+    if (isGuilhermeOp && phoneState === 'blink') {
+      // Guilherme pode silenciar vibração OU registrar ação
+      // Mostrar opção de silenciar via confirm
+      const silenciar = window.confirm('Deseja SILENCIAR a vibração deste título?\n\nClique "OK" para silenciar ou "Cancelar" para registrar ação de cobrança.');
+      if (silenciar) {
+        togglePhoneMute.mutate({ receivableId: titleId, muted: true, operatorName: operator!.name });
+        return;
+      }
+    }
+
     if (!collectionUnlocked) {
       // Determinar qual ação será executada após a senha
       let action: "contato" | "actionPlan" | "document" = "contato";
@@ -657,6 +675,21 @@ export default function InadimplenciaTab() {
     { receivableIds },
     { enabled: receivableIds.length > 0 }
   );
+
+  // Buscar estado de mute de vibração (silenciado por Guilherme)
+  const { data: phoneMuteMap, refetch: refetchPhoneMute } = trpc.financial.getPhoneMuteStatus.useQuery(
+    { receivableIds },
+    { enabled: receivableIds.length > 0 }
+  );
+  const togglePhoneMute = trpc.financial.togglePhoneMute.useMutation({
+    onSuccess: () => {
+      refetchPhoneMute();
+      toast.success('Vibração atualizada com sucesso!');
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
+  });
 
   // 7 bolinhas manuais — apenas para operadores autorizados
   const canManualTick = operator && MANUAL_TICK_OPERATORS.includes(operator.name);
@@ -901,8 +934,12 @@ export default function InadimplenciaTab() {
   // REGRA: vibra nos dias 1/3/5 APENAS para títulos que seguem a régua (a partir de 16/04/2026)
   // Títulos antigos (>2 dias antes de hoje sem cobrancaStartedAt) NÃO vibram
   // REGRA NOVA: telefone só para de vibrar quando TODAS as ações obrigatórias do dia forem registradas
-  function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" | "document" {
+  function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" | "document" | "muted" {
     if (title.businessDaysOverdue < 1) return "idle";
+
+    // Se a vibração foi manualmente silenciada por Guilherme
+    if (phoneMuteMap?.[title.id]) return "muted";
+
     // Se tem documento gerado (dia 7+ não protestar) - mostrar documento
     if (hasCollectionDocument(title)) return "document";
     // Se precisa plano de ação urgente
@@ -1532,8 +1569,16 @@ export default function InadimplenciaTab() {
 }
 
 /* ---- Componente PhoneIcon com animação ---- */
-function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "idle" | "document"; onClick: () => void }) {
+function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "idle" | "document" | "muted"; onClick: () => void }) {
   const baseClasses = "p-1 rounded-md transition-colors cursor-pointer";
+
+  if (state === "muted") {
+    return (
+      <button onClick={onClick} title="Vibração silenciada por Guilherme. Clique para reativar." className={`${baseClasses} text-slate-400 bg-slate-100 hover:bg-slate-200 border border-dashed border-slate-300`}>
+        <Phone className="w-3.5 h-3.5 opacity-50" />
+      </button>
+    );
+  }
 
   if (state === "idle") {
     return (
@@ -1587,7 +1632,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   onOpenDocument: () => void;
   onPhoneClick: (phoneState: string, hasDocument: boolean, needsPlan: boolean) => void;
   onStatusChange: (status: string) => void;
-  phoneState: "blink" | "done" | "urgent" | "idle" | "document";
+  phoneState: "blink" | "done" | "urgent" | "idle" | "document" | "muted";
   dayBadge: string | null;
   protestLabel: { label: string; color: string } | null;
   needsActionPlan: boolean;
@@ -1721,7 +1766,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
 
         {/* Dias atraso */}
         <div className="flex items-center justify-center px-1 py-3 border-r border-slate-300">
-          <span className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-bold ${getAgingColor(title.diasAtraso)}`}>
+          <span className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-bold ${getAgingColor(title.diasAtraso)}`} title="Dias úteis de atraso">
             {title.diasAtraso}d
           </span>
         </div>
@@ -1966,7 +2011,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   onOpenDocument: () => void;
   onPhoneClick: (phoneState: string, hasDocument: boolean, needsPlan: boolean) => void;
   onStatusChange: (status: string) => void;
-  phoneState: "blink" | "done" | "urgent" | "idle" | "document";
+  phoneState: "blink" | "done" | "urgent" | "idle" | "document" | "muted";
   dayBadge: string | null;
   protestLabel: { label: string; color: string } | null;
   needsActionPlan: boolean;

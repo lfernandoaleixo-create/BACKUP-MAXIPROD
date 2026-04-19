@@ -874,6 +874,13 @@ export const collectionActions = mysqlTable("collection_actions", {
    * Formato: YYYY-MM-DD
    */
   cobrancaStartedAt: varchar("cobrancaStartedAt", { length: 10 }),
+  /**
+   * Se preenchido, a vibração do telefone está manualmente desativada para este título.
+   * Guilherme pode ativar/desativar a qualquer momento.
+   * Formato: nome do operador que silenciou, ou null se não silenciado.
+   */
+  phoneMutedBy: varchar("phoneMutedBy", { length: 200 }),
+  phoneMutedAt: bigint("phoneMutedAt", { mode: "number" }),
   updatedBy: varchar("updatedBy", { length: 200 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

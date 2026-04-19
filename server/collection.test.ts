@@ -129,7 +129,7 @@ describe("collection (cobrança preventiva) procedures", () => {
     it("registers a collection action successfully", async () => {
       const result = await caller.financial.registerCollectionAction({
         receivableId: testReceivableId,
-        actionType: "ligacao",
+        actionTypes: ["ligacao"],
         operatorName: "VENDEDOR TESTE",
         notes: "Liguei para o cliente, prometeu pagar amanhã",
       });
@@ -138,13 +138,16 @@ describe("collection (cobrança preventiva) procedures", () => {
 
     it("shows action in today's actions after registration", async () => {
       const result = await caller.financial.getTodayActions({ receivableIds: [testReceivableId] });
-      expect(result[testReceivableId]).toBe(true);
+      // getTodayActions now returns string[] of action types per receivableId
+      expect(result[testReceivableId]).toBeDefined();
+      expect(Array.isArray(result[testReceivableId])).toBe(true);
+      expect(result[testReceivableId]).toContain("ligacao");
     });
 
     it("registers multiple action types", async () => {
       const result = await caller.financial.registerCollectionAction({
         receivableId: testReceivableId,
-        actionType: "whatsapp",
+        actionTypes: ["whatsapp"],
         operatorName: "VENDEDOR TESTE",
         notes: "Enviei mensagem no WhatsApp",
       });
@@ -273,7 +276,8 @@ describe("collection (cobrança preventiva) procedures", () => {
   });
 
   describe("generateCollectionDocument", () => {
-    it("generates document for existing receivable", async () => {
+    it("generates document for existing receivable", async () => {  // @ts-ignore
+    // Timeout increased because document generation involves PDF + S3 upload
       try {
         const result = await caller.financial.generateCollectionDocument({ receivableId: testReceivableId });
         expect(result.success).toBe(true);
@@ -284,7 +288,7 @@ describe("collection (cobrança preventiva) procedures", () => {
         // May fail if GraphQL is unavailable, that's ok
         expect(err.message).toBeDefined();
       }
-    });
+    }, 15000);
 
     it("document appears in getCollectionDocument after generation", async () => {
       const doc = await caller.financial.getCollectionDocument({ receivableId: testReceivableId });

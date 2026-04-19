@@ -7,7 +7,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
-import { eq, and, gte, lte, sql, desc, asc, ne, inArray } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
 import { ENV } from "./_core/env";
 import { generateCollectionPdf } from "./generateCollectionPdf";
 import { storagePut } from "./storage";
@@ -3114,9 +3114,12 @@ export const financialRouter = router({
         const valorPago = Number(row.valorRecebidoLiquido) || 0;
         const valorAReceber = valorOriginal - valorPago;
         const vencDate = (row.vencimentoData || "").split("T")[0];
-        const diasAtraso = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
+        const diasAtrasoRaw = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
         // Dias ÚTEIS de atraso (pula sábados, domingos e feriados)
-        const businessDaysOverdue = diasAtraso > 0 ? countBusinessDays(vencDate, todayStr) : 0;
+        // Se vencimento caiu em fds/feriado, só conta a partir do próximo dia útil
+        const businessDaysOverdue = diasAtrasoRaw > 0 ? countBusinessDays(vencDate, todayStr) : 0;
+        // diasAtraso agora é sempre em dias ÚTEIS para exibição
+        const diasAtraso = businessDaysOverdue;
         const action = actionsMap[row.id];
         const vendedor = graphqlMap[row.cliente || ""] || "";
         const clienteName = (row.cliente || "").trim();
@@ -3193,7 +3196,7 @@ export const financialRouter = router({
           titles.sort((a, b) => (a.valorAReceber - b.valorAReceber) * dir);
           break;
         case "dias":
-          titles.sort((a, b) => (a.diasAtraso - b.diasAtraso) * dir);
+          titles.sort((a, b) => (a.businessDaysOverdue - b.businessDaysOverdue) * dir);
           break;
         case "cliente":
           titles.sort((a, b) => a.cliente.localeCompare(b.cliente) * dir);
@@ -3202,7 +3205,7 @@ export const financialRouter = router({
           titles.sort((a, b) => a.vencimento.localeCompare(b.vencimento) * dir);
           break;
         default:
-          titles.sort((a, b) => (b.diasAtraso - a.diasAtraso));
+          titles.sort((a, b) => (b.businessDaysOverdue - a.businessDaysOverdue));
       }
 
       // Estatísticas
@@ -3465,7 +3468,10 @@ export const financialRouter = router({
       const now = new Date();
       const brNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
       const todayStr = brNow.toISOString().split("T")[0];
-      const diasAtraso = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
+      const diasAtrasoRaw = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
+      // Dias úteis de atraso (exclui fds e feriados)
+      const businessDaysOverdueLocal = diasAtrasoRaw > 0 ? countBusinessDays(vencDate, todayStr) : 0;
+      const diasAtraso = businessDaysOverdueLocal; // usar dias úteis para exibição
 
       // Data de início do sistema de cobrança
       const SISTEMA_COBRANCA_INICIO = "2026-04-16";
@@ -3476,7 +3482,6 @@ export const financialRouter = router({
       //    → Esses entram como "aguardando primeiro contato" com bolinhas zeradas e sem telefone
       const dia1Original = new Date(new Date(vencDate).getTime() + 1 * 86400000).toISOString().split("T")[0];
       const isOriginalLegacy = dia1Original < SISTEMA_COBRANCA_INICIO;
-      const businessDaysOverdueLocal = diasAtraso > 0 ? countBusinessDays(vencDate, todayStr) : 0;
       const is2PlusDaysNoStart = businessDaysOverdueLocal >= 2 && !startDate;
       const isLegacyTitle = isOriginalLegacy || is2PlusDaysNoStart;
 
@@ -3788,8 +3793,8 @@ export const financialRouter = router({
         const dia1Str = addBusinessDaysStr(vencStr, 1);
         if (dia1Str < SISTEMA_COBRANCA_INICIO_PENDING) continue;
 
-        // Título cujo dia 1 útil já passou: só vibra se dia1 é hoje ou futuro
-        if (dia1Str < todayStr) continue;
+        // Títulos com 0 dias úteis de atraso (vencimento em fds/feriado): não vibra
+        if (businessDaysOverdue < 1) continue;
 
         // Títulos com 2+ dias úteis de atraso: NUNCA vibra o telefone
         // Regra absoluta: independente de já terem sido contatados ou não
@@ -4088,12 +4093,13 @@ export const financialRouter = router({
       const vendedorMap = await fetchVendedorMapFromGraphQL();
       const vendedor = vendedorMap[rec.cliente || ""] || "Não identificado";
 
-      // Calcular dias de atraso
+      // Calcular dias de atraso (dias úteis)
       const now = new Date();
       const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
       const vencStr = (rec.vencimentoData || "").split('T')[0];
-      const vencDate = new Date(vencStr + 'T12:00:00');
-      const diasAtraso = Math.floor((brDate.getTime() - vencDate.getTime()) / 86400000);
+      const todayStrDoc = brDate.toISOString().split('T')[0];
+      const diasAtrasoRawDoc = Math.floor((brDate.getTime() - new Date(vencStr + 'T12:00:00').getTime()) / 86400000);
+      const diasAtraso = diasAtrasoRawDoc > 0 ? countBusinessDays(vencStr, todayStrDoc) : 0;
 
       // Buscar histórico de ações de cobrança
       const history = await db
@@ -4132,7 +4138,7 @@ export const financialRouter = router({
 
       const valorAReceber = (Number(rec.valorLiquido) || 0) - (Number(rec.valorRecebidoLiquido) || 0);
       const todayFormatted = brDate.toLocaleDateString('pt-BR');
-      const vencFormatted = vencDate.toLocaleDateString('pt-BR');
+      const vencFormatted = new Date(vencStr + 'T12:00:00').toLocaleDateString('pt-BR');
       const valorFormatted = valorAReceber.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
       // Gerar texto do documento profissional
@@ -4375,11 +4381,12 @@ ${acoesTexto}
       for (const rec of overdueReceivables) {
         if (!rec.vencimentoData) continue;
         const vencStr = (rec.vencimentoData as string).split('T')[0];
-        const diasAtrasoRaw = Math.floor((brDate.getTime() - new Date(vencStr + 'T12:00:00').getTime()) / 86400000);
-        if (diasAtrasoRaw < 1) continue;
+        const diasAtrasoCalendar = Math.floor((brDate.getTime() - new Date(vencStr + 'T12:00:00').getTime()) / 86400000);
+        if (diasAtrasoCalendar < 1) continue;
 
-        // Dias úteis de atraso
+        // Dias úteis de atraso (com feriados)
         const businessDaysOverdue = countBusinessDays(vencStr, todayStr);
+        const diasAtrasoRaw = businessDaysOverdue; // usar dias úteis para exibição
 
         // Verificar dias de cobrança que já passaram e registrar sem_contato se necessário
         for (const day of COLLECTION_DAYS) {
@@ -4672,11 +4679,12 @@ ${acoesTexto}
       for (const rec of overdueReceivables) {
         if (!rec.vencimentoData) continue;
         const vencStr = (rec.vencimentoData as string).split('T')[0];
-        const diasAtrasoRaw2 = Math.floor((brDate.getTime() - new Date(vencStr + 'T12:00:00').getTime()) / 86400000);
-        if (diasAtrasoRaw2 < 1) continue;
+        const diasAtrasoCalendar2 = Math.floor((brDate.getTime() - new Date(vencStr + 'T12:00:00').getTime()) / 86400000);
+        if (diasAtrasoCalendar2 < 1) continue;
 
-        // Dias úteis de atraso
+        // Dias úteis de atraso (com feriados)
         const businessDaysOverdue2 = countBusinessDays(vencStr, todayStr);
+        const diasAtrasoRaw2 = businessDaysOverdue2; // usar dias úteis
 
         // Verificar se segue a régua de vibração
         const existingAction = await db
@@ -5621,10 +5629,13 @@ ${acoesTexto}
       const tickMap: Record<number, typeof currentTicks[0]> = {};
       for (const t of currentTicks) tickMap[t.step] = t;
 
+      // Guilherme tem permissão total para ticar/desticar qualquer bolinha (verde ou vermelha)
+      const isGuilherme = input.operatorName.toLowerCase().trim() === 'guilherme';
+
       if (input.ticked) {
-        // Não pode ticar step que já é vermelho (falha registrada)
+        // Não pode ticar step que já é vermelho (falha registrada) - exceto Guilherme
         const existingStep = tickMap[input.step];
-        if (existingStep?.ticked && existingStep?.tickStatus === 'red') {
+        if (existingStep?.ticked && existingStep?.tickStatus === 'red' && !isGuilherme) {
           throw new Error(`Passo ${input.step} já foi marcado como falha (vermelho). Não pode ser alterado.`);
         }
 
@@ -5680,17 +5691,36 @@ ${acoesTexto}
         // INTERVALO NÃO é mais auto-ticado junto com a Ação.
         // O Intervalo só fica verde quando o dia dele realmente passar (via syncTicksFromChecklist).
       } else {
-        // CONTROLE RÍGIDO: não pode desmarcar bolinha vermelha
+        // CONTROLE RÍGIDO: não pode desmarcar bolinha vermelha - exceto Guilherme
         const existingStep = tickMap[input.step];
-        if (existingStep?.tickStatus === 'red') {
+        if (existingStep?.tickStatus === 'red' && !isGuilherme) {
           throw new Error(`Passo ${input.step} está marcado como falha (vermelho). Não pode ser desmarcado.`);
         }
 
-        // Untick: validar que steps posteriores não estão ticados
-        for (let s = input.step + 1; s <= 7; s++) {
-          const next = tickMap[s];
-          if (next && next.ticked) {
-            throw new Error(`Não é possível desmarcar o passo ${input.step} pois o passo ${s} já está marcado.`);
+        // Untick: validar que steps posteriores não estão ticados - exceto Guilherme
+        if (!isGuilherme) {
+          for (let s = input.step + 1; s <= 7; s++) {
+            const next = tickMap[s];
+            if (next && next.ticked) {
+              throw new Error(`Não é possível desmarcar o passo ${input.step} pois o passo ${s} já está marcado.`);
+            }
+          }
+        } else {
+          // Guilherme: desticar também steps posteriores em cascata
+          for (let s = input.step + 1; s <= 7; s++) {
+            const next = tickMap[s];
+            if (next && next.ticked) {
+              await db.update(collectionManualTicks)
+                .set({ ticked: false, tickedBy: null, tickedAt: null, tickStatus: 'green' })
+                .where(eq(collectionManualTicks.id, next.id));
+              await db.insert(collectionManualTickHistory).values({
+                receivableId: input.receivableId,
+                step: s,
+                action: 'untick',
+                operatorName: input.operatorName,
+                reason: 'Desmarcado em cascata por Guilherme',
+              });
+            }
           }
         }
 
@@ -5762,16 +5792,9 @@ ${acoesTexto}
         const dia1Original = addDaysStr(vencDate, 1);
         const isLegacy = dia1Original < SISTEMA_COBRANCA_INICIO_CHECK;
 
-        // Calcular dias úteis de atraso
-        const vencDOvd = new Date(vencDate + 'T12:00:00Z');
-        const todayDOvd = new Date(todayStr + 'T12:00:00Z');
-        let bizDaysOvd = 0;
-        const tmpDOvd = new Date(vencDOvd);
-        while (tmpDOvd < todayDOvd) {
-          tmpDOvd.setDate(tmpDOvd.getDate() + 1);
-          const dowOvd = tmpDOvd.getDay();
-          if (dowOvd !== 0 && dowOvd !== 6) bizDaysOvd++;
-        }
+        // Calcular dias úteis de atraso (com feriados)
+        const diasAtrasoRawOvd = Math.floor((new Date(todayStr + 'T12:00:00').getTime() - new Date(vencDate + 'T12:00:00').getTime()) / 86400000);
+        const bizDaysOvd = diasAtrasoRawOvd > 0 ? countBusinessDays(vencDate, todayStr) : 0;
 
         // Calcular base para dias úteis (mesma lógica do checklist)
         // Para 2+ dias com start: base = dia anterior ao primeiro contato
@@ -5910,16 +5933,9 @@ ${acoesTexto}
         const dia1Original = addDaysStr(vencDate, 1);
         const isLegacy = dia1Original < SISTEMA_COBRANCA_INICIO_SYNC;
 
-        // Calcular dias úteis de atraso
-        const vencD = new Date(vencDate + 'T12:00:00Z');
-        const todayD = new Date(todayStr + 'T12:00:00Z');
-        let bizDaysOverdue = 0;
-        const tmpD = new Date(vencD);
-        while (tmpD < todayD) {
-          tmpD.setDate(tmpD.getDate() + 1);
-          const dow = tmpD.getDay();
-          if (dow !== 0 && dow !== 6) bizDaysOverdue++;
-        }
+        // Calcular dias úteis de atraso (com feriados)
+        const diasAtrasoRawSync = Math.floor((new Date(todayStr + 'T12:00:00').getTime() - new Date(vencDate + 'T12:00:00').getTime()) / 86400000);
+        const bizDaysOverdue = diasAtrasoRawSync > 0 ? countBusinessDays(vencDate, todayStr) : 0;
         const is2PlusDaysNoStart = bizDaysOverdue >= 2 && !action?.cobrancaStartedAt;
 
         // Se é legado OU 2+ dias sem start, pular sincronização
@@ -6054,5 +6070,93 @@ ${acoesTexto}
         .where(eq(collectionManualTickHistory.receivableId, input.receivableId))
         .orderBy(desc(collectionManualTickHistory.createdAt));
       return { history: rows };
+    }),
+
+  /**
+   * Silenciar/ativar vibração do telefone para um título específico.
+   * Somente Guilherme pode usar este endpoint.
+   */
+  togglePhoneMute: publicProcedure
+    .input(z.object({
+      receivableId: z.number(),
+      muted: z.boolean(),
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Somente Guilherme pode silenciar/ativar vibração
+      if (input.operatorName.toLowerCase().trim() !== 'guilherme') {
+        throw new Error('Apenas Guilherme pode silenciar/ativar a vibração do telefone.');
+      }
+
+      // Verificar se já existe registro em collection_actions
+      const existing = await db.select().from(collectionActions)
+        .where(eq(collectionActions.receivableId, input.receivableId))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db.update(collectionActions)
+          .set({
+            phoneMutedBy: input.muted ? input.operatorName : null,
+            phoneMutedAt: input.muted ? Date.now() : null,
+          })
+          .where(eq(collectionActions.receivableId, input.receivableId));
+      } else {
+        // Criar registro se não existe
+        await db.insert(collectionActions).values({
+          receivableId: input.receivableId,
+          status: 'pendente',
+          phoneMutedBy: input.muted ? input.operatorName : null,
+          phoneMutedAt: input.muted ? Date.now() : null,
+          updatedBy: input.operatorName,
+        });
+      }
+
+      // Registrar no histórico de ticks
+      await db.insert(collectionManualTickHistory).values({
+        receivableId: input.receivableId,
+        step: 0, // step 0 = ação de mute
+        action: input.muted ? 'phone_mute' : 'phone_unmute',
+        operatorName: input.operatorName,
+        reason: input.muted ? 'Vibração silenciada manualmente por Guilherme' : 'Vibração reativada por Guilherme',
+      });
+
+      return { success: true, muted: input.muted };
+    }),
+
+  /**
+   * Buscar estado de mute de vibração para múltiplos títulos
+   */
+  getPhoneMuteStatus: publicProcedure
+    .input(z.object({ receivableIds: z.array(z.number()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db || input.receivableIds.length === 0) return {};
+
+      const rows = await db.select({
+        receivableId: collectionActions.receivableId,
+        phoneMutedBy: collectionActions.phoneMutedBy,
+        phoneMutedAt: collectionActions.phoneMutedAt,
+      })
+        .from(collectionActions)
+        .where(
+          and(
+            inArray(collectionActions.receivableId, input.receivableIds),
+            isNotNull(collectionActions.phoneMutedBy)
+          )
+        );
+
+      const result: Record<number, { mutedBy: string; mutedAt: number }> = {};
+      for (const row of rows) {
+        if (row.phoneMutedBy) {
+          result[row.receivableId] = {
+            mutedBy: row.phoneMutedBy,
+            mutedAt: row.phoneMutedAt || 0,
+          };
+        }
+      }
+      return result;
     }),
 });

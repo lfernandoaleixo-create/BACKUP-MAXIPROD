@@ -561,6 +561,13 @@
       "when": 1776442881118,
       "tag": "0079_burly_imperial_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "5",
+      "when": 1776602561807,
+      "tag": "0080_chilly_trauma",
+      "breakpoints": true
     }
   ]
 }
