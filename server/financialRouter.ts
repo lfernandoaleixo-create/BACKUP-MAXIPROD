@@ -3869,6 +3869,7 @@ export const financialRouter = router({
       actionTypes: z.array(z.enum(["ligacao", "whatsapp", "email", "visita", "outro"])).min(1),
       operatorName: z.string(),
       notes: z.string().optional(),
+      actionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD - permite registro retroativo (Guilherme/Thiago)
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -3876,11 +3877,12 @@ export const financialRouter = router({
       const now = new Date();
       const brDate = new Date(now.getTime() - 3 * 60 * 60 * 1000);
       const todayStr = brDate.toISOString().split('T')[0];
+      const dateToUse = input.actionDate || todayStr;
       // Registrar cada tipo de ação separadamente
       for (const actionType of input.actionTypes) {
         await db.insert(collectionDailyActions).values({
           receivableId: input.receivableId,
-          actionDate: todayStr,
+          actionDate: dateToUse,
           actionType,
           operatorName: input.operatorName,
           notes: input.notes || null,
@@ -3896,18 +3898,18 @@ export const financialRouter = router({
         // Atualizar status para "contatado" e definir cobrancaStartedAt se ainda não tinha
         const updates: Record<string, any> = { status: "contatado", updatedBy: input.operatorName };
         if (!existing[0].cobrancaStartedAt) {
-          updates.cobrancaStartedAt = todayStr;
+          updates.cobrancaStartedAt = dateToUse;
         }
         await db
           .update(collectionActions)
           .set(updates)
           .where(eq(collectionActions.receivableId, input.receivableId));
       } else {
-        // Primeiro contato: criar collectionAction com cobrancaStartedAt = hoje
+        // Primeiro contato: criar collectionAction com cobrancaStartedAt = data da ação
         await db.insert(collectionActions).values({
           receivableId: input.receivableId,
           status: "contatado",
-          cobrancaStartedAt: todayStr,
+          cobrancaStartedAt: dateToUse,
           updatedBy: input.operatorName,
         });
       }
@@ -5489,6 +5491,7 @@ ${acoesTexto}
     .input(z.object({
       dailyActionId: z.number(),
       actionType: z.string().optional(),
+      actionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD - permite editar a data da ação
       notes: z.string().optional(),
       editedBy: z.string(),
     }))
@@ -5511,6 +5514,15 @@ ${acoesTexto}
           field: "actionType",
           oldValue: current.actionType,
           newValue: input.actionType,
+        });
+      }
+
+      // Verificar mudanças na data
+      if (input.actionDate !== undefined && input.actionDate !== current.actionDate) {
+        edits.push({
+          field: "actionDate",
+          oldValue: current.actionDate,
+          newValue: input.actionDate,
         });
       }
 
@@ -5540,6 +5552,7 @@ ${acoesTexto}
       // Aplicar as alterações na ação
       const updates: Record<string, any> = {};
       if (input.actionType !== undefined) updates.actionType = input.actionType;
+      if (input.actionDate !== undefined) updates.actionDate = input.actionDate;
       if (input.notes !== undefined) updates.notes = input.notes;
 
       await db.update(collectionDailyActions)
@@ -5629,13 +5642,14 @@ ${acoesTexto}
       const tickMap: Record<number, typeof currentTicks[0]> = {};
       for (const t of currentTicks) tickMap[t.step] = t;
 
-      // Guilherme tem permissão total para ticar/desticar qualquer bolinha (verde ou vermelha)
-      const isGuilherme = input.operatorName.toLowerCase().trim() === 'guilherme';
+      // Guilherme e Thiago têm permissão total para ticar/desticar qualquer bolinha (verde ou vermelha)
+      const opName = input.operatorName.toLowerCase().trim();
+      const isAdmin = opName === 'guilherme' || opName === 'thiago';
 
       if (input.ticked) {
         // Não pode ticar step que já é vermelho (falha registrada) - exceto Guilherme
         const existingStep = tickMap[input.step];
-        if (existingStep?.ticked && existingStep?.tickStatus === 'red' && !isGuilherme) {
+        if (existingStep?.ticked && existingStep?.tickStatus === 'red' && !isAdmin) {
           throw new Error(`Passo ${input.step} já foi marcado como falha (vermelho). Não pode ser alterado.`);
         }
 
@@ -5693,12 +5707,12 @@ ${acoesTexto}
       } else {
         // CONTROLE RÍGIDO: não pode desmarcar bolinha vermelha - exceto Guilherme
         const existingStep = tickMap[input.step];
-        if (existingStep?.tickStatus === 'red' && !isGuilherme) {
+        if (existingStep?.tickStatus === 'red' && !isAdmin) {
           throw new Error(`Passo ${input.step} está marcado como falha (vermelho). Não pode ser desmarcado.`);
         }
 
         // Untick: validar que steps posteriores não estão ticados - exceto Guilherme
-        if (!isGuilherme) {
+        if (!isAdmin) {
           for (let s = input.step + 1; s <= 7; s++) {
             const next = tickMap[s];
             if (next && next.ticked) {
@@ -5706,7 +5720,7 @@ ${acoesTexto}
             }
           }
         } else {
-          // Guilherme: desticar também steps posteriores em cascata
+          // Admin (Guilherme/Thiago): desticar também steps posteriores em cascata
           for (let s = input.step + 1; s <= 7; s++) {
             const next = tickMap[s];
             if (next && next.ticked) {
@@ -6086,9 +6100,10 @@ ${acoesTexto}
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Somente Guilherme pode silenciar/ativar vibração
-      if (input.operatorName.toLowerCase().trim() !== 'guilherme') {
-        throw new Error('Apenas Guilherme pode silenciar/ativar a vibração do telefone.');
+      // Somente Guilherme ou Thiago podem silenciar/ativar vibração
+      const opNameMute = input.operatorName.toLowerCase().trim();
+      if (opNameMute !== 'guilherme' && opNameMute !== 'thiago') {
+        throw new Error('Apenas Guilherme ou Thiago podem silenciar/ativar a vibração do telefone.');
       }
 
       // Verificar se já existe registro em collection_actions

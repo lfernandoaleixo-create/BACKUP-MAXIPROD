@@ -154,13 +154,13 @@ describe("Manual Ticks (7 bolinhas)", () => {
     expect(step2!.tickedBy).toBe("Guilherme");
   });
 
-  it("should NOT allow unticking step 1 when step 2 is ticked", async () => {
+  it("should NOT allow unticking step 1 when step 2 is ticked (non-admin)", async () => {
     await expect(
       caller.financial.toggleManualTick({
         receivableId: testRecId,
         step: 1,
         ticked: false,
-        operatorName: "Thiago",
+        operatorName: "Flavio", // Flavio não é admin, não pode desticar fora de ordem
       })
     ).rejects.toThrow(/Não é possível desmarcar/);
   });

@@ -2905,3 +2905,13 @@
 - [x] Permissão Guilherme: ticar/desticar bolinhas manualmente (verde/vermelho) a qualquer momento
 - [x] Permissão Guilherme: botão para parar vibração do telefone manualmente
 - [x] SAGRADO: preservar TODAS as ações já registradas pelo Thiago (Status, Histórico, Mensagens, Registros)
+- [x] BUG CRÍTICO: Restaurar registros de cobrança do Thiago para 9 clientes que foram sobrescritos
+- [x] Intervalo (bolinha 2) só tica verde NO DIA do intervalo, não imediatamente após Ação 1
+- [x] Bolinhas automáticas: dia de ação vibra telefone + bolinha juntos; quando Thiago registra ação correta, checkbox verde + bolinha verde automático
+- [x] Calendário: hoje é sábado, nenhuma ação/vibração deve ocorrer em fds/feriado
+- [x] Controle manual Guilherme é para segurança/ajustes, não substitui automático
+- [x] RESTAURAR: Dados de cobrança do Thiago para LIVRIERI (2761756) e FOGOS PIROMANIA (2810664)
+- [x] Permissão Guilherme/Thiago: editar histórico de cobrança (transformar bolinha vermelha em verde e vice-versa)
+- [x] Permissão Guilherme/Thiago: registrar textos no histórico na data que ele quiser (retroativo)
+- [x] Intervalo (bolinha 2): só tica verde NO DIA do intervalo, não imediatamente após Ação 1
+- [x] Permissão Thiago: mesmas permissões manuais que Guilherme (bolinhas, telefone, histórico)

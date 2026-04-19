@@ -564,15 +564,16 @@ export default function InadimplenciaTab() {
   const COLLECTION_PASSWORD = "Thiago";
 
   function handlePhoneClick(titleId: number, phoneState: string, hasDocument: boolean, needsPlan: boolean) {
-    // Se Guilherme clica em telefone muted, desmutar; se clica em qualquer outro estado, oferecer mutar
-    const isGuilhermeOp = operator?.name?.toLowerCase().trim() === 'guilherme';
-    if (isGuilhermeOp && phoneState === 'muted') {
+    // Se Guilherme/Thiago clica em telefone muted, desmutar; se clica em qualquer outro estado, oferecer mutar
+    const opLower = operator?.name?.toLowerCase().trim();
+    const isAdminOp = opLower === 'guilherme' || opLower === 'thiago';
+    if (isAdminOp && phoneState === 'muted') {
       // Desmutar
       togglePhoneMute.mutate({ receivableId: titleId, muted: false, operatorName: operator!.name });
       return;
     }
-    if (isGuilhermeOp && phoneState === 'blink') {
-      // Guilherme pode silenciar vibração OU registrar ação
+    if (isAdminOp && phoneState === 'blink') {
+      // Guilherme/Thiago pode silenciar vibração OU registrar ação
       // Mostrar opção de silenciar via confirm
       const silenciar = window.confirm('Deseja SILENCIAR a vibração deste título?\n\nClique "OK" para silenciar ou "Cancelar" para registrar ação de cobrança.');
       if (silenciar) {
@@ -676,7 +677,7 @@ export default function InadimplenciaTab() {
     { enabled: receivableIds.length > 0 }
   );
 
-  // Buscar estado de mute de vibração (silenciado por Guilherme)
+  // Buscar estado de mute de vibração (silenciado por Guilherme/Thiago)
   const { data: phoneMuteMap, refetch: refetchPhoneMute } = trpc.financial.getPhoneMuteStatus.useQuery(
     { receivableIds },
     { enabled: receivableIds.length > 0 }
@@ -937,7 +938,7 @@ export default function InadimplenciaTab() {
   function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" | "document" | "muted" {
     if (title.businessDaysOverdue < 1) return "idle";
 
-    // Se a vibração foi manualmente silenciada por Guilherme
+    // Se a vibração foi manualmente silenciada por Guilherme/Thiago
     if (phoneMuteMap?.[title.id]) return "muted";
 
     // Se tem documento gerado (dia 7+ não protestar) - mostrar documento
@@ -1574,7 +1575,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
 
   if (state === "muted") {
     return (
-      <button onClick={onClick} title="Vibração silenciada por Guilherme. Clique para reativar." className={`${baseClasses} text-slate-400 bg-slate-100 hover:bg-slate-200 border border-dashed border-slate-300`}>
+      <button onClick={onClick} title="Vibração silenciada. Clique para reativar." className={`${baseClasses} text-slate-400 bg-slate-100 hover:bg-slate-200 border border-dashed border-slate-300`}>
         <Phone className="w-3.5 h-3.5 opacity-50" />
       </button>
     );
@@ -2896,8 +2897,10 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
   const utils = trpc.useUtils();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editType, setEditType] = useState("");
+  const [editDate, setEditDate] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [showEditsFor, setShowEditsFor] = useState<number | null>(null);
+  const isAdminEditor = operator?.name?.toLowerCase().trim() === 'guilherme' || operator?.name?.toLowerCase().trim() === 'thiago';
 
   const editMutation = trpc.financial.editDailyAction.useMutation({
     onSuccess: (data) => {
@@ -2920,23 +2923,29 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
   const startEdit = (action: any) => {
     setEditingId(action.id);
     setEditType(action.actionType);
+    setEditDate(action.actionDate || "");
     setEditNotes(action.notes || "");
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditType("");
+    setEditDate("");
     setEditNotes("");
   };
 
   const saveEdit = () => {
     if (!editingId || !operator?.name) return;
-    editMutation.mutate({
+    const payload: any = {
       dailyActionId: editingId,
       actionType: editType,
       notes: editNotes,
       editedBy: operator.name,
-    });
+    };
+    if (isAdminEditor && editDate) {
+      payload.actionDate = editDate;
+    }
+    editMutation.mutate(payload);
   };
 
   // Contar edições por ação
@@ -3044,6 +3053,17 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
                       ))}
                     </select>
                   </div>
+                  {isAdminEditor && (
+                    <div>
+                      <label className="text-xs font-medium text-slate-600 block mb-1">Data da Ação</label>
+                      <input
+                        type="date"
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        className="w-full text-sm border border-amber-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Observações</label>
                     <textarea
@@ -3125,7 +3145,7 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
                         <div key={edit.id || idx} className="text-[10px] bg-amber-50 border border-amber-100 rounded px-2 py-1">
                           <div className="flex items-center justify-between">
                             <span className="font-medium text-amber-800">
-                              {edit.fieldChanged === "actionType" ? "Tipo" : "Observações"} alterado por <span className="font-bold">{edit.editedBy}</span>
+                              {edit.fieldChanged === "actionType" ? "Tipo" : edit.fieldChanged === "actionDate" ? "Data" : "Observações"} alterado por <span className="font-bold">{edit.editedBy}</span>
                             </span>
                             <span className="text-amber-500">
                               {edit.editedAt ? new Date(edit.editedAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : ""}
@@ -3133,11 +3153,11 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
                           </div>
                           <div className="flex items-center gap-1 mt-0.5">
                             <span className="text-red-500 line-through">
-                              {edit.fieldChanged === "actionType" ? (ACTION_TYPE_LABELS[edit.oldValue] || edit.oldValue) : (edit.oldValue || "(vazio)")}
+                              {edit.fieldChanged === "actionType" ? (ACTION_TYPE_LABELS[edit.oldValue] || edit.oldValue) : edit.fieldChanged === "actionDate" ? (edit.oldValue ? formatDate(edit.oldValue) : "(vazio)") : (edit.oldValue || "(vazio)")}
                             </span>
                             <span className="text-slate-400">→</span>
                             <span className="text-emerald-600 font-medium">
-                              {edit.fieldChanged === "actionType" ? (ACTION_TYPE_LABELS[edit.newValue] || edit.newValue) : (edit.newValue || "(vazio)")}
+                              {edit.fieldChanged === "actionType" ? (ACTION_TYPE_LABELS[edit.newValue] || edit.newValue) : edit.fieldChanged === "actionDate" ? (edit.newValue ? formatDate(edit.newValue) : "(vazio)") : (edit.newValue || "(vazio)")}
                             </span>
                           </div>
                         </div>
