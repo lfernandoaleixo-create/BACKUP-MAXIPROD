@@ -2923,3 +2923,10 @@
 - [x] BUG: LIVRIERI mostra Roteiro 0/7 e Histórico 0 apesar de dados restaurados no banco
 - [x] Roteiro: tick manual verde mostra "Ação registrada corretamente", vermelho mostra "NENHUMA AÇÃO registrada neste dia"
 - [x] Backend: getCollectionChecklist consulta manualTicks e sobrescreve status/motivo quando tick manual existe
+- [x] Remover CLIENTE TESTE COBRANCA do banco de dados
+- [x] Menu telefone: adicionar botão OK para confirmar ação selecionada
+- [x] Menu telefone: toggle bidirecional (silenciar → iniciar vibração e vice-versa)
+- [x] Menu telefone: sempre mostra 3 opções (vibrar/parar, registrar ação, ver histórico)
+- [x] Novo status: "Cliente não deu retorno"
+- [x] Novo status: "Cliente não atendeu"
+- [x] Cards/retângulos no topo do dashboard para os novos status

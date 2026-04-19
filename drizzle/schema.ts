@@ -855,7 +855,7 @@ export const collectionActions = mysqlTable("collection_actions", {
   id: int("id").autoincrement().primaryKey(),
   receivableId: int("receivableId").notNull(), // FK para accounts_receivable.id
   status: varchar("status", { length: 30 }).notNull().default("pendente"),
-  // pendente | contatado | em_negociacao | promessa | protestado | juridico
+  // pendente | contatado | em_negociacao | promessa | nao_retornou | nao_atendeu | protestado | juridico
   promessaData: varchar("promessaData", { length: 30 }), // YYYY-MM-DD
   promessaValor: decimal("promessaValor", { precision: 18, scale: 2 }),
   lembreteData: varchar("lembreteData", { length: 30 }), // YYYY-MM-DD

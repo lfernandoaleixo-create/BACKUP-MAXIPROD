@@ -24,6 +24,8 @@ const STATUS_OPTIONS = [
   { value: "contatado", label: "Contatado", color: "bg-blue-100 text-blue-700 border-blue-300" },
   { value: "em_negociacao", label: "Em Negociação", color: "bg-amber-100 text-amber-700 border-amber-300" },
   { value: "promessa", label: "Promessa de Pgto", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+  { value: "nao_retornou", label: "Não deu retorno", color: "bg-purple-100 text-purple-700 border-purple-300" },
+  { value: "nao_atendeu", label: "Não atendeu", color: "bg-pink-100 text-pink-700 border-pink-300" },
   { value: "protestado", label: "Protestado", color: "bg-orange-100 text-orange-700 border-orange-300" },
   { value: "juridico", label: "Jurídico", color: "bg-red-100 text-red-700 border-red-300" },
 ];
@@ -557,6 +559,7 @@ export default function InadimplenciaTab() {
   const [pendingPhoneAction, setPendingPhoneAction] = useState<{ titleId: number; action: "contato" | "actionPlan" | "document" } | null>(null);
   const [collectionUnlocked, setCollectionUnlocked] = useState(false);
   const [phoneMenuTarget, setPhoneMenuTarget] = useState<{ titleId: number; phoneState: string; hasDocument: boolean; needsPlan: boolean } | null>(null);
+  const [phoneMenuSelected, setPhoneMenuSelected] = useState<'mute' | 'unmute' | 'register' | 'history' | null>(null);
   const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
   const [decisaoTutorialData, setDecisaoTutorialData] = useState<{clienteName: string; vendedorName: string} | null>(null);
   const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
@@ -565,17 +568,12 @@ export default function InadimplenciaTab() {
   const COLLECTION_PASSWORD = "Thiago";
 
   function handlePhoneClick(titleId: number, phoneState: string, hasDocument: boolean, needsPlan: boolean) {
-    // Se Guilherme/Thiago clica em telefone muted, desmutar; se clica em qualquer outro estado, oferecer mutar
     const opLower = operator?.name?.toLowerCase().trim();
     const isAdminOp = opLower === 'guilherme' || opLower === 'thiago';
-    if (isAdminOp && phoneState === 'muted') {
-      // Desmutar
-      togglePhoneMute.mutate({ receivableId: titleId, muted: false, operatorName: operator!.name });
-      return;
-    }
-    if (isAdminOp && (phoneState === 'blink' || phoneState === 'idle' || phoneState === 'done' || phoneState === 'urgent')) {
-      // Guilherme/Thiago: mostrar menu com opções
+    if (isAdminOp) {
+      // Guilherme/Thiago: sempre mostrar menu com opções (qualquer estado do telefone)
       setPhoneMenuTarget({ titleId, phoneState, hasDocument, needsPlan });
+      setPhoneMenuSelected(null);
       return;
     }
 
@@ -1124,7 +1122,7 @@ export default function InadimplenciaTab() {
       </div>
 
       {/* Cards de status */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {STATUS_OPTIONS.map(s => {
           const c = statusCounts[s.value] || { count: 0, total: 0 };
           const isActive = statusFilter === s.value;
@@ -1525,7 +1523,7 @@ export default function InadimplenciaTab() {
 
       {/* Menu de opções do telefone para Guilherme/Thiago */}
       {phoneMenuTarget && (
-        <Dialog open onOpenChange={() => setPhoneMenuTarget(null)}>
+        <Dialog open onOpenChange={() => { setPhoneMenuTarget(null); setPhoneMenuSelected(null); }}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-sm">
@@ -1534,35 +1532,38 @@ export default function InadimplenciaTab() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-2">
-              {phoneMenuTarget.phoneState === 'blink' && (
-                <button
-                  onClick={() => {
-                    togglePhoneMute.mutate({ receivableId: phoneMenuTarget.titleId, muted: true, operatorName: operator!.name });
-                    setPhoneMenuTarget(null);
-                  }}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-red-50 hover:border-red-300 transition-colors text-left"
-                >
-                  <PhoneOff className="w-5 h-5 text-red-500 shrink-0" />
-                  <div>
-                    <div className="text-sm font-semibold text-slate-800">Silenciar Vibração</div>
-                    <div className="text-xs text-slate-500">Parar a vibração deste título</div>
-                  </div>
-                </button>
-              )}
+              {/* Opção 1: Toggle vibração (silenciar ou iniciar) */}
               <button
-                onClick={() => {
-                  setPhoneMenuTarget(null);
-                  if (!collectionUnlocked) {
-                    let action: "contato" | "actionPlan" | "document" = "contato";
-                    if (phoneMenuTarget.phoneState === "document" || phoneMenuTarget.hasDocument) action = "document";
-                    else if (phoneMenuTarget.needsPlan) action = "actionPlan";
-                    setPendingPhoneAction({ titleId: phoneMenuTarget.titleId, action });
-                    setPasswordDialogOpen(true);
-                  } else {
-                    executePhoneAction(phoneMenuTarget.titleId, phoneMenuTarget.phoneState, phoneMenuTarget.hasDocument, phoneMenuTarget.needsPlan);
-                  }
-                }}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition-colors text-left"
+                onClick={() => setPhoneMenuSelected(phoneMenuTarget.phoneState === 'muted' ? 'unmute' : 'mute')}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
+                  phoneMenuSelected === 'mute' || phoneMenuSelected === 'unmute'
+                    ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300'
+                    : 'border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {phoneMenuTarget.phoneState === 'muted' ? (
+                  <PhoneCall className="w-5 h-5 text-green-500 shrink-0" />
+                ) : (
+                  <PhoneOff className="w-5 h-5 text-red-500 shrink-0" />
+                )}
+                <div>
+                  <div className="text-sm font-semibold text-slate-800">
+                    {phoneMenuTarget.phoneState === 'muted' ? 'Iniciar Vibração' : 'Silenciar Vibração'}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {phoneMenuTarget.phoneState === 'muted' ? 'Reativar a vibração deste título' : 'Parar a vibração deste título'}
+                  </div>
+                </div>
+              </button>
+
+              {/* Opção 2: Registrar ação */}
+              <button
+                onClick={() => setPhoneMenuSelected('register')}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
+                  phoneMenuSelected === 'register'
+                    ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300'
+                    : 'border-slate-200 hover:bg-slate-50'
+                }`}
               >
                 <PhoneCall className="w-5 h-5 text-blue-500 shrink-0" />
                 <div>
@@ -1570,18 +1571,64 @@ export default function InadimplenciaTab() {
                   <div className="text-xs text-slate-500">Abrir formulário para registrar contato</div>
                 </div>
               </button>
+
+              {/* Opção 3: Ver histórico */}
               <button
-                onClick={() => {
-                  setPhoneMenuTarget(null);
-                  setHistoryDialogId(phoneMenuTarget.titleId);
-                }}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors text-left"
+                onClick={() => setPhoneMenuSelected('history')}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
+                  phoneMenuSelected === 'history'
+                    ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300'
+                    : 'border-slate-200 hover:bg-slate-50'
+                }`}
               >
                 <History className="w-5 h-5 text-emerald-500 shrink-0" />
                 <div>
                   <div className="text-sm font-semibold text-slate-800">Ver Histórico</div>
                   <div className="text-xs text-slate-500">Abrir histórico e roteiro de cobrança</div>
                 </div>
+              </button>
+            </div>
+
+            {/* Botão OK para confirmar */}
+            <div className="flex justify-end gap-2 mt-3 pt-3 border-t">
+              <button
+                onClick={() => { setPhoneMenuTarget(null); setPhoneMenuSelected(null); }}
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={!phoneMenuSelected}
+                onClick={() => {
+                  if (!phoneMenuSelected || !phoneMenuTarget) return;
+                  const target = phoneMenuTarget;
+                  if (phoneMenuSelected === 'mute') {
+                    togglePhoneMute.mutate({ receivableId: target.titleId, muted: true, operatorName: operator!.name });
+                  } else if (phoneMenuSelected === 'unmute') {
+                    togglePhoneMute.mutate({ receivableId: target.titleId, muted: false, operatorName: operator!.name });
+                  } else if (phoneMenuSelected === 'register') {
+                    if (!collectionUnlocked) {
+                      let action: "contato" | "actionPlan" | "document" = "contato";
+                      if (target.phoneState === "document" || target.hasDocument) action = "document";
+                      else if (target.needsPlan) action = "actionPlan";
+                      setPendingPhoneAction({ titleId: target.titleId, action });
+                      setPasswordDialogOpen(true);
+                    } else {
+                      executePhoneAction(target.titleId, target.phoneState, target.hasDocument, target.needsPlan);
+                    }
+                  } else if (phoneMenuSelected === 'history') {
+                    setHistoryDialogId(target.titleId);
+                  }
+                  setPhoneMenuTarget(null);
+                  setPhoneMenuSelected(null);
+                }}
+                className={`px-6 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                  phoneMenuSelected
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                OK
               </button>
             </div>
           </DialogContent>
