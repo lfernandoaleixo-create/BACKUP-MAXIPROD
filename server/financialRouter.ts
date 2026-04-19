@@ -3165,7 +3165,7 @@ export const financialRouter = router({
       }).filter(t => t.valorAReceber > 0);
 
       // Filtrar clientes de teste
-      const TEST_CLIENTS = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST'];
+      const TEST_CLIENTS = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
       titles = titles.filter(t => !TEST_CLIENTS.includes(t.cliente.toUpperCase().trim()));
 
       // Filtro de busca
@@ -4849,7 +4849,7 @@ ${acoesTexto}
         .limit(input?.limit || 50);
 
       // Filtrar clientes de teste
-      const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST'];
+      const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
       const filteredRows = rows.filter(row => !TEST_CLIENT_NAMES.includes((row.cliente || '').toUpperCase().trim()));
 
       let valorTotal = 0;
