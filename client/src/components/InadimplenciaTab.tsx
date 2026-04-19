@@ -729,12 +729,8 @@ export default function InadimplenciaTab() {
   React.useEffect(() => {
     if (canManualTick && receivableIds.length > 0 && !checkedOverdueRef.current) {
       checkedOverdueRef.current = true;
-      // Primeiro sincroniza bolinhas com checklist, depois verifica overdue
-      syncTicks.mutateAsync({ receivableIds }).then(() => {
-        checkOverdue.mutate({ receivableIds });
-      }).catch(() => {
-        checkOverdue.mutate({ receivableIds });
-      });
+      // Apenas verificar overdue (sem sync automático de bolinhas - bolinhas são manuais)
+      checkOverdue.mutate({ receivableIds });
     }
   }, [canManualTick, receivableIds.length]);
 
@@ -744,10 +740,8 @@ export default function InadimplenciaTab() {
       refetchTodayActions();
       refetchPendingActions();
       refetch();
-      // Após registrar ação, sincronizar bolinhas com checklist
-      syncTicks.mutateAsync({ receivableIds }).then(() => {
-        refetchManualTicks();
-      }).catch(() => {});
+      // Bolinhas são manuais - não sincronizar automaticamente
+      refetchManualTicks();
       toast.success("Ação de cobrança registrada!");
     },
   });

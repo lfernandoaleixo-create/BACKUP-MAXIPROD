@@ -2915,3 +2915,5 @@
 - [x] Permissão Guilherme/Thiago: registrar textos no histórico na data que ele quiser (retroativo)
 - [x] Intervalo (bolinha 2): só tica verde NO DIA do intervalo, não imediatamente após Ação 1
 - [x] Permissão Thiago: mesmas permissões manuais que Guilherme (bolinhas, telefone, histórico)
+- [x] Bolinhas: ticar uma por vez, sem cascata automática (syncTicksFromChecklist não deve auto-ticar)
+- [x] Telefone: silenciar vibração de um título por vez, não em lote
