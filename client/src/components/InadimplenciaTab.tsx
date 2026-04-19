@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
-import { Eye } from "lucide-react";
+import { Eye, Plus, PhoneOff, PhoneCall } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson"];
@@ -556,6 +556,7 @@ export default function InadimplenciaTab() {
   const [passwordInput, setPasswordInput] = useState("");
   const [pendingPhoneAction, setPendingPhoneAction] = useState<{ titleId: number; action: "contato" | "actionPlan" | "document" } | null>(null);
   const [collectionUnlocked, setCollectionUnlocked] = useState(false);
+  const [phoneMenuTarget, setPhoneMenuTarget] = useState<{ titleId: number; phoneState: string; hasDocument: boolean; needsPlan: boolean } | null>(null);
   const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
   const [decisaoTutorialData, setDecisaoTutorialData] = useState<{clienteName: string; vendedorName: string} | null>(null);
   const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
@@ -572,14 +573,10 @@ export default function InadimplenciaTab() {
       togglePhoneMute.mutate({ receivableId: titleId, muted: false, operatorName: operator!.name });
       return;
     }
-    if (isAdminOp && phoneState === 'blink') {
-      // Guilherme/Thiago pode silenciar vibração OU registrar ação
-      // Mostrar opção de silenciar via confirm
-      const silenciar = window.confirm('Deseja SILENCIAR a vibração deste título?\n\nClique "OK" para silenciar ou "Cancelar" para registrar ação de cobrança.');
-      if (silenciar) {
-        togglePhoneMute.mutate({ receivableId: titleId, muted: true, operatorName: operator!.name });
-        return;
-      }
+    if (isAdminOp && (phoneState === 'blink' || phoneState === 'idle' || phoneState === 'done' || phoneState === 'urgent')) {
+      // Guilherme/Thiago: mostrar menu com opções
+      setPhoneMenuTarget({ titleId, phoneState, hasDocument, needsPlan });
+      return;
     }
 
     if (!collectionUnlocked) {
@@ -1526,6 +1523,71 @@ export default function InadimplenciaTab() {
         />
       )}
 
+      {/* Menu de opções do telefone para Guilherme/Thiago */}
+      {phoneMenuTarget && (
+        <Dialog open onOpenChange={() => setPhoneMenuTarget(null)}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-sm">
+                <Phone className="w-4 h-4 text-blue-600" />
+                Opções do Telefone
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              {phoneMenuTarget.phoneState === 'blink' && (
+                <button
+                  onClick={() => {
+                    togglePhoneMute.mutate({ receivableId: phoneMenuTarget.titleId, muted: true, operatorName: operator!.name });
+                    setPhoneMenuTarget(null);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-red-50 hover:border-red-300 transition-colors text-left"
+                >
+                  <PhoneOff className="w-5 h-5 text-red-500 shrink-0" />
+                  <div>
+                    <div className="text-sm font-semibold text-slate-800">Silenciar Vibração</div>
+                    <div className="text-xs text-slate-500">Parar a vibração deste título</div>
+                  </div>
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setPhoneMenuTarget(null);
+                  if (!collectionUnlocked) {
+                    let action: "contato" | "actionPlan" | "document" = "contato";
+                    if (phoneMenuTarget.phoneState === "document" || phoneMenuTarget.hasDocument) action = "document";
+                    else if (phoneMenuTarget.needsPlan) action = "actionPlan";
+                    setPendingPhoneAction({ titleId: phoneMenuTarget.titleId, action });
+                    setPasswordDialogOpen(true);
+                  } else {
+                    executePhoneAction(phoneMenuTarget.titleId, phoneMenuTarget.phoneState, phoneMenuTarget.hasDocument, phoneMenuTarget.needsPlan);
+                  }
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition-colors text-left"
+              >
+                <PhoneCall className="w-5 h-5 text-blue-500 shrink-0" />
+                <div>
+                  <div className="text-sm font-semibold text-slate-800">Registrar Ação de Cobrança</div>
+                  <div className="text-xs text-slate-500">Abrir formulário para registrar contato</div>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setPhoneMenuTarget(null);
+                  setHistoryDialogId(phoneMenuTarget.titleId);
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors text-left"
+              >
+                <History className="w-5 h-5 text-emerald-500 shrink-0" />
+                <div>
+                  <div className="text-sm font-semibold text-slate-800">Ver Histórico</div>
+                  <div className="text-xs text-slate-500">Abrir histórico e roteiro de cobrança</div>
+                </div>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Dialog de Senha para Cobrança */}
       <Dialog open={passwordDialogOpen} onOpenChange={(v) => { if (!v) { setPasswordInput(""); setPendingPhoneAction(null); } setPasswordDialogOpen(v); }}>
         <DialogContent className="sm:max-w-md">
@@ -1641,6 +1703,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   isToggling?: boolean;
   pendingDays?: number[];
 }) {
+  const { operator } = useOperator();
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
   const hasHistorico = title.cobranca?.contatoHistorico && title.cobranca.contatoHistorico.length > 0;
 
@@ -1836,7 +1899,8 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                     const prevTicked = step === 1 || !!tickMap[step - 1]?.ticked;
                     const canTickStep = !isTicked && prevTicked;
                     // Não pode desmarcar bolinha vermelha (controle rígido)
-                    const canUntick = isTicked && !isRed && (step === 7 || !tickMap[step + 1]?.ticked);
+                    const isAdminTickOp = operator?.name?.toLowerCase().trim() === 'guilherme' || operator?.name?.toLowerCase().trim() === 'thiago';
+                    const canUntick = isTicked && (isAdminTickOp || !isRed) && (step === 7 || !tickMap[step + 1]?.ticked);
                     const tickedDate = tick?.tickedAt ? new Date(tick.tickedAt).toLocaleDateString('pt-BR') : null;
                     const tickedBy = tick?.tickedBy || null;
                     const isActionStep = [1,3,5].includes(step);
@@ -1863,8 +1927,13 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                             <button
                               onClick={() => {
                                 if (isToggling) return;
-                                if (isRed) {
+                                if (isRed && !isAdminTickOp) {
                                   toast.error('Falha registrada. Esta bolinha não pode ser alterada.');
+                                  return;
+                                }
+                                if (isRed && isAdminTickOp) {
+                                  // Admin pode desticar vermelha
+                                  onToggleTick?.(step, false);
                                   return;
                                 }
                                 if (isTicked && canUntick) {
@@ -2387,9 +2456,39 @@ function HistoryDialog({ title, onClose }: {
   title: Title;
   onClose: () => void;
 }) {
+  const { operator } = useOperator();
+  const utils = trpc.useUtils();
+  const isAdminEditor = operator?.name?.toLowerCase().trim() === 'guilherme' || operator?.name?.toLowerCase().trim() === 'thiago';
   const { data: history, isLoading } = trpc.financial.getCollectionHistory.useQuery({ receivableId: title.id });
   const { data: checklist, isLoading: checklistLoading } = trpc.financial.getCollectionChecklist.useQuery({ receivableId: title.id });
   const [activeTab, setActiveTab] = useState("checklist");
+
+  // Mutation para toggle de bolinhas no roteiro
+  const toggleTick = trpc.financial.toggleManualTick.useMutation({
+    onSuccess: () => {
+      utils.financial.getCollectionChecklist.invalidate({ receivableId: title.id });
+      utils.financial.getManualTicksBatch.invalidate();
+      toast.success('Bolinha atualizada!');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Mutation para registrar ação retroativa
+  const registerAction = trpc.financial.registerCollectionAction.useMutation({
+    onSuccess: () => {
+      utils.financial.getCollectionHistory.invalidate({ receivableId: title.id });
+      utils.financial.getCollectionChecklist.invalidate({ receivableId: title.id });
+      utils.financial.getTodayActions.invalidate();
+      toast.success('Ação registrada!');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Estado para adicionar nova ação manualmente
+  const [showAddAction, setShowAddAction] = useState(false);
+  const [newActionDate, setNewActionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [newActionTypes, setNewActionTypes] = useState<string[]>([]);
+  const [newActionNotes, setNewActionNotes] = useState('');
 
   // ---- PDF do Histórico ----
   function exportHistoryPDF() {
@@ -2843,6 +2942,61 @@ function HistoryDialog({ title, onClose }: {
                         {step.motivo}
                       </p>
 
+                      {/* Botões de edição manual para admins */}
+                      {isAdminEditor && (
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              if (operator) {
+                                toggleTick.mutate({ receivableId: title.id, step: step.dia, ticked: true, operatorName: operator.name, tickStatus: 'green' });
+                              }
+                            }}
+                            disabled={toggleTick.isPending}
+                            className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium border transition-all ${
+                              step.status === 'verde' || step.status === 'dispensado'
+                                ? 'bg-emerald-100 border-emerald-400 text-emerald-700 ring-1 ring-emerald-300'
+                                : 'bg-white border-slate-200 text-slate-500 hover:bg-emerald-50 hover:border-emerald-300'
+                            }`}
+                            title="Marcar como verde (concluído)"
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            Verde
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (operator) {
+                                toggleTick.mutate({ receivableId: title.id, step: step.dia, ticked: true, operatorName: operator.name, tickStatus: 'red' });
+                              }
+                            }}
+                            disabled={toggleTick.isPending}
+                            className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium border transition-all ${
+                              step.status === 'vermelho'
+                                ? 'bg-red-100 border-red-400 text-red-700 ring-1 ring-red-300'
+                                : 'bg-white border-slate-200 text-slate-500 hover:bg-red-50 hover:border-red-300'
+                            }`}
+                            title="Marcar como vermelho (falha)"
+                          >
+                            <XCircle className="w-3 h-3" />
+                            Vermelho
+                          </button>
+                          {(step.status === 'verde' || step.status === 'vermelho' || step.status === 'dispensado') && (
+                            <button
+                              onClick={() => {
+                                if (operator) {
+                                  toggleTick.mutate({ receivableId: title.id, step: step.dia, ticked: false, operatorName: operator.name });
+                                }
+                              }}
+                              disabled={toggleTick.isPending}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium border bg-white border-slate-200 text-slate-400 hover:bg-slate-50 hover:border-slate-300 transition-all"
+                              title="Remover marcação"
+                            >
+                              <Circle className="w-3 h-3" />
+                              Limpar
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       {/* Ações realizadas */}
                       {step.acoes && step.acoes.length > 0 && (
                         <div className="mt-2 space-y-1">
@@ -2895,6 +3049,23 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
   const [editNotes, setEditNotes] = useState("");
   const [showEditsFor, setShowEditsFor] = useState<number | null>(null);
   const isAdminEditor = operator?.name?.toLowerCase().trim() === 'guilherme' || operator?.name?.toLowerCase().trim() === 'thiago';
+
+  // Estado para adicionar nova ação manualmente
+  const [showAddAction, setShowAddAction] = useState(false);
+  const [newActionDate, setNewActionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [newActionTypes, setNewActionTypes] = useState<string[]>([]);
+  const [newActionNotes, setNewActionNotes] = useState('');
+
+  // Mutation para registrar ação retroativa
+  const registerAction = trpc.financial.registerCollectionAction.useMutation({
+    onSuccess: () => {
+      utils.financial.getCollectionHistory.invalidate({ receivableId: title.id });
+      utils.financial.getCollectionChecklist.invalidate({ receivableId: title.id });
+      utils.financial.getTodayActions.invalidate();
+      toast.success('Ação registrada!');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   const editMutation = trpc.financial.editDailyAction.useMutation({
     onSuccess: (data) => {
@@ -2976,17 +3147,108 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
           </span>
         )}
         <div className="flex-1" />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={exportHistoryPDF}
-          disabled={isLoading || !history || history.length === 0}
-          className="text-xs gap-1.5"
-        >
-          <FileDown className="w-3.5 h-3.5" />
-          PDF do Histórico
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdminEditor && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddAction(!showAddAction)}
+              className="text-xs gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Nova Ação
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportHistoryPDF}
+            disabled={isLoading || !history || history.length === 0}
+            className="text-xs gap-1.5"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            PDF do Histórico
+          </Button>
+        </div>
       </div>
+
+      {/* Formulário de nova ação manual */}
+      {showAddAction && isAdminEditor && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+              <Plus className="w-3.5 h-3.5" />
+              Registrar Ação Manual
+            </span>
+            <button onClick={() => setShowAddAction(false)} className="text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 block mb-1">Data da Ação</label>
+            <input
+              type="date"
+              value={newActionDate}
+              onChange={(e) => setNewActionDate(e.target.value)}
+              className="w-full text-sm border border-emerald-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 block mb-1">Tipo(s) de Contato</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[{v:'whatsapp',l:'WhatsApp'},{v:'email',l:'E-mail'},{v:'ligacao',l:'Ligação'},{v:'visita',l:'Visita'},{v:'outro',l:'Outro'}].map(t => (
+                <button
+                  key={t.v}
+                  type="button"
+                  onClick={() => setNewActionTypes(prev => prev.includes(t.v) ? prev.filter(x => x !== t.v) : [...prev, t.v])}
+                  className={`px-2 py-1 rounded text-xs font-medium border transition-all ${
+                    newActionTypes.includes(t.v)
+                      ? 'bg-emerald-100 border-emerald-400 text-emerald-700 ring-1 ring-emerald-300'
+                      : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-300'
+                  }`}
+                >
+                  {t.l}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-600 block mb-1">Observações</label>
+            <textarea
+              value={newActionNotes}
+              onChange={(e) => setNewActionNotes(e.target.value)}
+              rows={2}
+              className="w-full text-sm border border-emerald-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none"
+              placeholder="Descreva a ação realizada..."
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setShowAddAction(false); setNewActionTypes([]); setNewActionNotes(''); }} className="text-xs">Cancelar</Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (newActionTypes.length === 0) { toast.error('Selecione pelo menos um tipo!'); return; }
+                if (!newActionNotes.trim()) { toast.error('Preencha as observações!'); return; }
+                registerAction.mutate({
+                  receivableId: title.id,
+                  actionTypes: newActionTypes as any,
+                  operatorName: operator!.name,
+                  notes: newActionNotes.trim(),
+                  actionDate: newActionDate,
+                });
+                setShowAddAction(false);
+                setNewActionTypes([]);
+                setNewActionNotes('');
+              }}
+              disabled={registerAction.isPending}
+              className="text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {registerAction.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Registrar Ação
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="overflow-y-auto flex-1 space-y-2 pr-1">
         {isLoading && (

@@ -2917,3 +2917,9 @@
 - [x] Permissão Thiago: mesmas permissões manuais que Guilherme (bolinhas, telefone, histórico)
 - [x] Bolinhas: ticar uma por vez, sem cascata automática (syncTicksFromChecklist não deve auto-ticar)
 - [x] Telefone: silenciar vibração de um título por vez, não em lote
+- [x] Roteiro: Guilherme/Thiago podem clicar em qualquer bolinha e escolher verde/vermelho manualmente
+- [x] Histórico: Guilherme/Thiago podem adicionar registros de ação em qualquer data manualmente
+- [x] Telefone: ao clicar, mostrar opções claras (vibrar/parar OU registrar ação de cobrança)
+- [x] BUG: LIVRIERI mostra Roteiro 0/7 e Histórico 0 apesar de dados restaurados no banco
+- [x] Roteiro: tick manual verde mostra "Ação registrada corretamente", vermelho mostra "NENHUMA AÇÃO registrada neste dia"
+- [x] Backend: getCollectionChecklist consulta manualTicks e sobrescreve status/motivo quando tick manual existe

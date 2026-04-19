@@ -3463,6 +3463,16 @@ export const financialRouter = router({
         .where(eq(collectionDailyActions.receivableId, input.receivableId))
         .orderBy(collectionDailyActions.actionDate);
 
+      // Buscar ticks manuais para sobrescrever status
+      const manualTicks = await db
+        .select()
+        .from(collectionManualTicks)
+        .where(eq(collectionManualTicks.receivableId, input.receivableId));
+      const tickMap: Record<number, { ticked: boolean; tickStatus: string | null }> = {};
+      for (const t of manualTicks) {
+        tickMap[t.step] = { ticked: !!t.ticked, tickStatus: t.tickStatus };
+      }
+
       // Calcular data de vencimento e hoje
       const vencDate = (rec.vencimentoData || "").split("T")[0];
       const now = new Date();
@@ -3662,6 +3672,22 @@ export const financialRouter = router({
             status = "verde";
             motivo = "Dia de decisão alcançado";
           }
+        }
+
+        // Sobrescrever status com tick manual se existir (admin override)
+        const tick = tickMap[step.dia];
+        if (tick && tick.ticked) {
+          if (tick.tickStatus === 'green' && status !== 'verde' && status !== 'dispensado') {
+            status = 'verde';
+            motivo = manualActions.length > 0
+              ? `Ação registrada corretamente`
+              : `Marcado como concluído manualmente`;
+          } else if (tick.tickStatus === 'red' && status !== 'vermelho') {
+            status = 'vermelho';
+            motivo = 'NENHUMA AÇÃO registrada neste dia';
+          }
+        } else if (tick && !tick.ticked && (status === 'verde' || status === 'vermelho')) {
+          // Admin limpou o tick — reverter para cálculo automático (já está correto)
         }
 
         return {
