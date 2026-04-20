@@ -1746,7 +1746,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   onOpenDecisaoTutorial?: (clienteName: string, vendedorName: string) => void;
   canManualTick?: boolean;
   manualTicks?: Array<{ step: number; ticked: boolean; tickedBy: string | null; tickedAt: number | null; tickStatus: string | null }>;
-  onToggleTick?: (step: number, ticked: boolean, tickStatus?: 'green' | 'red') => void;
+  onToggleTick?: (step: number, ticked: boolean, tickStatus?: 'green' | 'red' | 'blue') => void;
   isToggling?: boolean;
   pendingDays?: number[];
 }) {
@@ -1763,7 +1763,8 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
 
   const tickedCount = useMemo(() => manualTicks.filter(t => t.ticked).length, [manualTicks]);
   const redCount = useMemo(() => manualTicks.filter(t => t.tickStatus === 'red').length, [manualTicks]);
-  const greenCount = useMemo(() => manualTicks.filter(t => t.ticked && t.tickStatus !== 'red').length, [manualTicks]);
+  const blueCount = useMemo(() => manualTicks.filter(t => t.ticked && t.tickStatus === 'blue').length, [manualTicks]);
+  const greenCount = useMemo(() => manualTicks.filter(t => t.ticked && t.tickStatus !== 'red' && t.tickStatus !== 'blue').length, [manualTicks]);
   const hasRedTicks = redCount > 0;
   const [tickChoiceStep, setTickChoiceStep] = useState<{ recId: number; step: number } | null>(null);
 
@@ -1942,7 +1943,8 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                     const tick = tickMap[step];
                     const isTicked = !!tick?.ticked;
                     const isRed = tick?.tickStatus === 'red';
-                    const isGreen = isTicked && !isRed;
+                    const isBlue = tick?.tickStatus === 'blue';
+                    const isGreen = isTicked && !isRed && !isBlue;
                     const prevTicked = step === 1 || !!tickMap[step - 1]?.ticked;
                     const canTickStep = !isTicked && prevTicked;
                     // Não pode desmarcar bolinha vermelha (controle rígido)
@@ -1963,9 +1965,9 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                         {idx > 0 && (
                           <div className={`h-0.5 flex-1 min-w-[8px] max-w-[20px] rounded-full transition-colors ${
                             tickMap[step - 1]?.ticked && isTicked
-                              ? (tickMap[step - 1]?.tickStatus === 'red' || isRed ? 'bg-red-300' : 'bg-emerald-400')
+                              ? (tickMap[step - 1]?.tickStatus === 'red' || isRed ? 'bg-red-300' : (tickMap[step - 1]?.tickStatus === 'blue' || isBlue ? 'bg-blue-300' : 'bg-emerald-400'))
                               : tickMap[step - 1]?.ticked
-                                ? (tickMap[step - 1]?.tickStatus === 'red' ? 'bg-red-200' : 'bg-emerald-200')
+                                ? (tickMap[step - 1]?.tickStatus === 'red' ? 'bg-red-200' : (tickMap[step - 1]?.tickStatus === 'blue' ? 'bg-blue-200' : 'bg-emerald-200'))
                                 : 'bg-slate-200'
                           }`} />
                         )}
@@ -2000,16 +2002,19 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                                   ? 'bg-red-100 border-red-400 text-red-600 animate-pulse shadow-sm shadow-red-300 cursor-pointer'
                                   : isRed
                                     ? 'bg-red-500 border-red-600 text-white shadow-sm shadow-red-200 cursor-not-allowed'
-                                    : isGreen
-                                      ? isDecisionStep
-                                        ? 'bg-blue-500 border-blue-600 text-white shadow-sm shadow-blue-200'
-                                        : 'bg-emerald-500 border-emerald-600 text-white shadow-sm shadow-emerald-200'
-                                      : canTickStep
-                                        ? 'bg-white border-slate-300 group-hover:border-emerald-400 group-hover:bg-emerald-50 group-hover:shadow-sm cursor-pointer'
-                                        : 'bg-slate-50 border-slate-200 cursor-not-allowed'
+                                    : isBlue
+                                      ? 'bg-blue-500 border-blue-600 text-white shadow-sm shadow-blue-200'
+                                      : isGreen
+                                        ? isDecisionStep
+                                          ? 'bg-blue-500 border-blue-600 text-white shadow-sm shadow-blue-200'
+                                          : 'bg-emerald-500 border-emerald-600 text-white shadow-sm shadow-emerald-200'
+                                        : canTickStep
+                                          ? 'bg-white border-slate-300 group-hover:border-emerald-400 group-hover:bg-emerald-50 group-hover:shadow-sm cursor-pointer'
+                                          : 'bg-slate-50 border-slate-200 cursor-not-allowed'
                               }`}>
                                 {isPendingBlink ? <Phone className="w-3.5 h-3.5 animate-bounce" /> :
                                  isRed ? <XCircle className="w-3.5 h-3.5" /> :
+                                 isBlue ? <Circle className="w-3.5 h-3.5 fill-white" /> :
                                  isGreen ? <Check className="w-3.5 h-3.5" /> : (
                                   <span className={`text-[9px] font-bold ${
                                     canTickStep ? 'text-slate-400 group-hover:text-emerald-500' : 'text-slate-300'
@@ -2019,6 +2024,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                               <span className={`text-[8px] leading-none font-medium whitespace-nowrap ${
                                 isPendingBlink ? 'text-red-600 animate-pulse font-bold' :
                                 isRed ? 'text-red-600' :
+                                isBlue ? 'text-blue-600' :
                                 isGreen ? 'text-emerald-600' :
                                 canTickStep ? 'text-slate-500' : 'text-slate-300'
                               }`}>
@@ -2030,6 +2036,9 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                             <p className="font-semibold">{TICK_LABELS[step - 1]}</p>
                             {isRed && (
                               <p className="text-red-600 mt-0.5 font-medium">✗ FALHA — Dia passou sem ticagem{tickedDate ? ` (${tickedDate})` : ''}</p>
+                            )}
+                            {isBlue && tickedBy && (
+                              <p className="text-blue-600 mt-0.5">○ Neutro — {tickedBy}{tickedDate ? ` (${tickedDate})` : ''}</p>
                             )}
                             {isGreen && tickedBy && (
                               <p className="text-emerald-600 mt-0.5">✓ {tickedBy} — {tickedDate}</p>
@@ -2065,6 +2074,16 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+                                onToggleTick?.(step, true, 'blue');
+                                setTickChoiceStep(null);
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-semibold transition-colors"
+                            >
+                              <Circle className="w-3.5 h-3.5 fill-blue-500" /> Neutro
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setTickChoiceStep(null);
                               }}
                               className="px-2 py-1.5 rounded-md hover:bg-slate-100 text-slate-400 text-xs transition-colors"
@@ -2087,6 +2106,12 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                     <div
                       className="h-full bg-emerald-500 transition-all duration-500"
                       style={{ width: `${(greenCount / 7) * 100}%` }}
+                    />
+                  )}
+                  {blueCount > 0 && (
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-500"
+                      style={{ width: `${(blueCount / 7) * 100}%` }}
                     />
                   )}
                   {redCount > 0 && (
@@ -2800,6 +2825,7 @@ function HistoryDialog({ title, onClose }: {
       case "verde": return <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />;
       case "dispensado": return <CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" />;
       case "vermelho": return <XCircle className="w-5 h-5 text-red-500 shrink-0" />;
+      case "neutro": return <Circle className="w-5 h-5 text-blue-500 fill-blue-500 shrink-0" />;
       case "pendente": return <Circle className="w-5 h-5 text-blue-500 animate-pulse shrink-0" />;
       case "futuro": return <Circle className="w-5 h-5 text-slate-300 shrink-0" />;
       default: return <Circle className="w-5 h-5 text-slate-300 shrink-0" />;
@@ -2811,6 +2837,7 @@ function HistoryDialog({ title, onClose }: {
       case "verde": return "bg-emerald-50 border-emerald-200";
       case "dispensado": return "bg-amber-50 border-amber-200";
       case "vermelho": return "bg-red-50 border-red-200";
+      case "neutro": return "bg-blue-50 border-blue-200";
       case "pendente": return "bg-blue-50 border-blue-200";
       case "futuro": return "bg-slate-50 border-slate-200";
       default: return "bg-slate-50 border-slate-200";
@@ -2822,6 +2849,7 @@ function HistoryDialog({ title, onClose }: {
       case "verde": return "text-emerald-700";
       case "dispensado": return "text-amber-700";
       case "vermelho": return "text-red-700";
+      case "neutro": return "text-blue-700";
       case "pendente": return "text-blue-700";
       case "futuro": return "text-slate-400";
       default: return "text-slate-400";
@@ -2833,6 +2861,7 @@ function HistoryDialog({ title, onClose }: {
   const vermelhos = checklist?.steps?.filter((s: any) => s.status === "vermelho").length || 0;
   const pendentes = checklist?.steps?.filter((s: any) => s.status === "pendente").length || 0;
   const dispensados = checklist?.steps?.filter((s: any) => s.status === "dispensado").length || 0;
+  const neutros = checklist?.steps?.filter((s: any) => s.status === "neutro").length || 0;
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
@@ -2894,6 +2923,11 @@ function HistoryDialog({ title, onClose }: {
                     <span className="flex items-center gap-1 text-xs text-blue-600 font-medium">
                       <Circle className="w-3.5 h-3.5" /> {pendentes}
                     </span>
+                    {neutros > 0 && (
+                      <span className="flex items-center gap-1 text-xs text-blue-600 font-medium" title="Neutros (azul)">
+                        <Circle className="w-3.5 h-3.5 fill-blue-500 text-blue-500" /> {neutros}
+                      </span>
+                    )}
                   </>
                 )}
               </div>
@@ -3026,7 +3060,24 @@ function HistoryDialog({ title, onClose }: {
                             <XCircle className="w-3 h-3" />
                             Vermelho
                           </button>
-                          {(step.status === 'verde' || step.status === 'vermelho' || step.status === 'dispensado') && (
+                          <button
+                            onClick={() => {
+                              if (operator) {
+                                toggleTick.mutate({ receivableId: title.id, step: step.dia, ticked: true, operatorName: operator.name, tickStatus: 'blue' });
+                              }
+                            }}
+                            disabled={toggleTick.isPending}
+                            className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium border transition-all ${
+                              step.status === 'neutro'
+                                ? 'bg-blue-100 border-blue-400 text-blue-700 ring-1 ring-blue-300'
+                                : 'bg-white border-slate-200 text-slate-500 hover:bg-blue-50 hover:border-blue-300'
+                            }`}
+                            title="Marcar como neutro (azul/limpo)"
+                          >
+                            <Circle className="w-3 h-3 fill-blue-500 text-blue-500" />
+                            Azul
+                          </button>
+                          {(step.status === 'verde' || step.status === 'vermelho' || step.status === 'dispensado' || step.status === 'neutro') && (
                             <button
                               onClick={() => {
                                 if (operator) {
