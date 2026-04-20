@@ -5683,7 +5683,8 @@ ${acoesTexto}
         }
 
         // Validar sequência: step anterior deve estar ticado (exceto step 1)
-        if (input.step > 1) {
+        // Admins (Guilherme/Thiago) podem ticar qualquer step sem restrição de sequência
+        if (input.step > 1 && !isAdmin) {
           const prev = tickMap[input.step - 1];
           if (!prev || !prev.ticked) {
             throw new Error(`Passo ${input.step - 1} precisa ser concluído antes do passo ${input.step}`);
@@ -5691,7 +5692,8 @@ ${acoesTexto}
         }
 
         // Validar que não pula dia: último tick deve ter sido em dia anterior ou antes
-        if (input.step > 1) {
+        // Admins (Guilherme/Thiago) podem ticar qualquer dia sem restrição
+        if (input.step > 1 && !isAdmin) {
           const prev = tickMap[input.step - 1];
           if (prev && prev.tickedAt) {
             const now = new Date();

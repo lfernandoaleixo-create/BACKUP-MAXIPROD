@@ -105,19 +105,37 @@ describe("Manual Ticks (7 bolinhas)", () => {
     expect(ticks.ticks[0].tickedBy).toBe("Thiago");
   });
 
-  it("should NOT allow ticking step 2 on the same day as step 1", async () => {
-    // Step 1 was just ticked (same day), so step 2 should fail
+  it("should NOT allow ticking step 2 on the same day as step 1 (non-admin)", async () => {
+    // Step 1 was just ticked (same day), so step 2 should fail for non-admin
     await expect(
       caller.financial.toggleManualTick({
         receivableId: testRecId,
         step: 2,
         ticked: true,
-        operatorName: "Thiago",
+        operatorName: "Maria",
       })
     ).rejects.toThrow(/Aguarde o próximo dia/);
   });
 
-  it("should NOT allow ticking step 3 when step 2 is not ticked", async () => {
+  it("should ALLOW admin (Thiago) to tick step 2 on the same day as step 1", async () => {
+    // Admin can bypass same-day restriction
+    const result = await caller.financial.toggleManualTick({
+      receivableId: testRecId,
+      step: 2,
+      ticked: true,
+      operatorName: "Thiago",
+    });
+    expect(result.success).toBe(true);
+    // Clean up: untick step 2 for next tests
+    await caller.financial.toggleManualTick({
+      receivableId: testRecId,
+      step: 2,
+      ticked: false,
+      operatorName: "Thiago",
+    });
+  });
+
+  it("should NOT allow non-admin ticking step 3 when step 2 is not ticked", async () => {
     // Manually set step 1 tickedAt to yesterday to bypass same-day check
     const db = await getDb();
     if (!db) return;
@@ -126,15 +144,33 @@ describe("Manual Ticks (7 bolinhas)", () => {
       .set({ tickedAt: yesterday })
       .where(eq(collectionManualTicks.receivableId, testRecId));
 
-    // Now try to tick step 3 (step 2 not ticked)
+    // Now try to tick step 3 (step 2 not ticked) as non-admin
     await expect(
       caller.financial.toggleManualTick({
         receivableId: testRecId,
         step: 3,
         ticked: true,
-        operatorName: "Guilherme",
+        operatorName: "Maria",
       })
     ).rejects.toThrow(/Passo 2 precisa ser concluído/);
+  });
+
+  it("should ALLOW admin (Guilherme) to tick step 3 even when step 2 is not ticked", async () => {
+    // Admin can bypass sequence restriction
+    const result = await caller.financial.toggleManualTick({
+      receivableId: testRecId,
+      step: 3,
+      ticked: true,
+      operatorName: "Guilherme",
+    });
+    expect(result.success).toBe(true);
+    // Clean up: untick step 3
+    await caller.financial.toggleManualTick({
+      receivableId: testRecId,
+      step: 3,
+      ticked: false,
+      operatorName: "Guilherme",
+    });
   });
 
   it("should allow ticking step 2 after step 1 (different day)", async () => {

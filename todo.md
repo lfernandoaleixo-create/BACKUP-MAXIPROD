@@ -2932,3 +2932,4 @@
 - [x] Cards/retângulos no topo do dashboard para os novos status
 - [ ] BUG: Card azul Sicoob Palitos deveria ser R$ 24.115,50 (mostra R$ 175.000,00) e card verde deveria ser R$ 138.042,66 (mostra R$ 500.000,00)
 - [x] Bolinha AZUL (neutro/limpo) — opção manual para Guilherme/Thiago marcar bolinha como azul (estado neutro) no Roteiro e no card TitleRow
+- [x] Controle total para Guilherme/Thiago: ticar bolinhas verde/vermelho/azul independente do dia e sem restrição de sequência (backend + frontend)

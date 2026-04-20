@@ -1945,10 +1945,9 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                     const isRed = tick?.tickStatus === 'red';
                     const isBlue = tick?.tickStatus === 'blue';
                     const isGreen = isTicked && !isRed && !isBlue;
-                    const prevTicked = step === 1 || !!tickMap[step - 1]?.ticked;
-                    const canTickStep = !isTicked && prevTicked;
-                    // Não pode desmarcar bolinha vermelha (controle rígido)
                     const isAdminTickOp = operator?.name?.toLowerCase().trim() === 'guilherme' || operator?.name?.toLowerCase().trim() === 'thiago';
+                    const prevTicked = step === 1 || !!tickMap[step - 1]?.ticked;
+                    const canTickStep = !isTicked && (prevTicked || isAdminTickOp);
                     const canUntick = isTicked && (isAdminTickOp || !isRed) && (step === 7 || !tickMap[step + 1]?.ticked);
                     const tickedDate = tick?.tickedAt ? new Date(tick.tickedAt).toLocaleDateString('pt-BR') : null;
                     const tickedBy = tick?.tickedBy || null;
@@ -1985,7 +1984,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                                   onToggleTick?.(step, false);
                                   return;
                                 }
-                                if (isTicked && canUntick) {
+                                if (isTicked && (canUntick || isAdminTickOp)) {
                                   onToggleTick?.(step, false);
                                 } else if (!isTicked && canTickStep) {
                                   // Mostrar opção verde ou vermelho
@@ -2001,7 +2000,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                                 isPendingBlink
                                   ? 'bg-red-100 border-red-400 text-red-600 animate-pulse shadow-sm shadow-red-300 cursor-pointer'
                                   : isRed
-                                    ? 'bg-red-500 border-red-600 text-white shadow-sm shadow-red-200 cursor-not-allowed'
+                                    ? `bg-red-500 border-red-600 text-white shadow-sm shadow-red-200 ${isAdminTickOp ? 'cursor-pointer' : 'cursor-not-allowed'}`
                                     : isBlue
                                       ? 'bg-blue-500 border-blue-600 text-white shadow-sm shadow-blue-200'
                                       : isGreen
