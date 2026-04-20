@@ -3573,7 +3573,7 @@ export const financialRouter = router({
         const manualActions = actionsOnDay.filter(a => !a.isAutomatic && a.actionType !== "sem_contato");
         const autoSemContato = actionsOnDay.filter(a => a.actionType === "sem_contato");
 
-        let status: "verde" | "vermelho" | "pendente" | "futuro" | "dispensado" | "neutro" = "futuro";
+        let status: "verde" | "vermelho" | "pendente" | "futuro" | "dispensado" = "futuro";
         let motivo = "";
         let acoes: Array<{ tipo: string; notas: string; operador: string; hora: string }> = [];
 
@@ -3685,9 +3685,6 @@ export const financialRouter = router({
           } else if (tick.tickStatus === 'red' && status !== 'vermelho') {
             status = 'vermelho';
             motivo = 'NENHUMA AÇÃO registrada neste dia';
-          } else if (tick.tickStatus === 'blue') {
-            status = 'neutro';
-            motivo = 'Marcado como neutro (limpo) manualmente';
           }
         } else if (tick && !tick.ticked && (status === 'verde' || status === 'vermelho')) {
           // Admin limpou o tick — reverter para cálculo automático (já está correto)
@@ -5657,7 +5654,7 @@ ${acoesTexto}
       step: z.number().min(1).max(7),
       ticked: z.boolean(),
       operatorName: z.string(),
-      tickStatus: z.enum(['green', 'red', 'blue']).optional().default('green'),
+      tickStatus: z.enum(['green', 'red']).optional().default('green'),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -5726,9 +5723,9 @@ ${acoesTexto}
         await db.insert(collectionManualTickHistory).values({
           receivableId: input.receivableId,
           step: input.step,
-          action: input.tickStatus === 'red' ? 'manual_red' : input.tickStatus === 'blue' ? 'manual_blue' : 'tick',
+          action: input.tickStatus === 'red' ? 'manual_red' : 'tick',
           operatorName: input.operatorName,
-          reason: input.tickStatus === 'red' ? 'Marcado como falha manualmente' : input.tickStatus === 'blue' ? 'Marcado como neutro (azul) manualmente' : undefined,
+          reason: input.tickStatus === 'red' ? 'Marcado como falha manualmente' : undefined,
         });
 
         // INTERVALO NÃO é mais auto-ticado junto com a Ação.
