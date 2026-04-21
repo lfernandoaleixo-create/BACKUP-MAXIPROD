@@ -2934,3 +2934,6 @@
 - [x] Bolinha AZUL (neutro/limpo) — opção manual para Guilherme/Thiago marcar bolinha como azul (estado neutro) no Roteiro e no card TitleRow
 - [x] Controle total para Guilherme/Thiago: ticar bolinhas verde/vermelho/azul independente do dia e sem restrição de sequência (backend + frontend)
 - [x] Arredondar para baixo (Math.floor) todos os valores de caixas no estoque da madeira — sem números quebrados
+- [x] Converter pacotes (PC) em caixas equivalentes no estoque da importação (PC × un_pacote ÷ un_caixa_mãe = cx)
+- [x] Detectar pedidos com estado E-COMMERCE como transferências internas (não vendas) e excluí-los da contagem de pedidos
+- [x] Card sofisticado ao clicar no produto mostrando breakdown: estoque físico (CX) vs transferido p/ E-commerce (PC convertido)

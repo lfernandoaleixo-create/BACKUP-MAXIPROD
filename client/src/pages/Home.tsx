@@ -65,6 +65,9 @@ import {
   Scale,
   FileText,
   ClipboardCheck,
+  Store,
+  Info,
+  ArrowRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -145,6 +148,20 @@ interface StockItem {
   pedidosCxProprio?: number | null;
   pedidosUnProprio?: number;
   pedidosPorClienteProprio?: PedidoCliente[];
+  // E-commerce breakdown (para produtos de importação com variações PC)
+  ecommerceBreakdown?: {
+    totalCaixasOriginal: number;
+    estoqueFisicoCx: number;
+    variacoes: {
+      codigoItem: string;
+      descricaoItem: string;
+      unidadesPorPacote: number;
+      quantidadePC: number;
+      caixasEquivalentes: number;
+    }[];
+    pedidosEcommerceCx: number;
+    pedidosEcommerceUn: number;
+  } | null;
 }
 
 type SortField = "descricaoItem" | "comprimento" | "estoqueCx" | "pedidosCx" | "disponivelCx" | "poCx" | "projetadoCx";
@@ -841,10 +858,76 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   {/* Estoque - esconder quando showFinancial */}
                   {!showFinancial && (
                   <td className='px-2 py-2.5 whitespace-nowrap'>
-                    <span className='font-semibold text-slate-800 text-sm'>
-                      {item.estoqueCx !== null ? `${formatNumber(item.estoqueCx, true)}` : `${formatNumber(item.estoqueUn, true)}`}
-                      {<> {getUnit(item, item.estoqueCx !== null)}</>}
-                    </span>
+                    {item.ecommerceBreakdown ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className='font-semibold text-slate-800 text-sm cursor-help border-b border-dashed border-purple-300'>
+                            {formatNumber(item.ecommerceBreakdown.totalCaixasOriginal, true)} {getUnit(item, true)}
+                            <Store className="w-3 h-3 inline ml-1 text-purple-500" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-md w-[400px] p-0" sideOffset={8}>
+                          <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden">
+                            {/* Header */}
+                            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-5 py-4 border-b border-purple-100">
+                              <div className="flex items-center gap-2">
+                                <Store className="w-5 h-5 text-purple-600" />
+                                <p className="text-sm font-bold text-purple-800">Composição do Estoque</p>
+                              </div>
+                              <p className="text-xs text-purple-500 mt-1">Inclui pacotes E-commerce convertidos em caixas</p>
+                            </div>
+                            {/* Breakdown */}
+                            <div className="px-5 py-4 space-y-3">
+                              {/* Estoque físico (caixas originais) */}
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 rounded-full bg-teal-500" />
+                                  <span className="text-sm text-slate-700">Estoque Físico (CX)</span>
+                                </div>
+                                <span className="text-sm font-bold text-teal-700">{formatNumber(item.ecommerceBreakdown.estoqueFisicoCx, true)} cx</span>
+                              </div>
+                              {/* Variações PC convertidas */}
+                              {item.ecommerceBreakdown.variacoes.map((v, vi) => (
+                                <div key={vi} className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-purple-400" />
+                                    <div>
+                                      <span className="text-xs text-slate-600">{formatNumber(v.quantidadePC, true)} PC × {formatNumber(v.unidadesPorPacote, true)} un</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <ArrowRight className="w-3 h-3 text-slate-400" />
+                                    <span className="text-sm font-bold text-purple-700">{formatNumber(v.caixasEquivalentes, true)} cx</span>
+                                  </div>
+                                </div>
+                              ))}
+                              {/* Separador */}
+                              <div className="border-t border-slate-200 pt-3 flex items-center justify-between">
+                                <span className="text-sm font-semibold text-slate-800">Total Real</span>
+                                <span className="text-base font-extrabold text-slate-900">{formatNumber(item.ecommerceBreakdown.totalCaixasOriginal, true)} cx</span>
+                              </div>
+                              {/* Info E-commerce */}
+                              {item.ecommerceBreakdown.pedidosEcommerceCx > 0 && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 mt-2">
+                                  <div className="flex items-center gap-2">
+                                    <Info className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                                    <div>
+                                      <p className="text-xs font-semibold text-amber-800">Transferência E-commerce</p>
+                                      <p className="text-xs text-amber-600">{formatNumber(item.ecommerceBreakdown.pedidosEcommerceCx, true)} cx em pedidos para filial (não gera receita)</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <span className='font-semibold text-slate-800 text-sm'>
+                        {item.estoqueCx !== null ? `${formatNumber(item.estoqueCx, true)}` : `${formatNumber(item.estoqueUn, true)}`}
+                        {<> {getUnit(item, item.estoqueCx !== null)}</>}
+                      </span>
+                    )}
                   </td>
                   )}
                   {/* Pedidos - esconder quando showFinancial */}

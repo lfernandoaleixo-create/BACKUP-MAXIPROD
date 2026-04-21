@@ -870,3 +870,144 @@ describe("stockProcessor - pedidosPorCliente tooltip data", () => {
     expect(item.pedidosPorCliente[2].status).toBe("Digitação");
   });
 });
+
+describe("stockProcessor - E-commerce PC→CX conversion and E-COMMERCE order exclusion", () => {
+  beforeEach(() => {
+    mockStockItems.length = 0;
+    mockOrderItems.length = 0;
+    mockPurchaseOrderItems.length = 0;
+    insertedDashboardData = null;
+  });
+
+  it("should convert PC variants to CX equivalents and merge into parent", async () => {
+    // Parent product: 70 CX of 10,000 units
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00100",
+        descricaoItem: "PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 10.000 UNID.",
+        quantidade: "700000", // 70 CX × 10,000 un
+        unidadeMedida: "UN",
+        grupoCodigo: "20",
+        codigoGrupo: "20",
+        codigoSuperGrupo: "12",
+        descricaoSuperGrupo: "IMPORTAÇÃO",
+      }),
+    );
+    // PC variant: 1000 PC of 500 units = 50 CX equivalent
+    mockStockItems.push(
+      makeStockItem({
+        id: 2,
+        codigoItem: "00101",
+        descricaoItem: "PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 500 UNID.",
+        quantidade: "500000", // 1000 PC × 500 un
+        unidadeMedida: "PC",
+        grupoCodigo: "20",
+        codigoGrupo: "20",
+        codigoSuperGrupo: "12",
+        descricaoSuperGrupo: "IMPORTAÇÃO",
+        maxiprodId: 12346,
+      }),
+    );
+    // PC variant: 1000 PC of 100 units = 10 CX equivalent
+    mockStockItems.push(
+      makeStockItem({
+        id: 3,
+        codigoItem: "00102",
+        descricaoItem: "PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 100 UNID.",
+        quantidade: "100000", // 1000 PC × 100 un
+        unidadeMedida: "PC",
+        grupoCodigo: "20",
+        codigoGrupo: "20",
+        codigoSuperGrupo: "12",
+        descricaoSuperGrupo: "IMPORTAÇÃO",
+        maxiprodId: 12347,
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    // The parent item should have ecommerceBreakdown
+    const parent = items.find((i: any) => i.codigoItem === "00100");
+    expect(parent).toBeDefined();
+    
+    if (parent.ecommerceBreakdown) {
+      // Should have the correct breakdown
+      expect(parent.ecommerceBreakdown.estoqueFisicoCx).toBe(70);
+      expect(parent.ecommerceBreakdown.totalCaixasOriginal).toBe(130); // 70 + 50 + 10
+      expect(parent.ecommerceBreakdown.variacoes).toHaveLength(2);
+    }
+  });
+
+  it("should exclude E-COMMERCE orders from pedidos count", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00100",
+        descricaoItem: "VARETA DE BAMBU 3,0 X 250 MM C/ 5.000 UNID",
+        quantidade: "500000", // 100 CX
+        grupoCodigo: "20",
+        codigoGrupo: "20",
+        codigoSuperGrupo: "12",
+        descricaoSuperGrupo: "IMPORTAÇÃO",
+      }),
+    );
+    // Regular order (should count)
+    mockOrderItems.push(
+      makeOrderItem({
+        codigoItem: "00100",
+        quantidade: "10",
+        quantidadeUnEstoque: "50000",
+        cliente: "CLIENTE NORMAL",
+        estadoNota: "Aprovado",
+        estadoConfiguravel: "BAMBU",
+      }),
+    );
+    // E-COMMERCE order (should NOT count as pedido)
+    mockOrderItems.push(
+      makeOrderItem({
+        id: 2,
+        codigoItem: "00100",
+        quantidade: "20",
+        quantidadeUnEstoque: "100000",
+        cliente: "PALITOS E-COMMERCE",
+        estadoNota: "Aprovado",
+        estadoConfiguravel: "E-COMMERCE",
+        maxiprodId: 99998,
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00100");
+    expect(item).toBeDefined();
+    
+    // Only the regular order should count (10 CX), E-COMMERCE excluded
+    // pedidosCx should be 10 (not 30)
+    expect(item.pedidosCx).toBe(10);
+  });
+
+  it("should handle products with only CX (no PC variants) normally", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00200",
+        descricaoItem: "ESPETO DE BAMBU 3,5 X 300 MM C/ 5.000 UNID",
+        quantidade: "250000", // 50 CX
+        unidadeMedida: "UN",
+        grupoCodigo: "20",
+        codigoGrupo: "20",
+        codigoSuperGrupo: "12",
+        descricaoSuperGrupo: "IMPORTAÇÃO",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00200");
+    expect(item).toBeDefined();
+    // No ecommerceBreakdown for items without PC variants
+    expect(item.ecommerceBreakdown).toBeNull();
+    expect(item.estoqueCx).toBe(50);
+  });
+});

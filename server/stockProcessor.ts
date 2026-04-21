@@ -59,6 +59,22 @@ interface VariantChild {
   estoqueCx: number | null; // estoque em caixas
 }
 
+interface EcommerceVariant {
+  codigoItem: string;
+  descricaoItem: string;
+  unidadesPorPacote: number; // un por pacote (ex: 100, 500)
+  quantidadePC: number; // quantidade de pacotes no Maxiprod
+  caixasEquivalentes: number; // pacotes convertidos em caixas do mãe
+}
+
+interface EcommerceBreakdown {
+  totalCaixasOriginal: number; // total real em caixas (mãe + variações convertidas)
+  estoqueFisicoCx: number; // caixas do produto mãe (CX)
+  variacoes: EcommerceVariant[]; // variações PC convertidas
+  pedidosEcommerceCx: number; // pedidos E-COMMERCE (transferências, não vendas)
+  pedidosEcommerceUn: number;
+}
+
 interface ProcessedItem {
   // Dados direto do Maxiprod (espelho fiel)
   codigoItem: string;
@@ -108,6 +124,8 @@ interface ProcessedItem {
   pedidosCxProprio: number | null;
   pedidosUnProprio: number;
   pedidosPorClienteProprio: PedidoCliente[];
+  // E-commerce breakdown (para produtos de importação com variações PC)
+  ecommerceBreakdown: EcommerceBreakdown | null;
 }
 
 /**
@@ -408,15 +426,46 @@ export async function processStockData(): Promise<void> {
     (o) => o.estadoNota !== "Cancelado"
   );
   
-  // Pedidos que RESERVAM estoque (exclui Digitação)
-  const reservingOrders = allValidOrders.filter(
+  // ─── Separar pedidos E-COMMERCE (transferências internas, não são vendas) ───
+  // Pedidos com estadoConfiguravel = "E-COMMERCE" e cliente = filial
+  // Não reservam estoque e não contam como demanda de venda.
+  const isEcommerceTransfer = (o: typeof rawOrders[0]) => {
+    const ec = (o.estadoConfiguravel || '').toUpperCase();
+    return ec === 'E-COMMERCE' || ec === 'ECOMMERCE';
+  };
+  
+  const ecommerceOrders = allValidOrders.filter(isEcommerceTransfer);
+  const nonEcommerceOrders = allValidOrders.filter(o => !isEcommerceTransfer(o));
+  
+  // Pedidos que RESERVAM estoque (exclui Digitação E exclui E-COMMERCE)
+  const reservingOrders = nonEcommerceOrders.filter(
     (o) => o.estadoNota !== "Digitação" && o.estadoNota !== "Digitacao"
   );
   
-  // Pedidos em Digitação (apenas para exibição no tooltip)
-  const digitacaoOrders = allValidOrders.filter(
+  // Pedidos em Digitação (apenas para exibição no tooltip, exclui E-COMMERCE)
+  const digitacaoOrders = nonEcommerceOrders.filter(
     (o) => o.estadoNota === "Digitação" || o.estadoNota === "Digitacao"
   );
+  
+  // ─── Build E-COMMERCE order map by codigoItem (para breakdown) ───
+  const ecommerceByCode = new Map<string, { totalUn: number; totalCx: number; items: typeof ecommerceOrders }>();
+  for (const order of ecommerceOrders) {
+    const code = order.codigoItem;
+    if (!code) continue;
+    const existing = ecommerceByCode.get(code) || { totalUn: 0, totalCx: 0, items: [] };
+    existing.items.push(order);
+    const qtyCx = parseFloat(order.quantidade);
+    existing.totalCx += qtyCx;
+    const qtyUnEstoque = order.quantidadeUnEstoque ? parseFloat(order.quantidadeUnEstoque) : 0;
+    if (qtyUnEstoque > 0) {
+      existing.totalUn += qtyUnEstoque;
+    } else {
+      const fator = order.fatorConversao ? parseFloat(order.fatorConversao) : 0;
+      const unitsPerBox = fator > 0 ? fator : extractUnitsPerBox(order.descricao);
+      existing.totalUn += unitsPerBox ? qtyCx * unitsPerBox : qtyCx;
+    }
+    ecommerceByCode.set(code, existing);
+  }
   
   // Filter POs: only pending (not Recebido/Cancelado)
   const validPOs = rawPOs.filter(
@@ -661,6 +710,7 @@ export async function processStockData(): Promise<void> {
       pedidosCxProprio: unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null,
       pedidosUnProprio: pedidosUn,
       pedidosPorClienteProprio: [...pedidosPorCliente],
+      ecommerceBreakdown: null, // preenchido no pós-processamento
     });
     processedCodes.add(item.codigoItem);
   }
@@ -762,6 +812,7 @@ export async function processStockData(): Promise<void> {
       pedidosCxProprio: unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null,
       pedidosUnProprio: pedidosUn,
       pedidosPorClienteProprio: [...pedidosPorCliente],
+      ecommerceBreakdown: null,
     });
     processedCodes.add(code);
   }
@@ -870,6 +921,120 @@ export async function processStockData(): Promise<void> {
         });
       }
     }
+  }
+  
+  // ─── Pós-processamento E-COMMERCE: Conversão PC→CX automática ───
+  // Para produtos de importação (grupo 12), detectar automaticamente variações PC
+  // que são pacotes desmembrados de um produto mãe CX.
+  // Converter o estoque dos PCs para caixas equivalentes do mãe.
+  // Também computar pedidos E-COMMERCE como transferências (não vendas).
+  
+  // Extrair nome base do produto (sem o "C/ XXXX UNID." ou "FLOW-PACK XXXX UNID.")
+  function extractBaseName(desc: string): string {
+    return desc
+      .replace(/\s*C\/\s*[\d.]+\s*(UNID\.?|UN\.?)/i, '')
+      .replace(/\s*-?\s*FLOW-?PACK\s*[\d.]+\s*(UNID\.?|UN\.?)/i, '')
+      .replace(/\s*EMBALADO\s+INDIVIDUALMENTE\s+C\/\s*[\d.]+\s*[xX]\s*[\d.]+\s*(UNID\.?|UN\.?)/i, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+  
+  // Agrupar produtos de importação por nome base
+  const importItems = processed.filter(p => p.grupo === 'importacao_revenda');
+  const byBaseName = new Map<string, ProcessedItem[]>();
+  for (const item of importItems) {
+    const baseName = extractBaseName(item.descricaoItem);
+    const group = byBaseName.get(baseName) || [];
+    group.push(item);
+    byBaseName.set(baseName, group);
+  }
+  
+  // Para cada grupo com múltiplos itens, identificar mãe (maior unitsPerBox) e variações
+  for (const [baseName, groupItems] of Array.from(byBaseName.entries())) {
+    if (groupItems.length < 2) continue; // Sem variações
+    
+    // Encontrar o produto mãe: maior unidadesPorCaixa
+    let mother: ProcessedItem | null = null;
+    let maxUpb = 0;
+    for (const item of groupItems) {
+      const upb = item.unidadesPorCaixa || 0;
+      if (upb > maxUpb) {
+        maxUpb = upb;
+        mother = item;
+      }
+    }
+    if (!mother || !mother.unidadesPorCaixa) continue;
+    
+    const motherUpb = mother.unidadesPorCaixa;
+    const variacoes: EcommerceVariant[] = [];
+    let totalVariacoesCx = 0;
+    
+    // Processar cada variação (PC)
+    for (const child of groupItems) {
+      if (child === mother) continue; // Pular o próprio mãe
+      if (!child.unidadesPorCaixa || child.unidadesPorCaixa >= motherUpb) continue; // Não é variação
+      
+      const childUpb = child.unidadesPorCaixa;
+      // Converter estoque do PC para caixas equivalentes do mãe
+      // Fórmula: (estoquePCs × un_por_pacote) ÷ un_por_caixa_mãe
+      const caixasEquivalentes = Math.floor((child.estoqueUn) / motherUpb);
+      
+      variacoes.push({
+        codigoItem: child.codigoItem,
+        descricaoItem: child.descricaoItem,
+        unidadesPorPacote: childUpb,
+        quantidadePC: child.estoqueCx || 0, // quantidade de pacotes
+        caixasEquivalentes,
+      });
+      totalVariacoesCx += caixasEquivalentes;
+      
+      // Marcar a variação como filho do mãe (se não já está marcado)
+      if (!child.isChild) {
+        child.isChild = true;
+        child.parentCode = mother.codigoItem;
+      }
+    }
+    
+    if (variacoes.length === 0) continue;
+    
+    // Computar pedidos E-COMMERCE para o mãe e variações
+    let ecommerceTotalUn = 0;
+    let ecommerceTotalCx = 0;
+    
+    // Pedidos E-COMMERCE do mãe
+    const motherEcom = ecommerceByCode.get(mother.codigoItem);
+    if (motherEcom) {
+      ecommerceTotalUn += motherEcom.totalUn;
+      ecommerceTotalCx += motherUpb ? Math.floor(motherEcom.totalUn / motherUpb) : 0;
+    }
+    
+    // Pedidos E-COMMERCE das variações (converter para caixas do mãe)
+    for (const v of variacoes) {
+      const childEcom = ecommerceByCode.get(v.codigoItem);
+      if (childEcom) {
+        ecommerceTotalUn += childEcom.totalUn;
+        ecommerceTotalCx += Math.floor(childEcom.totalUn / motherUpb);
+      }
+    }
+    
+    const estoqueFisicoCx = mother.estoqueCx || 0;
+    
+    // Preencher breakdown no produto mãe
+    mother.ecommerceBreakdown = {
+      totalCaixasOriginal: estoqueFisicoCx + totalVariacoesCx,
+      estoqueFisicoCx,
+      variacoes,
+      pedidosEcommerceCx: ecommerceTotalCx,
+      pedidosEcommerceUn: ecommerceTotalUn,
+    };
+    
+    // Marcar mãe como parent (se não já está)
+    if (!mother.isParent) {
+      mother.isParent = true;
+    }
+    
+    console.log(`[E-Commerce] ${baseName}: mãe=${mother.codigoItem} (${estoqueFisicoCx} cx) + ${variacoes.length} variações (${totalVariacoesCx} cx equiv) = ${estoqueFisicoCx + totalVariacoesCx} cx total | Pedidos E-COM: ${ecommerceTotalCx} cx`);
   }
   
   // Save processed data to dashboard_data table
