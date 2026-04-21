@@ -18,6 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DollarSign,
   ShoppingCart,
   Users,
@@ -57,6 +63,8 @@ import {
   ExternalLink,
   X,
   CheckCircle2,
+  Ban,
+  Info,
 } from "lucide-react";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
@@ -2674,6 +2682,7 @@ export default function Sales() {
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const [verifyingCard, setVerifyingCard] = useState<{ card: string; startDate: string; endDate: string; dashboardValue: number } | null>(null);
   const [simulatorCard, setSimulatorCard] = useState<{ section: string; title: string; subtitle: string; value: number } | null>(null);
+  const [showCanceledDialog, setShowCanceledDialog] = useState(false);
   const [period, setPeriod] = useState("current_month");
   const [grupo, setGrupo] = useState("all");
   const [subgrupo, setSubgrupo] = useState("all");
@@ -3154,6 +3163,20 @@ export default function Sales() {
                   <p className="text-2xl font-extrabold text-slate-900 tracking-tight">{formatCurrencyFull(analytics.totalValue)}</p>
                   <p className="text-xs text-slate-400 mt-1.5">{analytics.totalOrders} pedidos &bull; {analytics.totalClients} clientes</p>
                   <p className="text-xs text-slate-400">Ticket medio: {formatCurrencyFull(analytics.ticketMedio)}</p>
+                  {/* Botão vermelho de cancelados */}
+                  {analytics.totalCancelado > 0 && (
+                    <button
+                      onClick={() => setShowCanceledDialog(true)}
+                      className="mt-3 w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 transition-all group"
+                    >
+                      <Ban className="w-4 h-4 text-red-500 group-hover:text-red-600" />
+                      <div className="flex-1 text-left">
+                        <p className="text-xs font-bold text-red-600">{formatCurrencyFull(analytics.totalCancelado)} cancelado</p>
+                        <p className="text-[10px] text-red-400">{analytics.canceledOrders.length} {analytics.canceledOrders.length === 1 ? 'pedido' : 'pedidos'} — clique para detalhes</p>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-red-400 group-hover:text-red-500" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Faturado */}
@@ -3252,7 +3275,92 @@ export default function Sales() {
                     <p className="text-xs text-slate-400 mt-1">{analytics.pedidosAmostraBonif} pedidos</p>
                   </div>
               </div>
+              {/* Barra explicativa: conciliação Faturado + A Faturar + Cancelado = Total */}
+              {analytics.totalCancelado > 0 && (
+                <div className="border-t border-slate-100 px-5 py-3 bg-gradient-to-r from-red-50/50 to-transparent">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Info className="w-4 h-4 text-red-400 flex-shrink-0" />
+                    <p className="text-xs text-slate-500">
+                      <span className="font-semibold text-emerald-600">{formatCurrencyFull(analytics.totalFaturado)}</span>
+                      <span className="text-slate-400"> (Faturado) + </span>
+                      <span className="font-semibold text-orange-600">{formatCurrencyFull(analytics.totalAFaturar)}</span>
+                      <span className="text-slate-400"> (A Faturar) + </span>
+                      <span className="font-semibold text-red-600">{formatCurrencyFull(analytics.totalCancelado)}</span>
+                      <span className="text-slate-400"> (Cancelado) = </span>
+                      <span className="font-semibold text-slate-800">{formatCurrencyFull(analytics.totalFaturado + analytics.totalAFaturar + analytics.totalCancelado)}</span>
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1 ml-7 italic">O valor cancelado não entra no cálculo de comissão. Base para comissão: {formatCurrencyFull(analytics.totalValue - analytics.totalCancelado)}</p>
+                </div>
+              )}
             </div>
+
+            {/* Dialog de Pedidos Cancelados */}
+            <Dialog open={showCanceledDialog} onOpenChange={setShowCanceledDialog}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-red-700">
+                    <Ban className="w-5 h-5" />
+                    Pedidos Cancelados no Período
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-red-700">Total Cancelado</span>
+                      <span className="text-lg font-extrabold text-red-700">{formatCurrencyFull(analytics.totalCancelado)}</span>
+                    </div>
+                    <p className="text-xs text-red-500 mt-1">
+                      Estes pedidos foram vendidos mas cancelados posteriormente. O valor consta no Total de Vendas (reconhecendo o trabalho do vendedor), porém não aparece em Faturado nem A Faturar.
+                    </p>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold text-amber-700">Base para Comissão</p>
+                        <p className="text-xs text-amber-600 mt-0.5">
+                          Total vendido ({formatCurrencyFull(analytics.totalValue)}) - Cancelado ({formatCurrencyFull(analytics.totalCancelado)}) = <span className="font-bold">{formatCurrencyFull(analytics.totalValue - analytics.totalCancelado)}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  {analytics.canceledOrders.length > 0 && (
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200">
+                            <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase">Pedido</th>
+                            <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase">Cliente</th>
+                            <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-600 uppercase">Valor</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {analytics.canceledOrders.map((order: { pedido: string; cliente: string; valor: number; dataEmissao: string }, idx: number) => (
+                            <tr key={idx} className="hover:bg-red-50/50 transition-colors">
+                              <td className="px-4 py-2.5">
+                                <span className="font-mono font-semibold text-slate-700">#{order.pedido}</span>
+                                {order.dataEmissao && (
+                                  <p className="text-[10px] text-slate-400">{new Date(order.dataEmissao).toLocaleDateString('pt-BR')}</p>
+                                )}
+                              </td>
+                              <td className="px-4 py-2.5 text-slate-600 text-xs">{order.cliente}</td>
+                              <td className="px-4 py-2.5 text-right font-bold text-red-600">{formatCurrencyFull(order.valor)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-red-50 border-t border-red-200">
+                            <td colSpan={2} className="px-4 py-2.5 text-xs font-bold text-red-700 uppercase">Total Cancelado</td>
+                            <td className="px-4 py-2.5 text-right font-extrabold text-red-700">{formatCurrencyFull(analytics.totalCancelado)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Tabela de Detalhamento por Segmento / CRM */}
             {(() => {

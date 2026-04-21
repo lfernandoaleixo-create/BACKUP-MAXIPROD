@@ -152,12 +152,16 @@ export const salesRouter = router({
         return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
       };
 
-      // REGRA DE NEGÓCIO: Excluir itens "outros" (CANCELADO, AMOSTRA, BONIFICAÇÃO, GILSON, NULL)
-      // Mesma regra do card Vendas da aba Financeiro
+      // REGRA DE NEGÓCIO: Excluir itens "outros" (AMOSTRA, BONIFICAÇÃO, GILSON, NULL)
+      // CANCELADO é tratado separadamente: incluído no total mas excluído de faturado/a faturar
       const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
+      const isCancelado = (estado: string | null) => {
+        if (!estado) return false;
+        return estado.toUpperCase() === "CANCELADO";
+      };
 
-      // Apply hierarchical filters
-      let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      // Apply hierarchical filters — include CANCELADO items (they count in totalValue)
+      let items = allItems.filter(item => !isDigitacao(item.estadoNota) && (!isOutros(item.estadoConfiguravel) || isCancelado(item.estadoConfiguravel)));
       if (effectiveGrupo !== "all") {
         items = items.filter(item => estadoToGrupo(item.estadoConfiguravel) === effectiveGrupo);
       }
@@ -181,6 +185,8 @@ export const salesRouter = router({
           totalAmostra: 0,
           totalBonificacao: 0,
           pedidosAmostraBonif: 0,
+          totalCancelado: 0,
+          canceledOrders: [] as { pedido: string; cliente: string; valor: number; dataEmissao: string }[],
           ticketMedio: 0,
           bySegmentKPI: [],
           byMonth: [],
@@ -193,21 +199,30 @@ export const salesRouter = router({
         };
       }
 
+      // Separar itens cancelados dos normais
+      const canceledItems = items.filter(item => isCancelado(item.estadoConfiguravel));
+      const activeItems = items.filter(item => !isCancelado(item.estadoConfiguravel));
+
       // Compute analytics usando valorTotalPedido (inclui descontos e frete)
+      // Items inclui cancelados para totalValue, mas activeItems é usado para Faturado/A Faturar
       const uniqueOrders = new Set(items.map((i) => i.pedido).filter(Boolean));
       const uniqueClients = new Set(items.map((i) => i.cliente).filter(Boolean));
       // Total por pedido único usando valorTotalPedido quando disponível
       // Também calcula Faturado e A Faturar proporcionalmente para que a soma bata com o total
-      const pedidoMap = new Map<string, { valorTotalPedido: number; somaItensBruto: number; somaFaturadoBruto: number; somaAFaturarBruto: number }>();
+      // NOTA: pedidoMap usa TODOS os items (incluindo cancelados) para totalValue
+      const pedidoMap = new Map<string, { valorTotalPedido: number; somaItensBruto: number; somaFaturadoBruto: number; somaAFaturarBruto: number; isCanceled: boolean }>();
       for (const item of items) {
         const pedido = item.pedido || 'sem-pedido';
         const itemVal = Number(item.valorTotal || 0);
+        const canceled = isCancelado(item.estadoConfiguravel);
         if (!pedidoMap.has(pedido)) {
           pedidoMap.set(pedido, {
             valorTotalPedido: item.valorTotalPedido ? Number(item.valorTotalPedido) : 0,
             somaItensBruto: itemVal,
-            somaFaturadoBruto: item.estadoItem === "Faturado" ? itemVal : 0,
-            somaAFaturarBruto: item.estadoItem === "A faturar" ? itemVal : 0,
+            // Cancelados NÃO contam como faturado nem a faturar
+            somaFaturadoBruto: (!canceled && item.estadoItem === "Faturado") ? itemVal : 0,
+            somaAFaturarBruto: (!canceled && item.estadoItem === "A faturar") ? itemVal : 0,
+            isCanceled: canceled,
           });
         } else {
           const p = pedidoMap.get(pedido)!;
@@ -215,10 +230,40 @@ export const salesRouter = router({
             p.valorTotalPedido = Number(item.valorTotalPedido);
           }
           p.somaItensBruto += itemVal;
-          if (item.estadoItem === "Faturado") p.somaFaturadoBruto += itemVal;
-          if (item.estadoItem === "A faturar") p.somaAFaturarBruto += itemVal;
+          // Cancelados NÃO contam como faturado nem a faturar
+          if (!canceled && item.estadoItem === "Faturado") p.somaFaturadoBruto += itemVal;
+          if (!canceled && item.estadoItem === "A faturar") p.somaAFaturarBruto += itemVal;
+          if (canceled) p.isCanceled = true;
         }
       }
+
+      // Build canceled orders list for the red button
+      const canceledPedidoMap = new Map<string, { pedido: string; cliente: string; valor: number; dataEmissao: string }>();
+      for (const item of canceledItems) {
+        const pedido = item.pedido || 'sem-pedido';
+        if (!canceledPedidoMap.has(pedido)) {
+          canceledPedidoMap.set(pedido, {
+            pedido,
+            cliente: item.clienteApelido || item.cliente || "—",
+            valor: 0,
+            dataEmissao: item.dataEmissao || "",
+          });
+        }
+        // Use valorTotalPedido if available for the order total
+        const cp = canceledPedidoMap.get(pedido)!;
+        cp.valor += Number(item.valorTotal || 0);
+      }
+      // Replace sum of items with valorTotalPedido when available
+      canceledPedidoMap.forEach((cp, pedido) => {
+        const pm = pedidoMap.get(pedido);
+        if (pm && pm.valorTotalPedido) {
+          cp.valor = pm.valorTotalPedido;
+        }
+      });
+      const canceledOrders = Array.from(canceledPedidoMap.values())
+        .map(o => ({ ...o, valor: Math.round(o.valor * 100) / 100 }))
+        .sort((a, b) => b.valor - a.valor);
+      const totalCancelado = canceledOrders.reduce((sum, o) => sum + o.valor, 0);
 
       let totalValue = 0;
       let totalFaturado = 0;
@@ -227,6 +272,9 @@ export const salesRouter = router({
         // Usar valorTotalPedido se disponível, senão soma bruta dos itens
         const pedidoTotal = p.valorTotalPedido || p.somaItensBruto;
         totalValue += pedidoTotal;
+
+        // Pedidos cancelados: valor entra no total mas NÃO no faturado/a faturar
+        if (p.isCanceled) return;
 
         if (p.somaItensBruto > 0 && p.valorTotalPedido) {
           // Distribuir proporcionalmente o valor do pedido entre faturado e a faturar
@@ -243,8 +291,8 @@ export const salesRouter = router({
       // Arredondar para evitar imprecisão de ponto flutuante
       totalValue = Math.round(totalValue * 100) / 100;
       totalFaturado = Math.round(totalFaturado * 100) / 100;
-      // Garantir que A Faturar = Total - Faturado (elimina qualquer centavo de diferença)
-      totalAFaturar = Math.round((totalValue - totalFaturado) * 100) / 100;
+      // Garantir que A Faturar = Total - Faturado - Cancelado (elimina qualquer centavo de diferença)
+      totalAFaturar = Math.round((totalValue - totalFaturado - Math.round(totalCancelado * 100) / 100) * 100) / 100;
 
       // Amostra/Bonificação: itens excluídos do total mas mostrados em card separado
       const isAmostraBonif = (estado: string | null) => {
@@ -497,6 +545,8 @@ export const salesRouter = router({
         totalAmostra: Math.round(totalAmostra * 100) / 100,
         totalBonificacao: Math.round(totalBonificacao * 100) / 100,
         pedidosAmostraBonif,
+        totalCancelado: Math.round(totalCancelado * 100) / 100,
+        canceledOrders,
         ticketMedio: uniqueOrders.size > 0 ? Math.round((totalValue / uniqueOrders.size) * 100) / 100 : 0,
         bySegmentKPI,
         byCrmSegmentKPI,

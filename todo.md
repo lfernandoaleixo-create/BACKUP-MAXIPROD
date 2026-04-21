@@ -2940,3 +2940,10 @@
 
 ## Faturamento: Unidade CX/PC
 - [x] Faturamento: mostrar CX para itens não-e-commerce e PC para itens e-commerce (em vez de "un" genérico)
+
+## Vendas: Pedidos Cancelados no Valor Total
+- [x] Valor Total do Período deve incluir pedidos cancelados (reconhecer trabalho do vendedor)
+- [x] A Faturar e Faturado devem EXCLUIR pedidos cancelados
+- [x] Botão vermelho no card Valor Total mostrando lista de pedidos cancelados (pedido, cliente, valor)
+- [x] Exemplo: M D da Silva ~R$154.000 cancelado deve aparecer no Total mas não no A Faturar/Faturado
+- [x] Indicador explicativo quando Faturado + A Faturar ≠ Total (devido a cancelamentos)
