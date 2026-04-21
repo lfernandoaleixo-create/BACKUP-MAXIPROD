@@ -2937,3 +2937,6 @@
 - [x] Converter pacotes (PC) em caixas equivalentes no estoque da importação (PC × un_pacote ÷ un_caixa_mãe = cx)
 - [x] Detectar pedidos com estado E-COMMERCE como transferências internas (não vendas) e excluí-los da contagem de pedidos
 - [x] Card sofisticado ao clicar no produto mostrando breakdown: estoque físico (CX) vs transferido p/ E-commerce (PC convertido)
+
+## Faturamento: Unidade CX/PC
+- [x] Faturamento: mostrar CX para itens não-e-commerce e PC para itens e-commerce (em vez de "un" genérico)

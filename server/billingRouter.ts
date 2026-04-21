@@ -451,6 +451,7 @@ export const billingRouter = router({
           tipoEspecial,
           grupo,
           grupoKey,
+          isEcommerce: (o._estadoConfiguravel || "").toUpperCase() === "E-COMMERCE",
         };
       });
       openOrders.sort((a, b) => b.valorTotal - a.valorTotal);
@@ -653,6 +654,7 @@ export const billingRouter = router({
           grupo,
           grupoKey,
           dataFaturamento, // Data da NF mais recente (null se não houver NF)
+          isEcommerce: (o._estadoConfiguravel || "").toUpperCase() === "E-COMMERCE",
         };
       });
       
