@@ -218,7 +218,6 @@ type BillingOrder = {
   dataFaturamento?: string | null; // Data da NF mais recente (quando disponível)
   grupo?: string;
   grupoKey?: string;
-  isEcommerce?: boolean; // true se estadoConfiguravel === "E-COMMERCE" (unidade = PC)
   itens: Array<{
     descricao: string;
     quantidade: number;
@@ -1350,7 +1349,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <span className="text-base font-bold text-slate-800">
-                      {formatNumber(item.codigoItem === '00808' ? item.quantidade / 11.6 : item.quantidade)} {item.codigoItem === '00808' ? 'CX' : (order.isEcommerce ? 'PC' : 'CX')}
+                       {formatNumber(item.codigoItem === '00808' ? item.quantidade / 11.6 : item.quantidade)} {item.codigoItem === '00808' ? 'cx' : 'un'}
                     </span>
                     {item.quantidadeFaturada && item.quantidadeFaturada > 0 && (
                       <span className="text-[10px] text-blue-500 block">
@@ -1372,7 +1371,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
                 <div className="text-right">
                   <div className="border-t-2 border-slate-400 pt-1.5 mt-0.5 pl-8">
                     <span className="text-sm font-bold text-slate-800">
-                      Total: {formatNumber(order.itens.reduce((sum, i) => sum + (i.codigoItem === '00808' ? i.quantidade / 11.6 : i.quantidade), 0))} {order.isEcommerce ? 'PC' : 'CX'}
+                       Total: {formatNumber(order.itens.reduce((sum, i) => sum + (i.codigoItem === '00808' ? i.quantidade / 11.6 : i.quantidade), 0))} un
                     </span>
                     {showValues && (
                       <span className="text-xs text-slate-500 block">
