@@ -1864,11 +1864,13 @@ function ClassificationCard({
       setSortDir("desc");
     }
   };
-  const totalEstoque = items.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
-  const totalPedidos = items.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
-  const totalDisponivel = items.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0);
-  const totalPO = items.reduce((sum, i) => sum + (i.poCx ?? 0), 0);
-  const totalProjetado = items.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
+  // Excluir filhos (isChild) dos totais para não duplicar estoque de variações PC já somadas no mãe
+  const parentItems_ = useMemo(() => items.filter(i => !i.isChild), [items]);
+  const totalEstoque = parentItems_.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
+  const totalPedidos = parentItems_.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
+  const totalDisponivel = parentItems_.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0);
+  const totalPO = parentItems_.reduce((sum, i) => sum + (i.poCx ?? 0), 0);
+  const totalProjetado = parentItems_.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
   const negativos = items.filter(i => (i.disponivelCx ?? i.disponivelUn) < 0).length;
   const parentCount = useMemo(() => items.filter(i => !i.isChild).length, [items]);
 
@@ -3554,10 +3556,11 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const parentOnlyMP = useMemo(() => mpItems.filter(i => !i.isChild), [mpItems]);
 
   // Totais gerais: apenas importação (revenda + MP), exclui industrialização (madeira)
-  const importItems = useMemo(() => items.filter(i => i.grupo !== "industrializacao"), [items]);
+  // IMPORTANTE: excluir filhos (isChild) para não duplicar estoque de variações PC já somadas no mãe
+  const importItems = useMemo(() => items.filter(i => i.grupo !== "industrializacao" && !i.isChild), [items]);
   const totalEstoqueCx = importItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
-  // Pedidos de venda: soma TODOS os produtos (importação + industrialização) = 2.505 cx
-  const totalPedidosCx = items.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
+  // Pedidos de venda: soma TODOS os produtos (importação + industrialização), excluindo filhos
+  const totalPedidosCx = items.filter(i => !i.isChild).reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
   // Disponível = Estoque Total - Pedidos (Venda) = 19.501 - 2.505 = 16.996
   const totalDisponivelCx = totalEstoqueCx - totalPedidosCx;
   // KPI PO: somar em caixas usando poLotes (quantidade original da PO)

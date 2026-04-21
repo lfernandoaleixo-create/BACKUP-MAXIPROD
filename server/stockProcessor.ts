@@ -930,21 +930,48 @@ export async function processStockData(): Promise<void> {
   // Também computar pedidos E-COMMERCE como transferências (não vendas).
   
   // Extrair nome base do produto (sem o "C/ XXXX UNID." ou "FLOW-PACK XXXX UNID.")
+  // Precisa lidar com vários formatos:
+  // - "C/ 10.000 UNID." (simples)
+  // - "C/ 100 X 100 UNID." (embalagem transparente)
+  // - "C/ 200 X100 UNID." (sem espaço)
+  // - "C/ 400 x 50 UNID." (minúsculo)
+  // - "FLOW-PACK 50 UNID." / "FLOW-PACK 200 UNID."
+  // - "FLOW-PACK 500 x 10 UNID." (com multiplicador)
   function extractBaseName(desc: string): string {
-    return desc
-      .replace(/\s*C\/\s*[\d.]+\s*(UNID\.?|UN\.?)/i, '')
-      .replace(/\s*-?\s*FLOW-?PACK\s*[\d.]+\s*(UNID\.?|UN\.?)/i, '')
-      .replace(/\s*EMBALADO\s+INDIVIDUALMENTE\s+C\/\s*[\d.]+\s*[xX]\s*[\d.]+\s*(UNID\.?|UN\.?)/i, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toUpperCase();
+    let result = desc;
+    // Remove "C/ NNN [x NNN] UNID." patterns (with optional multiplier)
+    result = result.replace(/\s*C\/\s*[\d.]+\s*([xX]\s*[\d.]+)?\s*(UNID\.?|UN\.?)/gi, '');
+    // Remove "FLOW-PACK NNN [x NNN] UNID." patterns
+    result = result.replace(/\s*-?\s*FLOW-?PACK\s*[\d.]+\s*([xX]\s*[\d.]+)?\s*(UNID\.?|UN\.?)/gi, '');
+    // Remove "EMBALADO INDIVIDUALMENTE C/ NNN x NNN UNID."
+    result = result.replace(/\s*EMBALADO\s+INDIVIDUALMENTE/gi, '');
+    // Remove "(EMB. TRANSPARENTE)" and similar parenthetical notes
+    result = result.replace(/\s*\(EMB\.?\s*TRANSPARENTE\)/gi, '');
+    // Normalize spaces around "MM" ("125MM" → "125 MM")
+    result = result.replace(/(\d)MM/gi, '$1 MM');
+    // Collapse whitespace
+    result = result.replace(/\s+/g, ' ').trim().toUpperCase();
+    return result;
   }
+  
+  // Manual mapping for products with very different naming between parent and variants
+  // Key: normalized variant base name → normalized parent base name
+  const ECOMMERCE_NAME_ALIASES: Record<string, string> = {
+    'VARETA AROMATIZADOR FIBRA 3,0 X 200': 'VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM PRETA',
+  };
   
   // Agrupar produtos de importação por nome base
   const importItems = processed.filter(p => p.grupo === 'importacao_revenda');
   const byBaseName = new Map<string, ProcessedItem[]>();
   for (const item of importItems) {
-    const baseName = extractBaseName(item.descricaoItem);
+    let baseName = extractBaseName(item.descricaoItem);
+    // Check aliases: if this base name maps to a parent name, use the parent name
+    for (const [aliasKey, aliasTarget] of Object.entries(ECOMMERCE_NAME_ALIASES)) {
+      if (baseName.startsWith(aliasKey)) {
+        baseName = aliasTarget;
+        break;
+      }
+    }
     const group = byBaseName.get(baseName) || [];
     group.push(item);
     byBaseName.set(baseName, group);
@@ -954,26 +981,45 @@ export async function processStockData(): Promise<void> {
   for (const [baseName, groupItems] of Array.from(byBaseName.entries())) {
     if (groupItems.length < 2) continue; // Sem variações
     
-    // Encontrar o produto mãe: maior unidadesPorCaixa
+    // Filtrar itens que não devem participar do agrupamento e-commerce:
+    // - Embalagens transparentes ("EMB. TRANSPARENTE") são embalagens especiais, não mãe nem variação
+    // - Itens que já são filhos de outra relação pai/filho existente
+    const eligibleItems = groupItems.filter(item => {
+      const desc = item.descricaoItem.toUpperCase();
+      if (desc.includes('EMB.') && desc.includes('TRANSPARENTE')) return false;
+      if (desc.includes('EMBALAGEM') && desc.includes('TRANSPARENTE')) return false;
+      return true;
+    });
+    if (eligibleItems.length < 2) continue;
+    
+    // Encontrar o produto mãe: maior unidadesPorCaixa.
+    // Em caso de empate, preferir o item com estoque > 0.
     let mother: ProcessedItem | null = null;
     let maxUpb = 0;
-    for (const item of groupItems) {
+    for (const item of eligibleItems) {
       const upb = item.unidadesPorCaixa || 0;
-      if (upb > maxUpb) {
+      if (upb > maxUpb || (upb === maxUpb && item.estoqueUn > (mother?.estoqueUn || 0))) {
         maxUpb = upb;
         mother = item;
       }
     }
     if (!mother || !mother.unidadesPorCaixa) continue;
+    // Se a mãe selecionada tem 0 estoque mas há outro item com mesmo upb e estoque, trocar
+    if (mother.estoqueUn === 0) {
+      const altMother = eligibleItems.find(i => i !== mother && (i.unidadesPorCaixa || 0) === maxUpb && i.estoqueUn > 0);
+      if (altMother) mother = altMother;
+    }
     
-    const motherUpb = mother.unidadesPorCaixa;
+    const motherUpb = mother.unidadesPorCaixa!; // Already checked above: if (!mother.unidadesPorCaixa) continue;
     const variacoes: EcommerceVariant[] = [];
     let totalVariacoesCx = 0;
     
     // Processar cada variação (PC)
-    for (const child of groupItems) {
+    for (const child of eligibleItems) {
       if (child === mother) continue; // Pular o próprio mãe
       if (!child.unidadesPorCaixa || child.unidadesPorCaixa >= motherUpb) continue; // Não é variação
+      // Pular variações com 0 estoque (não poluir o breakdown)
+      if (child.estoqueUn === 0) continue;
       
       const childUpb = child.unidadesPorCaixa;
       // Converter estoque do PC para caixas equivalentes do mãe
