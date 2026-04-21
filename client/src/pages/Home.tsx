@@ -164,8 +164,13 @@ function extractComprimento(descricao: string): number {
   return 0;
 }
 
-function formatNumber(n: number | null): string {
+function formatNumber(n: number | null, forceFloor = false): string {
   if (n === null || n === undefined) return "—";
+  if (forceFloor) {
+    // Arredondar para baixo (sem números quebrados em caixas)
+    const floored = n < 0 ? Math.ceil(n) : Math.floor(n);
+    return floored.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  }
   // Show decimal places when number is not integer (e.g., 11.6 for product 00808)
   const fractionDigits = Number.isInteger(n) ? 0 : 1;
   return n.toLocaleString("pt-BR", { maximumFractionDigits: fractionDigits });
@@ -480,7 +485,7 @@ function POCell({ item }: { item: StockItem }) {
           </p>
           <p className="text-xs text-slate-500">
             Total: <strong className="text-slate-800">{formatNumber(poDisplayQty)} {poUnit}</strong> a receber
-            {isKg && <span className="ml-1">({formatNumber(poCx)} sacos)</span>}
+            {isKg && <span className="ml-1">({formatNumber(poCx, true)} sacos)</span>}
           </p>
           {lotes.length > 0 && (
             <div className="border border-slate-200 rounded overflow-hidden">
@@ -825,7 +830,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     <>
                       {/* Un/Cx */}
                       <td className="px-2 py-2.5 text-sm text-slate-600 whitespace-nowrap" style={{ width: 70 }}>
-                        {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "—")}
+                        {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa, true) : "—")}
                       </td>
                       {/* Grupo/Subgrupo */}
                       {!showSalesColumns && <td className="px-2 py-2.5 overflow-hidden" style={{ minWidth: 160, width: 170, maxWidth: 180 }}>
@@ -837,7 +842,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   {!showFinancial && (
                   <td className='px-2 py-2.5 whitespace-nowrap'>
                     <span className='font-semibold text-slate-800 text-sm'>
-                      {item.estoqueCx !== null ? `${formatNumber(item.estoqueCx)}` : `${formatNumber(item.estoqueUn)}`}
+                      {item.estoqueCx !== null ? `${formatNumber(item.estoqueCx, true)}` : `${formatNumber(item.estoqueUn, true)}`}
                       {<> {getUnit(item, item.estoqueCx !== null)}</>}
                     </span>
                   </td>
@@ -899,7 +904,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                                       {pc.cliente}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-bold text-orange-600 whitespace-nowrap text-sm">
-                                                      {formatNumber(Math.ceil(pc.quantidadeCx))} {unit}
+                                                      {formatNumber(Math.ceil(pc.quantidadeCx), true)} {unit}
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
                                                       <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
@@ -934,7 +939,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                                         {pc.cliente}
                                                       </td>
                                                       <td className="px-4 py-3 text-right font-bold text-violet-600 whitespace-nowrap text-sm">
-                                                        {formatNumber(Math.ceil(pc.quantidadeCx))} cx
+                                                        {formatNumber(Math.ceil(pc.quantidadeCx), true)} cx
                                                       </td>
                                                       <td className="px-4 py-3 text-center">
                                                         <span className={`inline-block px-3 py-1 rounded text-xs font-semibold ${
@@ -972,7 +977,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   {/* Disponivel - destaque para time comercial */}
                   <td className={`bg-emerald-50/40 border-x border-emerald-100 ${showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}`}>
                     <span className={`font-bold ${showFinancial ? 'text-[10px]' : 'text-sm'} ${isNegative ? "text-red-600" : isZero ? "text-amber-600" : "text-emerald-700"}`}>
-                      {item.disponivelCx !== null ? `${formatNumber(item.disponivelCx)}` : `${formatNumber(item.disponivelUn)}`}
+                      {item.disponivelCx !== null ? `${formatNumber(item.disponivelCx, true)}` : `${formatNumber(item.disponivelUn, true)}`}
                       {!showFinancial && <> {getUnit(item, item.disponivelCx !== null)}</>}
                     </span>
                   </td>
@@ -993,7 +998,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="text-xs">
-                            Disponivel ({formatNumber(item.disponivelCx ?? item.disponivelUn)} {getUnit(item, item.disponivelCx !== null)}) + PO ({formatNumber(item.poCx ?? 0)} {getPOUnit(item)}) = <strong>{formatNumber(projetado)} {getUnit(item, item.projetadoCx !== null)}</strong>
+                            Disponivel ({formatNumber(item.disponivelCx ?? item.disponivelUn, true)} {getUnit(item, item.disponivelCx !== null)}) + PO ({formatNumber(item.poCx ?? 0, true)} {getPOUnit(item)}) = <strong>{formatNumber(projetado, true)} {getUnit(item, item.projetadoCx !== null)}</strong>
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -1162,7 +1167,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     {!showFinancial && (
                       <>
                         <td className="px-2 py-1.5 text-xs text-slate-500 whitespace-nowrap" style={{ width: 70 }}>
-                          {variant.unidadesPorCaixa ? formatNumber(variant.unidadesPorCaixa) : '—'}
+                          {variant.unidadesPorCaixa ? formatNumber(variant.unidadesPorCaixa, true) : '—'}
                         </td>
                         <td className="px-2 py-1.5" style={{ minWidth: 130, width: 140 }}>
                           <span className="text-[9px] text-teal-500 font-medium">Variação</span>
@@ -1366,13 +1371,13 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
             <div>
               <h3 className="text-base font-bold text-slate-800">Pedidos de Compra (POs)</h3>
               <p className="text-xs text-slate-500">
-                {poSummaries.length} POs pendentes de chegada &middot; Total: <strong>{formatNumber(totalPOCx)} caixas</strong>
+                {poSummaries.length} POs pendentes de chegada &middot; Total: <strong>{formatNumber(totalPOCx, true)} caixas</strong>
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-2xl font-extrabold text-blue-600">{formatNumber(totalPOCx)} cx</p>
+              <p className="text-2xl font-extrabold text-blue-600">{formatNumber(totalPOCx, true)} cx</p>
               <p className="text-xs text-slate-400">{poSummaries.length} embarques</p>
             </div>
             {isListOpen ? (
@@ -1445,7 +1450,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <p className="font-bold text-blue-600 text-sm">{formatNumber(po.totalCx)} cx</p>
+                    <p className="font-bold text-blue-600 text-sm">{formatNumber(po.totalCx, true)} cx</p>
                   </div>
                   {isExpanded ? (
                     <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -1478,7 +1483,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                             {prod.codigoItem}
                           </td>
                           <td className="py-2 text-right font-bold text-blue-700">
-                            {formatNumber(prod.quantidade)} cx
+                            {formatNumber(prod.quantidade, true)} cx
                           </td>
                         </tr>
                       ))}
@@ -1487,7 +1492,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                       <tr className="border-t border-blue-200">
                         <td colSpan={2} className="py-2 text-xs font-semibold text-slate-600 uppercase">Total</td>
                         <td className="py-2 text-right font-extrabold text-blue-700">
-                          {formatNumber(po.totalCx)} cx
+                          {formatNumber(po.totalCx, true)} cx
                         </td>
                       </tr>
                     </tfoot>
@@ -1863,23 +1868,23 @@ function ClassificationCard({
         <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
           <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className={`rounded-lg px-3 py-3.5 ${totalDisponivel < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-blue-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">PO (Compra)</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalPO > 0 ? 'text-blue-700' : 'text-slate-400'}`}>{formatNumber(totalPO)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPO > 0 ? 'text-blue-700' : 'text-slate-400'}`}>{formatNumber(totalPO, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-indigo-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Projetado</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalProjetado < 0 ? 'text-red-700' : 'text-indigo-700'}`}>{formatNumber(totalProjetado)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalProjetado < 0 ? 'text-red-700' : 'text-indigo-700'}`}>{formatNumber(totalProjetado, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-slate-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
@@ -2260,7 +2265,7 @@ function AutoFeedReportModal({ open, onClose }: { open: boolean; onClose: () => 
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-center">
                 <p className="text-[10px] text-blue-600 font-semibold uppercase">Total Embalado</p>
-                <p className="text-xl font-extrabold text-blue-700">{formatNumber(totalEmbalado)} cx</p>
+                <p className="text-xl font-extrabold text-blue-700">{formatNumber(totalEmbalado, true)} cx</p>
               </div>
               <div className={`${totalDivergentes > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} border rounded-lg px-4 py-2.5 text-center`}>
                 <p className={`text-[10px] font-semibold uppercase ${totalDivergentes > 0 ? 'text-red-600' : 'text-green-600'}`}>Divergências</p>
@@ -2523,15 +2528,15 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
         <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
           <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(paEstoqueCx)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(paEstoqueCx, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className={`text-lg font-extrabold mt-1 ${paPedidosCx > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(paPedidosCx)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${paPedidosCx > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(paPedidosCx, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className={`rounded-lg px-3 py-3.5 ${paDisponivelCx < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
-            <p className={`text-lg font-extrabold mt-1 ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           {/* ROJÃO mini-card - AZUL */}
           <div className="bg-blue-50/80 rounded-lg px-2.5 py-3 border border-blue-200">
@@ -2698,7 +2703,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                         </td>
                         {/* Un/Cx */}
                         <td className="px-1.5 py-2 text-[13px] text-slate-600 text-center whitespace-nowrap">
-                          {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa) : "—")}
+                          {item.isKgProduct ? "kg" : (item.unidadesPorCaixa ? formatNumber(item.unidadesPorCaixa, true) : "—")}
                         </td>
                         {/* Grupo */}
                         <td className="px-1.5 py-2 text-center">
@@ -2713,7 +2718,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                           ) : (
                             <button onClick={(e) => { e.stopPropagation(); handleStartEdit(item.codigoItem); }}
                               className="text-[13px] font-bold text-green-700 hover:bg-green-100 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
-                              title="Clique para editar (somente aumento)">{formatNumber(manualQty)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}</button>
+                              title="Clique para editar (somente aumento)">{formatNumber(manualQty, true)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}</button>
                           )}
                         </td>
                         {/* Histórico */}
@@ -2732,7 +2737,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                         {/* Disponível = Estoque - Pedidos */}
                         <td className="px-1.5 py-2 text-center bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap">
                           <span className={`font-bold text-[13px] ${isNegative ? 'text-red-600' : isZero ? 'text-amber-600' : 'text-emerald-700'}`}>
-                            {formatNumber(disponivelManual)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}
+                            {formatNumber(disponivelManual, true)} {item.isKgProduct || item.codigoItem === "00223" ? "kg" : item.codigoItem === "00129" ? "dz" : "cx"}
                           </span>
                         </td>
 
@@ -2816,7 +2821,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                             </div>
                           </td>
                           <td className="px-1.5 py-1 text-xs text-slate-500 text-center whitespace-nowrap">
-                            {variant.unidadesPorCaixa ? formatNumber(variant.unidadesPorCaixa) : '—'}
+                            {variant.unidadesPorCaixa ? formatNumber(variant.unidadesPorCaixa, true) : '—'}
                           </td>
                           <td className="px-1.5 py-1 text-center">
                             <span className="text-[9px] text-green-500 font-medium">Variação</span>
@@ -3026,15 +3031,15 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
 <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
           <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-emerald-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
@@ -3254,15 +3259,15 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
         <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
           <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-emerald-50/80 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
@@ -3678,35 +3683,35 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <KPICard
           label="Estoque Total"
-          value={`${formatNumber(totalEstoqueCx)} cx`}
+          value={`${formatNumber(totalEstoqueCx, true)} cx`}
           sub={`${parentOnlyItems.length} produtos`}
           icon={Package}
           theme="teal"
         />
         <KPICard
           label="Pedidos (Venda)"
-          value={`${formatNumber(totalPedidosCx)} cx`}
+          value={`${formatNumber(totalPedidosCx, true)} cx`}
           sub="Aprovados + A aprovar"
           icon={ShoppingCart}
           theme="orange"
         />
         <KPICard
           label="Disponivel"
-          value={`${formatNumber(totalDisponivelCx)} cx`}
+          value={`${formatNumber(totalDisponivelCx, true)} cx`}
           sub="Estoque - Pedidos"
           icon={CheckCircle2}
           theme="emerald"
         />
         <KPICard
           label="PO (A Receber)"
-          value={`${formatNumber(totalPOCx)} cx`}
+          value={`${formatNumber(totalPOCx, true)} cx`}
           sub="Pedidos de compra"
           icon={Ship}
           theme="blue"
         />
         <KPICard
           label="Projetado"
-          value={`${formatNumber(totalProjetadoCx)} cx`}
+          value={`${formatNumber(totalProjetadoCx, true)} cx`}
           sub="Disponivel + PO"
           icon={TrendingUp}
           theme="indigo"
@@ -3808,11 +3813,11 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                         <div className="flex items-center gap-4 flex-shrink-0">
                           <div className="text-center">
                             <p className="text-[10px] text-slate-400 uppercase font-medium">Projetado</p>
-                            <p className={`text-sm font-bold ${colors.text}`}>{formatNumber(projetado)} cx</p>
+                            <p className={`text-sm font-bold ${colors.text}`}>{formatNumber(projetado, true)} cx</p>
                           </div>
                           <div className="text-center">
                             <p className="text-[10px] text-slate-400 uppercase font-medium">Est. Reg.</p>
-                            <p className="text-sm font-bold text-slate-600">{formatNumber(estReg)} cx</p>
+                            <p className="text-sm font-bold text-slate-600">{formatNumber(estReg, true)} cx</p>
                           </div>
                         </div>
                       </div>
@@ -3964,35 +3969,35 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <KPICard
           label="Estoque Total"
-          value={`${formatNumber(estoqueCaixas)} cx`}
+          value={`${formatNumber(estoqueCaixas, true)} cx`}
           sub={`${madeiraProdutos} produtos (Madeira PA)`}
           icon={TreePine}
           theme="teal"
         />
         <KPICard
           label="Pedidos (Venda)"
-          value={`${formatNumber(pedidosCaixas)} cx`}
+          value={`${formatNumber(pedidosCaixas, true)} cx`}
           sub="Apenas Madeira PA"
           icon={ShoppingCart}
           theme="orange"
         />
         <KPICard
           label="Disponível"
-          value={`${formatNumber(estoqueCaixas - pedidosCaixas)} cx`}
+          value={`${formatNumber(estoqueCaixas - pedidosCaixas, true)} cx`}
           sub="Estoque - Pedidos (cx)"
           icon={Boxes}
           theme="emerald"
         />
         <KPICard
           label="Semi Pronto"
-          value={`${formatNumber(semiProntoTotal)} cx`}
+          value={`${formatNumber(semiProntoTotal, true)} cx`}
           sub="Estoque semi pronto"
           icon={Hammer}
           theme="blue"
         />
         <KPICard
           label="Aguardando Escolha"
-          value={`${formatNumber(aguardandoTotal)} cx`}
+          value={`${formatNumber(aguardandoTotal, true)} cx`}
           sub="Estoque aguardando"
           icon={Clock}
           theme="indigo"
@@ -4069,9 +4074,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                     <td className="py-1.5 px-2 text-slate-700 text-xs">
                       <span className="text-slate-400 mr-1">{a.codigo}</span> {a.descricao}
                     </td>
-                    <td className="py-1.5 px-2 text-right font-semibold text-teal-600 text-xs">{formatNumber(a.estoque)} cx</td>
-                    <td className="py-1.5 px-2 text-right font-semibold text-orange-600 text-xs">{formatNumber(a.pedidos)} cx</td>
-                    <td className="py-1.5 px-2 text-right font-bold text-red-600 text-xs">-{formatNumber(a.deficit)} cx</td>
+                    <td className="py-1.5 px-2 text-right font-semibold text-teal-600 text-xs">{formatNumber(a.estoque, true)} cx</td>
+                    <td className="py-1.5 px-2 text-right font-semibold text-orange-600 text-xs">{formatNumber(a.pedidos, true)} cx</td>
+                    <td className="py-1.5 px-2 text-right font-bold text-red-600 text-xs">-{formatNumber(a.deficit, true)} cx</td>
                   </tr>
                 ))}
               </tbody>
