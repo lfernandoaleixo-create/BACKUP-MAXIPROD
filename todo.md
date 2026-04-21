@@ -2947,3 +2947,6 @@
 - [x] Botão vermelho no card Valor Total mostrando lista de pedidos cancelados (pedido, cliente, valor)
 - [x] Exemplo: M D da Silva ~R$154.000 cancelado deve aparecer no Total mas não no A Faturar/Faturado
 - [x] Indicador explicativo quando Faturado + A Faturar ≠ Total (devido a cancelamentos)
+
+## Bug: Texto Transferência E-commerce na Composição do Estoque
+- [x] Corrigir texto em laranja "Transferência E-commerce" que mostra valor errado (120 cx em vez da soma real dos itens e-commerce/roxos)
