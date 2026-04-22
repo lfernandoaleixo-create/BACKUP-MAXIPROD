@@ -1270,3 +1270,45 @@ export const ecommerceTransferHistory = mysqlTable("ecommerce_transfer_history",
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type EcommerceTransferHistory = typeof ecommerceTransferHistory.$inferSelect;
+
+
+/**
+ * Snapshot dos pedidos industrializados faturados — usado para detectar NOVOS faturamentos.
+ * A cada sync, salva o set de (pedido + codigoItem) faturados.
+ * Comparando com o snapshot anterior, detecta itens que acabaram de ser faturados.
+ * 
+ * REGRA: A partir de 22/04/2026 — não retroativo. Estoque atual já está correto.
+ */
+export const billedIndustrializedSnapshot = mysqlTable("billed_industrialized_snapshot", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull(),
+  codigoItem: varchar("codigoItem", { length: 50 }).notNull(),
+  quantidade: decimal("quantidade", { precision: 18, scale: 5 }).notNull(),
+  unidadeMedida: varchar("unidadeMedida", { length: 10 }),
+  snapshotDate: varchar("snapshotDate", { length: 10 }).notNull(), // YYYY-MM-DD
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type BilledIndustrializedSnapshot = typeof billedIndustrializedSnapshot.$inferSelect;
+
+/**
+ * Histórico de baixas automáticas no estoque de madeira por faturamento de industrializados.
+ * Cada registro = uma baixa que foi aplicada ao madeira_stock.
+ * 
+ * REGRA: Fator 1:1 — faturou 10 CX → abate 10 CX do madeira_stock.
+ * Unidade segue o item faturado (CX, DZ, KG, m3, etc.)
+ */
+export const industrializedBillingHistory = mysqlTable("industrialized_billing_history", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull(),
+  codigoItem: varchar("codigoItem", { length: 50 }).notNull(),
+  descricaoItem: text("descricaoItem"),
+  cliente: varchar("cliente", { length: 300 }),
+  quantidade: decimal("quantidade", { precision: 18, scale: 5 }).notNull(), // quantidade abatida
+  unidadeMedida: varchar("unidadeMedida", { length: 10 }),
+  estoqueAnterior: decimal("estoqueAnterior", { precision: 18, scale: 5 }).notNull(),
+  estoqueNovo: decimal("estoqueNovo", { precision: 18, scale: 5 }).notNull(),
+  dataFaturamento: varchar("dataFaturamento", { length: 30 }), // data de emissão do pedido
+  dataBaixa: varchar("dataBaixa", { length: 10 }).notNull(), // YYYY-MM-DD quando a baixa foi aplicada
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type IndustrializedBillingHistory = typeof industrializedBillingHistory.$inferSelect;

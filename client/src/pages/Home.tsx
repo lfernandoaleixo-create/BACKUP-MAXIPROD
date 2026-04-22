@@ -3447,6 +3447,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const [showFinancial, setShowFinancial] = useState(false);
   const [showMadeiraFinancial, setShowMadeiraFinancial] = useState(false);
   const [showEcommerceHistory, setShowEcommerceHistory] = useState(false);
+  const [showIndustrializedBaixa, setShowIndustrializedBaixa] = useState(false);
 
   // Fetch classifications
   const { data: classifications } = trpc.settings.getProductClassifications.useQuery();
@@ -3998,6 +3999,17 @@ function DashboardContent({ items }: { items: StockItem[] }) {
               </button>
             </div>
 
+            {/* Industrialized Baixa History button */}
+            <div className="flex items-center">
+              <button
+                onClick={() => setShowIndustrializedBaixa(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap bg-white text-violet-600 border border-violet-200 hover:bg-violet-50 shadow-sm"
+              >
+                <Factory className="w-4 h-4" />
+                Baixas Faturamento
+              </button>
+            </div>
+
             {/* Financial toggle button - restricted by est.valorizacao granular permission */}
             {operatorCtx?.hasGranularAccess("est.valorizacao") && (
               <div className={`flex items-center ${!showFinancial ? 'ml-auto' : ''}`}>
@@ -4021,6 +4033,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
 
       {/* E-commerce History Dialog */}
       {showEcommerceHistory && <EcommerceHistoryDialog open={showEcommerceHistory} onClose={() => setShowEcommerceHistory(false)} />}
+
+      {/* Industrialized Baixa History Dialog */}
+      {showIndustrializedBaixa && <IndustrializedBaixaDialog open={showIndustrializedBaixa} onClose={() => setShowIndustrializedBaixa(false)} />}
 
       {/* 3 Classification Cards */}
       <ClassificationCard
@@ -4224,6 +4239,150 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       />
 
     </div>
+  );
+}
+
+/* --- Industrialized Baixa History Dialog --- */
+function IndustrializedBaixaDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [dateFilter, setDateFilter] = useState<string>("");
+  const [dateFilterEnd, setDateFilterEnd] = useState<string>("");
+  const [productFilter, setProductFilter] = useState<string>("");
+
+  const { data, isLoading } = trpc.dashboard.getIndustrializedBaixaHistory.useQuery(
+    {
+      startDate: dateFilter || undefined,
+      endDate: dateFilterEnd || undefined,
+      codigoItem: productFilter || undefined,
+    },
+    { enabled: open }
+  );
+
+  const items = data?.items || [];
+  const totalBaixas = data?.totalBaixas || 0;
+  const totalQuantidade = data?.totalQuantidade || 0;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Factory className="w-5 h-5 text-violet-600" />
+            Baixas por Faturamento (Industrializados)
+          </DialogTitle>
+          <DialogDescription>
+            Registro automático de abatimentos no estoque de madeira quando pedidos industrializados são faturados
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Summary */}
+        {items.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="bg-violet-50 border border-violet-200 rounded-lg px-4 py-2.5 text-center">
+              <p className="text-[10px] text-violet-600 font-semibold uppercase">Baixas Realizadas</p>
+              <p className="text-lg font-extrabold text-violet-800">{totalBaixas}</p>
+            </div>
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 text-center">
+              <p className="text-[10px] text-indigo-600 font-semibold uppercase">Total Abatido</p>
+              <p className="text-lg font-extrabold text-indigo-800">{formatNumber(totalQuantidade)}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500 font-medium">De:</label>
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="h-8 text-xs w-36"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500 font-medium">Até:</label>
+            <Input
+              type="date"
+              value={dateFilterEnd}
+              onChange={(e) => setDateFilterEnd(e.target.value)}
+              className="h-8 text-xs w-36"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500 font-medium">Produto:</label>
+            <Input
+              type="text"
+              placeholder="Código do produto"
+              value={productFilter}
+              onChange={(e) => setProductFilter(e.target.value)}
+              className="h-8 text-xs w-40"
+            />
+          </div>
+          {(dateFilter || dateFilterEnd || productFilter) && (
+            <button
+              onClick={() => { setDateFilter(""); setDateFilterEnd(""); setProductFilter(""); }}
+              className="text-xs text-slate-400 hover:text-slate-600 underline"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-auto">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="w-8 h-8 mx-auto animate-spin text-violet-400" />
+              <p className="text-sm text-slate-400 mt-2">Carregando histórico...</p>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-12">
+              <Factory className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+              <p className="text-sm text-slate-500 font-medium">Nenhuma baixa registrada</p>
+              <p className="text-xs text-slate-400 mt-1">As baixas serão registradas automaticamente quando itens industrializados forem faturados</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Data Baixa</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Pedido</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Produto</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Descrição</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Cliente</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Qtd</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Anterior</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Novo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((h: any, i: number) => (
+                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50/50">
+                    <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">
+                      {h.dataBaixa ? new Date(h.dataBaixa + 'T12:00:00').toLocaleDateString("pt-BR") : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-xs font-semibold text-slate-700">#{h.pedido}</td>
+                    <td className="px-3 py-2 text-xs font-mono text-slate-500">{h.codigoItem}</td>
+                    <td className="px-3 py-2 text-sm text-slate-700 break-words leading-snug max-w-[200px]">{(h.descricaoItem || '').substring(0, 50)}</td>
+                    <td className="px-3 py-2 text-xs text-slate-500 max-w-[150px] truncate">{h.cliente || '—'}</td>
+                    <td className="px-3 py-2 text-right text-sm font-semibold text-red-600">-{formatNumber(parseFloat(h.quantidade))} {h.unidadeMedida || ''}</td>
+                    <td className="px-3 py-2 text-right text-xs text-slate-400">{formatNumber(parseFloat(h.estoqueAnterior))}</td>
+                    <td className="px-3 py-2 text-right text-xs font-semibold text-violet-700">{formatNumber(parseFloat(h.estoqueNovo))}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                <tr>
+                  <td colSpan={5} className="px-3 py-2 text-xs font-bold text-slate-600 uppercase">Total ({totalBaixas} baixas)</td>
+                  <td className="px-3 py-2 text-right text-sm font-extrabold text-red-700">-{formatNumber(totalQuantidade)}</td>
+                  <td colSpan={2}></td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

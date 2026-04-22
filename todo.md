@@ -2962,3 +2962,15 @@
 
 ## Correção: Variação incorreta
 - [x] Remover item 00074 (VARETA AROMATIZADOR 4,0 X 120 MM 10.000) da lista de variações do produto mãe 00079
+
+## Badge E-commerce na aba Faturamento
+- [x] Mostrar "E-commerce" em vez de "Outros" no badge/cardizinho cinza para pedidos com estadoConfiguravel = "E-COMMERCE" (apenas visual, sem alterar dados)
+
+## Baixa automática no estoque de madeira (Industrializados faturados)
+- [x] Criar tabela no banco para registrar baixas de estoque por faturamento de industrializados
+- [x] Detectar novos itens industrializados faturados na sync (estadoConfiguravel = MADEIRA/MADEIRA CONTABILIZADO)
+- [x] Abater automaticamente do estoque de madeira (fator 1:1 por unidade: cx, dúzia, kg)
+- [x] Registrar histórico da baixa (data, produto, quantidade, unidade, pedido)
+- [x] A partir de hoje — não retroativo (estoque atual já está correto, snapshot baseline criado em 22/04/2026)
+- [x] Exibir histórico de baixas na aba Estoque (botão "Baixas Faturamento" com dialog, tabela, filtros e totais)
+- [x] Adicionar aba E-commerce nas tabs do Faturamento (com ícone ShoppingCart e cor laranja)

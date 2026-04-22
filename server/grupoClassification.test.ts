@@ -33,6 +33,9 @@ describe("grupoClassification", () => {
     it("classifies BONIFICAÇÃO as outros (raw estadoToGrupo)", () => {
       expect(estadoToGrupo("BONIFICAÇÃO")).toBe("outros");
     });
+    it("classifies E-COMMERCE as ecommerce", () => {
+      expect(estadoToGrupo("E-COMMERCE")).toBe("ecommerce");
+    });
     it("classifies null as outros", () => {
       expect(estadoToGrupo(null)).toBe("outros");
     });
@@ -59,6 +62,9 @@ describe("grupoClassification", () => {
     });
     it("returns false for MADEIRA", () => {
       expect(isOutros("MADEIRA")).toBe(false);
+    });
+    it("returns false for E-COMMERCE", () => {
+      expect(isOutros("E-COMMERCE")).toBe(false);
     });
   });
 
@@ -158,9 +164,8 @@ describe("grupoClassification", () => {
   describe("GRUPO_LABELS_SHORT", () => {
     it("has short labels for all grupo keys", () => {
       expect(GRUPO_LABELS_SHORT.importacao_revenda).toBe("Revenda");
-      expect(GRUPO_LABELS_SHORT.industrializacao).toBe("Industr.");
-      expect(GRUPO_LABELS_SHORT.importacao_mp).toBe("Matéria-Prima");
-      expect(GRUPO_LABELS_SHORT.outros).toBe("Outros");
-    });
+      expect(GRUPO_LABELS_SHORT.industrializacao).toBe("Industr.");      expect(GRUPO_LABELS_SHORT.importacao_mp).toBe("Mat\u00e9ria-Prima");
+      expect(GRUPO_LABELS_SHORT.ecommerce).toBe("E-commerce");
+      expect(GRUPO_LABELS_SHORT.outros).toBe("Outros"); });
   });
 });

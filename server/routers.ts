@@ -10,6 +10,7 @@ import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalance
 import { isSchedulerRunning } from "./scheduler";
 import { processStockData } from "./stockProcessor";
 import { getEcommerceTransferHistoryData } from "./ecommerceHistory";
+import { getIndustrializedBaixaHistory } from "./industrializedBaixa";
 import { salesRouter } from "./salesRouter";
 import { settingsRouter } from "./settingsRouter";
 import { financialRouter } from "./financialRouter";
@@ -532,6 +533,20 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const results = await getEcommerceTransferHistoryData(input || undefined);
         return { history: results };
+      }),
+
+    /**
+     * Histórico de baixas automáticas de industrializados faturados
+     * Retorna todas as baixas aplicadas ao estoque de madeira
+     */
+    getIndustrializedBaixaHistory: publicProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        codigoItem: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return await getIndustrializedBaixaHistory(input || undefined);
       }),
   }),
 });

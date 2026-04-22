@@ -30,6 +30,7 @@ import {
 import { eq, sql, inArray, and, ne } from "drizzle-orm";
 import { processStockData } from "./stockProcessor";
 import { detectEcommerceTransfers } from "./ecommerceHistory";
+import { processIndustrializedBaixa } from "./industrializedBaixa";
 
 const GRAPHQL_URL = "https://api.maxiprod.com.br/graphql/";
 
@@ -858,12 +859,12 @@ async function saveAllData(
 
   console.log(`[GraphQL Sync] Dados de estoque/pedidos salvos atomicamente: ${stockData.length} est, ${orderData.length} ped, ${poData.length} po, ${salesData.length} vnd`);
 
-  // ═══ BAIXA AUTOMÁTICA: DESATIVADA em 16/04/2026 por solicitação do usuário ═══
-  // A produção não deve dar baixa automática em produtos sem autorização.
-  // Até 16/04/2026 o estoque é preenchido manualmente.
-  // A partir de 17/04/2026 o estoque será calculado pelo que a Maria preencher na produção.
-  // O bloco de baixa automática foi removido intencionalmente.
-  console.log(`[Baixa Automática] DESATIVADA — estoque não será alterado automaticamente`);
+  // ═══ BAIXA AUTOMÁTICA DE INDUSTRIALIZADOS: ATIVADA em 22/04/2026 ═══
+  // Quando um item industrializado (MADEIRA/MADEIRA CONTABILIZADO) é faturado,
+  // abate automaticamente do estoque de madeira (madeira_stock). Fator 1:1.
+  // NÃO retroativo — snapshot baseline criado em 22/04/2026.
+  updateProgress({ percent: 93, details: "Verificando baixas de industrializados" });
+  await processIndustrializedBaixa();
 
   updateProgress({ percent: 95, details: "Processando dashboard" });
 

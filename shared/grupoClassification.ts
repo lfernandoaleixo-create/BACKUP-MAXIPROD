@@ -14,7 +14,7 @@
  * NUNCA duplique esta lógica em outros arquivos.
  */
 
-export type GrupoKey = "importacao_revenda" | "industrializacao" | "importacao_mp" | "outros";
+export type GrupoKey = "importacao_revenda" | "industrializacao" | "importacao_mp" | "ecommerce" | "outros";
 export type SubgrupoKey = "bambu" | "fibra" | "madeira" | "madeira_importada" | "outros";
 
 /**
@@ -27,6 +27,7 @@ export function estadoToGrupo(estado: string | null): GrupoKey {
   if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
   if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
   if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+  if (e === "E-COMMERCE") return "ecommerce";
   return "outros";
 }
 
@@ -50,6 +51,7 @@ export const GRUPO_LABELS: Record<GrupoKey, string> = {
   importacao_revenda: "Prod. Importados (Revenda)",
   industrializacao: "Industrializados",
   importacao_mp: "Import. Matéria-Prima",
+  ecommerce: "E-commerce",
   outros: "Outros",
 };
 
@@ -60,6 +62,7 @@ export const GRUPO_LABELS_SHORT: Record<GrupoKey, string> = {
   importacao_revenda: "Revenda",
   industrializacao: "Industr.",
   importacao_mp: "Matéria-Prima",
+  ecommerce: "E-commerce",
   outros: "Outros",
 };
 

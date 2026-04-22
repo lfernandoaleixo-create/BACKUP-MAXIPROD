@@ -67,6 +67,7 @@ import {
   Factory,
   Gift,
   FlaskConical,
+  ShoppingCart,
   Printer,
   Pencil,
   Save,
@@ -726,6 +727,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
                   order.grupoKey === 'importacao_revenda' ? 'bg-teal-100 text-teal-700' :
                   order.grupoKey === 'industrializacao' ? 'bg-violet-100 text-violet-700' :
                   order.grupoKey === 'importacao_mp' ? 'bg-blue-100 text-blue-700' :
+                  order.grupoKey === 'ecommerce' ? 'bg-orange-100 text-orange-700' :
                   'bg-slate-100 text-slate-600'
                 }`}>
                   {order.grupo}
@@ -1458,9 +1460,9 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
   }, [orders]);
 
   // Tab entries — same logic as Aceite da Produção
-  type GrupoKey = "importacao_revenda" | "industrializacao" | "importacao_mp";
+  type GrupoKey = "importacao_revenda" | "industrializacao" | "importacao_mp" | "ecommerce";
   type TipoEspecial = "AMOSTRA" | "BONIFICACAO" | null;
-  const VALID_GRUPO_KEYS: GrupoKey[] = ["importacao_revenda", "industrializacao", "importacao_mp"];
+  const VALID_GRUPO_KEYS: GrupoKey[] = ["importacao_revenda", "industrializacao", "importacao_mp", "ecommerce"];
   const makeTabKey = (grupo: GrupoKey, tipo: TipoEspecial) => `${grupo}|${tipo || "normal"}`;
   const getOrderGrupoKey = (order: BillingOrder): GrupoKey => {
     const key = order.grupoKey as GrupoKey;
@@ -1472,6 +1474,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
     importacao_revenda: { label: "Prod. Importados (Revenda)", shortLabel: "Import. Revenda", icon: Leaf, color: "bg-teal-500", bgColor: "bg-teal-50", borderColor: "border-teal-200", textColor: "text-teal-700" },
     industrializacao: { label: "Industrializados", shortLabel: "Industrializados", icon: Factory, color: "bg-violet-500", bgColor: "bg-violet-50", borderColor: "border-violet-200", textColor: "text-violet-700" },
     importacao_mp: { label: "Matéria-Prima (Importação)", shortLabel: "Matéria-Prima", icon: Package, color: "bg-blue-500", bgColor: "bg-blue-50", borderColor: "border-blue-200", textColor: "text-blue-700" },
+    ecommerce: { label: "E-commerce", shortLabel: "E-commerce", icon: ShoppingCart, color: "bg-orange-500", bgColor: "bg-orange-50", borderColor: "border-orange-200", textColor: "text-orange-700" },
   };
 
   const getTabConfig = (grupo: GrupoKey, tipo: TipoEspecial) => {
