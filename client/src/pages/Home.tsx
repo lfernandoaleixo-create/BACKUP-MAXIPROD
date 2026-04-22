@@ -3446,6 +3446,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false, madeira: false, semiPronto: false, aguardandoEscolha: false });
   const [showFinancial, setShowFinancial] = useState(false);
   const [showMadeiraFinancial, setShowMadeiraFinancial] = useState(false);
+  const [showEcommerceHistory, setShowEcommerceHistory] = useState(false);
 
   // Fetch classifications
   const { data: classifications } = trpc.settings.getProductClassifications.useQuery();
@@ -3984,6 +3985,17 @@ function DashboardContent({ items }: { items: StockItem[] }) {
               </div>
             )}
 
+            {/* E-commerce History button */}
+            <div className="flex items-center">
+              <button
+                onClick={() => setShowEcommerceHistory(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 shadow-sm"
+              >
+                <Store className="w-4 h-4" />
+                Histórico E-commerce
+              </button>
+            </div>
+
             {/* Financial toggle button - restricted by est.valorizacao granular permission */}
             {operatorCtx?.hasGranularAccess("est.valorizacao") && (
               <div className={`flex items-center ${!showFinancial ? 'ml-auto' : ''}`}>
@@ -4004,6 +4016,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           </div>
         );
       })()}
+
+      {/* E-commerce History Dialog */}
+      {showEcommerceHistory && <EcommerceHistoryDialog open={showEcommerceHistory} onClose={() => setShowEcommerceHistory(false)} />}
 
       {/* 3 Classification Cards */}
       <ClassificationCard
@@ -4207,6 +4222,175 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       />
 
     </div>
+  );
+}
+
+/* --- E-commerce History Dialog --- */
+function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [dateFilter, setDateFilter] = useState<string>("");
+  const [dateFilterEnd, setDateFilterEnd] = useState<string>("");
+  const [productFilter, setProductFilter] = useState<string>("");
+
+  const { data, isLoading } = trpc.dashboard.getEcommerceHistory.useQuery(
+    {
+      fromDate: dateFilter || undefined,
+      toDate: dateFilterEnd || undefined,
+      codigoItem: productFilter || undefined,
+    },
+    { enabled: open }
+  );
+
+  const history = data?.history || [];
+
+  // Calculate totals
+  const totalCx = history.reduce((sum, h: any) => sum + (h.quantidadeCx || 0), 0);
+  const totalUn = history.reduce((sum, h: any) => sum + (h.quantidadeUn || 0), 0);
+
+  // Get unique products for filter
+  const uniqueProducts = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const h of history as any[]) {
+      if (h.codigoItem && h.descricaoItem) map.set(h.codigoItem, h.descricaoItem);
+    }
+    return Array.from(map.entries());
+  }, [history]);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Store className="w-5 h-5 text-purple-600" />
+            Histórico de Transferências E-commerce
+          </DialogTitle>
+          <DialogDescription>
+            Registro automático de todas as saídas de estoque para a filial E-commerce
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Summary */}
+        {history.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5 text-center">
+              <p className="text-[10px] text-purple-600 font-semibold uppercase">Transferências</p>
+              <p className="text-lg font-extrabold text-purple-800">{history.length}</p>
+            </div>
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 text-center">
+              <p className="text-[10px] text-indigo-600 font-semibold uppercase">Total Caixas</p>
+              <p className="text-lg font-extrabold text-indigo-800">{formatNumber(totalCx)} cx</p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-center">
+              <p className="text-[10px] text-blue-600 font-semibold uppercase">Total Unidades</p>
+              <p className="text-lg font-extrabold text-blue-800">{formatNumber(totalUn)} un</p>
+            </div>
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500 font-medium">De:</label>
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="h-8 text-xs w-36"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500 font-medium">Até:</label>
+            <Input
+              type="date"
+              value={dateFilterEnd}
+              onChange={(e) => setDateFilterEnd(e.target.value)}
+              className="h-8 text-xs w-36"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500 font-medium">Produto:</label>
+            <Input
+              type="text"
+              placeholder="Código do produto"
+              value={productFilter}
+              onChange={(e) => setProductFilter(e.target.value)}
+              className="h-8 text-xs w-40"
+            />
+          </div>
+          {(dateFilter || dateFilterEnd || productFilter) && (
+            <button
+              onClick={() => { setDateFilter(""); setDateFilterEnd(""); setProductFilter(""); }}
+              className="text-xs text-slate-400 hover:text-slate-600 underline"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-auto">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="w-8 h-8 mx-auto animate-spin text-purple-400" />
+              <p className="text-sm text-slate-400 mt-2">Carregando histórico...</p>
+            </div>
+          ) : history.length === 0 ? (
+            <div className="text-center py-12">
+              <Store className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+              <p className="text-sm text-slate-500 font-medium">Nenhuma transferência registrada</p>
+              <p className="text-xs text-slate-400 mt-1">As transferências serão registradas automaticamente quando o estoque E-commerce baixar na sync</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Data</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Produto</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Descrição</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Qtd (CX)</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Qtd (UN)</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Tipo</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Pedido</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(history as any[]).map((h, i) => (
+                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50/50">
+                    <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">
+                      {new Date(h.detectedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </td>
+                    <td className="px-3 py-2 text-xs font-mono text-slate-500">{h.codigoItem}</td>
+                    <td className="px-3 py-2 text-sm text-slate-700 break-words leading-snug max-w-[250px]">{h.descricaoItem}</td>
+                    <td className="px-3 py-2 text-right text-sm font-semibold text-purple-700">{formatNumber(h.quantidadeCx)} cx</td>
+                    <td className="px-3 py-2 text-right text-sm font-semibold text-indigo-700">{formatNumber(h.quantidadeUn)} un</td>
+                    <td className="px-3 py-2">
+                      <Badge className={`text-[10px] border-0 ${
+                        h.tipoMovimento === 'saida_total' ? 'bg-red-100 text-red-700' :
+                        h.tipoMovimento === 'saida_parcial' ? 'bg-orange-100 text-orange-700' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>
+                        {h.tipoMovimento === 'saida_total' ? 'Saída Total' :
+                         h.tipoMovimento === 'saida_parcial' ? 'Saída Parcial' :
+                         h.tipoMovimento}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2 text-xs text-slate-500">{h.pedidoRelacionado || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+              {/* Footer totals */}
+              <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                <tr>
+                  <td colSpan={3} className="px-3 py-2 text-xs font-bold text-slate-600 uppercase">Total</td>
+                  <td className="px-3 py-2 text-right text-sm font-extrabold text-purple-800">{formatNumber(totalCx)} cx</td>
+                  <td className="px-3 py-2 text-right text-sm font-extrabold text-indigo-800">{formatNumber(totalUn)} un</td>
+                  <td colSpan={2}></td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

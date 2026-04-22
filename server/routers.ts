@@ -9,6 +9,7 @@ import { sql, desc, eq, and, gte } from "drizzle-orm";
 import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
 import { isSchedulerRunning } from "./scheduler";
 import { processStockData } from "./stockProcessor";
+import { getEcommerceTransferHistoryData } from "./ecommerceHistory";
 import { salesRouter } from "./salesRouter";
 import { settingsRouter } from "./settingsRouter";
 import { financialRouter } from "./financialRouter";
@@ -516,6 +517,21 @@ export const appRouter = router({
           .limit(500);
         
         return { history: rows };
+      }),
+
+    /**
+     * Histórico de transferências E-commerce
+     * Retorna todas as movimentações de saída para filial E-commerce
+     */
+    getEcommerceHistory: publicProcedure
+      .input(z.object({
+        fromDate: z.string().optional(),
+        toDate: z.string().optional(),
+        codigoItem: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const results = await getEcommerceTransferHistoryData(input || undefined);
+        return { history: results };
       }),
   }),
 });

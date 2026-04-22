@@ -2950,3 +2950,9 @@
 
 ## Bug: Texto Transferência E-commerce na Composição do Estoque
 - [x] Corrigir texto em laranja "Transferência E-commerce" que mostra valor errado (120 cx em vez da soma real dos itens e-commerce/roxos)
+
+## Histórico de Transferências E-commerce
+- [x] Criar tabela no banco para histórico de transferências E-commerce
+- [x] Detecção automática na sync: registrar quando estoque E-commerce baixar
+- [x] Endpoint tRPC para consultar histórico com filtros (período, produto)
+- [x] Botão "Histórico E-commerce" na aba Estoque com dialog mostrando data, produto, qtd cx/un, pedido, cliente/filial

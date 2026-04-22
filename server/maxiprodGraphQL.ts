@@ -29,6 +29,7 @@ import {
 } from "../drizzle/schema";
 import { eq, sql, inArray, and, ne } from "drizzle-orm";
 import { processStockData } from "./stockProcessor";
+import { detectEcommerceTransfers } from "./ecommerceHistory";
 
 const GRAPHQL_URL = "https://api.maxiprod.com.br/graphql/";
 
@@ -868,6 +869,10 @@ async function saveAllData(
 
   // Reprocess stock data for dashboard
   await processStockData();
+
+  // Detectar transferências E-commerce (comparar snapshot anterior com estoque atual)
+  updateProgress({ percent: 97, details: "Verificando transferências E-commerce" });
+  await detectEcommerceTransfers();
 }
 
 // ============================================================

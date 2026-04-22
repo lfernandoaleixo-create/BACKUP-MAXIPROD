@@ -1236,3 +1236,37 @@ export const sicoobCardMessages = mysqlTable("sicoob_card_messages", {
 });
 export type SicoobCardMessage = typeof sicoobCardMessages.$inferSelect;
 export type InsertSicoobCardMessage = typeof sicoobCardMessages.$inferInsert;
+
+/**
+ * Snapshot de estoque E-commerce - salva o estado dos itens E-commerce a cada sync
+ * para detectar quando o estoque baixou (transferência efetivada)
+ */
+export const ecommerceStockSnapshots = mysqlTable("ecommerce_stock_snapshots", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull(),
+  descricaoItem: text("descricaoItem").notNull(),
+  quantidadeCx: decimal("quantidadeCx", { precision: 18, scale: 5 }).notNull(), // estoque em caixas
+  quantidadeUn: decimal("quantidadeUn", { precision: 18, scale: 5 }).notNull(), // estoque em unidades
+  snapshotDate: varchar("snapshotDate", { length: 10 }).notNull(), // YYYY-MM-DD
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type EcommerceStockSnapshot = typeof ecommerceStockSnapshots.$inferSelect;
+
+/**
+ * Histórico de transferências E-commerce - registra cada movimentação de saída
+ * Detectado automaticamente quando o estoque de um item E-commerce diminui entre syncs
+ */
+export const ecommerceTransferHistory = mysqlTable("ecommerce_transfer_history", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigoItem", { length: 20 }).notNull(),
+  descricaoItem: text("descricaoItem").notNull(),
+  quantidadeCxAnterior: decimal("quantidadeCxAnterior", { precision: 18, scale: 5 }).notNull(),
+  quantidadeCxAtual: decimal("quantidadeCxAtual", { precision: 18, scale: 5 }).notNull(),
+  quantidadeTransferidaCx: decimal("quantidadeTransferidaCx", { precision: 18, scale: 5 }).notNull(),
+  quantidadeTransferidaUn: decimal("quantidadeTransferidaUn", { precision: 18, scale: 5 }).notNull(),
+  numeroPedido: varchar("numeroPedido", { length: 20 }), // pedido E-commerce relacionado
+  cliente: varchar("cliente", { length: 200 }), // cliente/filial destino
+  dataTransferencia: varchar("dataTransferencia", { length: 10 }).notNull(), // YYYY-MM-DD
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type EcommerceTransferHistory = typeof ecommerceTransferHistory.$inferSelect;
