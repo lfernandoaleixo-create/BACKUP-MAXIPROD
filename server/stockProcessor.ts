@@ -126,6 +126,8 @@ interface ProcessedItem {
   pedidosPorClienteProprio: PedidoCliente[];
   // E-commerce breakdown (para produtos de importação com variações PC)
   ecommerceBreakdown: EcommerceBreakdown | null;
+  // Unidade de venda predominante dos pedidos (CX, PC, kg, DZ, un)
+  unidadeVenda: string;
 }
 
 /**
@@ -485,6 +487,28 @@ export async function processStockData(): Promise<void> {
     }
   }
   
+  // ─── Build unidade de venda predominante por codigoItem (de TODOS os pedidos válidos) ───
+  const unidadeVendaByCode = new Map<string, string>();
+  {
+    const unitCounts = new Map<string, Map<string, number>>();
+    for (const order of allValidOrders) {
+      const code = order.codigoItem;
+      const unit = order.unidadeMedida;
+      if (!code || !unit) continue;
+      if (!unitCounts.has(code)) unitCounts.set(code, new Map());
+      const counts = unitCounts.get(code)!;
+      counts.set(unit, (counts.get(unit) || 0) + 1);
+    }
+    unitCounts.forEach((counts, code) => {
+      let maxUnit = '';
+      let maxCount = 0;
+      counts.forEach((count, unit) => {
+        if (count > maxCount) { maxUnit = unit; maxCount = count; }
+      });
+      if (maxUnit) unidadeVendaByCode.set(code, maxUnit);
+    });
+  }
+
   // ─── Build order map by codigoItem (apenas pedidos que RESERVAM estoque) ───
   const orderByCode = new Map<string, { totalUn: number; totalCx: number; items: typeof reservingOrders }>();
   for (const order of reservingOrders) {
@@ -711,6 +735,7 @@ export async function processStockData(): Promise<void> {
       pedidosUnProprio: pedidosUn,
       pedidosPorClienteProprio: [...pedidosPorCliente],
       ecommerceBreakdown: null, // preenchido no pós-processamento
+      unidadeVenda: unidadeVendaByCode.get(item.codigoItem) || item.unidadeMedida || "",
     });
     processedCodes.add(item.codigoItem);
   }
@@ -813,6 +838,7 @@ export async function processStockData(): Promise<void> {
       pedidosUnProprio: pedidosUn,
       pedidosPorClienteProprio: [...pedidosPorCliente],
       ecommerceBreakdown: null,
+      unidadeVenda: unidadeVendaByCode.get(code) || poItem.unidadeMedida || "",
     });
     processedCodes.add(code);
   }

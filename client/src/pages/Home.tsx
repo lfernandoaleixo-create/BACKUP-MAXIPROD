@@ -162,6 +162,8 @@ interface StockItem {
     pedidosEcommerceCx: number;
     pedidosEcommerceUn: number;
   } | null;
+  // Unidade de venda predominante dos pedidos (CX, PC, kg, DZ, un)
+  unidadeVenda?: string;
 }
 
 type SortField = "descricaoItem" | "comprimento" | "estoqueCx" | "pedidosCx" | "disponivelCx" | "poCx" | "projetadoCx";
@@ -212,6 +214,14 @@ function getUnit(item: StockItem, hasCx: boolean): string {
   if (item.isKgProduct) return "kg";
   if (item.codigoItem === "00223") return "kg"; // Vareta de Apito: unidade = kg
   if (item.codigoItem === "00129") return "dz"; // Rojão: unidade = dúzia
+  // Usar unidade de venda dos pedidos quando disponível (CX, PC, etc.)
+  if (item.unidadeVenda && hasCx) {
+    const uv = item.unidadeVenda.toUpperCase();
+    if (uv === "PC") return "pc";
+    if (uv === "DZ") return "dz";
+    if (uv === "KG") return "kg";
+    return "cx";
+  }
   return hasCx ? "cx" : "un";
 }
 
@@ -223,6 +233,13 @@ function getPOUnit(item: StockItem): string {
   if (item.isKgProduct) return "kg";
   if (item.codigoItem === "00223") return "kg"; // Vareta de Apito: unidade = kg
   if (item.codigoItem === "00129") return "dz"; // Rojão: unidade = dúzia
+  // Usar unidade de venda dos pedidos quando disponível
+  if (item.unidadeVenda) {
+    const uv = item.unidadeVenda.toUpperCase();
+    if (uv === "PC") return "pc";
+    if (uv === "DZ") return "dz";
+    if (uv === "KG") return "kg";
+  }
   return "cx";
 }
 

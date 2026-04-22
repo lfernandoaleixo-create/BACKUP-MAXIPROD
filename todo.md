@@ -2986,3 +2986,6 @@
 
 ## Tooltip VLR PROJETADO Madeira
 - [x] Adicionar tooltip no VLR PROJETADO da seção Madeira: "Projetado = Estoque - Pedidos em Aberto" (sem PO) + tooltip no VLR PROJETADO global
+
+## Corrigir unidade de medida "unO" na aba Estoque
+- [x] Trocar exibição de "unO" pela unidade correta (CX, PC, etc.) usando unidade predominante dos pedidos de venda — SEM MEXER em pedidos em aberto, a faturar ou faturado
