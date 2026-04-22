@@ -98,7 +98,7 @@ export async function gql<T = any>(query: string, variables?: Record<string, any
 
   const MAX_RETRIES = 3;
   const INITIAL_DELAY_MS = 5000; // 5s, 10s, 20s
-  const FETCH_TIMEOUT_MS = 30000; // 30s timeout per request
+  const FETCH_TIMEOUT_MS = 60000; // 60s timeout per request (increased from 30s to handle large paginated queries)
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -859,12 +859,13 @@ async function saveAllData(
 
   console.log(`[GraphQL Sync] Dados de estoque/pedidos salvos atomicamente: ${stockData.length} est, ${orderData.length} ped, ${poData.length} po, ${salesData.length} vnd`);
 
-  // ═══ BAIXA AUTOMÁTICA DE INDUSTRIALIZADOS: ATIVADA em 22/04/2026 ═══
+  // ═══ BAIXA AUTOMÁTICA DE INDUSTRIALIZADOS: DESABILITADA em 22/04/2026 ═══
+  // MOTIVO: A lógica zerou indevidamente o estoque de madeira ao processar faturados antigos.
   // Quando um item industrializado (MADEIRA/MADEIRA CONTABILIZADO) é faturado,
   // abate automaticamente do estoque de madeira (madeira_stock). Fator 1:1.
   // NÃO retroativo — snapshot baseline criado em 22/04/2026.
-  updateProgress({ percent: 93, details: "Verificando baixas de industrializados" });
-  await processIndustrializedBaixa();
+  // updateProgress({ percent: 93, details: "Verificando baixas de industrializados" });
+  // await processIndustrializedBaixa();
 
   updateProgress({ percent: 95, details: "Processando dashboard" });
 
@@ -1471,12 +1472,19 @@ export async function runGraphQLSync(): Promise<{
   });
 
   try {
-    // ALL fetches in PARALLEL for maximum speed
-    const [rawStock, rawOpenOrders, rawAllSales, rawPOs, rawPayable, rawReceivable] = await Promise.all([
+    // Sequential fetches to avoid timeout from bandwidth competition
+    // Group 1: lightweight queries in parallel
+    const [rawStock, rawOpenOrders, rawPOs] = await Promise.all([
       fetchStock(),
       fetchOpenSalesOrderItems(),
-      fetchAllSalesOrderItems(),
       fetchPurchaseOrderItems(),
+    ]);
+
+    // Group 2: heavy query alone (1500+ items paginated)
+    const rawAllSales = await fetchAllSalesOrderItems();
+
+    // Group 3: financial queries in parallel
+    const [rawPayable, rawReceivable] = await Promise.all([
       fetchAccountsPayable().catch((e: any) => { console.error("[GraphQL Sync] Payable fetch error:", e.message); return []; }),
       fetchAccountsReceivable().catch((e: any) => { console.error("[GraphQL Sync] Receivable fetch error:", e.message); return []; }),
     ]);

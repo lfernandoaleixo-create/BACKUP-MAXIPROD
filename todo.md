@@ -2994,3 +2994,9 @@
 - [x] Reverter "Valor previsto de liberação para desconto na semana" para R$ 24.000,00 (Sicoob Palitos)
 - [x] Reverter "Limite disponível para troca de títulos" para R$ 138.042,66 (Sicoob Palitos)
 - [x] Investigado: não há lógica automática — valores só mudam manualmente pelo Flávio. Adicionado dialog de confirmação para evitar alterações acidentais
+
+## URGENTE: Sync automática falhando por timeout
+- [x] Investigar e corrigir sync automática: timeout aumentado de 30s para 60s, queries pesadas executam sequencialmente
+- [x] Desabilitar baixa automática de industrializados (zerou estoque de madeira indevidamente)
+- [x] Restaurar estoque de madeira para valores corretos (22 produtos restaurados aos valores originais)
+- [x] Limpar histórico de baixas incorretas (127 registros removidos + snapshot limpo)
