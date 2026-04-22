@@ -3004,3 +3004,4 @@
 ## Restaurar visão de caixas E-commerce no estoque de importação
 - [x] Restaurar a visão de caixas separadas para e-commerce no estoque de importação (17 produtos com breakdown)
 - [x] Incluir pedidos E-commerce faturados (#909, #927) no Histórico E-commerce da aba Estoque
+- [x] Converter itens PC (pacotes) para CX (caixas) no Histórico E-commerce usando lógica de produto mãe
