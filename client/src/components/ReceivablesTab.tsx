@@ -1182,6 +1182,8 @@ function SicoobInfoCard({ title, subtitle, icon: Icon, colorScheme, queryHook, m
   const isFlavio = operator?.name === "Flavio";
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingValue, setPendingValue] = useState<number>(0);
 
   const query = queryHook();
   const utils = trpc.useUtils();
@@ -1209,7 +1211,13 @@ function SicoobInfoCard({ title, subtitle, icon: Icon, colorScheme, queryHook, m
       toast.error("Valor inválido");
       return;
     }
-    mutation.mutate({ valor: parsed, operatorName: operator!.name });
+    setPendingValue(parsed);
+    setShowConfirm(true);
+  }
+
+  function confirmSave() {
+    mutation.mutate({ valor: pendingValue, operatorName: operator!.name });
+    setShowConfirm(false);
   }
 
   function formatUpdatedAt(iso: string) {
@@ -1294,6 +1302,35 @@ function SicoobInfoCard({ title, subtitle, icon: Icon, colorScheme, queryHook, m
           </div>
         )}
       </div>
+
+      {/* Dialog de confirmação */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4 border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Confirmar alteração</h3>
+            <p className="text-sm text-slate-600 mb-1">Tem certeza que deseja alterar o valor?</p>
+            <div className="bg-slate-50 rounded-lg p-3 mb-4">
+              <p className="text-xs text-slate-500">Valor atual: <span className="font-bold text-slate-700">{valor != null ? formatCurrency(valor) : "Não definido"}</span></p>
+              <p className="text-xs text-slate-500 mt-1">Novo valor: <span className="font-bold text-emerald-700">{formatCurrency(pendingValue)}</span></p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmSave}
+                disabled={mutation.isPending}
+                className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-all disabled:opacity-50"
+              >
+                {mutation.isPending ? "Salvando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

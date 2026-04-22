@@ -2989,3 +2989,8 @@
 
 ## Corrigir unidade de medida "unO" na aba Estoque
 - [x] Trocar exibição de "unO" pela unidade correta (CX, PC, etc.) usando unidade predominante dos pedidos de venda — SEM MEXER em pedidos em aberto, a faturar ou faturado
+
+## Bug: Valores financeiros Sicoob PALITOS sendo alterados automaticamente
+- [x] Reverter "Valor previsto de liberação para desconto na semana" para R$ 24.000,00 (Sicoob Palitos)
+- [x] Reverter "Limite disponível para troca de títulos" para R$ 138.042,66 (Sicoob Palitos)
+- [x] Investigado: não há lógica automática — valores só mudam manualmente pelo Flávio. Adicionado dialog de confirmação para evitar alterações acidentais
