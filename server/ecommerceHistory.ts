@@ -1,14 +1,15 @@
 /**
- * E-commerce Transfer History - Snapshot & Change Detection
+ * E-commerce Transfer History - Snapshot & Change Detection + Faturados
  * 
  * Salva snapshots dos itens E-commerce (variações PC) a cada sync.
  * Compara snapshots para detectar quando o estoque baixou (transferência efetivada).
+ * Também inclui pedidos E-commerce faturados da tabela sales_orders.
  * Registra cada movimentação no histórico para relatórios.
  */
 
 import { getDb } from "./db";
-import { ecommerceStockSnapshots, ecommerceTransferHistory, stockItems, orderItems } from "../drizzle/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { ecommerceStockSnapshots, ecommerceTransferHistory, stockItems, orderItems, salesOrders } from "../drizzle/schema";
+import { eq, and, desc, sql, like, or } from "drizzle-orm";
 
 /** Retorna a data de hoje em Brasília como string YYYY-MM-DD */
 function getTodayBR(): string {
@@ -32,6 +33,18 @@ function extractUnitsFromDesc(desc: string): number {
   const match = desc.match(/(\d+)\s*(?:un|UN|Un)/);
   if (match) return parseInt(match[1]);
   return 0;
+}
+
+/** Normalized history item shape expected by the frontend */
+export interface EcommerceHistoryItem {
+  detectedAt: Date | string;
+  codigoItem: string;
+  descricaoItem: string;
+  quantidadeCx: number;
+  quantidadeUn: number;
+  tipoMovimento: string; // 'saida_total' | 'saida_parcial' | 'faturado'
+  pedidoRelacionado: string | null;
+  cliente: string | null;
 }
 
 /**
@@ -177,35 +190,133 @@ export async function detectEcommerceTransfers(): Promise<void> {
 }
 
 /**
- * Busca histórico de transferências E-commerce com filtros opcionais
+ * Busca histórico de transferências E-commerce com filtros opcionais.
+ * Combina duas fontes:
+ * 1. Transferências detectadas por snapshot (estoque PC diminuiu)
+ * 2. Pedidos E-commerce faturados da tabela sales_orders
+ * 
+ * Retorna no formato normalizado esperado pelo frontend.
  */
 export async function getEcommerceTransferHistoryData(filters?: {
   fromDate?: string;
   toDate?: string;
   codigoItem?: string;
-}): Promise<any[]> {
+}): Promise<EcommerceHistoryItem[]> {
   const db = await getDb();
   if (!db) return [];
   
-  const conditions: any[] = [];
+  const results: EcommerceHistoryItem[] = [];
   
-  if (filters?.fromDate) {
-    conditions.push(sql`${ecommerceTransferHistory.dataTransferencia} >= ${filters.fromDate}`);
-  }
-  if (filters?.toDate) {
-    conditions.push(sql`${ecommerceTransferHistory.dataTransferencia} <= ${filters.toDate}`);
-  }
-  if (filters?.codigoItem) {
-    conditions.push(eq(ecommerceTransferHistory.codigoItem, filters.codigoItem));
+  // ===== FONTE 1: Transferências detectadas por snapshot (tabela ecommerce_transfer_history) =====
+  {
+    const conditions: any[] = [];
+    
+    if (filters?.fromDate) {
+      conditions.push(sql`${ecommerceTransferHistory.dataTransferencia} >= ${filters.fromDate}`);
+    }
+    if (filters?.toDate) {
+      conditions.push(sql`${ecommerceTransferHistory.dataTransferencia} <= ${filters.toDate}`);
+    }
+    if (filters?.codigoItem) {
+      conditions.push(eq(ecommerceTransferHistory.codigoItem, filters.codigoItem));
+    }
+    
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    const transferRows = await db
+      .select()
+      .from(ecommerceTransferHistory)
+      .where(whereClause)
+      .orderBy(desc(ecommerceTransferHistory.createdAt));
+    
+    for (const row of transferRows) {
+      const cxAnterior = parseFloat(row.quantidadeCxAnterior);
+      const cxAtual = parseFloat(row.quantidadeCxAtual);
+      const tipo = cxAtual <= 0 ? 'saida_total' : 'saida_parcial';
+      
+      results.push({
+        detectedAt: row.createdAt,
+        codigoItem: row.codigoItem,
+        descricaoItem: row.descricaoItem,
+        quantidadeCx: parseFloat(row.quantidadeTransferidaCx),
+        quantidadeUn: parseFloat(row.quantidadeTransferidaUn),
+        tipoMovimento: tipo,
+        pedidoRelacionado: row.numeroPedido || null,
+        cliente: row.cliente || null,
+      });
+    }
   }
   
-  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  // ===== FONTE 2: Pedidos E-commerce faturados (tabela sales_orders) =====
+  {
+    const conditions: any[] = [
+      // estadoConfiguravel = "E-COMMERCE" (case insensitive check)
+      sql`UPPER(${salesOrders.estadoConfiguravel}) IN ('E-COMMERCE', 'ECOMMERCE')`,
+      // estadoItem contém "Faturado" (inclui "Faturado", "Faturado parcial", "Faturado c/ entrega futura", etc.)
+      sql`(${salesOrders.estadoItem} LIKE '%aturado%' OR ${salesOrders.estadoItem} LIKE '%ATURADO%')`,
+    ];
+    
+    if (filters?.fromDate) {
+      conditions.push(sql`${salesOrders.dataEmissao} >= ${filters.fromDate}`);
+    }
+    if (filters?.toDate) {
+      conditions.push(sql`${salesOrders.dataEmissao} <= ${filters.toDate}`);
+    }
+    if (filters?.codigoItem) {
+      conditions.push(eq(salesOrders.codigoItem, filters.codigoItem));
+    }
+    
+    const faturadoRows = await db
+      .select()
+      .from(salesOrders)
+      .where(and(...conditions))
+      .orderBy(desc(salesOrders.collectedAt));
+    
+    for (const row of faturadoRows) {
+      const qtd = parseFloat(row.quantidade || '0');
+      const fatorConversao = parseFloat(row.fatorConversao || '1');
+      
+      // Calcular caixas e unidades
+      // Se fatorConversao > 1, a quantidade está em unidades menores e precisa converter
+      // Se fatorConversao = 1 ou 0, a quantidade já está na unidade de venda
+      let quantidadeCx = qtd;
+      let quantidadeUn = qtd;
+      
+      if (fatorConversao > 1) {
+        // quantidade está na unidade de venda, converter para unidades
+        quantidadeUn = qtd * fatorConversao;
+        quantidadeCx = qtd;
+      } else if (row.quantidadeUnidadeItem) {
+        quantidadeUn = parseFloat(row.quantidadeUnidadeItem);
+        quantidadeCx = qtd;
+      }
+      
+      // Determinar tipo de movimento baseado no estadoItem
+      let tipoMovimento = 'faturado';
+      const estadoItem = (row.estadoItem || '').toLowerCase();
+      if (estadoItem.includes('parcial') || estadoItem.includes('parc.')) {
+        tipoMovimento = 'faturado_parcial';
+      }
+      
+      results.push({
+        detectedAt: row.collectedAt,
+        codigoItem: row.codigoItem || '',
+        descricaoItem: row.descricaoItem || row.descricao || '',
+        quantidadeCx: quantidadeCx,
+        quantidadeUn: quantidadeUn,
+        tipoMovimento: tipoMovimento,
+        pedidoRelacionado: row.pedido || null,
+        cliente: row.clienteApelido || row.cliente || null,
+      });
+    }
+  }
   
-  const results = await db
-    .select()
-    .from(ecommerceTransferHistory)
-    .where(whereClause)
-    .orderBy(desc(ecommerceTransferHistory.createdAt));
+  // Ordenar tudo por data (mais recente primeiro)
+  results.sort((a, b) => {
+    const dateA = a.detectedAt instanceof Date ? a.detectedAt.getTime() : new Date(a.detectedAt).getTime();
+    const dateB = b.detectedAt instanceof Date ? b.detectedAt.getTime() : new Date(b.detectedAt).getTime();
+    return dateB - dateA;
+  });
   
   return results;
 }

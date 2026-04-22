@@ -4461,10 +4461,10 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Store className="w-5 h-5 text-purple-600" />
-            Histórico de Transferências E-commerce
+            Histórico E-commerce
           </DialogTitle>
           <DialogDescription>
-            Registro automático de todas as saídas de estoque para a filial E-commerce
+            Transferências de estoque e pedidos E-commerce faturados
           </DialogDescription>
         </DialogHeader>
 
@@ -4536,8 +4536,8 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
           ) : history.length === 0 ? (
             <div className="text-center py-12">
               <Store className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-              <p className="text-sm text-slate-500 font-medium">Nenhuma transferência registrada</p>
-              <p className="text-xs text-slate-400 mt-1">As transferências serão registradas automaticamente quando o estoque E-commerce baixar na sync</p>
+              <p className="text-sm text-slate-500 font-medium">Nenhum registro encontrado</p>
+              <p className="text-xs text-slate-400 mt-1">Transferências e pedidos E-commerce faturados aparecerão aqui automaticamente</p>
             </div>
           ) : (
             <table className="w-full">
@@ -4550,6 +4550,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                   <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Qtd (UN)</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Tipo</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Pedido</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Cliente</th>
                 </tr>
               </thead>
               <tbody>
@@ -4566,14 +4567,19 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                       <Badge className={`text-[10px] border-0 ${
                         h.tipoMovimento === 'saida_total' ? 'bg-red-100 text-red-700' :
                         h.tipoMovimento === 'saida_parcial' ? 'bg-orange-100 text-orange-700' :
+                        h.tipoMovimento === 'faturado' ? 'bg-green-100 text-green-700' :
+                        h.tipoMovimento === 'faturado_parcial' ? 'bg-emerald-100 text-emerald-700' :
                         'bg-slate-100 text-slate-600'
                       }`}>
                         {h.tipoMovimento === 'saida_total' ? 'Saída Total' :
                          h.tipoMovimento === 'saida_parcial' ? 'Saída Parcial' :
+                         h.tipoMovimento === 'faturado' ? 'Faturado' :
+                         h.tipoMovimento === 'faturado_parcial' ? 'Faturado Parcial' :
                          h.tipoMovimento}
                       </Badge>
                     </td>
                     <td className="px-3 py-2 text-xs text-slate-500">{h.pedidoRelacionado || '—'}</td>
+                    <td className="px-3 py-2 text-xs text-slate-500 max-w-[150px] truncate" title={h.cliente || ''}>{h.cliente || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -4583,7 +4589,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                   <td colSpan={3} className="px-3 py-2 text-xs font-bold text-slate-600 uppercase">Total</td>
                   <td className="px-3 py-2 text-right text-sm font-extrabold text-purple-800">{formatNumber(totalCx)} cx</td>
                   <td className="px-3 py-2 text-right text-sm font-extrabold text-indigo-800">{formatNumber(totalUn)} un</td>
-                  <td colSpan={2}></td>
+                  <td colSpan={3}></td>
                 </tr>
               </tfoot>
             </table>
