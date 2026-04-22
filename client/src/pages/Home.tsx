@@ -3931,7 +3931,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           let valorProjetado = 0;
           let comPreco = 0;
           let semPreco = 0;
-          for (const item of items) {
+          // Excluir filhos (isChild) para não duplicar variações PC já somadas no pai
+          const parentOnlyAll = items.filter(i => !i.isChild);
+          for (const item of parentOnlyAll) {
             const price = priceMap[item.descricaoItem];
             if (price) {
               comPreco++;

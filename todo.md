@@ -2956,3 +2956,6 @@
 - [x] Detecção automática na sync: registrar quando estoque E-commerce baixar
 - [x] Endpoint tRPC para consultar histórico com filtros (período, produto)
 - [x] Botão "Histórico E-commerce" na aba Estoque com dialog mostrando data, produto, qtd cx/un, pedido, cliente/filial
+
+## Bug: Valorização Total do Estoque
+- [x] Corrigir VLR Projetado no card geral para bater com soma Estoque + Sob Encomenda (diferença de ~R$120k)
