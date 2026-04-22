@@ -3000,3 +3000,6 @@
 - [x] Desabilitar baixa automática de industrializados (zerou estoque de madeira indevidamente)
 - [x] Restaurar estoque de madeira para valores corretos (22 produtos restaurados aos valores originais)
 - [x] Limpar histórico de baixas incorretas (127 registros removidos + snapshot limpo)
+
+## Restaurar visão de caixas E-commerce no estoque de importação
+- [x] Restaurar a visão de caixas separadas para e-commerce no estoque de importação (17 produtos com breakdown)

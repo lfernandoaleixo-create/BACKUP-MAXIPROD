@@ -1043,9 +1043,13 @@ export async function processStockData(): Promise<void> {
     // Processar cada variação (PC)
     for (const child of eligibleItems) {
       if (child === mother) continue; // Pular o próprio mãe
-      if (!child.unidadesPorCaixa || child.unidadesPorCaixa >= motherUpb) continue; // Não é variação
-      // Pular variações com 0 estoque (não poluir o breakdown)
-      if (child.estoqueUn === 0) continue;
+      if (!child.unidadesPorCaixa) continue;
+      // Variação = upb menor que mãe OU upb igual mas é filho reconhecido pelo Sistema 1 (isChild)
+      const isVariantByUpb = child.unidadesPorCaixa < motherUpb;
+      const isVariantByRelation = child.isChild && child.parentCode === mother.codigoItem;
+      const isVariantBySameUpb = child.unidadesPorCaixa === motherUpb && child.codigoItem !== mother.codigoItem;
+      if (!isVariantByUpb && !isVariantByRelation && !isVariantBySameUpb) continue;
+      // Incluir variações mesmo com estoque 0 (importante para mostrar composição e-commerce)
       
       const childUpb = child.unidadesPorCaixa;
       // Converter estoque do PC para caixas equivalentes do mãe
