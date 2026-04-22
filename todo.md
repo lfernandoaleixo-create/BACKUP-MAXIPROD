@@ -2974,3 +2974,6 @@
 - [x] A partir de hoje — não retroativo (estoque atual já está correto, snapshot baseline criado em 22/04/2026)
 - [x] Exibir histórico de baixas na aba Estoque (botão "Baixas Faturamento" com dialog, tabela, filtros e totais)
 - [x] Adicionar aba E-commerce nas tabs do Faturamento (com ícone ShoppingCart e cor laranja)
+
+## Ocultar botão "Baixas Faturamento"
+- [x] Remover botão "Baixas Faturamento" da aba Estoque (funcionalidade continua ativa nos bastidores)

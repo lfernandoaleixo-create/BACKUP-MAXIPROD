@@ -3999,16 +3999,6 @@ function DashboardContent({ items }: { items: StockItem[] }) {
               </button>
             </div>
 
-            {/* Industrialized Baixa History button */}
-            <div className="flex items-center">
-              <button
-                onClick={() => setShowIndustrializedBaixa(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap bg-white text-violet-600 border border-violet-200 hover:bg-violet-50 shadow-sm"
-              >
-                <Factory className="w-4 h-4" />
-                Baixas Faturamento
-              </button>
-            </div>
 
             {/* Financial toggle button - restricted by est.valorizacao granular permission */}
             {operatorCtx?.hasGranularAccess("est.valorizacao") && (
