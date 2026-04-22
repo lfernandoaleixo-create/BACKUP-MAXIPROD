@@ -2977,3 +2977,9 @@
 
 ## Ocultar botão "Baixas Faturamento"
 - [x] Remover botão "Baixas Faturamento" da aba Estoque (funcionalidade continua ativa nos bastidores)
+
+## Bug: VLR PROJETADO divergente do VLR ESTOQUE quando VLR PO = 0
+- [x] Investigar cálculo do VLR PROJETADO — comportamento correto (Projetado = Disponível + PO), adicionado tooltip explicativo
+
+## Explicação VLR PROJETADO
+- [x] Adicionar tooltip/explicação no card VLR PROJETADO explicando que desconta pedidos em aberto (Projetado = Estoque - Pedidos + PO)

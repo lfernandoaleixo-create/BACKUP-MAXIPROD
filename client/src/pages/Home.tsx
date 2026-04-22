@@ -1994,12 +1994,20 @@ function ClassificationCard({
                 </p>
                 <p className="text-base font-extrabold text-blue-800">{formatCurrency(valuation.valorPO)}</p>
               </div>
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
-                <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider flex items-center gap-1">
-                  <DollarSign className="w-3 h-3" />Vlr Projetado
-                </p>
-                <p className="text-base font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 cursor-help">
+                    <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" />Vlr Projetado
+                    </p>
+                    <p className="text-base font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
+                  <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto + PO</strong></p>
+                  <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos) e soma os pedidos de compra (PO) a caminho. Por isso pode ser menor que o Vlr Estoque.</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
 
           </div>
@@ -2032,10 +2040,18 @@ function ClassificationCard({
               <p className="text-[9px] text-blue-700 font-semibold">Vlr PO</p>
               <p className="text-xs font-bold text-blue-800">{formatCurrencyCompact(valuation.valorPO)}</p>
             </div>
-            <div className="text-center bg-indigo-50 border border-indigo-200 rounded px-2 py-1">
-              <p className="text-[9px] text-indigo-700 font-semibold">Vlr Projetado</p>
-              <p className="text-xs font-bold text-indigo-800">{formatCurrencyCompact(valuation.valorProjetado)}</p>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="text-center bg-indigo-50 border border-indigo-200 rounded px-2 py-1 cursor-help">
+                  <p className="text-[9px] text-indigo-700 font-semibold">Vlr Projetado</p>
+                  <p className="text-xs font-bold text-indigo-800">{formatCurrencyCompact(valuation.valorProjetado)}</p>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
+                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto + PO</strong></p>
+                <p className="text-[10px] text-slate-500 mt-1">Desconta pedidos já comprometidos e soma PO a caminho.</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         )}
       </button>
