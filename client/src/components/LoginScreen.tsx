@@ -7,7 +7,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 import { toast } from "sonner";
 
 const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_ai_transparent_7e0dd68e.png";
-const APP_VERSION = "V.1.1.1";
+const APP_VERSION = "V.2.1.1";
 
 const QUOTES = [
   { text: "A vitória pertence ao mais perseverante.", author: "Napoleão Bonaparte" },
