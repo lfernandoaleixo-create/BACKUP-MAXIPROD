@@ -2983,3 +2983,6 @@
 
 ## Explicação VLR PROJETADO
 - [x] Adicionar tooltip/explicação no card VLR PROJETADO explicando que desconta pedidos em aberto (Projetado = Estoque - Pedidos + PO)
+
+## Tooltip VLR PROJETADO Madeira
+- [x] Adicionar tooltip no VLR PROJETADO da seção Madeira: "Projetado = Estoque - Pedidos em Aberto" (sem PO) + tooltip no VLR PROJETADO global

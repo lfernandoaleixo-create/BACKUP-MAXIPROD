@@ -2285,10 +2285,18 @@ function MadeiraValorizacaoCard({
               <p className="text-[10px] text-blue-700 font-semibold uppercase tracking-wider">Vlr PO</p>
               <p className="text-lg font-extrabold text-blue-800">{formatCurrency(valuation.valorPO)}</p>
             </div>
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5">
-              <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
-              <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
+                  <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
+                  <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
+                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
+                <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos). Por isso pode ser menor que o Vlr Estoque. Não envolve PO por enquanto.</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           {custoEstRegMadeira && custoEstRegMadeira.total > 0 && (
             <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5">
@@ -3983,10 +3991,18 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                     <p className="text-[10px] text-blue-700 font-semibold uppercase tracking-wider">Vlr PO</p>
                     <p className="text-lg font-extrabold text-blue-800">{formatCurrency(globalValuation.valorPO)}</p>
                   </div>
-                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5">
-                    <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
-                    <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(globalValuation.valorProjetado)}</p>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
+                        <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
+                        <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(globalValuation.valorProjetado)}</p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
+                      <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto + PO</strong></p>
+                      <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos) e soma os pedidos de compra (PO) a caminho. Por isso pode ser menor que o Vlr Estoque.</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
                 {custoEstRegGlobal && custoEstRegGlobal.total > 0 && (
                   <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5">
