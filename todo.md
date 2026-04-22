@@ -2959,3 +2959,6 @@
 
 ## Bug: Valorização Total do Estoque
 - [x] Corrigir VLR Projetado no card geral para bater com soma Estoque + Sob Encomenda (diferença de ~R$120k)
+
+## Correção: Variação incorreta
+- [x] Remover item 00074 (VARETA AROMATIZADOR 4,0 X 120 MM 10.000) da lista de variações do produto mãe 00079
