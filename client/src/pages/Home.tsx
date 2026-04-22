@@ -4430,6 +4430,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
   const [dateFilter, setDateFilter] = useState<string>("");
   const [dateFilterEnd, setDateFilterEnd] = useState<string>("");
   const [productFilter, setProductFilter] = useState<string>("");
+  const [pedidoFilter, setPedidoFilter] = useState<string>("");
 
   const { data, isLoading } = trpc.dashboard.getEcommerceHistory.useQuery(
     {
@@ -4442,129 +4443,177 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
 
   const history = data?.history || [];
 
-  // Calculate totals
-  const totalCx = history.reduce((sum, h: any) => sum + (h.quantidadeCx || 0), 0);
-  const totalUn = history.reduce((sum, h: any) => sum + (h.quantidadeUn || 0), 0);
+  // Apply pedido filter client-side
+  const filteredHistory = useMemo(() => {
+    if (!pedidoFilter) return history;
+    return (history as any[]).filter((h: any) =>
+      (h.pedidoRelacionado || '').toString().includes(pedidoFilter)
+    );
+  }, [history, pedidoFilter]);
 
-  // Get unique products for filter
-  const uniqueProducts = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const h of history as any[]) {
-      if (h.codigoItem && h.descricaoItem) map.set(h.codigoItem, h.descricaoItem);
+  // Calculate totals
+  const totalCx = filteredHistory.reduce((sum: number, h: any) => sum + (h.quantidadeCx || 0), 0);
+
+  // Group by pedido for summary
+  const pedidoSummary = useMemo(() => {
+    const map = new Map<string, { pedido: string; cliente: string; itens: number; totalCx: number; data: string }>();
+    for (const h of filteredHistory as any[]) {
+      const ped = h.pedidoRelacionado || 'Transferência';
+      const existing = map.get(ped);
+      if (existing) {
+        existing.itens += 1;
+        existing.totalCx += h.quantidadeCx || 0;
+      } else {
+        map.set(ped, {
+          pedido: ped,
+          cliente: h.cliente || '—',
+          itens: 1,
+          totalCx: h.quantidadeCx || 0,
+          data: h.detectedAt,
+        });
+      }
     }
-    return Array.from(map.entries());
-  }, [history]);
+    return Array.from(map.values());
+  }, [filteredHistory]);
+
+  const hasFilters = dateFilter || dateFilterEnd || productFilter || pedidoFilter;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Store className="w-5 h-5 text-purple-600" />
-            Histórico E-commerce
-          </DialogTitle>
-          <DialogDescription>
-            Transferências de estoque e pedidos E-commerce faturados
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-slate-100 bg-gradient-to-r from-purple-50/80 to-indigo-50/80">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5 text-lg">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
+                <Store className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="text-slate-800">Histórico E-commerce</span>
+                <p className="text-xs font-normal text-slate-500 mt-0.5">Pedidos faturados e transferências de estoque</p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
 
-        {/* Summary */}
-        {history.length > 0 && (
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5 text-center">
-              <p className="text-[10px] text-purple-600 font-semibold uppercase">Transferências</p>
-              <p className="text-lg font-extrabold text-purple-800">{history.length}</p>
+          {/* Summary Cards */}
+          {filteredHistory.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+              <div className="bg-white/80 backdrop-blur border border-purple-100 rounded-xl px-4 py-3 shadow-sm">
+                <p className="text-[10px] text-purple-500 font-semibold uppercase tracking-wider">Registros</p>
+                <p className="text-xl font-extrabold text-purple-700 mt-0.5">{filteredHistory.length}</p>
+              </div>
+              <div className="bg-white/80 backdrop-blur border border-indigo-100 rounded-xl px-4 py-3 shadow-sm">
+                <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">Total Caixas</p>
+                <p className="text-xl font-extrabold text-indigo-700 mt-0.5">{formatNumber(totalCx)}<span className="text-sm font-bold ml-1">cx</span></p>
+              </div>
+              <div className="bg-white/80 backdrop-blur border border-emerald-100 rounded-xl px-4 py-3 shadow-sm">
+                <p className="text-[10px] text-emerald-500 font-semibold uppercase tracking-wider">Pedidos</p>
+                <p className="text-xl font-extrabold text-emerald-700 mt-0.5">{pedidoSummary.length}</p>
+              </div>
+              <div className="bg-white/80 backdrop-blur border border-amber-100 rounded-xl px-4 py-3 shadow-sm">
+                <p className="text-[10px] text-amber-500 font-semibold uppercase tracking-wider">Produtos Únicos</p>
+                <p className="text-xl font-extrabold text-amber-700 mt-0.5">{new Set((filteredHistory as any[]).map((h: any) => h.codigoItem)).size}</p>
+              </div>
             </div>
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 text-center">
-              <p className="text-[10px] text-indigo-600 font-semibold uppercase">Total Caixas</p>
-              <p className="text-lg font-extrabold text-indigo-800">{formatNumber(totalCx)} cx</p>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-center">
-              <p className="text-[10px] text-blue-600 font-semibold uppercase">Total Unidades</p>
-              <p className="text-lg font-extrabold text-blue-800">{formatNumber(totalUn)} un</p>
-            </div>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="flex items-center gap-3 mb-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-500 font-medium">De:</label>
-            <Input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="h-8 text-xs w-36"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-500 font-medium">Até:</label>
-            <Input
-              type="date"
-              value={dateFilterEnd}
-              onChange={(e) => setDateFilterEnd(e.target.value)}
-              className="h-8 text-xs w-36"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-500 font-medium">Produto:</label>
-            <Input
-              type="text"
-              placeholder="Código do produto"
-              value={productFilter}
-              onChange={(e) => setProductFilter(e.target.value)}
-              className="h-8 text-xs w-40"
-            />
-          </div>
-          {(dateFilter || dateFilterEnd || productFilter) && (
-            <button
-              onClick={() => { setDateFilter(""); setDateFilterEnd(""); setProductFilter(""); }}
-              className="text-xs text-slate-400 hover:text-slate-600 underline"
-            >
-              Limpar filtros
-            </button>
           )}
         </div>
 
-        {/* Table */}
-        <div className="flex-1 overflow-auto">
-          {isLoading ? (
-            <div className="text-center py-12">
-              <Loader2 className="w-8 h-8 mx-auto animate-spin text-purple-400" />
-              <p className="text-sm text-slate-400 mt-2">Carregando histórico...</p>
+        {/* Filters Bar */}
+        <div className="px-6 py-3 bg-slate-50/50 border-b border-slate-100">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <label className="text-[11px] text-slate-400 font-medium">De:</label>
+              <Input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="h-8 text-xs w-36 bg-white"
+              />
             </div>
-          ) : history.length === 0 ? (
-            <div className="text-center py-12">
-              <Store className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+            <div className="flex items-center gap-1.5">
+              <label className="text-[11px] text-slate-400 font-medium">Até:</label>
+              <Input
+                type="date"
+                value={dateFilterEnd}
+                onChange={(e) => setDateFilterEnd(e.target.value)}
+                className="h-8 text-xs w-36 bg-white"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label className="text-[11px] text-slate-400 font-medium">Produto:</label>
+              <Input
+                type="text"
+                placeholder="Código"
+                value={productFilter}
+                onChange={(e) => setProductFilter(e.target.value)}
+                className="h-8 text-xs w-28 bg-white"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label className="text-[11px] text-slate-400 font-medium">Pedido:</label>
+              <Input
+                type="text"
+                placeholder="Nº pedido"
+                value={pedidoFilter}
+                onChange={(e) => setPedidoFilter(e.target.value)}
+                className="h-8 text-xs w-28 bg-white"
+              />
+            </div>
+            {hasFilters && (
+              <button
+                onClick={() => { setDateFilter(""); setDateFilterEnd(""); setProductFilter(""); setPedidoFilter(""); }}
+                className="text-[11px] text-purple-500 hover:text-purple-700 font-medium flex items-center gap-1 transition-colors"
+              >
+                <X className="w-3 h-3" /> Limpar
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-auto px-6 pb-4">
+          {isLoading ? (
+            <div className="text-center py-16">
+              <Loader2 className="w-10 h-10 mx-auto animate-spin text-purple-400" />
+              <p className="text-sm text-slate-400 mt-3">Carregando histórico...</p>
+            </div>
+          ) : filteredHistory.length === 0 ? (
+            <div className="text-center py-16">
+              <Store className="w-14 h-14 mx-auto text-slate-200 mb-3" />
               <p className="text-sm text-slate-500 font-medium">Nenhum registro encontrado</p>
-              <p className="text-xs text-slate-400 mt-1">Transferências e pedidos E-commerce faturados aparecerão aqui automaticamente</p>
+              <p className="text-xs text-slate-400 mt-1">Pedidos E-commerce faturados aparecerão aqui automaticamente</p>
             </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+            <table className="w-full mt-3">
+              <thead className="bg-slate-50/80 border-b border-slate-200 sticky top-0 z-10">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Data</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Produto</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Descrição</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Qtd (CX)</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Qtd (UN)</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Tipo</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Pedido</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Cliente</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Data</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Código</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Descrição</th>
+                  <th className="px-3 py-2.5 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Caixas</th>
+                  <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                  <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Pedido</th>
+                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Cliente</th>
                 </tr>
               </thead>
-              <tbody>
-                {(history as any[]).map((h, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50/50">
-                    <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">
-                      {new Date(h.detectedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              <tbody className="divide-y divide-slate-100">
+                {(filteredHistory as any[]).map((h: any, i: number) => (
+                  <tr key={i} className="hover:bg-purple-50/30 transition-colors">
+                    <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">
+                      {new Date(h.detectedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </td>
-                    <td className="px-3 py-2 text-xs font-mono text-slate-500">{h.codigoItem}</td>
-                    <td className="px-3 py-2 text-sm text-slate-700 break-words leading-snug max-w-[250px]">{h.descricaoItem}</td>
-                    <td className="px-3 py-2 text-right text-sm font-semibold text-purple-700">{formatNumber(h.quantidadeCx)} cx</td>
-                    <td className="px-3 py-2 text-right text-sm font-semibold text-indigo-700">{formatNumber(h.quantidadeUn)} un</td>
-                    <td className="px-3 py-2">
-                      <Badge className={`text-[10px] border-0 ${
+                    <td className="px-3 py-2.5">
+                      <span className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{h.codigoItem}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-sm text-slate-700 max-w-[300px]">
+                      <span className="line-clamp-2 leading-snug" title={h.descricaoItem}>{h.descricaoItem}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      <span className="text-sm font-bold text-purple-700">{formatNumber(h.quantidadeCx)}</span>
+                      <span className="text-[10px] text-purple-400 ml-0.5">cx</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <Badge className={`text-[10px] border-0 px-2 py-0.5 ${
                         h.tipoMovimento === 'saida_total' ? 'bg-red-100 text-red-700' :
                         h.tipoMovimento === 'saida_parcial' ? 'bg-orange-100 text-orange-700' :
                         h.tipoMovimento === 'faturado' ? 'bg-green-100 text-green-700' :
@@ -4578,17 +4627,24 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                          h.tipoMovimento}
                       </Badge>
                     </td>
-                    <td className="px-3 py-2 text-xs text-slate-500">{h.pedidoRelacionado || '—'}</td>
-                    <td className="px-3 py-2 text-xs text-slate-500 max-w-[150px] truncate" title={h.cliente || ''}>{h.cliente || '—'}</td>
+                    <td className="px-3 py-2.5 text-center">
+                      {h.pedidoRelacionado ? (
+                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">#{h.pedidoRelacionado}</span>
+                      ) : (
+                        <span className="text-xs text-slate-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-slate-500 max-w-[200px] truncate" title={h.cliente || ''}>{h.cliente || '—'}</td>
                   </tr>
                 ))}
               </tbody>
-              {/* Footer totals */}
-              <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+              <tfoot className="bg-gradient-to-r from-purple-50 to-indigo-50 border-t-2 border-purple-200">
                 <tr>
-                  <td colSpan={3} className="px-3 py-2 text-xs font-bold text-slate-600 uppercase">Total</td>
-                  <td className="px-3 py-2 text-right text-sm font-extrabold text-purple-800">{formatNumber(totalCx)} cx</td>
-                  <td className="px-3 py-2 text-right text-sm font-extrabold text-indigo-800">{formatNumber(totalUn)} un</td>
+                  <td colSpan={3} className="px-3 py-3 text-xs font-bold text-slate-600 uppercase">Total ({filteredHistory.length} itens)</td>
+                  <td className="px-3 py-3 text-right">
+                    <span className="text-base font-extrabold text-purple-800">{formatNumber(totalCx)}</span>
+                    <span className="text-xs font-bold text-purple-500 ml-1">cx</span>
+                  </td>
                   <td colSpan={3}></td>
                 </tr>
               </tfoot>

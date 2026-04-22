@@ -3005,3 +3005,6 @@
 - [x] Restaurar a visão de caixas separadas para e-commerce no estoque de importação (17 produtos com breakdown)
 - [x] Incluir pedidos E-commerce faturados (#909, #927) no Histórico E-commerce da aba Estoque
 - [x] Converter itens PC (pacotes) para CX (caixas) no Histórico E-commerce usando lógica de produto mãe
+- [x] Remover card "Total de Unidades" do Histórico E-commerce
+- [x] Remover coluna "Unidades" da tabela do Histórico E-commerce
+- [x] Redesenhar dialog do Histórico E-commerce: maior e mais organizado
