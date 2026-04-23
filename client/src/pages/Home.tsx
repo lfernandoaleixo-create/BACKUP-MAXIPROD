@@ -3489,6 +3489,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const [showMadeiraFinancial, setShowMadeiraFinancial] = useState(false);
   const [showEcommerceHistory, setShowEcommerceHistory] = useState(false);
   const [showIndustrializedBaixa, setShowIndustrializedBaixa] = useState(false);
+  // Fetch pending E-commerce transfers (not yet faturado)
+  const { data: pendingEcommerce } = trpc.dashboard.getPendingEcommerceTransfers.useQuery(undefined, { refetchInterval: 30000 });
 
   // Fetch classifications
   const { data: classifications } = trpc.settings.getProductClassifications.useQuery();
@@ -4037,6 +4039,37 @@ function DashboardContent({ items }: { items: StockItem[] }) {
               </div>
             )}
 
+            {/* Pending E-commerce Transfer Alert Card */}
+            {pendingEcommerce && pendingEcommerce.items.length > 0 && (
+              <div className="w-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl px-5 py-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md flex-shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm font-bold text-amber-900">Transferência E-commerce Pendente</h4>
+                      {pendingEcommerce.pedidos.map((p: string) => (
+                        <span key={p} className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">#{p}</span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-amber-700 mt-1">
+                      <span className="font-bold text-amber-900">{formatNumber(pendingEcommerce.totalCx)} cx</span> em pedidos para filial E-commerce (não gera receita). O estoque pode diminuir após faturamento.
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {pendingEcommerce.items.slice(0, 5).map((item: any, idx: number) => (
+                        <span key={idx} className="text-[10px] bg-white/80 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md font-mono">
+                          {item.codigoItem} → {formatNumber(item.quantidadeCx)} cx
+                        </span>
+                      ))}
+                      {pendingEcommerce.items.length > 5 && (
+                        <span className="text-[10px] text-amber-500 font-medium">+{pendingEcommerce.items.length - 5} mais</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* E-commerce History button */}
             <div className="flex items-center">
               <button
@@ -4429,98 +4462,148 @@ function IndustrializedBaixaDialog({ open, onClose }: { open: boolean; onClose: 
 function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [dateFilter, setDateFilter] = useState<string>("");
   const [dateFilterEnd, setDateFilterEnd] = useState<string>("");
-  const [productFilter, setProductFilter] = useState<string>("");
+  const [searchText, setSearchText] = useState<string>("");
   const [pedidoFilter, setPedidoFilter] = useState<string>("");
+  const [unidadeFilter, setUnidadeFilter] = useState<string>("all");
 
   const { data, isLoading } = trpc.dashboard.getEcommerceHistory.useQuery(
     {
       fromDate: dateFilter || undefined,
       toDate: dateFilterEnd || undefined,
-      codigoItem: productFilter || undefined,
+      codigoItem: undefined,
     },
     { enabled: open }
   );
 
   const history = data?.history || [];
 
-  // Apply pedido filter client-side
+  // Apply client-side filters
   const filteredHistory = useMemo(() => {
-    if (!pedidoFilter) return history;
-    return (history as any[]).filter((h: any) =>
-      (h.pedidoRelacionado || '').toString().includes(pedidoFilter)
-    );
-  }, [history, pedidoFilter]);
+    return (history as any[]).filter((h: any) => {
+      if (pedidoFilter && !(h.pedidoRelacionado || '').toString().includes(pedidoFilter)) return false;
+      if (searchText) {
+        const s = searchText.toLowerCase();
+        const matchCode = (h.codigoItem || '').toLowerCase().includes(s);
+        const matchDesc = (h.descricaoItem || '').toLowerCase().includes(s);
+        const matchMae = (h.produtoMae || '').toLowerCase().includes(s);
+        if (!matchCode && !matchDesc && !matchMae) return false;
+      }
+      if (unidadeFilter !== 'all') {
+        if (unidadeFilter === 'PC' && h.unidadeOriginal !== 'PC') return false;
+        if (unidadeFilter === 'CX' && h.unidadeOriginal !== 'CX') return false;
+      }
+      return true;
+    });
+  }, [history, pedidoFilter, searchText, unidadeFilter]);
 
   // Calculate totals
   const totalCx = filteredHistory.reduce((sum: number, h: any) => sum + (h.quantidadeCx || 0), 0);
+  const totalOriginalPC = filteredHistory.filter((h: any) => h.unidadeOriginal === 'PC').reduce((sum: number, h: any) => sum + (h.quantidadeOriginal || 0), 0);
+  const totalOriginalCX = filteredHistory.filter((h: any) => h.unidadeOriginal === 'CX').reduce((sum: number, h: any) => sum + (h.quantidadeOriginal || 0), 0);
 
   // Group by pedido for summary
-  const pedidoSummary = useMemo(() => {
-    const map = new Map<string, { pedido: string; cliente: string; itens: number; totalCx: number; data: string }>();
+  const pedidoGroups = useMemo(() => {
+    const map = new Map<string, { pedido: string; cliente: string; data: string; items: any[]; totalCx: number }>();
     for (const h of filteredHistory as any[]) {
-      const ped = h.pedidoRelacionado || 'Transferência';
+      const ped = h.pedidoRelacionado || 'Transf.';
       const existing = map.get(ped);
       if (existing) {
-        existing.itens += 1;
+        existing.items.push(h);
         existing.totalCx += h.quantidadeCx || 0;
       } else {
         map.set(ped, {
           pedido: ped,
           cliente: h.cliente || '—',
-          itens: 1,
-          totalCx: h.quantidadeCx || 0,
           data: h.detectedAt,
+          items: [h],
+          totalCx: h.quantidadeCx || 0,
         });
       }
     }
-    return Array.from(map.values());
+    return Array.from(map.values()).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
   }, [filteredHistory]);
 
-  const hasFilters = dateFilter || dateFilterEnd || productFilter || pedidoFilter;
+  const hasFilters = dateFilter || dateFilterEnd || searchText || pedidoFilter || unidadeFilter !== 'all';
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-[95vw] w-[1400px] max-h-[92vh] overflow-hidden flex flex-col p-0">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-slate-100 bg-gradient-to-r from-purple-50/80 to-indigo-50/80">
+        <div className="px-8 pt-6 pb-5 border-b border-purple-100 bg-gradient-to-br from-purple-50 via-indigo-50/50 to-white">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5 text-lg">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-md">
-                <Store className="w-5 h-5 text-white" />
+            <DialogTitle className="flex items-center gap-3 text-xl">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-200">
+                <Store className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="text-slate-800">Histórico E-commerce</span>
-                <p className="text-xs font-normal text-slate-500 mt-0.5">Pedidos faturados e transferências de estoque</p>
+                <span className="text-slate-800 font-bold">Histórico E-commerce — Importação</span>
+                <p className="text-xs font-normal text-slate-500 mt-0.5">Transferências faturadas da matriz para filial E-commerce (Grupo 12)</p>
               </div>
             </DialogTitle>
           </DialogHeader>
 
           {/* Summary Cards */}
           {filteredHistory.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-              <div className="bg-white/80 backdrop-blur border border-purple-100 rounded-xl px-4 py-3 shadow-sm">
-                <p className="text-[10px] text-purple-500 font-semibold uppercase tracking-wider">Registros</p>
-                <p className="text-xl font-extrabold text-purple-700 mt-0.5">{filteredHistory.length}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-5">
+              <div className="bg-white/90 backdrop-blur border border-purple-100 rounded-xl px-4 py-3 shadow-sm">
+                <p className="text-[10px] text-purple-500 font-semibold uppercase tracking-wider">Itens</p>
+                <p className="text-2xl font-extrabold text-purple-700 mt-0.5">{filteredHistory.length}</p>
               </div>
-              <div className="bg-white/80 backdrop-blur border border-indigo-100 rounded-xl px-4 py-3 shadow-sm">
-                <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">Total Caixas</p>
-                <p className="text-xl font-extrabold text-indigo-700 mt-0.5">{formatNumber(totalCx)}<span className="text-sm font-bold ml-1">cx</span></p>
+              <div className="bg-white/90 backdrop-blur border border-indigo-100 rounded-xl px-4 py-3 shadow-sm">
+                <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wider">Total em Caixas</p>
+                <p className="text-2xl font-extrabold text-indigo-700 mt-0.5">{formatNumber(totalCx)} <span className="text-sm font-bold">cx</span></p>
               </div>
-              <div className="bg-white/80 backdrop-blur border border-emerald-100 rounded-xl px-4 py-3 shadow-sm">
+              <div className="bg-white/90 backdrop-blur border border-emerald-100 rounded-xl px-4 py-3 shadow-sm">
                 <p className="text-[10px] text-emerald-500 font-semibold uppercase tracking-wider">Pedidos</p>
-                <p className="text-xl font-extrabold text-emerald-700 mt-0.5">{pedidoSummary.length}</p>
+                <p className="text-2xl font-extrabold text-emerald-700 mt-0.5">{pedidoGroups.length}</p>
               </div>
-              <div className="bg-white/80 backdrop-blur border border-amber-100 rounded-xl px-4 py-3 shadow-sm">
-                <p className="text-[10px] text-amber-500 font-semibold uppercase tracking-wider">Produtos Únicos</p>
-                <p className="text-xl font-extrabold text-amber-700 mt-0.5">{new Set((filteredHistory as any[]).map((h: any) => h.codigoItem)).size}</p>
+              <div className="bg-white/90 backdrop-blur border border-cyan-100 rounded-xl px-4 py-3 shadow-sm">
+                <p className="text-[10px] text-cyan-500 font-semibold uppercase tracking-wider">Lançados CX</p>
+                <p className="text-2xl font-extrabold text-cyan-700 mt-0.5">{formatNumber(totalOriginalCX)} <span className="text-sm font-bold">cx</span></p>
+              </div>
+              <div className="bg-white/90 backdrop-blur border border-amber-100 rounded-xl px-4 py-3 shadow-sm">
+                <p className="text-[10px] text-amber-500 font-semibold uppercase tracking-wider">Lançados PC</p>
+                <p className="text-2xl font-extrabold text-amber-700 mt-0.5">{formatNumber(totalOriginalPC)} <span className="text-sm font-bold">pc</span></p>
               </div>
             </div>
           )}
         </div>
 
         {/* Filters Bar */}
-        <div className="px-6 py-3 bg-slate-50/50 border-b border-slate-100">
+        <div className="px-8 py-3 bg-slate-50/60 border-b border-slate-100">
           <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <Search className="w-3.5 h-3.5 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Buscar código, descrição ou produto mãe..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="h-8 text-xs w-64 bg-white"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label className="text-[11px] text-slate-400 font-medium">Pedido:</label>
+              <Input
+                type="text"
+                placeholder="Nº"
+                value={pedidoFilter}
+                onChange={(e) => setPedidoFilter(e.target.value)}
+                className="h-8 text-xs w-20 bg-white"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label className="text-[11px] text-slate-400 font-medium">Unidade:</label>
+              <select
+                value={unidadeFilter}
+                onChange={(e) => setUnidadeFilter(e.target.value)}
+                className="h-8 text-xs bg-white border border-slate-200 rounded-md px-2"
+              >
+                <option value="all">Todos</option>
+                <option value="CX">Caixa (CX)</option>
+                <option value="PC">Pacote (PC)</option>
+              </select>
+            </div>
             <div className="flex items-center gap-1.5">
               <label className="text-[11px] text-slate-400 font-medium">De:</label>
               <Input
@@ -4539,116 +4622,150 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                 className="h-8 text-xs w-36 bg-white"
               />
             </div>
-            <div className="flex items-center gap-1.5">
-              <label className="text-[11px] text-slate-400 font-medium">Produto:</label>
-              <Input
-                type="text"
-                placeholder="Código"
-                value={productFilter}
-                onChange={(e) => setProductFilter(e.target.value)}
-                className="h-8 text-xs w-28 bg-white"
-              />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <label className="text-[11px] text-slate-400 font-medium">Pedido:</label>
-              <Input
-                type="text"
-                placeholder="Nº pedido"
-                value={pedidoFilter}
-                onChange={(e) => setPedidoFilter(e.target.value)}
-                className="h-8 text-xs w-28 bg-white"
-              />
-            </div>
             {hasFilters && (
               <button
-                onClick={() => { setDateFilter(""); setDateFilterEnd(""); setProductFilter(""); setPedidoFilter(""); }}
+                onClick={() => { setDateFilter(""); setDateFilterEnd(""); setSearchText(""); setPedidoFilter(""); setUnidadeFilter("all"); }}
                 className="text-[11px] text-purple-500 hover:text-purple-700 font-medium flex items-center gap-1 transition-colors"
               >
-                <X className="w-3 h-3" /> Limpar
+                <X className="w-3 h-3" /> Limpar filtros
               </button>
             )}
           </div>
         </div>
 
-        {/* Table */}
-        <div className="flex-1 overflow-auto px-6 pb-4">
+        {/* Table grouped by pedido */}
+        <div className="flex-1 overflow-auto px-8 pb-6">
           {isLoading ? (
-            <div className="text-center py-16">
-              <Loader2 className="w-10 h-10 mx-auto animate-spin text-purple-400" />
-              <p className="text-sm text-slate-400 mt-3">Carregando histórico...</p>
+            <div className="text-center py-20">
+              <Loader2 className="w-12 h-12 mx-auto animate-spin text-purple-400" />
+              <p className="text-sm text-slate-400 mt-4">Carregando histórico...</p>
             </div>
           ) : filteredHistory.length === 0 ? (
-            <div className="text-center py-16">
-              <Store className="w-14 h-14 mx-auto text-slate-200 mb-3" />
-              <p className="text-sm text-slate-500 font-medium">Nenhum registro encontrado</p>
-              <p className="text-xs text-slate-400 mt-1">Pedidos E-commerce faturados aparecerão aqui automaticamente</p>
+            <div className="text-center py-20">
+              <Store className="w-16 h-16 mx-auto text-slate-200 mb-4" />
+              <p className="text-base text-slate-500 font-medium">Nenhum registro encontrado</p>
+              <p className="text-sm text-slate-400 mt-1">Pedidos E-commerce faturados de importação aparecerão aqui automaticamente</p>
             </div>
           ) : (
-            <table className="w-full mt-3">
-              <thead className="bg-slate-50/80 border-b border-slate-200 sticky top-0 z-10">
-                <tr>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Data</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Código</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Descrição</th>
-                  <th className="px-3 py-2.5 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Caixas</th>
-                  <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-3 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Pedido</th>
-                  <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Cliente</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {(filteredHistory as any[]).map((h: any, i: number) => (
-                  <tr key={i} className="hover:bg-purple-50/30 transition-colors">
-                    <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">
-                      {new Date(h.detectedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span className="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">{h.codigoItem}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-sm text-slate-700 max-w-[300px]">
-                      <span className="line-clamp-2 leading-snug" title={h.descricaoItem}>{h.descricaoItem}</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <span className="text-sm font-bold text-purple-700">{formatNumber(h.quantidadeCx)}</span>
-                      <span className="text-[10px] text-purple-400 ml-0.5">cx</span>
-                    </td>
-                    <td className="px-3 py-2.5 text-center">
-                      <Badge className={`text-[10px] border-0 px-2 py-0.5 ${
-                        h.tipoMovimento === 'saida_total' ? 'bg-red-100 text-red-700' :
-                        h.tipoMovimento === 'saida_parcial' ? 'bg-orange-100 text-orange-700' :
-                        h.tipoMovimento === 'faturado' ? 'bg-green-100 text-green-700' :
-                        h.tipoMovimento === 'faturado_parcial' ? 'bg-emerald-100 text-emerald-700' :
-                        'bg-slate-100 text-slate-600'
-                      }`}>
-                        {h.tipoMovimento === 'saida_total' ? 'Saída Total' :
-                         h.tipoMovimento === 'saida_parcial' ? 'Saída Parcial' :
-                         h.tipoMovimento === 'faturado' ? 'Faturado' :
-                         h.tipoMovimento === 'faturado_parcial' ? 'Faturado Parcial' :
-                         h.tipoMovimento}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2.5 text-center">
-                      {h.pedidoRelacionado ? (
-                        <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">#{h.pedidoRelacionado}</span>
-                      ) : (
-                        <span className="text-xs text-slate-300">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2.5 text-xs text-slate-500 max-w-[200px] truncate" title={h.cliente || ''}>{h.cliente || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-gradient-to-r from-purple-50 to-indigo-50 border-t-2 border-purple-200">
-                <tr>
-                  <td colSpan={3} className="px-3 py-3 text-xs font-bold text-slate-600 uppercase">Total ({filteredHistory.length} itens)</td>
-                  <td className="px-3 py-3 text-right">
-                    <span className="text-base font-extrabold text-purple-800">{formatNumber(totalCx)}</span>
-                    <span className="text-xs font-bold text-purple-500 ml-1">cx</span>
-                  </td>
-                  <td colSpan={3}></td>
-                </tr>
-              </tfoot>
-            </table>
+            <div className="space-y-6 mt-4">
+              {pedidoGroups.map((group) => (
+                <div key={group.pedido} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  {/* Group header */}
+                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-5 py-3 flex items-center justify-between border-b border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-lg">Pedido #{group.pedido}</span>
+                      <span className="text-xs text-slate-500">{new Date(group.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</span>
+                      <span className="text-xs text-slate-400">•</span>
+                      <span className="text-xs text-slate-500">{group.cliente}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500">{group.items.length} itens</span>
+                      <span className="text-sm font-extrabold text-purple-700 bg-purple-100 px-3 py-1 rounded-lg">{formatNumber(group.totalCx)} cx</span>
+                    </div>
+                  </div>
+                  {/* Group table */}
+                  <table className="w-full">
+                    <thead className="bg-slate-50/80">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[5%]">#</th>
+                        <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[8%]">Código</th>
+                        <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[32%]">Descrição do Produto</th>
+                        <th className="px-4 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Unid. Original</th>
+                        <th className="px-4 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Qtd. Original</th>
+                        <th className="px-4 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Produto Mãe</th>
+                        <th className="px-4 py-2 text-right text-[10px] font-semibold text-purple-600 uppercase tracking-wider w-[10%] bg-purple-50/50">Caixas</th>
+                        <th className="px-4 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {group.items.map((h: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-purple-50/20 transition-colors">
+                          <td className="px-4 py-2.5 text-xs text-slate-400 font-mono">{idx + 1}</td>
+                          <td className="px-4 py-2.5">
+                            <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">{h.codigoItem}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-[13px] text-slate-700">
+                            <span className="leading-snug" title={h.descricaoItem}>{h.descricaoItem}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              h.unidadeOriginal === 'PC' ? 'bg-amber-100 text-amber-700' : 'bg-cyan-100 text-cyan-700'
+                            }`}>
+                              {h.unidadeOriginal}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-sm font-semibold text-slate-600">
+                            {formatNumber(h.quantidadeOriginal)}
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            {h.produtoMae ? (
+                              <span className="text-xs font-mono bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-semibold">{h.produtoMae}</span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 italic">direto CX</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-right bg-purple-50/30">
+                            <span className="text-sm font-extrabold text-purple-700">{formatNumber(h.quantidadeCx)}</span>
+                            <span className="text-[10px] text-purple-400 ml-0.5 font-bold">cx</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            <Badge className="text-[10px] border-0 px-2 py-0.5 bg-green-100 text-green-700">
+                              Faturado
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    {/* Subtotal per group */}
+                    <tfoot className="bg-slate-50 border-t border-slate-200">
+                      <tr>
+                        <td colSpan={4} className="px-4 py-2.5 text-xs font-bold text-slate-500 uppercase">Subtotal Pedido #{group.pedido}</td>
+                        <td className="px-4 py-2.5 text-right text-xs font-bold text-slate-500">
+                          {formatNumber(group.items.reduce((s: number, h: any) => s + (h.quantidadeOriginal || 0), 0))}
+                        </td>
+                        <td></td>
+                        <td className="px-4 py-2.5 text-right bg-purple-50/30">
+                          <span className="text-sm font-extrabold text-purple-800">{formatNumber(group.totalCx)}</span>
+                          <span className="text-xs font-bold text-purple-500 ml-1">cx</span>
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              ))}
+
+              {/* Grand Total */}
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl px-6 py-4 shadow-lg shadow-purple-200 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white/90">Total Geral</p>
+                    <p className="text-xs text-white/60">{filteredHistory.length} itens em {pedidoGroups.length} pedido(s)</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-8">
+                  {totalOriginalPC > 0 && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-white/50 uppercase font-semibold">Pacotes (PC)</p>
+                      <p className="text-lg font-extrabold text-amber-300">{formatNumber(totalOriginalPC)} <span className="text-sm">pc</span></p>
+                    </div>
+                  )}
+                  {totalOriginalCX > 0 && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-white/50 uppercase font-semibold">Direto (CX)</p>
+                      <p className="text-lg font-extrabold text-cyan-300">{formatNumber(totalOriginalCX)} <span className="text-sm">cx</span></p>
+                    </div>
+                  )}
+                  <div className="text-right border-l border-white/20 pl-8">
+                    <p className="text-[10px] text-white/50 uppercase font-semibold">Total Convertido</p>
+                    <p className="text-2xl font-extrabold text-white">{formatNumber(totalCx)} <span className="text-base">caixas</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </DialogContent>

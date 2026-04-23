@@ -9,7 +9,7 @@ import { sql, desc, eq, and, gte } from "drizzle-orm";
 import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
 import { isSchedulerRunning } from "./scheduler";
 import { processStockData } from "./stockProcessor";
-import { getEcommerceTransferHistoryData } from "./ecommerceHistory";
+import { getEcommerceTransferHistoryData, getPendingEcommerceTransfers } from "./ecommerceHistory";
 import { getIndustrializedBaixaHistory } from "./industrializedBaixa";
 import { salesRouter } from "./salesRouter";
 import { settingsRouter } from "./settingsRouter";
@@ -529,10 +529,21 @@ export const appRouter = router({
         fromDate: z.string().optional(),
         toDate: z.string().optional(),
         codigoItem: z.string().optional(),
+        pedido: z.string().optional(),
+        searchText: z.string().optional(),
       }).optional())
       .query(async ({ input }) => {
         const results = await getEcommerceTransferHistoryData(input || undefined);
         return { history: results };
+      }),
+
+    /**
+     * Pedidos E-commerce pendentes (não faturados)
+     * Mostra card de alerta no estoque de importação
+     */
+    getPendingEcommerceTransfers: publicProcedure
+      .query(async () => {
+        return await getPendingEcommerceTransfers();
       }),
 
     /**

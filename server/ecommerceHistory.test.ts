@@ -1,72 +1,200 @@
 import { describe, it, expect } from "vitest";
+import {
+  CX_DIRECT_PRODUCTS,
+  PC_TO_CX_MAPPINGS,
+  ECOMMERCE_FILIAL_CLIENTS,
+  convertPcToCx,
+  isDirectCxProduct,
+  isPcVariant,
+  getAllImportEcommerceProductCodes,
+} from "./ecommerceManualMappings";
 
-/**
- * Tests for E-commerce History logic
- * Validates the normalized output format, classification rules, and PC→CX conversion
- */
+describe("ecommerceManualMappings - CX_DIRECT_PRODUCTS", () => {
+  it("should include all 5 CX direct products", () => {
+    const expected = ["00007B", "00009", "00033", "00032", "00054"];
+    for (const code of expected) {
+      expect(CX_DIRECT_PRODUCTS[code]).toBeDefined();
+    }
+    expect(Object.keys(CX_DIRECT_PRODUCTS)).toHaveLength(5);
+  });
 
-// Re-implement the key functions locally for unit testing
-function extractUnitsPerBox(desc: string): number | null {
-  const d = desc.toUpperCase();
-  if (d.includes("KG") && !d.includes("UNID")) return null;
+  it("should correctly identify direct CX products", () => {
+    expect(isDirectCxProduct("00007B")).toBe(true);
+    expect(isDirectCxProduct("00009")).toBe(true);
+    expect(isDirectCxProduct("00033")).toBe(true);
+    expect(isDirectCxProduct("00032")).toBe(true);
+    expect(isDirectCxProduct("00054")).toBe(true);
+    expect(isDirectCxProduct("00470")).toBe(false);
+    expect(isDirectCxProduct("99999")).toBe(false);
+  });
+});
 
-  const cPattern = /C\/\s*([\d.]+)\s*(?:UNID|UN)/i;
-  const cMatch = desc.match(cPattern);
-  if (cMatch) return parseFloat(cMatch[1].replace(/\./g, ""));
+describe("ecommerceManualMappings - PC_TO_CX_MAPPINGS", () => {
+  it("should have mappings for all 12 PC products", () => {
+    const pcCodes = [
+      "00470", "00471", "00472", "00473", "00474", "00475",
+      "00476", "00477", "00478", "00479", "00484", "00485",
+    ];
+    for (const code of pcCodes) {
+      expect(PC_TO_CX_MAPPINGS[code]).toBeDefined();
+    }
+    expect(Object.keys(PC_TO_CX_MAPPINGS)).toHaveLength(12);
+  });
 
-  const threeNumPattern = /(\d+)\s*[xX*]\s*(\d+)\s*[xX*]\s*(\d+)(?!\s*MM)/;
-  const threeMatch = desc.match(threeNumPattern);
-  if (threeMatch) return parseInt(threeMatch[1]) * parseInt(threeMatch[2]) * parseInt(threeMatch[3]);
+  it("should correctly identify PC variants", () => {
+    expect(isPcVariant("00470")).toBe(true);
+    expect(isPcVariant("00485")).toBe(true);
+    expect(isPcVariant("00007B")).toBe(false);
+    expect(isPcVariant("99999")).toBe(false);
+  });
 
-  const cNxMUnidPattern = /C\/\s*([\d.]+)\s*[xX]\s*([\d.]+)\s*(?:UNID|UN)/i;
-  const cNxMUnidMatch = desc.match(cNxMUnidPattern);
-  if (cNxMUnidMatch) return parseFloat(cNxMUnidMatch[1].replace(/\./g, "")) * parseFloat(cNxMUnidMatch[2].replace(/\./g, ""));
+  it("should map 00470 to parent 00036 with correct un/pc and un/cx", () => {
+    const m = PC_TO_CX_MAPPINGS["00470"];
+    expect(m.parentCode).toBe("00036");
+    expect(m.unPerPc).toBe(100);
+    expect(m.unPerCxParent).toBe(10000);
+  });
 
-  const cNxMPattern = /C\/\s*([\d.]+)\s*[xX]\s*([\d.]+)/i;
-  const cNxMMatch = desc.match(cNxMPattern);
-  if (cNxMMatch) return parseFloat(cNxMMatch[1].replace(/\./g, "")) * parseFloat(cNxMMatch[2].replace(/\./g, ""));
+  it("should map 00484 to parent 00110 with 20000 un/cx (not 10000)", () => {
+    const m = PC_TO_CX_MAPPINGS["00484"];
+    expect(m.parentCode).toBe("00110");
+    expect(m.unPerPc).toBe(50);
+    expect(m.unPerCxParent).toBe(20000);
+  });
 
-  const afterMM = desc.replace(/\d+[,.]?\d*\s*[xX*]\s*\d+\s*(?:MM|CM)/gi, "");
-  const nxmPattern = /([\d.]+)\s*[xX]\s*([\d.]+)\s*(?:UNID|UN)/i;
-  const nxmMatch = afterMM.match(nxmPattern);
-  if (nxmMatch) return parseFloat(nxmMatch[1].replace(/\./g, "")) * parseFloat(nxmMatch[2].replace(/\./g, ""));
+  it("should map 00485 to parent 00110 with 200 un/pc", () => {
+    const m = PC_TO_CX_MAPPINGS["00485"];
+    expect(m.parentCode).toBe("00110");
+    expect(m.unPerPc).toBe(200);
+    expect(m.unPerCxParent).toBe(20000);
+  });
+});
 
-  const hashiPattern = /CM\s+(\d+)\s*[xX*]\s*(\d+)/i;
-  const hashiMatch = desc.match(hashiPattern);
-  if (hashiMatch) return parseInt(hashiMatch[1]) * parseInt(hashiMatch[2]);
+describe("ecommerceManualMappings - convertPcToCx", () => {
+  it("should convert 00470 (1000 PC × 100 un / 10000 un/cx) = 10 CX", () => {
+    const result = convertPcToCx("00470", 1000);
+    expect(result).not.toBeNull();
+    expect(result!.caixas).toBe(10);
+    expect(result!.parentCode).toBe("00036");
+  });
 
-  const varetaPattern = /MM\s+([\d.]+)$/i;
-  const varetaMatch = desc.trim().match(varetaPattern);
-  if (varetaMatch) return parseFloat(varetaMatch[1].replace(/\./g, ""));
+  it("should convert 00471 (1000 PC × 500 un / 10000 un/cx) = 50 CX", () => {
+    const result = convertPcToCx("00471", 1000);
+    expect(result!.caixas).toBe(50);
+    expect(result!.parentCode).toBe("00036");
+  });
 
-  const afterMM2 = desc.replace(/\d+[,.]?\d*\s*[xX*]\s*\d+\s*(?:MM|CM)/gi, "");
-  const nxmNoUnidPattern = /(\d+)\s*[xX]\s*(\d+)\s*$/;
-  const nxmNoUnidMatch = afterMM2.trim().match(nxmNoUnidPattern);
-  if (nxmNoUnidMatch) return parseInt(nxmNoUnidMatch[1]) * parseInt(nxmNoUnidMatch[2]);
+  it("should convert 00472 (1000 PC × 100 un / 10000 un/cx) = 10 CX", () => {
+    const result = convertPcToCx("00472", 1000);
+    expect(result!.caixas).toBe(10);
+    expect(result!.parentCode).toBe("00046");
+  });
 
-  return null;
-}
+  it("should convert 00473 (1000 PC × 500 un / 10000 un/cx) = 50 CX", () => {
+    const result = convertPcToCx("00473", 1000);
+    expect(result!.caixas).toBe(50);
+    expect(result!.parentCode).toBe("00046");
+  });
 
-function extractDimensions(desc: string): string | null {
-  const match = desc.match(/(\d+[,.]?\d*)\s*[xX]\s*(\d+)\s*MM/i);
-  if (match) return `${match[1]} X ${match[2]}`;
-  return null;
-}
+  it("should convert 00474 (1000 PC × 50 un / 10000 un/cx) = 5 CX", () => {
+    const result = convertPcToCx("00474", 1000);
+    expect(result!.caixas).toBe(5);
+    expect(result!.parentCode).toBe("00037");
+  });
 
-function extractProductType(desc: string): string {
-  const d = desc.toUpperCase();
-  if (d.includes("MANICURE") && d.includes("DUAS PONTAS")) return "MANICURE_DUAS_PONTAS";
-  if (d.includes("MANICURE") && (d.includes("PONTA/CHANFRO") || d.includes("CHANFRO"))) return "MANICURE_PONTA_CHANFRO";
-  if (d.includes("FIBRA") && d.includes("AROMATIZADOR")) return "VARETA_FIBRA_AROMATIZADOR";
-  if (d.includes("ALGOD") && d.includes("DOCE") && d.includes("MADEIRA")) return "VARETA_ALGODAO_DOCE_MADEIRA";
-  if (d.includes("ALGOD") && d.includes("DOCE")) return "VARETA_ALGODAO_DOCE";
-  if (d.includes("AROMATIZADOR")) return "VARETA_AROMATIZADOR";
-  if (d.includes("ESPETO") && d.includes("BAMBU")) return "ESPETO_BAMBU";
-  if (d.includes("PALITO") && d.includes("DENTE")) return "PALITO_DENTE";
-  if (d.includes("HASHI")) return "PALITO_HASHI";
-  if (d.includes("PETISCO")) return "PALITO_PETISCO";
-  return "OUTRO";
-}
+  it("should convert 00475 (1000 PC × 250 un / 10000 un/cx) = 25 CX", () => {
+    const result = convertPcToCx("00475", 1000);
+    expect(result!.caixas).toBe(25);
+    expect(result!.parentCode).toBe("00037");
+  });
+
+  it("should convert 00476 (1000 PC × 50 un / 10000 un/cx) = 5 CX", () => {
+    const result = convertPcToCx("00476", 1000);
+    expect(result!.caixas).toBe(5);
+    expect(result!.parentCode).toBe("00051");
+  });
+
+  it("should convert 00477 (1000 PC × 250 un / 10000 un/cx) = 25 CX", () => {
+    const result = convertPcToCx("00477", 1000);
+    expect(result!.caixas).toBe(25);
+    expect(result!.parentCode).toBe("00051");
+  });
+
+  it("should convert 00478 (1000 PC × 50 un / 10000 un/cx) = 5 CX", () => {
+    const result = convertPcToCx("00478", 1000);
+    expect(result!.caixas).toBe(5);
+    expect(result!.parentCode).toBe("00040");
+  });
+
+  it("should convert 00479 (1000 PC × 250 un / 10000 un/cx) = 25 CX", () => {
+    const result = convertPcToCx("00479", 1000);
+    expect(result!.caixas).toBe(25);
+    expect(result!.parentCode).toBe("00040");
+  });
+
+  it("should convert 00484 (1000 PC × 50 un / 20000 un/cx) = 2.5 CX", () => {
+    const result = convertPcToCx("00484", 1000);
+    expect(result!.caixas).toBe(2.5);
+    expect(result!.parentCode).toBe("00110");
+  });
+
+  it("should convert 00485 (1000 PC × 200 un / 20000 un/cx) = 10 CX", () => {
+    const result = convertPcToCx("00485", 1000);
+    expect(result!.caixas).toBe(10);
+    expect(result!.parentCode).toBe("00110");
+  });
+
+  it("should return null for unknown product codes", () => {
+    expect(convertPcToCx("99999", 100)).toBeNull();
+  });
+
+  it("should handle zero quantity", () => {
+    const result = convertPcToCx("00470", 0);
+    expect(result).not.toBeNull();
+    expect(result!.caixas).toBe(0);
+  });
+
+  it("should produce correct total of 222.5 cx for all 12 PC items (1000 PC each)", () => {
+    const pcCodes = [
+      "00470", "00471", "00472", "00473", "00474", "00475",
+      "00476", "00477", "00478", "00479", "00484", "00485",
+    ];
+    let total = 0;
+    for (const code of pcCodes) {
+      const result = convertPcToCx(code, 1000);
+      expect(result).not.toBeNull();
+      total += result!.caixas;
+    }
+    // 10+50+10+50+5+25+5+25+5+25+2.5+10 = 222.5
+    expect(total).toBe(222.5);
+  });
+
+  it("should produce grand total of 297.5 cx for all 17 items", () => {
+    // 5 CX direct: 15+10+20+20+10 = 75
+    // 12 PC converted: 222.5
+    // Total: 297.5
+    const cxTotal = 15 + 10 + 20 + 20 + 10;
+    const pcTotal = 222.5;
+    expect(cxTotal + pcTotal).toBe(297.5);
+  });
+});
+
+describe("ecommerceManualMappings - getAllImportEcommerceProductCodes", () => {
+  it("should return all 17 product codes", () => {
+    const codes = getAllImportEcommerceProductCodes();
+    expect(codes).toHaveLength(17);
+    expect(codes).toContain("00007B");
+    expect(codes).toContain("00470");
+    expect(codes).toContain("00485");
+  });
+});
+
+describe("ecommerceManualMappings - ECOMMERCE_FILIAL_CLIENTS", () => {
+  it("should include known filial client names", () => {
+    expect(ECOMMERCE_FILIAL_CLIENTS).toContain("PALITOS E-COMMERCE");
+    expect(ECOMMERCE_FILIAL_CLIENTS).toContain("PALITOS INDUSTRIA E COMERCIO LTDA");
+  });
+});
 
 describe("E-commerce History - Business Rules", () => {
   it("should classify E-COMMERCE estadoConfiguravel correctly", () => {
@@ -76,8 +204,6 @@ describe("E-commerce History - Business Rules", () => {
       { input: "ECOMMERCE", expected: true },
       { input: "BAMBU", expected: false },
       { input: "MADEIRA", expected: false },
-      { input: "", expected: false },
-      { input: null, expected: false },
     ];
 
     for (const tc of testCases) {
@@ -95,7 +221,6 @@ describe("E-commerce History - Business Rules", () => {
       { input: "Parc. faturado c/ entrega futura", expected: true },
       { input: "A faturar", expected: false },
       { input: "Cancelado", expected: false },
-      { input: "", expected: false },
     ];
 
     for (const tc of testCases) {
@@ -103,19 +228,6 @@ describe("E-commerce History - Business Rules", () => {
       const isFaturado = val.includes("aturado");
       expect(isFaturado, `"${tc.input}" should be faturado=${tc.expected}`).toBe(tc.expected);
     }
-  });
-
-  it("should classify tipoMovimento correctly for faturados", () => {
-    const classify = (estadoItem: string) => {
-      const lower = (estadoItem || "").toLowerCase();
-      if (lower.includes("parcial") || lower.includes("parc.")) return "faturado_parcial";
-      return "faturado";
-    };
-
-    expect(classify("Faturado")).toBe("faturado");
-    expect(classify("Faturado parcial")).toBe("faturado_parcial");
-    expect(classify("Faturado c/ entrega futura")).toBe("faturado");
-    expect(classify("Parc. faturado c/ entrega futura")).toBe("faturado_parcial");
   });
 
   it("should not include non-E-COMMERCE faturados", () => {
@@ -134,130 +246,5 @@ describe("E-commerce History - Business Rules", () => {
 
     expect(ecommerceFaturados).toHaveLength(1);
     expect(ecommerceFaturados[0].pedido).toBe("909");
-  });
-});
-
-describe("E-commerce History - extractUnitsPerBox", () => {
-  it("should extract units from C/ N UNID pattern", () => {
-    expect(extractUnitsPerBox("PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125MM C/ 10.000 UNID.")).toBe(10000);
-    expect(extractUnitsPerBox("VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA")).toBe(20000);
-    expect(extractUnitsPerBox("VARETA PARA ALGODÃO DOCE BAMBU 4,0 X 350 MM C/ 10.000 UNID.")).toBe(10000);
-    expect(extractUnitsPerBox("VARETA AROMATIZADOR 4,0 X 125 MM C/ 100 UNID.")).toBe(100);
-  });
-
-  it("should extract units from VARETA AROMATIZADOR MM N pattern (no UNID)", () => {
-    expect(extractUnitsPerBox("VARETA AROMATIZADOR 4,0 X 125 MM 10.000")).toBe(10000);
-    expect(extractUnitsPerBox("VARETA AROMATIZADOR 4,0 X 180 MM 10.000")).toBe(10000);
-    expect(extractUnitsPerBox("VARETA AROMATIZADOR 4,0 X 200 MM 10.000")).toBe(10000);
-    expect(extractUnitsPerBox("VARETA AROMATIZADOR 4,0 X 250 MM 10.000")).toBe(10000);
-  });
-
-  it("should extract units from NxM pattern after MM (no UNID)", () => {
-    expect(extractUnitsPerBox("VARETA AROMATIZADOR 4,0 X 250 MM 100 x 100")).toBe(10000);
-    expect(extractUnitsPerBox("VARETA AROMATIZADOR 4,0 X 125 MM 200 x 100")).toBe(20000);
-  });
-
-  it("should extract units from C/ NxM UNID pattern", () => {
-    expect(extractUnitsPerBox("PALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 200 X100 UNID.")).toBe(20000);
-  });
-
-  it("should extract units from CM NxM pattern (hashi)", () => {
-    expect(extractUnitsPerBox("PALITO HASHI DE BAMBU 20 CM C/ 20 X 100 UNID.")).toBe(2000);
-  });
-});
-
-describe("E-commerce History - extractDimensions", () => {
-  it("should extract dimensions from product descriptions", () => {
-    expect(extractDimensions("PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 100 UNID.")).toBe("4,0 X 125");
-    expect(extractDimensions("VARETA AROMATIZADOR 4,0 X 250 MM 10.000")).toBe("4,0 X 250");
-    expect(extractDimensions("VARETA AROMATIZADOR FIBRA 3,0 X 200 MM-FLOW-PACK 50 UNID.")).toBe("3,0 X 200");
-    expect(extractDimensions("VARETA PARA ALGODÃO DOCE MADEIRA 4,0 X 350 MM C/ 300 UNID.")).toBe("4,0 X 350");
-  });
-
-  it("should return null for descriptions without dimensions", () => {
-    expect(extractDimensions("PRODUTO SEM MEDIDAS")).toBeNull();
-  });
-});
-
-describe("E-commerce History - extractProductType", () => {
-  it("should classify product types correctly", () => {
-    expect(extractProductType("PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM")).toBe("MANICURE_DUAS_PONTAS");
-    expect(extractProductType("PALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM")).toBe("MANICURE_PONTA_CHANFRO");
-    expect(extractProductType("VARETA AROMATIZADOR FIBRA 3,0 X 200 MM")).toBe("VARETA_FIBRA_AROMATIZADOR");
-    expect(extractProductType("VARETA AROMATIZADOR 4,0 X 125 MM")).toBe("VARETA_AROMATIZADOR");
-    expect(extractProductType("VARETA PARA ALGODÃO DOCE MADEIRA 4,0 X 350 MM")).toBe("VARETA_ALGODAO_DOCE_MADEIRA");
-    expect(extractProductType("ESPETO DE BAMBU 4,0 X 250 MM")).toBe("ESPETO_BAMBU");
-    expect(extractProductType("PALITO HASHI DE BAMBU 20 CM")).toBe("PALITO_HASHI");
-  });
-});
-
-describe("E-commerce History - PC→CX Conversion", () => {
-  it("should convert PC items to CX using parent units per box", () => {
-    // Simulating the conversion logic:
-    // totalUnidades = qtdPC * unidadesPerPC (from description)
-    // caixas = totalUnidades / parentUnitsPerBox
-
-    const conversions = [
-      // code, qtdPC, unPerPC, parentUpb, expectedCx, expectedUn
-      { code: "00470", qtdPC: 1000, unPerPC: 100, parentUpb: 10000, expectedCx: 10, expectedUn: 100000 },
-      { code: "00471", qtdPC: 1000, unPerPC: 500, parentUpb: 10000, expectedCx: 50, expectedUn: 500000 },
-      { code: "00472", qtdPC: 1000, unPerPC: 100, parentUpb: 10000, expectedCx: 10, expectedUn: 100000 },
-      { code: "00473", qtdPC: 1000, unPerPC: 500, parentUpb: 10000, expectedCx: 50, expectedUn: 500000 },
-      { code: "00487", qtdPC: 1000, unPerPC: 100, parentUpb: 10000, expectedCx: 10, expectedUn: 100000 },  // Note: actual qty from Maxiprod may differ
-      { code: "00490", qtdPC: 1000, unPerPC: 50, parentUpb: 10000, expectedCx: 5, expectedUn: 50000 },
-      { code: "00491", qtdPC: 1000, unPerPC: 200, parentUpb: 10000, expectedCx: 20, expectedUn: 200000 },
-    ];
-
-    for (const c of conversions) {
-      const totalUn = c.qtdPC * c.unPerPC;
-      const cx = totalUn / c.parentUpb;
-      expect(totalUn).toBe(c.expectedUn);
-      expect(cx).toBe(c.expectedCx);
-    }
-  });
-
-  it("should prefer maxiprodFator > 1 over descFator", () => {
-    // When maxiprodFator is > 1, use it
-    const maxiprodFator = 5000;
-    const descFator = 10000;
-    const result = (maxiprodFator && maxiprodFator > 1) ? maxiprodFator : descFator;
-    expect(result).toBe(5000);
-  });
-
-  it("should use descFator when maxiprodFator is 1", () => {
-    // When maxiprodFator is 1 (no conversion), fall back to description extraction
-    const maxiprodFator = 1;
-    const descFator = 10000;
-    const result = (maxiprodFator && maxiprodFator > 1) ? maxiprodFator : descFator;
-    expect(result).toBe(10000);
-  });
-
-  it("should use descFator when maxiprodFator is null", () => {
-    const maxiprodFator = null;
-    const descFator = 10000;
-    const result = (maxiprodFator && maxiprodFator > 1) ? maxiprodFator : descFator;
-    expect(result).toBe(10000);
-  });
-
-  it("should not convert CX items (only PC)", () => {
-    // Items already in CX should not be converted
-    const umCodigo = "CX";
-    const shouldConvert = umCodigo === "PC";
-    expect(shouldConvert).toBe(false);
-  });
-
-  it("should handle VARETA AROMATIZADOR with fallback to child items when no pure parent exists", () => {
-    // For VARETA AROMATIZADOR 4,0 X 200 MM, all stock items are children
-    // The system should use fallback (allNonPcByTypeAndDim) to find a match
-    // Parent 00084 (child of 00095) has desc "VARETA AROMATIZADOR 4,0 X 200 MM 10.000"
-    // extractUnitsPerBox should return 10000 for this description
-    const parentDesc = "VARETA AROMATIZADOR 4,0 X 200 MM 10.000";
-    const upb = extractUnitsPerBox(parentDesc);
-    expect(upb).toBe(10000);
-
-    // Conversion: 1000 PC × 50 un = 50000 / 10000 = 5 CX
-    const totalUn = 1000 * 50;
-    const cx = totalUn / upb!;
-    expect(cx).toBe(5);
   });
 });

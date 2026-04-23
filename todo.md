@@ -3008,3 +3008,14 @@
 - [x] Remover card "Total de Unidades" do Histórico E-commerce
 - [x] Remover coluna "Unidades" da tabela do Histórico E-commerce
 - [x] Redesenhar dialog do Histórico E-commerce: maior e mais organizado
+
+## Refatoração Histórico E-commerce (Importação)
+- [x] Filtrar Histórico E-commerce para mostrar apenas produtos de importação (Grupo 12)
+- [x] Usar mapeamentos manuais PC→CX conforme ensinado pelo usuário (17 produtos pedido #909)
+- [x] Card de transferência pendente E-commerce no estoque de importação (quando pedido não faturado)
+- [x] Card some quando pedido faturado e dados vão para Histórico E-commerce
+- [x] Dialog grande e moderno do Histórico E-commerce com todas colunas visíveis
+- [x] Somatório de caixas ao final da tabela do Histórico E-commerce
+- [x] Organizar histórico por data
+- [x] Filtros para pesquisar produtos no Histórico E-commerce
+- [x] Automatizar detecção de novos pedidos E-commerce (estado configurável + cliente filial)
