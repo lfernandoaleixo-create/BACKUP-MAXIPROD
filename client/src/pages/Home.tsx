@@ -4527,7 +4527,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-[95vw] w-[1400px] max-h-[92vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-[98vw] w-[1600px] max-h-[94vh] overflow-hidden flex flex-col p-0">
         {/* Header */}
         <div className="px-8 pt-6 pb-5 border-b border-purple-100 bg-gradient-to-br from-purple-50 via-indigo-50/50 to-white">
           <DialogHeader>
@@ -4634,7 +4634,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
         </div>
 
         {/* Table grouped by pedido */}
-        <div className="flex-1 overflow-auto px-8 pb-6">
+        <div className="flex-1 overflow-auto px-6 pb-6">
           {isLoading ? (
             <div className="text-center py-20">
               <Loader2 className="w-12 h-12 mx-auto animate-spin text-purple-400" />
@@ -4664,74 +4664,85 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                     </div>
                   </div>
                   {/* Group table */}
-                  <table className="w-full">
+                  <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1100px]">
                     <thead className="bg-slate-50/80">
                       <tr>
-                        <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[5%]">#</th>
-                        <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[8%]">Código</th>
-                        <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[32%]">Descrição do Produto</th>
-                        <th className="px-4 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Unid. Original</th>
-                        <th className="px-4 py-2 text-right text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Qtd. Original</th>
-                        <th className="px-4 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Produto Mãe</th>
-                        <th className="px-4 py-2 text-right text-[10px] font-semibold text-purple-600 uppercase tracking-wider w-[10%] bg-purple-50/50">Caixas</th>
-                        <th className="px-4 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Status</th>
+                        <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[4%]">#</th>
+                        <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[7%]">Código</th>
+                        <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Descrição do Produto</th>
+                        <th className="px-3 py-2.5 text-right text-[10px] font-semibold text-purple-600 uppercase tracking-wider w-[9%]">Caixas</th>
+                        <th className="px-3 py-2.5 text-right text-[10px] font-semibold text-amber-600 uppercase tracking-wider w-[9%]">Pacotes</th>
+                        <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[22%]">Observação</th>
+                        <th className="px-3 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-[8%]">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {group.items.map((h: any, idx: number) => (
+                      {group.items.map((h: any, idx: number) => {
+                        const isDirectCx = !h.produtoMae || h.unidadeOriginal === 'CX';
+                        return (
                         <tr key={idx} className="hover:bg-purple-50/20 transition-colors">
-                          <td className="px-4 py-2.5 text-xs text-slate-400 font-mono">{idx + 1}</td>
-                          <td className="px-4 py-2.5">
+                          <td className="px-3 py-2.5 text-xs text-slate-400 font-mono">{idx + 1}</td>
+                          <td className="px-3 py-2.5">
                             <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">{h.codigoItem}</span>
                           </td>
-                          <td className="px-4 py-2.5 text-[13px] text-slate-700">
+                          <td className="px-3 py-2.5 text-[13px] text-slate-700">
                             <span className="leading-snug" title={h.descricaoItem}>{h.descricaoItem}</span>
                           </td>
-                          <td className="px-4 py-2.5 text-center">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                              h.unidadeOriginal === 'PC' ? 'bg-amber-100 text-amber-700' : 'bg-cyan-100 text-cyan-700'
-                            }`}>
-                              {h.unidadeOriginal}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-right text-sm font-semibold text-slate-600">
-                            {formatNumber(h.quantidadeOriginal)}
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            {h.produtoMae ? (
-                              <span className="text-xs font-mono bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-semibold">{h.produtoMae}</span>
-                            ) : (
-                              <span className="text-[10px] text-slate-400 italic">direto CX</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2.5 text-right bg-purple-50/30">
+                          <td className="px-3 py-2.5 text-right bg-purple-50/30">
                             <span className="text-sm font-extrabold text-purple-700">{formatNumber(h.quantidadeCx)}</span>
                             <span className="text-[10px] text-purple-400 ml-0.5 font-bold">cx</span>
                           </td>
-                          <td className="px-4 py-2.5 text-center">
+                          <td className="px-3 py-2.5 text-right">
+                            {isDirectCx ? (
+                              <span className="text-sm text-slate-300 font-medium">—</span>
+                            ) : (
+                              <span className="text-sm font-semibold text-amber-700">{formatNumber(h.quantidadeOriginal)} <span className="text-[10px] text-amber-400 font-bold">pc</span></span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {isDirectCx ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-cyan-700 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded-md">
+                                <Info className="w-3 h-3" />
+                                Lançado direto em caixa
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-slate-400">Convertido de {formatNumber(h.quantidadeOriginal)} pc → {formatNumber(h.quantidadeCx)} cx (mãe: {h.produtoMae})</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
                             <Badge className="text-[10px] border-0 px-2 py-0.5 bg-green-100 text-green-700">
                               Faturado
                             </Badge>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                     {/* Subtotal per group */}
                     <tfoot className="bg-slate-50 border-t border-slate-200">
                       <tr>
-                        <td colSpan={4} className="px-4 py-2.5 text-xs font-bold text-slate-500 uppercase">Subtotal Pedido #{group.pedido}</td>
-                        <td className="px-4 py-2.5 text-right text-xs font-bold text-slate-500">
-                          {formatNumber(group.items.reduce((s: number, h: any) => s + (h.quantidadeOriginal || 0), 0))}
-                        </td>
-                        <td></td>
-                        <td className="px-4 py-2.5 text-right bg-purple-50/30">
+                        <td colSpan={3} className="px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Subtotal Pedido #{group.pedido}</td>
+                        <td className="px-3 py-2.5 text-right bg-purple-50/30">
                           <span className="text-sm font-extrabold text-purple-800">{formatNumber(group.totalCx)}</span>
                           <span className="text-xs font-bold text-purple-500 ml-1">cx</span>
                         </td>
+                        <td className="px-3 py-2.5 text-right">
+                          {(() => {
+                            const pcTotal = group.items.filter((h: any) => h.produtoMae && h.unidadeOriginal === 'PC').reduce((s: number, h: any) => s + (h.quantidadeOriginal || 0), 0);
+                            return pcTotal > 0 ? (
+                              <span className="text-sm font-bold text-amber-700">{formatNumber(pcTotal)} <span className="text-xs text-amber-500">pc</span></span>
+                            ) : (
+                              <span className="text-sm text-slate-300">—</span>
+                            );
+                          })()}
+                        </td>
+                        <td></td>
                         <td></td>
                       </tr>
                     </tfoot>
                   </table>
+                  </div>
                 </div>
               ))}
 

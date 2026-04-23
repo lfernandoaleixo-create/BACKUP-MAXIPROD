@@ -3019,3 +3019,6 @@
 - [x] Organizar histórico por data
 - [x] Filtros para pesquisar produtos no Histórico E-commerce
 - [x] Automatizar detecção de novos pedidos E-commerce (estado configurável + cliente filial)
+- [x] Alargar dialog Histórico E-commerce para não cortar/achatar nada
+- [x] Adicionar coluna Caixas (convertido) e coluna Pacotes (original) separadas
+- [x] Observação "Lançado direto em caixa" para produtos CX (tracinho na coluna Pacotes)
