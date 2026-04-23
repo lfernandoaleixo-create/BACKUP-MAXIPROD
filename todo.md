@@ -3022,3 +3022,4 @@
 - [x] Alargar dialog Histórico E-commerce para não cortar/achatar nada
 - [x] Adicionar coluna Caixas (convertido) e coluna Pacotes (original) separadas
 - [x] Observação "Lançado direto em caixa" para produtos CX (tracinho na coluna Pacotes)
+- [x] Dialog Histórico E-commerce em modo paisagem (widescreen) fullscreen, sem scroll
