@@ -3024,3 +3024,4 @@
 - [x] Observação "Lançado direto em caixa" para produtos CX (tracinho na coluna Pacotes)
 - [x] Dialog Histórico E-commerce em modo paisagem (widescreen) fullscreen, sem scroll
 - [x] Somatório semanal (dias úteis) abaixo das barras no gráfico Evolução Diária de Vendas
+- [x] Corrigir design cards somatório semanal: sem quebra de texto, espaçamento profissional, dias úteis embaixo

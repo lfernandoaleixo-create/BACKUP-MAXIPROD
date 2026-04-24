@@ -704,48 +704,55 @@ function DailyChart({ data, mode, period, comparison }: {
           { from: "from-rose-500", to: "to-pink-600", bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", accent: "text-rose-500", light: "bg-rose-100", ring: "ring-rose-200" },
         ];
 
+        const formatVal = (v: number) => {
+          if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+          if (v >= 1000) return `${(v / 1000).toFixed(0)}K`;
+          return v.toFixed(0);
+        };
+
         return (
-          <div className="flex items-stretch gap-2 mt-3">
+          <div className="grid gap-2.5 mt-4" style={{ gridTemplateColumns: `repeat(${weeks.length}, 1fr)` }}>
             {weeks.map((week, idx) => {
               const colors = weekColors[idx % weekColors.length];
               const hasValue = week.total > 0;
-              const formatVal = (v: number) => {
-                if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
-                if (v >= 1000) return `${(v / 1000).toFixed(0)}K`;
-                return v.toFixed(0);
-              };
+              const activeDays = week.days.filter(d => !d.isFuture && d.value > 0).length;
+              const avg = activeDays > 0 ? week.total / activeDays : 0;
               return (
                 <div
                   key={idx}
-                  className={`flex-1 relative overflow-hidden rounded-xl border ${colors.border} ${colors.bg} ring-1 ${colors.ring} shadow-sm hover:shadow-md transition-all duration-200`}
+                  className={`relative overflow-hidden rounded-xl border ${colors.border} ${colors.bg} shadow-sm hover:shadow-md transition-all duration-200`}
                 >
-                  {/* Top gradient bar */}
-                  <div className={`h-1 bg-gradient-to-r ${colors.from} ${colors.to}`} />
-                  <div className="px-3 py-2.5">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider ${colors.accent}`}>Semana {week.weekNum}</span>
-                      <span className="text-[9px] text-slate-400 font-medium">Dias {week.startDay}–{week.endDay}</span>
+                  {/* Top gradient accent */}
+                  <div className={`h-1.5 bg-gradient-to-r ${colors.from} ${colors.to}`} />
+
+                  <div className="px-4 pt-3 pb-3 flex flex-col gap-2">
+                    {/* Row 1: Semana + Dias - all on one line, no wrap */}
+                    <div className="flex items-baseline justify-between gap-2" style={{ whiteSpace: 'nowrap' }}>
+                      <span className={`text-xs font-extrabold uppercase tracking-wide ${colors.accent}`}>Semana {week.weekNum}</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Dias {week.startDay}–{week.endDay}</span>
                     </div>
-                    {hasValue ? (
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-lg font-black ${colors.text} tracking-tight leading-none`}>
-                          {mode === "value" ? `R$ ${formatVal(week.total)}` : week.totalOrders}
+
+                    {/* Row 2: Big value */}
+                    <div style={{ whiteSpace: 'nowrap' }}>
+                      {hasValue ? (
+                        <span className={`text-xl font-black ${colors.text} tracking-tight leading-none`}>
+                          {mode === "value" ? `R$ ${formatVal(week.total)}` : `${week.totalOrders} pedidos`}
                         </span>
-                        {mode === "orders" && (
-                          <span className={`text-[10px] font-semibold ${colors.accent}`}>pedidos</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-slate-300 font-medium">—</span>
-                    )}
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-[9px] text-slate-400">{week.days.length} dias úteis</span>
-                      {hasValue && mode === "value" && (
-                        <>
-                          <span className="text-[9px] text-slate-300">•</span>
-                          <span className={`text-[9px] font-semibold ${colors.accent}`}>média {formatCurrencyFull(week.total / (week.days.filter(d => !d.isFuture && d.value > 0).length || 1))}/dia</span>
-                        </>
+                      ) : (
+                        <span className="text-lg text-slate-300 font-semibold">—</span>
                       )}
+                    </div>
+
+                    {/* Row 3: Média (only if has value and value mode) */}
+                    {hasValue && mode === "value" && (
+                      <div style={{ whiteSpace: 'nowrap' }}>
+                        <span className={`text-[10px] font-semibold ${colors.accent}`}>média {formatCurrencyFull(avg)}/dia</span>
+                      </div>
+                    )}
+
+                    {/* Row 4: Dias úteis - at the bottom, separated */}
+                    <div className="pt-1.5 mt-auto border-t border-slate-200/50" style={{ whiteSpace: 'nowrap' }}>
+                      <span className="text-[10px] text-slate-400 font-medium">{week.days.length} dias úteis</span>
                     </div>
                   </div>
                 </div>
