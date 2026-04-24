@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 const BASE = `http://localhost:${process.env.PORT ?? 3000}`;
 
@@ -23,15 +23,28 @@ async function trpcMutation(path: string, input: any) {
 }
 
 describe("Sicoob Limite - Troca de Títulos", () => {
-  // Clean up after tests: reset the setting to null
-  afterAll(async () => {
-    // We can't easily delete from app_settings via tRPC, but we can set a known value
-    // The test values won't interfere with production since they're just test values
+  // Backup original value before tests
+  let originalValue: { valor: number; updatedBy: string; updatedAt: string } | null = null;
+
+  beforeAll(async () => {
+    const result = await trpcQuery("settings.getSicoobLimite");
+    if (result && result.valor !== null && result.valor !== undefined) {
+      originalValue = { valor: result.valor, updatedBy: result.updatedBy, updatedAt: result.updatedAt };
+    }
   });
 
-  it("getSicoobLimite returns null when not set", async () => {
+  // Restore original value after ALL tests
+  afterAll(async () => {
+    if (originalValue && originalValue.valor !== null && originalValue.valor !== undefined) {
+      await trpcMutation("settings.updateSicoobLimite", {
+        valor: originalValue.valor,
+        operatorName: "Flavio",
+      });
+    }
+  });
+
+  it("getSicoobLimite returns correct structure", async () => {
     const result = await trpcQuery("settings.getSicoobLimite");
-    // First time might be null or might have a value from previous test runs
     expect(result).toBeDefined();
     expect(result).toHaveProperty("valor");
     expect(result).toHaveProperty("updatedBy");
@@ -43,9 +56,7 @@ describe("Sicoob Limite - Troca de Títulos", () => {
       valor: 50000,
       operatorName: "Thiago",
     });
-    // Should return an error
     expect(result).toBeDefined();
-    // The error should indicate only Flavio can update
     expect(result.message || result.data?.message || JSON.stringify(result)).toContain("Flávio");
   });
 
@@ -73,7 +84,6 @@ describe("Sicoob Limite - Troca de Títulos", () => {
     expect(result.valor).toBe(250000.50);
     expect(result.updatedBy).toBe("Flavio");
     expect(result.updatedAt).toBeTruthy();
-    // updatedAt should be a valid ISO date
     expect(new Date(result.updatedAt).getTime()).toBeGreaterThan(0);
   });
 
@@ -87,6 +97,7 @@ describe("Sicoob Limite - Troca de Títulos", () => {
     const updated = await trpcQuery("settings.getSicoobLimite");
     expect(updated.valor).toBe(500000);
     expect(updated.updatedBy).toBe("Flavio");
+    // afterAll will restore the original value
   });
 
   it("updateSicoobLimite rejects negative values", async () => {
@@ -94,9 +105,7 @@ describe("Sicoob Limite - Troca de Títulos", () => {
       valor: -1000,
       operatorName: "Flavio",
     });
-    // Zod validation should reject negative values
     expect(result).toBeDefined();
-    // Should be an error (either zod validation or custom)
     const isError = result.message || result.code || !result.success;
     expect(isError).toBeTruthy();
   });

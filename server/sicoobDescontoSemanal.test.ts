@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 const BASE = `http://localhost:${process.env.PORT ?? 3000}`;
 
@@ -23,6 +23,26 @@ async function trpcMutation(path: string, input: any) {
 }
 
 describe("Sicoob Desconto Semanal - Valor previsto de liberação", () => {
+  // Backup original value before tests
+  let originalValue: { valor: number; updatedBy: string; updatedAt: string } | null = null;
+
+  beforeAll(async () => {
+    const result = await trpcQuery("settings.getSicoobDescontoSemanal");
+    if (result && result.valor !== null && result.valor !== undefined) {
+      originalValue = { valor: result.valor, updatedBy: result.updatedBy, updatedAt: result.updatedAt };
+    }
+  });
+
+  // Restore original value after ALL tests
+  afterAll(async () => {
+    if (originalValue && originalValue.valor !== null && originalValue.valor !== undefined) {
+      await trpcMutation("settings.updateSicoobDescontoSemanal", {
+        valor: originalValue.valor,
+        operatorName: "Flavio",
+      });
+    }
+  });
+
   it("getSicoobDescontoSemanal returns correct structure", async () => {
     const result = await trpcQuery("settings.getSicoobDescontoSemanal");
     expect(result).toBeDefined();
@@ -78,6 +98,9 @@ describe("Sicoob Desconto Semanal - Valor previsto de liberação", () => {
   });
 
   it("desconto semanal and limite are independent settings", async () => {
+    // Save current limite value first
+    const limiteBackup = await trpcQuery("settings.getSicoobLimite");
+
     // Update desconto semanal
     await trpcMutation("settings.updateSicoobDescontoSemanal", {
       valor: 175000,
@@ -86,10 +109,11 @@ describe("Sicoob Desconto Semanal - Valor previsto de liberação", () => {
 
     // Check that limite was not affected
     const limite = await trpcQuery("settings.getSicoobLimite");
-    expect(limite.valor).not.toBe(175000);
+    expect(limite.valor).toBe(limiteBackup.valor);
 
     // Check desconto semanal has the new value
     const desconto = await trpcQuery("settings.getSicoobDescontoSemanal");
     expect(desconto.valor).toBe(175000);
+    // afterAll will restore the original value
   });
 });

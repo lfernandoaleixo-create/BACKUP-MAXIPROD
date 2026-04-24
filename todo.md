@@ -3027,3 +3027,4 @@
 - [x] Corrigir design cards somatório semanal: sem quebra de texto, espaçamento profissional, dias úteis embaixo
 - [x] Renomear botão/dialog existente para "Histórico E-commerce — Importação"
 - [x] Criar botão "Histórico E-commerce — Industrialização" na seção Madeira com mesmo layout/design
+- [x] BUG: Valores dos cards "Valor previsto liberação desconto" e "Limite troca títulos" sendo sobrescritos automaticamente — são valores 100% MANUAIS, só mudam quando Flávio editar
