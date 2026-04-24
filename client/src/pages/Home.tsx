@@ -2293,14 +2293,10 @@ function MadeiraValorizacaoCard({
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
             <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
               <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
               <p className="text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
-              <p className="text-[10px] text-blue-700 font-semibold uppercase tracking-wider">Vlr PO</p>
-              <p className="text-lg font-extrabold text-blue-800">{formatCurrency(valuation.valorPO)}</p>
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
