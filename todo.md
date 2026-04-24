@@ -3034,3 +3034,4 @@
 - [x] Aumentar botão Valorização e escrever texto completo "Valorização do Estoque" (sem abreviar) nos cards Semi Pronto e Aguardando Escolha
 - [x] Configurar produtos de madeira para E-commerce no Histórico E-commerce — Industrialização (12 produtos do pedido 927)
 - [x] Adicionar medida 3,8x300mm na Vareteira (item 2 Produção) para máquinas 1, 2, 3 e 4 (não máquina 5)
+- [x] Atualizar fator de conversão do 3,8x218mm para cxp=0.6 e cxg=0.8 (igual ao 3,8x200mm)

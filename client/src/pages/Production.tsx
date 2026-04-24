@@ -94,7 +94,7 @@ const CONVERSION_FACTORS: Record<string, { cxp: number; cxg: number }> = {
   "3.8x150mm": { cxp: 0, cxg: 0 },
   "3.8x180mm": { cxp: 0.5, cxg: 0 },
   "3.8x200mm": { cxp: 0.6, cxg: 0.8 },
-  "3.8x218mm": { cxp: 0, cxg: 0 },
+  "3.8x218mm": { cxp: 0.6, cxg: 0.8 },
   "3.8x220mm": { cxp: 0.5, cxg: 0.7 },
   "3.8x250mm": { cxp: 0, cxg: 0.8 },
   "3.8x300mm": { cxp: 0, cxg: 0 },
