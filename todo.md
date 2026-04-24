@@ -3038,3 +3038,4 @@
 - [x] Adicionar 12 produtos de madeira (00487-00501) com estoque zerado no card Madeira Produto Acabado
 - [ ] BUG: VLR PROJETADO no Semi Pronto deveria ser negativo quando pedidos superam estoque (igual ao Aguardando Escolha)
 - [x] Adicionar extrato mensal nos Históricos E-commerce (Industrialização e Importação) com filtro por mês e exportação (código, nome, pacotes, caixas)
+- [x] Alterar exportação do extrato E-commerce de CSV para PDF formatado (Importação e Industrialização)

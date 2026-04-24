@@ -79,6 +79,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
+import { generateEcommerceExtractPdf } from "@/lib/ecommerceExtractPdf";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
 
@@ -4672,35 +4673,7 @@ function IndustrializedBaixaDialog({ open, onClose }: { open: boolean; onClose: 
   );
 }
 
-/* --- CSV Export helper for E-commerce History --- */
-function exportEcommerceCSV(data: any[], filename: string) {
-  const rows: string[][] = [['Código', 'Produto', 'Pacotes (PC)', 'Caixas (CX)']];
-  // Consolidate by product code
-  const byCode = new Map<string, { codigo: string; descricao: string; pc: number; cx: number }>();
-  for (const h of data) {
-    const existing = byCode.get(h.codigoItem) || { codigo: h.codigoItem, descricao: h.descricaoItem, pc: 0, cx: 0 };
-    if (h.unidadeOriginal === 'PC') existing.pc += h.quantidadeOriginal || 0;
-    existing.cx += h.quantidadeCx || 0;
-    byCode.set(h.codigoItem, existing);
-  }
-  // Sort by code
-  const sorted = Array.from(byCode.values()).sort((a, b) => a.codigo.localeCompare(b.codigo));
-  let totalPc = 0, totalCx = 0;
-  for (const p of sorted) {
-    rows.push([p.codigo, p.descricao, p.pc > 0 ? p.pc.toString() : '', p.cx.toString()]);
-    totalPc += p.pc;
-    totalCx += p.cx;
-  }
-  rows.push(['', 'TOTAL', totalPc > 0 ? totalPc.toString() : '', totalCx.toString()]);
-  const csv = rows.map(r => r.join(';')).join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+/* --- PDF Export for E-commerce History is in lib/ecommerceExtractPdf.ts --- */
 
 /* --- Available months helper --- */
 function getAvailableMonths(history: any[]): string[] {
@@ -4802,11 +4775,15 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
   const uniqueProducts = useMemo(() => new Set(filteredHistory.map((h: any) => h.codigoItem)).size, [filteredHistory]);
 
   // Export handler
-  const handleExportCSV = useCallback(() => {
-    const monthLabel = monthFilter !== 'all' ? monthFilter : 'todos';
-    const filename = `extrato-ecommerce-importacao-${monthLabel}.csv`;
-    exportEcommerceCSV(filteredHistory, filename);
-    toast.success('Extrato exportado com sucesso!');
+  const handleExportPDF = useCallback(async () => {
+    const label = monthFilter !== 'all' ? formatMonthLabel(monthFilter) : 'Todos';
+    try {
+      await generateEcommerceExtractPdf(filteredHistory, 'importacao', label);
+      toast.success('PDF do extrato gerado com sucesso!');
+    } catch (err) {
+      toast.error('Erro ao gerar PDF');
+      console.error(err);
+    }
   }, [filteredHistory, monthFilter]);
 
   return (
@@ -4920,12 +4897,12 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
             )}
             <div className="ml-auto">
               <button
-                onClick={handleExportCSV}
+                onClick={handleExportPDF}
                 disabled={filteredHistory.length === 0}
                 className="h-7 px-3 text-xs font-semibold rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-sm hover:from-purple-600 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-all"
               >
                 <Download className="w-3.5 h-3.5" />
-                Exportar Extrato
+                Exportar PDF
               </button>
             </div>
           </div>
@@ -5156,11 +5133,15 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
   const uniqueProducts = useMemo(() => new Set(filteredHistory.map((h: any) => h.codigoItem)).size, [filteredHistory]);
 
   // Export handler
-  const handleExportCSV = useCallback(() => {
-    const monthLabel = monthFilter !== 'all' ? monthFilter : 'todos';
-    const filename = `extrato-ecommerce-industrializacao-${monthLabel}.csv`;
-    exportEcommerceCSV(filteredHistory, filename);
-    toast.success('Extrato exportado com sucesso!');
+  const handleExportPDF = useCallback(async () => {
+    const label = monthFilter !== 'all' ? formatMonthLabel(monthFilter) : 'Todos';
+    try {
+      await generateEcommerceExtractPdf(filteredHistory, 'industrializacao', label);
+      toast.success('PDF do extrato gerado com sucesso!');
+    } catch (err) {
+      toast.error('Erro ao gerar PDF');
+      console.error(err);
+    }
   }, [filteredHistory, monthFilter]);
 
   return (
@@ -5273,12 +5254,12 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
             )}
             <div className="ml-auto">
               <button
-                onClick={handleExportCSV}
+                onClick={handleExportPDF}
                 disabled={filteredHistory.length === 0}
                 className="h-7 px-3 text-xs font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-sm hover:from-emerald-600 hover:to-teal-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-all"
               >
                 <Download className="w-3.5 h-3.5" />
-                Exportar Extrato
+                Exportar PDF
               </button>
             </div>
           </div>
