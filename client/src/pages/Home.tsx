@@ -3015,21 +3015,15 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
   );
 }
 
-/* --- Semi Pronto Valuation inline card --- */
-function SemiProntoValorizacao({
+/* --- Semi Pronto Valuation inline (inside card) --- */
+function SemiProntoValorizacaoInline({
   items,
   semiProntoMap,
   madeiraVisData,
-  showFinancial,
-  setShowFinancial,
-  operatorCtx,
 }: {
   items: StockItem[];
   semiProntoMap: Map<string, number>;
-  madeiraVisData: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> } | undefined;
-  showFinancial: boolean;
-  setShowFinancial: (v: boolean) => void;
-  operatorCtx: ReturnType<typeof useOperator>;
+  madeiraVisData?: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> };
 }) {
   const precosMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -3071,69 +3065,43 @@ function SemiProntoValorizacao({
   }, [items, precosMap, semiProntoMap]);
 
   return (
-    <div className="flex items-stretch gap-4">
-      {showFinancial && (
-        <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3 transition-all">
-          <div className="flex items-center gap-2 mb-3">
-            <DollarSign className="w-4 h-4 text-amber-600" />
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização — Semi Pronto</p>
-            <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
-              <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
-              <p className="text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
+    <div className="mx-5 mb-3 mt-1 bg-amber-50/50 border border-amber-200 rounded-xl px-5 py-3 transition-all">
+      <div className="flex items-center gap-2 mb-3">
+        <DollarSign className="w-4 h-4 text-amber-600" />
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização — Semi Pronto</p>
+        <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+          <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
+          <p className="text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
+              <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
+              <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
-                  <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
-                  <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
-                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
-                <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos).</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-      )}
-      {operatorCtx?.hasGranularAccess("est.valorizacao") && (
-        <div className={`flex items-center ${!showFinancial ? 'ml-auto' : ''}`}>
-          <button
-            onClick={() => setShowFinancial(!showFinancial)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-              showFinancial
-                ? 'bg-amber-600 text-white shadow-md hover:bg-amber-700'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
-            }`}
-          >
-            <DollarSign className="w-4 h-4" />
-            {showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
-            {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
-      )}
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
+            <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
+            <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos).</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
     </div>
   );
 }
 
-/* --- Aguardando Escolha Valuation inline card --- */
-function AguardandoValorizacao({
+/* --- Aguardando Escolha Valuation inline (inside card) --- */
+function AguardandoValorizacaoInline({
   items,
   aguardandoMap,
   madeiraVisData,
-  showFinancial,
-  setShowFinancial,
-  operatorCtx,
 }: {
   items: StockItem[];
   aguardandoMap: Map<string, number>;
-  madeiraVisData: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> } | undefined;
-  showFinancial: boolean;
-  setShowFinancial: (v: boolean) => void;
-  operatorCtx: ReturnType<typeof useOperator>;
+  madeiraVisData?: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> };
 }) {
   const precosMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -3175,61 +3143,44 @@ function AguardandoValorizacao({
   }, [items, precosMap, aguardandoMap]);
 
   return (
-    <div className="flex items-stretch gap-4">
-      {showFinancial && (
-        <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3 transition-all">
-          <div className="flex items-center gap-2 mb-3">
-            <DollarSign className="w-4 h-4 text-purple-600" />
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização — Aguardando Escolha</p>
-            <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
-              <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
-              <p className="text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
+    <div className="mx-5 mb-3 mt-1 bg-purple-50/50 border border-purple-200 rounded-xl px-5 py-3 transition-all">
+      <div className="flex items-center gap-2 mb-3">
+        <DollarSign className="w-4 h-4 text-purple-600" />
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização — Aguardando Escolha</p>
+        <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+          <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
+          <p className="text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
+              <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
+              <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
-                  <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
-                  <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
-                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
-                <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos).</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-      )}
-      {operatorCtx?.hasGranularAccess("est.valorizacao") && (
-        <div className={`flex items-center ${!showFinancial ? 'ml-auto' : ''}`}>
-          <button
-            onClick={() => setShowFinancial(!showFinancial)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-              showFinancial
-                ? 'bg-purple-600 text-white shadow-md hover:bg-purple-700'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
-            }`}
-          >
-            <DollarSign className="w-4 h-4" />
-            {showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
-            {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
-      )}
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
+            <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
+            <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos).</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
     </div>
   );
 }
 
 /* --- Semi Pronto Card (estoque editável com senha e histórico) --- */
-function SemiProntoCard({ items, isOpen, onToggle }: {
+function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }: {
   items: StockItem[];
   isOpen: boolean;
   onToggle: () => void;
+  madeiraVisData?: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> };
+  operatorCtx?: ReturnType<typeof useOperator>;
 }) {
   const [search, setSearch] = useState("");
+  const [showValorizacao, setShowValorizacao] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [pendingEditItem, setPendingEditItem] = useState<string | null>(null);
@@ -3371,11 +3322,28 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
             <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: '4 / 7' }}>
+          {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+            <div className="flex items-center justify-center" style={{ gridColumn: '4 / 5' }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowValorizacao(!showValorizacao); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  showValorizacao
+                    ? 'bg-amber-600 text-white shadow-md hover:bg-amber-700'
+                    : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 shadow-sm'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                {showValorizacao ? 'Ocultar' : 'Valorização'}
+                {showValorizacao ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          )}
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '5 / 7' : '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
             <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
         </div>
+        {showValorizacao && <SemiProntoValorizacaoInline items={parentItems} semiProntoMap={semiProntoMap} madeiraVisData={madeiraVisData} />}
       </div>
 
       {isOpen && (
@@ -3452,12 +3420,15 @@ function SemiProntoCard({ items, isOpen, onToggle }: {
   );
 }
 
-function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
+function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }: {
   items: StockItem[];
   isOpen: boolean;
   onToggle: () => void;
+  madeiraVisData?: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> };
+  operatorCtx?: ReturnType<typeof useOperator>;
 }) {
   const [search, setSearch] = useState("");
+  const [showValorizacao, setShowValorizacao] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [pendingEditItem, setPendingEditItem] = useState<string | null>(null);
@@ -3599,11 +3570,28 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle }: {
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
             <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: '4 / 7' }}>
+          {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+            <div className="flex items-center justify-center" style={{ gridColumn: '4 / 5' }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowValorizacao(!showValorizacao); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  showValorizacao
+                    ? 'bg-purple-600 text-white shadow-md hover:bg-purple-700'
+                    : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 shadow-sm'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                {showValorizacao ? 'Ocultar' : 'Valorização'}
+                {showValorizacao ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          )}
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '5 / 7' : '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
             <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
         </div>
+        {showValorizacao && <AguardandoValorizacaoInline items={parentItems} aguardandoMap={aguardandoMap} madeiraVisData={madeiraVisData} />}
       </div>
 
       {isOpen && (
@@ -3694,8 +3682,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const [showEcommerceHistory, setShowEcommerceHistory] = useState(false);
   const [showEcommerceHistoryMadeira, setShowEcommerceHistoryMadeira] = useState(false);
   const [showIndustrializedBaixa, setShowIndustrializedBaixa] = useState(false);
-  const [showSemiProntoFinancial, setShowSemiProntoFinancial] = useState(false);
-  const [showAguardandoFinancial, setShowAguardandoFinancial] = useState(false);
+
   // Fetch pending E-commerce transfers (not yet faturado)
   const { data: pendingEcommerce } = trpc.dashboard.getPendingEcommerceTransfers.useQuery(undefined, { refetchInterval: 30000 });
 
@@ -4519,27 +4506,11 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         monthlySalesData={monthlySalesData}
       />
 
-      <SemiProntoValorizacao
-        items={madeiraItemsSemiPronto}
-        semiProntoMap={semiProntoMapKPI}
-        madeiraVisData={madeiraVisData}
-        showFinancial={showSemiProntoFinancial}
-        setShowFinancial={setShowSemiProntoFinancial}
-        operatorCtx={operatorCtx}
-      />
-
       <SemiProntoCard
         items={madeiraItemsSemiPronto}
         isOpen={openCards.semiPronto}
         onToggle={() => toggleCard("semiPronto")}
-      />
-
-      <AguardandoValorizacao
-        items={madeiraItemsAguardando}
-        aguardandoMap={aguardandoMapKPI}
         madeiraVisData={madeiraVisData}
-        showFinancial={showAguardandoFinancial}
-        setShowFinancial={setShowAguardandoFinancial}
         operatorCtx={operatorCtx}
       />
 
@@ -4547,6 +4518,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         items={madeiraItemsAguardando}
         isOpen={openCards.aguardandoEscolha}
         onToggle={() => toggleCard("aguardandoEscolha")}
+        madeiraVisData={madeiraVisData}
+        operatorCtx={operatorCtx}
       />
 
     </div>
