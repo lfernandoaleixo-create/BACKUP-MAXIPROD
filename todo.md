@@ -3025,3 +3025,5 @@
 - [x] Dialog Histórico E-commerce em modo paisagem (widescreen) fullscreen, sem scroll
 - [x] Somatório semanal (dias úteis) abaixo das barras no gráfico Evolução Diária de Vendas
 - [x] Corrigir design cards somatório semanal: sem quebra de texto, espaçamento profissional, dias úteis embaixo
+- [x] Renomear botão/dialog existente para "Histórico E-commerce — Importação"
+- [x] Criar botão "Histórico E-commerce — Industrialização" na seção Madeira com mesmo layout/design

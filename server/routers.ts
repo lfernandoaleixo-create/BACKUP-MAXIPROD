@@ -10,6 +10,7 @@ import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalance
 import { isSchedulerRunning } from "./scheduler";
 import { processStockData } from "./stockProcessor";
 import { getEcommerceTransferHistoryData, getPendingEcommerceTransfers } from "./ecommerceHistory";
+import { getEcommerceMadeiraHistoryData } from "./ecommerceMadeiraHistory";
 import { getIndustrializedBaixaHistory } from "./industrializedBaixa";
 import { salesRouter } from "./salesRouter";
 import { settingsRouter } from "./settingsRouter";
@@ -534,6 +535,23 @@ export const appRouter = router({
       }).optional())
       .query(async ({ input }) => {
         const results = await getEcommerceTransferHistoryData(input || undefined);
+        return { history: results };
+      }),
+
+    /**
+     * Histórico de transferências E-commerce (Industrialização/Madeira)
+     * Retorna todas as movimentações de saída para filial E-commerce de produtos de madeira
+     */
+    getEcommerceHistoryMadeira: publicProcedure
+      .input(z.object({
+        fromDate: z.string().optional(),
+        toDate: z.string().optional(),
+        codigoItem: z.string().optional(),
+        pedido: z.string().optional(),
+        searchText: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const results = await getEcommerceMadeiraHistoryData(input || undefined);
         return { history: results };
       }),
 
