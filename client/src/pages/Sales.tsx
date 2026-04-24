@@ -654,6 +654,107 @@ function DailyChart({ data, mode, period, comparison }: {
         </svg>
       </div>
 
+      {/* Weekly Summaries (business days) */}
+      {(period === "current_month" || period === "last_month") && allDays.length > 0 && (() => {
+        // Group days into business weeks (Mon-Fri)
+        const weeks: Array<{ weekNum: number; days: typeof allDays; startDay: number; endDay: number; total: number; totalOrders: number }> = [];
+        let currentWeek: typeof allDays = [];
+        let weekStart = 0;
+
+        for (let i = 0; i < allDays.length; i++) {
+          const d = new Date(allDays[i].day + "T12:00:00");
+          const dow = d.getDay(); // 0=Sun, 1=Mon...6=Sat
+          const isBusinessDay = dow >= 1 && dow <= 5;
+
+          if (isBusinessDay) {
+            if (currentWeek.length === 0) weekStart = i;
+            currentWeek.push(allDays[i]);
+          }
+
+          // End of week (Friday) or last day of month
+          const isLastDay = i === allDays.length - 1;
+          const nextDow = i < allDays.length - 1 ? new Date(allDays[i + 1].day + "T12:00:00").getDay() : -1;
+          const isEndOfWeek = dow === 5 || (isBusinessDay && (nextDow === 0 || nextDow === 6 || isLastDay));
+
+          if (currentWeek.length > 0 && (isEndOfWeek || isLastDay)) {
+            const total = currentWeek.reduce((s, d) => s + (d.isFuture ? 0 : d.value), 0);
+            const totalOrders = currentWeek.reduce((s, d) => s + (d.isFuture ? 0 : d.orders), 0);
+            const startDayNum = parseInt(currentWeek[0].day.split("-")[2]);
+            const endDayNum = parseInt(currentWeek[currentWeek.length - 1].day.split("-")[2]);
+            weeks.push({
+              weekNum: weeks.length + 1,
+              days: [...currentWeek],
+              startDay: startDayNum,
+              endDay: endDayNum,
+              total,
+              totalOrders,
+            });
+            currentWeek = [];
+          }
+        }
+
+        if (weeks.length === 0) return null;
+
+        // Gradient colors for each week
+        const weekColors = [
+          { from: "from-teal-500", to: "to-emerald-600", bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-700", accent: "text-teal-500", light: "bg-teal-100", ring: "ring-teal-200" },
+          { from: "from-blue-500", to: "to-indigo-600", bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", accent: "text-blue-500", light: "bg-blue-100", ring: "ring-blue-200" },
+          { from: "from-violet-500", to: "to-purple-600", bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", accent: "text-violet-500", light: "bg-violet-100", ring: "ring-violet-200" },
+          { from: "from-amber-500", to: "to-orange-600", bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", accent: "text-amber-500", light: "bg-amber-100", ring: "ring-amber-200" },
+          { from: "from-rose-500", to: "to-pink-600", bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", accent: "text-rose-500", light: "bg-rose-100", ring: "ring-rose-200" },
+        ];
+
+        return (
+          <div className="flex items-stretch gap-2 mt-3">
+            {weeks.map((week, idx) => {
+              const colors = weekColors[idx % weekColors.length];
+              const hasValue = week.total > 0;
+              const formatVal = (v: number) => {
+                if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+                if (v >= 1000) return `${(v / 1000).toFixed(0)}K`;
+                return v.toFixed(0);
+              };
+              return (
+                <div
+                  key={idx}
+                  className={`flex-1 relative overflow-hidden rounded-xl border ${colors.border} ${colors.bg} ring-1 ${colors.ring} shadow-sm hover:shadow-md transition-all duration-200`}
+                >
+                  {/* Top gradient bar */}
+                  <div className={`h-1 bg-gradient-to-r ${colors.from} ${colors.to}`} />
+                  <div className="px-3 py-2.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${colors.accent}`}>Semana {week.weekNum}</span>
+                      <span className="text-[9px] text-slate-400 font-medium">Dias {week.startDay}–{week.endDay}</span>
+                    </div>
+                    {hasValue ? (
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-lg font-black ${colors.text} tracking-tight leading-none`}>
+                          {mode === "value" ? `R$ ${formatVal(week.total)}` : week.totalOrders}
+                        </span>
+                        {mode === "orders" && (
+                          <span className={`text-[10px] font-semibold ${colors.accent}`}>pedidos</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-slate-300 font-medium">—</span>
+                    )}
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-[9px] text-slate-400">{week.days.length} dias úteis</span>
+                      {hasValue && mode === "value" && (
+                        <>
+                          <span className="text-[9px] text-slate-300">•</span>
+                          <span className={`text-[9px] font-semibold ${colors.accent}`}>média {formatCurrencyFull(week.total / (week.days.filter(d => !d.isFuture && d.value > 0).length || 1))}/dia</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* Tooltip with order details */}
       {hoveredDay && (() => {
         const hoveredItem = allDays.find(d => d.day === hoveredDay);

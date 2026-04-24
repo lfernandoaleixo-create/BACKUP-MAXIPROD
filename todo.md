@@ -3023,3 +3023,4 @@
 - [x] Adicionar coluna Caixas (convertido) e coluna Pacotes (original) separadas
 - [x] Observação "Lançado direto em caixa" para produtos CX (tracinho na coluna Pacotes)
 - [x] Dialog Histórico E-commerce em modo paisagem (widescreen) fullscreen, sem scroll
+- [x] Somatório semanal (dias úteis) abaixo das barras no gráfico Evolução Diária de Vendas
