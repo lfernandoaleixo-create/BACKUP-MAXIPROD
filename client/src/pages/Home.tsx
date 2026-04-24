@@ -3323,22 +3323,22 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
             <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           {operatorCtx?.hasGranularAccess("est.valorizacao") && (
-            <div className="flex items-center justify-center" style={{ gridColumn: '4 / 5' }}>
+            <div className="flex items-center justify-center" style={{ gridColumn: '4 / 6' }}>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowValorizacao(!showValorizacao); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                   showValorizacao
                     ? 'bg-amber-600 text-white shadow-md hover:bg-amber-700'
                     : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 shadow-sm'
                 }`}
               >
-                <DollarSign className="w-3.5 h-3.5" />
-                {showValorizacao ? 'Ocultar' : 'Valorização'}
-                {showValorizacao ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                <DollarSign className="w-4 h-4" />
+                {showValorizacao ? 'Ocultar Valorização' : 'Valorização do Estoque'}
+                {showValorizacao ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           )}
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '5 / 7' : '4 / 7' }}>
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '6 / 7' : '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
             <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
@@ -3571,22 +3571,22 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
             <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
           {operatorCtx?.hasGranularAccess("est.valorizacao") && (
-            <div className="flex items-center justify-center" style={{ gridColumn: '4 / 5' }}>
+            <div className="flex items-center justify-center" style={{ gridColumn: '4 / 6' }}>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowValorizacao(!showValorizacao); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                   showValorizacao
                     ? 'bg-purple-600 text-white shadow-md hover:bg-purple-700'
                     : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 shadow-sm'
                 }`}
               >
-                <DollarSign className="w-3.5 h-3.5" />
-                {showValorizacao ? 'Ocultar' : 'Valorização'}
-                {showValorizacao ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                <DollarSign className="w-4 h-4" />
+                {showValorizacao ? 'Ocultar Valorização' : 'Valorização do Estoque'}
+                {showValorizacao ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           )}
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '5 / 7' : '4 / 7' }}>
+          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '6 / 7' : '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
             <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>

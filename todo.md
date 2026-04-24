@@ -3031,3 +3031,4 @@
 - [x] Remover card VLR PO da Valorização do Estoque da Madeira (Industrialização)
 - [x] Adicionar botão "Valorização do Estoque" nos cards Madeira Semi Pronto e Madeira Aguardando Escolha (à esquerda de PRODUTOS/quantidade, sem alterar dados)
 - [x] Mover botões Valorização do Estoque para DENTRO dos cards Semi Pronto e Aguardando Escolha (à esquerda de PRODUTOS/quantidade, no espaço vazio)
+- [x] Aumentar botão Valorização e escrever texto completo "Valorização do Estoque" (sem abreviar) nos cards Semi Pronto e Aguardando Escolha
