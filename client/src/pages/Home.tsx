@@ -68,6 +68,8 @@ import {
   Store,
   Info,
   ArrowRight,
+  Download,
+  Calendar,
 } from "lucide-react";
 import {
   Dialog,
@@ -4670,6 +4672,55 @@ function IndustrializedBaixaDialog({ open, onClose }: { open: boolean; onClose: 
   );
 }
 
+/* --- CSV Export helper for E-commerce History --- */
+function exportEcommerceCSV(data: any[], filename: string) {
+  const rows: string[][] = [['Código', 'Produto', 'Pacotes (PC)', 'Caixas (CX)']];
+  // Consolidate by product code
+  const byCode = new Map<string, { codigo: string; descricao: string; pc: number; cx: number }>();
+  for (const h of data) {
+    const existing = byCode.get(h.codigoItem) || { codigo: h.codigoItem, descricao: h.descricaoItem, pc: 0, cx: 0 };
+    if (h.unidadeOriginal === 'PC') existing.pc += h.quantidadeOriginal || 0;
+    existing.cx += h.quantidadeCx || 0;
+    byCode.set(h.codigoItem, existing);
+  }
+  // Sort by code
+  const sorted = Array.from(byCode.values()).sort((a, b) => a.codigo.localeCompare(b.codigo));
+  let totalPc = 0, totalCx = 0;
+  for (const p of sorted) {
+    rows.push([p.codigo, p.descricao, p.pc > 0 ? p.pc.toString() : '', p.cx.toString()]);
+    totalPc += p.pc;
+    totalCx += p.cx;
+  }
+  rows.push(['', 'TOTAL', totalPc > 0 ? totalPc.toString() : '', totalCx.toString()]);
+  const csv = rows.map(r => r.join(';')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* --- Available months helper --- */
+function getAvailableMonths(history: any[]): string[] {
+  const months = new Set<string>();
+  for (const h of history) {
+    if (h.detectedAt) {
+      const d = new Date(h.detectedAt);
+      const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      months.add(m);
+    }
+  }
+  return Array.from(months).sort().reverse();
+}
+
+function formatMonthLabel(ym: string): string {
+  const [y, m] = ym.split('-');
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  return `${months[parseInt(m) - 1]}/${y}`;
+}
+
 /* --- E-commerce History Dialog --- */
 function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -4677,6 +4728,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
   const [searchText, setSearchText] = useState<string>("");
   const [pedidoFilter, setPedidoFilter] = useState<string>("");
   const [unidadeFilter, setUnidadeFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
 
   const { data, isLoading } = trpc.dashboard.getEcommerceHistory.useQuery(
     {
@@ -4689,9 +4741,18 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
 
   const history = data?.history || [];
 
-  // Apply client-side filters
+  // Available months for the dropdown
+  const availableMonths = useMemo(() => getAvailableMonths(history as any[]), [history]);
+
+  // Apply client-side filters (including month filter)
   const filteredHistory = useMemo(() => {
     return (history as any[]).filter((h: any) => {
+      // Month filter
+      if (monthFilter !== 'all' && h.detectedAt) {
+        const d = new Date(h.detectedAt);
+        const hMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (hMonth !== monthFilter) return false;
+      }
       if (pedidoFilter && !(h.pedidoRelacionado || '').toString().includes(pedidoFilter)) return false;
       if (searchText) {
         const s = searchText.toLowerCase();
@@ -4706,7 +4767,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
       }
       return true;
     });
-  }, [history, pedidoFilter, searchText, unidadeFilter]);
+  }, [history, pedidoFilter, searchText, unidadeFilter, monthFilter]);
 
   // Calculate totals
   const totalCx = filteredHistory.reduce((sum: number, h: any) => sum + (h.quantidadeCx || 0), 0);
@@ -4735,10 +4796,18 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
     return Array.from(map.values()).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
   }, [filteredHistory]);
 
-  const hasFilters = dateFilter || dateFilterEnd || searchText || pedidoFilter || unidadeFilter !== 'all';
+  const hasFilters = dateFilter || dateFilterEnd || searchText || pedidoFilter || unidadeFilter !== 'all' || monthFilter !== 'all';
 
   // Unique products count
   const uniqueProducts = useMemo(() => new Set(filteredHistory.map((h: any) => h.codigoItem)).size, [filteredHistory]);
+
+  // Export handler
+  const handleExportCSV = useCallback(() => {
+    const monthLabel = monthFilter !== 'all' ? monthFilter : 'todos';
+    const filename = `extrato-ecommerce-importacao-${monthLabel}.csv`;
+    exportEcommerceCSV(filteredHistory, filename);
+    toast.success('Extrato exportado com sucesso!');
+  }, [filteredHistory, monthFilter]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -4788,6 +4857,20 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
           {/* Filters Bar - compact, inline with header */}
           <div className="flex items-center gap-2.5 mt-2.5 flex-wrap">
             <div className="flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-purple-500" />
+              <select
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                className="h-7 text-xs bg-white border border-purple-200 rounded-md px-1.5 font-semibold text-purple-700"
+              >
+                <option value="all">Todos os meses</option>
+                {availableMonths.map(m => (
+                  <option key={m} value={m}>{formatMonthLabel(m)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-px h-5 bg-slate-200" />
+            <div className="flex items-center gap-1">
               <Search className="w-3.5 h-3.5 text-slate-400" />
               <Input
                 type="text"
@@ -4829,12 +4912,22 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
             </div>
             {hasFilters && (
               <button
-                onClick={() => { setDateFilter(""); setDateFilterEnd(""); setSearchText(""); setPedidoFilter(""); setUnidadeFilter("all"); }}
+                onClick={() => { setDateFilter(""); setDateFilterEnd(""); setSearchText(""); setPedidoFilter(""); setUnidadeFilter("all"); setMonthFilter("all"); }}
                 className="text-[10px] text-purple-500 hover:text-purple-700 font-medium flex items-center gap-0.5 transition-colors"
               >
                 <X className="w-3 h-3" /> Limpar
               </button>
             )}
+            <div className="ml-auto">
+              <button
+                onClick={handleExportCSV}
+                disabled={filteredHistory.length === 0}
+                className="h-7 px-3 text-xs font-semibold rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-sm hover:from-purple-600 hover:to-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Exportar Extrato
+              </button>
+            </div>
           </div>
         </div>
 
@@ -4994,6 +5087,7 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
   const [searchText, setSearchText] = useState<string>("");
   const [pedidoFilter, setPedidoFilter] = useState<string>("");
   const [unidadeFilter, setUnidadeFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
 
   const { data, isLoading } = trpc.dashboard.getEcommerceHistoryMadeira.useQuery(
     {
@@ -5006,8 +5100,17 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
 
   const history = data?.history || [];
 
+  // Available months for the dropdown
+  const availableMonths = useMemo(() => getAvailableMonths(history as any[]), [history]);
+
   const filteredHistory = useMemo(() => {
     return (history as any[]).filter((h: any) => {
+      // Month filter
+      if (monthFilter !== 'all' && h.detectedAt) {
+        const d = new Date(h.detectedAt);
+        const hMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (hMonth !== monthFilter) return false;
+      }
       if (pedidoFilter && !(h.pedidoRelacionado || '').toString().includes(pedidoFilter)) return false;
       if (searchText) {
         const s = searchText.toLowerCase();
@@ -5022,7 +5125,7 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
       }
       return true;
     });
-  }, [history, pedidoFilter, searchText, unidadeFilter]);
+  }, [history, pedidoFilter, searchText, unidadeFilter, monthFilter]);
 
   const totalCx = filteredHistory.reduce((sum: number, h: any) => sum + (h.quantidadeCx || 0), 0);
   const totalOriginalPC = filteredHistory.filter((h: any) => h.unidadeOriginal === 'PC').reduce((sum: number, h: any) => sum + (h.quantidadeOriginal || 0), 0);
@@ -5049,8 +5152,16 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
     return Array.from(map.values()).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
   }, [filteredHistory]);
 
-  const hasFilters = dateFilter || dateFilterEnd || searchText || pedidoFilter || unidadeFilter !== 'all';
+  const hasFilters = dateFilter || dateFilterEnd || searchText || pedidoFilter || unidadeFilter !== 'all' || monthFilter !== 'all';
   const uniqueProducts = useMemo(() => new Set(filteredHistory.map((h: any) => h.codigoItem)).size, [filteredHistory]);
+
+  // Export handler
+  const handleExportCSV = useCallback(() => {
+    const monthLabel = monthFilter !== 'all' ? monthFilter : 'todos';
+    const filename = `extrato-ecommerce-industrializacao-${monthLabel}.csv`;
+    exportEcommerceCSV(filteredHistory, filename);
+    toast.success('Extrato exportado com sucesso!');
+  }, [filteredHistory, monthFilter]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -5099,6 +5210,20 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
           {/* Filters */}
           <div className="flex items-center gap-2.5 mt-2.5 flex-wrap">
             <div className="flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+              <select
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                className="h-7 text-xs bg-white border border-emerald-200 rounded-md px-1.5 font-semibold text-emerald-700"
+              >
+                <option value="all">Todos os meses</option>
+                {availableMonths.map(m => (
+                  <option key={m} value={m}>{formatMonthLabel(m)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-px h-5 bg-slate-200" />
+            <div className="flex items-center gap-1">
               <Search className="w-3.5 h-3.5 text-slate-400" />
               <Input
                 type="text"
@@ -5140,12 +5265,22 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
             </div>
             {hasFilters && (
               <button
-                onClick={() => { setDateFilter(""); setDateFilterEnd(""); setSearchText(""); setPedidoFilter(""); setUnidadeFilter("all"); }}
+                onClick={() => { setDateFilter(""); setDateFilterEnd(""); setSearchText(""); setPedidoFilter(""); setUnidadeFilter("all"); setMonthFilter("all"); }}
                 className="text-[10px] text-emerald-500 hover:text-emerald-700 font-medium flex items-center gap-0.5 transition-colors"
               >
                 <X className="w-3 h-3" /> Limpar
               </button>
             )}
+            <div className="ml-auto">
+              <button
+                onClick={handleExportCSV}
+                disabled={filteredHistory.length === 0}
+                className="h-7 px-3 text-xs font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-sm hover:from-emerald-600 hover:to-teal-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Exportar Extrato
+              </button>
+            </div>
           </div>
         </div>
 

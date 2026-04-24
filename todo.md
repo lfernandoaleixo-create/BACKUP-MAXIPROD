@@ -3036,3 +3036,5 @@
 - [x] Adicionar medida 3,8x300mm na Vareteira (item 2 Produção) para máquinas 1, 2, 3 e 4 (não máquina 5)
 - [x] Atualizar fator de conversão do 3,8x218mm para cxp=0.6 e cxg=0.8 (igual ao 3,8x200mm)
 - [x] Adicionar 12 produtos de madeira (00487-00501) com estoque zerado no card Madeira Produto Acabado
+- [ ] BUG: VLR PROJETADO no Semi Pronto deveria ser negativo quando pedidos superam estoque (igual ao Aguardando Escolha)
+- [x] Adicionar extrato mensal nos Históricos E-commerce (Industrialização e Importação) com filtro por mês e exportação (código, nome, pacotes, caixas)
