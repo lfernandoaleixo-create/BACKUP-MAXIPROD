@@ -1500,6 +1500,53 @@ export async function runGraphQLSync(): Promise<{
     const newMadeiraItems = madeiraData.filter((m: any) => !existingCodes.has(m.codigoItem));
     stockData.push(...newMadeiraItems);
     console.log(`[GraphQL Sync] Added ${newMadeiraItems.length} madeira items (no stock) to dashboard`);
+
+    // ─── Produtos manuais de Madeira E-commerce (Industrialização) ───
+    // Esses 12 produtos são do pedido 927 (E-commerce) e precisam existir no PA
+    // mesmo que não apareçam em pedidos de venda com estadoConfiguravel MADEIRA.
+    const MANUAL_MADEIRA_ECOMMERCE: Array<{ codigoItem: string; descricaoItem: string }> = [
+      { codigoItem: "00487", descricaoItem: "VARETA AROMATIZADOR 4,0 X 125 MM C/ 100 UNID." },
+      { codigoItem: "00488", descricaoItem: "VARETA AROMATIZADOR 4,0 X 180 MM KIT COM 6 FLOW PACK C/ 50 UNID." },
+      { codigoItem: "00489", descricaoItem: "VARETA AROMATIZADOR 4,0 X 180 MM KIT COM 6 FLOW PACK C/ 200 UNID." },
+      { codigoItem: "00490", descricaoItem: "VARETA AROMATIZADOR 4,0 X 200 MM KIT COM 6 FLOW PACK C/ 50 UNID." },
+      { codigoItem: "00491", descricaoItem: "VARETA AROMATIZADOR 4,0 X 200 MM KIT COM 6 FLOW PACK C/ 200 UNID." },
+      { codigoItem: "00492", descricaoItem: "VARETA AROMATIZADOR 4,0 X 220 MM KIT COM 6 FLOW PACK C/ 50 UNID." },
+      { codigoItem: "00493", descricaoItem: "VARETA AROMATIZADOR 4,0 X 220 MM KIT COM 6 FLOW PACK C/ 200 UNID." },
+      { codigoItem: "00494", descricaoItem: "VARETA AROMATIZADOR 4,0 X 250 MM KIT COM 6 FLOW PACK C/ 50 UNID." },
+      { codigoItem: "00495", descricaoItem: "VARETA AROMATIZADOR 4,0 X 250 MM KIT COM 6 FLOW PACK C/ 200 UNID." },
+      { codigoItem: "00482", descricaoItem: "VARETA PARA ALGODÃO DOCE MADEIRA 4,0 X 350 MM C/ 300 UNID." },
+      { codigoItem: "00483", descricaoItem: "VARETA PARA ALGODÃO DOCE MADEIRA 4,0 X 350 MM C/ 100 UNID." },
+      { codigoItem: "00501", descricaoItem: "VARETA AROMATIZADOR 4,0 X 250 MM C/ 50 UNID." },
+    ];
+    const existingCodesAfterMadeira = new Set(stockData.map((s: any) => s.codigoItem));
+    let manualMadeiraAdded = 0;
+    for (const item of MANUAL_MADEIRA_ECOMMERCE) {
+      if (!existingCodesAfterMadeira.has(item.codigoItem)) {
+        stockData.push({
+          codigoItem: item.codigoItem,
+          descricaoItem: item.descricaoItem,
+          quantidade: "0",
+          unidadeMedida: "PC",
+          custoUnitario: "0",
+          custoTotal: "0",
+          codigoGrupo: "",
+          descricaoGrupo: "",
+          codigoSuperGrupo: "",
+          descricaoSuperGrupo: "",
+          grupoCodigo: "18",
+          superGrupoCodigo: "16",
+          empresaDona: "PALITOS INDUSTRIA",
+          estoqueLocal: "Estoque",
+          tipoDecodificado: "Próprio",
+          maxiprodId: null,
+          unidadeDeVendaFator: null,
+        });
+        manualMadeiraAdded++;
+      }
+    }
+    if (manualMadeiraAdded > 0) {
+      console.log(`[GraphQL Sync] Added ${manualMadeiraAdded} manual madeira e-commerce items to dashboard`);
+    }
     const poData = transformPurchaseOrderItems(rawPOs);
     const payableData = transformAccountsPayable(rawPayable);
     const receivableData = transformAccountsReceivable(rawReceivable);

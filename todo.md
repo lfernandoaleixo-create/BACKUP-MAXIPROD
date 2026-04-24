@@ -3035,3 +3035,4 @@
 - [x] Configurar produtos de madeira para E-commerce no Histórico E-commerce — Industrialização (12 produtos do pedido 927)
 - [x] Adicionar medida 3,8x300mm na Vareteira (item 2 Produção) para máquinas 1, 2, 3 e 4 (não máquina 5)
 - [x] Atualizar fator de conversão do 3,8x218mm para cxp=0.6 e cxg=0.8 (igual ao 3,8x200mm)
+- [x] Adicionar 12 produtos de madeira (00487-00501) com estoque zerado no card Madeira Produto Acabado
