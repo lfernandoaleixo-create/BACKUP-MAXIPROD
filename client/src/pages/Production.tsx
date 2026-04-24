@@ -43,6 +43,7 @@ const VARETEIRA_BASE_OPTIONS = [
   { value: "3.8x200mm", label: "3,8x200mm", color: "#14b8a6", bgClass: "bg-teal-50", textClass: "text-teal-800", borderClass: "border-teal-300" },
   { value: "3.8x218mm", label: "3,8x218mm", color: "#10b981", bgClass: "bg-emerald-50", textClass: "text-emerald-800", borderClass: "border-emerald-300" },
   { value: "3.8x250mm", label: "3,8x250mm", color: "#22c55e", bgClass: "bg-green-50", textClass: "text-green-800", borderClass: "border-green-300" },
+  { value: "3.8x300mm", label: "3,8x300mm", color: "#84cc16", bgClass: "bg-lime-50", textClass: "text-lime-800", borderClass: "border-lime-300" },
   { value: "3.8x350mm", label: "3,8x350mm", color: "#eab308", bgClass: "bg-yellow-50", textClass: "text-yellow-800", borderClass: "border-yellow-300" },
 ];
 // Vareteira: medidas extras (3,5x) apenas para máquina 5
@@ -96,6 +97,7 @@ const CONVERSION_FACTORS: Record<string, { cxp: number; cxg: number }> = {
   "3.8x218mm": { cxp: 0, cxg: 0 },
   "3.8x220mm": { cxp: 0.5, cxg: 0.7 },
   "3.8x250mm": { cxp: 0, cxg: 0.8 },
+  "3.8x300mm": { cxp: 0, cxg: 0 },
   "3.8x350mm": { cxp: 0.4, cxg: 0.6 },
   "3.5x200mm": { cxp: 0.6, cxg: 0.8 },
   "3.5x250mm": { cxp: 0, cxg: 0 },

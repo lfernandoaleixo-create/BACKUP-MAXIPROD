@@ -3033,3 +3033,4 @@
 - [x] Mover botões Valorização do Estoque para DENTRO dos cards Semi Pronto e Aguardando Escolha (à esquerda de PRODUTOS/quantidade, no espaço vazio)
 - [x] Aumentar botão Valorização e escrever texto completo "Valorização do Estoque" (sem abreviar) nos cards Semi Pronto e Aguardando Escolha
 - [x] Configurar produtos de madeira para E-commerce no Histórico E-commerce — Industrialização (12 produtos do pedido 927)
+- [x] Adicionar medida 3,8x300mm na Vareteira (item 2 Produção) para máquinas 1, 2, 3 e 4 (não máquina 5)
