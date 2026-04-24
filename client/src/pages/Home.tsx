@@ -4228,15 +4228,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         </div>
       </div>
 
-      {/* Botões: Histórico E-commerce Madeira + Conferência Auto-feed */}
-      <div className="flex items-center justify-between mt-2">
-        <button
-          onClick={() => setShowEcommerceHistoryMadeira(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 shadow-sm"
-        >
-          <Store className="w-4 h-4" />
-          Histórico E-commerce — Industrialização
-        </button>
+      {/* Botão discreto de conferência auto-feed */}
+      <div className="flex justify-end mt-1">
         <button
           onClick={() => setShowAutoFeedReport(true)}
           className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-emerald-600 transition-colors font-medium px-2 py-1 rounded-md hover:bg-emerald-50"
@@ -4245,9 +4238,6 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           Conferência Auto-feed
         </button>
       </div>
-
-      {/* E-commerce History Madeira Dialog */}
-      {showEcommerceHistoryMadeira && <EcommerceHistoryMadeiraDialog open={showEcommerceHistoryMadeira} onClose={() => setShowEcommerceHistoryMadeira(false)} />}
 
       {/* Modal de Conferência Auto-feed */}
       {showAutoFeedReport && <AutoFeedReportModal open={showAutoFeedReport} onClose={() => setShowAutoFeedReport(false)} />}
@@ -4300,6 +4290,20 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         setShowMadeiraFinancial={setShowMadeiraFinancial}
         operatorCtx={operatorCtx}
       />
+
+      {/* Botão Histórico E-commerce Industrialização - próximo do card Madeira PA */}
+      <div className="flex items-center mt-3 mb-2">
+        <button
+          onClick={() => setShowEcommerceHistoryMadeira(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50 shadow-sm"
+        >
+          <Store className="w-4 h-4" />
+          Histórico E-commerce — Industrialização
+        </button>
+      </div>
+
+      {/* E-commerce History Madeira Dialog */}
+      {showEcommerceHistoryMadeira && <EcommerceHistoryMadeiraDialog open={showEcommerceHistoryMadeira} onClose={() => setShowEcommerceHistoryMadeira(false)} />}
 
       <MadeiraPACard
         items={madeiraItems}
