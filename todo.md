@@ -3029,3 +3029,4 @@
 - [x] Criar botão "Histórico E-commerce — Industrialização" na seção Madeira com mesmo layout/design
 - [x] BUG: Valores dos cards "Valor previsto liberação desconto" e "Limite troca títulos" sendo sobrescritos automaticamente — são valores 100% MANUAIS, só mudam quando Flávio editar
 - [x] Remover card VLR PO da Valorização do Estoque da Madeira (Industrialização)
+- [x] Adicionar botão "Valorização do Estoque" nos cards Madeira Semi Pronto e Madeira Aguardando Escolha (à esquerda de PRODUTOS/quantidade, sem alterar dados)

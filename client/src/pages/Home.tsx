@@ -3015,6 +3015,214 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
   );
 }
 
+/* --- Semi Pronto Valuation inline card --- */
+function SemiProntoValorizacao({
+  items,
+  semiProntoMap,
+  madeiraVisData,
+  showFinancial,
+  setShowFinancial,
+  operatorCtx,
+}: {
+  items: StockItem[];
+  semiProntoMap: Map<string, number>;
+  madeiraVisData: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> } | undefined;
+  showFinancial: boolean;
+  setShowFinancial: (v: boolean) => void;
+  operatorCtx: ReturnType<typeof useOperator>;
+}) {
+  const precosMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (madeiraVisData?.items) {
+      for (const row of madeiraVisData.items) {
+        if (row.precoCaixa) {
+          const val = parseFloat(row.precoCaixa);
+          if (!isNaN(val) && val > 0) {
+            const existing = map.get(row.codigoItem);
+            if (!existing || val > existing) map.set(row.codigoItem, val);
+          }
+        }
+      }
+    }
+    return map;
+  }, [madeiraVisData]);
+
+  const valuation = useMemo(() => {
+    let valorEstoque = 0;
+    let valorProjetado = 0;
+    let comPreco = 0;
+    let semPreco = 0;
+    for (const item of items) {
+      if (item.isChild) continue;
+      const preco = precosMap.get(item.codigoItem);
+      const estoque = semiProntoMap.get(item.codigoItem) || 0;
+      const pedidos = item.pedidosCx ?? 0;
+      const disponivel = estoque - pedidos;
+      if (preco && preco > 0) {
+        comPreco++;
+        valorEstoque += estoque * preco;
+        valorProjetado += disponivel * preco;
+      } else {
+        semPreco++;
+      }
+    }
+    const totalItens = comPreco + semPreco;
+    return { valorEstoque, valorProjetado, comPreco, semPreco, totalItens };
+  }, [items, precosMap, semiProntoMap]);
+
+  return (
+    <div className="flex items-stretch gap-4">
+      {showFinancial && (
+        <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3 transition-all">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-4 h-4 text-amber-600" />
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização — Semi Pronto</p>
+            <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+              <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
+              <p className="text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
+                  <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
+                  <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
+                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
+                <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos).</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      )}
+      {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+        <div className={`flex items-center ${!showFinancial ? 'ml-auto' : ''}`}>
+          <button
+            onClick={() => setShowFinancial(!showFinancial)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              showFinancial
+                ? 'bg-amber-600 text-white shadow-md hover:bg-amber-700'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
+            }`}
+          >
+            <DollarSign className="w-4 h-4" />
+            {showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
+            {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* --- Aguardando Escolha Valuation inline card --- */
+function AguardandoValorizacao({
+  items,
+  aguardandoMap,
+  madeiraVisData,
+  showFinancial,
+  setShowFinancial,
+  operatorCtx,
+}: {
+  items: StockItem[];
+  aguardandoMap: Map<string, number>;
+  madeiraVisData: { items: Array<{ codigoItem: string; card: string; precoCaixa: string | null }> } | undefined;
+  showFinancial: boolean;
+  setShowFinancial: (v: boolean) => void;
+  operatorCtx: ReturnType<typeof useOperator>;
+}) {
+  const precosMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (madeiraVisData?.items) {
+      for (const row of madeiraVisData.items) {
+        if (row.precoCaixa) {
+          const val = parseFloat(row.precoCaixa);
+          if (!isNaN(val) && val > 0) {
+            const existing = map.get(row.codigoItem);
+            if (!existing || val > existing) map.set(row.codigoItem, val);
+          }
+        }
+      }
+    }
+    return map;
+  }, [madeiraVisData]);
+
+  const valuation = useMemo(() => {
+    let valorEstoque = 0;
+    let valorProjetado = 0;
+    let comPreco = 0;
+    let semPreco = 0;
+    for (const item of items) {
+      if (item.isChild) continue;
+      const preco = precosMap.get(item.codigoItem);
+      const estoque = aguardandoMap.get(item.codigoItem) || 0;
+      const pedidos = item.pedidosCx ?? 0;
+      const disponivel = estoque - pedidos;
+      if (preco && preco > 0) {
+        comPreco++;
+        valorEstoque += estoque * preco;
+        valorProjetado += disponivel * preco;
+      } else {
+        semPreco++;
+      }
+    }
+    const totalItens = comPreco + semPreco;
+    return { valorEstoque, valorProjetado, comPreco, semPreco, totalItens };
+  }, [items, precosMap, aguardandoMap]);
+
+  return (
+    <div className="flex items-stretch gap-4">
+      {showFinancial && (
+        <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3 transition-all">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-4 h-4 text-purple-600" />
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização — Aguardando Escolha</p>
+            <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
+              <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
+              <p className="text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
+                  <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
+                  <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
+                <p className="text-xs leading-relaxed"><strong>Projetado = Estoque - Pedidos em Aberto</strong></p>
+                <p className="text-[10px] text-slate-500 mt-1">O valor projetado desconta os pedidos em aberto (já comprometidos).</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      )}
+      {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+        <div className={`flex items-center ${!showFinancial ? 'ml-auto' : ''}`}>
+          <button
+            onClick={() => setShowFinancial(!showFinancial)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              showFinancial
+                ? 'bg-purple-600 text-white shadow-md hover:bg-purple-700'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
+            }`}
+          >
+            <DollarSign className="w-4 h-4" />
+            {showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
+            {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* --- Semi Pronto Card (estoque editável com senha e histórico) --- */
 function SemiProntoCard({ items, isOpen, onToggle }: {
   items: StockItem[];
@@ -3486,6 +3694,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const [showEcommerceHistory, setShowEcommerceHistory] = useState(false);
   const [showEcommerceHistoryMadeira, setShowEcommerceHistoryMadeira] = useState(false);
   const [showIndustrializedBaixa, setShowIndustrializedBaixa] = useState(false);
+  const [showSemiProntoFinancial, setShowSemiProntoFinancial] = useState(false);
+  const [showAguardandoFinancial, setShowAguardandoFinancial] = useState(false);
   // Fetch pending E-commerce transfers (not yet faturado)
   const { data: pendingEcommerce } = trpc.dashboard.getPendingEcommerceTransfers.useQuery(undefined, { refetchInterval: 30000 });
 
@@ -4309,10 +4519,28 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         monthlySalesData={monthlySalesData}
       />
 
+      <SemiProntoValorizacao
+        items={madeiraItemsSemiPronto}
+        semiProntoMap={semiProntoMapKPI}
+        madeiraVisData={madeiraVisData}
+        showFinancial={showSemiProntoFinancial}
+        setShowFinancial={setShowSemiProntoFinancial}
+        operatorCtx={operatorCtx}
+      />
+
       <SemiProntoCard
         items={madeiraItemsSemiPronto}
         isOpen={openCards.semiPronto}
         onToggle={() => toggleCard("semiPronto")}
+      />
+
+      <AguardandoValorizacao
+        items={madeiraItemsAguardando}
+        aguardandoMap={aguardandoMapKPI}
+        madeiraVisData={madeiraVisData}
+        showFinancial={showAguardandoFinancial}
+        setShowFinancial={setShowAguardandoFinancial}
+        operatorCtx={operatorCtx}
       />
 
       <AguardandoEscolhaCard
