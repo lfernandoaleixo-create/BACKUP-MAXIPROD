@@ -26,7 +26,11 @@ async function getLogoBase64(): Promise<string | null> {
 }
 
 function formatNumber(n: number): string {
-  return n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  // Preserve decimals: 297.5 → "297,5" but 300 → "300"
+  if (Number.isInteger(n)) {
+    return n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  }
+  return n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 2 });
 }
 
 type ConsolidatedProduct = {

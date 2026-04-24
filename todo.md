@@ -3039,3 +3039,4 @@
 - [ ] BUG: VLR PROJETADO no Semi Pronto deveria ser negativo quando pedidos superam estoque (igual ao Aguardando Escolha)
 - [x] Adicionar extrato mensal nos Históricos E-commerce (Industrialização e Importação) com filtro por mês e exportação (código, nome, pacotes, caixas)
 - [x] Alterar exportação do extrato E-commerce de CSV para PDF formatado (Importação e Industrialização)
+- [x] Corrigir formatação de números no PDF do extrato E-commerce: manter casas decimais (297,5 em vez de 298)
