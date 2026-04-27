@@ -3059,3 +3059,8 @@
 - [x] Card PEDIDOS (VENDA): adicionar ícone de olho com tooltip explicativo profissional sobre o valor mostrado
 - [x] Reativar baixa automática de industrializados (MADEIRA) no estoque de madeira quando pedido é faturado
 - [x] Remover coluna "EST. REG." da tabela Madeira – Produto Acabado (manter na Importação)
+- [x] Criar aba "E-commerce" no Financeiro (visível apenas para Pedro/Flavio/Guilherme)
+- [x] Criar tabela de despesas e-commerce no banco (descrição, data compra, forma pagamento, parcelas, valor, quem lançou)
+- [x] Criar procedures tRPC para CRUD de despesas e-commerce
+- [x] Criar UI da aba com formulário de lançamento e listagem de despesas
+- [x] Controle de acesso: aba visível apenas para senhas Pedro/Flavio/Guilherme

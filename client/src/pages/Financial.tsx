@@ -68,10 +68,11 @@ import WeekReconciliationCard from "@/components/WeekReconciliationCard";
 import ResumoFinanceiroCard from "@/components/ResumoFinanceiroCard";
 import InadimplenciaTab from "@/components/InadimplenciaTab";
 import ReceivablesTab from "@/components/ReceivablesTab";
+import EcommerceTab from "@/components/EcommerceTab";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calculator, History } from "lucide-react";
+import { Calculator, History, ShoppingCart } from "lucide-react";
 import FinancialHistoryPanel, { WeekHistoryPanel } from "@/components/FinancialHistoryPanel";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
@@ -2060,7 +2061,9 @@ function CashFlowCard() {
 export default function Financial() {
   const { hasGranularAccess, operator } = useOperator();
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
-  const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis">("visao-geral");
+  const ECOMMERCE_TAB_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
+  const canSeeEcommerce = operator && ECOMMERCE_TAB_OPERATORS.includes(operator.name);
+  const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce">("visao-geral");
   const [verifyingMonth, setVerifyingMonth] = useState<{ label: string; type: "receber" | "pagar"; from: string; to: string; total: number } | null>(null);
   const [showTotalReceberSim, setShowTotalReceberSim] = useState(false);
   const [showTotalPagarSim, setShowTotalPagarSim] = useState(false);
@@ -2162,6 +2165,19 @@ export default function Financial() {
             <Landmark className="w-4 h-4" />
             Recebíveis
           </button>
+          {canSeeEcommerce && (
+            <button
+              onClick={() => setActiveTab("ecommerce")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                activeTab === "ecommerce"
+                  ? "bg-orange-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              E-commerce
+            </button>
+          )}
         </div>
 
         {/* Tab: Inadimplência */}
@@ -2169,6 +2185,9 @@ export default function Financial() {
 
         {/* Tab: Recebíveis */}
         {activeTab === "recebiveis" && <ReceivablesTab />}
+
+        {/* Tab: E-commerce */}
+        {activeTab === "ecommerce" && canSeeEcommerce && <EcommerceTab />}
 
         {/* Tab: Visão Geral */}
         {activeTab === "visao-geral" && (

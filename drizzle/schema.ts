@@ -1312,3 +1312,23 @@ export const industrializedBillingHistory = mysqlTable("industrialized_billing_h
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type IndustrializedBillingHistory = typeof industrializedBillingHistory.$inferSelect;
+
+
+/**
+ * Despesas do E-commerce (contas a pagar da filial e-commerce)
+ * Pedro registra os gastos, Flavio e Guilherme visualizam.
+ */
+export const ecommerceExpenses = mysqlTable("ecommerce_expenses", {
+  id: int("id").autoincrement().primaryKey(),
+  descricao: varchar("descricao", { length: 500 }).notNull(),
+  dataCompra: varchar("dataCompra", { length: 10 }).notNull(), // YYYY-MM-DD
+  formaPagamento: mysqlEnum("formaPagamento", ["pix", "boleto", "cartao_credito"]).notNull(),
+  parcelas: int("parcelas").notNull().default(1), // 1 = à vista
+  valorTotal: decimal("valorTotal", { precision: 12, scale: 2 }).notNull(),
+  observacao: text("observacao"),
+  registradoPor: varchar("registradoPor", { length: 100 }).notNull(), // nome do operador
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EcommerceExpense = typeof ecommerceExpenses.$inferSelect;
+export type InsertEcommerceExpense = typeof ecommerceExpenses.$inferInsert;

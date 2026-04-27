@@ -1,0 +1,375 @@
+/**
+ * E-commerce Tab - Despesas da operação e-commerce (contas a pagar filial)
+ * Acesso restrito: Pedro, Flavio, Guilherme
+ */
+import React, { useState, useMemo } from "react";
+import { trpc } from "@/lib/trpc";
+import { useOperator } from "@/contexts/OperatorContext";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  ShoppingCart,
+  Plus,
+  Trash2,
+  CreditCard,
+  Banknote,
+  QrCode,
+  Calendar,
+  DollarSign,
+  Package,
+  Loader2,
+  X,
+  AlertTriangle,
+  TrendingUp,
+} from "lucide-react";
+
+const FORMA_PAGAMENTO_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+  pix: { label: "PIX", icon: <QrCode className="w-3.5 h-3.5" />, color: "bg-green-100 text-green-700 border-green-200" },
+  boleto: { label: "Boleto", icon: <Banknote className="w-3.5 h-3.5" />, color: "bg-blue-100 text-blue-700 border-blue-200" },
+  cartao_credito: { label: "Cartão de Crédito", icon: <CreditCard className="w-3.5 h-3.5" />, color: "bg-purple-100 text-purple-700 border-purple-200" },
+};
+
+function formatCurrency(value: number): string {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+export default function EcommerceTab() {
+  const { operator } = useOperator();
+  const [showForm, setShowForm] = useState(false);
+  const [descricao, setDescricao] = useState("");
+  const [dataCompra, setDataCompra] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  });
+  const [formaPagamento, setFormaPagamento] = useState<"pix" | "boleto" | "cartao_credito">("pix");
+  const [parcelas, setParcelas] = useState(1);
+  const [valorTotal, setValorTotal] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+
+  const operatorName = operator?.name || "";
+
+  const { data: listData, isLoading, refetch } = trpc.ecommerce.listExpenses.useQuery(
+    { operatorName },
+    { enabled: !!operatorName, refetchInterval: 30000 }
+  );
+
+  const { data: summaryData } = trpc.ecommerce.getSummary.useQuery(
+    { operatorName },
+    { enabled: !!operatorName, refetchInterval: 30000 }
+  );
+
+  const addMutation = trpc.ecommerce.addExpense.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        setShowForm(false);
+        setDescricao("");
+        setValorTotal("");
+        setObservacao("");
+        setParcelas(1);
+        refetch();
+      }
+    },
+  });
+
+  const deleteMutation = trpc.ecommerce.deleteExpense.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        setDeleteConfirm(null);
+        refetch();
+      }
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const valor = parseFloat(valorTotal.replace(",", "."));
+    if (!descricao.trim() || isNaN(valor) || valor <= 0) return;
+    addMutation.mutate({
+      operatorName,
+      descricao: descricao.trim(),
+      dataCompra,
+      formaPagamento,
+      parcelas: formaPagamento === "cartao_credito" ? parcelas : 1,
+      valorTotal: valor,
+      observacao: observacao.trim() || undefined,
+    });
+  };
+
+  const expenses = listData?.expenses || [];
+  const summary = summaryData?.summary;
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-orange-500 mb-3" />
+        <p className="text-sm text-slate-500">Carregando despesas do e-commerce...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5 mt-4">
+      {/* KPI Cards */}
+      {summary && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Geral</span>
+              <DollarSign className="w-4 h-4 text-orange-500" />
+            </div>
+            <p className="text-xl font-bold text-slate-800">{formatCurrency(summary.totalGeral)}</p>
+            <p className="text-[11px] text-slate-400 mt-1">{summary.totalCount} lançamentos</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Mês Atual</span>
+              <Calendar className="w-4 h-4 text-teal-500" />
+            </div>
+            <p className="text-xl font-bold text-slate-800">{formatCurrency(summary.mesAtual.total)}</p>
+            <p className="text-[11px] text-slate-400 mt-1">{summary.mesAtual.count} lançamentos</p>
+          </div>
+          {summary.porFormaPagamento.map((fp) => {
+            const info = FORMA_PAGAMENTO_LABELS[fp.forma] || { label: fp.forma, icon: null, color: "" };
+            return (
+              <div key={fp.forma} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{info.label}</span>
+                  {info.icon}
+                </div>
+                <p className="text-xl font-bold text-slate-800">{formatCurrency(fp.total)}</p>
+                <p className="text-[11px] text-slate-400 mt-1">{fp.count} lançamentos</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Header + Add Button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ShoppingCart className="w-5 h-5 text-orange-600" />
+          <h3 className="text-lg font-semibold text-slate-800">Despesas E-commerce</h3>
+          <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-[10px]">
+            {expenses.length}
+          </Badge>
+        </div>
+        <Button
+          onClick={() => setShowForm(!showForm)}
+          size="sm"
+          className={showForm ? "bg-slate-500 hover:bg-slate-600" : "bg-orange-600 hover:bg-orange-700"}
+        >
+          {showForm ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+          {showForm ? "Cancelar" : "Nova Despesa"}
+        </Button>
+      </div>
+
+      {/* Form */}
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-orange-50/50 border border-orange-200 rounded-xl p-5 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Descrição do gasto *</label>
+              <Input
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Ex: 1 pó de café, material de escritório..."
+                className="bg-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Data da compra *</label>
+              <Input
+                type="date"
+                value={dataCompra}
+                onChange={(e) => setDataCompra(e.target.value)}
+                className="bg-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Valor total (R$) *</label>
+              <Input
+                value={valorTotal}
+                onChange={(e) => setValorTotal(e.target.value)}
+                placeholder="0,00"
+                className="bg-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Forma de pagamento *</label>
+              <div className="flex gap-2">
+                {(["pix", "boleto", "cartao_credito"] as const).map((fp) => {
+                  const info = FORMA_PAGAMENTO_LABELS[fp];
+                  return (
+                    <button
+                      key={fp}
+                      type="button"
+                      onClick={() => setFormaPagamento(fp)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                        formaPagamento === fp
+                          ? `${info.color} border-current ring-2 ring-current/20`
+                          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
+                      }`}
+                    >
+                      {info.icon}
+                      {info.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {formaPagamento === "cartao_credito" && (
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">Parcelas</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={48}
+                    value={parcelas}
+                    onChange={(e) => setParcelas(parseInt(e.target.value) || 1)}
+                    className="bg-white w-20"
+                  />
+                  <span className="text-xs text-slate-500">
+                    {parcelas === 1 ? "à vista" : `${parcelas}x`}
+                    {parcelas > 1 && valorTotal && ` de ${formatCurrency(parseFloat(valorTotal.replace(",", ".")) / parcelas)}`}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className={formaPagamento === "cartao_credito" ? "md:col-span-2" : ""}>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Observação (opcional)</label>
+              <Input
+                value={observacao}
+                onChange={(e) => setObservacao(e.target.value)}
+                placeholder="Detalhes adicionais..."
+                className="bg-white"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit" className="bg-orange-600 hover:bg-orange-700" disabled={addMutation.isPending}>
+              {addMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
+              Registrar Despesa
+            </Button>
+          </div>
+          {addMutation.data && !addMutation.data.success && (
+            <p className="text-xs text-red-600 flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {addMutation.data.error}
+            </p>
+          )}
+        </form>
+      )}
+
+      {/* Expenses List */}
+      {expenses.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
+          <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Nenhuma despesa registrada ainda</p>
+          <p className="text-xs text-slate-400 mt-1">Clique em "Nova Despesa" para começar</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Data</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Descrição</th>
+                <th className="px-4 py-3 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Pagamento</th>
+                <th className="px-4 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Valor</th>
+                <th className="px-4 py-3 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Registrado por</th>
+                <th className="px-4 py-3 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {expenses.map((exp: any) => {
+                const info = FORMA_PAGAMENTO_LABELS[exp.formaPagamento] || { label: exp.formaPagamento, icon: null, color: "" };
+                const canDelete = operator?.name === exp.registradoPor || operator?.name === "Guilherme";
+                return (
+                  <tr key={exp.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-xs font-medium">
+                      {formatDate(exp.dataCompra)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-slate-800 font-medium text-xs">{exp.descricao}</p>
+                      {exp.observacao && (
+                        <p className="text-[10px] text-slate-400 mt-0.5">{exp.observacao}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge className={`${info.color} text-[10px] gap-1`}>
+                        {info.icon}
+                        {info.label}
+                        {exp.formaPagamento === "cartao_credito" && exp.parcelas > 1 && (
+                          <span className="ml-0.5">{exp.parcelas}x</span>
+                        )}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-slate-800 whitespace-nowrap text-xs">
+                      {formatCurrency(Number(exp.valorTotal))}
+                      {exp.formaPagamento === "cartao_credito" && exp.parcelas > 1 && (
+                        <p className="text-[10px] text-slate-400 font-normal">
+                          {exp.parcelas}x de {formatCurrency(Number(exp.valorTotal) / exp.parcelas)}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="text-xs text-slate-500">{exp.registradoPor}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {canDelete && (
+                        deleteConfirm === exp.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => deleteMutation.mutate({ operatorName, id: exp.id })}
+                              className="text-red-600 hover:text-red-800 text-[10px] font-bold cursor-pointer"
+                            >
+                              Sim
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(null)}
+                              className="text-slate-400 hover:text-slate-600 text-[10px] cursor-pointer"
+                            >
+                              Não
+                            </button>
+                          </div>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => setDeleteConfirm(exp.id)}
+                                className="text-slate-300 hover:text-red-500 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Excluir despesa</TooltipContent>
+                          </Tooltip>
+                        )
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
