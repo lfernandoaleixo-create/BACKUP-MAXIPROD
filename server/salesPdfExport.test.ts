@@ -147,3 +147,152 @@ describe("Sales PDF Export - Data Structure Validation", () => {
     expect(emptyAnalytics.byDay.length).toBe(0);
   });
 });
+
+// ─── Weekly Summary Computation Tests ────────────────────────────
+// Replicate the computeWeeklySummaries logic from salesPdfExport.ts for testing
+function computeWeeklySummaries(byDay: Array<{ day: string; value: number }>): Array<{
+  weekNum: number; startDay: number; endDay: number; total: number; businessDays: number; avg: number;
+}> {
+  if (byDay.length === 0) return [];
+  const weeks: Array<{ weekNum: number; startDay: number; endDay: number; total: number; businessDays: number; avg: number }> = [];
+  let currentWeekDays: Array<{ day: string; value: number }> = [];
+
+  for (let i = 0; i < byDay.length; i++) {
+    const d = new Date(byDay[i].day + "T12:00:00");
+    const dow = d.getDay();
+    const isBusinessDay = dow >= 1 && dow <= 5;
+
+    if (isBusinessDay) {
+      currentWeekDays.push(byDay[i]);
+    }
+
+    const isLastDay = i === byDay.length - 1;
+    const nextDow = i < byDay.length - 1 ? new Date(byDay[i + 1].day + "T12:00:00").getDay() : -1;
+    const isEndOfWeek = dow === 5 || (isBusinessDay && (nextDow === 0 || nextDow === 6 || isLastDay));
+
+    if (currentWeekDays.length > 0 && (isEndOfWeek || isLastDay)) {
+      // For testing, treat all days as past (not future)
+      const total = currentWeekDays.reduce((s, d) => s + d.value, 0);
+      const activeDays = currentWeekDays.filter(d => d.value > 0).length;
+      const startDayNum = parseInt(currentWeekDays[0].day.split("-")[2]);
+      const endDayNum = parseInt(currentWeekDays[currentWeekDays.length - 1].day.split("-")[2]);
+      weeks.push({
+        weekNum: weeks.length + 1,
+        startDay: startDayNum,
+        endDay: endDayNum,
+        total,
+        businessDays: currentWeekDays.length,
+        avg: activeDays > 0 ? total / activeDays : 0,
+      });
+      currentWeekDays = [];
+    }
+  }
+  return weeks;
+}
+
+function fmtCompactCurrency(val: number): string {
+  if (val >= 1000000) return `R$ ${(val / 1000000).toFixed(1)}M`;
+  if (val >= 1000) return `R$ ${(val / 1000).toFixed(0)}K`;
+  return `R$ ${val.toFixed(0)}`;
+}
+
+describe("Sales PDF Export - Weekly Summary Computation", () => {
+  // April 2026: Wed 1st, Thu 2nd, Fri 3rd, Sat 4th, Sun 5th, Mon 6th...
+  const aprilDays = [
+    { day: "2026-04-01", value: 19000 },  // Wed
+    { day: "2026-04-02", value: 158000 }, // Thu
+    { day: "2026-04-03", value: 6000 },   // Fri
+    { day: "2026-04-04", value: 0 },      // Sat
+    { day: "2026-04-05", value: 0 },      // Sun
+    { day: "2026-04-06", value: 38000 },  // Mon
+    { day: "2026-04-07", value: 39000 },  // Tue
+    { day: "2026-04-08", value: 35000 },  // Wed
+    { day: "2026-04-09", value: 71000 },  // Thu
+    { day: "2026-04-10", value: 30000 },  // Fri
+    { day: "2026-04-11", value: 0 },      // Sat
+    { day: "2026-04-12", value: 0 },      // Sun
+    { day: "2026-04-13", value: 16000 },  // Mon
+    { day: "2026-04-14", value: 67000 },  // Tue
+    { day: "2026-04-15", value: 53000 },  // Wed
+    { day: "2026-04-16", value: 7000 },   // Thu
+    { day: "2026-04-17", value: 25000 },  // Fri
+  ];
+
+  it("groups business days into weeks correctly", () => {
+    const weeks = computeWeeklySummaries(aprilDays);
+    expect(weeks.length).toBe(3);
+  });
+
+  it("week 1 has correct days and total", () => {
+    const weeks = computeWeeklySummaries(aprilDays);
+    expect(weeks[0].weekNum).toBe(1);
+    expect(weeks[0].startDay).toBe(1);
+    expect(weeks[0].endDay).toBe(3);
+    expect(weeks[0].businessDays).toBe(3);
+    expect(weeks[0].total).toBe(19000 + 158000 + 6000); // 183000
+  });
+
+  it("week 2 has correct days and total", () => {
+    const weeks = computeWeeklySummaries(aprilDays);
+    expect(weeks[1].weekNum).toBe(2);
+    expect(weeks[1].startDay).toBe(6);
+    expect(weeks[1].endDay).toBe(10);
+    expect(weeks[1].businessDays).toBe(5);
+    expect(weeks[1].total).toBe(38000 + 39000 + 35000 + 71000 + 30000); // 213000
+  });
+
+  it("week 3 has correct days and total", () => {
+    const weeks = computeWeeklySummaries(aprilDays);
+    expect(weeks[2].weekNum).toBe(3);
+    expect(weeks[2].startDay).toBe(13);
+    expect(weeks[2].endDay).toBe(17);
+    expect(weeks[2].businessDays).toBe(5);
+    expect(weeks[2].total).toBe(16000 + 67000 + 53000 + 7000 + 25000); // 168000
+  });
+
+  it("computes correct daily average", () => {
+    const weeks = computeWeeklySummaries(aprilDays);
+    // Week 1: 3 active days with values > 0
+    expect(weeks[0].avg).toBeCloseTo(183000 / 3, 0);
+    // Week 2: 5 active days
+    expect(weeks[1].avg).toBeCloseTo(213000 / 5, 0);
+  });
+
+  it("returns empty array for empty data", () => {
+    const weeks = computeWeeklySummaries([]);
+    expect(weeks).toEqual([]);
+  });
+
+  it("skips weekends in week grouping", () => {
+    const weeks = computeWeeklySummaries(aprilDays);
+    // No week should include Saturday (4th) or Sunday (5th)
+    expect(weeks[0].endDay).toBe(3); // Ends on Friday
+    expect(weeks[1].startDay).toBe(6); // Starts on Monday
+  });
+
+  it("handles a single business day", () => {
+    const singleDay = [{ day: "2026-04-01", value: 50000 }]; // Wednesday
+    const weeks = computeWeeklySummaries(singleDay);
+    expect(weeks.length).toBe(1);
+    expect(weeks[0].total).toBe(50000);
+    expect(weeks[0].businessDays).toBe(1);
+  });
+});
+
+describe("Sales PDF Export - fmtCompactCurrency", () => {
+  it("formats millions", () => {
+    expect(fmtCompactCurrency(1500000)).toBe("R$ 1.5M");
+    expect(fmtCompactCurrency(2000000)).toBe("R$ 2.0M");
+  });
+
+  it("formats thousands", () => {
+    expect(fmtCompactCurrency(184000)).toBe("R$ 184K");
+    expect(fmtCompactCurrency(213000)).toBe("R$ 213K");
+    expect(fmtCompactCurrency(1000)).toBe("R$ 1K");
+  });
+
+  it("formats small values", () => {
+    expect(fmtCompactCurrency(500)).toBe("R$ 500");
+    expect(fmtCompactCurrency(0)).toBe("R$ 0");
+  });
+});

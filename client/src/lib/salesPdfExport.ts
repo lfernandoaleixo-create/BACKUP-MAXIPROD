@@ -57,6 +57,16 @@ interface AnalyticsData {
   byDay: Array<{ day: string; value: number; orders: number }>;
 }
 
+// ─── Weekly Summary Types ────────────────────────────────────────
+interface WeekSummary {
+  weekNum: number;
+  startDay: number;
+  endDay: number;
+  total: number;
+  businessDays: number;
+  avg: number;
+}
+
 // ─── Color Palette ───────────────────────────────────────────────
 const C = {
   teal:     [13, 148, 136] as [number, number, number],
@@ -71,6 +81,12 @@ const C = {
   amberDark:[180, 83, 9] as [number, number, number],
   amberLight:[254, 243, 199] as [number, number, number],
   orange:   [234, 88, 12] as [number, number, number],
+  violet:   [139, 92, 246] as [number, number, number],
+  violetDark: [109, 40, 217] as [number, number, number],
+  violetLight: [237, 233, 254] as [number, number, number],
+  rose:     [244, 63, 94] as [number, number, number],
+  roseDark: [225, 29, 72] as [number, number, number],
+  roseLight:[255, 228, 230] as [number, number, number],
   slate900: [15, 23, 42] as [number, number, number],
   slate700: [51, 65, 85] as [number, number, number],
   slate500: [100, 116, 139] as [number, number, number],
@@ -83,6 +99,20 @@ const C = {
   weekendText: [248, 113, 113] as [number, number, number],
   weekendTextLight: [252, 165, 165] as [number, number, number],
 };
+
+// Week card color sets (matching the UI)
+const WEEK_COLORS: Array<{
+  main: [number, number, number];
+  dark: [number, number, number];
+  light: [number, number, number];
+  bg: [number, number, number];
+}> = [
+  { main: C.teal, dark: C.tealDark, light: C.tealLight, bg: [240, 253, 250] },
+  { main: C.blue, dark: C.blueDark, light: C.blueLight, bg: [239, 246, 255] },
+  { main: C.violet, dark: C.violetDark, light: C.violetLight, bg: [245, 243, 255] },
+  { main: C.amber, dark: C.amberDark, light: C.amberLight, bg: [255, 251, 235] },
+  { main: C.rose, dark: C.roseDark, light: C.roseLight, bg: [255, 241, 242] },
+];
 
 // ─── Formatters ──────────────────────────────────────────────────
 function fmtCurrency(n: number): string {
@@ -99,6 +129,52 @@ function fmtCompact(val: number): string {
   if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
   if (val >= 1000) return `${(val / 1000).toFixed(0)}k`;
   return val.toFixed(0);
+}
+function fmtCompactCurrency(val: number): string {
+  if (val >= 1000000) return `R$ ${(val / 1000000).toFixed(1)}M`;
+  if (val >= 1000) return `R$ ${(val / 1000).toFixed(0)}K`;
+  return `R$ ${val.toFixed(0)}`;
+}
+
+// ─── Compute Weekly Summaries ────────────────────────────────────
+function computeWeeklySummaries(byDay: Array<{ day: string; value: number }>): WeekSummary[] {
+  if (byDay.length === 0) return [];
+
+  const weeks: WeekSummary[] = [];
+  let currentWeekDays: Array<{ day: string; value: number }> = [];
+
+  for (let i = 0; i < byDay.length; i++) {
+    const d = new Date(byDay[i].day + "T12:00:00");
+    const dow = d.getDay(); // 0=Sun, 1=Mon...6=Sat
+    const isBusinessDay = dow >= 1 && dow <= 5;
+
+    if (isBusinessDay) {
+      currentWeekDays.push(byDay[i]);
+    }
+
+    const isLastDay = i === byDay.length - 1;
+    const nextDow = i < byDay.length - 1 ? new Date(byDay[i + 1].day + "T12:00:00").getDay() : -1;
+    const isEndOfWeek = dow === 5 || (isBusinessDay && (nextDow === 0 || nextDow === 6 || isLastDay));
+
+    if (currentWeekDays.length > 0 && (isEndOfWeek || isLastDay)) {
+      const todayStr = new Date().toISOString().substring(0, 10);
+      const total = currentWeekDays.reduce((s, d) => s + (d.day > todayStr ? 0 : d.value), 0);
+      const activeDays = currentWeekDays.filter(d => d.day <= todayStr && d.value > 0).length;
+      const startDayNum = parseInt(currentWeekDays[0].day.split("-")[2]);
+      const endDayNum = parseInt(currentWeekDays[currentWeekDays.length - 1].day.split("-")[2]);
+      weeks.push({
+        weekNum: weeks.length + 1,
+        startDay: startDayNum,
+        endDay: endDayNum,
+        total,
+        businessDays: currentWeekDays.length,
+        avg: activeDays > 0 ? total / activeDays : 0,
+      });
+      currentWeekDays = [];
+    }
+  }
+
+  return weeks;
 }
 
 // ─── SVG to Image ────────────────────────────────────────────────
@@ -211,6 +287,66 @@ function drawMiniCard(
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...colorDark);
   doc.text(acumValue, x + w - 3, y + 16.2, { align: "right" });
+}
+
+// ─── Draw Weekly Summary Card ────────────────────────────────────
+function drawWeekCard(
+  doc: jsPDF,
+  x: number, y: number, w: number, h: number,
+  week: WeekSummary,
+  colors: { main: [number, number, number]; dark: [number, number, number]; light: [number, number, number]; bg: [number, number, number] },
+) {
+  // Card background
+  doc.setFillColor(...colors.bg);
+  doc.roundedRect(x, y, w, h, 1.5, 1.5, "F");
+  doc.setDrawColor(...colors.light);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(x, y, w, h, 1.5, 1.5, "S");
+
+  // Top accent bar
+  doc.setFillColor(...colors.main);
+  doc.rect(x + 0.3, y, w - 0.6, 1, "F");
+
+  // Row 1: SEMANA N + Dias X-Y
+  doc.setFontSize(5.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...colors.main);
+  doc.text(`SEMANA ${week.weekNum}`, x + 2.5, y + 4.5);
+
+  doc.setFontSize(4.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...C.slate400);
+  doc.text(`Dias ${week.startDay}\u2013${week.endDay}`, x + w - 2.5, y + 4.5, { align: "right" });
+
+  // Row 2: Big value
+  if (week.total > 0) {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...colors.dark);
+    doc.text(fmtCompactCurrency(week.total), x + 2.5, y + 10.5);
+  } else {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C.slate400);
+    doc.text("\u2014", x + 2.5, y + 10.5);
+  }
+
+  // Row 3: média/dia
+  if (week.total > 0 && week.avg > 0) {
+    doc.setFontSize(4.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...colors.main);
+    doc.text(`media ${fmtCurrency(week.avg)}/dia`, x + 2.5, y + 14);
+  }
+
+  // Row 4: dias úteis
+  doc.setDrawColor(...C.slate200);
+  doc.setLineWidth(0.1);
+  doc.line(x + 2.5, y + h - 4.5, x + w - 2.5, y + h - 4.5);
+  doc.setFontSize(4.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...C.slate400);
+  doc.text(`${week.businessDays} dias uteis`, x + 2.5, y + h - 1.5);
 }
 
 // ─── Draw Bar+Line Chart (compact) ──────────────────────────────
@@ -474,6 +610,7 @@ export async function generateSalesPDF(
   crmSegmento: string,
   chartElementId: string,
   comparison?: ComparisonData | null,
+  period?: string,
 ): Promise<void> {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();  // 297mm
@@ -483,6 +620,10 @@ export async function generateSalesPDF(
 
   const now = new Date();
   const dateStr = `Gerado em ${now.toLocaleDateString("pt-BR")} as ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+
+  // Compute weekly summaries if applicable
+  const showWeekly = (period === "current_month" || period === "last_month") && analytics.byDay.length > 0;
+  const weeks = showWeekly ? computeWeeklySummaries(analytics.byDay) : [];
 
   // ── Top accent line ──
   doc.setFillColor(...C.teal);
@@ -622,10 +763,27 @@ export async function generateSalesPDF(
   doc.setTextColor(...C.orange);
   doc.text(fmtPct(analytics.totalAFaturar, analytics.totalValue), aX + barOffX + barMaxW + 1.5, y + 16);
 
-  y += kpiH + 2.5;
+  y += kpiH + 2;
 
   // ══════════════════════════════════════════════════════════════
-  // DAILY AVERAGE CARDS (compact row) + SEGMENT TABLE side by side
+  // WEEKLY SUMMARY CARDS (only for current_month / last_month)
+  // ══════════════════════════════════════════════════════════════
+  if (weeks.length > 0) {
+    const weekCardH = 19;
+    const weekGap = 2.5;
+    const weekCardW = (kpiTotalW - weekGap * (weeks.length - 1)) / weeks.length;
+
+    for (let i = 0; i < weeks.length; i++) {
+      const wx = margin + i * (weekCardW + weekGap);
+      const colors = WEEK_COLORS[i % WEEK_COLORS.length];
+      drawWeekCard(doc, wx, y, weekCardW, weekCardH, weeks[i], colors);
+    }
+
+    y += weekCardH + 2;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // DAILY AVERAGE CARDS + SEGMENT TABLE side by side
   // ══════════════════════════════════════════════════════════════
   const hasComparison = comparison && comparison.currentMonth && comparison.currentMonth.length > 0;
   const showCrm = grupo !== "all" && (analytics.byCrmSegmentKPI || []).length > 0;
@@ -758,9 +916,9 @@ export async function generateSalesPDF(
     });
 
     const tableEndY = (doc as any).lastAutoTable?.finalY ?? sectionStartY + 30;
-    y = Math.max(y, tableEndY) + 3;
+    y = Math.max(y, tableEndY) + 2;
   } else {
-    y += 3;
+    y += 2;
   }
 
   // ══════════════════════════════════════════════════════════════

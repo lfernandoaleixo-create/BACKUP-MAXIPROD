@@ -2941,6 +2941,7 @@ export default function Sales() {
         crmSegmento,
         "sales-daily-chart",
         comparison,
+        period,
       );
       // Restore chart state if it was collapsed
       if (!wasExpanded) {
@@ -2951,7 +2952,7 @@ export default function Sales() {
     } finally {
       setPdfExporting(false);
     }
-  }, [analytics, pdfExporting, chartExpanded, label, grupo, crmSegmento, comparison]);
+  }, [analytics, pdfExporting, chartExpanded, label, grupo, crmSegmento, comparison, period]);
 
   return (
     <div className="min-h-screen bg-slate-50">
