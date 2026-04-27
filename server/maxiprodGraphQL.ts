@@ -859,13 +859,13 @@ async function saveAllData(
 
   console.log(`[GraphQL Sync] Dados de estoque/pedidos salvos atomicamente: ${stockData.length} est, ${orderData.length} ped, ${poData.length} po, ${salesData.length} vnd`);
 
-  // ═══ BAIXA AUTOMÁTICA DE INDUSTRIALIZADOS: DESABILITADA em 22/04/2026 ═══
-  // MOTIVO: A lógica zerou indevidamente o estoque de madeira ao processar faturados antigos.
+  // ═══ BAIXA AUTOMÁTICA DE INDUSTRIALIZADOS: REATIVADA em 27/04/2026 ═══
   // Quando um item industrializado (MADEIRA/MADEIRA CONTABILIZADO) é faturado,
   // abate automaticamente do estoque de madeira (madeira_stock). Fator 1:1.
-  // NÃO retroativo — snapshot baseline criado em 22/04/2026.
-  // updateProgress({ percent: 93, details: "Verificando baixas de industrializados" });
-  // await processIndustrializedBaixa();
+  // NÃO retroativo — snapshot baseline atualizado em 27/04/2026 (413 itens).
+  // Só processa NOVOS faturamentos (comparação com snapshot).
+  updateProgress({ percent: 93, details: "Verificando baixas de industrializados" });
+  await processIndustrializedBaixa();
 
   updateProgress({ percent: 95, details: "Processando dashboard" });
 

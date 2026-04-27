@@ -3057,3 +3057,4 @@
 - [x] Pedidos de Venda (Importação): mostrar apenas pedidos com status "Aprovado" (não incluir "A aprovar") - coluna Qt do Maxiprod já em caixas (já estava correto, apenas texto do card atualizado)
 - [x] Card PEDIDOS (VENDA): alterar texto de "Aprovados + A aprovar" para "Aprovados"
 - [x] Card PEDIDOS (VENDA): adicionar ícone de olho com tooltip explicativo profissional sobre o valor mostrado
+- [x] Reativar baixa automática de industrializados (MADEIRA) no estoque de madeira quando pedido é faturado
