@@ -1168,20 +1168,25 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                             const aboveAvg = avg3m > 0 && mAtual > avg3m;
                             const belowAvg = avg3m > 0 && mAtual < avg3m;
                             const diff = Math.abs(mAtual - avg3m);
-                            const color = aboveAvg ? 'text-emerald-700' : belowAvg ? 'text-orange-600' : mAtual > 0 ? 'text-emerald-600' : 'text-slate-300';
+                            const hasAvg = avg3m > 0;
+                            const color = aboveAvg ? 'text-emerald-700' : belowAvg ? 'text-orange-600' : mAtual > 0 ? 'text-emerald-600' : hasAvg ? 'text-orange-600' : 'text-slate-300';
+                            const displayValue = mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : hasAvg ? `0 ${unit}` : '—';
+                            const arrow = aboveAvg ? ' ↑' : (belowAvg || (mAtual === 0 && hasAvg)) ? ' ↓' : '';
                             const tooltipText = aboveAvg
                               ? `↑ ${formatNumber(Math.round(diff))} ${unit} ACIMA da média (média: ${formatNumber(Math.round(avg3m))} ${unit}/mês). Vendas estão acima do normal!`
                               : belowAvg
                               ? `↓ ${formatNumber(Math.round(diff))} ${unit} ABAIXO da média (média: ${formatNumber(Math.round(avg3m))} ${unit}/mês). Vendas estão abaixo do normal.`
+                              : mAtual === 0 && hasAvg
+                              ? `↓ Nenhuma venda ainda este mês. Média dos últimos 3 meses: ${formatNumber(Math.round(avg3m))} ${unit}/mês. Produto está ${formatNumber(Math.round(avg3m))} ${unit} abaixo do esperado.`
                               : mAtual > 0 && avg3m > 0
                               ? `Vendas iguais à média de ${formatNumber(Math.round(avg3m))} ${unit}/mês`
                               : mAtual > 0
                               ? `${formatNumber(mAtual)} ${unit} vendidos este mês (sem histórico anterior para comparar)`
-                              : 'Nenhuma venda registrada neste mês';
+                              : 'Nenhuma venda registrada neste mês e sem histórico anterior';
                             return (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className={`text-[11px] font-bold ${color} cursor-help`}>{mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : '—'}{aboveAvg ? ' ↑' : belowAvg ? ' ↓' : ''}</span>
+                                  <span className={`text-[11px] font-bold ${color} cursor-help`}>{displayValue}{arrow}</span>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="max-w-[300px] text-xs leading-relaxed bg-white border border-slate-200 shadow-xl p-3 rounded-lg">
                                   <p className="font-bold text-slate-800 mb-1">Vendas do Mês Atual</p>
@@ -3050,20 +3055,25 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                                   const aboveAvg = avg3m > 0 && mAtual > avg3m;
                                   const belowAvg = avg3m > 0 && mAtual < avg3m;
                                   const diff = Math.abs(mAtual - avg3m);
-                                  const color = aboveAvg ? 'text-emerald-700' : belowAvg ? 'text-orange-600' : mAtual > 0 ? 'text-emerald-600' : 'text-slate-300';
+                                  const hasAvg = avg3m > 0;
+                                  const color = aboveAvg ? 'text-emerald-700' : belowAvg ? 'text-orange-600' : mAtual > 0 ? 'text-emerald-600' : hasAvg ? 'text-orange-600' : 'text-slate-300';
+                                  const displayValue = mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : hasAvg ? `0 ${unit}` : '—';
+                                  const arrow = aboveAvg ? ' ↑' : (belowAvg || (mAtual === 0 && hasAvg)) ? ' ↓' : '';
                                   const tooltipText = aboveAvg
                                     ? `↑ ${formatNumber(Math.round(diff))} ${unit} ACIMA da média (média: ${formatNumber(Math.round(avg3m))} ${unit}/mês). Vendas estão acima do normal!`
                                     : belowAvg
                                     ? `↓ ${formatNumber(Math.round(diff))} ${unit} ABAIXO da média (média: ${formatNumber(Math.round(avg3m))} ${unit}/mês). Vendas estão abaixo do normal.`
+                                    : mAtual === 0 && hasAvg
+                                    ? `↓ Nenhuma venda ainda este mês. Média dos últimos 3 meses: ${formatNumber(Math.round(avg3m))} ${unit}/mês. Produto está ${formatNumber(Math.round(avg3m))} ${unit} abaixo do esperado.`
                                     : mAtual > 0 && avg3m > 0
                                     ? `Vendas iguais à média de ${formatNumber(Math.round(avg3m))} ${unit}/mês`
                                     : mAtual > 0
                                     ? `${formatNumber(mAtual)} ${unit} vendidos este mês (sem histórico anterior para comparar)`
-                                    : 'Nenhuma venda registrada neste mês';
+                                    : 'Nenhuma venda registrada neste mês e sem histórico anterior';
                                   return (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <span className={`text-[11px] font-bold ${color} cursor-help`}>{mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : '—'}{aboveAvg ? ' ↑' : belowAvg ? ' ↓' : ''}</span>
+                                        <span className={`text-[11px] font-bold ${color} cursor-help`}>{displayValue}{arrow}</span>
                                       </TooltipTrigger>
                                       <TooltipContent side="top" className="max-w-[300px] text-xs leading-relaxed bg-white border border-slate-200 shadow-xl p-3 rounded-lg">
                                         <p className="font-bold text-slate-800 mb-1">Vendas do Mês Atual</p>

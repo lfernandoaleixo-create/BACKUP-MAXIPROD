@@ -3052,3 +3052,4 @@
 - [x] Centralizar valores nas colunas de vendas mensais para layout profissional
 - [x] Corrigir botão de gráfico sobrepondo texto "DISPONÍVEL P/ VENDA" na tabela de Importação
 - [x] Melhorar tooltip da coluna verde (mês atual) com explicação da seta ↑/↓ (ex: "3 cx acima da média de 10 cx/mês")
+- [x] Corrigir coluna verde (mês atual): mostrar "0 cx ↓" quando vendas=0 mas há média, em vez de "— ↓"
