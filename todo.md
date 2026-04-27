@@ -3058,3 +3058,4 @@
 - [x] Card PEDIDOS (VENDA): alterar texto de "Aprovados + A aprovar" para "Aprovados"
 - [x] Card PEDIDOS (VENDA): adicionar ícone de olho com tooltip explicativo profissional sobre o valor mostrado
 - [x] Reativar baixa automática de industrializados (MADEIRA) no estoque de madeira quando pedido é faturado
+- [x] Remover coluna "EST. REG." da tabela Madeira – Produto Acabado (manter na Importação)

@@ -2951,7 +2951,6 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                         </th>
                       </>
                     )}
-                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap" title="Estoque Regulador">Est. Reg.</th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
@@ -3103,24 +3102,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                             </>
                           );
                         })()}
-                        {/* Est. Reg. */}
-                        <td className="px-1.5 py-2 text-center whitespace-nowrap">
-                          {(() => {
-                            const pricingItem = pricingOverrides?.find(p => p.codigoItem === item.codigoItem);
-                            const vendaMensal = pricingItem?.vendaMensal;
-                            if (vendaMensal == null) return <span className="text-[11px] text-slate-300">—</span>;
-                            const fator = pricingItem?.fatorMultiplicacao ? parseFloat(pricingItem.fatorMultiplicacao) : 2.3;
-                            const estReg = Math.round(vendaMensal * fator);
-                            const unit = item.isKgProduct || item.codigoItem === "00223" ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
-                            let estRegColor = 'text-emerald-600';
-                            if (estReg > 0) {
-                              if (disponivelManual <= estReg) estRegColor = 'text-red-600 bg-red-50 px-1 py-0.5 rounded';
-                              else if (disponivelManual <= estReg * 1.2) estRegColor = 'text-pink-600 bg-pink-50 px-1 py-0.5 rounded';
-                              else if (disponivelManual <= estReg * 1.4) estRegColor = 'text-orange-600 bg-orange-50 px-1 py-0.5 rounded';
-                            }
-                            return <span className={`text-[11px] font-semibold ${estRegColor}`} title={`Vd.Mensal: ${vendaMensal} × Fator: ${fator.toLocaleString("pt-BR")} = ${estReg} ${unit}`}>{formatNumber(estReg)} {unit}</span>;
-                          })()}
-                        </td>
+
                         {/* Status */}
                         <td className="px-1.5 py-2 text-center whitespace-nowrap">
                           {(() => {
