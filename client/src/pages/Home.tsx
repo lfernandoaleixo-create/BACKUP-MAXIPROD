@@ -2941,10 +2941,6 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                           <div className="text-[8px] text-indigo-500 font-medium leading-tight">MÉDIA</div>
                           <div>3 Meses</div>
                         </th>
-                        <th className="px-2 py-2.5 text-center text-[10px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
-                          <div className="text-[8px] text-purple-500 font-medium leading-tight">EST.REG.</div>
-                          <div>Calc.</div>
-                        </th>
                         <th className="px-2 py-2.5 text-center text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
                           <div className="text-[8px] text-emerald-500 font-medium leading-tight">VENDAS</div>
                           <div>{monthlySalesData.months[3]?.label || 'Atual'}</div>
@@ -3062,9 +3058,6 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                               </td>
                               <td className="px-2 py-2 text-center bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap">
                                 <span className={`text-[11px] font-bold ${avg3m > 0 ? 'text-indigo-800' : 'text-slate-300'}`}>{avg3m > 0 ? `${formatNumber(Math.round(avg3m))} ${unit}` : '—'}</span>
-                              </td>
-                              <td className="px-2 py-2 text-center bg-purple-100/40 border-x border-purple-200 whitespace-nowrap">
-                                <span className={`text-[11px] font-bold ${estRegCalc > 0 ? 'text-purple-800' : 'text-slate-300'}`} title={`${formatNumber(Math.round(avg3m))} × 2,33 = ${formatNumber(estRegCalc)}`}>{estRegCalc > 0 ? `${formatNumber(estRegCalc)} ${unit}` : '—'}</span>
                               </td>
                               <td className="px-2 py-2 text-center bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap">
                                 {(() => {
