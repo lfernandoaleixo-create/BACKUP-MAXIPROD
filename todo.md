@@ -3065,3 +3065,4 @@
 - [x] Criar UI da aba com formulário de lançamento e listagem de despesas
 - [x] Controle de acesso: aba visível apenas para senhas Pedro/Flavio/Guilherme
 - [x] Aba E-commerce: adicionar filtros por descrição/produto, forma de pagamento, período (data início/fim) e quem registrou
+- [x] Aba E-commerce: botão exportar PDF com filtros ativos, painel moderno e profissional

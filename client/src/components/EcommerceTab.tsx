@@ -31,12 +31,21 @@ import {
   Filter,
   SlidersHorizontal,
   User,
+  FileDown,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const FORMA_PAGAMENTO_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   pix: { label: "PIX", icon: <QrCode className="w-3.5 h-3.5" />, color: "bg-green-100 text-green-700 border-green-200" },
   boleto: { label: "Boleto", icon: <Banknote className="w-3.5 h-3.5" />, color: "bg-blue-100 text-blue-700 border-blue-200" },
   cartao_credito: { label: "Cartão de Crédito", icon: <CreditCard className="w-3.5 h-3.5" />, color: "bg-purple-100 text-purple-700 border-purple-200" },
+};
+
+const FORMA_PAGAMENTO_PDF_LABELS: Record<string, string> = {
+  pix: "PIX",
+  boleto: "Boleto",
+  cartao_credito: "Cartão de Crédito",
 };
 
 function formatCurrency(value: number): string {
@@ -46,6 +55,171 @@ function formatCurrency(value: number): string {
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split("-");
   return `${d}/${m}/${y}`;
+}
+
+function generateExpensesPdf(
+  expenses: any[],
+  filters: { descricao: string; formaPagamento: string; dataInicio: string; dataFim: string; registradoPor: string },
+  total: number,
+) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // Header - dark gradient bar
+  doc.setFillColor(15, 23, 42); // slate-900
+  doc.rect(0, 0, pageW, 36, "F");
+  // Orange accent line
+  doc.setFillColor(234, 88, 12); // orange-600
+  doc.rect(0, 36, pageW, 2, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("GRUPO FOX", 14, 14);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.text("Relatório de Despesas — E-commerce", 14, 22);
+  doc.setFontSize(8);
+  doc.setTextColor(180, 180, 180);
+  doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 14, 30);
+
+  // Filtros aplicados
+  let y = 44;
+  const activeFilters: string[] = [];
+  if (filters.descricao) activeFilters.push(`Descrição: "${filters.descricao}"`);
+  if (filters.formaPagamento) activeFilters.push(`Pagamento: ${FORMA_PAGAMENTO_PDF_LABELS[filters.formaPagamento] || filters.formaPagamento}`);
+  if (filters.dataInicio) activeFilters.push(`De: ${formatDate(filters.dataInicio)}`);
+  if (filters.dataFim) activeFilters.push(`Até: ${formatDate(filters.dataFim)}`);
+  if (filters.registradoPor) activeFilters.push(`Registrado por: ${filters.registradoPor}`);
+
+  if (activeFilters.length > 0) {
+    doc.setFillColor(255, 247, 237); // orange-50
+    doc.roundedRect(14, y, pageW - 28, 14, 2, 2, "F");
+    doc.setDrawColor(251, 191, 36); // amber-400
+    doc.roundedRect(14, y, pageW - 28, 14, 2, 2, "S");
+    doc.setTextColor(146, 64, 14); // amber-800
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.text("FILTROS APLICADOS:", 18, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.text(activeFilters.join("  •  "), 18, y + 10);
+    y += 20;
+  } else {
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(8);
+    doc.text("Sem filtros aplicados — exibindo todas as despesas", 14, y);
+    y += 8;
+  }
+
+  // Summary boxes
+  const boxW = 52;
+  const gap = 6;
+  const boxH = 18;
+
+  // Total
+  doc.setFillColor(234, 88, 12); // orange-600
+  doc.roundedRect(14, y, boxW, boxH, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.text("TOTAL", 18, y + 6);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(total), 18, y + 14);
+
+  // Qtd itens
+  doc.setFillColor(71, 85, 105); // slate-600
+  doc.roundedRect(14 + boxW + gap, y, boxW, boxH, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.text("LANÇAMENTOS", 18 + boxW + gap, y + 6);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(String(expenses.length), 18 + boxW + gap, y + 14);
+
+  // Média por item
+  const media = expenses.length > 0 ? total / expenses.length : 0;
+  doc.setFillColor(8, 145, 178); // cyan-600
+  doc.roundedRect(14 + 2 * (boxW + gap), y, boxW, boxH, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.text("MÉDIA/ITEM", 18 + 2 * (boxW + gap), y + 6);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(media), 18 + 2 * (boxW + gap), y + 14);
+
+  y += boxH + 8;
+
+  // Table
+  const tableData = expenses.map((exp: any) => [
+    formatDate(exp.dataCompra),
+    exp.descricao,
+    FORMA_PAGAMENTO_PDF_LABELS[exp.formaPagamento] || exp.formaPagamento,
+    exp.formaPagamento === "cartao_credito" && exp.parcelas > 1 ? `${exp.parcelas}x` : "1x",
+    formatCurrency(Number(exp.valorTotal)),
+    exp.registradoPor,
+  ]);
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Data", "Descrição", "Pagamento", "Parcelas", "Valor", "Registrado por"]],
+    body: tableData,
+    theme: "grid",
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: "bold",
+      cellPadding: 3,
+    },
+    bodyStyles: { fontSize: 7.5, cellPadding: 2.5 },
+    columnStyles: {
+      0: { cellWidth: 22 },
+      1: { cellWidth: 62 },
+      2: { cellWidth: 30, halign: "center" },
+      3: { cellWidth: 18, halign: "center" },
+      4: { cellWidth: 28, halign: "right", fontStyle: "bold" },
+      5: { cellWidth: 22, halign: "center" },
+    },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    didParseCell: (data: any) => {
+      if (data.section === "body" && data.column.index === 2) {
+        const val = data.cell.raw;
+        if (val === "PIX") {
+          data.cell.styles.textColor = [21, 128, 61]; // green-700
+          data.cell.styles.fontStyle = "bold";
+        } else if (val === "Boleto") {
+          data.cell.styles.textColor = [29, 78, 216]; // blue-700
+          data.cell.styles.fontStyle = "bold";
+        } else if (val === "Cartão de Crédito") {
+          data.cell.styles.textColor = [126, 34, 206]; // purple-700
+          data.cell.styles.fontStyle = "bold";
+        }
+      }
+    },
+  });
+
+  // Footer
+  const finalY = (doc as any).lastAutoTable?.finalY || y + 20;
+  doc.setDrawColor(226, 232, 240);
+  doc.line(14, finalY + 6, pageW - 14, finalY + 6);
+  doc.setTextColor(148, 163, 184);
+  doc.setFontSize(7);
+  doc.text("Grupo Fox — Sistema de Gestão de Despesas E-commerce", 14, finalY + 12);
+  doc.text("Documento gerado automaticamente", pageW - 14 - doc.getTextWidth("Documento gerado automaticamente"), finalY + 12);
+
+  // Generate filename
+  const parts = ["Despesas_Ecommerce"];
+  if (filters.dataInicio || filters.dataFim) {
+    if (filters.dataInicio) parts.push(filters.dataInicio.replace(/-/g, ""));
+    parts.push("a");
+    if (filters.dataFim) parts.push(filters.dataFim.replace(/-/g, ""));
+  }
+  if (filters.formaPagamento) parts.push(FORMA_PAGAMENTO_PDF_LABELS[filters.formaPagamento]?.replace(/\s+/g, "") || filters.formaPagamento);
+  const fileName = `${parts.join("_")}.pdf`;
+  doc.save(fileName);
 }
 
 export default function EcommerceTab() {
@@ -125,20 +299,15 @@ export default function EcommerceTab() {
   // Aplicar filtros
   const filteredExpenses = useMemo(() => {
     return allExpenses.filter((exp: any) => {
-      // Filtro por descrição
       if (filterDescricao.trim()) {
         const search = filterDescricao.toLowerCase().trim();
         const matchDesc = exp.descricao?.toLowerCase().includes(search);
         const matchObs = exp.observacao?.toLowerCase().includes(search);
         if (!matchDesc && !matchObs) return false;
       }
-      // Filtro por forma de pagamento
       if (filterFormaPagamento && exp.formaPagamento !== filterFormaPagamento) return false;
-      // Filtro por data início
       if (filterDataInicio && exp.dataCompra < filterDataInicio) return false;
-      // Filtro por data fim
       if (filterDataFim && exp.dataCompra > filterDataFim) return false;
-      // Filtro por quem registrou
       if (filterRegistradoPor && exp.registradoPor !== filterRegistradoPor) return false;
       return true;
     });
@@ -163,6 +332,20 @@ export default function EcommerceTab() {
     setFilterDataInicio("");
     setFilterDataFim("");
     setFilterRegistradoPor("");
+  };
+
+  const handleExportPdf = () => {
+    generateExpensesPdf(
+      filteredExpenses,
+      {
+        descricao: filterDescricao,
+        formaPagamento: filterFormaPagamento,
+        dataInicio: filterDataInicio,
+        dataFim: filterDataFim,
+        registradoPor: filterRegistradoPor,
+      },
+      filteredTotal,
+    );
   };
 
   if (isLoading) {
@@ -211,7 +394,7 @@ export default function EcommerceTab() {
         </div>
       )}
 
-      {/* Header + Add Button */}
+      {/* Header + Buttons */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-5 h-5 text-orange-600" />
@@ -221,6 +404,27 @@ export default function EcommerceTab() {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
+          {/* Exportar PDF */}
+          {filteredExpenses.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleExportPdf}
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 border-slate-300 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  Exportar PDF
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {hasActiveFilters
+                  ? `Exportar ${filteredExpenses.length} itens filtrados (${formatCurrency(filteredTotal)})`
+                  : `Exportar todas as ${allExpenses.length} despesas`}
+              </TooltipContent>
+            </Tooltip>
+          )}
           <Button
             onClick={() => setShowFilters(!showFilters)}
             size="sm"
