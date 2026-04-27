@@ -779,7 +779,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                           </button>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-[260px] text-xs leading-relaxed bg-white border border-slate-200 shadow-xl p-3 rounded-lg">
-                          <p className="font-bold text-slate-800 mb-1">Hist\u00f3rico de Vendas</p>
+                          <p className="font-bold text-slate-800 mb-1">Histórico de Vendas</p>
                           <p className="text-slate-600">Clique para {showSalesColumns ? 'ocultar' : 'exibir'} as colunas de vendas mensais.</p>
                         </TooltipContent>
                       </Tooltip>
@@ -816,20 +816,20 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   {showSalesColumns && monthlySalesData?.months && (
                     <>
                       {monthlySalesData.months.slice(0, 3).map((m) => (
-                        <th key={m.key} className="px-1 py-2.5 text-right text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
+                        <th key={m.key} className="px-2 py-2.5 text-center text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
                           <div className="text-[8px] text-blue-500 font-medium leading-tight">VENDAS</div>
                           <div>{m.label}</div>
                         </th>
                       ))}
-                      <th className="px-1 py-2.5 text-right text-[10px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
+                      <th className="px-2 py-2.5 text-center text-[10px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
                         <div className="text-[8px] text-indigo-500 font-medium leading-tight">MÉDIA</div>
                         <div>3 Meses</div>
                       </th>
-                      <th className="px-1 py-2.5 text-right text-[10px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                      <th className="px-2 py-2.5 text-center text-[10px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
                         <div className="text-[8px] text-purple-500 font-medium leading-tight">EST.REG.</div>
                         <div>Calc.</div>
                       </th>
-                      <th className="px-1 py-2.5 text-right text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                      <th className="px-2 py-2.5 text-center text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
                         <div className="text-[8px] text-emerald-500 font-medium leading-tight">VENDAS</div>
                         <div>{monthlySalesData.months[3]?.label || 'Atual'}</div>
                       </th>
@@ -1147,22 +1147,22 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     const unit = item.isKgProduct ? "kg" : "cx";
                     return (
                       <>
-                        <td className="px-1 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
+                        <td className="px-2 py-2 text-center bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                           <span className={`text-[11px] font-medium ${m1 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m1 > 0 ? `${formatNumber(m1)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-1 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
+                        <td className="px-2 py-2 text-center bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                           <span className={`text-[11px] font-medium ${m2 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m2 > 0 ? `${formatNumber(m2)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-1 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
+                        <td className="px-2 py-2 text-center bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                           <span className={`text-[11px] font-medium ${m3 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m3 > 0 ? `${formatNumber(m3)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-1 py-2 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap">
+                        <td className="px-2 py-2 text-center bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap">
                           <span className={`text-[11px] font-bold ${avg3m > 0 ? 'text-indigo-800' : 'text-slate-300'}`}>{avg3m > 0 ? `${formatNumber(Math.round(avg3m))} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-1 py-2 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap">
+                        <td className="px-2 py-2 text-center bg-purple-100/40 border-x border-purple-200 whitespace-nowrap">
                           <span className={`text-[11px] font-bold ${estRegCalc > 0 ? 'text-purple-800' : 'text-slate-300'}`} title={`${formatNumber(Math.round(avg3m))} × 2,33 = ${formatNumber(estRegCalc)}`}>{estRegCalc > 0 ? `${formatNumber(estRegCalc)} ${unit}` : '—'}</span>
                         </td>
-                        <td className="px-1 py-2 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap">
+                        <td className="px-2 py-2 text-center bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap">
                           {(() => {
                             const aboveAvg = avg3m > 0 && mAtual > avg3m;
                             const belowAvg = avg3m > 0 && mAtual < avg3m;
@@ -1423,10 +1423,10 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
             <DialogHeader>
               <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
                 <div className="p-2 bg-amber-500/20 rounded-lg"><BarChart3 className="w-5 h-5 text-amber-400" /></div>
-                Guia: Hist\u00f3rico de Vendas por Produto
+                Guia: Histórico de Vendas por Produto
               </DialogTitle>
               <DialogDescription className="text-slate-300 mt-2">
-                Entenda o que cada coluna e n\u00famero representa quando voc\u00ea expande o hist\u00f3rico de vendas.
+                Entenda o que cada coluna e número representa quando você expande o histórico de vendas.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -1440,7 +1440,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   <p className="text-blue-600 text-xs">Colunas azuis</p>
                 </div>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed">Mostra a <strong>quantidade total vendida (faturada)</strong> de cada produto nos \u00faltimos 3 meses. Os valores s\u00e3o em <strong>caixas (cx)</strong> e representam NFs de sa\u00edda emitidas no per\u00edodo. Quanto maior o n\u00famero, mais aquele produto vendeu naquele m\u00eas.</p>
+              <p className="text-slate-700 text-sm leading-relaxed">Mostra a <strong>quantidade total vendida (faturada)</strong> de cada produto nos últimos 3 meses. Os valores são em <strong>caixas (cx)</strong> e representam NFs de saída emitidas no período. Quanto maior o número, mais aquele produto vendeu naquele mês.</p>
             </div>
 
             {/* M\u00e9dia 3 Meses */}
@@ -1448,11 +1448,11 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-indigo-100 rounded-lg"><Eye className="w-4 h-4 text-indigo-600" /></div>
                 <div>
-                  <h3 className="font-bold text-indigo-900 text-sm">M\u00e9dia 3 Meses</h3>
-                  <p className="text-indigo-600 text-xs">Coluna \u00edndigo</p>
+                  <h3 className="font-bold text-indigo-900 text-sm">Média 3 Meses</h3>
+                  <p className="text-indigo-600 text-xs">Coluna índigo</p>
                 </div>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed">\u00c9 a <strong>m\u00e9dia aritm\u00e9tica</strong> das vendas dos 3 meses anteriores. Exemplo: se vendeu 100, 80 e 120 cx, a m\u00e9dia \u00e9 <strong>100 cx/m\u00eas</strong>. Esse n\u00famero indica o <strong>ritmo normal de sa\u00edda</strong> do produto e \u00e9 a base para calcular o estoque regulador.</p>
+              <p className="text-slate-700 text-sm leading-relaxed">É a <strong>média aritmética</strong> das vendas dos 3 meses anteriores. Exemplo: se vendeu 100, 80 e 120 cx, a média é <strong>100 cx/mês</strong>. Esse número indica o <strong>ritmo normal de saída</strong> do produto e é a base para calcular o estoque regulador.</p>
             </div>
 
             {/* Est. Reg. Calculado */}
@@ -1464,7 +1464,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   <p className="text-purple-600 text-xs">Coluna roxa</p>
                 </div>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed">\u00c9 o <strong>Estoque Regulador sugerido pelo sistema</strong>, calculado como: <strong>M\u00e9dia 3 Meses \u00d7 2,33</strong> (cobertura de ~70 dias). Esse valor indica a quantidade m\u00ednima ideal que deveria ter em estoque para n\u00e3o faltar produto. Se o estoque atual estiver abaixo desse n\u00famero, \u00e9 sinal de que precisa repor.</p>
+              <p className="text-slate-700 text-sm leading-relaxed">É o <strong>Estoque Regulador sugerido pelo sistema</strong>, calculado como: <strong>Média 3 Meses x 2,33</strong> (cobertura de ~70 dias). Esse valor indica a quantidade mínima ideal que deveria ter em estoque para não faltar produto. Se o estoque atual estiver abaixo desse número, é sinal de que precisa repor.</p>
             </div>
 
             {/* Vendas M\u00eas Atual */}
@@ -1472,11 +1472,11 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-emerald-100 rounded-lg"><Eye className="w-4 h-4 text-emerald-600" /></div>
                 <div>
-                  <h3 className="font-bold text-emerald-900 text-sm">Vendas do M\u00eas Atual</h3>
+                  <h3 className="font-bold text-emerald-900 text-sm">Vendas do Mês Atual</h3>
                   <p className="text-emerald-600 text-xs">Coluna verde</p>
                 </div>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed">Mostra as <strong>vendas j\u00e1 faturadas no m\u00eas corrente</strong>. Esse n\u00famero vai crescendo ao longo do m\u00eas. Compare com a m\u00e9dia mensal para saber se o produto est\u00e1 vendendo acima ou abaixo do normal.</p>
+              <p className="text-slate-700 text-sm leading-relaxed">Mostra as <strong>vendas já faturadas no mês corrente</strong>. Esse número vai crescendo ao longo do mês. Compare com a média mensal para saber se o produto está vendendo acima ou abaixo do normal.</p>
             </div>
 
             {/* Como usar */}
@@ -1486,10 +1486,10 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                 <h3 className="font-bold text-slate-800 text-sm">Como interpretar</h3>
               </div>
               <ul className="text-slate-700 text-sm space-y-2">
-                <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">\u2713</span> Se <strong>Dispon\u00edvel P/ Venda</strong> est\u00e1 acima do <strong>Est. Reg. Calc.</strong> = estoque saud\u00e1vel</li>
-                <li className="flex items-start gap-2"><span className="text-amber-500 font-bold mt-0.5">\u26a0</span> Se <strong>Dispon\u00edvel</strong> est\u00e1 entre 50-100% do Est. Reg. = <strong>cuidado</strong>, considere repor</li>
-                <li className="flex items-start gap-2"><span className="text-red-500 font-bold mt-0.5">\u2717</span> Se <strong>Dispon\u00edvel</strong> est\u00e1 abaixo de 50% do Est. Reg. = <strong>compra urgente</strong></li>
-                <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">\u2191</span> Se <strong>Vendas Atual</strong> est\u00e1 acima da <strong>M\u00e9dia 3M</strong> = produto em alta, pode faltar</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">✓</span> Se <strong>Disponível P/ Venda</strong> está acima do <strong>Est. Reg. Calc.</strong> = estoque saudável</li>
+                <li className="flex items-start gap-2"><span className="text-amber-500 font-bold mt-0.5">⚠</span> Se <strong>Disponível</strong> está entre 50-100% do Est. Reg. = <strong>cuidado</strong>, considere repor</li>
+                <li className="flex items-start gap-2"><span className="text-red-500 font-bold mt-0.5">✗</span> Se <strong>Disponível</strong> está abaixo de 50% do Est. Reg. = <strong>compra urgente</strong></li>
+                <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">↑</span> Se <strong>Vendas Atual</strong> está acima da <strong>Média 3M</strong> = produto em alta, pode faltar</li>
               </ul>
             </div>
           </div>
@@ -2862,7 +2862,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                             </button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-[260px] text-xs leading-relaxed bg-white border border-slate-200 shadow-xl p-3 rounded-lg">
-                            <p className="font-bold text-slate-800 mb-1">Hist\u00f3rico de Vendas</p>
+                            <p className="font-bold text-slate-800 mb-1">Histórico de Vendas</p>
                             <p className="text-slate-600">Clique para {showSalesColumns ? 'ocultar' : 'exibir'} as colunas de vendas mensais.</p>
                           </TooltipContent>
                         </Tooltip>
@@ -2888,20 +2888,20 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                     {showSalesColumns && monthlySalesData?.months && (
                       <>
                         {monthlySalesData.months.slice(0, 3).map((m) => (
-                          <th key={m.key} className="px-1 py-2.5 text-right text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
+                          <th key={m.key} className="px-2 py-2.5 text-center text-[10px] font-bold text-blue-700 uppercase tracking-wider bg-blue-50/60 border-x border-blue-200 whitespace-nowrap" title={`Vendas faturadas em ${m.label}`}>
                             <div className="text-[8px] text-blue-500 font-medium leading-tight">VENDAS</div>
                             <div>{m.label}</div>
                           </th>
                         ))}
-                        <th className="px-1 py-2.5 text-right text-[10px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
+                        <th className="px-2 py-2.5 text-center text-[10px] font-bold text-indigo-800 uppercase tracking-wider bg-indigo-100/60 border-x border-indigo-200 whitespace-nowrap" title="Média de vendas dos últimos 3 meses">
                           <div className="text-[8px] text-indigo-500 font-medium leading-tight">MÉDIA</div>
                           <div>3 Meses</div>
                         </th>
-                        <th className="px-1 py-2.5 text-right text-[10px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
+                        <th className="px-2 py-2.5 text-center text-[10px] font-bold text-purple-800 uppercase tracking-wider bg-purple-100/60 border-x border-purple-200 whitespace-nowrap" title="Estoque Regulador Calculado = Média × 2,33 (cobertura 60 dias)">
                           <div className="text-[8px] text-purple-500 font-medium leading-tight">EST.REG.</div>
                           <div>Calc.</div>
                         </th>
-                        <th className="px-1 py-2.5 text-right text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
+                        <th className="px-2 py-2.5 text-center text-[10px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-100/60 border-x border-emerald-200 whitespace-nowrap" title={`Vendas do mês atual (${monthlySalesData.months[3]?.label})`}>
                           <div className="text-[8px] text-emerald-500 font-medium leading-tight">VENDAS</div>
                           <div>{monthlySalesData.months[3]?.label || 'Atual'}</div>
                         </th>
@@ -3008,22 +3008,22 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                           const unit = item.isKgProduct || item.codigoItem === "00223" ? "kg" : (item.codigoItem === "00129" ? "dz" : "cx");
                           return (
                             <>
-                              <td className="px-1 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
+                              <td className="px-2 py-2 text-center bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                                 <span className={`text-[11px] font-medium ${m1 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m1 > 0 ? `${formatNumber(m1)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-1 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
+                              <td className="px-2 py-2 text-center bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                                 <span className={`text-[11px] font-medium ${m2 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m2 > 0 ? `${formatNumber(m2)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-1 py-2 text-right bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
+                              <td className="px-2 py-2 text-center bg-blue-50/30 border-x border-blue-200 whitespace-nowrap">
                                 <span className={`text-[11px] font-medium ${m3 > 0 ? 'text-blue-700' : 'text-slate-300'}`}>{m3 > 0 ? `${formatNumber(m3)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-1 py-2 text-right bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap">
+                              <td className="px-2 py-2 text-center bg-indigo-100/40 border-x border-indigo-200 whitespace-nowrap">
                                 <span className={`text-[11px] font-bold ${avg3m > 0 ? 'text-indigo-800' : 'text-slate-300'}`}>{avg3m > 0 ? `${formatNumber(Math.round(avg3m))} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-1 py-2 text-right bg-purple-100/40 border-x border-purple-200 whitespace-nowrap">
+                              <td className="px-2 py-2 text-center bg-purple-100/40 border-x border-purple-200 whitespace-nowrap">
                                 <span className={`text-[11px] font-bold ${estRegCalc > 0 ? 'text-purple-800' : 'text-slate-300'}`} title={`${formatNumber(Math.round(avg3m))} × 2,33 = ${formatNumber(estRegCalc)}`}>{estRegCalc > 0 ? `${formatNumber(estRegCalc)} ${unit}` : '—'}</span>
                               </td>
-                              <td className="px-1 py-2 text-right bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap">
+                              <td className="px-2 py-2 text-center bg-emerald-100/40 border-x border-emerald-200 whitespace-nowrap">
                                 {(() => {
                                   const aboveAvg = avg3m > 0 && mAtual > avg3m;
                                   const belowAvg = avg3m > 0 && mAtual < avg3m;
@@ -3152,10 +3152,10 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             <DialogHeader>
               <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
                 <div className="p-2 bg-amber-500/20 rounded-lg"><BarChart3 className="w-5 h-5 text-amber-400" /></div>
-                Guia: Hist\u00f3rico de Vendas por Produto
+                Guia: Histórico de Vendas por Produto
               </DialogTitle>
               <DialogDescription className="text-slate-300 mt-2">
-                Entenda o que cada coluna e n\u00famero representa quando voc\u00ea expande o hist\u00f3rico de vendas.
+                Entenda o que cada coluna e número representa quando você expande o histórico de vendas.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -3164,21 +3164,21 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-blue-100 rounded-lg"><Eye className="w-4 h-4 text-blue-600" /></div>
                 <div>
-                  <h3 className="font-bold text-blue-900 text-sm">Vendas Mensais (\u00faltimos 3 meses)</h3>
+                  <h3 className="font-bold text-blue-900 text-sm">Vendas Mensais (últimos 3 meses)</h3>
                   <p className="text-blue-600 text-xs">Colunas azuis</p>
                 </div>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed">Mostra a <strong>quantidade total vendida (faturada)</strong> de cada produto nos \u00faltimos 3 meses. Os valores s\u00e3o em <strong>caixas (cx)</strong> e representam NFs de sa\u00edda emitidas no per\u00edodo. Quanto maior o n\u00famero, mais aquele produto vendeu naquele m\u00eas.</p>
+              <p className="text-slate-700 text-sm leading-relaxed">Mostra a <strong>quantidade total vendida (faturada)</strong> de cada produto nos últimos 3 meses. Os valores são em <strong>caixas (cx)</strong> e representam NFs de saída emitidas no período. Quanto maior o número, mais aquele produto vendeu naquele mês.</p>
             </div>
             <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-indigo-100 rounded-lg"><Eye className="w-4 h-4 text-indigo-600" /></div>
                 <div>
-                  <h3 className="font-bold text-indigo-900 text-sm">M\u00e9dia 3 Meses</h3>
-                  <p className="text-indigo-600 text-xs">Coluna \u00edndigo</p>
+                  <h3 className="font-bold text-indigo-900 text-sm">Média 3 Meses</h3>
+                  <p className="text-indigo-600 text-xs">Coluna índigo</p>
                 </div>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed">\u00c9 a <strong>m\u00e9dia aritm\u00e9tica</strong> das vendas dos 3 meses anteriores. Exemplo: se vendeu 100, 80 e 120 cx, a m\u00e9dia \u00e9 <strong>100 cx/m\u00eas</strong>. Esse n\u00famero indica o <strong>ritmo normal de sa\u00edda</strong> do produto e \u00e9 a base para calcular o estoque regulador.</p>
+              <p className="text-slate-700 text-sm leading-relaxed">É a <strong>média aritmética</strong> das vendas dos 3 meses anteriores. Exemplo: se vendeu 100, 80 e 120 cx, a média é <strong>100 cx/mês</strong>. Esse número indica o <strong>ritmo normal de saída</strong> do produto e é a base para calcular o estoque regulador.</p>
             </div>
             <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-4">
               <div className="flex items-center gap-3 mb-3">
@@ -3188,17 +3188,17 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                   <p className="text-purple-600 text-xs">Coluna roxa</p>
                 </div>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed">\u00c9 o <strong>Estoque Regulador sugerido pelo sistema</strong>, calculado como: <strong>M\u00e9dia 3 Meses \u00d7 2,33</strong> (cobertura de ~70 dias). Esse valor indica a quantidade m\u00ednima ideal que deveria ter em estoque para n\u00e3o faltar produto. Se o estoque atual estiver abaixo desse n\u00famero, \u00e9 sinal de que precisa repor.</p>
+              <p className="text-slate-700 text-sm leading-relaxed">É o <strong>Estoque Regulador sugerido pelo sistema</strong>, calculado como: <strong>Média 3 Meses x 2,33</strong> (cobertura de ~70 dias). Esse valor indica a quantidade mínima ideal que deveria ter em estoque para não faltar produto. Se o estoque atual estiver abaixo desse número, é sinal de que precisa repor.</p>
             </div>
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-emerald-100 rounded-lg"><Eye className="w-4 h-4 text-emerald-600" /></div>
                 <div>
-                  <h3 className="font-bold text-emerald-900 text-sm">Vendas do M\u00eas Atual</h3>
+                  <h3 className="font-bold text-emerald-900 text-sm">Vendas do Mês Atual</h3>
                   <p className="text-emerald-600 text-xs">Coluna verde</p>
                 </div>
               </div>
-              <p className="text-slate-700 text-sm leading-relaxed">Mostra as <strong>vendas j\u00e1 faturadas no m\u00eas corrente</strong>. Esse n\u00famero vai crescendo ao longo do m\u00eas. Compare com a m\u00e9dia mensal para saber se o produto est\u00e1 vendendo acima ou abaixo do normal.</p>
+              <p className="text-slate-700 text-sm leading-relaxed">Mostra as <strong>vendas já faturadas no mês corrente</strong>. Esse número vai crescendo ao longo do mês. Compare com a média mensal para saber se o produto está vendendo acima ou abaixo do normal.</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4">
               <div className="flex items-center gap-3 mb-3">
@@ -3206,10 +3206,10 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                 <h3 className="font-bold text-slate-800 text-sm">Como interpretar</h3>
               </div>
               <ul className="text-slate-700 text-sm space-y-2">
-                <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">\u2713</span> Se <strong>Dispon\u00edvel P/ Venda</strong> est\u00e1 acima do <strong>Est. Reg. Calc.</strong> = estoque saud\u00e1vel</li>
-                <li className="flex items-start gap-2"><span className="text-amber-500 font-bold mt-0.5">\u26a0</span> Se <strong>Dispon\u00edvel</strong> est\u00e1 entre 50-100% do Est. Reg. = <strong>cuidado</strong>, considere repor</li>
-                <li className="flex items-start gap-2"><span className="text-red-500 font-bold mt-0.5">\u2717</span> Se <strong>Dispon\u00edvel</strong> est\u00e1 abaixo de 50% do Est. Reg. = <strong>compra urgente</strong></li>
-                <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">\u2191</span> Se <strong>Vendas Atual</strong> est\u00e1 acima da <strong>M\u00e9dia 3M</strong> = produto em alta, pode faltar</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">✓</span> Se <strong>Disponível P/ Venda</strong> está acima do <strong>Est. Reg. Calc.</strong> = estoque saudável</li>
+                <li className="flex items-start gap-2"><span className="text-amber-500 font-bold mt-0.5">⚠</span> Se <strong>Disponível</strong> está entre 50-100% do Est. Reg. = <strong>cuidado</strong>, considere repor</li>
+                <li className="flex items-start gap-2"><span className="text-red-500 font-bold mt-0.5">✗</span> Se <strong>Disponível</strong> está abaixo de 50% do Est. Reg. = <strong>compra urgente</strong></li>
+                <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">↑</span> Se <strong>Vendas Atual</strong> está acima da <strong>Média 3M</strong> = produto em alta, pode faltar</li>
               </ul>
             </div>
           </div>

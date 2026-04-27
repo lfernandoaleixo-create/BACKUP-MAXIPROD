@@ -3048,3 +3048,5 @@
 - [x] Padronizar posição do botão de vendas: mover para junto de DISPONÍVEL P/ VENDA em ambas tabelas (Importação e Madeira)
 - [x] Redesenhar modal/card de vendas: layout moderno, sofisticado, amplo, sem cortes, com explicações de cada número
 - [x] Criar guia interativo (card com ícone de olho) explicando cada coluna de vendas (substitui vídeo)
+- [x] Corrigir caracteres Unicode escapados no guia de vendas (mostrar acentos corretamente)
+- [x] Centralizar valores nas colunas de vendas mensais para layout profissional
