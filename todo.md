@@ -3045,3 +3045,6 @@
 - [x] Corrigir layout do botão de gráfico de vendas nas tabelas Importação e Madeira (sem corte/sobreposição)
 - [x] Adicionar ícone de "olho" com tooltip explicando o que o botão de gráfico representa
 - [x] Melhorar card/modal de vendas do produto: amplo, sem cortes, alinhado, com explicações completas
+- [x] Padronizar posição do botão de vendas: mover para junto de DISPONÍVEL P/ VENDA em ambas tabelas (Importação e Madeira)
+- [x] Redesenhar modal/card de vendas: layout moderno, sofisticado, amplo, sem cortes, com explicações de cada número
+- [x] Criar guia interativo (card com ícone de olho) explicando cada coluna de vendas (substitui vídeo)
