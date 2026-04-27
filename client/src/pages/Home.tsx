@@ -761,19 +761,21 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   <SortHeader field="estoqueCx">Estoque</SortHeader>
                   <SortHeader field="pedidosCx">Pedidos</SortHeader>
                   <th
-                    className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider select-none bg-emerald-50/60 border-x border-emerald-100 relative"
+                    className="px-2 py-2 text-left text-xs font-semibold uppercase tracking-wider select-none bg-emerald-50/60 border-x border-emerald-100 relative"
+                    style={{ minWidth: 140 }}
                   >
-                    <div className="flex items-center gap-1">
-                      <div className="flex items-center gap-1 text-emerald-700 cursor-pointer hover:text-emerald-800" onClick={() => onSort("disponivelCx")}>
-                        <ShoppingCart className="w-3 h-3" />
-                        Disponivel
-                        <ArrowUpDown className={`w-3 h-3 ${sort === "disponivelCx" ? "text-emerald-700" : "text-emerald-300"}`} />
-                      </div>
+                    <div className="flex items-center gap-1 text-emerald-700 cursor-pointer hover:text-emerald-800" onClick={() => onSort("disponivelCx")}>
+                      <ShoppingCart className="w-3 h-3 shrink-0" />
+                      <span className="whitespace-nowrap">Disponível</span>
+                      <ArrowUpDown className={`w-3 h-3 shrink-0 ${sort === "disponivelCx" ? "text-emerald-700" : "text-emerald-300"}`} />
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-[8px] font-bold text-emerald-500 tracking-widest">P/ VENDA</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
                             onClick={(e) => { e.stopPropagation(); setShowSalesColumns(!showSalesColumns); }}
-                            className={`p-1 rounded-md transition-all flex items-center gap-0.5 ml-1 ${showSalesColumns ? 'bg-blue-500 text-white shadow-md' : 'bg-amber-50 text-amber-600 hover:bg-amber-100 ring-1 ring-amber-300'}`}
+                            className={`p-0.5 rounded transition-all flex items-center ${showSalesColumns ? 'bg-blue-500 text-white shadow-md' : 'bg-amber-50 text-amber-600 hover:bg-amber-100 ring-1 ring-amber-300'}`}
                           >
                             <BarChart3 className="w-3 h-3" />
                           </button>
@@ -788,7 +790,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                           <TooltipTrigger asChild>
                             <button
                               onClick={(e) => { e.stopPropagation(); setShowSalesGuide(true); }}
-                              className="p-1 rounded-md transition-all bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 ring-1 ring-slate-300"
+                              className="p-0.5 rounded transition-all bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 ring-1 ring-slate-300"
                             >
                               <Eye className="w-3 h-3" />
                             </button>
@@ -799,7 +801,6 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                         </Tooltip>
                       )}
                     </div>
-                    <span className="text-[8px] font-bold text-emerald-500 tracking-widest block">P/ VENDA</span>
                   </th>
                   <SortHeader field="poCx">
                     <Ship className="w-3 h-3" /> PO
@@ -1166,8 +1167,28 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                           {(() => {
                             const aboveAvg = avg3m > 0 && mAtual > avg3m;
                             const belowAvg = avg3m > 0 && mAtual < avg3m;
+                            const diff = Math.abs(mAtual - avg3m);
                             const color = aboveAvg ? 'text-emerald-700' : belowAvg ? 'text-orange-600' : mAtual > 0 ? 'text-emerald-600' : 'text-slate-300';
-                            return <span className={`text-[11px] font-bold ${color}`}>{mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : '—'}{aboveAvg ? ' ↑' : belowAvg ? ' ↓' : ''}</span>;
+                            const tooltipText = aboveAvg
+                              ? `↑ ${formatNumber(Math.round(diff))} ${unit} ACIMA da média (média: ${formatNumber(Math.round(avg3m))} ${unit}/mês). Vendas estão acima do normal!`
+                              : belowAvg
+                              ? `↓ ${formatNumber(Math.round(diff))} ${unit} ABAIXO da média (média: ${formatNumber(Math.round(avg3m))} ${unit}/mês). Vendas estão abaixo do normal.`
+                              : mAtual > 0 && avg3m > 0
+                              ? `Vendas iguais à média de ${formatNumber(Math.round(avg3m))} ${unit}/mês`
+                              : mAtual > 0
+                              ? `${formatNumber(mAtual)} ${unit} vendidos este mês (sem histórico anterior para comparar)`
+                              : 'Nenhuma venda registrada neste mês';
+                            return (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className={`text-[11px] font-bold ${color} cursor-help`}>{mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : '—'}{aboveAvg ? ' ↑' : belowAvg ? ' ↓' : ''}</span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[300px] text-xs leading-relaxed bg-white border border-slate-200 shadow-xl p-3 rounded-lg">
+                                  <p className="font-bold text-slate-800 mb-1">Vendas do Mês Atual</p>
+                                  <p className="text-slate-600">{tooltipText}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            );
                           })()}
                         </td>
                       </>
@@ -2847,16 +2868,18 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" onClick={() => handleMadeiraSort('pedidosCx')}>
                       <div className="flex items-center justify-center gap-1">Pedidos <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'pedidosCx' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
-                    <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider select-none bg-emerald-50/60 border-x border-emerald-100 whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        <div className="flex items-center gap-1 text-emerald-700 cursor-pointer hover:text-emerald-800" onClick={() => handleMadeiraSort('disponivelCx')}>
-                          Disponivel <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} />
-                        </div>
+                    <th className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wider select-none bg-emerald-50/60 border-x border-emerald-100" style={{ minWidth: 140 }}>
+                      <div className="flex items-center justify-center gap-1 text-emerald-700 cursor-pointer hover:text-emerald-800" onClick={() => handleMadeiraSort('disponivelCx')}>
+                        <span className="whitespace-nowrap">Disponível</span>
+                        <ArrowUpDown className={`w-3 h-3 shrink-0 ${madeiraSort === 'disponivelCx' ? 'text-emerald-700' : 'text-emerald-300'}`} />
+                      </div>
+                      <div className="flex items-center justify-center gap-1 mt-0.5">
+                        <span className="text-[8px] font-bold text-emerald-500 tracking-widest">P/ VENDA</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <button
                               onClick={(e) => { e.stopPropagation(); setShowSalesColumns(!showSalesColumns); }}
-                              className={`p-1 rounded-md transition-all flex items-center gap-0.5 ml-1 ${showSalesColumns ? 'bg-blue-500 text-white shadow-md' : 'bg-amber-50 text-amber-600 hover:bg-amber-100 ring-1 ring-amber-300'}`}
+                              className={`p-0.5 rounded transition-all flex items-center ${showSalesColumns ? 'bg-blue-500 text-white shadow-md' : 'bg-amber-50 text-amber-600 hover:bg-amber-100 ring-1 ring-amber-300'}`}
                             >
                               <BarChart3 className="w-3 h-3" />
                             </button>
@@ -2871,7 +2894,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                             <TooltipTrigger asChild>
                               <button
                                 onClick={(e) => { e.stopPropagation(); setShowSalesGuide(true); }}
-                                className="p-1 rounded-md transition-all bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 ring-1 ring-slate-300"
+                                className="p-0.5 rounded transition-all bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 ring-1 ring-slate-300"
                               >
                                 <Eye className="w-3 h-3" />
                               </button>
@@ -2882,7 +2905,6 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                           </Tooltip>
                         )}
                       </div>
-                      <span className="text-[8px] font-bold text-emerald-500 tracking-widest block text-center">P/ VENDA</span>
                     </th>
 
                     {showSalesColumns && monthlySalesData?.months && (
@@ -3027,8 +3049,28 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                                 {(() => {
                                   const aboveAvg = avg3m > 0 && mAtual > avg3m;
                                   const belowAvg = avg3m > 0 && mAtual < avg3m;
+                                  const diff = Math.abs(mAtual - avg3m);
                                   const color = aboveAvg ? 'text-emerald-700' : belowAvg ? 'text-orange-600' : mAtual > 0 ? 'text-emerald-600' : 'text-slate-300';
-                                  return <span className={`text-[11px] font-bold ${color}`}>{mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : '—'}{aboveAvg ? ' ↑' : belowAvg ? ' ↓' : ''}</span>;
+                                  const tooltipText = aboveAvg
+                                    ? `↑ ${formatNumber(Math.round(diff))} ${unit} ACIMA da média (média: ${formatNumber(Math.round(avg3m))} ${unit}/mês). Vendas estão acima do normal!`
+                                    : belowAvg
+                                    ? `↓ ${formatNumber(Math.round(diff))} ${unit} ABAIXO da média (média: ${formatNumber(Math.round(avg3m))} ${unit}/mês). Vendas estão abaixo do normal.`
+                                    : mAtual > 0 && avg3m > 0
+                                    ? `Vendas iguais à média de ${formatNumber(Math.round(avg3m))} ${unit}/mês`
+                                    : mAtual > 0
+                                    ? `${formatNumber(mAtual)} ${unit} vendidos este mês (sem histórico anterior para comparar)`
+                                    : 'Nenhuma venda registrada neste mês';
+                                  return (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className={`text-[11px] font-bold ${color} cursor-help`}>{mAtual > 0 ? `${formatNumber(mAtual)} ${unit}` : '—'}{aboveAvg ? ' ↑' : belowAvg ? ' ↓' : ''}</span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-[300px] text-xs leading-relaxed bg-white border border-slate-200 shadow-xl p-3 rounded-lg">
+                                        <p className="font-bold text-slate-800 mb-1">Vendas do Mês Atual</p>
+                                        <p className="text-slate-600">{tooltipText}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  );
                                 })()}
                               </td>
                             </>
