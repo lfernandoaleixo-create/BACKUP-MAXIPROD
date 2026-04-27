@@ -457,10 +457,11 @@ const kpiStyles: Record<string, { iconBg: string; iconColor: string; bar: string
   slate:   { iconBg: "bg-slate-50",   iconColor: "text-slate-500",   bar: "bg-gradient-to-r from-slate-300 to-slate-400" },
 };
 
-function KPICard({ label, value, sub, icon: Icon, theme, onClick }: { 
+function KPICard({ label, value, sub, icon: Icon, theme, onClick, tooltip }: { 
   label: string; value: string; sub?: string; icon: React.ElementType; 
   theme: keyof typeof kpiStyles;
   onClick?: () => void;
+  tooltip?: React.ReactNode;
 }) {
   const s = kpiStyles[theme];
   return (
@@ -474,7 +475,23 @@ function KPICard({ label, value, sub, icon: Icon, theme, onClick }: {
           </div>
         </div>
         <p className="text-[26px] font-extrabold text-slate-900 tracking-tight leading-none">{value}</p>
-        {sub && <p className="text-[11px] text-slate-400 mt-2 font-medium">{sub}</p>}
+        {(sub || tooltip) && (
+          <div className="flex items-center gap-1.5 mt-2">
+            {sub && <p className="text-[11px] text-slate-400 font-medium">{sub}</p>}
+            {tooltip && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <Eye className="w-2.5 h-2.5 text-slate-400" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs bg-white border border-slate-200 shadow-xl text-slate-700 p-3 rounded-lg" sideOffset={6}>
+                  {tooltip}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -4272,9 +4289,17 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         <KPICard
           label="Pedidos (Venda)"
           value={`${formatNumber(totalPedidosCx, true)} cx`}
-          sub="Aprovados + A aprovar"
+          sub="Aprovados"
           icon={ShoppingCart}
           theme="orange"
+          tooltip={
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-slate-800">Como este valor é calculado</p>
+              <p className="text-[11px] text-slate-600 leading-relaxed">Soma da coluna <strong>Qt</strong> (quantidade em caixas) de todos os itens dos pedidos de venda com status <strong>Aprovado</strong> no Maxiprod, excluindo pedidos em Digitação e transferências E-commerce internas.</p>
+              <div className="h-px bg-slate-100" />
+              <p className="text-[10px] text-slate-400">Fonte: API GraphQL Maxiprod &middot; Filtro: estado = A_FATURAR</p>
+            </div>
+          }
         />
         <KPICard
           label="Disponivel"

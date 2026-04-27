@@ -3054,3 +3054,6 @@
 - [x] Melhorar tooltip da coluna verde (mês atual) com explicação da seta ↑/↓ (ex: "3 cx acima da média de 10 cx/mês")
 - [x] Corrigir coluna verde (mês atual): mostrar "0 cx ↓" quando vendas=0 mas há média, em vez de "— ↓"
 - [x] Corrigir sobreposição do botão de gráfico na coluna DISPONÍVEL P/ VENDA - reorganizar layout e reduzir largura colunas
+- [x] Pedidos de Venda (Importação): mostrar apenas pedidos com status "Aprovado" (não incluir "A aprovar") - coluna Qt do Maxiprod já em caixas (já estava correto, apenas texto do card atualizado)
+- [x] Card PEDIDOS (VENDA): alterar texto de "Aprovados + A aprovar" para "Aprovados"
+- [x] Card PEDIDOS (VENDA): adicionar ícone de olho com tooltip explicativo profissional sobre o valor mostrado
