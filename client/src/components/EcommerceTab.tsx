@@ -405,26 +405,27 @@ export default function EcommerceTab() {
         </div>
         <div className="flex items-center gap-2">
           {/* Exportar PDF */}
-          {filteredExpenses.length > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={handleExportPdf}
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 border-slate-300 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all"
-                >
-                  <FileDown className="w-3.5 h-3.5" />
-                  Exportar PDF
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasActiveFilters
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleExportPdf}
+                size="sm"
+                variant="outline"
+                disabled={filteredExpenses.length === 0}
+                className="gap-1.5 border-slate-300 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                Exportar PDF
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {filteredExpenses.length === 0
+                ? "Nenhuma despesa para exportar"
+                : hasActiveFilters
                   ? `Exportar ${filteredExpenses.length} itens filtrados (${formatCurrency(filteredTotal)})`
                   : `Exportar todas as ${allExpenses.length} despesas`}
-              </TooltipContent>
-            </Tooltip>
-          )}
+            </TooltipContent>
+          </Tooltip>
           <Button
             onClick={() => setShowFilters(!showFilters)}
             size="sm"
