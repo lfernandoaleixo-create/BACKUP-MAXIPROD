@@ -766,37 +766,16 @@ export async function generateSalesPDF(
   y += kpiH + 2;
 
   // ══════════════════════════════════════════════════════════════
-  // WEEKLY SUMMARY CARDS (only for current_month / last_month)
-  // ══════════════════════════════════════════════════════════════
-  if (weeks.length > 0) {
-    const weekCardH = 19;
-    const weekGap = 2.5;
-    const weekCardW = (kpiTotalW - weekGap * (weeks.length - 1)) / weeks.length;
-
-    for (let i = 0; i < weeks.length; i++) {
-      const wx = margin + i * (weekCardW + weekGap);
-      const colors = WEEK_COLORS[i % WEEK_COLORS.length];
-      drawWeekCard(doc, wx, y, weekCardW, weekCardH, weeks[i], colors);
-    }
-
-    y += weekCardH + 2;
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // DAILY AVERAGE CARDS + SEGMENT TABLE side by side
+  // DAILY AVERAGE CARDS (horizontal) + SEGMENT TABLE side by side
   // ══════════════════════════════════════════════════════════════
   const hasComparison = comparison && comparison.currentMonth && comparison.currentMonth.length > 0;
   const showCrm = grupo !== "all" && (analytics.byCrmSegmentKPI || []).length > 0;
   const segments = showCrm ? (analytics.byCrmSegmentKPI || []) : (analytics.bySegmentKPI || []);
 
-  // Layout: Left side = daily average cards stacked, Right side = segment table
-  const leftW = 100;
-  const rightW = kpiTotalW - leftW - 4;
-  const leftX = margin;
-  const rightX = margin + leftW + 4;
   const sectionStartY = y;
+  const miniCardH = 19;
 
-  // ── LEFT: Daily Average Cards ──
+  // ── LEFT: Daily Average Cards SIDE BY SIDE (horizontal row) ──
   if (hasComparison) {
     const todayDay = new Date().getDate();
     const currentTotal = comparison!.currentMonth?.[comparison!.currentMonth.length - 1]?.cumulative ?? 0;
@@ -812,41 +791,45 @@ export async function generateSalesPDF(
     const bestAvg = bestDays > 0 ? bestTotal / bestDays : 0;
 
     const hasBest = comparison!.bestMonth && comparison!.bestMonth.length > 0;
-    const miniCardH = 19;
-    const miniGap = 2;
+    const cardCount = hasBest ? 3 : 2;
+
+    // Calculate width: leave space for segment table on the right
+    const segTableW = segments.length > 0 ? 120 : 0;
+    const cardsAreaW = kpiTotalW - segTableW - (segTableW > 0 ? 4 : 0);
+    const miniGap = 2.5;
+    const miniCardW = (cardsAreaW - miniGap * (cardCount - 1)) / cardCount;
 
     // Card 1: Mês Atual
-    drawMiniCard(doc, leftX, y, leftW, miniCardH,
+    drawMiniCard(doc, margin, y, miniCardW, miniCardH,
       "MEDIA DIARIA - MES ATUAL", `${currentDays} dias`,
       fmtCurrency(currentAvg),
       `Acum. (${comparison!.currentMonthLabel || ""})`, fmtCurrency(currentTotal),
       C.teal, C.tealDark, C.tealLight,
     );
-    y += miniCardH + miniGap;
 
     // Card 2: Mês Anterior
-    drawMiniCard(doc, leftX, y, leftW, miniCardH,
+    drawMiniCard(doc, margin + miniCardW + miniGap, y, miniCardW, miniCardH,
       "MEDIA DIARIA - MES ANTERIOR", `${lastDays} dias`,
       fmtCurrency(lastAvg),
       `Anterior (${comparison!.lastMonthLabel || ""})`, fmtCurrency(lastTotal),
       C.blue, C.blueDark, C.blueLight,
     );
-    y += miniCardH + miniGap;
 
     // Card 3: Melhor Mês (if exists)
     if (hasBest) {
-      drawMiniCard(doc, leftX, y, leftW, miniCardH,
+      drawMiniCard(doc, margin + (miniCardW + miniGap) * 2, y, miniCardW, miniCardH,
         "MEDIA DIARIA - MELHOR MES", `${bestDays} dias`,
         fmtCurrency(bestAvg),
         `Melhor (${comparison!.bestMonthLabel || ""})`, fmtCurrency(bestTotal),
         C.amber, C.amberDark, C.amberLight,
       );
-      y += miniCardH + miniGap;
     }
   }
 
-  // ── RIGHT: Segment Table ──
+  // ── RIGHT: Segment Table (beside the mini cards) ──
   if (segments.length > 0) {
+    const segTableW = 120;
+    const rightX = margin + kpiTotalW - segTableW;
     const tableTitle = showCrm ? "Detalhamento por CRM" : "Detalhamento por Segmento";
     const colLabel = showCrm ? "Segmento CRM" : "Segmento";
 
@@ -876,7 +859,7 @@ export async function generateSalesPDF(
     autoTable(doc, {
       startY: sectionStartY + 5,
       margin: { left: rightX, right: margin },
-      tableWidth: rightW,
+      tableWidth: segTableW,
       head: [[colLabel, "Valor Total", "Faturado", "A Faturar", "%"]],
       body: tableData,
       theme: "grid",
@@ -899,7 +882,7 @@ export async function generateSalesPDF(
         textColor: C.slate700,
       },
       columnStyles: {
-        0: { cellWidth: rightW * 0.32, fontStyle: "bold" },
+        0: { cellWidth: segTableW * 0.30, fontStyle: "bold" },
         1: { halign: "right" as const, fontStyle: "bold" },
         2: { halign: "right" as const, textColor: C.emerald },
         3: { halign: "right" as const, textColor: C.orange },
@@ -916,13 +899,13 @@ export async function generateSalesPDF(
     });
 
     const tableEndY = (doc as any).lastAutoTable?.finalY ?? sectionStartY + 30;
-    y = Math.max(y, tableEndY) + 2;
+    y = Math.max(sectionStartY + miniCardH, tableEndY) + 2;
   } else {
-    y += 2;
+    y = sectionStartY + miniCardH + 2;
   }
 
   // ══════════════════════════════════════════════════════════════
-  // CHART: Evolução Diária (fill remaining space)
+  // CHART: Evolução Diária
   // ══════════════════════════════════════════════════════════════
   doc.setFontSize(8);
   doc.setTextColor(...C.slate900);
@@ -941,9 +924,10 @@ export async function generateSalesPDF(
     y = drawChartLegend(doc, comparison, margin, y);
   }
 
-  // Chart fills remaining space
+  // Reserve space for weekly cards below chart
   const footerH = 6;
-  const availableChartH = pageH - y - footerH - 2;
+  const weeklyCardH = weeks.length > 0 ? 20 : 0; // 18 card + 2 gap
+  const availableChartH = pageH - y - footerH - weeklyCardH - 3;
 
   // Try SVG capture first
   let chartCaptured = false;
@@ -973,6 +957,23 @@ export async function generateSalesPDF(
     const chartH = Math.max(availableChartH, 40);
     y = drawChartInPdf(doc, analytics.byDay, comparison, margin, y, pageW - margin * 2, chartH);
     y += 1;
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // WEEKLY SUMMARY CARDS (below chart, aligned with weeks)
+  // ══════════════════════════════════════════════════════════════
+  if (weeks.length > 0) {
+    const weekCardH = 18;
+    const weekGap = 2.5;
+    const weekCardW = (kpiTotalW - weekGap * (weeks.length - 1)) / weeks.length;
+
+    for (let i = 0; i < weeks.length; i++) {
+      const wx = margin + i * (weekCardW + weekGap);
+      const colors = WEEK_COLORS[i % WEEK_COLORS.length];
+      drawWeekCard(doc, wx, y, weekCardW, weekCardH, weeks[i], colors);
+    }
+
+    y += weekCardH + 1;
   }
 
   // ══════════════════════════════════════════════════════════════

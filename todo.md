@@ -3041,3 +3041,4 @@
 - [x] Alterar exportação do extrato E-commerce de CSV para PDF formatado (Importação e Industrialização)
 - [x] Corrigir formatação de números no PDF do extrato E-commerce: manter casas decimais (297,5 em vez de 298)
 - [x] Adicionar cards de soma semanal (SEMANA 1-5 com total, média/dia, dias úteis) no relatório PDF de vendas e garantir que tudo caiba em 1 página
+- [x] Reorganizar layout PDF vendas: cards média diária lado a lado (horizontal), gráfico abaixo, cards semanais embaixo do gráfico alinhados com cada semana
