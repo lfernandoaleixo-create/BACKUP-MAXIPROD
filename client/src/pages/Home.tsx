@@ -4289,17 +4289,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         <KPICard
           label="Pedidos (Venda)"
           value={`${formatNumber(totalPedidosCx, true)} cx`}
-          sub="Aprovados"
+          sub="Aprovados + A aprovar"
           icon={ShoppingCart}
           theme="orange"
-          tooltip={
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-800">Como este valor é calculado</p>
-              <p className="text-[11px] text-slate-600 leading-relaxed">Soma da coluna <strong>Qt</strong> (quantidade em caixas) de todos os itens dos pedidos de venda com status <strong>Aprovado</strong> no Maxiprod, excluindo pedidos em Digitação e transferências E-commerce internas.</p>
-              <div className="h-px bg-slate-100" />
-              <p className="text-[10px] text-slate-400">Fonte: API GraphQL Maxiprod &middot; Filtro: estado = A_FATURAR</p>
-            </div>
-          }
         />
         <KPICard
           label="Disponivel"
