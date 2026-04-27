@@ -923,9 +923,9 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                     {item.ecommerceBreakdown ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className='font-semibold text-slate-800 text-sm cursor-help border-b border-dashed border-purple-300'>
+                          <span className={`font-semibold text-slate-800 text-sm cursor-help border-b border-dashed ${item.ecommerceBreakdown.pedidosEcommerceCx > 0 ? 'border-purple-300' : 'border-slate-300'}`}>
                             {formatNumber(item.ecommerceBreakdown.totalCaixasOriginal, true)} {getUnit(item, true)}
-                            <Store className="w-3 h-3 inline ml-1 text-purple-500" />
+                            {item.ecommerceBreakdown.pedidosEcommerceCx > 0 && <Store className="w-3 h-3 inline ml-1 text-purple-500" />}
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="max-w-md w-[400px] p-0" sideOffset={8}>
