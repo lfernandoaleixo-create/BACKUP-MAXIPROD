@@ -27,6 +27,10 @@ import {
   X,
   AlertTriangle,
   TrendingUp,
+  Search,
+  Filter,
+  SlidersHorizontal,
+  User,
 } from "lucide-react";
 
 const FORMA_PAGAMENTO_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
@@ -57,6 +61,14 @@ export default function EcommerceTab() {
   const [valorTotal, setValorTotal] = useState("");
   const [observacao, setObservacao] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+
+  // Filtros
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterDescricao, setFilterDescricao] = useState("");
+  const [filterFormaPagamento, setFilterFormaPagamento] = useState<"" | "pix" | "boleto" | "cartao_credito">("");
+  const [filterDataInicio, setFilterDataInicio] = useState("");
+  const [filterDataFim, setFilterDataFim] = useState("");
+  const [filterRegistradoPor, setFilterRegistradoPor] = useState("");
 
   const operatorName = operator?.name || "";
 
@@ -107,8 +119,51 @@ export default function EcommerceTab() {
     });
   };
 
-  const expenses = listData?.expenses || [];
+  const allExpenses = listData?.expenses || [];
   const summary = summaryData?.summary;
+
+  // Aplicar filtros
+  const filteredExpenses = useMemo(() => {
+    return allExpenses.filter((exp: any) => {
+      // Filtro por descrição
+      if (filterDescricao.trim()) {
+        const search = filterDescricao.toLowerCase().trim();
+        const matchDesc = exp.descricao?.toLowerCase().includes(search);
+        const matchObs = exp.observacao?.toLowerCase().includes(search);
+        if (!matchDesc && !matchObs) return false;
+      }
+      // Filtro por forma de pagamento
+      if (filterFormaPagamento && exp.formaPagamento !== filterFormaPagamento) return false;
+      // Filtro por data início
+      if (filterDataInicio && exp.dataCompra < filterDataInicio) return false;
+      // Filtro por data fim
+      if (filterDataFim && exp.dataCompra > filterDataFim) return false;
+      // Filtro por quem registrou
+      if (filterRegistradoPor && exp.registradoPor !== filterRegistradoPor) return false;
+      return true;
+    });
+  }, [allExpenses, filterDescricao, filterFormaPagamento, filterDataInicio, filterDataFim, filterRegistradoPor]);
+
+  // Lista de operadores únicos que registraram despesas
+  const registradores = useMemo(() => {
+    const names = new Set(allExpenses.map((e: any) => e.registradoPor));
+    return Array.from(names).sort();
+  }, [allExpenses]);
+
+  // Total filtrado
+  const filteredTotal = useMemo(() => {
+    return filteredExpenses.reduce((sum: number, exp: any) => sum + Number(exp.valorTotal), 0);
+  }, [filteredExpenses]);
+
+  const hasActiveFilters = filterDescricao || filterFormaPagamento || filterDataInicio || filterDataFim || filterRegistradoPor;
+
+  const clearFilters = () => {
+    setFilterDescricao("");
+    setFilterFormaPagamento("");
+    setFilterDataInicio("");
+    setFilterDataFim("");
+    setFilterRegistradoPor("");
+  };
 
   if (isLoading) {
     return (
@@ -140,7 +195,7 @@ export default function EcommerceTab() {
             <p className="text-xl font-bold text-slate-800">{formatCurrency(summary.mesAtual.total)}</p>
             <p className="text-[11px] text-slate-400 mt-1">{summary.mesAtual.count} lançamentos</p>
           </div>
-          {summary.porFormaPagamento.map((fp) => {
+          {summary.porFormaPagamento.map((fp: any) => {
             const info = FORMA_PAGAMENTO_LABELS[fp.forma] || { label: fp.forma, icon: null, color: "" };
             return (
               <div key={fp.forma} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
@@ -162,18 +217,134 @@ export default function EcommerceTab() {
           <ShoppingCart className="w-5 h-5 text-orange-600" />
           <h3 className="text-lg font-semibold text-slate-800">Despesas E-commerce</h3>
           <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-[10px]">
-            {expenses.length}
+            {hasActiveFilters ? `${filteredExpenses.length}/${allExpenses.length}` : allExpenses.length}
           </Badge>
         </div>
-        <Button
-          onClick={() => setShowForm(!showForm)}
-          size="sm"
-          className={showForm ? "bg-slate-500 hover:bg-slate-600" : "bg-orange-600 hover:bg-orange-700"}
-        >
-          {showForm ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
-          {showForm ? "Cancelar" : "Nova Despesa"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowFilters(!showFilters)}
+            size="sm"
+            variant="outline"
+            className={`gap-1.5 ${hasActiveFilters ? "border-orange-300 bg-orange-50 text-orange-700" : ""}`}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            Filtros
+            {hasActiveFilters && (
+              <Badge className="bg-orange-600 text-white text-[9px] px-1.5 py-0 ml-1">
+                {[filterDescricao, filterFormaPagamento, filterDataInicio, filterDataFim, filterRegistradoPor].filter(Boolean).length}
+              </Badge>
+            )}
+          </Button>
+          <Button
+            onClick={() => setShowForm(!showForm)}
+            size="sm"
+            className={showForm ? "bg-slate-500 hover:bg-slate-600" : "bg-orange-600 hover:bg-orange-700"}
+          >
+            {showForm ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+            {showForm ? "Cancelar" : "Nova Despesa"}
+          </Button>
+        </div>
       </div>
+
+      {/* Filtros */}
+      {showFilters && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-slate-500" />
+              <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Filtros</span>
+            </div>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="text-[11px] text-orange-600 hover:text-orange-800 font-medium flex items-center gap-1 cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+                Limpar filtros
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            {/* Busca por descrição */}
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-semibold text-slate-500 mb-1 block uppercase tracking-wider">Descrição / Produto</label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={filterDescricao}
+                  onChange={(e) => setFilterDescricao(e.target.value)}
+                  placeholder="Buscar por nome..."
+                  className="bg-white pl-8 h-8 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Forma de pagamento */}
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 mb-1 block uppercase tracking-wider">Pagamento</label>
+              <select
+                value={filterFormaPagamento}
+                onChange={(e) => setFilterFormaPagamento(e.target.value as any)}
+                className="w-full h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-200"
+              >
+                <option value="">Todos</option>
+                <option value="pix">PIX</option>
+                <option value="boleto">Boleto</option>
+                <option value="cartao_credito">Cartão de Crédito</option>
+              </select>
+            </div>
+
+            {/* Período */}
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 mb-1 block uppercase tracking-wider">Data início</label>
+              <Input
+                type="date"
+                value={filterDataInicio}
+                onChange={(e) => setFilterDataInicio(e.target.value)}
+                className="bg-white h-8 text-xs"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 mb-1 block uppercase tracking-wider">Data fim</label>
+              <Input
+                type="date"
+                value={filterDataFim}
+                onChange={(e) => setFilterDataFim(e.target.value)}
+                className="bg-white h-8 text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Segunda linha: registrado por */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 mb-1 block uppercase tracking-wider">Registrado por</label>
+              <select
+                value={filterRegistradoPor}
+                onChange={(e) => setFilterRegistradoPor(e.target.value)}
+                className="w-full h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-200"
+              >
+                <option value="">Todos</option>
+                {registradores.map((name: string) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+            {hasActiveFilters && (
+              <div className="md:col-span-4 flex items-end">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className="font-medium text-slate-700">{filteredExpenses.length}</span> resultado{filteredExpenses.length !== 1 ? "s" : ""}
+                  {filteredExpenses.length > 0 && (
+                    <span className="text-slate-400">
+                      — Total: <span className="font-semibold text-orange-700">{formatCurrency(filteredTotal)}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Form */}
       {showForm && (
@@ -277,11 +448,25 @@ export default function EcommerceTab() {
       )}
 
       {/* Expenses List */}
-      {expenses.length === 0 ? (
+      {filteredExpenses.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-xl border border-slate-200">
           <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">Nenhuma despesa registrada ainda</p>
-          <p className="text-xs text-slate-400 mt-1">Clique em "Nova Despesa" para começar</p>
+          {hasActiveFilters ? (
+            <>
+              <p className="text-sm text-slate-500">Nenhuma despesa encontrada com os filtros aplicados</p>
+              <button
+                onClick={clearFilters}
+                className="text-xs text-orange-600 hover:text-orange-800 font-medium mt-2 cursor-pointer"
+              >
+                Limpar filtros
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-slate-500">Nenhuma despesa registrada ainda</p>
+              <p className="text-xs text-slate-400 mt-1">Clique em "Nova Despesa" para começar</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -297,7 +482,7 @@ export default function EcommerceTab() {
               </tr>
             </thead>
             <tbody>
-              {expenses.map((exp: any) => {
+              {filteredExpenses.map((exp: any) => {
                 const info = FORMA_PAGAMENTO_LABELS[exp.formaPagamento] || { label: exp.formaPagamento, icon: null, color: "" };
                 const canDelete = operator?.name === exp.registradoPor || operator?.name === "Guilherme";
                 return (
@@ -367,6 +552,20 @@ export default function EcommerceTab() {
                 );
               })}
             </tbody>
+            {/* Footer com total filtrado */}
+            {hasActiveFilters && filteredExpenses.length > 0 && (
+              <tfoot>
+                <tr className="bg-orange-50/50 border-t border-orange-200">
+                  <td colSpan={3} className="px-4 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                    Total filtrado ({filteredExpenses.length} itens)
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-orange-700 text-sm">
+                    {formatCurrency(filteredTotal)}
+                  </td>
+                  <td colSpan={2}></td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       )}
