@@ -3092,3 +3092,4 @@
 - [x] Inadimplência: só considerar inadimplente a partir do 4º dia útil de atraso (3 dias úteis completos - antes disso pode ser conciliação). Threshold configurável.
 - [x] Inadimplência: botão exportar PDF com todo o histórico de cobrança do cliente (já existia no dialog Histórico)
 - [x] Inadimplência: funcionalidade de importação via planilha (Thiago pode subir XLSX com dados de cobrança e sistema preenche automaticamente)
+- [x] Inadimplência: marcar bolinhas verdes (ticks manuais) para clientes que Thiago já iniciou cobrança (47 ticks inseridos para 23 títulos)
