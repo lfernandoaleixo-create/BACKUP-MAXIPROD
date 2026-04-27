@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
-import { Eye, Plus, PhoneOff, PhoneCall } from "lucide-react";
+import { Eye, Plus, PhoneOff, PhoneCall, Upload } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson"];
@@ -561,6 +561,7 @@ export default function InadimplenciaTab() {
   const [phoneMenuTarget, setPhoneMenuTarget] = useState<{ titleId: number; phoneState: string; hasDocument: boolean; needsPlan: boolean } | null>(null);
   const [phoneMenuSelected, setPhoneMenuSelected] = useState<'mute' | 'unmute' | 'register' | 'history' | null>(null);
   const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [decisaoTutorialData, setDecisaoTutorialData] = useState<{clienteName: string; vendedorName: string} | null>(null);
   const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
@@ -1034,6 +1035,16 @@ export default function InadimplenciaTab() {
             <FileDown className="w-4 h-4" />
             <span>Exportar PDF</span>
           </button>
+          {canCobranca && (
+            <button
+              onClick={() => setShowImportDialog(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02]"
+              title="Importar planilha de cobrança (XLSX)"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Importar Planilha</span>
+            </button>
+          )}
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
@@ -1509,6 +1520,18 @@ export default function InadimplenciaTab() {
         <CobrancaGuideSimulator
           valorTotal={stats.total}
           onClose={() => setShowCobrancaGuide(false)}
+        />
+      )}
+
+      {/* Dialog de Importação de Planilha */}
+      {showImportDialog && operator && (
+        <ImportSpreadsheetDialog
+          operatorName={operator.name}
+          onClose={() => setShowImportDialog(false)}
+          onSuccess={() => {
+            setShowImportDialog(false);
+            // Invalidate queries to refresh data
+          }}
         />
       )}
 
@@ -3954,6 +3977,262 @@ Documento para Tomada de Decisão
             </div>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+/* ---- Dialog de Importação de Planilha de Cobrança ---- */
+function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
+  operatorName: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [parsedRecords, setParsedRecords] = useState<Array<{
+    dataContato: string;
+    cliente: string;
+    valor: number;
+    vencimento: string;
+    mensagem: string;
+    actionTypes: string[];
+  }> | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const utils = trpc.useUtils();
+
+  const importMutation = trpc.financial.importCobrancaSpreadsheet.useMutation({
+    onSuccess: (data) => {
+      setResult(data);
+      setImporting(false);
+      utils.financial.getOverdueTitles.invalidate();
+      utils.financial.getCollectionHistory.invalidate();
+      utils.financial.getCollectionChecklist.invalidate();
+      toast.success(`Importação concluída! ${data.matched} registros vinculados.`);
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      setImporting(false);
+    },
+  });
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFile(f);
+    setParsing(true);
+    setParsedRecords(null);
+    setResult(null);
+
+    try {
+      // Parse XLSX in the browser using SheetJS
+      const XLSX = await import('xlsx');
+      const buffer = await f.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+
+      // Expected columns: DATA CONTATO, CLIENTE, VALOR, VENC., MENSAGEM
+      const records: typeof parsedRecords = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || !row[0] || !row[1] || !row[4]) continue;
+
+        let dataContato = '';
+        const rawDate = row[0];
+        if (typeof rawDate === 'string' && rawDate.includes('-')) {
+          dataContato = rawDate.split('T')[0];
+        } else if (typeof rawDate === 'string' && rawDate.includes('/')) {
+          const parts = rawDate.split('/');
+          if (parts.length === 3) {
+            dataContato = parts[2].length === 4 
+              ? `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
+              : `20${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+        } else if (typeof rawDate === 'number') {
+          // Excel serial date
+          const d = new Date((rawDate - 25569) * 86400000);
+          dataContato = d.toISOString().split('T')[0];
+        }
+
+        let vencimento = '';
+        const rawVenc = row[3];
+        if (typeof rawVenc === 'string' && rawVenc.includes('-')) {
+          vencimento = rawVenc.split('T')[0];
+        } else if (typeof rawVenc === 'string' && rawVenc.includes('/')) {
+          const parts = rawVenc.split('/');
+          if (parts.length === 3) {
+            vencimento = parts[2].length === 4
+              ? `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
+              : `20${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+        } else if (typeof rawVenc === 'number') {
+          const d = new Date((rawVenc - 25569) * 86400000);
+          vencimento = d.toISOString().split('T')[0];
+        }
+
+        const valor = parseFloat(String(row[2]).replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+        const mensagem = String(row[4]).trim();
+
+        // Extract action types from message
+        const actionTypes: string[] = [];
+        const msgUpper = mensagem.toUpperCase();
+        if (msgUpper.includes('WHATSAPP')) actionTypes.push('whatsapp');
+        if (msgUpper.includes('EMAIL') || msgUpper.includes('E-MAIL')) actionTypes.push('email');
+        if (msgUpper.includes('LIGAÇ') || msgUpper.includes('LIGAC') || msgUpper.includes('TELEFONE')) actionTypes.push('ligacao');
+        if (actionTypes.length === 0) actionTypes.push('outro');
+
+        if (dataContato && vencimento) {
+          records.push({
+            dataContato,
+            cliente: String(row[1]).trim(),
+            valor,
+            vencimento,
+            mensagem,
+            actionTypes,
+          });
+        }
+      }
+
+      setParsedRecords(records);
+    } catch (err: any) {
+      toast.error(`Erro ao ler planilha: ${err.message}`);
+    } finally {
+      setParsing(false);
+    }
+  }
+
+  function handleImport() {
+    if (!parsedRecords || parsedRecords.length === 0) return;
+    setImporting(true);
+    importMutation.mutate({
+      operatorName,
+      records: parsedRecords,
+    });
+  }
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="w-5 h-5 text-emerald-600" />
+            Importar Planilha de Cobrança
+          </DialogTitle>
+          <DialogDescription>
+            Selecione um arquivo XLSX com as colunas: DATA CONTATO, CLIENTE, VALOR, VENC., MENSAGEM
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 overflow-y-auto flex-1">
+          {/* File input */}
+          <div className="border-2 border-dashed border-emerald-300 rounded-xl p-6 text-center hover:border-emerald-500 transition-colors">
+            <Upload className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+            <label className="cursor-pointer">
+              <span className="text-sm text-emerald-700 font-medium hover:underline">
+                {file ? file.name : 'Clique para selecionar arquivo XLSX'}
+              </span>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {/* Parsing indicator */}
+          {parsing && (
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Lendo planilha...
+            </div>
+          )}
+
+          {/* Preview of parsed records */}
+          {parsedRecords && !result && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-700">
+                  {parsedRecords.length} registros encontrados
+                </span>
+                <Button
+                  onClick={handleImport}
+                  disabled={importing || parsedRecords.length === 0}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                  size="sm"
+                >
+                  {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {importing ? 'Importando...' : 'Importar Agora'}
+                </Button>
+              </div>
+
+              <div className="max-h-48 overflow-y-auto border rounded-lg">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50 sticky top-0">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left font-medium text-slate-500">Data</th>
+                      <th className="px-2 py-1.5 text-left font-medium text-slate-500">Cliente</th>
+                      <th className="px-2 py-1.5 text-right font-medium text-slate-500">Valor</th>
+                      <th className="px-2 py-1.5 text-left font-medium text-slate-500">Tipo</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {parsedRecords.slice(0, 20).map((r, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="px-2 py-1 text-slate-600">{r.dataContato}</td>
+                        <td className="px-2 py-1 text-slate-700 truncate max-w-[150px]" title={r.cliente}>{r.cliente}</td>
+                        <td className="px-2 py-1 text-right text-slate-600">R$ {r.valor.toFixed(2)}</td>
+                        <td className="px-2 py-1 text-slate-500">{r.actionTypes.join(', ')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {parsedRecords.length > 20 && (
+                  <div className="px-2 py-1 text-[10px] text-slate-400 text-center bg-slate-50">
+                    ... e mais {parsedRecords.length - 20} registros
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Import result */}
+          {result && (
+            <div className="space-y-3">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  <span className="font-semibold text-emerald-800">Importação Concluída!</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><span className="text-slate-500">Total registros:</span> <span className="font-medium">{result.totalRecords}</span></div>
+                  <div><span className="text-slate-500">Vinculados:</span> <span className="font-medium text-emerald-700">{result.matched}</span></div>
+                  <div><span className="text-slate-500">Ações inseridas:</span> <span className="font-medium">{result.actionsInserted}</span></div>
+                  <div><span className="text-slate-500">Diárias inseridas:</span> <span className="font-medium">{result.dailyInserted}</span></div>
+                  <div><span className="text-slate-500">Já existentes:</span> <span className="font-medium text-slate-400">{result.skipped}</span></div>
+                </div>
+              </div>
+
+              {result.notFound && result.notFound.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="text-xs font-semibold text-amber-700 mb-1">Clientes não encontrados ({result.notFound.length}):</div>
+                  <div className="text-xs text-amber-600 space-y-0.5">
+                    {result.notFound.map((c: string, i: number) => (
+                      <div key={i}>• {c}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button onClick={onSuccess} className="w-full">
+                Fechar
+              </Button>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

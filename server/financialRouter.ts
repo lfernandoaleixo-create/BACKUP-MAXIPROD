@@ -3164,6 +3164,12 @@ export const financialRouter = router({
         };
       }).filter(t => t.valorAReceber > 0);
 
+      // REGRA: Só considerar inadimplente a partir do 4º dia ÚTIL de atraso (3 dias úteis completos)
+      // Antes disso pode ser falta de conciliação bancária
+      // Threshold configurável: Fernando pode pedir para mudar
+      const INADIMPLENCIA_THRESHOLD_BUSINESS_DAYS = 3;
+      titles = titles.filter(t => t.businessDaysOverdue > INADIMPLENCIA_THRESHOLD_BUSINESS_DAYS);
+
       // Filtrar clientes de teste
       const TEST_CLIENTS = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
       titles = titles.filter(t => !TEST_CLIENTS.includes(t.cliente.toUpperCase().trim()));
@@ -6204,5 +6210,210 @@ ${acoesTexto}
         }
       }
       return result;
+    }),
+
+  /**
+   * Importar dados de cobrança de uma planilha XLSX.
+   * Recebe os dados parseados no frontend (array de registros).
+   * Vincula ao receivable por nome do cliente + vencimento + valor.
+   * Só Thiago/Guilherme podem usar.
+   */
+  importCobrancaSpreadsheet: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      records: z.array(z.object({
+        dataContato: z.string(), // YYYY-MM-DD
+        cliente: z.string(),
+        valor: z.number(),
+        vencimento: z.string(), // YYYY-MM-DD
+        mensagem: z.string(),
+        actionTypes: z.array(z.string()),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      const opLower = input.operatorName.toLowerCase().trim();
+      if (opLower !== 'thiago' && opLower !== 'guilherme' && opLower !== 'fernando') {
+        throw new Error('Apenas Thiago, Guilherme ou Fernando podem importar planilhas.');
+      }
+
+      const db = await getDb();
+      if (!db) throw new Error('Database not available');
+
+      // Get all EMITIDO receivables
+      const receivables = await db.select({
+        id: accountsReceivable.id,
+        cliente: accountsReceivable.cliente,
+        valorLiquido: accountsReceivable.valorLiquido,
+        valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+        vencimentoData: accountsReceivable.vencimentoData,
+      }).from(accountsReceivable)
+        .where(eq(accountsReceivable.estado, 'EMITIDO'));
+
+      // Get existing collection_actions
+      const existingActions = await db.select({
+        id: collectionActions.id,
+        receivableId: collectionActions.receivableId,
+        status: collectionActions.status,
+        contatoHistorico: collectionActions.contatoHistorico,
+      }).from(collectionActions);
+      const existingActionMap = new Map<number, typeof existingActions[0]>();
+      for (const a of existingActions) existingActionMap.set(a.receivableId, a);
+
+      // Get existing daily actions
+      const existingDaily = await db.select({
+        receivableId: collectionDailyActions.receivableId,
+        actionDate: collectionDailyActions.actionDate,
+        actionType: collectionDailyActions.actionType,
+      }).from(collectionDailyActions);
+      const existingDailySet = new Set<string>();
+      for (const d of existingDaily) existingDailySet.add(`${d.receivableId}_${d.actionDate}_${d.actionType}`);
+
+      // Build lookup by client name
+      function normalize(s: string) {
+        return (s || '').trim().toUpperCase().replace(/\s+/g, ' ');
+      }
+      const recByClient: Record<string, typeof receivables> = {};
+      for (const r of receivables) {
+        const key = normalize(r.cliente || '');
+        if (!recByClient[key]) recByClient[key] = [];
+        recByClient[key].push(r);
+      }
+
+      let matchedCount = 0;
+      let insertedActions = 0;
+      let insertedDaily = 0;
+      let skipped = 0;
+      const notFound: string[] = [];
+
+      for (const record of input.records) {
+        const clienteNorm = normalize(record.cliente);
+        let candidates = recByClient[clienteNorm] || [];
+
+        // Partial match if not found
+        if (candidates.length === 0) {
+          for (const [key, recs] of Object.entries(recByClient)) {
+            if (key.includes(clienteNorm) || clienteNorm.includes(key)) {
+              candidates = recs;
+              break;
+            }
+          }
+        }
+
+        if (candidates.length === 0) {
+          if (!notFound.includes(record.cliente)) notFound.push(record.cliente);
+          continue;
+        }
+
+        // Match by vencimento + valor
+        let matched: typeof receivables[0] | null = null;
+        for (const c of candidates) {
+          const cVenc = (c.vencimentoData || '').split('T')[0];
+          const cValor = parseFloat(String(c.valorLiquido)) || 0;
+          const cValorAReceber = cValor - (parseFloat(String(c.valorRecebidoLiquido)) || 0);
+          if (cVenc === record.vencimento) {
+            if (Math.abs(cValorAReceber - record.valor) < 1 || Math.abs(cValor - record.valor) < 1) {
+              matched = c;
+              break;
+            }
+          }
+        }
+        if (!matched) {
+          for (const c of candidates) {
+            const cVenc = (c.vencimentoData || '').split('T')[0];
+            if (cVenc === record.vencimento) { matched = c; break; }
+          }
+        }
+        if (!matched) {
+          for (const c of candidates) {
+            const cValor = parseFloat(String(c.valorLiquido)) || 0;
+            const cValorAReceber = cValor - (parseFloat(String(c.valorRecebidoLiquido)) || 0);
+            if (Math.abs(cValorAReceber - record.valor) < 1 || Math.abs(cValor - record.valor) < 1) {
+              matched = c; break;
+            }
+          }
+        }
+        if (!matched) matched = candidates[0];
+
+        matchedCount++;
+        const receivableId = matched.id;
+
+        // Ensure collection_actions exists
+        if (!existingActionMap.has(receivableId)) {
+          let status = 'contatado';
+          const msgUpper = record.mensagem.toUpperCase();
+          if (msgUpper.includes('PROMESSA') || msgUpper.includes('PROMETEU')) status = 'promessa';
+          else if (msgUpper.includes('NÃO ATEND') || msgUpper.includes('SEM RETORNO')) status = 'nao_atendeu';
+
+          const contatoHistorico = [{
+            data: record.dataContato,
+            tipo: record.actionTypes[0] || 'outro',
+            resumo: record.mensagem,
+            usuario: input.operatorName,
+          }];
+
+          await db.insert(collectionActions).values({
+            receivableId,
+            status,
+            observacoes: record.mensagem,
+            contatoHistorico,
+            cobrancaStartedAt: record.dataContato,
+            updatedBy: input.operatorName,
+          });
+          existingActionMap.set(receivableId, { id: 0, receivableId, status, contatoHistorico });
+          insertedActions++;
+        } else {
+          // Update existing - add to historico
+          const existing = existingActionMap.get(receivableId)!;
+          const historico = Array.isArray(existing.contatoHistorico) ? [...existing.contatoHistorico] : [];
+          const alreadyRecorded = historico.some((h: any) => h.data === record.dataContato && h.resumo === record.mensagem);
+          if (!alreadyRecorded) {
+            historico.push({
+              data: record.dataContato,
+              tipo: record.actionTypes[0] || 'outro',
+              resumo: record.mensagem,
+              usuario: input.operatorName,
+            });
+            let status = existing.status || 'contatado';
+            const msgUpper = record.mensagem.toUpperCase();
+            if (msgUpper.includes('PROMESSA') || msgUpper.includes('PROMETEU')) status = 'promessa';
+
+            await db.update(collectionActions)
+              .set({ contatoHistorico: historico, status, updatedBy: input.operatorName })
+              .where(eq(collectionActions.receivableId, receivableId));
+            insertedActions++;
+          } else {
+            skipped++;
+          }
+        }
+
+        // Insert daily actions
+        for (const actionType of record.actionTypes) {
+          const dailyKey = `${receivableId}_${record.dataContato}_${actionType}`;
+          if (!existingDailySet.has(dailyKey)) {
+            await db.insert(collectionDailyActions).values({
+              receivableId,
+              actionDate: record.dataContato,
+              actionType,
+              operatorName: input.operatorName,
+              notes: record.mensagem,
+              isAutomatic: false,
+            });
+            existingDailySet.add(dailyKey);
+            insertedDaily++;
+          } else {
+            skipped++;
+          }
+        }
+      }
+
+      return {
+        success: true,
+        totalRecords: input.records.length,
+        matched: matchedCount,
+        actionsInserted: insertedActions,
+        dailyInserted: insertedDaily,
+        skipped,
+        notFound,
+      };
     }),
 });

@@ -3067,3 +3067,28 @@
 - [x] Aba E-commerce: adicionar filtros por descrição/produto, forma de pagamento, período (data início/fim) e quem registrou
 - [x] Aba E-commerce: botão exportar PDF com filtros ativos, painel moderno e profissional
 - [x] Estoque Importação: ocultar ícone casinha roxa (e-commerce) na coluna pedidos quando não houver pedidos e-commerce para o produto
+- [x] BUG CRÍTICO: Sync de inadimplência sobrescreve status/decisão marcados pelo Thiago — corrigido: removido decisaoCobranca do onDuplicateKeyUpdate
+- [x] Sync deve apenas: adicionar títulos novos (Pendente) e remover títulos pagos (já funciona assim)
+- [x] Bolinhas do roteiro já ticadas devem ser IMUTÁVEIS pela sync (confirmado: sync não toca collection_manual_ticks)
+- [x] Histórico de ações deve ser PERMANENTE e nunca sumir (confirmado: sync não toca collection_actions/daily_actions)
+
+## Inadimplência - Regras de Comportamento (definido 27/04/2026)
+
+### CLIENTES ANTIGOS (até 27/04/2026):
+- [ ] Tudo 100% manual — Thiago tica/destica bolinhas livremente
+- [ ] Única automação: quando Thiago tica "Intervalo", sistema vibra o telefone no dia da próxima ação
+- [ ] Thiago pode retirar a vibração clicando nela
+- [ ] Sistema NÃO acusa nada no histórico — apenas registra ações e respostas do cliente
+- [ ] Aos 7 dias: sistema pergunta se quer gerar PDF para vendedor (títulos "Sem Protesto")
+
+### CLIENTES NOVOS (a partir de 28/04/2026):
+- [ ] Roteiro automático: vibra em 1d, 3d, 5d → Thiago marca como feito → intervalo tica no próximo dia útil
+- [ ] Aos 7 dias: Com Protesto → cartório / Sem Protesto → documento para vendedor
+- [ ] Guilherme pode ticar/desticar tudo manualmente para correções
+
+### GERAL:
+- [ ] Cards para clientes sem resultado (Com Protesto e Sem Protesto)
+- [x] Aguardar planilha do Thiago para restaurar dados de cobranças já realizadas (importado 38/40 registros com sucesso)
+- [x] Inadimplência: só considerar inadimplente a partir do 4º dia útil de atraso (3 dias úteis completos - antes disso pode ser conciliação). Threshold configurável.
+- [x] Inadimplência: botão exportar PDF com todo o histórico de cobrança do cliente (já existia no dialog Histórico)
+- [x] Inadimplência: funcionalidade de importação via planilha (Thiago pode subir XLSX com dados de cobrança e sistema preenche automaticamente)
