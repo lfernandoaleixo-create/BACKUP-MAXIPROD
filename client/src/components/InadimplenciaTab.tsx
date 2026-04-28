@@ -2558,7 +2558,7 @@ function HistoryDialog({ title, onClose }: {
 }) {
   const { operator } = useOperator();
   const utils = trpc.useUtils();
-  const isAdminEditor = operator?.name?.toLowerCase().trim() === 'guilherme' || operator?.name?.toLowerCase().trim() === 'thiago';
+  // All operators can edit (no isAdminEditor restriction)
   const { data: history, isLoading } = trpc.financial.getCollectionHistory.useQuery({ receivableId: title.id });
   const { data: checklist, isLoading: checklistLoading } = trpc.financial.getCollectionChecklist.useQuery({ receivableId: title.id });
   const [activeTab, setActiveTab] = useState("checklist");
@@ -2589,6 +2589,42 @@ function HistoryDialog({ title, onClose }: {
   const [newActionDate, setNewActionDate] = useState(new Date().toISOString().split('T')[0]);
   const [newActionTypes, setNewActionTypes] = useState<string[]>([]);
   const [newActionNotes, setNewActionNotes] = useState('');
+
+  // ---- Edição de textos do Roteiro (por título) ----
+  const { data: stepOverridesData } = trpc.financial.getStepOverrides.useQuery({ receivableId: title.id });
+  const upsertStepOverride = trpc.financial.upsertStepOverride.useMutation({
+    onSuccess: () => {
+      utils.financial.getStepOverrides.invalidate({ receivableId: title.id });
+      toast.success('Texto do roteiro atualizado!');
+      setEditingStepDia(null);
+    },
+    onError: () => toast.error('Erro ao salvar texto'),
+  });
+  const [editingStepDia, setEditingStepDia] = useState<number | null>(null);
+  const [editStepDescricao, setEditStepDescricao] = useState('');
+  const [editStepMotivo, setEditStepMotivo] = useState('');
+
+  const startStepEdit = (step: any) => {
+    const override = stepOverridesData?.overrides?.[step.dia];
+    setEditingStepDia(step.dia);
+    setEditStepDescricao(override?.descricao ?? step.descricao ?? '');
+    setEditStepMotivo(override?.motivo ?? step.motivo ?? '');
+  };
+  const cancelStepEdit = () => {
+    setEditingStepDia(null);
+    setEditStepDescricao('');
+    setEditStepMotivo('');
+  };
+  const saveStepEdit = (stepDia: number) => {
+    if (!operator?.name) return;
+    upsertStepOverride.mutate({
+      receivableId: title.id,
+      step: stepDia,
+      descricao: editStepDescricao,
+      motivo: editStepMotivo,
+      operatorName: operator.name,
+    });
+  };
 
   // ---- PDF do Histórico ----
   function exportHistoryPDF() {
@@ -3043,16 +3079,64 @@ function HistoryDialog({ title, onClose }: {
                         <span className="text-xs text-slate-400 shrink-0">{formatDate(step.data)}</span>
                       </div>
 
-                      {/* Descrição do passo */}
-                      <p className="text-xs text-slate-500 mt-0.5">{step.descricao}</p>
+                      {/* Descrição + Motivo — com edição inline */}
+                      {editingStepDia === step.dia ? (
+                        <div className="mt-1 space-y-1.5">
+                          <div>
+                            <label className="text-[10px] font-medium text-amber-700 block mb-0.5">Descrição</label>
+                            <textarea
+                              value={editStepDescricao}
+                              onChange={(e) => setEditStepDescricao(e.target.value)}
+                              rows={2}
+                              className="w-full text-xs border border-amber-300 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-medium text-amber-700 block mb-0.5">Status / Motivo</label>
+                            <textarea
+                              value={editStepMotivo}
+                              onChange={(e) => setEditStepMotivo(e.target.value)}
+                              rows={2}
+                              className="w-full text-xs border border-amber-300 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => saveStepEdit(step.dia)}
+                              disabled={upsertStepOverride.isPending}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-amber-600 text-white hover:bg-amber-700 transition-all"
+                            >
+                              {upsertStepOverride.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                              Salvar
+                            </button>
+                            <button
+                              onClick={cancelStepEdit}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all"
+                            >
+                              <X className="w-3 h-3" />
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-xs text-slate-500 mt-0.5">{stepOverridesData?.overrides?.[step.dia]?.descricao || step.descricao}</p>
+                          <p className={`text-xs font-medium mt-1 ${statusTextColor(step.status)}`}>
+                            {stepOverridesData?.overrides?.[step.dia]?.motivo || step.motivo}
+                          </p>
+                          <button
+                            onClick={() => startStepEdit(step)}
+                            className="mt-1 flex items-center gap-1 text-[10px] text-slate-400 hover:text-amber-600 transition-colors"
+                            title="Editar textos deste passo"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Editar textos
+                          </button>
+                        </>
+                      )}
 
-                      {/* Motivo do status */}
-                      <p className={`text-xs font-medium mt-1 ${statusTextColor(step.status)}`}>
-                        {step.motivo}
-                      </p>
-
-                      {/* Botões de edição manual para admins */}
-                      {isAdminEditor && (
+                      {/* Botões de cor (Verde/Vermelho/Azul/Limpar) — todos os operadores */}
+                      {operator && (
                         <div className="mt-2 flex items-center gap-1.5">
                           <button
                             onClick={() => {

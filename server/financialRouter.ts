@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
 import { ENV } from "./_core/env";
@@ -6065,5 +6065,69 @@ ${acoesTexto}
         skipped,
         notFound,
       };
+    }),
+
+  /**
+   * Salvar override de texto de um step do roteiro para um título específico.
+   * Permite editar descricao e/ou motivo individualmente por título.
+   * Sem registro de auditoria — salva direto.
+   */
+  upsertStepOverride: publicProcedure
+    .input(z.object({
+      receivableId: z.number(),
+      step: z.number().min(1).max(7),
+      descricao: z.string().optional(),
+      motivo: z.string().optional(),
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+
+      // Buscar override existente
+      const [existing] = await db.select().from(collectionStepOverrides)
+        .where(and(
+          eq(collectionStepOverrides.receivableId, input.receivableId),
+          eq(collectionStepOverrides.step, input.step)
+        ))
+        .limit(1);
+
+      if (existing) {
+        const updates: Record<string, any> = { updatedBy: input.operatorName, updatedAt: Date.now() };
+        if (input.descricao !== undefined) updates.descricao = input.descricao;
+        if (input.motivo !== undefined) updates.motivo = input.motivo;
+        await db.update(collectionStepOverrides)
+          .set(updates)
+          .where(eq(collectionStepOverrides.id, existing.id));
+      } else {
+        await db.insert(collectionStepOverrides).values({
+          receivableId: input.receivableId,
+          step: input.step,
+          descricao: input.descricao || null,
+          motivo: input.motivo || null,
+          updatedBy: input.operatorName,
+        });
+      }
+
+      return { success: true };
+    }),
+
+  /**
+   * Obter overrides de texto dos steps do roteiro para um título.
+   */
+  getStepOverrides: publicProcedure
+    .input(z.object({ receivableId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { overrides: {} as Record<number, { descricao?: string | null; motivo?: string | null }> };
+
+      const rows = await db.select().from(collectionStepOverrides)
+        .where(eq(collectionStepOverrides.receivableId, input.receivableId));
+
+      const map: Record<number, { descricao?: string | null; motivo?: string | null }> = {};
+      for (const r of rows) {
+        map[r.step] = { descricao: r.descricao, motivo: r.motivo };
+      }
+      return { overrides: map };
     }),
 });

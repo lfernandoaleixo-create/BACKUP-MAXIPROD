@@ -1332,3 +1332,21 @@ export const ecommerceExpenses = mysqlTable("ecommerce_expenses", {
 });
 export type EcommerceExpense = typeof ecommerceExpenses.$inferSelect;
 export type InsertEcommerceExpense = typeof ecommerceExpenses.$inferInsert;
+
+
+/**
+ * Override de textos do roteiro de cobrança por título.
+ * Permite que operadores editem a descrição e o motivo de cada step individualmente.
+ * Chave única: (receivableId, step) — no máximo 1 override por step por título.
+ */
+export const collectionStepOverrides = mysqlTable("collection_step_overrides", {
+  id: int("id").autoincrement().primaryKey(),
+  receivableId: int("receivable_id").notNull(),
+  step: int("step").notNull(), // 1-7
+  descricao: text("descricao"), // override da descrição do step (null = usar padrão)
+  motivo: text("motivo"), // override do motivo/status text (null = usar padrão)
+  updatedBy: varchar("updated_by", { length: 100 }),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type CollectionStepOverride = typeof collectionStepOverrides.$inferSelect;
+export type InsertCollectionStepOverride = typeof collectionStepOverrides.$inferInsert;
