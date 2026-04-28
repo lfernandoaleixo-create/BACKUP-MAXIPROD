@@ -3113,3 +3113,7 @@
 - [x] Inadimplência: botão de edição de textos na aba Roteiro (descrição da ação, notas, mensagem de conclusão)
 - [x] Inadimplência: garantir que botão de edição funciona na aba Histórico Completo (já implementado, verificar)
 - [x] Inadimplência: permitir edição da data de cada step no Roteiro (campo data no override)
+- [x] Produção: PDF com lançamento diário (todos setores, todas máquinas, observações, tudo em 1 PDF)
+- [x] Produção: PDF com fechamento semanal (todos setores, total geral do setor, média diária por setor)
+- [x] Produção: PDF com fechamento mensal (todos setores, todas máquinas, média por máquinas, média total geral)
+- [ ] Produção: gráficos por máquinas e por setor geral com filtro de manutenções (não urgente)

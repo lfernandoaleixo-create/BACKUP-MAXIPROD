@@ -17,7 +17,9 @@ import {
   ArrowLeft, ArrowRight, Loader2, Cog, Eye, Package, Box, Zap, Scissors,
   Layers, Printer, History, AlertTriangle, Wrench, Ban, CheckCircle2, Clock,
   MessageSquare, TreePine, Ruler, Search, X, Plus, Pencil, Trash2, Flame, Type,
+  FileDown,
 } from "lucide-react";
+import { generateDailyPdf, generateWeeklyPdf, generateMonthlyPdf } from "@/lib/productionPdfExport";
 
 // ─── Status options ───
 const MACHINE_STATUS_OPTIONS = [
@@ -271,6 +273,8 @@ export default function Production() {
   const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia">("lancamento");
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [showConversionModal, setShowConversionModal] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null);
+  const [showPdfMenu, setShowPdfMenu] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -868,7 +872,7 @@ export default function Production() {
             </h1>
             <p className="text-sm text-slate-500 mt-1">Lançamento diário de produção por setor e máquina</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button onClick={() => setViewMode("lancamento")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "lancamento" ? "bg-teal-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <Save className="w-4 h-4" /> Lançamento
             </button>
@@ -878,6 +882,89 @@ export default function Production() {
             <button onClick={() => setViewMode("pirografia")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "pirografia" ? "bg-orange-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <Flame className="w-4 h-4" /> Pirografia
             </button>
+
+            {/* ─── PDF Export Menu ─── */}
+            <div className="relative">
+              <button
+                onClick={() => setShowPdfMenu(!showPdfMenu)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              >
+                <FileDown className="w-4 h-4" /> PDF
+              </button>
+              {showPdfMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowPdfMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl border border-slate-200 shadow-lg py-1 w-56">
+                    <button
+                      onClick={async () => {
+                        if (!sectors || !entries) return;
+                        setPdfLoading("diario");
+                        setShowPdfMenu(false);
+                        try {
+                          await generateDailyPdf(sectors as any, entries as any, selectedDate);
+                          toast.success("PDF Diário gerado!");
+                        } catch (err: any) { toast.error("Erro ao gerar PDF: " + err.message); }
+                        finally { setPdfLoading(null); }
+                      }}
+                      disabled={pdfLoading !== null}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {pdfLoading === "diario" ? <Loader2 className="w-4 h-4 animate-spin text-teal-600" /> : <Calendar className="w-4 h-4 text-teal-600" />}
+                      <div>
+                        <div className="font-medium text-slate-700">PDF Diário</div>
+                        <div className="text-[10px] text-slate-400">Lançamento do dia {fmtDate(selectedDate)}</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!sectors) return;
+                        setPdfLoading("semanal");
+                        setShowPdfMenu(false);
+                        try {
+                          const range = getWeekRange(selectedDate);
+                          const histData = await utils.production.getHistory.fetch({ dataInicio: range.start, dataFim: range.end });
+                          await generateWeeklyPdf(sectors as any, histData as any, range.start, range.end);
+                          toast.success("PDF Semanal gerado!");
+                        } catch (err: any) { toast.error("Erro ao gerar PDF: " + err.message); }
+                        finally { setPdfLoading(null); }
+                      }}
+                      disabled={pdfLoading !== null}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {pdfLoading === "semanal" ? <Loader2 className="w-4 h-4 animate-spin text-blue-600" /> : <BarChart3 className="w-4 h-4 text-blue-600" />}
+                      <div>
+                        <div className="font-medium text-slate-700">PDF Semanal</div>
+                        <div className="text-[10px] text-slate-400">Fechamento da semana</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!sectors) return;
+                        setPdfLoading("mensal");
+                        setShowPdfMenu(false);
+                        try {
+                          const month = selectedDate.slice(0, 7);
+                          const [y, m] = month.split("-");
+                          const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+                          const histData = await utils.production.getHistory.fetch({ dataInicio: `${month}-01`, dataFim: `${month}-${String(lastDay).padStart(2, "0")}` });
+                          await generateMonthlyPdf(sectors as any, histData as any, month);
+                          toast.success("PDF Mensal gerado!");
+                        } catch (err: any) { toast.error("Erro ao gerar PDF: " + err.message); }
+                        finally { setPdfLoading(null); }
+                      }}
+                      disabled={pdfLoading !== null}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {pdfLoading === "mensal" ? <Loader2 className="w-4 h-4 animate-spin text-purple-600" /> : <FileDown className="w-4 h-4 text-purple-600" />}
+                      <div>
+                        <div className="font-medium text-slate-700">PDF Mensal</div>
+                        <div className="text-[10px] text-slate-400">Fechamento do mês</div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
