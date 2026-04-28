@@ -5654,13 +5654,13 @@ ${acoesTexto}
     }),
 
   /**
-   * Toggle ticagem manual (tick/untick) com validação de sequência e controle rígido.
-   * Regras:
-   * - Não pode ticar step N se step N-1 não está ticado (exceto step 1)
-   * - Não pode desticar step N se step N+1 está ticado
-   * - Não pode ticar mais de 1 step por dia (sequência de dias)
-   * - CONTROLE RÍGIDO: bolinha vermelha (tickStatus='red') não pode ser desmarcada
-   * - CONTROLE RÍGIDO: se step anterior é vermelho, próximo step pode ser ticado normalmente
+   * Toggle ticagem manual (tick/untick) — 100% MANUAL.
+   * Qualquer operador (Thiago, Guilherme, Flavio) pode:
+   * - Ticar/desticar qualquer step, em qualquer ordem
+   * - Escolher qualquer cor (green, red, blue)
+   * - Ticar múltiplos steps no mesmo dia
+   * Sem restrições de sequência, dia ou cor.
+   * Histórico é sempre registrado.
    */
   toggleManualTick: publicProcedure
     .input(z.object({
@@ -5674,51 +5674,16 @@ ${acoesTexto}
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Buscar todos os ticks atuais do título
-      const currentTicks = await db.select().from(collectionManualTicks)
-        .where(eq(collectionManualTicks.receivableId, input.receivableId))
-        .orderBy(asc(collectionManualTicks.step));
-
-      const tickMap: Record<number, typeof currentTicks[0]> = {};
-      for (const t of currentTicks) tickMap[t.step] = t;
-
-      // Guilherme e Thiago têm permissão total para ticar/desticar qualquer bolinha (verde ou vermelha)
-      const opName = input.operatorName.toLowerCase().trim();
-      const isAdmin = opName === 'guilherme' || opName === 'thiago';
+      // Buscar tick atual deste step
+      const [existing] = await db.select().from(collectionManualTicks)
+        .where(and(
+          eq(collectionManualTicks.receivableId, input.receivableId),
+          eq(collectionManualTicks.step, input.step)
+        ))
+        .limit(1);
 
       if (input.ticked) {
-        // Não pode ticar step que já é vermelho (falha registrada) - exceto Guilherme
-        const existingStep = tickMap[input.step];
-        if (existingStep?.ticked && existingStep?.tickStatus === 'red' && !isAdmin) {
-          throw new Error(`Passo ${input.step} já foi marcado como falha (vermelho). Não pode ser alterado.`);
-        }
-
-        // Validar sequência: step anterior deve estar ticado (exceto step 1)
-        // Admins (Guilherme/Thiago) podem ticar qualquer step sem restrição de sequência
-        if (input.step > 1 && !isAdmin) {
-          const prev = tickMap[input.step - 1];
-          if (!prev || !prev.ticked) {
-            throw new Error(`Passo ${input.step - 1} precisa ser concluído antes do passo ${input.step}`);
-          }
-        }
-
-        // Validar que não pula dia: último tick deve ter sido em dia anterior ou antes
-        // Admins (Guilherme/Thiago) podem ticar qualquer dia sem restrição
-        if (input.step > 1 && !isAdmin) {
-          const prev = tickMap[input.step - 1];
-          if (prev && prev.tickedAt) {
-            const now = new Date();
-            const brNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-            const todayStr = brNow.toISOString().split('T')[0];
-            const prevDate = new Date(prev.tickedAt - 3 * 60 * 60 * 1000).toISOString().split('T')[0];
-            if (prevDate === todayStr) {
-              throw new Error(`Passo ${input.step - 1} foi concluído hoje. Aguarde o próximo dia para o passo ${input.step}.`);
-            }
-          }
-        }
-
         // Upsert: criar ou atualizar
-        const existing = tickMap[input.step];
         const now = Date.now();
         if (existing) {
           await db.update(collectionManualTicks)
@@ -5743,44 +5708,8 @@ ${acoesTexto}
           operatorName: input.operatorName,
           reason: input.tickStatus === 'red' ? 'Marcado como falha manualmente' : input.tickStatus === 'blue' ? 'Marcado como neutro (azul) manualmente' : undefined,
         });
-
-        // INTERVALO NÃO é mais auto-ticado junto com a Ação.
-        // O Intervalo só fica verde quando o dia dele realmente passar (via syncTicksFromChecklist).
       } else {
-        // CONTROLE RÍGIDO: não pode desmarcar bolinha vermelha - exceto Guilherme
-        const existingStep = tickMap[input.step];
-        if (existingStep?.tickStatus === 'red' && !isAdmin) {
-          throw new Error(`Passo ${input.step} está marcado como falha (vermelho). Não pode ser desmarcado.`);
-        }
-
-        // Untick: validar que steps posteriores não estão ticados - exceto Guilherme
-        if (!isAdmin) {
-          for (let s = input.step + 1; s <= 7; s++) {
-            const next = tickMap[s];
-            if (next && next.ticked) {
-              throw new Error(`Não é possível desmarcar o passo ${input.step} pois o passo ${s} já está marcado.`);
-            }
-          }
-        } else {
-          // Admin (Guilherme/Thiago): desticar também steps posteriores em cascata
-          for (let s = input.step + 1; s <= 7; s++) {
-            const next = tickMap[s];
-            if (next && next.ticked) {
-              await db.update(collectionManualTicks)
-                .set({ ticked: false, tickedBy: null, tickedAt: null, tickStatus: 'green' })
-                .where(eq(collectionManualTicks.id, next.id));
-              await db.insert(collectionManualTickHistory).values({
-                receivableId: input.receivableId,
-                step: s,
-                action: 'untick',
-                operatorName: input.operatorName,
-                reason: 'Desmarcado em cascata por Guilherme',
-              });
-            }
-          }
-        }
-
-        const existing = tickMap[input.step];
+        // Untick
         if (existing) {
           await db.update(collectionManualTicks)
             .set({ ticked: false, tickedBy: null, tickedAt: null, tickStatus: 'green' })
@@ -5800,318 +5729,27 @@ ${acoesTexto}
     }),
 
   /**
-   * Verificar e marcar automaticamente como vermelho os steps que passaram do dia.
-   * Chamado ao carregar a lista de inadimplência para verificar se algum step ficou sem ticar.
-   * Lógica: se o step anterior foi ticado há mais de 1 dia (BR timezone) e o step atual
-   * não foi ticado, marca automaticamente como vermelho.
+   * DESABILITADO: Cobrança agora é 100% manual.
+   * Não marca mais vermelho automaticamente.
+   * Mantido como no-op para não quebrar chamadas do frontend.
    */
   checkOverdueTicks: publicProcedure
     .input(z.object({ receivableIds: z.array(z.number()) }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db || input.receivableIds.length === 0) return { updated: 0 };
-
-      const allTicks = await db.select().from(collectionManualTicks)
-        .where(inArray(collectionManualTicks.receivableId, input.receivableIds))
-        .orderBy(asc(collectionManualTicks.step));
-
-      const ticksByRec: Record<number, typeof allTicks> = {};
-      for (const t of allTicks) {
-        if (!ticksByRec[t.receivableId]) ticksByRec[t.receivableId] = [];
-        ticksByRec[t.receivableId].push(t);
-      }
-
-      const now = new Date();
-      const brNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-      const todayStr = brNow.toISOString().split('T')[0];
-      let updated = 0;
-
-      for (const recId of input.receivableIds) {
-        const ticks = ticksByRec[recId] || [];
-        const tickMap: Record<number, typeof ticks[0]> = {};
-        for (const t of ticks) tickMap[t.step] = t;
-
-        // Buscar dados do título para calcular datas com dias úteis
-        const [rec] = await db.select({ vencimentoData: accountsReceivable.vencimentoData })
-          .from(accountsReceivable)
-          .where(eq(accountsReceivable.id, recId))
-          .limit(1);
-        if (!rec) continue;
-
-        const [action] = await db.select({ cobrancaStartedAt: collectionActions.cobrancaStartedAt })
-          .from(collectionActions)
-          .where(eq(collectionActions.receivableId, recId))
-          .limit(1);
-
-        const vencDate = (rec.vencimentoData || '').split('T')[0];
-        const SISTEMA_COBRANCA_INICIO_CHECK = '2026-04-16';
-        const dia1Original = addDaysStr(vencDate, 1);
-        const isLegacy = dia1Original < SISTEMA_COBRANCA_INICIO_CHECK;
-
-        // Calcular dias úteis de atraso (com feriados)
-        const diasAtrasoRawOvd = Math.floor((new Date(todayStr + 'T12:00:00').getTime() - new Date(vencDate + 'T12:00:00').getTime()) / 86400000);
-        const bizDaysOvd = diasAtrasoRawOvd > 0 ? countBusinessDays(vencDate, todayStr) : 0;
-
-        // Calcular base para dias úteis (mesma lógica do checklist)
-        // Para 2+ dias com start: base = dia anterior ao primeiro contato
-        const baseDateStr = (action?.cobrancaStartedAt && bizDaysOvd >= 2)
-          ? addDaysStr(action.cobrancaStartedAt, -1)
-          : isLegacy
-            ? (action?.cobrancaStartedAt
-                ? addDaysStr(action.cobrancaStartedAt, -1)
-                : addDaysStr(SISTEMA_COBRANCA_INICIO_CHECK, -1))
-            : vencDate;
-        const is2PlusDaysNoStartOvd = bizDaysOvd >= 2 && !action?.cobrancaStartedAt;
-
-        // Se é legado OU 2+ dias sem start, não verificar (aguardando primeiro contato)
-        if ((isLegacy && !action?.cobrancaStartedAt) || is2PlusDaysNoStartOvd) continue;
-
-        for (let step = 1; step <= 7; step++) {
-          const tick = tickMap[step];
-          // Se já está ticado (verde ou vermelho), pular
-          if (tick?.ticked) continue;
-
-          // Calcular a data deste step usando DIAS ÚTEIS
-          const stepDate = addBusinessDaysStr(baseDateStr, step);
-
-          // Só marca vermelho se:
-          // 1. O step anterior está ticado (ou é step 1 com cobrança iniciada)
-          // 2. A data do step já passou E o próximo dia útil também já passou
-          //    (operador tem até o final do dia útil do step para ticar)
-          let shouldBeRed = false;
-
-          if (step === 1) {
-            // Step 1: cobrança iniciada e o dia útil do step já passou completamente
-            if (action?.cobrancaStartedAt) {
-              const nextBizDay = addBusinessDaysStr(stepDate, 1);
-              if (nextBizDay <= todayStr) {
-                shouldBeRed = true;
-              }
-            }
-          } else {
-            // Steps 2+: step anterior ticado e o dia útil deste step já passou
-            const prev = tickMap[step - 1];
-            if (prev?.ticked) {
-              const nextBizDay = addBusinessDaysStr(stepDate, 1);
-              if (nextBizDay <= todayStr) {
-                shouldBeRed = true;
-              }
-            }
-          }
-
-          if (shouldBeRed) {
-            // Marcar como vermelho
-            if (tick) {
-              await db.update(collectionManualTicks)
-                .set({ ticked: true, tickedBy: 'SISTEMA', tickedAt: Date.now(), tickStatus: 'red' })
-                .where(eq(collectionManualTicks.id, tick.id));
-            } else {
-              await db.insert(collectionManualTicks).values({
-                receivableId: recId,
-                step,
-                ticked: true,
-                tickedBy: 'SISTEMA',
-                tickedAt: Date.now(),
-                tickStatus: 'red',
-              });
-            }
-
-            // Registrar no histórico
-            await db.insert(collectionManualTickHistory).values({
-              receivableId: recId,
-              step,
-              action: 'auto_red',
-              operatorName: 'SISTEMA',
-              reason: `Dia útil passou sem ticagem manual (verificado em ${new Date().toLocaleDateString('pt-BR')})`,
-            });
-
-            updated++;
-            tickMap[step] = { id: 0, receivableId: recId, step, ticked: true, tickedBy: 'SISTEMA', tickedAt: Date.now(), tickStatus: 'red', createdAt: Date.now() };
-          } else {
-            break;
-          }
-        }
-      }
-
-      return { updated };
+      // DESABILITADO: cobrança 100% manual (28/04/2026)
+      return { updated: 0 };
     }),
 
   /**
-   * Sincronizar bolinhas manuais com o checklist do histórico.
-   * Para cada título:
-   * - Se o step do checklist está "verde" → bolinha verde (se ainda não estava marcada)
-   * - Se o step do checklist está "vermelho" → bolinha vermelha (se ainda não estava marcada)
-   * - Se o step do checklist está "dispensado" → bolinha verde (dispensado = OK)
-   * - Se o step do checklist está "pendente" ou "futuro" → não altera
-   * NUNCA sobrescreve bolinhas já marcadas (preserva dados existentes).
+   * DESABILITADO: Cobrança agora é 100% manual.
+   * Não sincroniza mais automaticamente bolinhas com checklist.
+   * Mantido como no-op para não quebrar chamadas do frontend.
    */
   syncTicksFromChecklist: publicProcedure
     .input(z.object({ receivableIds: z.array(z.number()) }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db || input.receivableIds.length === 0) return { synced: 0 };
-
-      // Buscar todos os ticks atuais
-      const allTicks = await db.select().from(collectionManualTicks)
-        .where(inArray(collectionManualTicks.receivableId, input.receivableIds))
-        .orderBy(asc(collectionManualTicks.step));
-
-      const ticksByRec: Record<number, Record<number, typeof allTicks[0]>> = {};
-      for (const t of allTicks) {
-        if (!ticksByRec[t.receivableId]) ticksByRec[t.receivableId] = {};
-        ticksByRec[t.receivableId][t.step] = t;
-      }
-
-      // Para cada título, calcular o checklist e sincronizar
-      let synced = 0;
-      const now = new Date();
-      const brNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-      const todayStr = brNow.toISOString().split('T')[0];
-      const SISTEMA_COBRANCA_INICIO_SYNC = '2026-04-16';
-
-      for (const recId of input.receivableIds) {
-        const tickMap = ticksByRec[recId] || {};
-
-        // Buscar dados do título
-        const [rec] = await db.select({
-          id: accountsReceivable.id,
-          vencimentoData: accountsReceivable.vencimentoData,
-        }).from(accountsReceivable).where(eq(accountsReceivable.id, recId)).limit(1);
-        if (!rec || !rec.vencimentoData) continue;
-
-        // Buscar ação de cobrança
-        const [action] = await db.select({ cobrancaStartedAt: collectionActions.cobrancaStartedAt })
-          .from(collectionActions)
-          .where(eq(collectionActions.receivableId, recId))
-          .limit(1);
-
-        const vencDate = (rec.vencimentoData || '').split('T')[0];
-        const dia1Original = addDaysStr(vencDate, 1);
-        const isLegacy = dia1Original < SISTEMA_COBRANCA_INICIO_SYNC;
-
-        // Calcular dias úteis de atraso (com feriados)
-        const diasAtrasoRawSync = Math.floor((new Date(todayStr + 'T12:00:00').getTime() - new Date(vencDate + 'T12:00:00').getTime()) / 86400000);
-        const bizDaysOverdue = diasAtrasoRawSync > 0 ? countBusinessDays(vencDate, todayStr) : 0;
-        const is2PlusDaysNoStart = bizDaysOverdue >= 2 && !action?.cobrancaStartedAt;
-
-        // Se é legado OU 2+ dias sem start, pular sincronização
-        if ((isLegacy && !action?.cobrancaStartedAt) || is2PlusDaysNoStart) continue;
-
-        // Para títulos com 2+ dias úteis E cobrancaStartedAt: roteiro começa a partir do primeiro contato
-        // Para legados com start: roteiro começa a partir do start
-        // Para normais (1 dia): roteiro começa a partir do vencimento
-        const baseDateStr = (action?.cobrancaStartedAt && bizDaysOverdue >= 2)
-          ? addDaysStr(action.cobrancaStartedAt, -1)
-          : isLegacy
-            ? (action?.cobrancaStartedAt
-                ? addDaysStr(action.cobrancaStartedAt, -1)
-                : addDaysStr(SISTEMA_COBRANCA_INICIO_SYNC, -1))
-            : vencDate;
-
-        // Buscar ações diárias para calcular status do checklist
-        const dailyActions = await db.select()
-          .from(collectionDailyActions)
-          .where(eq(collectionDailyActions.receivableId, recId))
-          .orderBy(collectionDailyActions.actionDate);
-
-        const actionsByDate: Record<string, typeof dailyActions> = {};
-        for (const a of dailyActions) {
-          if (!actionsByDate[a.actionDate]) actionsByDate[a.actionDate] = [];
-          actionsByDate[a.actionDate].push(a);
-        }
-
-        let hasCascadeError = false;
-
-        for (let step = 1; step <= 7; step++) {
-          const existingTick = tickMap[step];
-          // NUNCA sobrescrever bolinhas já marcadas
-          if (existingTick?.ticked) continue;
-
-          const stepDate = addBusinessDaysStr(baseDateStr, step);
-          const isFuture = stepDate > todayStr;
-          const isToday = stepDate === todayStr;
-          const isBeforeSystem = stepDate < SISTEMA_COBRANCA_INICIO_SYNC;
-
-          const actionsOnDay = actionsByDate[stepDate] || [];
-          const manualActions = actionsOnDay.filter(a => !a.isAutomatic && a.actionType !== 'sem_contato');
-
-          // Calcular status do step (mesma lógica do getCollectionChecklist)
-          let status: 'verde' | 'vermelho' | 'pendente' | 'futuro' | 'dispensado' = 'futuro';
-          const isAcao = [1, 3, 5].includes(step);
-          const isEspera = [2, 4, 6].includes(step);
-
-          if (isBeforeSystem && !isFuture) {
-            status = 'dispensado';
-          } else if (isFuture) {
-            status = 'futuro';
-          } else if (hasCascadeError) {
-            status = 'vermelho';
-          } else if (isAcao) {
-            if (manualActions.length > 0) {
-              status = 'verde';
-            } else if (isToday) {
-              status = 'pendente';
-            } else {
-              status = 'vermelho';
-              hasCascadeError = true;
-            }
-          } else if (isEspera) {
-            // Intervalo só fica verde quando o dia já PASSOU (não no mesmo dia)
-            if (isToday) {
-              status = 'pendente';
-            } else {
-              status = 'verde';
-            }
-          } else {
-            // Decisão (step 7)
-            if (isToday || isFuture) {
-              status = 'pendente';
-            } else {
-              status = 'verde';
-            }
-          }
-
-          // Sincronizar bolinha baseado no status
-          let newTickStatus: 'green' | 'red' | null = null;
-          if (status === 'verde' || status === 'dispensado') {
-            newTickStatus = 'green';
-          } else if (status === 'vermelho') {
-            newTickStatus = 'red';
-          }
-          // pendente e futuro: não marcar
-
-          if (newTickStatus) {
-            if (existingTick) {
-              await db.update(collectionManualTicks)
-                .set({ ticked: true, tickedBy: 'SYNC', tickedAt: Date.now(), tickStatus: newTickStatus })
-                .where(eq(collectionManualTicks.id, existingTick.id));
-            } else {
-              await db.insert(collectionManualTicks).values({
-                receivableId: recId,
-                step,
-                ticked: true,
-                tickedBy: 'SYNC',
-                tickedAt: Date.now(),
-                tickStatus: newTickStatus,
-              });
-            }
-
-            await db.insert(collectionManualTickHistory).values({
-              receivableId: recId,
-              step,
-              action: newTickStatus === 'red' ? 'sync_red' : 'sync_green',
-              operatorName: 'SYNC',
-              reason: `Sincronizado automaticamente com checklist (status: ${status})`,
-            });
-
-            synced++;
-            // Atualizar tickMap local para próximas iterações
-            tickMap[step] = { id: 0, receivableId: recId, step, ticked: true, tickedBy: 'SYNC', tickedAt: Date.now(), tickStatus: newTickStatus, createdAt: Date.now() };
-          }
-        }
-      }
-
-      return { synced };
+      // DESABILITADO: cobrança 100% manual (28/04/2026)
+      return { synced: 0 };
     }),
 
   /**
@@ -6130,7 +5768,7 @@ ${acoesTexto}
 
   /**
    * Silenciar/ativar vibração do telefone para um título específico.
-   * Somente Guilherme pode usar este endpoint.
+   * Qualquer operador pode usar (100% manual).
    */
   togglePhoneMute: publicProcedure
     .input(z.object({
@@ -6142,11 +5780,7 @@ ${acoesTexto}
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Somente Guilherme ou Thiago podem silenciar/ativar vibração
-      const opNameMute = input.operatorName.toLowerCase().trim();
-      if (opNameMute !== 'guilherme' && opNameMute !== 'thiago') {
-        throw new Error('Apenas Guilherme ou Thiago podem silenciar/ativar a vibração do telefone.');
-      }
+      // Qualquer operador pode silenciar/ativar vibração (100% manual)
 
       // Verificar se já existe registro em collection_actions
       const existing = await db.select().from(collectionActions)
@@ -6177,7 +5811,7 @@ ${acoesTexto}
         step: 0, // step 0 = ação de mute
         action: input.muted ? 'phone_mute' : 'phone_unmute',
         operatorName: input.operatorName,
-        reason: input.muted ? 'Vibração silenciada manualmente por Guilherme' : 'Vibração reativada por Guilherme',
+        reason: input.muted ? `Vibração silenciada manualmente por ${input.operatorName}` : `Vibração reativada por ${input.operatorName}`,
       });
 
       return { success: true, muted: input.muted };

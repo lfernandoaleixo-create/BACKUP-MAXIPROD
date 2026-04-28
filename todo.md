@@ -3095,3 +3095,10 @@
 - [x] Inadimplência: marcar bolinhas verdes (ticks manuais) para clientes que Thiago já iniciou cobrança (47 ticks inseridos para 23 títulos)
 - [x] E-commerce: ao selecionar Boleto como forma de pagamento, mostrar opção de parcelamento (quantas parcelas)
 - [x] BUG Inadimplência: cutoff date travado em 22/04 — corrigido: lista de cobrança agora mostra TODOS os títulos vencidos até hoje (sem threshold). Threshold de 3 dias movido para o quadro "Pagos/Resolvidos".
+- [x] Inadimplência: tornar TUDO manual — removida automação de ticks, vibração, cron job diário desabilitado
+- [x] Inadimplência: permitir ticar/desticar bolinhas livremente, qualquer cor, qualquer dia, qualquer operador
+- [x] Inadimplência: vibração do telefone como opção manual (qualquer operador pode ativar/desativar)
+- [x] Inadimplência: manter guia de cobrança como referência, sem forçar nada
+- [x] Inadimplência: garantir que ressincronização e virada do dia NUNCA percam informações manuais (confirmado: sync não toca tabelas de cobrança)
+- [x] Inadimplência: campo de observações manuais por título (já existia no sistema)
+- [x] Inadimplência: registro de histórico manual (ações, contatos, respostas) (já existia no sistema)

@@ -90,24 +90,9 @@ export function startScheduler(): void {
     console.error(`[Scheduler] Startup auth reset check failed: ${err.message}`);
   });
 
-  // Daily collection job: alertas de cobrança às 7h (Brasília), seg-sex
-  if (!dailyCollectionTask) {
-    dailyCollectionTask = schedule("0 7 * * 1-5", async () => {
-      console.log(`[Scheduler] Starting daily collection job at ${new Date().toISOString()}`);
-      try {
-        // Import dynamically to avoid circular dependencies
-        const { appRouter } = await import("./routers");
-        const caller = appRouter.createCaller({ user: null, req: { protocol: "https", headers: {} } as any, res: { clearCookie: () => {} } as any });
-        const result = await caller.financial.runDailyCollectionJob();
-        console.log(`[Scheduler] Collection job completed: ${result.semContatoCount} sem_contato, ${result.protestadoCount} protestado, ${result.documentoCount} documentos, ${result.alertCount} alertas`);
-      } catch (error: any) {
-        console.error(`[Scheduler] Collection job failed: ${error.message}`);
-      }
-    }, {
-      timezone: "America/Sao_Paulo",
-    });
-    console.log("[Scheduler] Daily collection job: 7h seg-sex (America/Sao_Paulo)");
-  }
+  // DESABILITADO: Cobrança agora é 100% manual — sem automação de sem_contato, protesto ou documentos
+  // Daily collection job removido conforme solicitação do Fernando (28/04/2026)
+  console.log("[Scheduler] Daily collection job: DESABILITADO (cobrança 100% manual)");
 
   // Daily reset of payment authorizations at midnight (00:00) Brasilia time, every day
   if (!dailyResetTask) {
