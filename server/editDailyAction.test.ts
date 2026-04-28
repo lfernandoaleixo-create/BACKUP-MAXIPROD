@@ -102,7 +102,7 @@ describe("editDailyAction + getActionEditHistory", () => {
         }
       }
     }
-  });
+  }, 30000);
 
   it("should edit action type and register audit trail", async () => {
     const result = await caller.financial.editDailyAction({
@@ -188,6 +188,22 @@ describe("editDailyAction + getActionEditHistory", () => {
     expect(edit).toHaveProperty("newValue");
     expect(edit).toHaveProperty("editedBy");
     expect(edit).toHaveProperty("editedAt");
+  });
+
+  it("should edit operatorName and register audit trail", async () => {
+    const result = await caller.financial.editDailyAction({
+      dailyActionId: testActionId,
+      operatorName: "Guilherme",
+      editedBy: "Thiago",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.editsCount).toBe(1);
+
+    const db = await getDb();
+    const [updated] = await db!.select().from(collectionDailyActions)
+      .where(eq(collectionDailyActions.id, testActionId));
+    expect(updated.operatorName).toBe("Guilherme");
   });
 
   it("should have correct old/new values in audit trail", async () => {

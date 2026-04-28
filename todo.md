@@ -3109,3 +3109,4 @@
 - [x] Inadimplência: novo status "Clientes Especiais Sem Cobrança" com card correspondente
 - [x] Inadimplência: novo status "Cheque em Compensação" com card correspondente
 - [x] REGRA: NÃO perder nenhuma informação preenchida anteriormente — apenas ADICIONAR novos status
+- [x] Inadimplência: tornar todo o histórico de cobrança editável (data, horário, tipo contato, operador, mensagem)

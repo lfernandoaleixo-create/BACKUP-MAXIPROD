@@ -5533,6 +5533,7 @@ ${acoesTexto}
       actionType: z.string().optional(),
       actionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // YYYY-MM-DD - permite editar a data da ação
       notes: z.string().optional(),
+      operatorName: z.string().optional(), // permite editar o operador
       editedBy: z.string(),
     }))
     .mutation(async ({ input }) => {
@@ -5566,6 +5567,15 @@ ${acoesTexto}
         });
       }
 
+      // Verificar mudanças no operador
+      if (input.operatorName !== undefined && input.operatorName !== current.operatorName) {
+        edits.push({
+          field: "operatorName",
+          oldValue: current.operatorName || null,
+          newValue: input.operatorName,
+        });
+      }
+
       // Verificar mudanças nas notas
       if (input.notes !== undefined && input.notes !== current.notes) {
         edits.push({
@@ -5593,6 +5603,7 @@ ${acoesTexto}
       const updates: Record<string, any> = {};
       if (input.actionType !== undefined) updates.actionType = input.actionType;
       if (input.actionDate !== undefined) updates.actionDate = input.actionDate;
+      if (input.operatorName !== undefined) updates.operatorName = input.operatorName;
       if (input.notes !== undefined) updates.notes = input.notes;
 
       await db.update(collectionDailyActions)

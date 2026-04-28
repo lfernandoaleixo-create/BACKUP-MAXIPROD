@@ -3173,8 +3173,8 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
   const [editType, setEditType] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [editOperator, setEditOperator] = useState("");
   const [showEditsFor, setShowEditsFor] = useState<number | null>(null);
-  const isAdminEditor = operator?.name?.toLowerCase().trim() === 'guilherme' || operator?.name?.toLowerCase().trim() === 'thiago';
 
   // Estado para adicionar nova ação manualmente
   const [showAddAction, setShowAddAction] = useState(false);
@@ -3216,6 +3216,7 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
     setEditType(action.actionType);
     setEditDate(action.actionDate || "");
     setEditNotes(action.notes || "");
+    setEditOperator(action.operatorName || "");
   };
 
   const cancelEdit = () => {
@@ -3223,6 +3224,7 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
     setEditType("");
     setEditDate("");
     setEditNotes("");
+    setEditOperator("");
   };
 
   const saveEdit = () => {
@@ -3231,9 +3233,10 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
       dailyActionId: editingId,
       actionType: editType,
       notes: editNotes,
+      operatorName: editOperator,
       editedBy: operator.name,
     };
-    if (isAdminEditor && editDate) {
+    if (editDate) {
       payload.actionDate = editDate;
     }
     editMutation.mutate(payload);
@@ -3274,17 +3277,15 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
         )}
         <div className="flex-1" />
         <div className="flex items-center gap-2">
-          {isAdminEditor && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAddAction(!showAddAction)}
-              className="text-xs gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Nova Ação
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddAction(!showAddAction)}
+            className="text-xs gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Nova Ação
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -3299,7 +3300,7 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
       </div>
 
       {/* Formulário de nova ação manual */}
-      {showAddAction && isAdminEditor && (
+      {showAddAction && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-2 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
@@ -3435,17 +3436,25 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
                       ))}
                     </select>
                   </div>
-                  {isAdminEditor && (
-                    <div>
-                      <label className="text-xs font-medium text-slate-600 block mb-1">Data da Ação</label>
-                      <input
-                        type="date"
-                        value={editDate}
-                        onChange={(e) => setEditDate(e.target.value)}
-                        className="w-full text-sm border border-amber-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Data da Ação</label>
+                    <input
+                      type="date"
+                      value={editDate}
+                      onChange={(e) => setEditDate(e.target.value)}
+                      className="w-full text-sm border border-amber-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 block mb-1">Operador</label>
+                    <input
+                      type="text"
+                      value={editOperator}
+                      onChange={(e) => setEditOperator(e.target.value)}
+                      className="w-full text-sm border border-amber-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      placeholder="Nome do operador..."
+                    />
+                  </div>
                   <div>
                     <label className="text-xs font-medium text-slate-600 block mb-1">Observações</label>
                     <textarea
@@ -3501,7 +3510,7 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
                       <span className={`text-xs font-medium ${isAutomatic ? "text-slate-400" : "text-blue-600"}`}>
                         {action.operatorName}
                       </span>
-                      {!isAutomatic && action.id && (
+                      {action.id && (
                         <button
                           onClick={() => startEdit(action)}
                           className="text-slate-400 hover:text-amber-600 transition-colors p-0.5 rounded hover:bg-amber-50"
@@ -3527,7 +3536,7 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
                         <div key={edit.id || idx} className="text-[10px] bg-amber-50 border border-amber-100 rounded px-2 py-1">
                           <div className="flex items-center justify-between">
                             <span className="font-medium text-amber-800">
-                              {edit.fieldChanged === "actionType" ? "Tipo" : edit.fieldChanged === "actionDate" ? "Data" : "Observações"} alterado por <span className="font-bold">{edit.editedBy}</span>
+                              {edit.fieldChanged === "actionType" ? "Tipo" : edit.fieldChanged === "actionDate" ? "Data" : edit.fieldChanged === "operatorName" ? "Operador" : "Observações"} alterado por <span className="font-bold">{edit.editedBy}</span>
                             </span>
                             <span className="text-amber-500">
                               {edit.editedAt ? new Date(edit.editedAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : ""}
