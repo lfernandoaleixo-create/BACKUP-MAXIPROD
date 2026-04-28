@@ -9,13 +9,10 @@
  * - A partir de 22/04/2026 — NÃO retroativo. O estoque atual já está correto.
  * - NÃO mexer na aba Faturamento — apenas leitura dos dados de lá.
  * 
- * FLUXO:
- * 1. A cada sync, ler todos os itens faturados industrializados do sales_orders
- * 2. Comparar com o snapshot anterior (billed_industrialized_snapshot)
- * 3. Itens NOVOS (não estavam no snapshot) = acabaram de ser faturados → dar baixa
- * 4. Abater do madeira_stock (se o produto existir lá)
- * 5. Registrar no industrialized_billing_history
- * 6. Atualizar o snapshot para a próxima sync
+ * PROTEÇÃO CONTRA DUPLICATAS (fix 28/04/2026):
+ * - Usa DUAS fontes para detectar duplicatas: snapshot E billing_history
+ * - Mesmo que o snapshot seja limpo (deploy/restart), o billing_history impede reprocessamento
+ * - Chave única: "pedido|codigoItem|quantidade"
  */
 
 import { getDb } from "./db";
@@ -34,8 +31,20 @@ function getTodayBR(): string {
 }
 
 /**
+ * Gera chave única para um faturamento: "pedido|codigoItem|quantidade"
+ */
+function makeKey(pedido: string, codigoItem: string, quantidade: string): string {
+  return `${pedido}|${codigoItem}|${parseFloat(quantidade).toFixed(5)}`;
+}
+
+/**
  * Detecta novos faturamentos de industrializados e dá baixa no estoque de madeira.
  * Chamado após cada sync do Maxiprod (após salvar salesOrders no banco).
+ * 
+ * PROTEÇÃO DUPLA contra reprocessamento:
+ * 1. Snapshot (billed_industrialized_snapshot) — comparação rápida
+ * 2. Billing history (industrialized_billing_history) — backup permanente
+ * Um item só é processado se NÃO existir em NENHUMA das duas fontes.
  */
 export async function processIndustrializedBaixa(): Promise<void> {
   const db = await getDb();
@@ -61,27 +70,40 @@ export async function processIndustrializedBaixa(): Promise<void> {
       return;
     }
 
-    // 2. Buscar snapshot anterior (todos os itens já conhecidos como faturados)
+    // 2. PROTEÇÃO DUPLA: buscar chaves do snapshot E do billing history
     const previousSnapshot = await db.select().from(billedIndustrializedSnapshot);
+    const previousHistory = await db.select({
+      pedido: industrializedBillingHistory.pedido,
+      codigoItem: industrializedBillingHistory.codigoItem,
+      quantidade: industrializedBillingHistory.quantidade,
+    }).from(industrializedBillingHistory);
     
-    // Criar set de chaves únicas do snapshot anterior: "pedido|codigoItem|quantidade"
-    const previousKeys = new Set<string>();
+    // Criar set combinado de chaves já processadas
+    const alreadyProcessedKeys = new Set<string>();
+    
+    // Chaves do snapshot
     for (const snap of previousSnapshot) {
-      const key = `${snap.pedido}|${snap.codigoItem}|${parseFloat(snap.quantidade).toFixed(5)}`;
-      previousKeys.add(key);
+      alreadyProcessedKeys.add(makeKey(snap.pedido, snap.codigoItem, snap.quantidade));
+    }
+    
+    // Chaves do billing history (backup permanente — nunca perde)
+    for (const hist of previousHistory) {
+      alreadyProcessedKeys.add(makeKey(hist.pedido, hist.codigoItem, hist.quantidade));
     }
 
-    // 3. Detectar NOVOS faturamentos (não estavam no snapshot anterior)
+    console.log(`[Baixa Industrializado] ${alreadyProcessedKeys.size} chaves já processadas (snapshot: ${previousSnapshot.length}, history: ${previousHistory.length})`);
+
+    // 3. Detectar NOVOS faturamentos (não estavam em NENHUMA das duas fontes)
     const newBilled: typeof billedIndustrialized = [];
     for (const item of billedIndustrialized) {
-      const key = `${item.pedido || ''}|${item.codigoItem || ''}|${parseFloat(item.quantidade || '0').toFixed(5)}`;
-      if (!previousKeys.has(key)) {
+      const key = makeKey(item.pedido || '', item.codigoItem || '', item.quantidade || '0');
+      if (!alreadyProcessedKeys.has(key)) {
         newBilled.push(item);
       }
     }
 
     if (newBilled.length === 0) {
-      console.log(`[Baixa Industrializado] Nenhum novo faturamento detectado (${billedIndustrialized.length} itens já no snapshot)`);
+      console.log(`[Baixa Industrializado] Nenhum novo faturamento detectado (${billedIndustrialized.length} itens já processados)`);
     } else {
       console.log(`[Baixa Industrializado] ${newBilled.length} novo(s) faturamento(s) detectado(s)!`);
 
@@ -118,7 +140,7 @@ export async function processIndustrializedBaixa(): Promise<void> {
           // Atualizar o mapa local para baixas subsequentes no mesmo sync
           madeiraMap.set(codigoItem, { id: madeiraItem.id, quantidade: estoqueNovo.toFixed(5) });
 
-          // Registrar no histórico de baixas
+          // Registrar no histórico de baixas (PERMANENTE — nunca é deletado)
           await db.insert(industrializedBillingHistory).values({
             pedido: item.pedido || '',
             codigoItem: codigoItem,

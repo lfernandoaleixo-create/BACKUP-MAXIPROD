@@ -3102,3 +3102,6 @@
 - [x] Inadimplência: garantir que ressincronização e virada do dia NUNCA percam informações manuais (confirmado: sync não toca tabelas de cobrança)
 - [x] Inadimplência: campo de observações manuais por título (já existia no sistema)
 - [x] Inadimplência: registro de histórico manual (ações, contatos, respostas) (já existia no sistema)
+- [x] BUG CRÍTICO: Baixa Faturamento duplicada em 28/04 zerou estoque Madeira PA — corrigido e estoque restaurado de 1.003 para 8.301 caixas
+- [x] Reverter baixas duplicadas de 28/04 e restaurar estoque correto (275 duplicatas removidas, 9 legítimas mantidas)
+- [x] Corrigir lógica do snapshot para nunca reprocessar faturamentos antigos (proteção dupla: snapshot + billing_history)
