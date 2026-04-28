@@ -6078,6 +6078,7 @@ ${acoesTexto}
       step: z.number().min(1).max(7),
       descricao: z.string().optional(),
       motivo: z.string().optional(),
+      dataOverride: z.string().optional(),
       operatorName: z.string(),
     }))
     .mutation(async ({ input }) => {
@@ -6096,6 +6097,7 @@ ${acoesTexto}
         const updates: Record<string, any> = { updatedBy: input.operatorName, updatedAt: Date.now() };
         if (input.descricao !== undefined) updates.descricao = input.descricao;
         if (input.motivo !== undefined) updates.motivo = input.motivo;
+        if (input.dataOverride !== undefined) updates.dataOverride = input.dataOverride || null;
         await db.update(collectionStepOverrides)
           .set(updates)
           .where(eq(collectionStepOverrides.id, existing.id));
@@ -6105,6 +6107,7 @@ ${acoesTexto}
           step: input.step,
           descricao: input.descricao || null,
           motivo: input.motivo || null,
+          dataOverride: input.dataOverride || null,
           updatedBy: input.operatorName,
         });
       }
@@ -6119,14 +6122,14 @@ ${acoesTexto}
     .input(z.object({ receivableId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
-      if (!db) return { overrides: {} as Record<number, { descricao?: string | null; motivo?: string | null }> };
+      if (!db) return { overrides: {} as Record<number, { descricao?: string | null; motivo?: string | null; dataOverride?: string | null }> };
 
       const rows = await db.select().from(collectionStepOverrides)
         .where(eq(collectionStepOverrides.receivableId, input.receivableId));
 
-      const map: Record<number, { descricao?: string | null; motivo?: string | null }> = {};
+      const map: Record<number, { descricao?: string | null; motivo?: string | null; dataOverride?: string | null }> = {};
       for (const r of rows) {
-        map[r.step] = { descricao: r.descricao, motivo: r.motivo };
+        map[r.step] = { descricao: r.descricao, motivo: r.motivo, dataOverride: r.dataOverride };
       }
       return { overrides: map };
     }),

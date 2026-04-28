@@ -2603,17 +2603,20 @@ function HistoryDialog({ title, onClose }: {
   const [editingStepDia, setEditingStepDia] = useState<number | null>(null);
   const [editStepDescricao, setEditStepDescricao] = useState('');
   const [editStepMotivo, setEditStepMotivo] = useState('');
+  const [editStepData, setEditStepData] = useState('');
 
   const startStepEdit = (step: any) => {
     const override = stepOverridesData?.overrides?.[step.dia];
     setEditingStepDia(step.dia);
     setEditStepDescricao(override?.descricao ?? step.descricao ?? '');
     setEditStepMotivo(override?.motivo ?? step.motivo ?? '');
+    setEditStepData(override?.dataOverride ?? step.data ?? '');
   };
   const cancelStepEdit = () => {
     setEditingStepDia(null);
     setEditStepDescricao('');
     setEditStepMotivo('');
+    setEditStepData('');
   };
   const saveStepEdit = (stepDia: number) => {
     if (!operator?.name) return;
@@ -2622,6 +2625,7 @@ function HistoryDialog({ title, onClose }: {
       step: stepDia,
       descricao: editStepDescricao,
       motivo: editStepMotivo,
+      dataOverride: editStepData,
       operatorName: operator.name,
     });
   };
@@ -3076,12 +3080,21 @@ function HistoryDialog({ title, onClose }: {
                             </span>
                           )}
                         </div>
-                        <span className="text-xs text-slate-400 shrink-0">{formatDate(step.data)}</span>
+                        <span className="text-xs text-slate-400 shrink-0">{formatDate(stepOverridesData?.overrides?.[step.dia]?.dataOverride || step.data)}</span>
                       </div>
 
-                      {/* Descrição + Motivo — com edição inline */}
+                      {/* Descrição + Motivo + Data — com edição inline */}
                       {editingStepDia === step.dia ? (
                         <div className="mt-1 space-y-1.5">
+                          <div>
+                            <label className="text-[10px] font-medium text-amber-700 block mb-0.5">Data</label>
+                            <input
+                              type="date"
+                              value={editStepData}
+                              onChange={(e) => setEditStepData(e.target.value)}
+                              className="w-full text-xs border border-amber-300 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            />
+                          </div>
                           <div>
                             <label className="text-[10px] font-medium text-amber-700 block mb-0.5">Descrição</label>
                             <textarea

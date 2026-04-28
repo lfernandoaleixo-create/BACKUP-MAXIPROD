@@ -3112,3 +3112,4 @@
 - [x] Inadimplência: tornar todo o histórico de cobrança editável (data, horário, tipo contato, operador, mensagem)
 - [x] Inadimplência: botão de edição de textos na aba Roteiro (descrição da ação, notas, mensagem de conclusão)
 - [x] Inadimplência: garantir que botão de edição funciona na aba Histórico Completo (já implementado, verificar)
+- [x] Inadimplência: permitir edição da data de cada step no Roteiro (campo data no override)

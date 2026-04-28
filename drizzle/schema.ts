@@ -1345,6 +1345,7 @@ export const collectionStepOverrides = mysqlTable("collection_step_overrides", {
   step: int("step").notNull(), // 1-7
   descricao: text("descricao"), // override da descrição do step (null = usar padrão)
   motivo: text("motivo"), // override do motivo/status text (null = usar padrão)
+  dataOverride: varchar("data_override", { length: 20 }), // override da data do step (YYYY-MM-DD, null = usar padrão)
   updatedBy: varchar("updated_by", { length: 100 }),
   updatedAt: bigint("updated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 });

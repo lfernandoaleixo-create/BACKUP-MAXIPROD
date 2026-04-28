@@ -103,4 +103,32 @@ describe("Step Overrides (upsertStepOverride / getStepOverrides)", () => {
     // Step 2 should not exist
     expect(overrides.overrides[2]).toBeUndefined();
   });
+
+  it("should save and retrieve dataOverride", async () => {
+    await caller.financial.upsertStepOverride({
+      receivableId: testReceivableId,
+      step: 5,
+      dataOverride: "2026-05-15",
+      operatorName: "Thiago",
+    });
+
+    const overrides = await caller.financial.getStepOverrides({ receivableId: testReceivableId });
+    expect(overrides.overrides[5]).toBeDefined();
+    expect(overrides.overrides[5].dataOverride).toBe("2026-05-15");
+  });
+
+  it("should update dataOverride on existing override", async () => {
+    // Update step 1 which already exists with a date
+    await caller.financial.upsertStepOverride({
+      receivableId: testReceivableId,
+      step: 1,
+      dataOverride: "2026-06-01",
+      operatorName: "Guilherme",
+    });
+
+    const overrides = await caller.financial.getStepOverrides({ receivableId: testReceivableId });
+    expect(overrides.overrides[1].dataOverride).toBe("2026-06-01");
+    // descricao should remain from previous edits
+    expect(overrides.overrides[1].descricao).toBe("Texto atualizado");
+  });
 });

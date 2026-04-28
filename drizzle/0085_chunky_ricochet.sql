@@ -1,0 +1,1 @@
+ALTER TABLE `collection_step_overrides` ADD `data_override` varchar(20);
