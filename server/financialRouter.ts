@@ -3115,10 +3115,11 @@ export const financialRouter = router({
         const valorPago = Number(row.valorRecebidoLiquido) || 0;
         const valorAReceber = valorOriginal - valorPago;
         const vencDate = (row.vencimentoData || "").split("T")[0];
-        const diasAtrasoRaw = Math.floor((new Date(cutoffCobranca).getTime() - new Date(vencDate).getTime()) / 86400000);
-        // Dias ÚTEIS de atraso (pula sábados, domingos e feriados)
-        // Se vencimento caiu em fds/feriado, só conta a partir do próximo dia útil
-        const businessDaysOverdue = diasAtrasoRaw > 0 ? countBusinessDays(vencDate, cutoffCobranca) : 0;
+        const todayForDisplay = getTodayBR();
+        const diasAtrasoRaw = Math.floor((new Date(todayForDisplay).getTime() - new Date(vencDate).getTime()) / 86400000);
+        // Dias ÚTEIS de atraso (pula sábados, domingos e feriados) — usa HOJE para exibição
+        // Cutoff serve apenas para filtrar quem aparece, dias de atraso é sempre baseado em hoje
+        const businessDaysOverdue = diasAtrasoRaw > 0 ? countBusinessDays(vencDate, todayForDisplay) : 0;
         // diasAtraso agora é sempre em dias ÚTEIS para exibição
         const diasAtraso = businessDaysOverdue;
         const action = actionsMap[row.id];
