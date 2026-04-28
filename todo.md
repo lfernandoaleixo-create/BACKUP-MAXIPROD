@@ -3094,3 +3094,4 @@
 - [x] Inadimplência: funcionalidade de importação via planilha (Thiago pode subir XLSX com dados de cobrança e sistema preenche automaticamente)
 - [x] Inadimplência: marcar bolinhas verdes (ticks manuais) para clientes que Thiago já iniciou cobrança (47 ticks inseridos para 23 títulos)
 - [x] E-commerce: ao selecionar Boleto como forma de pagamento, mostrar opção de parcelamento (quantas parcelas)
+- [x] BUG Inadimplência: cutoff date travado em 22/04 — corrigido: lista de cobrança agora mostra TODOS os títulos vencidos até hoje (sem threshold). Threshold de 3 dias movido para o quadro "Pagos/Resolvidos".

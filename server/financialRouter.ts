@@ -3058,8 +3058,10 @@ export const financialRouter = router({
       const db = await getDb();
       if (!db) return { titles: [], stats: { total: 0, count: 0, byStatus: {} } };
 
-      const cutoff = getPreviousBusinessDay();
       const todayStr = getTodayBR();
+      // Para a aba de cobrança: buscar TODOS os títulos vencidos até hoje (inclusive os que entraram hoje)
+      // O cutoff de conciliação bancária NÃO se aplica aqui — aplica-se apenas na Visão Geral
+      const cutoffCobranca = todayStr;
 
       // Buscar títulos vencidos com JOIN no banco
       const rows = await db
@@ -3090,7 +3092,7 @@ export const financialRouter = router({
           and(
             eq(accountsReceivable.estado, "EMITIDO"),
             inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
-            lte(accountsReceivable.vencimentoData, cutoff + "T23:59:59")
+            lte(accountsReceivable.vencimentoData, cutoffCobranca + "T23:59:59")
           )
         )
         .orderBy(asc(accountsReceivable.vencimentoData));
@@ -3164,11 +3166,8 @@ export const financialRouter = router({
         };
       }).filter(t => t.valorAReceber > 0);
 
-      // REGRA: Só considerar inadimplente a partir do 4º dia ÚTIL de atraso (3 dias úteis completos)
-      // Antes disso pode ser falta de conciliação bancária
-      // Threshold configurável: Fernando pode pedir para mudar
-      const INADIMPLENCIA_THRESHOLD_BUSINESS_DAYS = 3;
-      titles = titles.filter(t => t.businessDaysOverdue > INADIMPLENCIA_THRESHOLD_BUSINESS_DAYS);
+      // NOTA: Mostrar TODOS os títulos vencidos na lista de cobrança (sem threshold)
+      // O threshold de 3 dias úteis aplica-se apenas ao quadro "Pagos/Resolvidos" (recuperação)
 
       // Filtrar clientes de teste
       const TEST_CLIENTS = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
@@ -4861,8 +4860,14 @@ ${acoesTexto}
       const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
       const filteredRows = rows.filter(row => !TEST_CLIENT_NAMES.includes((row.cliente || '').toUpperCase().trim()));
 
+      // REGRA: Só considerar como "recuperado da inadimplência" se o título tinha 3+ dias úteis de atraso.
+      // Antes de 3 dias úteis, pode ser apenas falta de conciliação bancária (não era inadimplência real).
+      // Threshold configurável: Fernando pode pedir para mudar.
+      const RECUPERACAO_THRESHOLD_DAYS = 3;
+      const qualifiedRows = filteredRows.filter(row => (row.diasAtrasoNaResolucao || 0) >= RECUPERACAO_THRESHOLD_DAYS);
+
       let valorTotal = 0;
-      const titles = filteredRows.map(row => {
+      const titles = qualifiedRows.map(row => {
         const valor = Number(row.valorAReceber) || 0;
         valorTotal += valor;
         return {
