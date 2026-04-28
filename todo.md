@@ -3105,3 +3105,4 @@
 - [x] BUG CRÍTICO: Baixa Faturamento duplicada em 28/04 zerou estoque Madeira PA — corrigido e estoque restaurado de 1.003 para 8.301 caixas
 - [x] Reverter baixas duplicadas de 28/04 e restaurar estoque correto (275 duplicatas removidas, 9 legítimas mantidas)
 - [x] Corrigir lógica do snapshot para nunca reprocessar faturamentos antigos (proteção dupla: snapshot + billing_history)
+- [x] Inadimplência: ponto de corte deve ser dia útil anterior (não hoje) — corrigido para getPreviousBusinessDay()

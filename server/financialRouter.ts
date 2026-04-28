@@ -3058,10 +3058,9 @@ export const financialRouter = router({
       const db = await getDb();
       if (!db) return { titles: [], stats: { total: 0, count: 0, byStatus: {} } };
 
-      const todayStr = getTodayBR();
-      // Para a aba de cobrança: buscar TODOS os títulos vencidos até hoje (inclusive os que entraram hoje)
-      // O cutoff de conciliação bancária NÃO se aplica aqui — aplica-se apenas na Visão Geral
-      const cutoffCobranca = todayStr;
+      // Para a aba de cobrança: buscar títulos vencidos até o dia útil anterior
+      // Títulos que vencem hoje ainda não são inadimplentes (pode ser conciliação pendente)
+      const cutoffCobranca = getPreviousBusinessDay();
 
       // Buscar títulos vencidos com JOIN no banco
       const rows = await db
