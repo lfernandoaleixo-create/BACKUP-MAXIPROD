@@ -3093,3 +3093,4 @@
 - [x] Inadimplência: botão exportar PDF com todo o histórico de cobrança do cliente (já existia no dialog Histórico)
 - [x] Inadimplência: funcionalidade de importação via planilha (Thiago pode subir XLSX com dados de cobrança e sistema preenche automaticamente)
 - [x] Inadimplência: marcar bolinhas verdes (ticks manuais) para clientes que Thiago já iniciou cobrança (47 ticks inseridos para 23 títulos)
+- [x] E-commerce: ao selecionar Boleto como forma de pagamento, mostrar opção de parcelamento (quantas parcelas)

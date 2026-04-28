@@ -287,7 +287,7 @@ export default function EcommerceTab() {
       descricao: descricao.trim(),
       dataCompra,
       formaPagamento,
-      parcelas: formaPagamento === "cartao_credito" ? parcelas : 1,
+      parcelas: (formaPagamento === "cartao_credito" || formaPagamento === "boleto") ? parcelas : 1,
       valorTotal: valor,
       observacao: observacao.trim() || undefined,
     });
@@ -608,7 +608,7 @@ export default function EcommerceTab() {
                 })}
               </div>
             </div>
-            {formaPagamento === "cartao_credito" && (
+            {(formaPagamento === "cartao_credito" || formaPagamento === "boleto") && (
               <div>
                 <label className="text-xs font-semibold text-slate-600 mb-1 block">Parcelas</label>
                 <div className="flex items-center gap-2">
@@ -627,7 +627,7 @@ export default function EcommerceTab() {
                 </div>
               </div>
             )}
-            <div className={formaPagamento === "cartao_credito" ? "md:col-span-2" : ""}>
+            <div className={(formaPagamento === "cartao_credito" || formaPagamento === "boleto") ? "md:col-span-2" : ""}>
               <label className="text-xs font-semibold text-slate-600 mb-1 block">Observação (opcional)</label>
               <Input
                 value={observacao}
