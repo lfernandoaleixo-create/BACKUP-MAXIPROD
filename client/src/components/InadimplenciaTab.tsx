@@ -28,6 +28,8 @@ const STATUS_OPTIONS = [
   { value: "nao_atendeu", label: "Não atendeu", color: "bg-pink-100 text-pink-700 border-pink-300" },
   { value: "protestado", label: "Protestado", color: "bg-orange-100 text-orange-700 border-orange-300" },
   { value: "juridico", label: "Jurídico", color: "bg-red-100 text-red-700 border-red-300" },
+  { value: "especial_sem_cobranca", label: "Especial s/ Cobrança", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
+  { value: "cheque_compensacao", label: "Cheque em Compensação", color: "bg-teal-100 text-teal-700 border-teal-300" },
 ];
 
 const CONTATO_TIPOS = [
@@ -95,6 +97,8 @@ function exportInadimplenciaPDF(
   const STATUS_LABELS: Record<string, string> = {
     pendente: "Pendente", contatado: "Contatado", em_negociacao: "Em Negociação",
     promessa: "Promessa de Pgto", protestado: "Protestado", juridico: "Jurídico",
+    especial_sem_cobranca: "Especial s/ Cobrança", cheque_compensacao: "Cheque em Compensação",
+    nao_retornou: "Não Deu Retorno", nao_atendeu: "Não Atendeu",
   };
 
   // Sort by diasAtraso descending (oldest first)
@@ -114,7 +118,7 @@ function exportInadimplenciaPDF(
 
   // ── Status counts for header ──
   const statusCounts: Record<string, { count: number; total: number }> = {};
-  for (const s of ["pendente", "contatado", "em_negociacao", "promessa", "protestado", "juridico"]) {
+  for (const s of ["pendente", "contatado", "em_negociacao", "promessa", "nao_retornou", "nao_atendeu", "protestado", "juridico", "especial_sem_cobranca", "cheque_compensacao"]) {
     statusCounts[s] = { count: 0, total: 0 };
   }
   for (const t of sorted) {
@@ -204,9 +208,11 @@ function exportInadimplenciaPDF(
     { key: "promessa", label: "PROMESSA PGTO", bg: [209, 250, 229] as [number, number, number], text: [4, 120, 87] as [number, number, number] },
     { key: "protestado", label: "PROTESTADO", bg: [255, 237, 213] as [number, number, number], text: [194, 65, 12] as [number, number, number] },
     { key: "juridico", label: "JURÍDICO", bg: [254, 226, 226] as [number, number, number], text: [185, 28, 28] as [number, number, number] },
+    { key: "especial_sem_cobranca", label: "ESPECIAL S/ COB.", bg: [207, 250, 254] as [number, number, number], text: [14, 116, 144] as [number, number, number] },
+    { key: "cheque_compensacao", label: "CHEQUE COMP.", bg: [204, 251, 241] as [number, number, number], text: [15, 118, 110] as [number, number, number] },
   ];
 
-  const sBoxW = (pageW - 12 - 5 * 4) / 6; // 6mm margins
+  const sBoxW = (pageW - 12 - (statusDefs.length - 1) * 4) / statusDefs.length; // dynamic margins
   statusDefs.forEach((s, i) => {
     const sc = statusCounts[s.key] || { count: 0, total: 0 };
     const x = 6 + i * (sBoxW + 4);
@@ -1133,7 +1139,7 @@ export default function InadimplenciaTab() {
       </div>
 
       {/* Cards de status */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-3">
         {STATUS_OPTIONS.map(s => {
           const c = statusCounts[s.value] || { count: 0, total: 0 };
           const isActive = statusFilter === s.value;

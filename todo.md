@@ -3106,3 +3106,6 @@
 - [x] Reverter baixas duplicadas de 28/04 e restaurar estoque correto (275 duplicatas removidas, 9 legítimas mantidas)
 - [x] Corrigir lógica do snapshot para nunca reprocessar faturamentos antigos (proteção dupla: snapshot + billing_history)
 - [x] Inadimplência: ponto de corte deve ser dia útil anterior (não hoje) — corrigido para getPreviousBusinessDay()
+- [x] Inadimplência: novo status "Clientes Especiais Sem Cobrança" com card correspondente
+- [x] Inadimplência: novo status "Cheque em Compensação" com card correspondente
+- [x] REGRA: NÃO perder nenhuma informação preenchida anteriormente — apenas ADICIONAR novos status
