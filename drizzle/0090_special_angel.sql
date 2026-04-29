@@ -1,0 +1,1 @@
+ALTER TABLE `payment_priority_marks` MODIFY COLUMN `maxiprod_id` bigint;
