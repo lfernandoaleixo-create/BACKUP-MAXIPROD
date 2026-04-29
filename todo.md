@@ -3160,3 +3160,4 @@
 - [x] Gráfico Manutenções: explicar o que cada tipo de parada significa e como % Parada é calculado
 - [x] Gráfico Status: explicar o que cada status representa na produção
 - [x] Financeiro - Autorização de Pagamentos: remover card de "Vencidas"
+- [x] Financeiro - Autorização de Pagamentos: tooltip "Dê Preferência/Urgência" ao passar mouse nas bolinhas vermelhas (Fernando/Guilherme)

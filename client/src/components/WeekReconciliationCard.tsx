@@ -658,8 +658,12 @@ function DayCard({
                             </button>
                           )}
                           {!isPriorityEditor && isPriorityViewer && dayDate && prioritySet.has(`${group.fornecedor}::${dayDate}`) && (
-                            <span className="ml-1 flex-shrink-0" title="Prioridade/Urgência (marcado por Flávio)">
-                              <span className="inline-block w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-red-600 shadow-sm shadow-red-300 animate-pulse" />
+                            <span className="ml-1 flex-shrink-0 relative group/priority">
+                              <span className="inline-block w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-red-600 shadow-sm shadow-red-300 animate-pulse cursor-help" />
+                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-red-600 text-white text-[11px] font-semibold rounded-lg shadow-lg opacity-0 group-hover/priority:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50">
+                                Dê Preferência/Urgência
+                                <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-red-600" />
+                              </span>
                             </span>
                           )}
                         </button>
