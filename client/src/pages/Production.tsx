@@ -6,7 +6,7 @@
  * Todos os setores: caixa de comentários opcional
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import TopNav from "@/components/TopNav";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -17,10 +17,15 @@ import {
   ArrowLeft, ArrowRight, Loader2, Cog, Eye, Package, Box, Zap, Scissors,
   Layers, Printer, History, AlertTriangle, Wrench, Ban, CheckCircle2, Clock,
   MessageSquare, TreePine, Ruler, Search, X, Plus, Pencil, Trash2, Flame, Type,
-  FileDown,
+  FileDown, TrendingUp,
 } from "lucide-react";
 import { generateDailyPdf, generateWeeklyPdf, generateMonthlyPdf } from "@/lib/productionPdfExport";
+import { generateAnnotationPdf } from "@/lib/annotationPdfExport";
 import ProductionCharts from "@/components/ProductionCharts";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  ResponsiveContainer, Legend as RechartsLegend,
+} from "recharts";
 
 // ─── Status options ───
 const MACHINE_STATUS_OPTIONS = [
@@ -2986,6 +2991,8 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editQty, setEditQty] = useState("");
   const [editObs, setEditObs] = useState("");
+  const [showChart, setShowChart] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -2993,6 +3000,79 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
     data: selectedDate,
     sectorId,
   });
+
+  // Weekly trend: last 7 days from selectedDate
+  const weekRange = useMemo(() => {
+    const end = new Date(selectedDate + "T12:00:00");
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+    return {
+      startDate: start.toISOString().slice(0, 10),
+      endDate: end.toISOString().slice(0, 10),
+    };
+  }, [selectedDate]);
+
+  const { data: weekHistory } = trpc.annotations.getHistory.useQuery({
+    startDate: weekRange.startDate,
+    endDate: weekRange.endDate,
+  }, { enabled: showChart });
+
+  // Monthly range for PDF export
+  const monthRange = useMemo(() => {
+    const d = new Date(selectedDate + "T12:00:00");
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const start = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const end = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    return { startDate: start, endDate: end, month: m, year: y };
+  }, [selectedDate]);
+
+  const { data: monthHistory } = trpc.annotations.getHistory.useQuery({
+    startDate: monthRange.startDate,
+    endDate: monthRange.endDate,
+  }, { enabled: generatingPdf });
+
+  // Build chart data
+  const chartData = useMemo(() => {
+    if (!weekHistory) return [];
+    const validEntries = weekHistory.filter((e: any) => parseFloat(String(e.quantidade)) > 0);
+    const days: { date: string; label: string; queijo_coalho: number; alidio: number }[] = [];
+    const end = new Date(selectedDate + "T12:00:00");
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(end);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      const dayLabel = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" });
+      const qc = validEntries.filter((e: any) => e.data === dateStr && e.tipo === "queijo_coalho").reduce((s: number, e: any) => s + parseFloat(String(e.quantidade)), 0);
+      const al = validEntries.filter((e: any) => e.data === dateStr && e.tipo === "alidio").reduce((s: number, e: any) => s + parseFloat(String(e.quantidade)), 0);
+      days.push({ date: dateStr, label: dayLabel, queijo_coalho: qc, alidio: al });
+    }
+    return days;
+  }, [weekHistory, selectedDate]);
+
+  const handleExportPdf = useCallback(async () => {
+    setGeneratingPdf(true);
+    // Small delay to let the query fire
+    await new Promise(r => setTimeout(r, 500));
+  }, []);
+
+  // Effect to generate PDF once monthHistory is loaded
+  useMemo(() => {
+    if (generatingPdf && monthHistory) {
+      generateAnnotationPdf({
+        entries: monthHistory as any,
+        month: monthRange.month,
+        year: monthRange.year,
+      }).then(() => {
+        setGeneratingPdf(false);
+        toast.success("PDF gerado com sucesso!");
+      }).catch((err) => {
+        setGeneratingPdf(false);
+        toast.error("Erro ao gerar PDF: " + err.message);
+      });
+    }
+  }, [generatingPdf, monthHistory, monthRange]);
 
   const createMutation = trpc.annotations.create.useMutation({
     onSuccess: (_data, variables) => {
@@ -3069,7 +3149,64 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
         <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Anotações Avulsas</span>
         <div className="flex-1 h-px bg-slate-200" />
       </div>
-      <p className="text-[10px] text-slate-400 text-center italic">Registros de acompanhamento — NÃO contabilizam no total do setor</p>
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-slate-400 italic">Registros de acompanhamento — NÃO contabilizam no total do setor</p>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setShowChart(prev => !prev)}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all border ${
+              showChart ? "bg-teal-50 text-teal-700 border-teal-200" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            <TrendingUp className="w-3 h-3" />
+            Tendência
+          </button>
+          <button
+            onClick={handleExportPdf}
+            disabled={generatingPdf}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-40"
+          >
+            {generatingPdf ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
+            PDF Mensal
+          </button>
+        </div>
+      </div>
+
+      {/* Weekly Trend Chart */}
+      {showChart && (
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4 text-teal-600" />
+            <span className="text-xs font-semibold text-slate-700">Últimos 7 dias</span>
+          </div>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={chartData} barCategoryGap="20%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} width={30} />
+                <RechartsTooltip
+                  contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e2e8f0", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)" }}
+                  formatter={(value: number, name: string) => [
+                    `${value} cx`,
+                    name === "queijo_coalho" ? "Queijo Coalho" : "Alídio"
+                  ]}
+                />
+                <RechartsLegend
+                  formatter={(value: string) => value === "queijo_coalho" ? "Queijo Coalho" : "Alídio"}
+                  wrapperStyle={{ fontSize: 10 }}
+                />
+                <Bar dataKey="queijo_coalho" fill="#f59e0b" radius={[4, 4, 0, 0]} name="queijo_coalho" />
+                <Bar dataKey="alidio" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="alidio" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-[120px] text-xs text-slate-400">
+              Nenhum dado nos últimos 7 dias
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {ANNOTATION_TYPES.map(at => {

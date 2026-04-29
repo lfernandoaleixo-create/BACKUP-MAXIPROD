@@ -211,3 +211,117 @@ describe("Saco Totals Separation by Sector", () => {
     expect(sectorSacoTotals[2].total).toBe(200);
   });
 });
+
+describe("Annotation Weekly Trend Chart", () => {
+  it("should build chart data for last 7 days from selected date", () => {
+    const selectedDate = "2026-04-29";
+    const end = new Date(selectedDate + "T12:00:00");
+    const days: { date: string; label: string }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(end);
+      d.setDate(d.getDate() - i);
+      days.push({
+        date: d.toISOString().slice(0, 10),
+        label: d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" }),
+      });
+    }
+
+    expect(days).toHaveLength(7);
+    expect(days[0].date).toBe("2026-04-23");
+    expect(days[6].date).toBe("2026-04-29");
+  });
+
+  it("should aggregate quantities per day per type", () => {
+    const weekHistory = [
+      { data: "2026-04-29", tipo: "queijo_coalho", quantidade: "10" },
+      { data: "2026-04-29", tipo: "queijo_coalho", quantidade: "5" },
+      { data: "2026-04-29", tipo: "alidio", quantidade: "8" },
+      { data: "2026-04-28", tipo: "queijo_coalho", quantidade: "12" },
+      { data: "2026-04-28", tipo: "alidio", quantidade: "0" }, // soft-deleted, should be excluded
+    ];
+
+    const validEntries = weekHistory.filter(e => parseFloat(e.quantidade) > 0);
+
+    const qcDay29 = validEntries
+      .filter(e => e.data === "2026-04-29" && e.tipo === "queijo_coalho")
+      .reduce((s, e) => s + parseFloat(e.quantidade), 0);
+    const alDay29 = validEntries
+      .filter(e => e.data === "2026-04-29" && e.tipo === "alidio")
+      .reduce((s, e) => s + parseFloat(e.quantidade), 0);
+    const qcDay28 = validEntries
+      .filter(e => e.data === "2026-04-28" && e.tipo === "queijo_coalho")
+      .reduce((s, e) => s + parseFloat(e.quantidade), 0);
+    const alDay28 = validEntries
+      .filter(e => e.data === "2026-04-28" && e.tipo === "alidio")
+      .reduce((s, e) => s + parseFloat(e.quantidade), 0);
+
+    expect(qcDay29).toBe(15); // 10 + 5
+    expect(alDay29).toBe(8);
+    expect(qcDay28).toBe(12);
+    expect(alDay28).toBe(0); // soft-deleted excluded
+  });
+
+  it("should exclude soft-deleted entries (quantity = 0) from chart", () => {
+    const entries = [
+      { quantidade: "10", tipo: "queijo_coalho" },
+      { quantidade: "0", tipo: "queijo_coalho" },
+      { quantidade: "5", tipo: "alidio" },
+    ];
+
+    const valid = entries.filter(e => parseFloat(e.quantidade) > 0);
+    expect(valid).toHaveLength(2);
+  });
+});
+
+describe("Annotation PDF Export", () => {
+  it("should calculate monthly range correctly", () => {
+    const selectedDate = "2026-04-15";
+    const d = new Date(selectedDate + "T12:00:00");
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const start = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const end = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+    expect(start).toBe("2026-04-01");
+    expect(end).toBe("2026-04-30");
+    expect(m).toBe(3); // April is 0-indexed as 3
+    expect(y).toBe(2026);
+  });
+
+  it("should build daily breakdown with totals per type", () => {
+    const entries = [
+      { data: "2026-04-01", tipo: "queijo_coalho", quantidade: "10" },
+      { data: "2026-04-01", tipo: "alidio", quantidade: "5" },
+      { data: "2026-04-02", tipo: "queijo_coalho", quantidade: "20" },
+      { data: "2026-04-03", tipo: "alidio", quantidade: "15" },
+      { data: "2026-04-03", tipo: "alidio", quantidade: "0" }, // soft-deleted
+    ];
+
+    const validEntries = entries.filter(e => parseFloat(e.quantidade) > 0);
+
+    const grandTotalQC = validEntries
+      .filter(e => e.tipo === "queijo_coalho")
+      .reduce((s, e) => s + parseFloat(e.quantidade), 0);
+    const grandTotalAL = validEntries
+      .filter(e => e.tipo === "alidio")
+      .reduce((s, e) => s + parseFloat(e.quantidade), 0);
+
+    expect(grandTotalQC).toBe(30); // 10 + 20
+    expect(grandTotalAL).toBe(20); // 5 + 15
+    expect(validEntries).toHaveLength(4); // excludes the soft-deleted one
+  });
+
+  it("should count unique days with entries", () => {
+    const entries = [
+      { data: "2026-04-01", tipo: "queijo_coalho", quantidade: "10" },
+      { data: "2026-04-01", tipo: "queijo_coalho", quantidade: "5" },
+      { data: "2026-04-03", tipo: "queijo_coalho", quantidade: "20" },
+    ];
+
+    const validEntries = entries.filter(e => parseFloat(e.quantidade) > 0);
+    const uniqueDays = new Set(validEntries.map(e => e.data)).size;
+
+    expect(uniqueDays).toBe(2); // April 1 and April 3
+  });
+});

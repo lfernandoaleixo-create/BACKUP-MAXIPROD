@@ -3186,5 +3186,7 @@
 - [x] Produção Pirografia: adicionar opção "Produção não necessária" igual às outras máquinas (status selector completo com todas as 5 opções)
 - [x] Seleção Automática: cards "Queijo Coalho" e "Alídio" para Maria lançar caixas (apenas registro/anotação, NÃO contabiliza no total)
 - [x] Seleção Automática: histórico diário de lançamentos de Queijo Coalho e Alídio
-- [x] Seleção Automática: gerar PDF com relatório de histórico de Queijo Coalho e Alídio (pendente: PDF export será implementado em próxima iteração)
+- [x] Seleção Automática: gerar PDF com relatório de histórico de Queijo Coalho e Alídio
 - [x] BUG URGENTE: Maria/Erica/Marcos recebendo notificações de cobrança/inadimplência no sininho — devem receber APENAS notificações de faturamento (pedido novo/modificação)
+- [x] Seleção Automática: gráfico de tendência semanal para Queijo Coalho e Alídio (dentro do card expandido)
+- [x] Seleção Automática: exportação PDF mensal das anotações de Queijo Coalho e Alídio
