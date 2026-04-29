@@ -1391,3 +1391,20 @@ export const decisionPdfHistory = mysqlTable("decision_pdf_history", {
 });
 export type DecisionPdfHistory = typeof decisionPdfHistory.$inferSelect;
 export type InsertDecisionPdfHistory = typeof decisionPdfHistory.$inferInsert;
+
+
+/**
+ * Marcações de prioridade/urgência nos pagamentos.
+ * Flávio marca fornecedores como prioritários (bolinha vermelha).
+ * Fernando e Guilherme veem as bolinhas vermelhas marcadas.
+ * Marcações são diárias — resetam junto com as autorizações de pagamento.
+ */
+export const paymentPriorityMarks = mysqlTable("payment_priority_marks", {
+  id: int("id").autoincrement().primaryKey(),
+  fornecedor: varchar("fornecedor", { length: 500 }).notNull(), // Nome do fornecedor
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD — dia da marcação
+  markedBy: varchar("marked_by", { length: 100 }).notNull(), // Quem marcou (Flavio)
+  markedAt: bigint("marked_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type PaymentPriorityMark = typeof paymentPriorityMarks.$inferSelect;
+export type InsertPaymentPriorityMark = typeof paymentPriorityMarks.$inferInsert;

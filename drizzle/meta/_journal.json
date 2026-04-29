@@ -617,6 +617,13 @@
       "when": 1777461707991,
       "tag": "0087_classy_shiva",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "5",
+      "when": 1777467553062,
+      "tag": "0088_first_gateway",
+      "breakpoints": true
     }
   ]
 }

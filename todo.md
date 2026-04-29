@@ -3146,3 +3146,9 @@
 - [x] Gráficos Produção: cards expandíveis/retráteis (accordion) — começam fechados, abrem no clique
 - [x] Gráficos Produção: cards DEVEM iniciar recolhidos ao entrar na aba (bug: estavam abrindo expandidos)
 - [x] Gráficos Produção: botão "Expandir Todos / Recolher Todos" no topo
+- [x] Financeiro - Autorização de Pagamentos: bolinha de prioridade/urgência ao lado de cada fornecedor
+- [x] Financeiro - Autorização de Pagamentos: Flávio autentica com senha "Flavio" para desbloquear marcação
+- [x] Financeiro - Autorização de Pagamentos: bolinha marcada fica vermelha (prioridade)
+- [x] Financeiro - Autorização de Pagamentos: Fernando e Guilherme só veem bolinhas vermelhas marcadas
+- [x] Financeiro - Autorização de Pagamentos: tabela no banco para persistir marcações diárias
+- [x] Financeiro - Autorização de Pagamentos: testes automatizados

@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
@@ -1972,6 +1972,8 @@ export const financialRouter = router({
     return {
       days,
       weekLabel,
+      mondayStr,
+      fridayStr,
       vencidas: {
         items: vencidasItems,
         total: Math.round(vencidasTotal * 100) / 100,
@@ -6322,8 +6324,77 @@ ${acoesTexto}
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB indisponível");
-
       await db.delete(decisionPdfHistory).where(eq(decisionPdfHistory.id, input.id));
+      return { success: true };
+    }),
+
+  // ═══════════════════════════════════════════════════════
+  // Prioridade de Pagamento — Bolinhas vermelhas (Flávio)
+  // ═══════════════════════════════════════════════════════
+
+  /**
+   * Obter todas as marcações de prioridade da semana corrente.
+   * Retorna um Set de fornecedores marcados por data.
+   */
+  getPaymentPriorities: publicProcedure
+    .input(z.object({ weekStart: z.string(), weekEnd: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { marks: [] };
+      const rows = await db.select().from(paymentPriorityMarks)
+        .where(and(
+          gte(paymentPriorityMarks.date, input.weekStart),
+          lte(paymentPriorityMarks.date, input.weekEnd)
+        ));
+      return { marks: rows };
+    }),
+
+  /**
+   * Toggle marcação de prioridade para um fornecedor em uma data.
+   * Se já existe, remove. Se não existe, cria.
+   */
+  togglePaymentPriority: publicProcedure
+    .input(z.object({
+      fornecedor: z.string(),
+      date: z.string(), // YYYY-MM-DD
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      // Verificar se já existe marcação para este fornecedor nesta data
+      const [existing] = await db.select().from(paymentPriorityMarks)
+        .where(and(
+          eq(paymentPriorityMarks.fornecedor, input.fornecedor),
+          eq(paymentPriorityMarks.date, input.date)
+        ))
+        .limit(1);
+
+      if (existing) {
+        // Remover marcação
+        await db.delete(paymentPriorityMarks).where(eq(paymentPriorityMarks.id, existing.id));
+        return { marked: false };
+      } else {
+        // Criar marcação
+        await db.insert(paymentPriorityMarks).values({
+          fornecedor: input.fornecedor,
+          date: input.date,
+          markedBy: input.operatorName,
+        });
+        return { marked: true };
+      }
+    }),
+
+  /**
+   * Limpar todas as marcações de prioridade de uma data específica.
+   */
+  clearPaymentPriorities: publicProcedure
+    .input(z.object({ date: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+      await db.delete(paymentPriorityMarks).where(eq(paymentPriorityMarks.date, input.date));
       return { success: true };
     }),
 });

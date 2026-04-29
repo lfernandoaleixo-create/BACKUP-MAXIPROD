@@ -32,8 +32,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useOperator } from "@/contexts/OperatorContext";
 
 const AUTH_PASSWORDS = ["Fernando", "Bruno"];
+const PRIORITY_PASSWORD = "Flavio";
+const PRIORITY_VIEWERS = ["Fernando", "Guilherme", "Flavio"];
 
 function formatCurrency(n: number): string {
   return n.toLocaleString("pt-BR", {
@@ -358,6 +361,10 @@ function DayCard({
   saldoBancario,
   isAuthenticated,
   onRequestAuth,
+  prioritySet,
+  isPriorityEditor,
+  isPriorityViewer,
+  onTogglePriority,
 }: {
   day:
     | DayData
@@ -376,9 +383,14 @@ function DayCard({
   saldoBancario: number;
   isAuthenticated: boolean;
   onRequestAuth: (callback: () => void) => void;
+  prioritySet: Set<string>;
+  isPriorityEditor: boolean;
+  isPriorityViewer: boolean;
+  onTogglePriority: (fornecedor: string, date: string) => void;
 }) {
   const isToday = "isToday" in day ? day.isToday : false;
   const isPast = "isPast" in day ? day.isPast : false;
+  const dayDate = "date" in day ? day.date : "";
   const [expanded, setExpanded] = useState(isVencidas || isToday);
   const allAuthorized = day.count > 0 && day.authorizedCount === day.count;
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -627,6 +639,29 @@ function DayCard({
                             {group.fornecedor}
                           </span>
                           <span className={`text-[9px] ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`}>({group.items.length})</span>
+                          {/* Priority dot */}
+                          {isPriorityEditor && dayDate && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onTogglePriority(group.fornecedor, dayDate);
+                              }}
+                              className="ml-1 flex-shrink-0 transition-all duration-200 hover:scale-125"
+                              title={prioritySet.has(`${group.fornecedor}::${dayDate}`) ? "Remover prioridade" : "Marcar como prioridade/urgência"}
+                            >
+                              <span className={`inline-block w-3.5 h-3.5 rounded-full border-2 transition-colors duration-200 ${
+                                prioritySet.has(`${group.fornecedor}::${dayDate}`)
+                                  ? "bg-red-500 border-red-600 shadow-sm shadow-red-300"
+                                  : "bg-white border-slate-300 hover:border-red-400"
+                              }`} />
+                            </button>
+                          )}
+                          {!isPriorityEditor && isPriorityViewer && dayDate && prioritySet.has(`${group.fornecedor}::${dayDate}`) && (
+                            <span className="ml-1 flex-shrink-0" title="Prioridade/Urgência (marcado por Flávio)">
+                              <span className="inline-block w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-red-600 shadow-sm shadow-red-300 animate-pulse" />
+                            </span>
+                          )}
                         </button>
 
                         {/* Centro: Checkbox Selecionar Tudo */}
@@ -716,7 +751,65 @@ export default function WeekReconciliationCard() {
   const { data: authCompletionData } = trpc.financial.getAuthCompletionStatus.useQuery();
   const setAuthCompletionMut = trpc.financial.setAuthCompletion.useMutation();
   const utils = trpc.useUtils();
+  const { operator } = useOperator();
   const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
+
+  // ─── Priority dots (Flávio) ───
+  const [isPriorityAuthenticated, setIsPriorityAuthenticated] = useState(false);
+  const [showPriorityDialog, setShowPriorityDialog] = useState(false);
+  const [priorityPasswordInput, setPriorityPasswordInput] = useState("");
+  const [priorityPasswordError, setPriorityPasswordError] = useState(false);
+
+  const isPriorityEditor = isPriorityAuthenticated;
+  const isPriorityViewer = operator ? PRIORITY_VIEWERS.includes(operator.name) : false;
+
+  const { data: priorityData } = trpc.financial.getPaymentPriorities.useQuery(
+    { weekStart: data?.mondayStr ?? "", weekEnd: data?.fridayStr ?? "" },
+    { enabled: !!data?.mondayStr }
+  );
+
+  const prioritySet = useMemo(() => {
+    const s = new Set<string>();
+    if (priorityData?.marks) {
+      for (const m of priorityData.marks) {
+        s.add(`${m.fornecedor}::${m.date}`);
+      }
+    }
+    return s;
+  }, [priorityData]);
+
+  const togglePriorityMut = trpc.financial.togglePaymentPriority.useMutation({
+    onSuccess: () => {
+      utils.financial.getPaymentPriorities.invalidate();
+    },
+  });
+
+  const handleTogglePriority = useCallback((fornecedor: string, date: string) => {
+    if (!isPriorityAuthenticated) {
+      setShowPriorityDialog(true);
+      setPriorityPasswordInput("");
+      setPriorityPasswordError(false);
+      return;
+    }
+    togglePriorityMut.mutate({
+      fornecedor,
+      date,
+      operatorName: operator?.name || "Flavio",
+    });
+  }, [isPriorityAuthenticated, operator, togglePriorityMut]);
+
+  const handlePriorityPasswordSubmit = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (priorityPasswordInput === PRIORITY_PASSWORD) {
+      setIsPriorityAuthenticated(true);
+      setShowPriorityDialog(false);
+      setPriorityPasswordError(false);
+      toast.success("Acesso de prioridade liberado para Flávio!");
+    } else {
+      setPriorityPasswordError(true);
+      toast.error("Senha incorreta");
+    }
+  }, [priorityPasswordInput]);
   // Auth completion password dialog
   const [showAuthCompletionDialog, setShowAuthCompletionDialog] = useState(false);
   const [authCompletionPassword, setAuthCompletionPassword] = useState("");
@@ -936,6 +1029,42 @@ export default function WeekReconciliationCard() {
             )}
           </div>
 
+          {/* Priority unlock button (Flávio) */}
+          <div className="mb-4 flex items-center justify-between bg-red-50/50 border border-red-200 rounded-lg px-4 py-2.5">
+            <div className="flex items-center gap-3">
+              <span className={`inline-block w-4 h-4 rounded-full border-2 ${
+                isPriorityAuthenticated ? "bg-red-500 border-red-600" : "bg-white border-red-300"
+              }`} />
+              <div>
+                <span className={`text-sm font-bold ${
+                  isPriorityAuthenticated ? "text-red-700" : "text-red-600"
+                }`}>
+                  Marcar Prioridades
+                </span>
+                <p className="text-[10px] text-red-500">
+                  {isPriorityAuthenticated
+                    ? "Acesso liberado — clique nas bolinhas ao lado dos fornecedores"
+                    : "Apenas Flávio — clique para liberar acesso"}
+                </p>
+              </div>
+            </div>
+            {!isPriorityAuthenticated ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-red-300 text-red-600 hover:bg-red-100 hover:text-red-700"
+                onClick={() => { setShowPriorityDialog(true); setPriorityPasswordInput(""); setPriorityPasswordError(false); }}
+              >
+                <Lock className="w-3.5 h-3.5 mr-1" />
+                Liberar
+              </Button>
+            ) : (
+              <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full">
+                Ativo
+              </span>
+            )}
+          </div>
+
           {/* Day cards */}
           <div className="space-y-3">
             {/* Vencidas */}
@@ -956,6 +1085,10 @@ export default function WeekReconciliationCard() {
                 saldoBancario={saldoBancario}
                 isAuthenticated={isAuthenticated}
                 onRequestAuth={handleRequestAuth}
+                prioritySet={prioritySet}
+                isPriorityEditor={isPriorityEditor}
+                isPriorityViewer={isPriorityViewer}
+                onTogglePriority={handleTogglePriority}
               />
             )}
 
@@ -972,6 +1105,10 @@ export default function WeekReconciliationCard() {
                   saldoBancario={saldoBancario}
                   isAuthenticated={isAuthenticated}
                   onRequestAuth={handleRequestAuth}
+                  prioritySet={prioritySet}
+                  isPriorityEditor={isPriorityEditor}
+                  isPriorityViewer={isPriorityViewer}
+                  onTogglePriority={handleTogglePriority}
                 />
               ))}
           </div>
@@ -1071,6 +1208,45 @@ export default function WeekReconciliationCard() {
               <Button type="submit" disabled={!passwordInput.trim()} className="bg-amber-600 hover:bg-amber-700">
                 <ShieldCheck className="w-4 h-4 mr-2" />
                 Confirmar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Priority Password Dialog (Flávio) */}
+      <Dialog open={showPriorityDialog} onOpenChange={(v) => { if (!v) { setPriorityPasswordInput(""); setPriorityPasswordError(false); } setShowPriorityDialog(v); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 rounded-full bg-red-500 border-2 border-red-600" />
+              Acesso Prioridade (Flávio)
+            </DialogTitle>
+            <DialogDescription>
+              Digite a senha do Flávio para marcar fornecedores como prioridade/urgência.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePriorityPasswordSubmit}>
+            <div className="py-4">
+              <Input
+                type="password"
+                placeholder="Senha do Flávio..."
+                value={priorityPasswordInput}
+                onChange={(e) => { setPriorityPasswordInput(e.target.value); setPriorityPasswordError(false); }}
+                autoFocus
+                className={`text-center text-lg tracking-widest ${priorityPasswordError ? 'border-red-400 ring-1 ring-red-400' : ''}`}
+              />
+              {priorityPasswordError && (
+                <p className="text-xs text-red-500 text-center mt-2">Senha incorreta. Tente novamente.</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setPriorityPasswordInput(""); setPriorityPasswordError(false); setShowPriorityDialog(false); }}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={!priorityPasswordInput.trim()} className="bg-red-600 hover:bg-red-700 text-white">
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Liberar Acesso
               </Button>
             </DialogFooter>
           </form>
