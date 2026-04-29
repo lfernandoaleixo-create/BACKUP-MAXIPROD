@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { OperatorProvider, useOperator } from "./contexts/OperatorContext";
+import { DiscountAlertProvider } from "./contexts/DiscountAlertContext";
 import LoginScreen from "./components/LoginScreen";
 import Home from "./pages/Home";
 import Sales from "./pages/Sales";
@@ -36,7 +37,11 @@ function AppContent() {
     return <LoginScreen />;
   }
 
-  return <Router />;
+  return (
+    <DiscountAlertProvider>
+      <Router />
+    </DiscountAlertProvider>
+  );
 }
 
 function App() {

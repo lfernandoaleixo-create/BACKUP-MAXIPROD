@@ -1409,3 +1409,69 @@ export const paymentPriorityMarks = mysqlTable("payment_priority_marks", {
 });
 export type PaymentPriorityMark = typeof paymentPriorityMarks.$inferSelect;
 export type InsertPaymentPriorityMark = typeof paymentPriorityMarks.$inferInsert;
+
+
+/**
+ * Alertas de troca/desconto de títulos.
+ * Quando Fernando finaliza uma seleção de títulos para desconto no Sicoob,
+ * um alerta é criado para Guilherme, Flávio e Thiago.
+ * O alerta gera blink cascading: aba Financeiro → aba Recebíveis → card empresa → mês.
+ */
+export const discountAlerts = mysqlTable("discount_alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Quem gerou o desconto (Fernando/Bruno) */
+  createdBy: varchar("created_by", { length: 100 }).notNull(),
+  /** Empresa: PALITOS INDUSTRIA, VARETAS INDUSTRIA, ESPETOS INDUSTRIA */
+  empresa: varchar("empresa", { length: 200 }).notNull(),
+  /** Label da conta bancária (ex: Sicoob PALITOS · Ag 3140 · Cc 80.247) */
+  contaLabel: varchar("conta_label", { length: 300 }).notNull(),
+  /** Chave do mês (ex: 2026-06) */
+  mesKey: varchar("mes_key", { length: 10 }).notNull(),
+  /** Quantidade de títulos selecionados */
+  totalTitulos: int("total_titulos").notNull(),
+  /** Valor total dos títulos selecionados */
+  valorTotal: decimal("valor_total", { precision: 18, scale: 2 }).notNull(),
+  /** Timestamp de criação */
+  createdAt: bigint("created_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type DiscountAlert = typeof discountAlerts.$inferSelect;
+export type InsertDiscountAlert = typeof discountAlerts.$inferInsert;
+
+/**
+ * Registro de quem já "leu" (visualizou) cada alerta de desconto.
+ * Cada operador tem seu próprio registro de leitura.
+ */
+export const discountAlertReads = mysqlTable("discount_alert_reads", {
+  id: int("id").autoincrement().primaryKey(),
+  alertId: int("alert_id").notNull(),
+  /** Nome do operador que leu o alerta */
+  readBy: varchar("read_by", { length: 100 }).notNull(),
+  /** Timestamp de leitura */
+  readAt: bigint("read_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type DiscountAlertRead = typeof discountAlertReads.$inferSelect;
+
+
+/**
+ * Anotações avulsas de produção (Queijo Coalho, Alídio, etc.)
+ * NÃO contabilizam no total do setor — são apenas registros de acompanhamento.
+ */
+export const annotationEntries = mysqlTable("annotation_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Tipo da anotação: 'queijo_coalho' | 'alidio' */
+  tipo: varchar("tipo", { length: 50 }).notNull(),
+  /** Data do lançamento YYYY-MM-DD */
+  data: varchar("data", { length: 10 }).notNull(),
+  /** Setor de referência (Seleção Automática = setor 4) */
+  sectorId: int("sector_id"),
+  /** Quantidade em caixas */
+  quantidade: decimal("quantidade", { precision: 18, scale: 5 }).notNull().default("0"),
+  /** Observação opcional */
+  observacoes: text("observacoes"),
+  /** Quem lançou */
+  lancadoPor: varchar("lancado_por", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type AnnotationEntry = typeof annotationEntries.$inferSelect;
+export type InsertAnnotationEntry = typeof annotationEntries.$inferInsert;

@@ -94,15 +94,17 @@ export default function NotificationBell() {
     return null;
   }
 
-  // Poll unread count every 15 seconds - per operator
+  const operatorName = operator?.name;
+
+  // Poll unread count every 15 seconds - per operator (with name-based type filtering)
   const { data: countData } = trpc.notifications.unreadCount.useQuery(
-    operatorId ? { operatorId } : undefined,
+    operatorId ? { operatorId, operatorName } : undefined,
     { refetchInterval: 15000 }
   );
 
-  // Fetch full list when dropdown opens - per operator
+  // Fetch full list when dropdown opens - per operator (with name-based type filtering)
   const { data: listData, isLoading, refetch } = trpc.notifications.list.useQuery(
-    { limit: 100, operatorId },
+    { limit: 100, operatorId, operatorName },
     { enabled: open }
   );
 

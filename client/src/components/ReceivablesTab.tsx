@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useOperator } from "@/contexts/OperatorContext";
+import { useDiscountAlerts } from "@/contexts/DiscountAlertContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { trpc } from "@/lib/trpc";
@@ -1506,6 +1507,12 @@ function SicoobLimiteCard() {
 /* ============================================================
    Main Component
    ============================================================ */
+/** Helper: short empresa name for matching alerts */
+function shortEmpresaNameForAlert(nome: string): string {
+  // Alert stores full empresa name like "PALITOS INDUSTRIA", "VARETAS INDUSTRIA", etc.
+  return nome;
+}
+
 export default function ReceivablesTab() {
   const [estado, setEstado] = useState<"EMITIDO" | "RECEBIDO" | "ALL">("EMITIDO");
   const [search, setSearch] = useState("");
@@ -1515,6 +1522,10 @@ export default function ReceivablesTab() {
   const [expandedItem, setExpandedItem] = useState<number | null>(null);
   const [selectedIdsByAccount, setSelectedIdsByAccount] = useState<Record<string, Set<number>>>({});
   const [showHistoryPanel, setShowHistoryPanel] = useState<string | null>(null);
+
+  // Discount alert cascading blink
+  let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
+  try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
 
   const { data, isLoading } = trpc.financial.getReceivablesByBank.useQuery({ estado });
 
@@ -1693,9 +1704,19 @@ export default function ReceivablesTab() {
           const today = new Date().toISOString().substring(0, 7);
           const mesesVencidos = emp.meses.filter(m => m.mes < today).length;
 
+          // Check if this empresa card should blink for discount alerts
+          const empresaHasAlert = discountAlerts?.isAlertOperator 
+            && discountAlerts.blinkLevel === "empresa-card" 
+            && discountAlerts.alertEmpresas.has(emp.nome);
+
           return (
-            <button key={emp.nome} onClick={() => toggleSet(setExpandedEmpresas, emp.nome)}
-              className={`rounded-2xl border-2 p-0 text-left transition-all hover:shadow-xl ${colors.bg} ${isOpen ? `${colors.border} ring-2 ring-offset-2 ring-blue-400 shadow-xl` : colors.border}`}>
+            <button key={emp.nome} onClick={() => {
+              if (empresaHasAlert && discountAlerts) {
+                discountAlerts.advanceBlink("empresa-card");
+              }
+              toggleSet(setExpandedEmpresas, emp.nome);
+            }}
+              className={`rounded-2xl border-2 p-0 text-left transition-all hover:shadow-xl ${colors.bg} ${isOpen ? `${colors.border} ring-2 ring-offset-2 ring-blue-400 shadow-xl` : colors.border} ${empresaHasAlert ? "animate-discount-glow" : ""}`}>
               <div className={`px-5 py-4 flex items-center justify-between ${colors.headerBg} rounded-t-xl`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-white shadow-sm border ${colors.border}`}>
@@ -1836,12 +1857,24 @@ export default function ReceivablesTab() {
                   const isOverdueMonth = mes.mes < today;
                   const currentMonth = mes.mes === today;
 
+                  // Check if this month should blink for discount alerts
+                  const mesHasAlert = discountAlerts?.isAlertOperator
+                    && discountAlerts.blinkLevel === "mes-card"
+                    && discountAlerts.alertMeses.get(emp.nome)?.has(mes.mes);
+
                   return (
                     <div key={mes.mes} className={`${mi > 0 ? "border-t border-slate-200" : ""}`}>
-                      <button onClick={() => toggleSet(setExpandedMeses, mesKey)}
+                      <button onClick={() => {
+                        if (mesHasAlert && discountAlerts) {
+                          discountAlerts.advanceBlink("mes-card");
+                          // Mark all alerts for this empresa/month as read
+                          discountAlerts.markAlertsReadForMes(emp.nome, mes.mes);
+                        }
+                        toggleSet(setExpandedMeses, mesKey);
+                      }}
                         className={`w-full px-5 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-all ${
                           isOverdueMonth ? "bg-red-50/40" : currentMonth ? "bg-blue-50/40" : ""
-                        }`}>
+                        } ${mesHasAlert ? "animate-discount-glow" : ""}`}>
                         <div className="flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
                             isOverdueMonth ? "bg-red-100 border border-red-200" : currentMonth ? "bg-blue-100 border border-blue-200" : "bg-slate-100 border border-slate-200"

@@ -198,6 +198,23 @@ function formatNumber(n: number | null, forceFloor = false): string {
   return n.toLocaleString("pt-BR", { maximumFractionDigits: fractionDigits });
 }
 
+/**
+ * Parse a number string that may use pt-BR formatting (dot as thousands separator).
+ * Examples: "6.600" → 6600, "1.234.567" → 1234567, "6.5" → 6.5, "6600" → 6600
+ */
+function parseNumberBR(s: string): number {
+  const trimmed = s.trim();
+  // Pattern: full pt-BR format with thousands dots AND decimal comma (e.g., "1.234,56")
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(trimmed)) {
+    return parseFloat(trimmed.replace(/\./g, '').replace(',', '.'));
+  }
+  // Handle comma as decimal separator (e.g., "6,5" → 6.5)
+  if (/^\d+,\d+$/.test(trimmed)) {
+    return parseFloat(trimmed.replace(',', '.'));
+  }
+  return parseFloat(trimmed);
+}
+
 function formatCurrency(n: number): string {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
 }
@@ -2751,7 +2768,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
 
   const handleSave = useCallback(() => {
     if (!editingItem || !currentOperator) return;
-    const val = parseFloat(editValue) || 0;
+    const val = parseNumberBR(editValue) || 0;
     const currentVal = madeiraStockMap.get(editingItem) || 0;
     // Client-side warning for decrease attempt (backend also blocks)
     if (val < currentVal) {
@@ -3005,7 +3022,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                         {/* Estoque */}
                         <td className="px-1.5 py-2 text-center bg-green-50/40 border-x border-green-200">
                           {isEditing ? (
-                            <input ref={inputRef} type="number" min="0" value={editValue}
+                            <input ref={inputRef} type="text" inputMode="decimal" value={editValue}
                               onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
                               className="w-16 text-right text-[13px] border border-green-400 rounded px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-green-300 bg-green-50" />
                           ) : (
@@ -3515,7 +3532,7 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
 
   const handleSave = useCallback(() => {
     if (!editingItem || !currentOperator) return;
-    const val = parseFloat(editValue) || 0;
+    const val = parseNumberBR(editValue) || 0;
     const item = parentItems.find(i => i.codigoItem === editingItem);
     updateMutation.mutate(
       { codigoItem: editingItem, quantidade: val, operatorName: currentOperator, descricaoItem: item?.descricaoItem },
@@ -3631,7 +3648,7 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
 <td className="py-2 px-2 text-sm text-slate-700 break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</td>
                        <td className="py-2 px-2 text-right">
                         {isEditing ? (
-                          <input ref={inputRef} type="number" min="0" value={editValue}
+                          <input ref={inputRef} type="text" inputMode="decimal" value={editValue}
                             onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
                             className="w-20 text-right text-sm border border-amber-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-amber-50" />
                         ) : (
@@ -3763,7 +3780,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
 
   const handleSave = useCallback(() => {
     if (!editingItem || !currentOperator) return;
-    const val = parseFloat(editValue) || 0;
+    const val = parseNumberBR(editValue) || 0;
     const item = parentItems.find(i => i.codigoItem === editingItem);
     updateMutation.mutate(
       { codigoItem: editingItem, quantidade: val, operatorName: currentOperator, descricaoItem: item?.descricaoItem },
@@ -3880,7 +3897,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
                       <td className="py-2 px-2 text-sm text-slate-700 break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</td>
                       <td className="py-2 px-2 text-right">
                         {isEditing ? (
-                          <input ref={inputRef} type="number" min="0" value={editValue}
+                          <input ref={inputRef} type="text" inputMode="decimal" value={editValue}
                             onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleKeyDown} onBlur={handleSave}
                             className="w-20 text-right text-sm border border-purple-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-purple-300 bg-purple-50" />
                         ) : (

@@ -5489,7 +5489,7 @@ ${acoesTexto}
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
-      const { discountSelectionHistory } = await import("../drizzle/schema");
+      const { discountSelectionHistory, discountAlerts } = await import("../drizzle/schema");
       await db!.insert(discountSelectionHistory).values({
         operatorName: input.operatorName,
         empresa: input.empresa,
@@ -5499,6 +5499,59 @@ ${acoesTexto}
         valorTotal: String(input.valorTotal),
         titulosJson: input.titulosJson,
       });
+      // Criar alerta para Guilherme/Flávio/Thiago
+      await db!.insert(discountAlerts).values({
+        createdBy: input.operatorName,
+        empresa: input.empresa,
+        contaLabel: input.contaLabel,
+        mesKey: input.mesKey,
+        totalTitulos: input.totalTitulos,
+        valorTotal: String(input.valorTotal),
+      });
+      return { success: true };
+    }),
+
+  /** Buscar alertas de desconto pendentes para o operador atual */
+  getDiscountAlerts: publicProcedure
+    .input(z.object({ operatorName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const { discountAlerts, discountAlertReads } = await import("../drizzle/schema");
+      // Buscar todos os alertas
+      const alerts = await db.select().from(discountAlerts)
+        .orderBy(desc(discountAlerts.createdAt))
+        .limit(50);
+      // Buscar quais este operador já leu
+      const reads = await db.select().from(discountAlertReads)
+        .where(eq(discountAlertReads.readBy, input.operatorName));
+      const readAlertIds = new Set(reads.map(r => r.alertId));
+      return alerts.map(a => ({
+        ...a,
+        isRead: readAlertIds.has(a.id),
+      }));
+    }),
+
+  /** Marcar um alerta de desconto como lido pelo operador */
+  markDiscountAlertRead: publicProcedure
+    .input(z.object({ alertId: z.number(), operatorName: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      const { discountAlertReads } = await import("../drizzle/schema");
+      // Verificar se já existe
+      const [existing] = await db.select().from(discountAlertReads)
+        .where(and(
+          eq(discountAlertReads.alertId, input.alertId),
+          eq(discountAlertReads.readBy, input.operatorName)
+        ))
+        .limit(1);
+      if (!existing) {
+        await db.insert(discountAlertReads).values({
+          alertId: input.alertId,
+          readBy: input.operatorName,
+        });
+      }
       return { success: true };
     }),
 

@@ -1159,6 +1159,16 @@ export default function Production() {
                             canEdit={canEdit && !isFutureDate}
                           />
                         )}
+
+                        {/* Annotation cards for Seleção Automática (setor 4) */}
+                        {sector.ordem === 4 && (
+                          <AnnotationCards
+                            selectedDate={selectedDate}
+                            sectorId={sector.id}
+                            canEdit={canEdit && !isFutureDate}
+                            operatorName={operator?.name || "Desconhecido"}
+                          />
+                        )}
                       </div>
                     )}
                   </div>
@@ -1794,6 +1804,12 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
     return Object.values(registeredMap).reduce((sum, v) => sum + v, 0);
   }, [registeredMap]);
 
+  /** Get the display unit for a product (Rojão 00129 = dz, others = cx) */
+  const getProductUnit = (codigoItem: string, unidadeMedida?: string): string => {
+    if (codigoItem === "00129") return "dz"; // Rojão: dúzias
+    return "cx";
+  };
+
   const handleSelectProduct = (product: any) => {
     if (selectedProduct?.codigoItem === product.codigoItem) {
       setSelectedProduct(null);
@@ -1842,7 +1858,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Registrados hoje</span>
             <span className="text-sm font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full">
-              Total: {totalEmbalado} cx
+              Total: {totalEmbalado} itens
             </span>
           </div>
           <div className="space-y-1.5">
@@ -1879,7 +1895,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
                           autoFocus
                           className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
                         />
-                        <span className="text-xs text-slate-400">cx</span>
+                        <span className="text-xs text-slate-400">{getProductUnit(rp.codigoItem, rp.unidadeMedida)}</span>
                         <button
                           onClick={() => handleSaveCardEdit(rp.codigoItem, rp.descricaoItem)}
                           disabled={isSaving}
@@ -1896,7 +1912,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
                         <div className="text-sm text-slate-700 truncate" title={rp.descricaoItem}>{rp.descricaoItem}</div>
                       </div>
                       <span className="text-sm font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full shrink-0 tabular-nums">
-                        {rp.quantidade} cx
+                        {rp.quantidade} {getProductUnit(rp.codigoItem, rp.unidadeMedida)}
                       </span>
                       {canEdit && (
                         <button
@@ -2024,7 +2040,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
                         autoFocus
                         className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums bg-white"
                       />
-                      <span className="text-xs text-slate-400">cx</span>
+                      <span className="text-xs text-slate-400">{selectedProduct ? getProductUnit(selectedProduct.codigoItem, selectedProduct.unidadeMedida) : "cx"}</span>
                       <button
                         onClick={handleSave}
                         disabled={isSaving}
@@ -2079,6 +2095,8 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
   const [editQty, setEditQty] = useState("");
   const [editNome, setEditNome] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [machineStatuses, setMachineStatuses] = useState<Record<number, string>>({});
+  const [savingStatus, setSavingStatus] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -2087,6 +2105,50 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
     data: selectedDate,
     sectorId: sector.id,
   });
+
+  // Fetch production entries for this sector/date to get machine statuses
+  const { data: prodEntries } = trpc.production.getEntries.useQuery({
+    data: selectedDate,
+    sectorId: sector.id,
+  });
+
+  // Get the current status for a machine from production_entries
+  const getMachineStatus = (machineId: number): string => {
+    if (machineStatuses[machineId] !== undefined) return machineStatuses[machineId];
+    if (!prodEntries) return "";
+    const entry = prodEntries.find(e => e.machineId === machineId);
+    return entry?.status || "";
+  };
+
+  // Status mutation using the existing upsertEntry
+  const statusMutation = trpc.production.upsertEntry.useMutation({
+    onSuccess: () => {
+      setSavingStatus(null);
+      utils.production.getEntries.invalidate();
+      utils.production.getHistory.invalidate();
+      toast.success("Status atualizado!");
+    },
+    onError: (err: any) => {
+      setSavingStatus(null);
+      toast.error("Erro ao salvar status: " + err.message);
+    },
+  });
+
+  const handleStatusChange = (machineId: number, statusVal: string) => {
+    const current = getMachineStatus(machineId);
+    // Toggle: if same status, go back to empty (normal)
+    const newStatus = current === statusVal ? "" : statusVal;
+    setMachineStatuses(prev => ({ ...prev, [machineId]: newStatus }));
+    setSavingStatus(machineId);
+    statusMutation.mutate({
+      sectorId: sector.id,
+      machineId,
+      data: selectedDate,
+      quantidade: 0,
+      status: newStatus || "producao_normal",
+      lancadoPor: operatorName,
+    });
+  };
 
   const saveMutation = trpc.production.savePirografiaEntry.useMutation({
     onSuccess: () => {
@@ -2233,6 +2295,20 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
               </div>
               <span className="text-sm font-semibold text-slate-700 flex-1">{machine.nome}</span>
 
+              {/* Status badge */}
+              {(() => {
+                const st = getMachineStatus(machine.id);
+                const statusOpt = st && st !== "producao_normal" ? MACHINE_STATUS_OPTIONS.find(o => o.value === st) : null;
+                if (!statusOpt) return null;
+                const StIcon = statusOpt.icon;
+                return (
+                  <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusOpt.bgClass} ${statusOpt.textClass} ${statusOpt.borderClass}`}>
+                    <StIcon className="w-3 h-3" />
+                    <span className="hidden sm:inline">{statusOpt.label}</span>
+                  </div>
+                );
+              })()}
+
               {/* Entry badges summary */}
               {machineEntries.length > 0 && (
                 <div className="flex items-center gap-1 flex-wrap">
@@ -2252,6 +2328,28 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
             {/* Expanded content */}
             {isExpanded && (
               <div className="border-t border-slate-100 px-4 py-3 space-y-3">
+                {/* Status selector for Pirografia machine */}
+                <div className="bg-white rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Status da Máquina</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                    {MACHINE_STATUS_OPTIONS.map(opt => {
+                      const currentSt = getMachineStatus(machine.id);
+                      const isSelected = currentSt === opt.value || (opt.value === "producao_normal" && (!currentSt || currentSt === "producao_normal"));
+                      const OptIcon = opt.icon;
+                      return (
+                        <button key={opt.value} onClick={() => canEdit && handleStatusChange(machine.id, opt.value)}
+                          disabled={!canEdit || savingStatus === machine.id}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${!canEdit ? 'opacity-60 cursor-not-allowed' : ''} ${isSelected ? `${opt.bgClass} ${opt.textClass} ${opt.borderClass} ring-2 ring-offset-1` : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}`}
+                          style={isSelected ? { '--tw-ring-color': opt.color } as React.CSSProperties : {}}
+                        >
+                          {savingStatus === machine.id ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <OptIcon className="w-4 h-4 shrink-0" />}
+                          <span className="truncate">{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Registered entries for this machine */}
                 {machineEntries.length > 0 && (
                   <div className="space-y-2">
@@ -2860,6 +2958,261 @@ function PirografiaHistoryView() {
           <p className="text-xs text-slate-400 mt-1">Tente ampliar o intervalo de datas.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   ANNOTATION CARDS (Queijo Coalho & Alídio)
+   Cards de anotação avulsa para Seleção Automática.
+   NÃO contabilizam no total do setor — apenas registro.
+   ═══════════════════════════════════════════════════════════ */
+interface AnnotationCardsProps {
+  selectedDate: string;
+  sectorId: number;
+  canEdit: boolean;
+  operatorName: string;
+}
+
+const ANNOTATION_TYPES = [
+  { tipo: "queijo_coalho", label: "Queijo Coalho", emoji: "🧀", color: "#f59e0b", bgClass: "bg-amber-50", borderClass: "border-amber-200", textClass: "text-amber-700" },
+  { tipo: "alidio", label: "Alídio", emoji: "📦", color: "#8b5cf6", bgClass: "bg-violet-50", borderClass: "border-violet-200", textClass: "text-violet-700" },
+];
+
+function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: AnnotationCardsProps) {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [obs, setObs] = useState<Record<string, string>>({});
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editQty, setEditQty] = useState("");
+  const [editObs, setEditObs] = useState("");
+
+  const utils = trpc.useUtils();
+
+  const { data: entries } = trpc.annotations.getEntries.useQuery({
+    data: selectedDate,
+    sectorId,
+  });
+
+  const createMutation = trpc.annotations.create.useMutation({
+    onSuccess: (_data, variables) => {
+      setValues(prev => ({ ...prev, [variables.tipo]: "" }));
+      setObs(prev => ({ ...prev, [variables.tipo]: "" }));
+      utils.annotations.getEntries.invalidate();
+      toast.success("Anotação registrada!");
+    },
+    onError: (err: any) => toast.error("Erro: " + err.message),
+  });
+
+  const updateMutation = trpc.annotations.update.useMutation({
+    onSuccess: () => {
+      setEditingId(null);
+      setEditQty("");
+      setEditObs("");
+      utils.annotations.getEntries.invalidate();
+      toast.success("Anotação atualizada!");
+    },
+    onError: (err: any) => toast.error("Erro: " + err.message),
+  });
+
+  const deleteMutation = trpc.annotations.delete.useMutation({
+    onSuccess: () => {
+      utils.annotations.getEntries.invalidate();
+      toast.success("Anotação removida!");
+    },
+    onError: (err: any) => toast.error("Erro: " + err.message),
+  });
+
+  const handleSave = (tipo: string) => {
+    const raw = values[tipo] || "";
+    const quantidade = parseFloat(raw.replace(",", "."));
+    if (isNaN(quantidade) || quantidade <= 0) {
+      toast.error("Digite uma quantidade válida");
+      return;
+    }
+    createMutation.mutate({
+      tipo,
+      data: selectedDate,
+      sectorId,
+      quantidade,
+      observacoes: obs[tipo] || undefined,
+      lancadoPor: operatorName,
+    });
+  };
+
+  const handleUpdate = (id: number) => {
+    const quantidade = editQty ? parseFloat(editQty.replace(",", ".")) : undefined;
+    if (quantidade !== undefined && (isNaN(quantidade) || quantidade < 0)) {
+      toast.error("Quantidade inválida");
+      return;
+    }
+    updateMutation.mutate({
+      id,
+      quantidade,
+      observacoes: editObs || undefined,
+    });
+  };
+
+  const getEntriesForType = (tipo: string) => {
+    if (!entries) return [];
+    return entries.filter((e: any) => e.tipo === tipo && parseFloat(String(e.quantidade)) > 0);
+  };
+
+  const getTotalForType = (tipo: string) => {
+    return getEntriesForType(tipo).reduce((sum: number, e: any) => sum + (parseFloat(String(e.quantidade)) || 0), 0);
+  };
+
+  return (
+    <div className="border-t border-slate-200 bg-gradient-to-b from-slate-50/50 to-white px-4 py-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-px bg-slate-200" />
+        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Anotações Avulsas</span>
+        <div className="flex-1 h-px bg-slate-200" />
+      </div>
+      <p className="text-[10px] text-slate-400 text-center italic">Registros de acompanhamento — NÃO contabilizam no total do setor</p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {ANNOTATION_TYPES.map(at => {
+          const typeEntries = getEntriesForType(at.tipo);
+          const total = getTotalForType(at.tipo);
+
+          return (
+            <div key={at.tipo} className={`rounded-xl border-2 ${at.borderClass} overflow-hidden`}>
+              {/* Card header */}
+              <div className={`${at.bgClass} px-4 py-3 flex items-center gap-3`}>
+                <span className="text-2xl">{at.emoji}</span>
+                <div className="flex-1">
+                  <span className={`text-sm font-bold ${at.textClass}`}>{at.label}</span>
+                  <div className="text-[10px] text-slate-400">Apenas registro</div>
+                </div>
+                {total > 0 && (
+                  <div className="text-right">
+                    <div className={`text-lg font-bold tabular-nums ${at.textClass}`}>{total}</div>
+                    <div className="text-[9px] text-slate-400">cx hoje</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Entries list */}
+              {typeEntries.length > 0 && (
+                <div className="px-3 py-2 space-y-1.5 bg-white">
+                  {typeEntries.map((entry: any) => {
+                    const isEditing = editingId === entry.id;
+                    return (
+                      <div key={entry.id} className={`rounded-lg px-3 py-2 border ${at.borderClass} ${at.bgClass}`}>
+                        {isEditing ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Package className="w-4 h-4 text-slate-400 shrink-0" />
+                              <span className="text-xs text-slate-500 shrink-0">Qtd:</span>
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                value={editQty}
+                                onChange={(e) => setEditQty(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") handleUpdate(entry.id); if (e.key === "Escape") { setEditingId(null); setEditQty(""); setEditObs(""); } }}
+                                autoFocus
+                                className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 tabular-nums bg-white"
+                              />
+                              <span className="text-xs text-slate-400">cx</span>
+                              <button
+                                onClick={() => handleUpdate(entry.id)}
+                                disabled={updateMutation.isPending}
+                                className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center text-white transition-colors shrink-0"
+                                style={{ backgroundColor: at.color }}
+                              >
+                                {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                              </button>
+                              <button onClick={() => { setEditingId(null); setEditQty(""); setEditObs(""); }} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-200 text-slate-400 shrink-0">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <MessageSquare className="w-4 h-4 text-slate-400 shrink-0" />
+                              <input
+                                type="text"
+                                value={editObs}
+                                onChange={(e) => setEditObs(e.target.value)}
+                                placeholder="Observação..."
+                                className="flex-1 text-xs border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-bold tabular-nums ${at.textClass}`}>{parseFloat(String(entry.quantidade))} cx</span>
+                            {entry.observacoes && entry.observacoes !== "[REMOVIDO]" && (
+                              <span className="text-xs text-slate-500 truncate flex-1" title={entry.observacoes}>— {entry.observacoes}</span>
+                            )}
+                            {!entry.observacoes && <span className="flex-1" />}
+                            <span className="text-[10px] text-slate-400 shrink-0">{entry.lancadoPor}</span>
+                            {canEdit && (
+                              <>
+                                <button
+                                  onClick={() => { setEditingId(entry.id); setEditQty(String(parseFloat(String(entry.quantidade)))); setEditObs(entry.observacoes || ""); }}
+                                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-slate-200 text-slate-400 shrink-0"
+                                  title="Editar"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => deleteMutation.mutate({ id: entry.id })}
+                                  disabled={deleteMutation.isPending}
+                                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-red-100 text-red-400 hover:text-red-600 shrink-0"
+                                  title="Remover"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Input area */}
+              {canEdit && (
+                <div className="px-3 py-2.5 bg-white border-t border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={values[at.tipo] || ""}
+                      onChange={(e) => setValues(prev => ({ ...prev, [at.tipo]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSave(at.tipo); }}
+                      placeholder="Qtd"
+                      className="w-20 text-right text-sm font-medium border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:border-transparent tabular-nums bg-white"
+                      style={{ '--tw-ring-color': at.color } as React.CSSProperties}
+                    />
+                    <span className="text-xs text-slate-400">cx</span>
+                    <input
+                      type="text"
+                      value={obs[at.tipo] || ""}
+                      onChange={(e) => setObs(prev => ({ ...prev, [at.tipo]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleSave(at.tipo); }}
+                      placeholder="Obs (opcional)"
+                      className="flex-1 text-xs border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:border-transparent bg-white"
+                      style={{ '--tw-ring-color': at.color } as React.CSSProperties}
+                    />
+                    <button
+                      onClick={() => handleSave(at.tipo)}
+                      disabled={createMutation.isPending}
+                      className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-white text-xs font-medium hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
+                      style={{ backgroundColor: at.color }}
+                    >
+                      {createMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                      Lançar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

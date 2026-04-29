@@ -186,26 +186,45 @@ export type EntryData = {
 type UnitGroup = { unit: string; label: string; total: number; decimals: number };
 
 function groupByUnit(sectors: SectorData[], entries: EntryData[]): UnitGroup[] {
-  const map = new Map<string, { total: number; decimals: number }>();
-  for (const sector of sectors) {
-    const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
-    // Apply cxp/cxg→saco conversion for dual-unit sectors
-    const total = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
-    const u = displayUnit(sector);
-    const decimals = u === "m³" ? 3 : (u === "forma" ? 0 : 1);
-    if (!map.has(u)) map.set(u, { total: 0, decimals });
-    map.get(u)!.total += total;
-  }
+  const result: UnitGroup[] = [];
+  const nonSacoMap = new Map<string, { total: number; decimals: number }>();
+  
   const unitLabels: Record<string, string> = {
     "caixa": "Caixas", "cx": "Caixas", "saco": "Sacos", "m³": "Metro Cúbico (m³)",
     "forma": "Formas", "pç": "Peças", "un": "Unidades",
   };
-  return Array.from(map.entries()).map(([unit, data]) => ({
-    unit,
-    label: unitLabels[unit.toLowerCase()] || unit,
-    total: data.total,
-    decimals: data.decimals,
-  }));
+
+  for (const sector of sectors) {
+    const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
+    const total = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
+    const u = displayUnit(sector);
+    const decimals = u === "m³" ? 3 : (u === "forma" ? 0 : 1);
+
+    if (u === "saco") {
+      // Separar sacos por setor para não misturar Vareteira, Toco, Automática
+      result.push({
+        unit: "saco",
+        label: `Sacos (${sector.nome})`,
+        total,
+        decimals,
+      });
+    } else {
+      if (!nonSacoMap.has(u)) nonSacoMap.set(u, { total: 0, decimals });
+      nonSacoMap.get(u)!.total += total;
+    }
+  }
+
+  // Add non-saco units
+  for (const [unit, data] of Array.from(nonSacoMap.entries())) {
+    result.push({
+      unit,
+      label: unitLabels[unit.toLowerCase()] || unit,
+      total: data.total,
+      decimals: data.decimals,
+    });
+  }
+
+  return result;
 }
 
 // ─── Common header ───
@@ -306,6 +325,10 @@ function drawUnitTotalBars(doc: jsPDF, unitGroups: UnitGroup[], y: number, margi
   const barH = 8;
   const barGap = 2;
 
+  // Check if there are multiple saco groups (separated by sector)
+  const sacoGroups = unitGroups.filter(ug => ug.unit === "saco");
+  const hasSeparatedSacos = sacoGroups.length > 1;
+
   for (const ug of unitGroups) {
     if (y + barH + barGap > doc.internal.pageSize.getHeight() - 15) {
       doc.addPage();
@@ -322,6 +345,19 @@ function drawUnitTotalBars(doc: jsPDF, unitGroups: UnitGroup[], y: number, margi
     doc.text(`${fmtNum(ug.total, ug.decimals)} ${ug.unit}`, pageW - marginR - 4, y + 5.5, { align: "right" });
 
     y += barH + barGap;
+  }
+
+  // Add legend if sacos are separated by sector
+  if (hasSeparatedSacos) {
+    y += 1;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(6);
+    doc.setTextColor(...C.medium);
+    doc.text(
+      "Nota: Totais de sacos s\u00e3o separados por setor (fatores de convers\u00e3o diferentes). N\u00e3o devem ser somados entre setores.",
+      marginL, y + 3
+    );
+    y += 6;
   }
 
   return y;

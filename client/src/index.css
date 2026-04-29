@@ -280,3 +280,19 @@
   animation: phone-ripple 2s ease-out infinite;
   pointer-events: none;
 }
+
+/* Discount alert cascading blink animation */
+@keyframes discount-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-discount-blink {
+  animation: discount-blink 0.8s ease-in-out infinite;
+}
+@keyframes discount-glow {
+  0%, 100% { box-shadow: 0 0 4px 1px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 12px 4px rgba(245, 158, 11, 0.6); }
+}
+.animate-discount-glow {
+  animation: discount-glow 1.2s ease-in-out infinite;
+}

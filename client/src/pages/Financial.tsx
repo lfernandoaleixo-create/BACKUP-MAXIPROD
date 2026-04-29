@@ -74,6 +74,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calculator, History, ShoppingCart } from "lucide-react";
 import FinancialHistoryPanel, { WeekHistoryPanel } from "@/components/FinancialHistoryPanel";
+import { useDiscountAlerts } from "@/contexts/DiscountAlertContext";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
@@ -2064,6 +2065,9 @@ export default function Financial() {
   const ECOMMERCE_TAB_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
   const canSeeEcommerce = operator && ECOMMERCE_TAB_OPERATORS.includes(operator.name);
   const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce">("visao-geral");
+  let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
+  try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
+  const recebiveisBlinking = discountAlerts?.isAlertOperator && discountAlerts.blinkLevel === "recebiveis-tab" && discountAlerts.unreadCount > 0;
   const [verifyingMonth, setVerifyingMonth] = useState<{ label: string; type: "receber" | "pagar"; from: string; to: string; total: number } | null>(null);
   const [showTotalReceberSim, setShowTotalReceberSim] = useState(false);
   const [showTotalPagarSim, setShowTotalPagarSim] = useState(false);
@@ -2155,15 +2159,23 @@ export default function Financial() {
             )}
           </button>
           <button
-            onClick={() => setActiveTab("recebiveis")}
+            onClick={() => {
+              if (recebiveisBlinking && discountAlerts) {
+                discountAlerts.advanceBlink("recebiveis-tab");
+              }
+              setActiveTab("recebiveis");
+            }}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
               activeTab === "recebiveis"
                 ? "bg-blue-600 text-white shadow-sm"
                 : "text-slate-600 hover:bg-slate-100"
-            }`}
+            } ${recebiveisBlinking ? "animate-discount-blink" : ""}`}
           >
             <Landmark className="w-4 h-4" />
             Recebíveis
+            {recebiveisBlinking && (
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
+            )}
           </button>
           {canSeeEcommerce && (
             <button

@@ -374,7 +374,8 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
     const sectorTotals = sectors.map((sector, idx) => {
       const entries = historyData.filter(e => e.sectorId === sector.id);
       const total = entries.reduce((sum, e) => sum + Number(e.quantidade), 0);
-      const daysWithData = new Set(entries.map(e => e.data)).size;
+      // Contar apenas dias com produção real (quantidade > 0) para a média
+      const daysWithData = new Set(entries.filter(e => Number(e.quantidade) > 0).map(e => e.data)).size;
       const avg = daysWithData > 0 ? total / daysWithData : 0;
       const pct = grandTotal > 0 ? (total / grandTotal) * 100 : 0;
       return {
@@ -398,7 +399,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
       return sector.machines.map(machine => {
         const machineEntries = sectorEntries.filter(e => e.machineId === machine.id);
         const total = machineEntries.reduce((sum, e) => sum + Number(e.quantidade), 0);
-        const days = new Set(machineEntries.map(e => e.data)).size;
+        const days = new Set(machineEntries.filter(e => Number(e.quantidade) > 0).map(e => e.data)).size;
         const pct = sectorTotal > 0 ? (total / sectorTotal) * 100 : 0;
         return { name: machine.nome, total, media: days > 0 ? total / days : 0, dias: days, pct };
       }).sort((a, b) => b.total - a.total);
@@ -488,9 +489,13 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
       const total = dayEntries.reduce((sum, e) => sum + Number(e.quantidade), 0);
       return { date, dateLabel: fmtDate(date), total };
     });
-    const avgDaily = dailyTrend.length > 0 ? dailyTrend.reduce((s, d) => s + d.total, 0) / dailyTrend.length : 0;
-    const maxDay = dailyTrend.length > 0 ? Math.max(...dailyTrend.map(d => d.total)) : 0;
-    const minDay = dailyTrend.length > 0 ? Math.min(...dailyTrend.map(d => d.total)) : 0;
+    // Média calculada APENAS sobre dias com produção real (quantidade > 0)
+    // Dias de manutenção, falta de madeira ou produção não necessária (qty=0) NÃO entram na média
+    const daysWithProduction = dailyTrend.filter(d => d.total > 0);
+    const avgDaily = daysWithProduction.length > 0 ? daysWithProduction.reduce((s, d) => s + d.total, 0) / daysWithProduction.length : 0;
+    const maxDay = daysWithProduction.length > 0 ? Math.max(...daysWithProduction.map(d => d.total)) : 0;
+    const minDay = daysWithProduction.length > 0 ? Math.min(...daysWithProduction.map(d => d.total)) : 0;
+    const daysWithProdCount = daysWithProduction.length;
 
     // Global KPIs
     const totalMaintCount = maintenanceData.reduce((s, d) => s + d.totalManutencao, 0);
@@ -501,7 +506,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
       maintenanceData: filteredMaintenanceData,
       rawMaintenanceData: maintenanceData,
       maintDailyTimeline, statusData, dailyTrend,
-      sortedDates, grandTotal, totalDays, avgDaily, maxDay, minDay,
+      sortedDates, grandTotal, totalDays, avgDaily, maxDay, minDay, daysWithProdCount,
       totalEntries, totalMaintCount, totalParadasCount, activeProdSectors,
     };
   }, [historyData, sectors, selectedSector, prodSectorFilter, maintTypeFilter, maintSectorFilter]);
@@ -571,7 +576,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
   const {
     dailyBySector, sectorTotals, machineData, maintenanceData, rawMaintenanceData,
     maintDailyTimeline, statusData, dailyTrend,
-    grandTotal, totalDays, avgDaily, maxDay, minDay,
+    grandTotal, totalDays, avgDaily, maxDay, minDay, daysWithProdCount,
     totalEntries, totalMaintCount, totalParadasCount, activeProdSectors,
   } = processedData;
 
@@ -685,7 +690,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               </div>
               <div>
                 <h4 className="font-bold text-slate-700">Produção Diária por Setor</h4>
-                {!openSections.has('producao') && <p className="text-[10px] text-slate-400 mt-0.5">{fmtNum(grandTotal, 0)} unidades em {totalDays} dias — média {fmtNum(avgDaily, 0)}/dia</p>}
+                {!openSections.has('producao') && <p className="text-[10px] text-slate-400 mt-0.5">{fmtNum(grandTotal, 0)} unidades em {daysWithProdCount} dias lançados — média {fmtNum(avgDaily, 0)}/dia</p>}
               </div>
               <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-semibold">
                 {fmtNum(grandTotal, 0)} total
@@ -703,8 +708,8 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             <p className="text-[11px] text-blue-700 leading-relaxed">
               <strong>O que este gráfico mostra:</strong> Cada barra representa a produção total de um dia, dividida por setor (cores). 
               A altura total da barra é a soma de todos os setores naquele dia. 
-              Período: <strong>{fmtFullDate(dateRange.start)} a {fmtFullDate(dateRange.end)}</strong> ({totalDays} dias úteis). 
-              Produção total: <strong>{fmtNum(grandTotal, 0)}</strong> unidades. Média diária: <strong>{fmtNum(avgDaily, 0)}</strong> unidades/dia.
+              Período: <strong>{fmtFullDate(dateRange.start)} a {fmtFullDate(dateRange.end)}</strong> ({totalDays} dias com registros, {daysWithProdCount} com produção). 
+              Produção total: <strong>{fmtNum(grandTotal, 0)}</strong> unidades. Média diária: <strong>{fmtNum(avgDaily, 0)}</strong> unidades/dia (calculada apenas sobre os {daysWithProdCount} dias com produção real — dias de manutenção, falta de madeira e produção não necessária não entram na média).
             </p>
           </div>
           <div className="flex items-center justify-between mb-3">
@@ -1009,7 +1014,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
           <div className="grid grid-cols-3 gap-3 mt-4">
             {[
               { label: "Pico Máximo", value: maxDay, color: "emerald", icon: <ArrowUpRight className="w-4 h-4" />, desc: "Maior produção em um único dia no período" },
-              { label: "Média Diária", value: avgDaily, color: "blue", icon: <Minus className="w-4 h-4" />, desc: `Total (${fmtNum(grandTotal, 0)}) ÷ ${totalDays} dias úteis` },
+              { label: "Média Diária", value: avgDaily, color: "blue", icon: <Minus className="w-4 h-4" />, desc: `Total (${fmtNum(grandTotal, 0)}) ÷ ${daysWithProdCount} dias lançados` },
               { label: "Mínimo", value: minDay, color: "amber", icon: <ArrowDownRight className="w-4 h-4" />, desc: "Menor produção em um único dia no período" },
             ].map((stat, i) => (
               <div key={i} className={`text-center p-3 bg-${stat.color}-50 rounded-xl border border-${stat.color}-100 transition-all duration-300 hover:shadow-md hover:scale-[1.02]`}>
@@ -1055,7 +1060,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             <p className="text-[11px] text-indigo-700 leading-relaxed">
               <strong>O que este gráfico mostra:</strong> A participação de cada setor na <strong>produção total do período ({fmtNum(grandTotal, 0)} unidades)</strong>.
               Exemplo: se Vareteira mostra 20%, significa que a Vareteira produziu 20% de todas as {fmtNum(grandTotal, 0)} unidades do período.
-              <strong>Média/Dia</strong> = total do setor ÷ {totalDays} dias úteis. <strong>Dias</strong> = quantos dias o setor teve produção.
+              <strong>Média/Dia</strong> = total do setor ÷ dias lançados daquele setor. <strong>Dias</strong> = quantos dias o setor teve produção real (dias de manutenção/parada não entram na média).
               Clique em um setor na tabela para ver o detalhamento por máquina.
             </p>
           </div>
@@ -1177,6 +1182,12 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               <p className="text-[10px] text-slate-400 mt-3 italic flex items-center gap-1">
                 <Search className="w-3 h-3" /> Clique em um setor para ver o detalhamento por máquina
               </p>
+              <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <p className="text-[10px] text-amber-700 leading-relaxed">
+                  <strong>Nota sobre unidades:</strong> Os totais de <strong>sacos</strong> são separados por setor (Vareteira, Seletoras Toco, Seleção Automática) porque cada setor tem fatores de conversão diferentes. 
+                  Não faz sentido somar sacos de setores diferentes. Outros tipos de unidade (caixas, m³, formas) são agrupados normalmente.
+                </p>
+              </div>
             </div>
           </div>
         </div>

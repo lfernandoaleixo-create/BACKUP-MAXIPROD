@@ -3173,3 +3173,18 @@
 - [x] Vendas: indicador vermelho para contas canceladas (ex: MD da Silva) — APENAS informativo, NÃO incluir em nenhum cálculo/gráfico
 - [x] Vendas: ícone "olho" com tooltip detalhado explicando que a conta foi cancelada e não entra nos valores
 - [x] Sync: incluir pedidos cancelados na sincronização do Maxiprod (GraphQL query atualizada com CANCELADO)
+- [x] Alerta visual: quando Fernando trocar títulos (desconto Sicoob), gerar alerta para Guilherme/Flávio/Thiago
+- [x] Alerta visual: aba Financeiro pisca → ao clicar, aba Recebíveis pisca → ao clicar, card da empresa pisca → mês do desconto pisca
+- [x] Alerta visual: criar tabela no banco para registrar alertas de troca de títulos
+- [x] Alerta visual: backend para criar/consultar/marcar alertas como lidos
+- [x] Alerta visual: frontend com animação de blink cascading
+- [x] Produção Embalagem: adicionar opção de lançar Rojão em Dúzias para alimentar estoque
+- [x] BUG Produção: valores grandes (ex: 6600 dz) aparecem como 6,6 dz no estoque Madeira - produto acabado (fix: parseNumberBR para lidar com separador de milhar pt-BR + input type=text)
+- [x] Produção: média deve ser calculada apenas sobre dias lançados (trabalhados), não dias do período, e justificar nos relatórios
+- [x] Produção: separar totais de sacos por setor nos relatórios e cards (Vareteira, Toco, Automática, etc.) — não misturar
+- [x] Produção: legenda auto-explicativa sobre a separação de sacos por setor nos relatórios
+- [x] Produção Pirografia: adicionar opção "Produção não necessária" igual às outras máquinas (status selector completo com todas as 5 opções)
+- [x] Seleção Automática: cards "Queijo Coalho" e "Alídio" para Maria lançar caixas (apenas registro/anotação, NÃO contabiliza no total)
+- [x] Seleção Automática: histórico diário de lançamentos de Queijo Coalho e Alídio
+- [x] Seleção Automática: gerar PDF com relatório de histórico de Queijo Coalho e Alídio (pendente: PDF export será implementado em próxima iteração)
+- [x] BUG URGENTE: Maria/Erica/Marcos recebendo notificações de cobrança/inadimplência no sininho — devem receber APENAS notificações de faturamento (pedido novo/modificação)

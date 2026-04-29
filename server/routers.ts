@@ -19,6 +19,7 @@ import { billingRouter } from "./billingRouter";
 import { notificationRouter } from "./notificationRouter";
 import { productionRouter } from "./productionRouter";
 import { ecommerceRouter } from "./ecommerceRouter";
+import { annotationRouter } from "./annotationRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -29,6 +30,7 @@ export const appRouter = router({
   notifications: notificationRouter,
   production: productionRouter,
   ecommerce: ecommerceRouter,
+  annotations: annotationRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

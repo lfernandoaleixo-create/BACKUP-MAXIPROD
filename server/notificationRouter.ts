@@ -19,8 +19,20 @@ import { getDb } from "./db";
 import { systemNotifications, notificationReads } from "../drizzle/schema";
 import { desc, eq, sql, and, isNull, isNotNull, lt, inArray } from "drizzle-orm";
 
-// Tipos de notificação relevantes para a produção
-const ALLOWED_NOTIFICATION_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada", "cobranca_documento", "cobranca_alerta"];
+// Tipos de notificação: faturamento (para todos) + cobrança (apenas gestão financeira)
+const ALL_NOTIFICATION_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada", "cobranca_documento", "cobranca_alerta"];
+const FATURAMENTO_ONLY_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada"];
+
+// Operadores que só devem ver notificações de faturamento (NÃO cobrança/inadimplência)
+const FATURAMENTO_ONLY_OPERATORS = ["Maria", "Erica", "Marcos"];
+
+/** Retorna os tipos de notificação permitidos para o operador */
+function getAllowedTypes(operatorName?: string): string[] {
+  if (operatorName && FATURAMENTO_ONLY_OPERATORS.includes(operatorName)) {
+    return FATURAMENTO_ONLY_TYPES;
+  }
+  return ALL_NOTIFICATION_TYPES;
+}
 
 export const notificationRouter = router({
   /**
@@ -33,6 +45,7 @@ export const notificationRouter = router({
       limit: z.number().min(1).max(500).default(200),
       unreadOnly: z.boolean().default(false),
       operatorId: z.number().optional(),
+      operatorName: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -41,12 +54,13 @@ export const notificationRouter = router({
       const limit = input?.limit ?? 200;
       const unreadOnly = input?.unreadOnly ?? false;
       const operatorId = input?.operatorId;
+      const allowedTypes = getAllowedTypes(input?.operatorName);
 
-      // Fetch all recent notifications - apenas tipos relevantes para produção
+      // Fetch recent notifications filtered by operator's allowed types
       const notifications = await db
         .select()
         .from(systemNotifications)
-        .where(inArray(systemNotifications.type, ALLOWED_NOTIFICATION_TYPES))
+        .where(inArray(systemNotifications.type, allowedTypes))
         .orderBy(desc(systemNotifications.createdAt))
         .limit(limit);
 
@@ -95,18 +109,19 @@ export const notificationRouter = router({
    * Contar notificações não lidas (polling leve) - por operador
    */
   unreadCount: publicProcedure
-    .input(z.object({ operatorId: z.number().optional() }).optional())
+    .input(z.object({ operatorId: z.number().optional(), operatorName: z.string().optional() }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return { count: 0 };
 
       const operatorId = input?.operatorId;
+      const allowedTypes = getAllowedTypes(input?.operatorName);
 
-      // Total de notificações - apenas tipos relevantes para produção
+      // Total de notificações filtrado por tipos permitidos ao operador
       const totalResult = await db
         .select({ count: sql<number>`count(*)` })
         .from(systemNotifications)
-        .where(inArray(systemNotifications.type, ALLOWED_NOTIFICATION_TYPES));
+        .where(inArray(systemNotifications.type, allowedTypes));
       const total = Number(totalResult[0]?.count ?? 0);
 
       if (!operatorId) {
@@ -117,7 +132,7 @@ export const notificationRouter = router({
           .where(
             and(
               isNull(systemNotifications.readAt),
-              inArray(systemNotifications.type, ALLOWED_NOTIFICATION_TYPES)
+              inArray(systemNotifications.type, allowedTypes)
             )
           );
         return { count: Number(result[0]?.count ?? 0) };
@@ -127,7 +142,7 @@ export const notificationRouter = router({
       const relevantNotifs = await db
         .select({ id: systemNotifications.id })
         .from(systemNotifications)
-        .where(inArray(systemNotifications.type, ALLOWED_NOTIFICATION_TYPES));
+        .where(inArray(systemNotifications.type, allowedTypes));
       const relevantIds = relevantNotifs.map(n => n.id);
 
       if (relevantIds.length === 0) return { count: 0 };
