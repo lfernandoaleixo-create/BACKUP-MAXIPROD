@@ -4105,6 +4105,9 @@ function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadDone, setUploadDone] = useState(false);
+  const [previewRows, setPreviewRows] = useState<string[][] | null>(null);
+  const [previewHeaders, setPreviewHeaders] = useState<string[] | null>(null);
+  const [historyFilter, setHistoryFilter] = useState('');
   const utils = trpc.useUtils();
 
   // History query
@@ -4138,6 +4141,23 @@ function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
     if (!f) return;
     setFile(f);
     setUploadDone(false);
+    setPreviewRows(null);
+    setPreviewHeaders(null);
+
+    // Parse preview
+    try {
+      const XLSX = await import('xlsx');
+      const buffer = await f.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+      if (rows.length > 0) {
+        setPreviewHeaders(rows[0].map((c: any) => String(c || '')));
+        setPreviewRows(rows.slice(1, 11).map(r => r.map((c: any) => String(c || ''))));
+      }
+    } catch {
+      // If can't parse, just show file info without preview
+    }
   }
 
   async function handleUpload() {
@@ -4246,6 +4266,35 @@ function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
                 )}
               </div>
 
+              {/* Preview table */}
+              {file && previewHeaders && previewRows && !uploadDone && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-600">Pré-visualização ({previewRows.length} de {previewRows.length >= 10 ? '10+' : previewRows.length} linhas)</span>
+                  </div>
+                  <div className="max-h-44 overflow-auto border border-slate-200 rounded-lg">
+                    <table className="w-full text-[11px]">
+                      <thead className="bg-emerald-50 sticky top-0">
+                        <tr>
+                          {previewHeaders.map((h, i) => (
+                            <th key={i} className="px-2 py-1.5 text-left font-semibold text-emerald-800 whitespace-nowrap border-b border-emerald-200">{h || `Col ${i+1}`}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewRows.map((row, ri) => (
+                          <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                            {previewHeaders!.map((_, ci) => (
+                              <td key={ci} className="px-2 py-1 text-slate-600 whitespace-nowrap">{row[ci] || ''}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {file && !uploadDone && (
                 <Button
                   onClick={handleUpload}
@@ -4294,6 +4343,27 @@ function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
           {/* History tab */}
           {tab === 'history' && (
             <div className="space-y-2 pt-2">
+              {/* Date filter */}
+              {historyData?.uploads && historyData.uploads.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Filtrar por mês, nome ou operador... (ex: abril, Thiago)"
+                      value={historyFilter}
+                      onChange={(e) => setHistoryFilter(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400"
+                    />
+                  </div>
+                  {historyFilter && (
+                    <button onClick={() => setHistoryFilter('')} className="p-1 rounded hover:bg-slate-100">
+                      <X className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                  )}
+                </div>
+              )}
+
               {historyLoading && (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
@@ -4307,9 +4377,27 @@ function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
                 </div>
               )}
 
-              {historyData?.uploads && historyData.uploads.length > 0 && (
+              {historyData?.uploads && historyData.uploads.length > 0 && (() => {
+                const monthNames = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+                const filterLower = historyFilter.toLowerCase().trim();
+                const filtered = historyData.uploads.filter((u) => {
+                  if (!filterLower) return true;
+                  const d = new Date(u.uploadedAt);
+                  const monthName = monthNames[d.getMonth()];
+                  const yearStr = String(d.getFullYear());
+                  const dateStr = fmtDate(u.uploadedAt);
+                  const searchable = `${u.fileName} ${u.uploadedBy} ${monthName} ${yearStr} ${dateStr}`.toLowerCase();
+                  return searchable.includes(filterLower);
+                });
+                return (
                 <div className="space-y-2">
-                  {historyData.uploads.map((upload) => (
+                  {filtered.length === 0 && (
+                    <div className="text-center py-6">
+                      <Search className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                      <p className="text-sm text-slate-400">Nenhuma planilha encontrada para "{historyFilter}"</p>
+                    </div>
+                  )}
+                  {filtered.map((upload) => (
                     <div
                       key={upload.id}
                       className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg hover:border-emerald-300 transition-colors group"
@@ -4348,7 +4436,8 @@ function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
                     </div>
                   ))}
                 </div>
-              )}
+                );
+              })()}
             </div>
           )}
         </div>

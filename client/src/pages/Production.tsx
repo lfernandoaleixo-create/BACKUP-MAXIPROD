@@ -20,6 +20,7 @@ import {
   FileDown,
 } from "lucide-react";
 import { generateDailyPdf, generateWeeklyPdf, generateMonthlyPdf } from "@/lib/productionPdfExport";
+import ProductionCharts from "@/components/ProductionCharts";
 
 // ─── Status options ───
 const MACHINE_STATUS_OPTIONS = [
@@ -270,7 +271,7 @@ export default function Production() {
   const [statusValues, setStatusValues] = useState<Record<string, string>>({});
   const [commentValues, setCommentValues] = useState<Record<string, string>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia">("lancamento");
+  const [viewMode, setViewMode] = useState<"lancamento" | "historico" | "pirografia" | "graficos">("lancamento");
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [showConversionModal, setShowConversionModal] = useState(false);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
@@ -882,6 +883,9 @@ export default function Production() {
             <button onClick={() => setViewMode("pirografia")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "pirografia" ? "bg-orange-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
               <Flame className="w-4 h-4" /> Pirografia
             </button>
+            <button onClick={() => setViewMode("graficos")} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === "graficos" ? "bg-indigo-600 text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}>
+              <BarChart3 className="w-4 h-4" /> Gráficos
+            </button>
 
             {/* ─── PDF Export Menu ─── */}
             <div className="relative">
@@ -1166,6 +1170,8 @@ export default function Production() {
           </>
         ) : viewMode === "historico" ? (
           <HistoryView sectors={sectors || []} weekRange={weekRange} weeklySummary={weeklySummary || []} selectedDate={selectedDate} />
+        ) : viewMode === "graficos" ? (
+          <ProductionCharts selectedDate={selectedDate} sectors={(sectors || []) as any} />
         ) : (
           <PirografiaHistoryView />
         )}

@@ -3116,10 +3116,14 @@
 - [x] Produção: PDF com lançamento diário (todos setores, todas máquinas, observações, tudo em 1 PDF)
 - [x] Produção: PDF com fechamento semanal (todos setores, total geral do setor, média diária por setor)
 - [x] Produção: PDF com fechamento mensal (todos setores, todas máquinas, média por máquinas, média total geral)
-- [ ] Produção: gráficos por máquinas e por setor geral com filtro de manutenções (não urgente)
+- [x] Produção: gráficos por máquinas e por setor geral com filtro de manutenções (não urgente)
 - [x] Produção PDF: separar somatórios por unidade (caixas, sacos, m³) em todos os relatórios
 - [x] Produção PDF: redesign profissional com cores mais vivas e atraentes
 - [x] Produção PDF: linhas alternadas (zebra stripes) claro/escuro para destaque
 - [x] Inadimplência: card Importar Planilha — upload e armazenamento no S3 sem alterar dados
 - [x] Inadimplência: histórico de planilhas enviadas com data, operador e nome do arquivo
 - [x] Inadimplência: botão para exportar/baixar planilha do histórico por data
+- [x] Inadimplência: filtro por data no histórico de planilhas (ex: "planilhas de abril")
+- [x] Inadimplência: preview da planilha antes de salvar (mostrar primeiras linhas da tabela)
+- [x] Produção: gráficos por máquinas com filtro de manutenções
+- [x] Produção: gráficos por setor geral com filtro de manutenções
