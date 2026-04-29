@@ -3117,3 +3117,6 @@
 - [x] Produção: PDF com fechamento semanal (todos setores, total geral do setor, média diária por setor)
 - [x] Produção: PDF com fechamento mensal (todos setores, todas máquinas, média por máquinas, média total geral)
 - [ ] Produção: gráficos por máquinas e por setor geral com filtro de manutenções (não urgente)
+- [x] Produção PDF: separar somatórios por unidade (caixas, sacos, m³) em todos os relatórios
+- [x] Produção PDF: redesign profissional com cores mais vivas e atraentes
+- [x] Produção PDF: linhas alternadas (zebra stripes) claro/escuro para destaque

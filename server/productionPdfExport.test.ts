@@ -21,6 +21,8 @@ const mockDoc = {
   setPage: vi.fn(),
   splitTextToSize: vi.fn((text: string) => [text]),
   getTextWidth: vi.fn(() => 40),
+  setLineWidth: vi.fn(),
+  line: vi.fn(),
   addPage: vi.fn(),
   save: vi.fn(),
   lastAutoTable: { finalY: 80 },
