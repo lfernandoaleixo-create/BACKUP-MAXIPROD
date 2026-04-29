@@ -13,6 +13,7 @@ import {
   BarChart3, Filter, Wrench, Calendar, ChevronDown, ChevronUp,
   Loader2, Factory, TrendingUp, AlertTriangle, X, Search,
   ArrowUpRight, ArrowDownRight, Minus, Eye, EyeOff, Zap, Activity,
+  Info, CheckCircle,
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════
@@ -137,27 +138,57 @@ function AnimatedNumber({ value, decimals = 0, duration = 1200 }: { value: numbe
 }
 
 /* ═══════════════════════════════════════════════════════
-   Custom Tooltip
+   Custom Tooltip — with sector name resolution & context
    ═══════════════════════════════════════════════════════ */
+interface TooltipContext {
+  sectorMap?: Map<number, string>;
+  grandTotal?: number;
+  contextLabel?: string; // e.g. "da produção total do período"
+}
+let _tooltipCtx: TooltipContext = {};
+function setTooltipContext(ctx: TooltipContext) { _tooltipCtx = ctx; }
+
+function resolveName(raw: string): string {
+  if (!raw) return raw;
+  // Resolve sector_N keys to real sector names
+  const m = raw.match(/^sector_(\d+)$/);
+  if (m && _tooltipCtx.sectorMap) {
+    return _tooltipCtx.sectorMap.get(Number(m[1])) || raw;
+  }
+  return raw;
+}
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   const total = payload.reduce((s: number, p: any) => s + (p.value || 0), 0);
+  const gt = _tooltipCtx.grandTotal || 0;
+  const ctx = _tooltipCtx.contextLabel || "";
   return (
-    <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
+    <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[240px] max-w-[340px] animate-in fade-in zoom-in-95 duration-200">
       <p className="font-bold text-slate-700 mb-2 text-sm border-b border-slate-100 pb-1.5">{label}</p>
-      {payload.map((p: any, i: number) => (
-        <div key={i} className="flex items-center justify-between gap-4 py-0.5">
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: p.color }} />
-            <span className="text-slate-600">{p.name}</span>
+      {payload.map((p: any, i: number) => {
+        const name = resolveName(p.name);
+        const pct = gt > 0 && p.value > 0 ? ((p.value / gt) * 100) : 0;
+        return (
+          <div key={i} className="flex items-center justify-between gap-3 py-0.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-2.5 h-2.5 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: p.color }} />
+              <span className="text-slate-600 truncate">{name}</span>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="font-bold text-slate-800 tabular-nums">{fmtNum(p.value)}</span>
+              {gt > 0 && pct > 0 && <span className="text-slate-400 tabular-nums">({fmtNum(pct, 0)}%)</span>}
+            </div>
           </div>
-          <span className="font-bold text-slate-800 tabular-nums">{fmtNum(p.value)}</span>
-        </div>
-      ))}
+        );
+      })}
       {payload.length > 1 && (
-        <div className="flex items-center justify-between gap-4 pt-1.5 mt-1.5 border-t border-slate-100">
-          <span className="font-semibold text-slate-700">Total</span>
-          <span className="font-bold text-teal-700 tabular-nums">{fmtNum(total)}</span>
+        <div className="flex items-center justify-between gap-3 pt-1.5 mt-1.5 border-t border-slate-100">
+          <span className="font-semibold text-slate-700">Total do dia</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-teal-700 tabular-nums">{fmtNum(total)}</span>
+            {gt > 0 && <span className="text-slate-400 tabular-nums">({fmtNum((total / gt) * 100, 0)}% {ctx})</span>}
+          </div>
         </div>
       )}
     </div>
@@ -217,6 +248,9 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [selectedSector, setSelectedSector] = useState<number | null>(null);
+
+  // Selected day for detail view
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   // Collapsible section state — all start closed
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
@@ -493,6 +527,48 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
     totalEntries, totalMaintCount, totalParadasCount, activeProdSectors,
   } = processedData;
 
+  // Build sector name map for tooltip resolution
+  const sectorNameMap = useMemo(() => {
+    const m = new Map<number, string>();
+    sectors.forEach(s => m.set(s.id, s.nome));
+    return m;
+  }, [sectors]);
+
+  // Set tooltip context for the custom tooltip
+  setTooltipContext({ sectorMap: sectorNameMap, grandTotal, contextLabel: "do total" });
+
+  // Selected day detail data
+  const selectedDayData = useMemo(() => {
+    if (!selectedDay || !historyData) return null;
+    const dayEntries = historyData.filter(e => e.data === selectedDay);
+    if (!dayEntries.length) return null;
+    const dayTotal = dayEntries.reduce((s, e) => s + Number(e.quantidade), 0);
+    const bySector = sectors.map((sector, idx) => {
+      const sectorEntries = dayEntries.filter(e => e.sectorId === sector.id);
+      const total = sectorEntries.reduce((s, e) => s + Number(e.quantidade), 0);
+      const pct = dayTotal > 0 ? (total / dayTotal) * 100 : 0;
+      const pctOfGrand = grandTotal > 0 ? (total / grandTotal) * 100 : 0;
+      return {
+        name: sector.nome,
+        unit: sector.unidade,
+        total,
+        pct,
+        pctOfGrand,
+        color: SECTOR_COLORS[idx % SECTOR_COLORS.length],
+        machines: sector.machines.map(m => {
+          const mEntries = sectorEntries.filter(e => e.machineId === m.id);
+          return {
+            name: m.nome,
+            total: mEntries.reduce((s, e) => s + Number(e.quantidade), 0),
+            status: mEntries[0]?.status || 'producao_normal',
+          };
+        }).filter(m => m.total > 0),
+      };
+    }).filter(s => s.total > 0);
+    const pctOfGrandTotal = grandTotal > 0 ? (dayTotal / grandTotal) * 100 : 0;
+    return { date: selectedDay, dayTotal, pctOfGrandTotal, bySector };
+  }, [selectedDay, historyData, sectors, grandTotal]);
+
   return (
     <div className="space-y-6">
       {/* ═══ Header + Period Selector ═══ */}
@@ -591,7 +667,10 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-white" />
               </div>
-              <h4 className="font-bold text-slate-700">Produção Diária por Setor</h4>
+              <div>
+                <h4 className="font-bold text-slate-700">Produção Diária por Setor</h4>
+                {!openSections.has('producao') && <p className="text-[10px] text-slate-400 mt-0.5">{fmtNum(grandTotal, 0)} unidades em {totalDays} dias — média {fmtNum(avgDaily, 0)}/dia</p>}
+              </div>
               <span className="text-xs bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full font-semibold">
                 {fmtNum(grandTotal, 0)} total
               </span>
@@ -603,6 +682,15 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
         </div>
         {openSections.has('producao') && (
         <div className="px-5 pt-3 pb-1 border-b border-slate-100">
+          <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+            <p className="text-[11px] text-blue-700 leading-relaxed">
+              <strong>O que este gráfico mostra:</strong> Cada barra representa a produção total de um dia, dividida por setor (cores). 
+              A altura total da barra é a soma de todos os setores naquele dia. 
+              Período: <strong>{fmtFullDate(dateRange.start)} a {fmtFullDate(dateRange.end)}</strong> ({totalDays} dias úteis). 
+              Produção total: <strong>{fmtNum(grandTotal, 0)}</strong> unidades. Média diária: <strong>{fmtNum(avgDaily, 0)}</strong> unidades/dia.
+            </p>
+          </div>
           <div className="flex items-center justify-between mb-3">
             <div />
             <button
@@ -680,17 +768,98 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               </BarChart>
             </ResponsiveContainer>
           </div>
-          {/* Daily totals row */}
+          {/* Daily totals row — CLICKABLE */}
           <div className="mt-3 overflow-x-auto">
+            <p className="text-[10px] text-slate-400 mb-1.5 flex items-center gap-1"><Info className="w-3 h-3" /> Clique em um dia para ver o detalhamento completo</p>
             <div className="flex gap-2 min-w-max">
               {dailyBySector.map((d, i) => (
-                <div key={i} className={`text-center px-3 py-2 rounded-lg text-xs transition-all duration-200 hover:scale-105 ${i % 2 === 0 ? "bg-slate-50" : "bg-white"} border border-slate-100 hover:border-teal-200 hover:shadow-sm`}>
-                  <p className="font-bold text-slate-700 tabular-nums">{fmtNum(d.total, 0)}</p>
-                  <p className="text-slate-400 text-[10px]">{d.dateLabel}</p>
+                <div
+                  key={i}
+                  onClick={() => setSelectedDay(selectedDay === d.date ? null : d.date)}
+                  className={`text-center px-3 py-2 rounded-lg text-xs transition-all duration-200 hover:scale-105 cursor-pointer ${
+                    selectedDay === d.date
+                      ? "bg-teal-100 border-teal-400 border-2 shadow-md ring-2 ring-teal-200"
+                      : `${i % 2 === 0 ? "bg-slate-50" : "bg-white"} border border-slate-100 hover:border-teal-200 hover:shadow-sm`
+                  }`}
+                >
+                  <p className={`font-bold tabular-nums ${selectedDay === d.date ? "text-teal-800" : "text-slate-700"}`}>{fmtNum(d.total, 0)}</p>
+                  <p className={`text-[10px] ${selectedDay === d.date ? "text-teal-600 font-semibold" : "text-slate-400"}`}>{d.dateLabel}</p>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* ═══ Selected Day Detail Panel ═══ */}
+          {selectedDayData && (
+            <div className="mt-4 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl p-4 animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 bg-teal-500 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-teal-800 text-sm">Detalhamento do dia {fmtFullDate(selectedDayData.date)}</h5>
+                    <p className="text-[10px] text-teal-600">
+                      Produção total do dia: <strong>{fmtNum(selectedDayData.dayTotal, 0)}</strong> unidades
+                      ({fmtNum(selectedDayData.pctOfGrandTotal, 1)}% de toda a produção do período)
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedDay(null)}
+                  className="text-xs text-teal-600 hover:text-teal-800 bg-white px-2.5 py-1 rounded-lg border border-teal-200 hover:shadow-sm transition-all">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-teal-200">
+                      <th className="text-left py-2 px-2 text-teal-700 font-semibold">Setor</th>
+                      <th className="text-right py-2 px-2 text-teal-700 font-semibold">Produção do Dia</th>
+                      <th className="text-right py-2 px-2 text-teal-700 font-semibold">% do Dia</th>
+                      <th className="text-right py-2 px-2 text-teal-700 font-semibold">% do Período</th>
+                      <th className="text-left py-2 px-2 text-teal-700 font-semibold">Máquinas Ativas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedDayData.bySector.map((s, idx) => (
+                      <tr key={idx} className={`${idx % 2 === 0 ? "bg-white/50" : "bg-teal-50/30"} hover:bg-white transition-colors`}>
+                        <td className="py-2 px-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                            <span className="font-medium text-slate-700">{s.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-2 px-2 text-right font-bold text-slate-800 tabular-nums">{fmtNum(s.total)}</td>
+                        <td className="py-2 px-2 text-right">
+                          <span className="bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums">
+                            {fmtNum(s.pct, 0)}% do dia
+                          </span>
+                        </td>
+                        <td className="py-2 px-2 text-right">
+                          <span className="text-slate-500 tabular-nums text-[10px]">
+                            {fmtNum(s.pctOfGrand, 1)}% do período
+                          </span>
+                        </td>
+                        <td className="py-2 px-2 text-slate-600">
+                          {s.machines.map(m => `${m.name} (${fmtNum(m.total)})`).join(", ") || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-teal-300 bg-teal-50/50">
+                      <td className="py-2 px-2 font-bold text-teal-800">TOTAL DO DIA</td>
+                      <td className="py-2 px-2 text-right font-bold text-teal-700 tabular-nums">{fmtNum(selectedDayData.dayTotal, 0)}</td>
+                      <td className="py-2 px-2 text-right font-bold text-teal-700">100%</td>
+                      <td className="py-2 px-2 text-right font-bold text-teal-700 tabular-nums">{fmtNum(selectedDayData.pctOfGrandTotal, 1)}%</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
         )}
       </div>
@@ -706,7 +875,10 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-green-500 rounded-lg flex items-center justify-center">
                 <Activity className="w-4 h-4 text-white" />
               </div>
-              <h4 className="font-bold text-slate-700">Tendência de Produção Total</h4>
+              <div>
+                <h4 className="font-bold text-slate-700">Tendência de Produção Total</h4>
+                {!openSections.has('tendencia') && <p className="text-[10px] text-slate-400 mt-0.5">Pico: {fmtNum(maxDay, 0)} — Média: {fmtNum(avgDaily, 1)} — Mín: {fmtNum(minDay, 0)}</p>}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="hidden sm:flex items-center gap-4 text-xs mr-3">
@@ -725,6 +897,16 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
         </div>
         {openSections.has('tendencia') && (
         <div className="p-5 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+            <p className="text-[11px] text-green-700 leading-relaxed">
+              <strong>O que este gráfico mostra:</strong> A linha verde mostra a produção total (soma de todos os setores) de cada dia.
+              A linha tracejada amarela é a <strong>média diária do período ({fmtNum(avgDaily, 1)} unidades/dia)</strong>.
+              Dias acima da linha amarela tiveram produção acima da média; abaixo, ficaram abaixo.
+              <strong>Pico Máximo</strong> = dia com maior produção ({fmtNum(maxDay, 0)} un).
+              <strong>Mínimo</strong> = dia com menor produção ({fmtNum(minDay, 0)} un).
+            </p>
+          </div>
           <div className="h-[340px]">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart key={`trend-${animKey}`} data={dailyTrend} margin={{ top: 20, right: 15, left: 10, bottom: 5 }}>
@@ -765,9 +947,9 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
           </div>
           <div className="grid grid-cols-3 gap-3 mt-4">
             {[
-              { label: "Pico Máximo", value: maxDay, color: "emerald", icon: <ArrowUpRight className="w-4 h-4" /> },
-              { label: "Média Diária", value: avgDaily, color: "blue", icon: <Minus className="w-4 h-4" /> },
-              { label: "Mínimo", value: minDay, color: "amber", icon: <ArrowDownRight className="w-4 h-4" /> },
+              { label: "Pico Máximo", value: maxDay, color: "emerald", icon: <ArrowUpRight className="w-4 h-4" />, desc: "Maior produção em um único dia no período" },
+              { label: "Média Diária", value: avgDaily, color: "blue", icon: <Minus className="w-4 h-4" />, desc: `Total (${fmtNum(grandTotal, 0)}) ÷ ${totalDays} dias úteis` },
+              { label: "Mínimo", value: minDay, color: "amber", icon: <ArrowDownRight className="w-4 h-4" />, desc: "Menor produção em um único dia no período" },
             ].map((stat, i) => (
               <div key={i} className={`text-center p-3 bg-${stat.color}-50 rounded-xl border border-${stat.color}-100 transition-all duration-300 hover:shadow-md hover:scale-[1.02]`}>
                 <div className={`flex items-center justify-center gap-1.5 text-${stat.color}-500 mb-1`}>{stat.icon}</div>
@@ -775,6 +957,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                   <AnimatedNumber value={stat.value} decimals={stat.label === "Média Diária" ? 1 : 0} />
                 </p>
                 <p className={`text-[10px] text-${stat.color}-500 font-semibold uppercase tracking-wider`}>{stat.label}</p>
+                <p className={`text-[9px] text-${stat.color}-400 mt-0.5`}>{(stat as any).desc}</p>
               </div>
             ))}
           </div>
@@ -793,7 +976,10 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-violet-500 rounded-lg flex items-center justify-center">
                 <Factory className="w-4 h-4 text-white" />
               </div>
-              <h4 className="font-bold text-slate-700">Distribuição por Setor</h4>
+              <div>
+                <h4 className="font-bold text-slate-700">Distribuição por Setor</h4>
+                {!openSections.has('distribuicao') && <p className="text-[10px] text-slate-400 mt-0.5">{sectorTotals.length} setores — maior: {sectorTotals[0]?.name} ({fmtNum(sectorTotals[0]?.pct || 0, 0)}%)</p>}
+              </div>
               <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">
                 {sectorTotals.length} setores ativos
               </span>
@@ -803,6 +989,15 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
         </div>
         {openSections.has('distribuicao') && (
         <div className="p-5 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
+            <p className="text-[11px] text-indigo-700 leading-relaxed">
+              <strong>O que este gráfico mostra:</strong> A participação de cada setor na <strong>produção total do período ({fmtNum(grandTotal, 0)} unidades)</strong>.
+              Exemplo: se Vareteira mostra 20%, significa que a Vareteira produziu 20% de todas as {fmtNum(grandTotal, 0)} unidades do período.
+              <strong>Média/Dia</strong> = total do setor ÷ {totalDays} dias úteis. <strong>Dias</strong> = quantos dias o setor teve produção.
+              Clique em um setor na tabela para ver o detalhamento por máquina.
+            </p>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Pie chart — no external labels, use tooltip + legend below */}
             <div className="flex flex-col items-center">
@@ -870,7 +1065,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                       <th className="text-left py-2.5 px-2 text-slate-500 font-semibold text-xs">Setor</th>
                       <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs">Total</th>
                       <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs">Média/Dia</th>
-                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs">%</th>
+                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs" title="Percentual da produção total do período">% do Total</th>
                       <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs">Dias</th>
                     </tr>
                   </thead>
@@ -946,6 +1141,15 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             </div>
           </div>
           <div className="p-5">
+            <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
+              <Info className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
+              <p className="text-[11px] text-indigo-700 leading-relaxed">
+                <strong>Detalhamento por máquina do setor {sectors.find(s => s.id === selectedSector)?.nome}.</strong>{" "}
+                <strong>Total</strong> = produção acumulada da máquina no período.
+                <strong>Média Diária</strong> = total ÷ dias em que a máquina produziu.
+                <strong>% do Setor</strong> = quanto essa máquina contribuiu para o total do setor (soma = 100%).
+              </p>
+            </div>
             <div className="h-[380px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={machineData} margin={{ top: 30, right: 10, left: 10, bottom: 80 }}>
@@ -1026,7 +1230,10 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               <div className="w-8 h-8 bg-gradient-to-br from-violet-400 to-purple-500 rounded-lg flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-white" />
               </div>
-              <h4 className="font-bold text-slate-700">Manutenções e Paradas</h4>
+              <div>
+                <h4 className="font-bold text-slate-700">Manutenções e Paradas</h4>
+                {!openSections.has('manutencao') && <p className="text-[10px] text-slate-400 mt-0.5">{rawMaintenanceData.reduce((s, d) => s + d.totalParadas, 0)} paradas no período</p>}
+              </div>
               <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-semibold">
                 {rawMaintenanceData.reduce((s, d) => s + d.totalParadas, 0)} paradas
               </span>
@@ -1036,6 +1243,17 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
         </div>
         {openSections.has('manutencao') && (
         <div className="px-5 pt-3 pb-1 border-b border-slate-100">
+          <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 text-violet-500 mt-0.5 flex-shrink-0" />
+            <p className="text-[11px] text-violet-700 leading-relaxed">
+              <strong>O que este gráfico mostra:</strong> Cada tipo de parada de máquina no período.
+              <strong>Manutenção</strong> = máquina parada para conserto programado.
+              <strong>Manutenção Pontual</strong> = quebra inesperada que exigiu reparo imediato.
+              <strong>Falta de Madeira</strong> = máquina parada por falta de matéria-prima.
+              <strong>Prod. Não Necessária</strong> = máquina parada porque não havia demanda de produção.
+              <strong>% Parada</strong> = total de paradas do setor ÷ total de registros do setor (quanto maior, mais tempo parado).
+            </p>
+          </div>
           <div className="flex items-center justify-between mb-3">
             <div />
             <button onClick={(e) => { e.stopPropagation(); setShowMaintFilter(!showMaintFilter); }}
@@ -1242,7 +1460,10 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
                 <AlertTriangle className="w-4 h-4 text-white" />
               </div>
-              <h4 className="font-bold text-slate-700">Distribuição de Status</h4>
+              <div>
+                <h4 className="font-bold text-slate-700">Distribuição de Status</h4>
+                {!openSections.has('status') && <p className="text-[10px] text-slate-400 mt-0.5">{totalEntries} registros de produção no período</p>}
+              </div>
               <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">
                 {totalEntries} registros
               </span>
@@ -1252,6 +1473,18 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
         </div>
         {openSections.has('status') && (
         <div className="p-5 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+            <p className="text-[11px] text-amber-700 leading-relaxed">
+              <strong>O que este gráfico mostra:</strong> Cada registro de máquina/dia tem um status.
+              <strong>Produzindo</strong> = máquina funcionou normalmente.
+              <strong>Manutenção</strong> = parada para conserto.
+              <strong>Falta de Madeira</strong> = sem matéria-prima.
+              <strong>Prod. Não Necessária</strong> = sem demanda.
+              Os percentuais mostram a proporção de cada status sobre o <strong>total de {totalEntries} registros</strong> do período.
+              Quanto maior o % de "Produzindo", melhor a eficiência da fábrica.
+            </p>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="h-[340px]" style={{ overflow: "visible" }}>
               <ResponsiveContainer width="100%" height="100%">

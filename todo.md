@@ -3152,3 +3152,11 @@
 - [x] Financeiro - Autorização de Pagamentos: Fernando e Guilherme só veem bolinhas vermelhas marcadas
 - [x] Financeiro - Autorização de Pagamentos: tabela no banco para persistir marcações diárias
 - [x] Financeiro - Autorização de Pagamentos: testes automatizados
+- [x] Gráfico Produção Diária: clique nos dias (cards inferiores) deve filtrar/destacar o dia no gráfico
+- [x] Gráfico Produção Diária: tooltip mostra "sector_1" em vez dos nomes reais dos setores — corrigir
+- [x] Todos os gráficos: adicionar descrições contextuais ricas para leigos (ex: "20% da produção total do período")
+- [x] Gráfico Tendência: explicar o que cada métrica significa (pico, média, mínimo)
+- [x] Gráfico Distribuição por Setor: explicar que % é da produção total do período selecionado
+- [x] Gráfico Manutenções: explicar o que cada tipo de parada significa e como % Parada é calculado
+- [x] Gráfico Status: explicar o que cada status representa na produção
+- [x] Financeiro - Autorização de Pagamentos: remover card de "Vencidas"

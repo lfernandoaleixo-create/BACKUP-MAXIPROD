@@ -893,22 +893,20 @@ export default function WeekReconciliationCard() {
 
   if (
     !data ||
-    (data.days.every((d) => d.count === 0) && data.vencidas.count === 0)
+    (data.days.every((d) => d.count === 0))
   ) {
     return null;
   }
 
   const visibleDays = data.days.filter((d) => !d.isPast || d.isToday);
   const totalContas =
-    visibleDays.reduce((s, d) => s + d.count, 0) + data.vencidas.count;
+    visibleDays.reduce((s, d) => s + d.count, 0);
   const totalValor =
-    visibleDays.reduce((s, d) => s + d.total, 0) + data.vencidas.total;
+    visibleDays.reduce((s, d) => s + d.total, 0);
   const totalAuthorized =
-    visibleDays.reduce((s, d) => s + d.authorizedCount, 0) +
-    (data.vencidas.authorizedCount || 0);
+    visibleDays.reduce((s, d) => s + d.authorizedCount, 0);
   const totalAuthorizedValor =
-    visibleDays.reduce((s, d) => s + d.authorizedTotal, 0) +
-    (data.vencidas.authorizedTotal || 0);
+    visibleDays.reduce((s, d) => s + d.authorizedTotal, 0);
 
   const saldoBancario = bankData?.totalSaldo ?? 0;
 
@@ -1067,31 +1065,6 @@ export default function WeekReconciliationCard() {
 
           {/* Day cards */}
           <div className="space-y-3">
-            {/* Vencidas */}
-            {data.vencidas.count > 0 && (
-              <DayCard
-                day={{
-                  dayLabel: `Vencidas (${data.vencidas.count})`,
-                  items: data.vencidas.items,
-                  total: data.vencidas.total,
-                  authorizedTotal: data.vencidas.authorizedTotal || 0,
-                  authorizedCount: data.vencidas.authorizedCount || 0,
-                  count: data.vencidas.count,
-                }}
-                onToggleItem={handleToggleItem}
-                onToggleAll={handleToggleAll}
-                togglingIds={togglingIds}
-                isVencidas
-                saldoBancario={saldoBancario}
-                isAuthenticated={isAuthenticated}
-                onRequestAuth={handleRequestAuth}
-                prioritySet={prioritySet}
-                isPriorityEditor={isPriorityEditor}
-                isPriorityViewer={isPriorityViewer}
-                onTogglePriority={handleTogglePriority}
-              />
-            )}
-
             {/* Week days */}
             {data.days
               .filter((day) => !day.isPast || day.isToday)
