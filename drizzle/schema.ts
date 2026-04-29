@@ -1369,3 +1369,25 @@ export const spreadsheetUploads = mysqlTable("spreadsheet_uploads", {
 });
 export type SpreadsheetUpload = typeof spreadsheetUploads.$inferSelect;
 export type InsertSpreadsheetUpload = typeof spreadsheetUploads.$inferInsert;
+
+
+/**
+ * Histórico de PDFs de decisão de cobrança gerados.
+ * Armazena metadados e o PDF no S3.
+ */
+export const decisionPdfHistory = mysqlTable("decision_pdf_history", {
+  id: int("id").autoincrement().primaryKey(),
+  receivableId: int("receivable_id").notNull(),
+  cliente: varchar("cliente", { length: 500 }).notNull(),
+  vendedor: varchar("vendedor", { length: 255 }),
+  valorAberto: varchar("valor_aberto", { length: 50 }),
+  diasAtraso: int("dias_atraso"),
+  decisao: varchar("decisao", { length: 100 }), // "SEM PROTESTO", "COM PROTESTO", etc.
+  protocolo: varchar("protocolo", { length: 100 }).notNull(),
+  fileKey: varchar("file_key", { length: 500 }).notNull(),
+  fileUrl: varchar("file_url", { length: 1000 }).notNull(),
+  generatedBy: varchar("generated_by", { length: 100 }).notNull(),
+  generatedAt: bigint("generated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type DecisionPdfHistory = typeof decisionPdfHistory.$inferSelect;
+export type InsertDecisionPdfHistory = typeof decisionPdfHistory.$inferInsert;

@@ -3127,3 +3127,6 @@
 - [x] Inadimplência: preview da planilha antes de salvar (mostrar primeiras linhas da tabela)
 - [x] Produção: gráficos por máquinas com filtro de manutenções
 - [x] Produção: gráficos por setor geral com filtro de manutenções
+- [x] Inadimplência: botão "Exportar PDF" ao lado de cada cliente para gerar documento de decisão de cobrança
+- [x] Inadimplência: PDF profissional com histórico de ações realizadas (sem "não foi feito"), nome do cliente, vendedor, responsabilidade do próximo passo
+- [x] Inadimplência: histórico de PDFs de decisão gerados com botão para visualizar

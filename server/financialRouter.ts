@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
@@ -6232,5 +6232,98 @@ ${acoesTexto}
         // Fallback to stored URL
         return { url: row.fileUrl, fileName: row.fileName };
       }
+    }),
+
+  // ─── PDFs de Decisão de Cobrança ───
+
+  /**
+   * Salvar registro de PDF de decisão gerado.
+   */
+  saveDecisionPdf: publicProcedure
+    .input(z.object({
+      receivableId: z.number(),
+      cliente: z.string(),
+      vendedor: z.string().optional(),
+      valorAberto: z.string().optional(),
+      diasAtraso: z.number().optional(),
+      decisao: z.string().optional(),
+      protocolo: z.string(),
+      fileBase64: z.string(),
+      generatedBy: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      const buffer = Buffer.from(input.fileBase64, "base64");
+      const timestamp = Date.now();
+      const safeName = input.cliente.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30);
+      const fileKey = `decision-pdfs/${timestamp}-${safeName}.pdf`;
+
+      const { url } = await storagePut(fileKey, buffer, "application/pdf");
+
+      const [result] = await db.insert(decisionPdfHistory).values({
+        receivableId: input.receivableId,
+        cliente: input.cliente,
+        vendedor: input.vendedor || null,
+        valorAberto: input.valorAberto || null,
+        diasAtraso: input.diasAtraso || null,
+        decisao: input.decisao || null,
+        protocolo: input.protocolo,
+        fileKey,
+        fileUrl: url,
+        generatedBy: input.generatedBy,
+        generatedAt: timestamp,
+      });
+
+      return {
+        id: result.insertId,
+        fileUrl: url,
+        protocolo: input.protocolo,
+        generatedAt: timestamp,
+      };
+    }),
+
+  /**
+   * Listar PDFs de decisão gerados para um título.
+   */
+  listDecisionPdfs: publicProcedure
+    .input(z.object({ receivableId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { pdfs: [] };
+
+      const rows = await db.select().from(decisionPdfHistory)
+        .where(eq(decisionPdfHistory.receivableId, input.receivableId))
+        .orderBy(desc(decisionPdfHistory.generatedAt));
+
+      return { pdfs: rows };
+    }),
+
+  /**
+   * Listar TODOS os PDFs de decisão gerados (para o histórico geral).
+   */
+  listAllDecisionPdfs: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return { pdfs: [] };
+
+      const rows = await db.select().from(decisionPdfHistory)
+        .orderBy(desc(decisionPdfHistory.generatedAt));
+
+      return { pdfs: rows };
+    }),
+
+  /**
+   * Deletar PDF de decisão do histórico.
+   */
+  deleteDecisionPdf: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      await db.delete(decisionPdfHistory).where(eq(decisionPdfHistory.id, input.id));
+      return { success: true };
     }),
 });

@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
-import { Eye, Plus, PhoneOff, PhoneCall, Upload } from "lucide-react";
+import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp } from "lucide-react";
+import { generateDecisionPdf } from "../lib/decisionPdfExport";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson"];
@@ -569,6 +570,8 @@ export default function InadimplenciaTab() {
   const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [decisaoTutorialData, setDecisaoTutorialData] = useState<{clienteName: string; vendedorName: string} | null>(null);
+  const [decisionPdfTitleId, setDecisionPdfTitleId] = useState<number | null>(null);
+  const [showDecisionPdfHistory, setShowDecisionPdfHistory] = useState(false);
   const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
 
@@ -1051,6 +1054,14 @@ export default function InadimplenciaTab() {
               <span>Importar Planilha</span>
             </button>
           )}
+          <button
+            onClick={() => setShowDecisionPdfHistory(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02]"
+            title="Ver histórico de PDFs de decisão gerados"
+          >
+            <Stamp className="w-4 h-4" />
+            <span>PDFs de Decisão</span>
+          </button>
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
@@ -1448,6 +1459,7 @@ export default function InadimplenciaTab() {
                 }}
                 isToggling={toggleTick.isPending}
                 pendingDays={pendingActionsMap?.[title.id]?.pendingDays || []}
+                onGenerateDecisionPdf={() => setDecisionPdfTitleId(title.id)}
               />
             ))}
           </div>
@@ -1539,6 +1551,24 @@ export default function InadimplenciaTab() {
             // Invalidate queries to refresh data
           }}
         />
+      )}
+
+      {/* Dialog de Geração de PDF de Decisão */}
+      {decisionPdfTitleId && (() => {
+        const t = [...(filteredTitles || []), ...(titles || [])].find(t => t.id === decisionPdfTitleId);
+        if (!t) return null;
+        return (
+          <DecisionPdfDialog
+            title={t}
+            operatorName={operator?.name || 'Operador'}
+            onClose={() => setDecisionPdfTitleId(null)}
+          />
+        );
+      })()}
+
+      {/* Histórico de PDFs de Decisão */}
+      {showDecisionPdfHistory && (
+        <DecisionPdfHistoryDialog onClose={() => setShowDecisionPdfHistory(false)} />
       )}
 
       {/* Tutorial Decisão de Cobrança (Vitória) */}
@@ -1754,7 +1784,7 @@ function PhoneIcon({ state, onClick }: { state: "blink" | "done" | "urgent" | "i
 }
 
 /* ---- Componente TitleRow (vista por título) ---- */
-function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true, isVitoria = false, onOpenDecisaoTutorial, canManualTick = false, manualTicks = [], onToggleTick, isToggling = false, pendingDays = [] }: {
+function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, onOpenHistory, onOpenActionPlan, onOpenDocument, onPhoneClick, onStatusChange, phoneState, dayBadge, protestLabel, needsActionPlan: needsPlan, hasDocument, canCobranca = true, isVitoria = false, onOpenDecisaoTutorial, canManualTick = false, manualTicks = [], onToggleTick, isToggling = false, pendingDays = [], onGenerateDecisionPdf }: {
   title: Title;
   isExpanded: boolean;
   onToggle: () => void;
@@ -1778,6 +1808,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   onToggleTick?: (step: number, ticked: boolean, tickStatus?: 'green' | 'red' | 'blue') => void;
   isToggling?: boolean;
   pendingDays?: number[];
+  onGenerateDecisionPdf?: () => void;
 }) {
   const { operator } = useOperator();
   const statusBadge = getStatusBadge(title.cobranca?.status || "pendente");
@@ -1941,6 +1972,11 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
           {canCobranca && (
             <button onClick={onOpenAction} title="Gerenciar cobrança" className="p-1 rounded-md hover:bg-white/80 text-slate-600 hover:text-slate-800 transition-colors">
               <FileText className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onGenerateDecisionPdf && (
+            <button onClick={onGenerateDecisionPdf} title="Gerar PDF de Decisão" className="p-1 rounded-md hover:bg-blue-100 text-blue-600 hover:text-blue-800 transition-colors border border-blue-200">
+              <Stamp className="w-3.5 h-3.5" />
             </button>
           )}
           <button onClick={onToggle} className="p-1 rounded-md hover:bg-white/80 text-slate-400">
@@ -4440,6 +4476,276 @@ function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
               })()}
             </div>
           )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ---- Dialog de Geração de PDF de Decisão ---- */
+function DecisionPdfDialog({ title, operatorName, onClose }: {
+  title: Title;
+  operatorName: string;
+  onClose: () => void;
+}) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { data: checklist } = trpc.financial.getCollectionChecklist.useQuery({ receivableId: title.id });
+  const saveDecisionPdf = trpc.financial.saveDecisionPdf.useMutation();
+  const utils = trpc.useUtils();
+
+  async function handleGenerate() {
+    if (!checklist?.steps) {
+      toast.error("Roteiro não disponível para este título.");
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const result = await generateDecisionPdf({
+        title: {
+          id: title.id,
+          cliente: title.cliente,
+          vendedor: title.vendedor || "",
+          valorAReceber: title.valorAReceber,
+          vencimento: title.vencimento,
+          diasAtraso: title.diasAtraso,
+          referenteA: title.referenteA,
+          documento: title.documento,
+          parcela: title.parcela,
+          empresa: title.empresa,
+          decisaoCobranca: title.decisaoCobranca || "SEM PROTESTO",
+          formaCobranca: title.formaCobranca || "",
+          observacoesMaxiprod: title.observacoesMaxiprod || "",
+          cobranca: title.cobranca,
+        },
+        checklistSteps: (checklist.steps as any[]).map((s: any) => ({
+          dia: s.dia,
+          label: s.label,
+          descricao: s.descricao,
+          motivo: s.motivo,
+          data: s.data,
+          status: s.status,
+        })),
+        operatorName,
+      });
+
+      // Download the PDF
+      const url = URL.createObjectURL(result.blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Decisao_${title.cliente.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30)}_${result.protocolo}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      // Save to history
+      await saveDecisionPdf.mutateAsync({
+        receivableId: title.id,
+        cliente: title.cliente,
+        vendedor: title.vendedor || undefined,
+        valorAberto: title.valorAReceber.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+        diasAtraso: title.diasAtraso,
+        decisao: title.decisaoCobranca || "SEM PROTESTO",
+        protocolo: result.protocolo,
+        fileBase64: result.base64,
+        generatedBy: operatorName,
+      });
+
+      utils.financial.listDecisionPdfs.invalidate({ receivableId: title.id });
+      utils.financial.listAllDecisionPdfs.invalidate();
+      toast.success(`PDF de decisão gerado! Protocolo: ${result.protocolo}`);
+      onClose();
+    } catch (err: any) {
+      toast.error("Erro ao gerar PDF: " + (err.message || "Erro desconhecido"));
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  const doneSteps = checklist?.steps
+    ? (checklist.steps as any[]).filter((s: any) => s.status === "verde" || s.status === "vermelho" || s.status === "dispensado" || s.status === "neutro")
+    : [];
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Stamp className="w-5 h-5 text-blue-600" />
+            Gerar PDF de Decisão
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Client info summary */}
+          <div className="bg-slate-50 rounded-lg p-3 space-y-1">
+            <div className="flex justify-between">
+              <span className="text-sm font-semibold text-slate-800">{title.cliente}</span>
+              <span className="text-sm font-bold text-red-600">
+                {title.valorAReceber.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs text-slate-500">
+              <span>Vendedor: {title.vendedor || "—"}</span>
+              <span>{title.diasAtraso} dias de atraso</span>
+            </div>
+            <div className="text-xs text-slate-500">
+              Decisão: <span className="font-medium text-blue-600">{title.decisaoCobranca || "SEM PROTESTO"}</span>
+            </div>
+          </div>
+
+          {/* Preview of what will be in the PDF */}
+          <div className="border rounded-lg p-3">
+            <h4 className="text-xs font-bold text-slate-600 uppercase mb-2">Ações que serão incluídas no PDF:</h4>
+            {doneSteps.length > 0 ? (
+              <div className="space-y-1">
+                {doneSteps.map((step: any) => (
+                  <div key={step.dia} className="flex items-center gap-2 text-xs">
+                    <span className={`w-2 h-2 rounded-full ${
+                      step.status === "verde" ? "bg-emerald-500" :
+                      step.status === "vermelho" ? "bg-red-500" :
+                      step.status === "dispensado" ? "bg-amber-500" : "bg-slate-400"
+                    }`} />
+                    <span className="font-medium text-slate-700">{step.label}</span>
+                    <span className="text-slate-400">—</span>
+                    <span className="text-slate-500 truncate">{step.motivo}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic">Nenhuma ação realizada ainda.</p>
+            )}
+          </div>
+
+          <p className="text-xs text-slate-400">
+            O PDF incluirá apenas as ações realizadas e passará a responsabilidade para o vendedor.
+          </p>
+
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+            >
+              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+              {isGenerating ? "Gerando..." : "Gerar e Baixar PDF"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ---- Histórico de PDFs de Decisão ---- */
+function DecisionPdfHistoryDialog({ onClose }: { onClose: () => void }) {
+  const { data, isLoading } = trpc.financial.listAllDecisionPdfs.useQuery();
+  const deletePdf = trpc.financial.deleteDecisionPdf.useMutation();
+  const utils = trpc.useUtils();
+  const [filterMonth, setFilterMonth] = useState("");
+
+  const pdfs = data?.pdfs || [];
+  const filteredPdfs = filterMonth
+    ? pdfs.filter(p => {
+        const d = new Date(p.generatedAt);
+        const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return monthStr === filterMonth;
+      })
+    : pdfs;
+
+  function handleDelete(id: number) {
+    if (!confirm("Tem certeza que deseja excluir este PDF?")) return;
+    deletePdf.mutate({ id }, {
+      onSuccess: () => {
+        utils.financial.listAllDecisionPdfs.invalidate();
+        toast.success("PDF excluído.");
+      },
+    });
+  }
+
+  return (
+    <Dialog open onOpenChange={() => onClose()}>
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Stamp className="w-5 h-5 text-blue-600" />
+            Histórico de PDFs de Decisão
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          {/* Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500 font-medium">Filtrar por mês:</label>
+            <input
+              type="month"
+              value={filterMonth}
+              onChange={e => setFilterMonth(e.target.value)}
+              className="text-xs border rounded-md px-2 py-1"
+            />
+            {filterMonth && (
+              <button onClick={() => setFilterMonth("")} className="text-xs text-blue-600 hover:underline">Limpar</button>
+            )}
+          </div>
+
+          {isLoading && (
+            <div className="py-8 text-center">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
+              <p className="text-sm text-slate-400 mt-2">Carregando...</p>
+            </div>
+          )}
+
+          {!isLoading && filteredPdfs.length === 0 && (
+            <div className="py-8 text-center text-slate-400">
+              <Stamp className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>Nenhum PDF de decisão gerado{filterMonth ? " neste mês" : " ainda"}.</p>
+            </div>
+          )}
+
+          {filteredPdfs.map(pdf => (
+            <div key={pdf.id} className="border rounded-lg p-3 hover:bg-slate-50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-slate-800 truncate">{pdf.cliente}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                      pdf.decisao?.toUpperCase().includes("COM PROTESTO")
+                        ? "bg-orange-100 text-orange-700 border-orange-300"
+                        : "bg-blue-100 text-blue-700 border-blue-300"
+                    }`}>
+                      {pdf.decisao || "SEM PROTESTO"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+                    <span>Protocolo: <span className="font-mono font-medium">{pdf.protocolo}</span></span>
+                    <span>{pdf.valorAberto}</span>
+                    {pdf.vendedor && <span>Vendedor: {pdf.vendedor}</span>}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
+                    <span>Gerado em {new Date(pdf.generatedAt).toLocaleDateString("pt-BR")} às {new Date(pdf.generatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                    <span>por {pdf.generatedBy}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0 ml-2">
+                  <a
+                    href={pdf.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-md hover:bg-blue-100 text-blue-600 transition-colors"
+                    title="Baixar PDF"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                  <button
+                    onClick={() => handleDelete(pdf.id)}
+                    className="p-1.5 rounded-md hover:bg-red-100 text-red-500 transition-colors"
+                    title="Excluir"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </DialogContent>
     </Dialog>
