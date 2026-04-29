@@ -3130,3 +3130,12 @@
 - [x] Inadimplência: botão "Exportar PDF" ao lado de cada cliente para gerar documento de decisão de cobrança
 - [x] Inadimplência: PDF profissional com histórico de ações realizadas (sem "não foi feito"), nome do cliente, vendedor, responsabilidade do próximo passo
 - [x] Inadimplência: histórico de PDFs de decisão gerados com botão para visualizar
+- [x] Gráficos Produção: mais números e escalas nos gráficos (valores nas barras, tooltips detalhados)
+- [x] Gráficos Produção: filtros avançados por tipo de manutenção (pontual, programada, falta de madeira)
+- [x] Gráficos Produção: filtro por setor específico (Vareteira, Flow Pack, etc.)
+- [x] Gráficos Produção: filtro por período de data
+- [x] Gráficos Produção: KPIs detalhados, tabelas resumo, percentuais e médias
+- [x] Gráficos Produção: animações dinâmicas em todos os gráficos (barras, linhas, áreas, pizza) com easing suave
+- [x] Gráficos Produção: labels do pie chart corrigidos (não cortados) com abreviação inteligente de nomes longos
+- [x] Gráficos Produção: design mais profissional com gradientes, sombras, hover effects, números animados nos KPIs
+- [x] Gráficos Produção: eixo X dos bar charts com labels angulados (-35°) e altura aumentada para nomes longos de setores/máquinas
