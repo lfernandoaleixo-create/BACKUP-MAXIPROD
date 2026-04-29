@@ -6334,7 +6334,7 @@ ${acoesTexto}
 
   /**
    * Obter todas as marcações de prioridade da semana corrente.
-   * Retorna um Set de fornecedores marcados por data.
+   * Retorna marcações por maxiprodId (conta individual).
    */
   getPaymentPriorities: publicProcedure
     .input(z.object({ weekStart: z.string(), weekEnd: z.string() }))
@@ -6350,23 +6350,24 @@ ${acoesTexto}
     }),
 
   /**
-   * Toggle marcação de prioridade para um fornecedor em uma data.
+   * Toggle marcação de prioridade para uma conta individual (por maxiprodId).
    * Se já existe, remove. Se não existe, cria.
    */
   togglePaymentPriority: publicProcedure
     .input(z.object({
       fornecedor: z.string(),
       date: z.string(), // YYYY-MM-DD
+      maxiprodId: z.number(),
       operatorName: z.string(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB indisponível");
 
-      // Verificar se já existe marcação para este fornecedor nesta data
+      // Verificar se já existe marcação para esta conta (maxiprodId) nesta data
       const [existing] = await db.select().from(paymentPriorityMarks)
         .where(and(
-          eq(paymentPriorityMarks.fornecedor, input.fornecedor),
+          eq(paymentPriorityMarks.maxiprodId, input.maxiprodId),
           eq(paymentPriorityMarks.date, input.date)
         ))
         .limit(1);
@@ -6380,6 +6381,7 @@ ${acoesTexto}
         await db.insert(paymentPriorityMarks).values({
           fornecedor: input.fornecedor,
           date: input.date,
+          maxiprodId: input.maxiprodId,
           markedBy: input.operatorName,
         });
         return { marked: true };

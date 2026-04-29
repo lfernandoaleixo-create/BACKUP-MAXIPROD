@@ -1,0 +1,1 @@
+ALTER TABLE `payment_priority_marks` ADD `maxiprod_id` int;

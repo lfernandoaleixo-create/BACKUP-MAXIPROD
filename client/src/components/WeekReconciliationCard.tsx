@@ -96,10 +96,18 @@ function PayableRow({
   item,
   onToggle,
   isToggling,
+  isPriorityMarked,
+  isPriorityEditor,
+  isPriorityViewer,
+  onTogglePriority,
 }: {
   item: PayableItem;
   onToggle: () => void;
   isToggling: boolean;
+  isPriorityMarked: boolean;
+  isPriorityEditor: boolean;
+  isPriorityViewer: boolean;
+  onTogglePriority: () => void;
 }) {
   const badge = item.authStatus ? AUTH_STATUS_BADGE[item.authStatus] : null;
 
@@ -197,32 +205,63 @@ function PayableRow({
           </p>
         )}
       </div>
-      <div className="flex-shrink-0 min-w-[120px] text-right">
-        <span
-          className={`text-base font-bold tabular-nums ${
-            item.authorized ? "text-emerald-700" : "text-red-600"
-          }`}
-        >
-          {formatCurrency(item.valor)}
-        </span>
-        <div
-          className={`text-sm ${
-            item.authorized ? "text-emerald-400" : "text-slate-500"
-          }`}
-        >
-          Venc. {item.vencimento.split("-").reverse().join("/")}
-        </div>
-        {item.vencimentoOriginal && (
-          <div
-            className={`text-sm font-medium ${
-              item.vencimentoOriginal !== item.vencimento
-                ? "text-orange-500"
-                : item.authorized ? "text-emerald-400/70" : "text-slate-300"
+      {/* Priority dot + Value column */}
+      <div className="flex items-start gap-2 flex-shrink-0">
+        {/* Priority dot for editor (Flávio): always visible, clickable */}
+        {isPriorityEditor && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePriority();
+            }}
+            className="mt-1 flex-shrink-0 transition-all duration-200 hover:scale-125"
+            title={isPriorityMarked ? "Remover prioridade" : "Marcar como prioridade/urgência"}
+          >
+            <span className={`inline-block w-3.5 h-3.5 rounded-full border-2 transition-colors duration-200 ${
+              isPriorityMarked
+                ? "bg-red-500 border-red-600 shadow-sm shadow-red-300"
+                : "bg-white border-slate-300 hover:border-red-400"
+            }`} />
+          </button>
+        )}
+        {/* Priority dot for viewers (Fernando/Guilherme): only when marked */}
+        {!isPriorityEditor && isPriorityViewer && isPriorityMarked && (
+          <span className="mt-1 flex-shrink-0 relative group/priority">
+            <span className="inline-block w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-red-600 shadow-sm shadow-red-300 animate-pulse cursor-help" />
+            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-red-600 text-white text-[11px] font-semibold rounded-lg shadow-lg opacity-0 group-hover/priority:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50">
+              Se não pagar, gera restrições no nome da empresa
+              <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-red-600" />
+            </span>
+          </span>
+        )}
+        <div className="min-w-[120px] text-right">
+          <span
+            className={`text-base font-bold tabular-nums ${
+              item.authorized ? "text-emerald-700" : "text-red-600"
             }`}
           >
-            Venc. Orig. {item.vencimentoOriginal.split("-").reverse().join("/")}
+            {formatCurrency(item.valor)}
+          </span>
+          <div
+            className={`text-sm ${
+              item.authorized ? "text-emerald-400" : "text-slate-500"
+            }`}
+          >
+            Venc. {item.vencimento.split("-").reverse().join("/")}
           </div>
-        )}
+          {item.vencimentoOriginal && (
+            <div
+              className={`text-sm font-medium ${
+                item.vencimentoOriginal !== item.vencimento
+                  ? "text-orange-500"
+                  : item.authorized ? "text-emerald-400/70" : "text-slate-300"
+              }`}
+            >
+              Venc. Orig. {item.vencimentoOriginal.split("-").reverse().join("/")}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -383,10 +422,10 @@ function DayCard({
   saldoBancario: number;
   isAuthenticated: boolean;
   onRequestAuth: (callback: () => void) => void;
-  prioritySet: Set<string>;
+  prioritySet: Set<number>;
   isPriorityEditor: boolean;
   isPriorityViewer: boolean;
-  onTogglePriority: (fornecedor: string, date: string) => void;
+  onTogglePriority: (maxiprodId: number, fornecedor: string, date: string) => void;
 }) {
   const isToday = "isToday" in day ? day.isToday : false;
   const isPast = "isPast" in day ? day.isPast : false;
@@ -639,33 +678,6 @@ function DayCard({
                             {group.fornecedor}
                           </span>
                           <span className={`text-[9px] ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`}>({group.items.length})</span>
-                          {/* Priority dot */}
-                          {isPriorityEditor && dayDate && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onTogglePriority(group.fornecedor, dayDate);
-                              }}
-                              className="ml-1 flex-shrink-0 transition-all duration-200 hover:scale-125"
-                              title={prioritySet.has(`${group.fornecedor}::${dayDate}`) ? "Remover prioridade" : "Marcar como prioridade/urgência"}
-                            >
-                              <span className={`inline-block w-3.5 h-3.5 rounded-full border-2 transition-colors duration-200 ${
-                                prioritySet.has(`${group.fornecedor}::${dayDate}`)
-                                  ? "bg-red-500 border-red-600 shadow-sm shadow-red-300"
-                                  : "bg-white border-slate-300 hover:border-red-400"
-                              }`} />
-                            </button>
-                          )}
-                          {!isPriorityEditor && isPriorityViewer && dayDate && prioritySet.has(`${group.fornecedor}::${dayDate}`) && (
-                            <span className="ml-1 flex-shrink-0 relative group/priority">
-                              <span className="inline-block w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-red-600 shadow-sm shadow-red-300 animate-pulse cursor-help" />
-                              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-red-600 text-white text-[11px] font-semibold rounded-lg shadow-lg opacity-0 group-hover/priority:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50">
-                                Dê Preferência/Urgência
-                                <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-red-600" />
-                              </span>
-                            </span>
-                          )}
                         </button>
 
                         {/* Centro: Checkbox Selecionar Tudo */}
@@ -727,6 +739,10 @@ function DayCard({
                         handleProtectedToggleItem(item.maxiprodId, !item.authorized)
                       }
                       isToggling={togglingIds.has(item.maxiprodId)}
+                      isPriorityMarked={prioritySet.has(item.maxiprodId)}
+                      isPriorityEditor={isPriorityEditor}
+                      isPriorityViewer={isPriorityViewer}
+                      onTogglePriority={() => onTogglePriority(item.maxiprodId, item.fornecedor, dayDate)}
                     />
                   ))}
                 </div>
@@ -773,10 +789,10 @@ export default function WeekReconciliationCard() {
   );
 
   const prioritySet = useMemo(() => {
-    const s = new Set<string>();
+    const s = new Set<number>();
     if (priorityData?.marks) {
       for (const m of priorityData.marks) {
-        s.add(`${m.fornecedor}::${m.date}`);
+        if (m.maxiprodId) s.add(m.maxiprodId);
       }
     }
     return s;
@@ -788,7 +804,7 @@ export default function WeekReconciliationCard() {
     },
   });
 
-  const handleTogglePriority = useCallback((fornecedor: string, date: string) => {
+  const handleTogglePriority = useCallback((maxiprodId: number, fornecedor: string, date: string) => {
     if (!isPriorityAuthenticated) {
       setShowPriorityDialog(true);
       setPriorityPasswordInput("");
@@ -798,6 +814,7 @@ export default function WeekReconciliationCard() {
     togglePriorityMut.mutate({
       fornecedor,
       date,
+      maxiprodId,
       operatorName: operator?.name || "Flavio",
     });
   }, [isPriorityAuthenticated, operator, togglePriorityMut]);

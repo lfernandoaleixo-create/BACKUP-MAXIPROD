@@ -3161,3 +3161,5 @@
 - [x] Gráfico Status: explicar o que cada status representa na produção
 - [x] Financeiro - Autorização de Pagamentos: remover card de "Vencidas"
 - [x] Financeiro - Autorização de Pagamentos: tooltip "Dê Preferência/Urgência" ao passar mouse nas bolinhas vermelhas (Fernando/Guilherme)
+- [x] Financeiro - Autorização: mover bolinha de prioridade do header do fornecedor para cada conta individual (card expandido)
+- [x] Financeiro - Autorização: trocar tooltip de "Dê Preferência/Urgência" para "Se não pagar, gera restrições no nome da empresa"

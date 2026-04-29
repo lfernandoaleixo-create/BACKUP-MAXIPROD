@@ -624,6 +624,13 @@
       "when": 1777467553062,
       "tag": "0088_first_gateway",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "5",
+      "when": 1777470319338,
+      "tag": "0089_chilly_king_bedlam",
+      "breakpoints": true
     }
   ]
 }

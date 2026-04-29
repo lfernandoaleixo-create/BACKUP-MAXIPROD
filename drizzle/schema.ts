@@ -1403,6 +1403,7 @@ export const paymentPriorityMarks = mysqlTable("payment_priority_marks", {
   id: int("id").autoincrement().primaryKey(),
   fornecedor: varchar("fornecedor", { length: 500 }).notNull(), // Nome do fornecedor
   date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD — dia da marcação
+  maxiprodId: int("maxiprod_id"), // ID da conta individual (nova abordagem por conta)
   markedBy: varchar("marked_by", { length: 100 }).notNull(), // Quem marcou (Flavio)
   markedAt: bigint("marked_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
 });
