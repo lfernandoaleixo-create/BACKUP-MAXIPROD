@@ -3144,3 +3144,5 @@
 - [ ] Relatório PDF Produção: tabelas ocuparem largura total da página, sem deslocamento lateral
 - [x] Relatórios PDF Produção: converter totais de "caixa" para "saco" (aplicar mesma conversão do dashboard)
 - [x] Gráficos Produção: cards expandíveis/retráteis (accordion) — começam fechados, abrem no clique
+- [x] Gráficos Produção: cards DEVEM iniciar recolhidos ao entrar na aba (bug: estavam abrindo expandidos)
+- [x] Gráficos Produção: botão "Expandir Todos / Recolher Todos" no topo

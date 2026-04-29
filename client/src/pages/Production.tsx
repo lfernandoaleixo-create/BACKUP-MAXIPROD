@@ -1171,7 +1171,7 @@ export default function Production() {
         ) : viewMode === "historico" ? (
           <HistoryView sectors={sectors || []} weekRange={weekRange} weeklySummary={weeklySummary || []} selectedDate={selectedDate} />
         ) : viewMode === "graficos" ? (
-          <ProductionCharts selectedDate={selectedDate} sectors={(sectors || []) as any} />
+          <ProductionCharts key={`charts-${viewMode}`} selectedDate={selectedDate} sectors={(sectors || []) as any} />
         ) : (
           <PirografiaHistoryView />
         )}

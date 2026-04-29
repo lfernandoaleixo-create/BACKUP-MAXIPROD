@@ -560,6 +560,26 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
         </div>
       </div>
 
+      {/* ═══ Expandir / Recolher Todos ═══ */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            const ALL_KEYS = ['producao', 'tendencia', 'distribuicao', 'manutencao', 'status'];
+            setOpenSections(prev => {
+              const allOpen = ALL_KEYS.every(k => prev.has(k));
+              return allOpen ? new Set<string>() : new Set(ALL_KEYS);
+            });
+          }}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:shadow-sm transition-all duration-300"
+        >
+          {['producao', 'tendencia', 'distribuicao', 'manutencao', 'status'].every(k => openSections.has(k)) ? (
+            <><ChevronUp className="w-4 h-4" /> Recolher Todos</>
+          ) : (
+            <><ChevronDown className="w-4 h-4" /> Expandir Todos</>
+          )}
+        </button>
+      </div>
+
       {/* ═══ 1. Produção Diária por Setor (Stacked Bar) ═══ */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
         <div
