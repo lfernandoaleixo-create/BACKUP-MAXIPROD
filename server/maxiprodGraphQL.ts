@@ -374,7 +374,7 @@ async function fetchAllSalesOrderItems(): Promise<any[]> {
   const items = await fetchAllPages("itensDosPedidosDeVendas", (skip, take) => `{
     itensDosPedidosDeVendas(
       skip: ${skip}, take: ${take},
-      where: { estado: { in: [A_FATURAR, FATURADO_COM_ENTREGA_FUTURA, FATURADO, FATURADO_PARCIAL, PARCIALMENTE_FATURADO_COM_ENTREGA_FUTURA] } }
+      where: { estado: { in: [A_FATURAR, FATURADO_COM_ENTREGA_FUTURA, FATURADO, FATURADO_PARCIAL, PARCIALMENTE_FATURADO_COM_ENTREGA_FUTURA, CANCELADO] } }
     ) {
       totalCount
       items {

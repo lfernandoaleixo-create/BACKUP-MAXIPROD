@@ -65,6 +65,11 @@ function fmtNum(n: number, decimals = 1): string {
   return n.toLocaleString("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
+// Format number with unit of measurement
+function fmtWithUnit(n: number, unit: string, decimals = 1): string {
+  return `${fmtNum(n, decimals)} ${unit}`;
+}
+
 function fmtDate(dateStr: string): string {
   const parts = dateStr.split("-");
   return `${parts[2]}/${parts[1]}`;
@@ -142,6 +147,7 @@ function AnimatedNumber({ value, decimals = 0, duration = 1200 }: { value: numbe
    ═══════════════════════════════════════════════════════ */
 interface TooltipContext {
   sectorMap?: Map<number, string>;
+  sectorUnitMap?: Map<number, string>;
   grandTotal?: number;
   contextLabel?: string; // e.g. "da produção total do período"
 }
@@ -153,7 +159,9 @@ function resolveName(raw: string): string {
   // Resolve sector_N keys to real sector names
   const m = raw.match(/^sector_(\d+)$/);
   if (m && _tooltipCtx.sectorMap) {
-    return _tooltipCtx.sectorMap.get(Number(m[1])) || raw;
+    const name = _tooltipCtx.sectorMap.get(Number(m[1])) || raw;
+    const unit = _tooltipCtx.sectorUnitMap?.get(Number(m[1]));
+    return unit ? `${name} (${unit})` : name;
   }
   return raw;
 }
@@ -567,8 +575,15 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
     totalEntries, totalMaintCount, totalParadasCount, activeProdSectors,
   } = processedData;
 
+  // Build sector unit map for tooltip
+  const sectorUnitMap = useMemo(() => {
+    const m = new Map<number, string>();
+    sectors.forEach(s => m.set(s.id, s.unidade));
+    return m;
+  }, [sectors]);
+
   // Set tooltip context for the custom tooltip
-  setTooltipContext({ sectorMap: sectorNameMap, grandTotal, contextLabel: "do total" });
+  setTooltipContext({ sectorMap: sectorNameMap, sectorUnitMap, grandTotal, contextLabel: "do total" });
 
   return (
     <div className="space-y-6">
@@ -727,7 +742,14 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
         <div className="p-5 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="h-[420px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart key={`bar1-${animKey}`} data={dailyBySector} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
+              <BarChart key={`bar1-${animKey}`} data={dailyBySector} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}
+                onClick={(data: any) => {
+                  if (data?.activePayload?.[0]?.payload?.date) {
+                    const clickedDate = data.activePayload[0].payload.date;
+                    setSelectedDay(selectedDay === clickedDate ? null : clickedDate);
+                  }
+                }}
+              >
                 <defs>
                   {activeProdSectors.map((sector, idx) => {
                     const colorIdx = sectors.findIndex(s => s.id === sector.id);
@@ -739,11 +761,26 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                       </linearGradient>
                     );
                   })}
+                  <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: "#64748b", fontWeight: 500 }} axisLine={{ stroke: "#e2e8f0" }} />
                 <YAxis tick={{ fontSize: 11, fill: "#64748b" }} tickFormatter={(v: number) => fmtNum(v, 0)} axisLine={{ stroke: "#e2e8f0" }} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(16,185,129,0.06)" }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: selectedDay ? "transparent" : "rgba(16,185,129,0.06)" }} />
+                {/* Highlight selected day bar with a reference area */}
+                {selectedDay && (() => {
+                  const idx = dailyBySector.findIndex(d => d.date === selectedDay);
+                  if (idx >= 0) {
+                    return <rect x={0} y={0} width={0} height={0} />; // placeholder for ReferenceArea below
+                  }
+                  return null;
+                })()}
                 <Legend
                   wrapperStyle={{ fontSize: "11px", paddingTop: "12px" }}
                   formatter={(value: string) => {
@@ -764,6 +801,25 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                     animationDuration={ANIM.barDuration}
                     animationEasing={ANIM.barEasing}
                     animationBegin={idx * 80}
+                    shape={(props: any) => {
+                      const { x, y, width, height, fill: barFill } = props;
+                      const barDate = dailyBySector[props.index]?.date;
+                      const isSelected = barDate === selectedDay;
+                      return (
+                        <rect
+                          x={x}
+                          y={y}
+                          width={width}
+                          height={height}
+                          fill={barFill}
+                          rx={idx === activeProdSectors.length - 1 ? 4 : 0}
+                          ry={idx === activeProdSectors.length - 1 ? 4 : 0}
+                          filter={isSelected ? "url(#glowFilter)" : undefined}
+                          opacity={selectedDay ? (isSelected ? 1 : 0.4) : 1}
+                          style={{ transition: "opacity 0.3s ease, filter 0.3s ease" }}
+                        />
+                      );
+                    }}
                   />
                 ))}
               </BarChart>
@@ -771,7 +827,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
           </div>
           {/* Daily totals row — CLICKABLE */}
           <div className="mt-3 overflow-x-auto">
-            <p className="text-[10px] text-slate-400 mb-1.5 flex items-center gap-1"><Info className="w-3 h-3" /> Clique em um dia para ver o detalhamento completo</p>
+            <p className="text-[10px] text-slate-400 mb-1.5 flex items-center gap-1"><Info className="w-3 h-3" /> Clique em um dia abaixo (ou diretamente na barra do gráfico) para ver o detalhamento completo. A coluna selecionada brilha no gráfico.</p>
             <div className="flex gap-2 min-w-max">
               {dailyBySector.map((d, i) => (
                 <div
@@ -802,7 +858,9 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                     <h5 className="font-bold text-teal-800 text-sm">Detalhamento do dia {fmtFullDate(selectedDayData.date)}</h5>
                     <p className="text-[10px] text-teal-600">
                       Produção total do dia: <strong>{fmtNum(selectedDayData.dayTotal, 0)}</strong> unidades
-                      ({fmtNum(selectedDayData.pctOfGrandTotal, 1)}% de toda a produção do período)
+                      ({fmtNum(selectedDayData.pctOfGrandTotal, 1)}% de toda a produção do período de {fmtNum(grandTotal, 0)} unidades).
+                      <br/><strong>% do Dia</strong> = quanto aquele setor contribuiu para o total DESTE DIA.
+                      <strong>% do Período</strong> = quanto aquele setor neste dia representou do TOTAL DE TODOS OS DIAS somados.
                     </p>
                   </div>
                 </div>
@@ -831,14 +889,16 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                             <span className="font-medium text-slate-700">{s.name}</span>
                           </div>
                         </td>
-                        <td className="py-2 px-2 text-right font-bold text-slate-800 tabular-nums">{fmtNum(s.total)}</td>
+                        <td className="py-2 px-2 text-right font-bold text-slate-800 tabular-nums">
+                          {fmtNum(s.total)} <span className="text-[9px] text-slate-500 font-normal">{s.unit}</span>
+                        </td>
                         <td className="py-2 px-2 text-right">
-                          <span className="bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums">
+                          <span className="bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums" title={`Este setor produziu ${fmtNum(s.pct, 0)}% de tudo que foi produzido NESTE DIA (${fmtNum(selectedDayData.dayTotal, 0)} unidades no dia)`}>
                             {fmtNum(s.pct, 0)}% do dia
                           </span>
                         </td>
                         <td className="py-2 px-2 text-right">
-                          <span className="text-slate-500 tabular-nums text-[10px]">
+                          <span className="text-slate-500 tabular-nums text-[10px]" title={`Este setor neste dia representou ${fmtNum(s.pctOfGrand, 1)}% da produção TOTAL DO PERÍODO INTEIRO (${fmtNum(grandTotal, 0)} unidades no período)`}>
                             {fmtNum(s.pctOfGrand, 1)}% do período
                           </span>
                         </td>
@@ -1088,14 +1148,18 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                             <span className="font-medium text-slate-700 text-xs">{sector.name}</span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-2 text-right font-bold text-slate-800 tabular-nums">{fmtNum(sector.value)}</td>
-                        <td className="py-2.5 px-2 text-right text-slate-600 tabular-nums">{fmtNum(sector.avg)}</td>
+                        <td className="py-2.5 px-2 text-right font-bold text-slate-800 tabular-nums">
+                          {fmtNum(sector.value)} <span className="text-[9px] text-slate-400 font-normal">{sector.unit}</span>
+                        </td>
+                        <td className="py-2.5 px-2 text-right text-slate-600 tabular-nums">
+                          {fmtNum(sector.avg)} <span className="text-[9px] text-slate-400 font-normal">{sector.unit}/dia</span>
+                        </td>
                         <td className="py-2.5 px-2 text-right">
-                          <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-medium tabular-nums">
+                          <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-medium tabular-nums" title={`Este setor produziu ${fmtNum(sector.pct, 1)}% de toda a produção do período (${fmtNum(grandTotal, 0)} unidades totais). Ou seja, de cada 100 unidades produzidas, ${fmtNum(sector.pct, 0)} vieram deste setor.`}>
                             {fmtNum(sector.pct, 0)}%
                           </span>
                         </td>
-                        <td className="py-2.5 px-2 text-right text-slate-500 tabular-nums">{sector.daysWithData}</td>
+                        <td className="py-2.5 px-2 text-right text-slate-500 tabular-nums" title={`Este setor teve produção em ${sector.daysWithData} dos ${totalDays} dias do período`}>{sector.daysWithData}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1200,17 +1264,21 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                     <tr key={idx} className={`transition-colors duration-200 ${idx % 2 === 0 ? "bg-white" : "bg-indigo-50/30"} hover:bg-indigo-50`}>
                       <td className="py-2.5 px-3 text-slate-400 text-xs font-medium">{idx + 1}</td>
                       <td className="py-2.5 px-3 font-medium text-slate-700">{m.name}</td>
-                      <td className="py-2.5 px-3 text-right font-bold text-slate-800 tabular-nums">{fmtNum(m.total)}</td>
-                      <td className="py-2.5 px-3 text-right text-slate-600 tabular-nums">{fmtNum(m.media)}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-800 tabular-nums">
+                        {fmtNum(m.total)} <span className="text-[9px] text-slate-400 font-normal">{sectors.find(s => s.id === selectedSector)?.unidade || ''}</span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-slate-600 tabular-nums">
+                        {fmtNum(m.media)} <span className="text-[9px] text-slate-400 font-normal">{sectors.find(s => s.id === selectedSector)?.unidade || ''}/dia</span>
+                      </td>
                       <td className="py-2.5 px-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <div className="w-16 h-2.5 bg-slate-100 rounded-full overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full transition-all duration-1000" style={{ width: `${Math.min(m.pct, 100)}%` }} />
                           </div>
-                          <span className="text-xs font-semibold text-slate-600 w-10 text-right tabular-nums">{fmtNum(m.pct, 0)}%</span>
+                          <span className="text-xs font-semibold text-slate-600 w-10 text-right tabular-nums" title={`Esta máquina produziu ${fmtNum(m.pct, 1)}% do total deste setor. Ou seja, de cada 100 unidades que o setor produziu, ${fmtNum(m.pct, 0)} vieram desta máquina.`}>{fmtNum(m.pct, 0)}%</span>
                         </div>
                       </td>
-                      <td className="py-2.5 px-3 text-right text-slate-500 tabular-nums">{m.dias}</td>
+                      <td className="py-2.5 px-3 text-right text-slate-500 tabular-nums" title={`Esta máquina teve produção registrada em ${m.dias} dias do período`}>{m.dias}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -3167,3 +3167,9 @@
 - [x] Financeiro - Autorização: tooltip da bolinha deve aparecer legível e inteiro, sem cortes
 - [x] BUG URGENTE: Flávio clica na bolinha de prioridade mas ela não fica vermelha — toggle não funciona (causa: maxiprod_id era INT, overflow com IDs > 2 bilhões, corrigido para BIGINT)
 - [x] BUG: Erro React #310 (useMemo crash) ao clicar para ver gráficos da produção (causa: hooks useMemo após early returns condicionais, reordenado)
+- [x] Produção Gráficos: explicar detalhadamente cada porcentagem e número (acessível para leigos)
+- [x] Produção Gráficos: mostrar unidade de medida correspondente de cada setor/máquina (m³, saco, caixa, forma)
+- [x] Produção Gráficos: brilho temporário na coluna do gráfico ao clicar no dia
+- [x] Vendas: indicador vermelho para contas canceladas (ex: MD da Silva) — APENAS informativo, NÃO incluir em nenhum cálculo/gráfico
+- [x] Vendas: ícone "olho" com tooltip detalhado explicando que a conta foi cancelada e não entra nos valores
+- [x] Sync: incluir pedidos cancelados na sincronização do Maxiprod (GraphQL query atualizada com CANCELADO)

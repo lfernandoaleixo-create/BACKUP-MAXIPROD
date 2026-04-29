@@ -3384,22 +3384,17 @@ export default function Sales() {
                     <p className="text-xs text-slate-400 mt-1">{analytics.pedidosAmostraBonif} pedidos</p>
                   </div>
               </div>
-              {/* Barra explicativa: conciliação Faturado + A Faturar + Cancelado = Total */}
+              {/* Barra informativa de pedidos cancelados */}
               {analytics.totalCancelado > 0 && (
                 <div className="border-t border-slate-100 px-5 py-3 bg-gradient-to-r from-red-50/50 to-transparent">
                   <div className="flex items-center gap-3 flex-wrap">
                     <Info className="w-4 h-4 text-red-400 flex-shrink-0" />
                     <p className="text-xs text-slate-500">
-                      <span className="font-semibold text-emerald-600">{formatCurrencyFull(analytics.totalFaturado)}</span>
-                      <span className="text-slate-400"> (Faturado) + </span>
-                      <span className="font-semibold text-orange-600">{formatCurrencyFull(analytics.totalAFaturar)}</span>
-                      <span className="text-slate-400"> (A Faturar) + </span>
                       <span className="font-semibold text-red-600">{formatCurrencyFull(analytics.totalCancelado)}</span>
-                      <span className="text-slate-400"> (Cancelado) = </span>
-                      <span className="font-semibold text-slate-800">{formatCurrencyFull(analytics.totalFaturado + analytics.totalAFaturar + analytics.totalCancelado)}</span>
+                      <span className="text-slate-400"> em pedidos cancelados ({analytics.canceledOrders.length} {analytics.canceledOrders.length === 1 ? 'pedido' : 'pedidos'})</span>
                     </p>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1 ml-7 italic">O valor cancelado não entra no cálculo de comissão. Base para comissão: {formatCurrencyFull(analytics.totalValue - analytics.totalCancelado)}</p>
+                  <p className="text-[10px] text-slate-400 mt-1 ml-7 italic">Cancelados não estão incluídos no valor total, nos gráficos, nem nos rankings. São exibidos apenas como informação.</p>
                 </div>
               )}
             </div>
@@ -3420,16 +3415,16 @@ export default function Sales() {
                       <span className="text-lg font-extrabold text-red-700">{formatCurrencyFull(analytics.totalCancelado)}</span>
                     </div>
                     <p className="text-xs text-red-500 mt-1">
-                      Estes pedidos foram vendidos mas cancelados posteriormente. O valor consta no Total de Vendas (reconhecendo o trabalho do vendedor), porém não aparece em Faturado nem A Faturar.
+                      Estes pedidos foram cancelados. O valor NÃO está incluído no Total de Vendas, nos gráficos, nem nos rankings. Esta informação é apenas para consulta.
                     </p>
                   </div>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-xs font-semibold text-amber-700">Base para Comissão</p>
+                        <p className="text-xs font-semibold text-amber-700">Impacto na Comissão</p>
                         <p className="text-xs text-amber-600 mt-0.5">
-                          Total vendido ({formatCurrencyFull(analytics.totalValue)}) - Cancelado ({formatCurrencyFull(analytics.totalCancelado)}) = <span className="font-bold">{formatCurrencyFull(analytics.totalValue - analytics.totalCancelado)}</span>
+                          Pedidos cancelados <span className="font-bold">não geram comissão</span> para o vendedor. O valor de {formatCurrencyFull(analytics.totalCancelado)} não entra em nenhum cálculo.
                         </p>
                       </div>
                     </div>
