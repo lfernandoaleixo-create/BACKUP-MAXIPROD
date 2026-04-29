@@ -16,8 +16,8 @@ import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp } from "lucide-react";
 import { generateDecisionPdf } from "../lib/decisionPdfExport";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson"];
-const MANUAL_TICK_OPERATORS = ["Thiago", "Guilherme", "Flavio", "Fernando", "Bruno", "Gilson"];
+const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson", "Thalita"];
+const MANUAL_TICK_OPERATORS = ["Thiago", "Guilherme", "Flavio", "Fernando", "Bruno", "Gilson", "Thalita"];
 const TICK_LABELS = ["Ação 1", "Intervalo", "Ação 2", "Intervalo", "Ação 3", "Intervalo", "Decisão"];
 
 const STATUS_OPTIONS = [
@@ -579,9 +579,9 @@ export default function InadimplenciaTab() {
 
   function handlePhoneClick(titleId: number, phoneState: string, hasDocument: boolean, needsPlan: boolean) {
     const opLower = operator?.name?.toLowerCase().trim();
-    const isAdminOp = opLower === 'guilherme' || opLower === 'thiago';
+    const isAdminOp = opLower === 'guilherme' || opLower === 'thiago' || opLower === 'thalita';
     if (isAdminOp) {
-      // Guilherme/Thiago: sempre mostrar menu com opções (qualquer estado do telefone)
+      // Guilherme/Thiago/Thalita: sempre mostrar menu com opções (qualquer estado do telefone)
       setPhoneMenuTarget({ titleId, phoneState, hasDocument, needsPlan });
       setPhoneMenuSelected(null);
       return;
@@ -682,7 +682,7 @@ export default function InadimplenciaTab() {
     { enabled: receivableIds.length > 0 }
   );
 
-  // Buscar estado de mute de vibração (silenciado por Guilherme/Thiago)
+  // Buscar estado de mute de vibração (silenciado por Guilherme/Thiago/Thalita)
   const { data: phoneMuteMap, refetch: refetchPhoneMute } = trpc.financial.getPhoneMuteStatus.useQuery(
     { receivableIds },
     { enabled: receivableIds.length > 0 }
@@ -937,7 +937,7 @@ export default function InadimplenciaTab() {
   function getPhoneState(title: Title): "blink" | "done" | "urgent" | "idle" | "document" | "muted" {
     if (title.businessDaysOverdue < 1) return "idle";
 
-    // Se a vibração foi manualmente silenciada por Guilherme/Thiago
+    // Se a vibração foi manualmente silenciada por Guilherme/Thiago/Thalita
     if (phoneMuteMap?.[title.id]) return "muted";
 
     // Se tem documento gerado (dia 7+ não protestar) - mostrar documento
@@ -1580,7 +1580,7 @@ export default function InadimplenciaTab() {
         />
       )}
 
-      {/* Menu de opções do telefone para Guilherme/Thiago */}
+      {/* Menu de opções do telefone para Guilherme/Thiago/Thalita */}
       {phoneMenuTarget && (
         <Dialog open onOpenChange={() => { setPhoneMenuTarget(null); setPhoneMenuSelected(null); }}>
           <DialogContent className="sm:max-w-sm">
@@ -2010,7 +2010,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                     const isRed = tick?.tickStatus === 'red';
                     const isBlue = tick?.tickStatus === 'blue';
                     const isGreen = isTicked && !isRed && !isBlue;
-                    const isAdminTickOp = operator?.name?.toLowerCase().trim() === 'guilherme' || operator?.name?.toLowerCase().trim() === 'thiago';
+                    const isAdminTickOp = operator?.name?.toLowerCase().trim() === 'guilherme' || operator?.name?.toLowerCase().trim() === 'thiago' || operator?.name?.toLowerCase().trim() === 'thalita';
                     const prevTicked = step === 1 || !!tickMap[step - 1]?.ticked;
                     const canTickStep = !isTicked && (prevTicked || isAdminTickOp);
                     const canUntick = isTicked && (isAdminTickOp || !isRed) && (step === 7 || !tickMap[step + 1]?.ticked);

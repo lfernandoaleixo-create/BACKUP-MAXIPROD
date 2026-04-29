@@ -9,7 +9,7 @@
  * 4. Mês correspondente pisca → operador clica para ver detalhes
  * 5. Ao visualizar, o alerta é marcado como lido
  * 
- * Operadores que veem alertas: Guilherme, Flávio, Thiago
+ * Operadores que veem alertas: Guilherme, Flávio, Thiago, Thalita
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
@@ -17,7 +17,7 @@ import { trpc } from "@/lib/trpc";
 import { useOperator } from "./OperatorContext";
 
 /** Operadores que devem receber alertas de desconto */
-const DISCOUNT_ALERT_OPERATORS = ["Guilherme", "Flávio", "Thiago"];
+const DISCOUNT_ALERT_OPERATORS = ["Guilherme", "Flávio", "Thiago", "Thalita"];
 
 interface DiscountAlert {
   id: number;

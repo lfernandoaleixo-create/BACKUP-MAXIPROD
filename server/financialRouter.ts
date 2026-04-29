@@ -4709,7 +4709,7 @@ ${acoesTexto}
         }
       }
 
-      // === NOTIFICAÇÕES DE COBRANÇA para Thiago, Flavio e Guilherme ===
+      // === NOTIFICAÇÕES DE COBRANÇA para Thiago, Flavio, Guilherme e Thalita ===
       // Alertar sobre títulos que precisam de cobrança hoje (regra 1,3,5 dias)
       const COBRANCA_RULE_START = "2026-04-16";
       const alertTitles: Array<{ cliente: string; diasAtraso: number; valor: number; receivableId: number }> = [];
@@ -4778,14 +4778,14 @@ ${acoesTexto}
           await createNotification({
             type: "cobranca_alerta",
             title: `\ud83d\udea8 COBRAN\u00c7A: ${alertTitles.length} título(s) precisam de a\u00e7\u00e3o hoje!`,
-            message: `Thiago, Flavio e Guilherme: ${alertTitles.length} título(s) estão no dia de cobrança hoje (total: ${valorFormatted2}).\n\n${clientesList}${moreText}\n\nAcesse a aba Inadimplência para registrar as ações de cobrança.`,
+            message: `Thiago, Flavio, Guilherme e Thalita: ${alertTitles.length} título(s) estão no dia de cobrança hoje (total: ${valorFormatted2}).\n\n${clientesList}${moreText}\n\nAcesse a aba Inadimplência para registrar as ações de cobrança.`,
             severity: "warning",
             metadata: {
               alertDate: todayStr,
               totalTitles: alertTitles.length,
               totalValor,
               titles: alertTitles.slice(0, 20),
-              destinatarios: ["Thiago", "Flavio", "Guilherme"],
+              destinatarios: ["Thiago", "Flavio", "Guilherme", "Thalita"],
             },
           });
           console.log(`[DailyJob] Cobranca alert created for ${alertTitles.length} titles`);
@@ -5499,7 +5499,7 @@ ${acoesTexto}
         valorTotal: String(input.valorTotal),
         titulosJson: input.titulosJson,
       });
-      // Criar alerta para Guilherme/Flávio/Thiago
+      // Criar alerta para Guilherme/Flávio/Thiago/Thalita
       await db!.insert(discountAlerts).values({
         createdBy: input.operatorName,
         empresa: input.empresa,
@@ -5721,7 +5721,7 @@ ${acoesTexto}
 
   /**
    * Toggle ticagem manual (tick/untick) — 100% MANUAL.
-   * Qualquer operador (Thiago, Guilherme, Flavio) pode:
+   * Qualquer operador (Thiago, Guilherme, Flavio, Thalita) pode:
    * - Ticar/desticar qualquer step, em qualquer ordem
    * - Escolher qualquer cor (green, red, blue)
    * - Ticar múltiplos steps no mesmo dia
@@ -5921,7 +5921,7 @@ ${acoesTexto}
    * Importar dados de cobrança de uma planilha XLSX.
    * Recebe os dados parseados no frontend (array de registros).
    * Vincula ao receivable por nome do cliente + vencimento + valor.
-   * Só Thiago/Guilherme podem usar.
+   * Só Thiago/Guilherme/Thalita podem usar.
    */
   importCobrancaSpreadsheet: publicProcedure
     .input(z.object({
@@ -5937,8 +5937,8 @@ ${acoesTexto}
     }))
     .mutation(async ({ input }) => {
       const opLower = input.operatorName.toLowerCase().trim();
-      if (opLower !== 'thiago' && opLower !== 'guilherme' && opLower !== 'fernando') {
-        throw new Error('Apenas Thiago, Guilherme ou Fernando podem importar planilhas.');
+      if (opLower !== 'thiago' && opLower !== 'guilherme' && opLower !== 'fernando' && opLower !== 'thalita') {
+        throw new Error('Apenas Thiago, Guilherme, Fernando ou Thalita podem importar planilhas.');
       }
 
       const db = await getDb();
