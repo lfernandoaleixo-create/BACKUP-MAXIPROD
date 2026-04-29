@@ -3139,3 +3139,8 @@
 - [x] Gráficos Produção: labels do pie chart corrigidos (não cortados) com abreviação inteligente de nomes longos
 - [x] Gráficos Produção: design mais profissional com gradientes, sombras, hover effects, números animados nos KPIs
 - [x] Gráficos Produção: eixo X dos bar charts com labels angulados (-35°) e altura aumentada para nomes longos de setores/máquinas
+- [x] Relatório PDF Produção: centralizar todas as tabelas (Resumo por Setor, Detalhamento por Máquina, Totais)
+- [ ] Relatório PDF Produção: alinhar cards de totais coloridos (M³, Sacos, Formas, Caixas) uniformemente
+- [ ] Relatório PDF Produção: tabelas ocuparem largura total da página, sem deslocamento lateral
+- [x] Relatórios PDF Produção: converter totais de "caixa" para "saco" (aplicar mesma conversão do dashboard)
+- [x] Gráficos Produção: cards expandíveis/retráteis (accordion) — começam fechados, abrem no clique

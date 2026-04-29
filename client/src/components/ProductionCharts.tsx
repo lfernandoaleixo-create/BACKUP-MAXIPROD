@@ -218,6 +218,16 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
   const [customEnd, setCustomEnd] = useState("");
   const [selectedSector, setSelectedSector] = useState<number | null>(null);
 
+  // Collapsible section state — all start closed
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+  const toggleSection = useCallback((key: string) => {
+    setOpenSections(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }, []);
+
   // Filters for production chart
   const [prodSectorFilter, setProdSectorFilter] = useState<Set<number>>(new Set());
   const [showProdFilter, setShowProdFilter] = useState(false);
@@ -552,8 +562,11 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
 
       {/* ═══ 1. Produção Diária por Setor (Stacked Bar) ═══ */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <div className="flex items-center justify-between mb-3">
+        <div
+          className="px-5 py-4 border-b border-slate-100 cursor-pointer select-none hover:bg-slate-50/50 transition-colors duration-200"
+          onClick={() => toggleSection('producao')}
+        >
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-white" />
@@ -563,8 +576,17 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                 {fmtNum(grandTotal, 0)} total
               </span>
             </div>
+            <div className="flex items-center gap-2">
+              <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${openSections.has('producao') ? 'rotate-180' : ''}`} />
+            </div>
+          </div>
+        </div>
+        {openSections.has('producao') && (
+        <div className="px-5 pt-3 pb-1 border-b border-slate-100">
+          <div className="flex items-center justify-between mb-3">
+            <div />
             <button
-              onClick={() => setShowProdFilter(!showProdFilter)}
+              onClick={(e) => { e.stopPropagation(); setShowProdFilter(!showProdFilter); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
                 showProdFilter ? "bg-teal-100 text-teal-700 shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
@@ -591,7 +613,9 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             </div>
           )}
         </div>
-        <div className="p-5">
+        )}
+        {openSections.has('producao') && (
+        <div className="p-5 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="h-[420px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart key={`bar1-${animKey}`} data={dailyBySector} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
@@ -648,11 +672,15 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* ═══ 2. Tendência de Produção (Area Chart) ═══ */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="px-5 py-4 border-b border-slate-100">
+        <div
+          className="px-5 py-4 border-b border-slate-100 cursor-pointer select-none hover:bg-slate-50/50 transition-colors duration-200"
+          onClick={() => toggleSection('tendencia')}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-green-500 rounded-lg flex items-center justify-center">
@@ -660,19 +688,23 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               </div>
               <h4 className="font-bold text-slate-700">Tendência de Produção Total</h4>
             </div>
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <div className="w-8 h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full" />
-                <span className="text-slate-500">Produção</span>
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-4 text-xs mr-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-8 h-1 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full" />
+                  <span className="text-slate-500">Produção</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-8 h-0.5 border-b-2 border-dashed border-amber-400" />
+                  <span className="text-slate-500">Média ({fmtNum(avgDaily)})</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-8 h-0.5 border-b-2 border-dashed border-amber-400" />
-                <span className="text-slate-500">Média ({fmtNum(avgDaily)})</span>
-              </div>
+              <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${openSections.has('tendencia') ? 'rotate-180' : ''}`} />
             </div>
           </div>
         </div>
-        <div className="p-5">
+        {openSections.has('tendencia') && (
+        <div className="p-5 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="h-[340px]">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart key={`trend-${animKey}`} data={dailyTrend} margin={{ top: 20, right: 15, left: 10, bottom: 5 }}>
@@ -727,22 +759,30 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             ))}
           </div>
         </div>
+        )}
       </div>
 
       {/* ═══ 3. Distribuição por Setor (Pie + Table) — FIXED LABELS ═══ */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-violet-500 rounded-lg flex items-center justify-center">
-              <Factory className="w-4 h-4 text-white" />
+        <div
+          className="px-5 py-4 border-b border-slate-100 cursor-pointer select-none hover:bg-slate-50/50 transition-colors duration-200"
+          onClick={() => toggleSection('distribuicao')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-violet-500 rounded-lg flex items-center justify-center">
+                <Factory className="w-4 h-4 text-white" />
+              </div>
+              <h4 className="font-bold text-slate-700">Distribuição por Setor</h4>
+              <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">
+                {sectorTotals.length} setores ativos
+              </span>
             </div>
-            <h4 className="font-bold text-slate-700">Distribuição por Setor</h4>
-            <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">
-              {sectorTotals.length} setores ativos
-            </span>
+            <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${openSections.has('distribuicao') ? 'rotate-180' : ''}`} />
           </div>
         </div>
-        <div className="p-5">
+        {openSections.has('distribuicao') && (
+        <div className="p-5 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Pie chart — no external labels, use tooltip + legend below */}
             <div className="flex flex-col items-center">
@@ -860,6 +900,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* ═══ 4. Detalhamento por Máquina ═══ */}
@@ -956,8 +997,11 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
 
       {/* ═══ 5. Manutenções e Paradas ═══ */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <div className="flex items-center justify-between mb-3">
+        <div
+          className="px-5 py-4 border-b border-slate-100 cursor-pointer select-none hover:bg-slate-50/50 transition-colors duration-200"
+          onClick={() => toggleSection('manutencao')}
+        >
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-violet-400 to-purple-500 rounded-lg flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-white" />
@@ -967,7 +1011,14 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                 {rawMaintenanceData.reduce((s, d) => s + d.totalParadas, 0)} paradas
               </span>
             </div>
-            <button onClick={() => setShowMaintFilter(!showMaintFilter)}
+            <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${openSections.has('manutencao') ? 'rotate-180' : ''}`} />
+          </div>
+        </div>
+        {openSections.has('manutencao') && (
+        <div className="px-5 pt-3 pb-1 border-b border-slate-100">
+          <div className="flex items-center justify-between mb-3">
+            <div />
+            <button onClick={(e) => { e.stopPropagation(); setShowMaintFilter(!showMaintFilter); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
                 showMaintFilter ? "bg-violet-100 text-violet-700 shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}>
@@ -1001,7 +1052,9 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             </div>
           )}
         </div>
-        <div className="p-5">
+        )}
+        {openSections.has('manutencao') && (
+        <div className="p-5 animate-in fade-in slide-in-from-top-2 duration-300">
           {maintenanceData.length === 0 ? (
             <div className="text-center py-8">
               <Wrench className="w-8 h-8 text-slate-300 mx-auto mb-2" />
@@ -1155,22 +1208,30 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             </>
           )}
         </div>
+        )}
       </div>
 
       {/* ═══ 6. Distribuição de Status ═══ */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4 text-white" />
+        <div
+          className="px-5 py-4 border-b border-slate-100 cursor-pointer select-none hover:bg-slate-50/50 transition-colors duration-200"
+          onClick={() => toggleSection('status')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-white" />
+              </div>
+              <h4 className="font-bold text-slate-700">Distribuição de Status</h4>
+              <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">
+                {totalEntries} registros
+              </span>
             </div>
-            <h4 className="font-bold text-slate-700">Distribuição de Status</h4>
-            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">
-              {totalEntries} registros
-            </span>
+            <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${openSections.has('status') ? 'rotate-180' : ''}`} />
           </div>
         </div>
-        <div className="p-5">
+        {openSections.has('status') && (
+        <div className="p-5 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="h-[340px]" style={{ overflow: "visible" }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -1244,6 +1305,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
