@@ -637,21 +637,23 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
         {/* ═══ Global KPI Cards with animated numbers ═══ */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: "Total Produzido", value: grandTotal, decimals: 0, from: "from-teal-50", to: "to-emerald-50", border: "border-teal-200", textColor: "text-teal-600", numColor: "text-teal-800", icon: <Zap className="w-3.5 h-3.5" /> },
-            { label: "Média Diária", value: avgDaily, decimals: 1, from: "from-blue-50", to: "to-sky-50", border: "border-blue-200", textColor: "text-blue-600", numColor: "text-blue-800", icon: <Activity className="w-3.5 h-3.5" /> },
-            { label: "Melhor Dia", value: maxDay, decimals: 0, from: "from-emerald-50", to: "to-green-50", border: "border-emerald-200", textColor: "text-emerald-600", numColor: "text-emerald-800", icon: <ArrowUpRight className="w-3.5 h-3.5" /> },
-            { label: "Pior Dia", value: minDay, decimals: 0, from: "from-amber-50", to: "to-yellow-50", border: "border-amber-200", textColor: "text-amber-600", numColor: "text-amber-800", icon: <ArrowDownRight className="w-3.5 h-3.5" /> },
-            { label: "Manutenções", value: totalMaintCount, decimals: 0, from: "from-violet-50", to: "to-purple-50", border: "border-violet-200", textColor: "text-violet-600", numColor: "text-violet-800", icon: <Wrench className="w-3.5 h-3.5" /> },
-            { label: "Total Paradas", value: totalParadasCount, decimals: 0, from: "from-rose-50", to: "to-red-50", border: "border-rose-200", textColor: "text-rose-600", numColor: "text-rose-800", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+            { label: "Total Produzido", value: grandTotal, decimals: 0, desc: "Soma de todas as unidades produzidas (cx, dz, saco) em todos os setores no período selecionado", from: "from-teal-50", to: "to-emerald-50", border: "border-teal-200", textColor: "text-teal-600", numColor: "text-teal-800", icon: <Zap className="w-3.5 h-3.5" /> },
+            { label: "Média Diária", value: avgDaily, decimals: 1, desc: `Produção total ÷ dias com lançamento (${daysWithProdCount} dias). Dias sem produção não entram no cálculo`, from: "from-blue-50", to: "to-sky-50", border: "border-blue-200", textColor: "text-blue-600", numColor: "text-blue-800", icon: <Activity className="w-3.5 h-3.5" /> },
+            { label: "Melhor Dia", value: maxDay, decimals: 0, desc: "Maior produção total registrada em um único dia no período", from: "from-emerald-50", to: "to-green-50", border: "border-emerald-200", textColor: "text-emerald-600", numColor: "text-emerald-800", icon: <ArrowUpRight className="w-3.5 h-3.5" /> },
+            { label: "Pior Dia", value: minDay, decimals: 0, desc: "Menor produção total registrada em um único dia no período (apenas dias com produção)", from: "from-amber-50", to: "to-yellow-50", border: "border-amber-200", textColor: "text-amber-600", numColor: "text-amber-800", icon: <ArrowDownRight className="w-3.5 h-3.5" /> },
+            { label: "Manutenções", value: totalMaintCount, decimals: 0, desc: "Total de registros de manutenção (programada + pontual) em todas as máquinas no período", from: "from-violet-50", to: "to-purple-50", border: "border-violet-200", textColor: "text-violet-600", numColor: "text-violet-800", icon: <Wrench className="w-3.5 h-3.5" /> },
+            { label: "Total Paradas", value: totalParadasCount, decimals: 0, desc: "Soma de todas as paradas (manutenção + pontual + falta madeira + prod. não necessária) no período", from: "from-rose-50", to: "to-red-50", border: "border-rose-200", textColor: "text-rose-600", numColor: "text-rose-800", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
           ].map((kpi, i) => (
-            <div key={i} className={`bg-gradient-to-br ${kpi.from} ${kpi.to} border ${kpi.border} rounded-xl p-3 transition-all duration-300 hover:shadow-md hover:scale-[1.02]`}>
+            <div key={i} className={`bg-gradient-to-br ${kpi.from} ${kpi.to} border ${kpi.border} rounded-xl p-3 transition-all duration-300 hover:shadow-md hover:scale-[1.02] group relative`}>
               <div className={`flex items-center gap-1.5 ${kpi.textColor}`}>
                 {kpi.icon}
                 <p className="text-[10px] font-semibold uppercase tracking-wider">{kpi.label}</p>
+                <Info className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity cursor-help" />
               </div>
               <p className={`text-xl font-bold ${kpi.numColor} mt-1 tabular-nums`}>
                 <AnimatedNumber value={kpi.value} decimals={kpi.decimals} />
               </p>
+              <p className="text-[8px] leading-tight text-slate-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">{kpi.desc}</p>
             </div>
           ))}
         </div>
@@ -879,10 +881,10 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                   <thead>
                     <tr className="border-b border-teal-200">
                       <th className="text-left py-2 px-2 text-teal-700 font-semibold">Setor</th>
-                      <th className="text-right py-2 px-2 text-teal-700 font-semibold">Produção do Dia</th>
-                      <th className="text-right py-2 px-2 text-teal-700 font-semibold">% do Dia</th>
-                      <th className="text-right py-2 px-2 text-teal-700 font-semibold">% do Período</th>
-                      <th className="text-left py-2 px-2 text-teal-700 font-semibold">Máquinas Ativas</th>
+                      <th className="text-right py-2 px-2 text-teal-700 font-semibold cursor-help" title="Quantidade total produzida por este setor neste dia específico">Produção do Dia</th>
+                      <th className="text-right py-2 px-2 text-teal-700 font-semibold cursor-help" title="Quanto este setor contribuiu para o total DESTE DIA. Soma de todos os setores = 100%">% do Dia</th>
+                      <th className="text-right py-2 px-2 text-teal-700 font-semibold cursor-help" title={`Quanto este setor neste dia representou do TOTAL DE TODO O PERÍODO (${fmtNum(grandTotal, 0)} unidades somando todos os dias)`}>% do Período</th>
+                      <th className="text-left py-2 px-2 text-teal-700 font-semibold cursor-help" title="Máquinas que produziram neste dia, com a quantidade individual entre parênteses">Máquinas Ativas</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1129,10 +1131,10 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                   <thead>
                     <tr className="border-b-2 border-slate-200">
                       <th className="text-left py-2.5 px-2 text-slate-500 font-semibold text-xs">Setor</th>
-                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs">Total</th>
-                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs">Média/Dia</th>
-                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs" title="Percentual da produção total do período">% do Total</th>
-                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs">Dias</th>
+                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs cursor-help" title="Produção total acumulada do setor em todo o período selecionado (soma de todas as máquinas do setor)">Total</th>
+                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs cursor-help" title="Total do setor ÷ número de dias em que o setor teve produção real. Dias de parada/manutenção não entram no cálculo">Média/Dia</th>
+                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs cursor-help" title={`Percentual da produção total do período (${fmtNum(grandTotal, 0)} unidades). Exemplo: 20% significa que este setor produziu 20% de tudo`}>% do Total</th>
+                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs cursor-help" title="Número de dias em que o setor teve produção real registrada (quantidade > 0). Dias de manutenção/parada não contam">Dias</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1264,10 +1266,10 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                   <tr className="border-b-2 border-indigo-200 bg-indigo-50/50">
                     <th className="text-left py-2.5 px-3 text-indigo-600 font-semibold text-xs">#</th>
                     <th className="text-left py-2.5 px-3 text-indigo-600 font-semibold text-xs">Máquina</th>
-                    <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs">Total</th>
-                    <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs">Média/Dia</th>
-                    <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs">% do Setor</th>
-                    <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs">Dias</th>
+                    <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs cursor-help" title="Produção total acumulada desta máquina em todo o período selecionado">Total</th>
+                    <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs cursor-help" title="Total da máquina ÷ número de dias em que ela produziu. Dias de parada não entram no cálculo">Média/Dia</th>
+                    <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs cursor-help" title="Quanto esta máquina contribuiu para o total do setor. Soma de todas as máquinas = 100%">% do Setor</th>
+                    <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs cursor-help" title="Número de dias em que esta máquina teve produção registrada (quantidade > 0)">Dias</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1475,12 +1477,16 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                 {MAINT_TYPES.filter(t => maintTypeFilter.has(t.key)).map(t => {
                   const total = rawMaintenanceData.reduce((s, d) => s + (d as any)[t.key], 0);
                   return (
-                    <div key={t.key} className="rounded-xl p-3 text-center border transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
-                      style={{ backgroundColor: `${t.color}08`, borderColor: `${t.color}25` }}>
+                    <div key={t.key} className="rounded-xl p-3 text-center border transition-all duration-300 hover:shadow-md hover:scale-[1.02] group"
+                      style={{ backgroundColor: `${t.color}08`, borderColor: `${t.color}25` }}
+                      title={t.key === 'manutencao' ? `${total} parada(s) programada(s) para conserto em todas as máquinas no período` : t.key === 'manutencaoPontual' ? `${total} quebra(s) inesperada(s) que exigiram reparo imediato` : t.key === 'faltaMadeira' ? `${total} vez(es) que máquinas pararam por falta de matéria-prima` : `${total} vez(es) que máquinas pararam por não haver demanda`}>
                       <p className="text-2xl font-bold tabular-nums" style={{ color: t.color }}>
                         <AnimatedNumber value={total} />
                       </p>
                       <p className="text-xs mt-0.5 font-medium" style={{ color: t.color }}>{t.label}</p>
+                      <p className="text-[8px] mt-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: t.color }}>
+                        {t.key === 'manutencao' ? 'Conserto programado' : t.key === 'manutencaoPontual' ? 'Quebra inesperada' : t.key === 'faltaMadeira' ? 'Sem matéria-prima' : 'Sem demanda'}
+                      </p>
                     </div>
                   );
                 })}
@@ -1491,30 +1497,30 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b-2 border-violet-200 bg-violet-50/50">
-                      <th className="text-left py-2.5 px-3 text-violet-600 font-semibold text-xs">Setor</th>
-                      {maintTypeFilter.has("manutencao") && <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs">Manut.</th>}
-                      {maintTypeFilter.has("manutencaoPontual") && <th className="text-right py-2.5 px-3 text-violet-600 font-semibold text-xs">Pontual</th>}
-                      {maintTypeFilter.has("faltaMadeira") && <th className="text-right py-2.5 px-3 text-red-600 font-semibold text-xs">Falta Mad.</th>}
-                      {maintTypeFilter.has("prodNaoNecessaria") && <th className="text-right py-2.5 px-3 text-amber-600 font-semibold text-xs">Não Nec.</th>}
-                      <th className="text-right py-2.5 px-3 text-slate-600 font-semibold text-xs">Total</th>
-                      <th className="text-right py-2.5 px-3 text-slate-600 font-semibold text-xs">% Parada</th>
+                      <th className="text-left py-2.5 px-3 text-violet-600 font-semibold text-xs" title="Nome do setor de produção">Setor</th>
+                      {maintTypeFilter.has("manutencao") && <th className="text-right py-2.5 px-3 text-indigo-600 font-semibold text-xs cursor-help" title="Manutenção Programada: número de vezes que máquinas deste setor ficaram paradas para conserto programado no período">Manut.</th>}
+                      {maintTypeFilter.has("manutencaoPontual") && <th className="text-right py-2.5 px-3 text-violet-600 font-semibold text-xs cursor-help" title="Manutenção Pontual: número de vezes que máquinas deste setor quebraram inesperadamente e precisaram de reparo imediato">Pontual</th>}
+                      {maintTypeFilter.has("faltaMadeira") && <th className="text-right py-2.5 px-3 text-red-600 font-semibold text-xs cursor-help" title="Falta de Madeira: número de vezes que máquinas deste setor ficaram paradas por falta de matéria-prima">Falta Mad.</th>}
+                      {maintTypeFilter.has("prodNaoNecessaria") && <th className="text-right py-2.5 px-3 text-amber-600 font-semibold text-xs cursor-help" title="Produção Não Necessária: número de vezes que máquinas deste setor ficaram paradas porque não havia demanda de produção">Não Nec.</th>}
+                      <th className="text-right py-2.5 px-3 text-slate-600 font-semibold text-xs cursor-help" title="Total de Paradas: soma de todas as paradas (Manut. + Pontual + Falta Mad. + Não Nec.) deste setor no período">Total</th>
+                      <th className="text-right py-2.5 px-3 text-slate-600 font-semibold text-xs cursor-help" title="% Parada: total de paradas deste setor ÷ total de registros (máquina/dia) deste setor × 100. Exemplo: se o setor tem 8 máquinas e 10 dias = 80 registros, e 40 foram paradas, então % Parada = 50%. Quanto MAIOR, mais tempo parado.">% Parada</th>
                     </tr>
                   </thead>
                   <tbody>
                     {maintenanceData.map((d: any, idx: number) => (
                       <tr key={idx} className={`transition-colors duration-200 ${idx % 2 === 0 ? "bg-white" : "bg-violet-50/30"} hover:bg-violet-50`}>
                         <td className="py-2.5 px-3 font-medium text-slate-700">{d.name}</td>
-                        {maintTypeFilter.has("manutencao") && <td className="py-2.5 px-3 text-right font-bold text-indigo-700 tabular-nums">{d.manutencao || 0}</td>}
-                        {maintTypeFilter.has("manutencaoPontual") && <td className="py-2.5 px-3 text-right font-bold text-violet-700 tabular-nums">{d.manutencaoPontual || 0}</td>}
-                        {maintTypeFilter.has("faltaMadeira") && <td className="py-2.5 px-3 text-right font-bold text-red-700 tabular-nums">{d.faltaMadeira || 0}</td>}
-                        {maintTypeFilter.has("prodNaoNecessaria") && <td className="py-2.5 px-3 text-right font-bold text-amber-700 tabular-nums">{d.prodNaoNecessaria || 0}</td>}
-                        <td className="py-2.5 px-3 text-right font-bold text-slate-800 tabular-nums">{d.total}</td>
+                        {maintTypeFilter.has("manutencao") && <td className="py-2.5 px-3 text-right font-bold text-indigo-700 tabular-nums" title={`${d.name}: ${d.manutencao || 0} registro(s) de manutenção programada no período`}>{d.manutencao || 0}</td>}
+                        {maintTypeFilter.has("manutencaoPontual") && <td className="py-2.5 px-3 text-right font-bold text-violet-700 tabular-nums" title={`${d.name}: ${d.manutencaoPontual || 0} quebra(s) inesperada(s) no período`}>{d.manutencaoPontual || 0}</td>}
+                        {maintTypeFilter.has("faltaMadeira") && <td className="py-2.5 px-3 text-right font-bold text-red-700 tabular-nums" title={`${d.name}: ${d.faltaMadeira || 0} parada(s) por falta de madeira no período`}>{d.faltaMadeira || 0}</td>}
+                        {maintTypeFilter.has("prodNaoNecessaria") && <td className="py-2.5 px-3 text-right font-bold text-amber-700 tabular-nums" title={`${d.name}: ${d.prodNaoNecessaria || 0} registro(s) de produção não necessária no período`}>{d.prodNaoNecessaria || 0}</td>}
+                        <td className="py-2.5 px-3 text-right font-bold text-slate-800 tabular-nums" title={`${d.name}: ${d.total} parada(s) total no período (soma de todos os tipos)`}>{d.total}</td>
                         <td className="py-2.5 px-3 text-right">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold cursor-help ${
                             d.pctParada > 30 ? "bg-red-100 text-red-700" :
                             d.pctParada > 15 ? "bg-amber-100 text-amber-700" :
                             "bg-green-100 text-green-700"
-                          }`}>
+                          }`} title={`${d.name}: ${fmtNum(d.pctParada, 1)}% de parada = ${d.total} paradas ÷ ${d.totalEntries || '?'} registros totais. ${d.pctParada > 30 ? 'ALTO — setor com muitas paradas!' : d.pctParada > 15 ? 'MODERADO — atenção necessária' : 'BOM — poucas paradas'}`}>
                             {fmtNum(d.pctParada, 0)}%
                           </span>
                         </td>
@@ -1618,14 +1624,15 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Detalhamento</p>
               <div className="space-y-2.5">
                 {statusData.map((status, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 transition-all duration-200 hover:shadow-sm hover:border-slate-200">
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 transition-all duration-200 hover:shadow-sm hover:border-slate-200 cursor-help"
+                    title={`${status.name}: ${status.value} de ${totalEntries} registros (${fmtNum(status.pct, 1)}%). Cada registro = 1 máquina em 1 dia. ${status.name === 'Produzindo' ? 'Máquina funcionou normalmente naquele dia.' : status.name === 'Manutenção' ? 'Máquina parou para conserto programado.' : status.name === 'Manutenção Pontual' ? 'Máquina quebrou e precisou de reparo imediato.' : status.name === 'Falta de Madeira' ? 'Máquina parou por falta de matéria-prima.' : 'Máquina parou por não haver demanda.'}`}>
                     <div className="flex items-center gap-2.5">
                       <div className="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-sm" style={{ backgroundColor: status.color }} />
                       <span className="text-sm text-slate-700 font-medium">{status.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-slate-800 tabular-nums">{status.value}</span>
-                      <span className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-semibold w-14 text-center tabular-nums">
+                      <span className="text-sm font-bold text-slate-800 tabular-nums" title={`${status.value} registros de máquina/dia com este status`}>{status.value}</span>
+                      <span className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-semibold w-14 text-center tabular-nums" title={`${fmtNum(status.pct, 1)}% = ${status.value} ÷ ${totalEntries} registros totais × 100`}>
                         {fmtNum(status.pct, 0)}%
                       </span>
                       <div className="w-24 h-2.5 bg-slate-200 rounded-full overflow-hidden">

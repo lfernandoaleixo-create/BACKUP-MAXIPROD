@@ -3190,3 +3190,4 @@
 - [x] BUG URGENTE: Maria/Erica/Marcos recebendo notificações de cobrança/inadimplência no sininho — devem receber APENAS notificações de faturamento (pedido novo/modificação)
 - [x] Seleção Automática: gráfico de tendência semanal para Queijo Coalho e Alídio (dentro do card expandido)
 - [x] Seleção Automática: exportação PDF mensal das anotações de Queijo Coalho e Alídio
+- [x] ProductionCharts: adicionar explicações detalhadas (tooltips/legendas) em todos os gráficos e tabelas — cada valor, porcentagem e coluna deve ter contexto claro
