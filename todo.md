@@ -3166,3 +3166,4 @@
 - [x] Financeiro - Autorização: mover bolinha de prioridade para perto do nome do fornecedor (não ao lado do valor)
 - [x] Financeiro - Autorização: tooltip da bolinha deve aparecer legível e inteiro, sem cortes
 - [x] BUG URGENTE: Flávio clica na bolinha de prioridade mas ela não fica vermelha — toggle não funciona (causa: maxiprod_id era INT, overflow com IDs > 2 bilhões, corrigido para BIGINT)
+- [x] BUG: Erro React #310 (useMemo crash) ao clicar para ver gráficos da produção (causa: hooks useMemo após early returns condicionais, reordenado)

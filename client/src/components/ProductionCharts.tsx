@@ -498,6 +498,46 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
     };
   }, [historyData, sectors, selectedSector, prodSectorFilter, maintTypeFilter, maintSectorFilter]);
 
+  // Build sector name map for tooltip resolution (MUST be before any early return to keep hooks order stable)
+  const sectorNameMap = useMemo(() => {
+    const m = new Map<number, string>();
+    sectors.forEach(s => m.set(s.id, s.nome));
+    return m;
+  }, [sectors]);
+
+  // Selected day detail data (MUST be before any early return to keep hooks order stable)
+  const grandTotalForDay = processedData?.grandTotal ?? 0;
+  const selectedDayData = useMemo(() => {
+    if (!selectedDay || !historyData) return null;
+    const dayEntries = historyData.filter(e => e.data === selectedDay);
+    if (!dayEntries.length) return null;
+    const dayTotal = dayEntries.reduce((s, e) => s + Number(e.quantidade), 0);
+    const bySector = sectors.map((sector, idx) => {
+      const sectorEntries = dayEntries.filter(e => e.sectorId === sector.id);
+      const total = sectorEntries.reduce((s, e) => s + Number(e.quantidade), 0);
+      const pct = dayTotal > 0 ? (total / dayTotal) * 100 : 0;
+      const pctOfGrand = grandTotalForDay > 0 ? (total / grandTotalForDay) * 100 : 0;
+      return {
+        name: sector.nome,
+        unit: sector.unidade,
+        total,
+        pct,
+        pctOfGrand,
+        color: SECTOR_COLORS[idx % SECTOR_COLORS.length],
+        machines: sector.machines.map(m => {
+          const mEntries = sectorEntries.filter(e => e.machineId === m.id);
+          return {
+            name: m.nome,
+            total: mEntries.reduce((s, e) => s + Number(e.quantidade), 0),
+            status: mEntries[0]?.status || 'producao_normal',
+          };
+        }).filter(m => m.total > 0),
+      };
+    }).filter(s => s.total > 0);
+    const pctOfGrandTotal = grandTotalForDay > 0 ? (dayTotal / grandTotalForDay) * 100 : 0;
+    return { date: selectedDay, dayTotal, pctOfGrandTotal, bySector };
+  }, [selectedDay, historyData, sectors, grandTotalForDay]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -527,47 +567,8 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
     totalEntries, totalMaintCount, totalParadasCount, activeProdSectors,
   } = processedData;
 
-  // Build sector name map for tooltip resolution
-  const sectorNameMap = useMemo(() => {
-    const m = new Map<number, string>();
-    sectors.forEach(s => m.set(s.id, s.nome));
-    return m;
-  }, [sectors]);
-
   // Set tooltip context for the custom tooltip
   setTooltipContext({ sectorMap: sectorNameMap, grandTotal, contextLabel: "do total" });
-
-  // Selected day detail data
-  const selectedDayData = useMemo(() => {
-    if (!selectedDay || !historyData) return null;
-    const dayEntries = historyData.filter(e => e.data === selectedDay);
-    if (!dayEntries.length) return null;
-    const dayTotal = dayEntries.reduce((s, e) => s + Number(e.quantidade), 0);
-    const bySector = sectors.map((sector, idx) => {
-      const sectorEntries = dayEntries.filter(e => e.sectorId === sector.id);
-      const total = sectorEntries.reduce((s, e) => s + Number(e.quantidade), 0);
-      const pct = dayTotal > 0 ? (total / dayTotal) * 100 : 0;
-      const pctOfGrand = grandTotal > 0 ? (total / grandTotal) * 100 : 0;
-      return {
-        name: sector.nome,
-        unit: sector.unidade,
-        total,
-        pct,
-        pctOfGrand,
-        color: SECTOR_COLORS[idx % SECTOR_COLORS.length],
-        machines: sector.machines.map(m => {
-          const mEntries = sectorEntries.filter(e => e.machineId === m.id);
-          return {
-            name: m.nome,
-            total: mEntries.reduce((s, e) => s + Number(e.quantidade), 0),
-            status: mEntries[0]?.status || 'producao_normal',
-          };
-        }).filter(m => m.total > 0),
-      };
-    }).filter(s => s.total > 0);
-    const pctOfGrandTotal = grandTotal > 0 ? (dayTotal / grandTotal) * 100 : 0;
-    return { date: selectedDay, dayTotal, pctOfGrandTotal, bySector };
-  }, [selectedDay, historyData, sectors, grandTotal]);
 
   return (
     <div className="space-y-6">
