@@ -1351,3 +1351,21 @@ export const collectionStepOverrides = mysqlTable("collection_step_overrides", {
 });
 export type CollectionStepOverride = typeof collectionStepOverrides.$inferSelect;
 export type InsertCollectionStepOverride = typeof collectionStepOverrides.$inferInsert;
+
+
+/**
+ * Histórico de planilhas enviadas na aba Inadimplência.
+ * Armazena apenas o arquivo no S3 — NÃO altera dados de inadimplência.
+ */
+export const spreadsheetUploads = mysqlTable("spreadsheet_uploads", {
+  id: int("id").autoincrement().primaryKey(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileKey: varchar("file_key", { length: 500 }).notNull(), // S3 key
+  fileUrl: varchar("file_url", { length: 1000 }).notNull(), // S3 public URL
+  fileSize: int("file_size"), // bytes
+  mimeType: varchar("mime_type", { length: 100 }),
+  uploadedBy: varchar("uploaded_by", { length: 100 }).notNull(),
+  uploadedAt: bigint("uploaded_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type SpreadsheetUpload = typeof spreadsheetUploads.$inferSelect;
+export type InsertSpreadsheetUpload = typeof spreadsheetUploads.$inferInsert;

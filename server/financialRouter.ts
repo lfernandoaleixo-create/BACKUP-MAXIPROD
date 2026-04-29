@@ -5,12 +5,12 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
+import { storagePut, storageGet } from "./storage";
 import { ENV } from "./_core/env";
 import { generateCollectionPdf } from "./generateCollectionPdf";
-import { storagePut } from "./storage";
 import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial, gql } from "./maxiprodGraphQL";
 import { checkAndResetIfNeeded } from "./paymentAuthReset";
 
@@ -6132,5 +6132,105 @@ ${acoesTexto}
         map[r.step] = { descricao: r.descricao, motivo: r.motivo, dataOverride: r.dataOverride };
       }
       return { overrides: map };
+    }),
+
+  // ─── Planilhas (upload/armazenamento sem alterar dados) ───
+
+  /**
+   * Upload de planilha — salva no S3 e registra no histórico.
+   * NÃO altera nenhum dado de inadimplência.
+   */
+  uploadSpreadsheet: publicProcedure
+    .input(z.object({
+      fileName: z.string(),
+      fileBase64: z.string(), // base64 encoded file content
+      mimeType: z.string().optional(),
+      fileSize: z.number().optional(),
+      uploadedBy: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      // Decode base64 to buffer
+      const buffer = Buffer.from(input.fileBase64, "base64");
+
+      // Generate unique S3 key
+      const timestamp = Date.now();
+      const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const fileKey = `spreadsheet-uploads/${timestamp}-${safeName}`;
+      const contentType = input.mimeType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+      // Upload to S3
+      const { url } = await storagePut(fileKey, buffer, contentType);
+
+      // Save metadata to DB
+      const [result] = await db.insert(spreadsheetUploads).values({
+        fileName: input.fileName,
+        fileKey,
+        fileUrl: url,
+        fileSize: input.fileSize || buffer.length,
+        mimeType: contentType,
+        uploadedBy: input.uploadedBy,
+        uploadedAt: timestamp,
+      });
+
+      return {
+        id: result.insertId,
+        fileName: input.fileName,
+        fileUrl: url,
+        uploadedAt: timestamp,
+      };
+    }),
+
+  /**
+   * Listar planilhas enviadas — histórico completo.
+   */
+  listSpreadsheetUploads: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return { uploads: [] };
+
+      const rows = await db.select().from(spreadsheetUploads)
+        .orderBy(desc(spreadsheetUploads.uploadedAt));
+
+      return { uploads: rows };
+    }),
+
+  /**
+   * Deletar planilha do histórico.
+   */
+  deleteSpreadsheetUpload: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      await db.delete(spreadsheetUploads).where(eq(spreadsheetUploads.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Obter URL de download de uma planilha.
+   */
+  getSpreadsheetDownloadUrl: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      const [row] = await db.select().from(spreadsheetUploads)
+        .where(eq(spreadsheetUploads.id, input.id));
+
+      if (!row) throw new Error("Planilha não encontrada");
+
+      // Try to get a fresh download URL
+      try {
+        const { url } = await storageGet(row.fileKey);
+        return { url, fileName: row.fileName };
+      } catch {
+        // Fallback to stored URL
+        return { url: row.fileUrl, fileName: row.fileName };
+      }
     }),
 });

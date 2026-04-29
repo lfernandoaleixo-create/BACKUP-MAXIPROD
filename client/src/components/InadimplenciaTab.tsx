@@ -4095,253 +4095,260 @@ Documento para Tomada de Decisão
 }
 
 
-/* ---- Dialog de Importação de Planilha de Cobrança ---- */
+/* ---- Dialog de Importação de Planilha (Upload + Histórico) ---- */
 function ImportSpreadsheetDialog({ operatorName, onClose, onSuccess }: {
   operatorName: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const [tab, setTab] = useState<'upload' | 'history'>('upload');
   const [file, setFile] = useState<File | null>(null);
-  const [parsedRecords, setParsedRecords] = useState<Array<{
-    dataContato: string;
-    cliente: string;
-    valor: number;
-    vencimento: string;
-    mensagem: string;
-    actionTypes: string[];
-  }> | null>(null);
-  const [parsing, setParsing] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadDone, setUploadDone] = useState(false);
   const utils = trpc.useUtils();
 
-  const importMutation = trpc.financial.importCobrancaSpreadsheet.useMutation({
-    onSuccess: (data) => {
-      setResult(data);
-      setImporting(false);
-      utils.financial.getOverdueTitles.invalidate();
-      utils.financial.getCollectionHistory.invalidate();
-      utils.financial.getCollectionChecklist.invalidate();
-      toast.success(`Importação concluída! ${data.matched} registros vinculados.`);
+  // History query
+  const { data: historyData, isLoading: historyLoading } = trpc.financial.listSpreadsheetUploads.useQuery();
+
+  // Upload mutation
+  const uploadMutation = trpc.financial.uploadSpreadsheet.useMutation({
+    onSuccess: () => {
+      setUploadDone(true);
+      setUploading(false);
+      utils.financial.listSpreadsheetUploads.invalidate();
+      toast.success('Planilha salva com sucesso!');
     },
     onError: (err) => {
-      toast.error(err.message);
-      setImporting(false);
+      toast.error(`Erro ao salvar: ${err.message}`);
+      setUploading(false);
     },
+  });
+
+  // Delete mutation
+  const deleteMutation = trpc.financial.deleteSpreadsheetUpload.useMutation({
+    onSuccess: () => {
+      utils.financial.listSpreadsheetUploads.invalidate();
+      toast.success('Planilha removida do histórico.');
+    },
+    onError: (err) => toast.error(err.message),
   });
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     setFile(f);
-    setParsing(true);
-    setParsedRecords(null);
-    setResult(null);
+    setUploadDone(false);
+  }
 
+  async function handleUpload() {
+    if (!file) return;
+    setUploading(true);
     try {
-      // Parse XLSX in the browser using SheetJS
-      const XLSX = await import('xlsx');
-      const buffer = await f.arrayBuffer();
-      const wb = XLSX.read(buffer, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
-
-      // Expected columns: DATA CONTATO, CLIENTE, VALOR, VENC., MENSAGEM
-      const records: typeof parsedRecords = [];
-      for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row || !row[0] || !row[1] || !row[4]) continue;
-
-        let dataContato = '';
-        const rawDate = row[0];
-        if (typeof rawDate === 'string' && rawDate.includes('-')) {
-          dataContato = rawDate.split('T')[0];
-        } else if (typeof rawDate === 'string' && rawDate.includes('/')) {
-          const parts = rawDate.split('/');
-          if (parts.length === 3) {
-            dataContato = parts[2].length === 4 
-              ? `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
-              : `20${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-          }
-        } else if (typeof rawDate === 'number') {
-          // Excel serial date
-          const d = new Date((rawDate - 25569) * 86400000);
-          dataContato = d.toISOString().split('T')[0];
-        }
-
-        let vencimento = '';
-        const rawVenc = row[3];
-        if (typeof rawVenc === 'string' && rawVenc.includes('-')) {
-          vencimento = rawVenc.split('T')[0];
-        } else if (typeof rawVenc === 'string' && rawVenc.includes('/')) {
-          const parts = rawVenc.split('/');
-          if (parts.length === 3) {
-            vencimento = parts[2].length === 4
-              ? `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
-              : `20${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-          }
-        } else if (typeof rawVenc === 'number') {
-          const d = new Date((rawVenc - 25569) * 86400000);
-          vencimento = d.toISOString().split('T')[0];
-        }
-
-        const valor = parseFloat(String(row[2]).replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-        const mensagem = String(row[4]).trim();
-
-        // Extract action types from message
-        const actionTypes: string[] = [];
-        const msgUpper = mensagem.toUpperCase();
-        if (msgUpper.includes('WHATSAPP')) actionTypes.push('whatsapp');
-        if (msgUpper.includes('EMAIL') || msgUpper.includes('E-MAIL')) actionTypes.push('email');
-        if (msgUpper.includes('LIGAÇ') || msgUpper.includes('LIGAC') || msgUpper.includes('TELEFONE')) actionTypes.push('ligacao');
-        if (actionTypes.length === 0) actionTypes.push('outro');
-
-        if (dataContato && vencimento) {
-          records.push({
-            dataContato,
-            cliente: String(row[1]).trim(),
-            valor,
-            vencimento,
-            mensagem,
-            actionTypes,
-          });
-        }
-      }
-
-      setParsedRecords(records);
+      const buffer = await file.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+      uploadMutation.mutate({
+        fileName: file.name,
+        fileBase64: base64,
+        mimeType: file.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        fileSize: file.size,
+        uploadedBy: operatorName,
+      });
     } catch (err: any) {
-      toast.error(`Erro ao ler planilha: ${err.message}`);
-    } finally {
-      setParsing(false);
+      toast.error(`Erro: ${err.message}`);
+      setUploading(false);
     }
   }
 
-  function handleImport() {
-    if (!parsedRecords || parsedRecords.length === 0) return;
-    setImporting(true);
-    importMutation.mutate({
-      operatorName,
-      records: parsedRecords,
-    });
+  function handleDownload(upload: any) {
+    if (upload.fileUrl) {
+      window.open(upload.fileUrl, '_blank');
+    } else {
+      toast.error('URL do arquivo não disponível');
+    }
+  }
+
+  function handleDelete(id: number) {
+    if (!confirm('Tem certeza que deseja remover esta planilha do histórico?')) return;
+    deleteMutation.mutate({ id });
+  }
+
+  function fmtDate(ts: number) {
+    return new Date(ts).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+  function fmtTime(ts: number) {
+    return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function fmtSize(bytes: number | null) {
+    if (!bytes) return '—';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   return (
     <Dialog open onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-emerald-600" />
-            Importar Planilha de Cobrança
+            Planilhas de Cobrança
           </DialogTitle>
           <DialogDescription>
-            Selecione um arquivo XLSX com as colunas: DATA CONTATO, CLIENTE, VALOR, VENC., MENSAGEM
+            Envie planilhas para armazenamento ou consulte o histórico de envios.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 overflow-y-auto flex-1">
-          {/* File input */}
-          <div className="border-2 border-dashed border-emerald-300 rounded-xl p-6 text-center hover:border-emerald-500 transition-colors">
-            <Upload className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-            <label className="cursor-pointer">
-              <span className="text-sm text-emerald-700 font-medium hover:underline">
-                {file ? file.name : 'Clique para selecionar arquivo XLSX'}
-              </span>
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </label>
-          </div>
+        {/* Tab switcher */}
+        <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+          <button
+            onClick={() => setTab('upload')}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              tab === 'upload' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Upload className="w-3.5 h-3.5" />
+            Enviar Planilha
+          </button>
+          <button
+            onClick={() => setTab('history')}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              tab === 'history' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <History className="w-3.5 h-3.5" />
+            Histórico ({historyData?.uploads?.length || 0})
+          </button>
+        </div>
 
-          {/* Parsing indicator */}
-          {parsing && (
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Lendo planilha...
-            </div>
-          )}
-
-          {/* Preview of parsed records */}
-          {parsedRecords && !result && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-700">
-                  {parsedRecords.length} registros encontrados
-                </span>
-                <Button
-                  onClick={handleImport}
-                  disabled={importing || parsedRecords.length === 0}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
-                  size="sm"
-                >
-                  {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  {importing ? 'Importando...' : 'Importar Agora'}
-                </Button>
-              </div>
-
-              <div className="max-h-48 overflow-y-auto border rounded-lg">
-                <table className="w-full text-xs">
-                  <thead className="bg-slate-50 sticky top-0">
-                    <tr>
-                      <th className="px-2 py-1.5 text-left font-medium text-slate-500">Data</th>
-                      <th className="px-2 py-1.5 text-left font-medium text-slate-500">Cliente</th>
-                      <th className="px-2 py-1.5 text-right font-medium text-slate-500">Valor</th>
-                      <th className="px-2 py-1.5 text-left font-medium text-slate-500">Tipo</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {parsedRecords.slice(0, 20).map((r, i) => (
-                      <tr key={i} className="hover:bg-slate-50">
-                        <td className="px-2 py-1 text-slate-600">{r.dataContato}</td>
-                        <td className="px-2 py-1 text-slate-700 truncate max-w-[150px]" title={r.cliente}>{r.cliente}</td>
-                        <td className="px-2 py-1 text-right text-slate-600">R$ {r.valor.toFixed(2)}</td>
-                        <td className="px-2 py-1 text-slate-500">{r.actionTypes.join(', ')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {parsedRecords.length > 20 && (
-                  <div className="px-2 py-1 text-[10px] text-slate-400 text-center bg-slate-50">
-                    ... e mais {parsedRecords.length - 20} registros
+        <div className="overflow-y-auto flex-1">
+          {/* Upload tab */}
+          {tab === 'upload' && (
+            <div className="space-y-4 pt-2">
+              <div className="border-2 border-dashed border-emerald-300 rounded-xl p-6 text-center hover:border-emerald-500 transition-colors">
+                <Upload className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                <label className="cursor-pointer">
+                  <span className="text-sm text-emerald-700 font-medium hover:underline">
+                    {file ? file.name : 'Clique para selecionar arquivo (XLSX, XLS, CSV)'}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </label>
+                {file && (
+                  <div className="mt-2 text-xs text-slate-400">
+                    {fmtSize(file.size)} • {file.type || 'planilha'}
                   </div>
                 )}
               </div>
-            </div>
-          )}
 
-          {/* Import result */}
-          {result && (
-            <div className="space-y-3">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span className="font-semibold text-emerald-800">Importação Concluída!</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-slate-500">Total registros:</span> <span className="font-medium">{result.totalRecords}</span></div>
-                  <div><span className="text-slate-500">Vinculados:</span> <span className="font-medium text-emerald-700">{result.matched}</span></div>
-                  <div><span className="text-slate-500">Ações inseridas:</span> <span className="font-medium">{result.actionsInserted}</span></div>
-                  <div><span className="text-slate-500">Diárias inseridas:</span> <span className="font-medium">{result.dailyInserted}</span></div>
-                  <div><span className="text-slate-500">Já existentes:</span> <span className="font-medium text-slate-400">{result.skipped}</span></div>
-                </div>
-              </div>
+              {file && !uploadDone && (
+                <Button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                >
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {uploading ? 'Enviando...' : 'Salvar Planilha'}
+                </Button>
+              )}
 
-              {result.notFound && result.notFound.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <div className="text-xs font-semibold text-amber-700 mb-1">Clientes não encontrados ({result.notFound.length}):</div>
-                  <div className="text-xs text-amber-600 space-y-0.5">
-                    {result.notFound.map((c: string, i: number) => (
-                      <div key={i}>• {c}</div>
-                    ))}
+              {uploadDone && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+                  <p className="font-semibold text-emerald-800">Planilha salva com sucesso!</p>
+                  <p className="text-xs text-emerald-600 mt-1">O arquivo foi armazenado e pode ser acessado no histórico.</p>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => { setFile(null); setUploadDone(false); }}
+                    >
+                      Enviar Outra
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => setTab('history')}
+                    >
+                      Ver Histórico
+                    </Button>
                   </div>
                 </div>
               )}
 
-              <Button onClick={onSuccess} className="w-full">
-                Fechar
-              </Button>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-700">
+                  <strong>Nota:</strong> A planilha será apenas armazenada como registro.
+                  Nenhum dado de inadimplência será alterado.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* History tab */}
+          {tab === 'history' && (
+            <div className="space-y-2 pt-2">
+              {historyLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+                </div>
+              )}
+
+              {!historyLoading && (!historyData?.uploads || historyData.uploads.length === 0) && (
+                <div className="text-center py-8">
+                  <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                  <p className="text-sm text-slate-400">Nenhuma planilha enviada ainda.</p>
+                </div>
+              )}
+
+              {historyData?.uploads && historyData.uploads.length > 0 && (
+                <div className="space-y-2">
+                  {historyData.uploads.map((upload) => (
+                    <div
+                      key={upload.id}
+                      className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg hover:border-emerald-300 transition-colors group"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                        <FileText className="w-4.5 h-4.5 text-emerald-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-800 truncate" title={upload.fileName}>
+                          {upload.fileName}
+                        </p>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                          <span>{fmtDate(upload.uploadedAt)} às {fmtTime(upload.uploadedAt)}</span>
+                          <span>•</span>
+                          <span>{upload.uploadedBy}</span>
+                          <span>•</span>
+                          <span>{fmtSize(upload.fileSize)}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleDownload(upload)}
+                          className="p-1.5 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          title="Baixar planilha"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(upload.id)}
+                          className="p-1.5 rounded-md text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Remover do histórico"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

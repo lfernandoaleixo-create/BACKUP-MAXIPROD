@@ -603,6 +603,13 @@
       "when": 1777403644577,
       "tag": "0085_chunky_ricochet",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "5",
+      "when": 1777459786740,
+      "tag": "0086_massive_bishop",
+      "breakpoints": true
     }
   ]
 }

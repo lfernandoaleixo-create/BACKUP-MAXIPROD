@@ -3120,3 +3120,6 @@
 - [x] Produção PDF: separar somatórios por unidade (caixas, sacos, m³) em todos os relatórios
 - [x] Produção PDF: redesign profissional com cores mais vivas e atraentes
 - [x] Produção PDF: linhas alternadas (zebra stripes) claro/escuro para destaque
+- [x] Inadimplência: card Importar Planilha — upload e armazenamento no S3 sem alterar dados
+- [x] Inadimplência: histórico de planilhas enviadas com data, operador e nome do arquivo
+- [x] Inadimplência: botão para exportar/baixar planilha do histórico por data
