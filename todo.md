@@ -3163,3 +3163,5 @@
 - [x] Financeiro - Autorização de Pagamentos: tooltip "Dê Preferência/Urgência" ao passar mouse nas bolinhas vermelhas (Fernando/Guilherme)
 - [x] Financeiro - Autorização: mover bolinha de prioridade do header do fornecedor para cada conta individual (card expandido)
 - [x] Financeiro - Autorização: trocar tooltip de "Dê Preferência/Urgência" para "Se não pagar, gera restrições no nome da empresa"
+- [x] Financeiro - Autorização: mover bolinha de prioridade para perto do nome do fornecedor (não ao lado do valor)
+- [x] Financeiro - Autorização: tooltip da bolinha deve aparecer legível e inteiro, sem cortes

@@ -146,8 +146,8 @@ function PayableRow({
         )}
       </div>
       <div className="flex-1 min-w-0">
-        {/* Linha 1: Fornecedor + Badge */}
-        <div className="flex items-center gap-1.5">
+        {/* Linha 1: Fornecedor + Badge + Priority dot */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           {item.authorized && (
             <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
           )}
@@ -159,6 +159,34 @@ function PayableRow({
           >
             {item.fornecedor}
           </span>
+          {/* Priority dot for editor (Flávio): always visible, clickable */}
+          {isPriorityEditor && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePriority();
+              }}
+              className="flex-shrink-0 transition-all duration-200 hover:scale-125"
+              title={isPriorityMarked ? "Remover prioridade" : "Marcar como prioridade/urgência"}
+            >
+              <span className={`inline-block w-3.5 h-3.5 rounded-full border-2 transition-colors duration-200 ${
+                isPriorityMarked
+                  ? "bg-red-500 border-red-600 shadow-sm shadow-red-300"
+                  : "bg-white border-slate-300 hover:border-red-400"
+              }`} />
+            </button>
+          )}
+          {/* Priority dot for viewers (Fernando/Guilherme): only when marked */}
+          {!isPriorityEditor && isPriorityViewer && isPriorityMarked && (
+            <span className="flex-shrink-0 relative group/priority">
+              <span className="inline-block w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-red-600 shadow-sm shadow-red-300 animate-pulse cursor-help" />
+              <span className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg shadow-lg opacity-0 group-hover/priority:opacity-100 transition-opacity duration-200 pointer-events-none z-[100] w-max max-w-[280px] leading-relaxed">
+                Se não pagar, gera restrições no nome da empresa
+                <span className="absolute top-full left-4 -mt-px border-4 border-transparent border-t-red-600" />
+              </span>
+            </span>
+          )}
           {badge && (
             <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${badge.bg} ${badge.text} shrink-0`}>
               {badge.label}
@@ -205,36 +233,8 @@ function PayableRow({
           </p>
         )}
       </div>
-      {/* Priority dot + Value column */}
-      <div className="flex items-start gap-2 flex-shrink-0">
-        {/* Priority dot for editor (Flávio): always visible, clickable */}
-        {isPriorityEditor && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePriority();
-            }}
-            className="mt-1 flex-shrink-0 transition-all duration-200 hover:scale-125"
-            title={isPriorityMarked ? "Remover prioridade" : "Marcar como prioridade/urgência"}
-          >
-            <span className={`inline-block w-3.5 h-3.5 rounded-full border-2 transition-colors duration-200 ${
-              isPriorityMarked
-                ? "bg-red-500 border-red-600 shadow-sm shadow-red-300"
-                : "bg-white border-slate-300 hover:border-red-400"
-            }`} />
-          </button>
-        )}
-        {/* Priority dot for viewers (Fernando/Guilherme): only when marked */}
-        {!isPriorityEditor && isPriorityViewer && isPriorityMarked && (
-          <span className="mt-1 flex-shrink-0 relative group/priority">
-            <span className="inline-block w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-red-600 shadow-sm shadow-red-300 animate-pulse cursor-help" />
-            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-red-600 text-white text-[11px] font-semibold rounded-lg shadow-lg opacity-0 group-hover/priority:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50">
-              Se não pagar, gera restrições no nome da empresa
-              <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-red-600" />
-            </span>
-          </span>
-        )}
+      {/* Value column */}
+      <div className="flex-shrink-0">
         <div className="min-w-[120px] text-right">
           <span
             className={`text-base font-bold tabular-nums ${
