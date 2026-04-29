@@ -518,6 +518,13 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
     return m;
   }, [sectors]);
 
+  // Build sector unit map for tooltip (MUST be before any early return to keep hooks order stable)
+  const sectorUnitMap = useMemo(() => {
+    const m = new Map<number, string>();
+    sectors.forEach(s => m.set(s.id, s.unidade));
+    return m;
+  }, [sectors]);
+
   // Selected day detail data (MUST be before any early return to keep hooks order stable)
   const grandTotalForDay = processedData?.grandTotal ?? 0;
   const selectedDayData = useMemo(() => {
@@ -580,14 +587,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
     totalEntries, totalMaintCount, totalParadasCount, activeProdSectors,
   } = processedData;
 
-  // Build sector unit map for tooltip
-  const sectorUnitMap = useMemo(() => {
-    const m = new Map<number, string>();
-    sectors.forEach(s => m.set(s.id, s.unidade));
-    return m;
-  }, [sectors]);
-
-  // Set tooltip context for the custom tooltip
+  // Set tooltip context for the custom tooltip (module-level, not React state)
   setTooltipContext({ sectorMap: sectorNameMap, sectorUnitMap, grandTotal, contextLabel: "do total" });
 
   return (
