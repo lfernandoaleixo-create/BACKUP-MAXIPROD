@@ -149,14 +149,18 @@ interface TooltipContext {
   sectorMap?: Map<number, string>;
   sectorUnitMap?: Map<number, string>;
   grandTotal?: number;
-  contextLabel?: string; // e.g. "da produção total do período"
+  totalDays?: number;
+  avgDaily?: number;
+  maxDay?: number;
+  minDay?: number;
+  daysWithProdCount?: number;
+  contextLabel?: string;
 }
 let _tooltipCtx: TooltipContext = {};
 function setTooltipContext(ctx: TooltipContext) { _tooltipCtx = ctx; }
 
 function resolveName(raw: string): string {
   if (!raw) return raw;
-  // Resolve sector_N keys to real sector names
   const m = raw.match(/^sector_(\d+)$/);
   if (m && _tooltipCtx.sectorMap) {
     const name = _tooltipCtx.sectorMap.get(Number(m[1])) || raw;
@@ -166,6 +170,288 @@ function resolveName(raw: string): string {
   return raw;
 }
 
+/* ─── Tooltip para o gráfico de Tendência de Produção Total ─── */
+const TrendTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const gt = _tooltipCtx.grandTotal || 0;
+  const avg = _tooltipCtx.avgDaily || 0;
+  const totalDays = _tooltipCtx.daysWithProdCount || 1;
+  // payload[0] = Total (area/line), payload[1] = Total (line duplicate), payload[2] = Média
+  const prodValue = payload[0]?.value || 0;
+  const pctOfTotal = gt > 0 ? (prodValue / gt) * 100 : 0;
+  const diffFromAvg = avg > 0 ? prodValue - avg : 0;
+  const pctDiffFromAvg = avg > 0 ? (diffFromAvg / avg) * 100 : 0;
+  const isAboveAvg = diffFromAvg > 0;
+  const isZero = prodValue === 0;
+
+  return (
+    <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[280px] max-w-[380px] animate-in fade-in zoom-in-95 duration-200">
+      <p className="font-bold text-slate-700 mb-2 text-sm border-b border-slate-100 pb-1.5">📅 Dia {label}</p>
+      
+      {isZero ? (
+        <div className="py-2">
+          <p className="text-red-600 font-semibold">⚠️ Nenhuma produção neste dia</p>
+          <p className="text-slate-500 mt-1 leading-relaxed">Significa que nenhuma máquina produziu nesta data. Pode ter sido um dia sem expediente, feriado, ou todas as máquinas estavam em manutenção/parada.</p>
+        </div>
+      ) : (
+        <>
+          {/* Produção do dia */}
+          <div className="flex items-center justify-between gap-3 py-1">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <span className="text-slate-600">Produção do dia</span>
+            </div>
+            <span className="font-bold text-slate-800 tabular-nums">{fmtNum(prodValue, 1)} unidades</span>
+          </div>
+          
+          {/* Explicação da porcentagem do total */}
+          <div className="bg-slate-50 rounded-lg px-2.5 py-1.5 mt-1 mb-1">
+            <p className="text-slate-600 leading-relaxed">
+              <strong className="text-teal-700">{fmtNum(pctOfTotal, 1)}%</strong> da produção total do período.
+              <span className="text-slate-500"> Isso significa que de tudo que foi produzido em {totalDays} dias ({fmtNum(gt, 0)} unidades no total), este dia sozinho contribuiu com {fmtNum(pctOfTotal, 1)}%.</span>
+            </p>
+          </div>
+
+          {/* Comparação com a média */}
+          <div className="flex items-center justify-between gap-3 py-1">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+              <span className="text-slate-600">Média do período</span>
+            </div>
+            <span className="font-bold text-amber-700 tabular-nums">{fmtNum(avg, 1)} un/dia</span>
+          </div>
+          
+          <div className={`rounded-lg px-2.5 py-1.5 mt-1 ${isAboveAvg ? 'bg-green-50' : 'bg-red-50'}`}>
+            <p className="leading-relaxed">
+              <span className={isAboveAvg ? 'text-green-700 font-semibold' : 'text-red-700 font-semibold'}>
+                {isAboveAvg ? '▲' : '▼'} {fmtNum(Math.abs(pctDiffFromAvg), 1)}% {isAboveAvg ? 'acima' : 'abaixo'} da média
+              </span>
+              <span className="text-slate-500"> — Este dia produziu {fmtNum(Math.abs(diffFromAvg), 1)} unidades {isAboveAvg ? 'a mais' : 'a menos'} que a média diária de {fmtNum(avg, 1)} unidades.</span>
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+/* ─── Tooltip para o gráfico de Produção Diária por Setor (barras empilhadas) ─── */
+const BarSectorTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const gt = _tooltipCtx.grandTotal || 0;
+  const totalDays = _tooltipCtx.daysWithProdCount || 1;
+  const dayTotal = payload.reduce((s: number, p: any) => s + (p.value || 0), 0);
+  const pctDayOfPeriod = gt > 0 ? (dayTotal / gt) * 100 : 0;
+
+  return (
+    <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[300px] max-w-[420px] animate-in fade-in zoom-in-95 duration-200">
+      <p className="font-bold text-slate-700 mb-1 text-sm">📅 Dia {label}</p>
+      <p className="text-[10px] text-slate-500 mb-2 pb-1.5 border-b border-slate-100">
+        Cada barra colorida representa um setor diferente. O tamanho da barra indica quanto aquele setor produziu neste dia.
+      </p>
+      
+      {payload.filter((p: any) => p.value > 0).map((p: any, i: number) => {
+        const name = resolveName(p.name);
+        const pctOfDay = dayTotal > 0 ? (p.value / dayTotal) * 100 : 0;
+        const pctOfPeriod = gt > 0 ? (p.value / gt) * 100 : 0;
+        return (
+          <div key={i} className="py-1 border-b border-slate-50 last:border-0">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-2.5 h-2.5 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: p.color || p.fill }} />
+                <span className="text-slate-700 font-medium truncate">{name}</span>
+              </div>
+              <span className="font-bold text-slate-800 tabular-nums flex-shrink-0">{fmtNum(p.value)}</span>
+            </div>
+            <p className="text-[10px] text-slate-500 ml-5 mt-0.5 leading-relaxed">
+              → <strong>{fmtNum(pctOfDay, 0)}% do dia</strong> (de {fmtNum(dayTotal, 0)} produzidas neste dia, {fmtNum(p.value)} vieram deste setor)
+              {gt > 0 && <> · <strong>{fmtNum(pctOfPeriod, 1)}% do período</strong> (de {fmtNum(gt, 0)} do período inteiro)</>}
+            </p>
+          </div>
+        );
+      })}
+      
+      <div className="mt-2 pt-2 border-t border-slate-200 bg-teal-50/50 -mx-4 -mb-3 px-4 pb-3 rounded-b-xl">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-teal-800">Total do dia (todos os setores)</span>
+          <span className="font-bold text-teal-700 tabular-nums">{fmtNum(dayTotal, 0)}</span>
+        </div>
+        <p className="text-[10px] text-teal-600 mt-0.5">
+          Este dia representa <strong>{fmtNum(pctDayOfPeriod, 1)}%</strong> de toda a produção do período ({fmtNum(gt, 0)} unidades em {totalDays} dias com produção).
+        </p>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Tooltip para o gráfico de Manutenção/Paradas (timeline) ─── */
+const MaintenanceTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const dayTotal = payload.reduce((s: number, p: any) => s + (p.value || 0), 0);
+  const MAINT_LABELS: Record<string, string> = {
+    manutencao: "Manutenção Programada",
+    manutencaoPontual: "Manutenção Pontual",
+    faltaMadeira: "Falta de Madeira",
+    prodNaoNecessaria: "Produção Não Necessária",
+  };
+  const MAINT_EXPLANATIONS: Record<string, string> = {
+    manutencao: "Máquinas paradas para manutenção preventiva/programada",
+    manutencaoPontual: "Máquinas que quebraram ou precisaram de reparo urgente",
+    faltaMadeira: "Máquinas paradas por falta de matéria-prima (madeira)",
+    prodNaoNecessaria: "Máquinas que não precisavam produzir neste dia (demanda atendida)",
+  };
+
+  return (
+    <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[280px] max-w-[380px] animate-in fade-in zoom-in-95 duration-200">
+      <p className="font-bold text-slate-700 mb-1 text-sm">📅 Dia {label}</p>
+      <p className="text-[10px] text-slate-500 mb-2 pb-1.5 border-b border-slate-100">
+        Quantidade de máquinas que NÃO produziram neste dia, separadas por motivo da parada.
+      </p>
+      
+      {payload.filter((p: any) => p.value > 0).map((p: any, i: number) => {
+        const name = MAINT_LABELS[p.dataKey] || p.name;
+        const explanation = MAINT_EXPLANATIONS[p.dataKey] || "";
+        return (
+          <div key={i} className="py-1 border-b border-slate-50 last:border-0">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-2.5 h-2.5 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: p.color || p.fill }} />
+                <span className="text-slate-700 font-medium">{name}</span>
+              </div>
+              <span className="font-bold text-slate-800 tabular-nums">{p.value} máquina{p.value !== 1 ? 's' : ''}</span>
+            </div>
+            {explanation && <p className="text-[10px] text-slate-500 ml-5 mt-0.5">{explanation}</p>}
+          </div>
+        );
+      })}
+      
+      {dayTotal > 0 && (
+        <div className="mt-2 pt-2 border-t border-slate-200">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-red-700">Total de paradas no dia</span>
+            <span className="font-bold text-red-700 tabular-nums">{dayTotal} máquina{dayTotal !== 1 ? 's' : ''}</span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-0.5">
+            Neste dia, {dayTotal} máquina{dayTotal !== 1 ? 's' : ''} ficou/ficaram parada{dayTotal !== 1 ? 's' : ''} por algum motivo listado acima.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─── Tooltip para o gráfico de Detalhamento por Máquina ─── */
+const MachineTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const totalValue = payload.find((p: any) => p.dataKey === 'total')?.value || 0;
+  const mediaValue = payload.find((p: any) => p.dataKey === 'media')?.value || 0;
+  const gt = _tooltipCtx.grandTotal || 0;
+  const pctOfTotal = gt > 0 ? (totalValue / gt) * 100 : 0;
+  const daysCount = _tooltipCtx.daysWithProdCount || 1;
+
+  return (
+    <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[280px] max-w-[380px] animate-in fade-in zoom-in-95 duration-200">
+      <p className="font-bold text-slate-700 mb-1 text-sm">🔧 {label}</p>
+      <p className="text-[10px] text-slate-500 mb-2 pb-1.5 border-b border-slate-100">
+        Dados desta máquina específica no período selecionado.
+      </p>
+      
+      <div className="space-y-2">
+        {/* Total */}
+        <div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+              <span className="text-slate-600 font-medium">Produção Total</span>
+            </div>
+            <span className="font-bold text-slate-800 tabular-nums">{fmtNum(totalValue)} unidades</span>
+          </div>
+          <p className="text-[10px] text-slate-500 ml-5 mt-0.5 leading-relaxed">
+            → Esta máquina produziu <strong>{fmtNum(totalValue)}</strong> unidades no período inteiro.
+            {gt > 0 && <> Isso representa <strong>{fmtNum(pctOfTotal, 1)}%</strong> de toda a produção da fábrica ({fmtNum(gt, 0)} unidades no período).</>}
+          </p>
+        </div>
+        
+        {/* Média */}
+        <div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-indigo-300" />
+              <span className="text-slate-600 font-medium">Média Diária</span>
+            </div>
+            <span className="font-bold text-indigo-700 tabular-nums">{fmtNum(mediaValue, 1)} un/dia</span>
+          </div>
+          <p className="text-[10px] text-slate-500 ml-5 mt-0.5 leading-relaxed">
+            → Em média, esta máquina produziu <strong>{fmtNum(mediaValue, 1)}</strong> unidades por dia trabalhado.
+            Calculado dividindo o total ({fmtNum(totalValue)}) pelos dias em que houve produção ({daysCount} dias).
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Tooltip para o gráfico de Manutenção por Setor (barras agrupadas) ─── */
+const MaintenanceSectorTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const MAINT_LABELS: Record<string, string> = {
+    manutencao: "Manutenção Programada",
+    manutencaoPontual: "Manutenção Pontual",
+    faltaMadeira: "Falta de Madeira",
+    prodNaoNecessaria: "Prod. Não Necessária",
+  };
+  const MAINT_EXPLANATIONS: Record<string, string> = {
+    manutencao: "Quantidade de vezes que máquinas deste setor ficaram paradas para manutenção preventiva/programada no período",
+    manutencaoPontual: "Quantidade de vezes que máquinas deste setor quebraram ou precisaram de reparo urgente no período",
+    faltaMadeira: "Quantidade de vezes que máquinas deste setor ficaram paradas por falta de matéria-prima (madeira) no período",
+    prodNaoNecessaria: "Quantidade de vezes que máquinas deste setor não precisaram produzir (demanda já atendida) no período",
+  };
+  const dayTotal = payload.reduce((s: number, p: any) => s + (p.value || 0), 0);
+
+  return (
+    <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[280px] max-w-[400px] animate-in fade-in zoom-in-95 duration-200">
+      <p className="font-bold text-slate-700 mb-1 text-sm">🏭 Setor: {label}</p>
+      <p className="text-[10px] text-slate-500 mb-2 pb-1.5 border-b border-slate-100">
+        Resumo de todas as paradas/manutenções deste setor no período selecionado, separadas por tipo.
+      </p>
+      
+      {payload.filter((p: any) => p.value > 0).map((p: any, i: number) => {
+        const name = MAINT_LABELS[p.dataKey] || p.name;
+        const explanation = MAINT_EXPLANATIONS[p.dataKey] || "";
+        const pctOfSector = dayTotal > 0 ? (p.value / dayTotal) * 100 : 0;
+        return (
+          <div key={i} className="py-1.5 border-b border-slate-50 last:border-0">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-2.5 h-2.5 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: p.color || p.fill }} />
+                <span className="text-slate-700 font-medium">{name}</span>
+              </div>
+              <span className="font-bold text-slate-800 tabular-nums">{p.value} vez{p.value !== 1 ? 'es' : ''}</span>
+            </div>
+            <p className="text-[10px] text-slate-500 ml-5 mt-0.5 leading-relaxed">
+              {explanation}
+              {dayTotal > 0 && <><br/>→ Representa <strong>{fmtNum(pctOfSector, 0)}%</strong> de todas as paradas deste setor ({dayTotal} no total).</>}
+            </p>
+          </div>
+        );
+      })}
+      
+      {dayTotal > 0 && (
+        <div className="mt-2 pt-2 border-t border-slate-200">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-purple-700">Total de paradas do setor</span>
+            <span className="font-bold text-purple-700 tabular-nums">{dayTotal}</span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-0.5">
+            No período selecionado, este setor teve {dayTotal} ocorrência{dayTotal !== 1 ? 's' : ''} de máquinas paradas (somando todos os tipos de parada).
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─── Tooltip genérico (fallback) ─── */
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   const total = payload.reduce((s: number, p: any) => s + (p.value || 0), 0);
@@ -588,7 +874,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
   } = processedData;
 
   // Set tooltip context for the custom tooltip (module-level, not React state)
-  setTooltipContext({ sectorMap: sectorNameMap, sectorUnitMap, grandTotal, contextLabel: "do total" });
+  setTooltipContext({ sectorMap: sectorNameMap, sectorUnitMap, grandTotal, totalDays, avgDaily, maxDay, minDay, daysWithProdCount, contextLabel: "do total" });
 
   return (
     <div className="space-y-6">
@@ -708,10 +994,13 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
           <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
             <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
             <p className="text-[11px] text-blue-700 leading-relaxed">
-              <strong>O que este gráfico mostra:</strong> Cada barra representa a produção total de um dia, dividida por setor (cores). 
-              A altura total da barra é a soma de todos os setores naquele dia. 
-              Período: <strong>{fmtFullDate(dateRange.start)} a {fmtFullDate(dateRange.end)}</strong> ({totalDays} dias com registros, {daysWithProdCount} com produção). 
-              Produção total: <strong>{fmtNum(grandTotal, 0)}</strong> unidades. Média diária: <strong>{fmtNum(avgDaily, 0)}</strong> unidades/dia (calculada apenas sobre os {daysWithProdCount} dias com produção real — dias de manutenção, falta de madeira e produção não necessária não entram na média).
+              <strong>O que este gráfico mostra:</strong> Cada barra vertical representa a produção total de um dia, dividida por cores (cada cor = um setor da fábrica). 
+              A altura total da barra mostra quanto a fábrica inteira produziu naquele dia. As faixas coloridas dentro da barra mostram a contribuição de cada setor.
+              <br/><strong>Como ler:</strong> Passe o mouse sobre qualquer barra para ver o detalhamento completo. Clique em uma barra para abrir o painel de detalhamento do dia.
+              <br/><strong>Período:</strong> {fmtFullDate(dateRange.start)} a {fmtFullDate(dateRange.end)} ({totalDays} dias com registros, {daysWithProdCount} com produção efetiva).
+              <br/><strong>Produção total do período:</strong> {fmtNum(grandTotal, 0)} unidades. <strong>Média diária:</strong> {fmtNum(avgDaily, 0)} unidades/dia.
+              <br/><strong>Sobre a média:</strong> É calculada APENAS sobre os {daysWithProdCount} dias em que houve produção real. Dias de manutenção, falta de madeira ou produção não necessária NÃO entram no cálculo da média, para não distorcer o resultado.
+              <br/><strong>Exemplo prático:</strong> Se uma barra tem altura 500 e a faixa azul (Vareteira) ocupa metade, significa que a Vareteira produziu ~250 unidades naquele dia, ou seja, 50% da produção diária.
             </p>
           </div>
           <div className="flex items-center justify-between mb-3">
@@ -779,7 +1068,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: "#64748b", fontWeight: 500 }} axisLine={{ stroke: "#e2e8f0" }} />
                 <YAxis tick={{ fontSize: 11, fill: "#64748b" }} tickFormatter={(v: number) => fmtNum(v, 0)} axisLine={{ stroke: "#e2e8f0" }} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: selectedDay ? "transparent" : "rgba(16,185,129,0.06)" }} />
+                <Tooltip content={<BarSectorTooltip />} cursor={{ fill: selectedDay ? "transparent" : "rgba(16,185,129,0.06)" }} />
                 {/* Highlight selected day bar with a reference area */}
                 {selectedDay && (() => {
                   const idx = dailyBySector.findIndex(d => d.date === selectedDay);
@@ -866,8 +1155,9 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                     <p className="text-[10px] text-teal-600">
                       Produção total do dia: <strong>{fmtNum(selectedDayData.dayTotal, 0)}</strong> unidades
                       ({fmtNum(selectedDayData.pctOfGrandTotal, 1)}% de toda a produção do período de {fmtNum(grandTotal, 0)} unidades).
-                      <br/><strong>% do Dia</strong> = quanto aquele setor contribuiu para o total DESTE DIA.
-                      <strong>% do Período</strong> = quanto aquele setor neste dia representou do TOTAL DE TODOS OS DIAS somados.
+                      <br/><strong>% do Dia (badge verde):</strong> Mostra quanto aquele setor contribuiu para o total DESTE DIA ESPECÍFICO. Exemplo: se Vareteira mostra "22% do dia" e o total do dia é {fmtNum(selectedDayData.dayTotal, 0)}, significa que a Vareteira produziu ~{fmtNum(selectedDayData.dayTotal * 0.22, 0)} unidades neste dia. A soma de todos os setores = 100%.
+                      <br/><strong>% do Período (texto cinza):</strong> Mostra quanto aquele setor NESTE DIA representou da produção TOTAL DE TODO O PERÍODO ({fmtNum(grandTotal, 0)} unidades somando TODOS os {daysWithProdCount} dias). Esse número é sempre pequeno porque divide a produção de 1 dia pelo total de muitos dias.
+                      <br/><strong>Máquinas Ativas:</strong> Lista cada máquina que produziu neste dia, com a quantidade individual entre parênteses. Permite identificar quais máquinas estavam funcionando e quanto cada uma contribuiu.
                     </p>
                   </div>
                 </div>
@@ -968,11 +1258,12 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
           <div className="bg-green-50 border border-green-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
             <Info className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
             <p className="text-[11px] text-green-700 leading-relaxed">
-              <strong>O que este gráfico mostra:</strong> A linha verde mostra a produção total (soma de todos os setores) de cada dia.
-              A linha tracejada amarela é a <strong>média diária do período ({fmtNum(avgDaily, 1)} unidades/dia)</strong>.
-              Dias acima da linha amarela tiveram produção acima da média; abaixo, ficaram abaixo.
-              <strong>Pico Máximo</strong> = dia com maior produção ({fmtNum(maxDay, 0)} un).
-              <strong>Mínimo</strong> = dia com menor produção ({fmtNum(minDay, 0)} un).
+              <strong>O que este gráfico mostra:</strong> A evolução da produção total da fábrica ao longo do tempo.
+              <br/><strong>Linha verde:</strong> Cada ponto representa o total produzido por TODOS os setores naquele dia. A área sombreada abaixo ajuda a visualizar o volume.
+              <br/><strong>Linha tracejada amarela:</strong> É a média diária do período = <strong>{fmtNum(avgDaily, 1)} unidades/dia</strong>. Serve como referência: pontos ACIMA da linha amarela são dias em que a fábrica produziu mais que o normal; pontos ABAIXO são dias com produção inferior à média.
+              <br/><strong>Pico Máximo:</strong> {fmtNum(maxDay, 0)} unidades (melhor dia do período). <strong>Mínimo:</strong> {fmtNum(minDay, 0)} unidades (pior dia com produção).
+              <br/><strong>Como ler as porcentagens no tooltip:</strong> Ao passar o mouse, a "% do total" mostra quanto aquele dia contribuiu para a produção do período inteiro. Ex: se mostra 5%, significa que de tudo que foi produzido em {daysWithProdCount} dias, aquele dia sozinho foi responsável por 5%.
+              <br/><strong>Dias com valor 0:</strong> Significam que nenhuma máquina produziu (feriado, fim de semana, ou todas paradas).
             </p>
           </div>
           <div className="h-[340px]">
@@ -988,7 +1279,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: "#64748b", fontWeight: 500 }} axisLine={{ stroke: "#e2e8f0" }} />
                 <YAxis tick={{ fontSize: 11, fill: "#64748b" }} tickFormatter={(v: number) => fmtNum(v, 0)} axisLine={{ stroke: "#e2e8f0" }} />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#10b981", strokeWidth: 1, strokeDasharray: "4 4" }} />
+                <Tooltip content={<TrendTooltip />} cursor={{ stroke: "#10b981", strokeWidth: 1, strokeDasharray: "4 4" }} />
                 <Area
                   type="monotone" dataKey="total" name="Total"
                   fill="url(#gradientAreaMain)" stroke="transparent"
@@ -1060,10 +1351,16 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
           <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
             <Info className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
             <p className="text-[11px] text-indigo-700 leading-relaxed">
-              <strong>O que este gráfico mostra:</strong> A participação de cada setor na <strong>produção total do período ({fmtNum(grandTotal, 0)} unidades)</strong>.
-              Exemplo: se Vareteira mostra 20%, significa que a Vareteira produziu 20% de todas as {fmtNum(grandTotal, 0)} unidades do período.
-              <strong>Média/Dia</strong> = total do setor ÷ dias lançados daquele setor. <strong>Dias</strong> = quantos dias o setor teve produção real (dias de manutenção/parada não entram na média).
-              Clique em um setor na tabela para ver o detalhamento por máquina.
+              <strong>O que este gráfico mostra:</strong> A participação (fatia) de cada setor na produção total da fábrica no período.
+              <br/><strong>Produção total do período:</strong> {fmtNum(grandTotal, 0)} unidades (soma de todos os setores).
+              <br/><strong>Como ler o gráfico de pizza:</strong> Cada fatia colorida representa um setor. O tamanho da fatia mostra quanto aquele setor contribuiu. Exemplo: se Vareteira mostra 20%, significa que de {fmtNum(grandTotal, 0)} unidades produzidas, a Vareteira foi responsável por 20% (≈{fmtNum(grandTotal * 0.2, 0)} unidades).
+              <br/><strong>Tabela ao lado — colunas:</strong>
+              • <strong>Setor:</strong> Nome do setor da fábrica.
+              • <strong>Total:</strong> Quantidade total produzida por aquele setor no período inteiro.
+              • <strong>%:</strong> Participação percentual = (total do setor ÷ {fmtNum(grandTotal, 0)}) × 100.
+              • <strong>Média/Dia:</strong> Produção média diária daquele setor = total do setor ÷ dias em que o setor efetivamente produziu (dias de manutenção/parada NÃO entram).
+              • <strong>Dias:</strong> Quantos dias o setor teve produção real (não conta dias parados).
+              <br/><strong>Dica:</strong> Clique em um setor na tabela para expandir e ver o detalhamento por máquina individual.
             </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1106,10 +1403,29 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                         />
                       ))}
                     </Pie>
-                    <Tooltip
-                      formatter={(value: number, name: string) => [fmtNum(value), name]}
-                      contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}
-                    />
+                    <Tooltip content={({ active, payload }: any) => {
+                      if (!active || !payload?.length) return null;
+                      const { name, value, color, pct } = payload[0].payload;
+                      const gt = _tooltipCtx.grandTotal || 0;
+                      const totalDays = _tooltipCtx.daysWithProdCount || 1;
+                      return (
+                        <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[260px] max-w-[360px]">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                            <span className="font-bold text-slate-700 text-sm">{name}</span>
+                          </div>
+                          <div className="space-y-1.5 mt-2">
+                            <p className="text-slate-600"><strong>Produção total:</strong> {fmtNum(value)} unidades</p>
+                            <p className="text-slate-600"><strong>Participação:</strong> {fmtNum(pct, 1)}% da produção total</p>
+                            <div className="bg-slate-50 rounded-lg px-2.5 py-1.5 mt-1">
+                              <p className="text-slate-500 leading-relaxed">
+                                → Isso significa que de tudo que a fábrica produziu no período ({fmtNum(gt, 0)} unidades em {totalDays} dias), o setor <strong>{name}</strong> foi responsável por <strong>{fmtNum(pct, 1)}%</strong> desse total, produzindo <strong>{fmtNum(value)}</strong> unidades.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -1222,10 +1538,12 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
             <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
               <Info className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
               <p className="text-[11px] text-indigo-700 leading-relaxed">
-                <strong>Detalhamento por máquina do setor {sectors.find(s => s.id === selectedSector)?.nome}.</strong>{" "}
-                <strong>Total</strong> = produção acumulada da máquina no período.
-                <strong>Média Diária</strong> = total ÷ dias em que a máquina produziu.
-                <strong>% do Setor</strong> = quanto essa máquina contribuiu para o total do setor (soma = 100%).
+                <strong>Detalhamento por máquina do setor {sectors.find(s => s.id === selectedSector)?.nome}.</strong>
+                <br/>Este gráfico mostra a produção individual de cada máquina dentro do setor selecionado.
+                <br/><strong>Barra escura (Total):</strong> Produção acumulada da máquina no período inteiro. Quanto maior a barra, mais a máquina produziu.
+                <br/><strong>Barra clara (Média Diária):</strong> Total da máquina ÷ dias em que ela efetivamente produziu. Mostra a capacidade média diária daquela máquina.
+                <br/><strong>% do Setor (no tooltip):</strong> Quanto essa máquina contribuiu para o total do setor. Exemplo: se mostra 30%, significa que de tudo que o setor produziu, 30% veio dessa máquina específica.
+                <br/><strong>Como interpretar:</strong> Máquinas com barra grande = alta produção. Se uma máquina tem média diária baixa mas muitos dias, pode indicar que ela produz pouco por dia mas é consistente. Se tem média alta mas poucos dias, pode ter ficado parada com frequência.
               </p>
             </div>
             <div className="h-[380px]">
@@ -1244,7 +1562,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }} angle={-35} textAnchor="end" height={80} interval={0} />
                   <YAxis tick={{ fontSize: 11, fill: "#64748b" }} tickFormatter={(v: number) => fmtNum(v, 0)} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
+                  <Tooltip content={<MachineTooltip />} cursor={{ fill: "rgba(99,102,241,0.06)" }} />
                   <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
                   <Bar dataKey="total" name="Total" fill="url(#gradMachTotal)" radius={[6, 6, 0, 0]}
                     isAnimationActive={true} animationDuration={ANIM.barDuration} animationEasing={ANIM.barEasing}>
@@ -1328,12 +1646,19 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
           <div className="bg-violet-50 border border-violet-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
             <Info className="w-3.5 h-3.5 text-violet-500 mt-0.5 flex-shrink-0" />
             <p className="text-[11px] text-violet-700 leading-relaxed">
-              <strong>O que este gráfico mostra:</strong> Cada tipo de parada de máquina no período.
-              <strong>Manutenção</strong> = máquina parada para conserto programado.
-              <strong>Manutenção Pontual</strong> = quebra inesperada que exigiu reparo imediato.
-              <strong>Falta de Madeira</strong> = máquina parada por falta de matéria-prima.
-              <strong>Prod. Não Necessária</strong> = máquina parada porque não havia demanda de produção.
-              <strong>% Parada</strong> = total de paradas do setor ÷ total de registros do setor (quanto maior, mais tempo parado).
+              <strong>O que esta seção mostra:</strong> Todas as vezes que máquinas ficaram PARADAS (não produziram) no período, organizadas por motivo e por setor.
+              <br/><strong>Tipos de parada:</strong>
+              • <strong>Manutenção (roxo):</strong> Máquina parada para conserto PROGRAMADO/preventivo. A equipe já sabia que ia parar.
+              • <strong>Manutenção Pontual (lilás):</strong> Máquina QUEBROU de forma inesperada e precisou de reparo urgente.
+              • <strong>Falta de Madeira (vermelho):</strong> Máquina ficou ociosa porque não tinha matéria-prima disponível para trabalhar.
+              • <strong>Prod. Não Necessária (amarelo):</strong> Máquina não precisou funcionar porque a demanda já estava atendida.
+              <br/><strong>Tabela — colunas:</strong>
+              • <strong>Setor:</strong> Nome do setor.
+              • <strong>Manut./Pontual/Falta Mad./Não Nec.:</strong> Quantidade de ocorrências de cada tipo de parada naquele setor.
+              • <strong>Total:</strong> Soma de todas as paradas do setor (todos os tipos juntos).
+              • <strong>% Parada:</strong> Percentual de tempo parado = (total de paradas do setor ÷ total de registros do setor) × 100. Exemplo: se um setor tem 100 registros e 25 são paradas, a % Parada é 25%. Quanto MAIOR esse número, PIOR — significa que o setor ficou mais tempo sem produzir.
+              <br/><strong>Gráfico de barras:</strong> Mostra visualmente a comparação entre setores. Barras maiores = mais paradas.
+              <br/><strong>Gráfico de área (timeline):</strong> Mostra a evolução das paradas ao longo dos dias. Picos indicam dias com muitas máquinas paradas.
             </p>
           </div>
           <div className="flex items-center justify-between mb-3">
@@ -1389,7 +1714,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }} angle={-35} textAnchor="end" height={80} interval={0} />
                     <YAxis tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(139,92,246,0.06)" }} />
+                    <Tooltip content={<MaintenanceSectorTooltip />} cursor={{ fill: "rgba(139,92,246,0.06)" }} />
                     <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
                     {maintTypeFilter.has("manutencao") && (
                       <Bar dataKey="manutencao" name="Manutenção" fill="#6366f1" radius={[4, 4, 0, 0]}
@@ -1446,7 +1771,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: "#64748b" }} />
                       <YAxis tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip content={<MaintenanceTooltip />} />
                       {maintTypeFilter.has("manutencao") && (
                         <Area type="monotone" dataKey="manutencao" name="Manutenção" stackId="1"
                           fill="url(#gradMaint)" stroke="#6366f1" strokeWidth={2}
@@ -1562,13 +1887,16 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
           <div className="bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
             <Info className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
             <p className="text-[11px] text-amber-700 leading-relaxed">
-              <strong>O que este gráfico mostra:</strong> Cada registro de máquina/dia tem um status.
-              <strong>Produzindo</strong> = máquina funcionou normalmente.
-              <strong>Manutenção</strong> = parada para conserto.
-              <strong>Falta de Madeira</strong> = sem matéria-prima.
-              <strong>Prod. Não Necessária</strong> = sem demanda.
-              Os percentuais mostram a proporção de cada status sobre o <strong>total de {totalEntries} registros</strong> do período.
-              Quanto maior o % de "Produzindo", melhor a eficiência da fábrica.
+              <strong>O que esta seção mostra:</strong> A visão geral de TODOS os registros de máquinas no período, classificados por status (o que a máquina estava fazendo).
+              <br/><strong>Total de registros:</strong> {totalEntries} (cada registro = 1 máquina em 1 dia).
+              <br/><strong>Status possíveis:</strong>
+              • <strong>Produzindo (verde):</strong> A máquina funcionou normalmente e produziu peças/produtos.
+              • <strong>Manutenção (roxo):</strong> A máquina estava parada para conserto programado.
+              • <strong>Manut. Pontual (lilás):</strong> A máquina quebrou e precisou de reparo urgente.
+              • <strong>Falta Madeira (vermelho):</strong> A máquina ficou parada por falta de matéria-prima.
+              • <strong>Prod. Não Nec. (amarelo):</strong> A máquina não precisou produzir (demanda atendida).
+              <br/><strong>Como ler as porcentagens:</strong> Cada % mostra a proporção daquele status sobre o total de {totalEntries} registros. Exemplo: se "Produzindo" mostra 80%, significa que em 80% das vezes ({Math.round(totalEntries * 0.8)} registros) as máquinas estavam funcionando normalmente.
+              <br/><strong>Indicador de eficiência:</strong> Quanto MAIOR o % de "Produzindo", MELHOR a eficiência da fábrica. Se "Produzindo" está abaixo de 70%, pode indicar problemas frequentes de manutenção ou falta de insumos.
             </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1613,10 +1941,36 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                         style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: number, name: string) => [`${value} registros`, name]}
-                    contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}
-                  />
+                  <Tooltip content={({ active, payload }: any) => {
+                    if (!active || !payload?.length) return null;
+                    const { name, value, color, pct } = payload[0].payload;
+                    const STATUS_EXPLAIN: Record<string, string> = {
+                      'Produzindo': 'A máquina estava funcionando normalmente e produzindo peças/produtos.',
+                      'Manutenção': 'A máquina estava parada para manutenção preventiva ou corretiva programada.',
+                      'Manut. Pontual': 'A máquina quebrou ou precisou de reparo urgente não planejado.',
+                      'Falta Madeira': 'A máquina ficou parada porque não havia matéria-prima (madeira) disponível.',
+                      'Prod. Não Nec.': 'A máquina não precisou produzir porque a demanda já estava atendida.',
+                    };
+                    const explanation = STATUS_EXPLAIN[name] || 'Status registrado para esta máquina.';
+                    return (
+                      <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[260px] max-w-[380px]">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                          <span className="font-bold text-slate-700 text-sm">{name}</span>
+                        </div>
+                        <p className="text-slate-500 mt-1 mb-2">{explanation}</p>
+                        <div className="space-y-1.5">
+                          <p className="text-slate-600"><strong>Ocorrências:</strong> {value} registros</p>
+                          <p className="text-slate-600"><strong>Proporção:</strong> {fmtNum(pct, 1)}% de todos os registros</p>
+                          <div className="bg-slate-50 rounded-lg px-2.5 py-1.5 mt-1">
+                            <p className="text-slate-500 leading-relaxed">
+                              → De todos os registros de máquinas no período ({totalEntries} no total), <strong>{fmtNum(pct, 1)}%</strong> das vezes as máquinas estavam com status "{name}". {pct > 50 ? 'Este é o status predominante.' : pct < 5 ? 'Este status é raro no período.' : ''}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

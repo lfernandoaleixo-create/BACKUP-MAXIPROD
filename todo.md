@@ -3193,3 +3193,4 @@
 - [x] ProductionCharts: adicionar explicações detalhadas (tooltips/legendas) em todos os gráficos e tabelas — cada valor, porcentagem e coluna deve ter contexto claro
 - [x] Adicionar operadora Thalita (senha: Thalita) com mesmas permissões financeiras do Thiago
 - [x] BUG: Erro React #310 ao clicar nos gráficos de produção — crash da página (fix: mover useMemo sectorUnitMap antes dos early returns)
+- [x] ProductionCharts: reescrever TODOS os tooltips dos gráficos para serem extremamente detalhados e auto-explicativos — cada porcentagem explicada em linguagem simples
