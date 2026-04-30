@@ -3292,3 +3292,8 @@
 - [x] Setores: Multilâmina, Vareteira, Seletora de Toco, Seleção Automática, Seleção Visual, Flow Pack, Embalagem, Máquina de Pirografar
 - [x] Cada card: nome setor no topo, tabela (Máquina, Tipo/Medida, Quantidade, Unidade, Status, Obs), Total no rodapé
 - [x] Grid responsívo em uma única página, visual moderno e sofisticado
+
+## Ajustes PDFs Produção (30/04/2026)
+- [x] Aumentar tamanho da fonte dentro dos cards
+- [x] Unidades no plural: sacos, caixas, formas (não singular)
+- [x] Ordenar máquinas/mesas numericamente (1, 2, 3...)

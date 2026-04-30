@@ -165,8 +165,21 @@ function convertedQty(entry: EntryData, sector: SectorData): number {
 }
 
 function displayUnit(sector: SectorData): string {
-  if (isDualUnitSector(sector.ordem)) return "saco";
-  return sector.unidadeMedida;
+  if (isDualUnitSector(sector.ordem)) return "sacos";
+  return pluralizeUnit(sector.unidadeMedida);
+}
+
+function pluralizeUnit(unit: string): string {
+  const plurals: Record<string, string> = {
+    "saco": "sacos",
+    "caixa": "caixas",
+    "cx": "caixas",
+    "forma": "formas",
+    "pç": "peças",
+    "un": "unidades",
+    "m³": "m³",
+  };
+  return plurals[unit.toLowerCase()] || unit;
 }
 
 // ─── Types ───
@@ -309,7 +322,13 @@ function prepareSectorCards(sectors: SectorData[], entries: EntryData[]): Sector
     if (sectorEntries.length === 0) {
       rows.push({ maquina: "—", tipo: "—", qtd: "0", unidade: unit, status: "Sem lançamento", obs: "" });
     } else {
-      for (const entry of sectorEntries) {
+      // Sort entries by machine order (numeric)
+      const sortedEntries = [...sectorEntries].sort((a, b) => {
+        const machA = sector.machines.find(m => m.id === a.machineId);
+        const machB = sector.machines.find(m => m.id === b.machineId);
+        return (machA?.ordem ?? 999) - (machB?.ordem ?? 999);
+      });
+      for (const entry of sortedEntries) {
         const machine = sector.machines.find(m => m.id === entry.machineId);
         const machineName = machine ? machine.nome : (entry.machineId ? `#${entry.machineId}` : "—");
         const obs = entry.observacoes && entry.observacoes !== "[REMOVIDO]" ? entry.observacoes : "";
@@ -358,7 +377,13 @@ function prepareSectorCardsWeekly(sectors: SectorData[], entries: EntryData[], n
     if (machineMap.size === 0) {
       rows.push({ maquina: "—", tipo: "—", qtd: "0", unidade: unit, status: `0/${numDays} dias`, obs: "" });
     } else {
-      for (const [, m] of Array.from(machineMap.entries())) {
+      // Sort machines by ordem (numeric order)
+      const sortedMachines = Array.from(machineMap.entries()).sort((a, b) => {
+        const machA = sector.machines.find(m => m.id === a[0]);
+        const machB = sector.machines.find(m => m.id === b[0]);
+        return (machA?.ordem ?? 999) - (machB?.ordem ?? 999);
+      });
+      for (const [, m] of sortedMachines) {
         const mAvg = m.days.size > 0 ? m.total / m.days.size : 0;
         rows.push({
           maquina: m.nome,
@@ -448,15 +473,15 @@ function drawSectorCardsGrid(
 
     // Sector name in header
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
+    doc.setFontSize(8);
     doc.setTextColor(255, 255, 255);
     const sectorName = card.nome.length > 18 ? card.nome.substring(0, 16) + "…" : card.nome;
-    doc.text(sectorName, x + 3, y + 5);
+    doc.text(sectorName, x + 3, y + 5.2);
 
     // Unit badge in header
-    doc.setFontSize(5);
+    doc.setFontSize(6);
     doc.setFont("helvetica", "normal");
-    doc.text(card.unit, x + cardW - 3, y + 5, { align: "right" });
+    doc.text(card.unit, x + cardW - 3, y + 5.2, { align: "right" });
 
     // Table area
     const tableY = y + headerH + 1;
@@ -469,7 +494,7 @@ function drawSectorCardsGrid(
       : ["Máquina", "Tipo", "Qtd", "Status"];
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(4.5);
+    doc.setFontSize(5.5);
     doc.setTextColor(...C.medium);
 
     const colWidths = isWeeklyOrMonthly
@@ -489,7 +514,7 @@ function drawSectorCardsGrid(
 
     // Data rows
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(4.2);
+    doc.setFontSize(5.2);
     doc.setTextColor(...C.dark);
 
     for (let r = 0; r < displayRows.length; r++) {
@@ -590,10 +615,10 @@ function drawSectorCardsGrid(
 
     // Total text
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(5.5);
+    doc.setFontSize(6.5);
     doc.setTextColor(...sectorColor);
     doc.text("TOTAL:", x + 3, footerY + 4.5);
-    doc.setFontSize(7);
+    doc.setFontSize(8.5);
     doc.text(`${fmtNum(card.total, card.decimals)} ${card.unit}`, x + cardW - 3, footerY + 4.5, { align: "right" });
   }
 
