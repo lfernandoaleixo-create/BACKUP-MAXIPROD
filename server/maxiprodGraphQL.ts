@@ -1239,10 +1239,16 @@ async function saveFinancialData(
               actionsMap.set(a.receivableId, a);
             }
             
-            // Para cada título com cobrança registrada, salvar em resolved_receivables
+            // Para cada título com cobrança registrada, salvar em resolved_receivables (com dedup)
             for (const title of disappearedTitles) {
               const action = actionsMap.get(title.id);
               if (action) {
+                // Check if already exists to prevent duplicates
+                const existingRows = await tx.execute(sql`SELECT id FROM resolved_receivables WHERE receivableId = ${title.id} LIMIT 1`);
+                if ((existingRows as unknown as any[]).length > 0 && (existingRows as unknown as any[])[0]?.id) {
+                  console.log(`[GraphQL Sync] Título já registrado como resolvido (receivableId=${title.id}), pulando duplicata`);
+                  continue;
+                }
                 const valorOriginal = Number(title.valorLiquido) || 0;
                 const valorPago = Number(title.valorRecebidoLiquido) || 0;
                 const valorAReceber = valorOriginal - valorPago;

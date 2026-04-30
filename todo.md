@@ -3262,3 +3262,6 @@
 - [x] Filtro de período no Resumo de Recuperações — selecionar dia/semana/mês/ano específico
 - [x] Tooltips detalhados em TODOS os cards, gráficos, textos e porcentagens
 - [x] Corrigir duplicatas no Pagos/Resolvidos (ex: SILVEIRA BUENO aparece 2x) sem mexer em dados — deduplificado via GROUP BY
+
+## Correções Métricas de Cobrança v4
+- [x] Corrigir duplicatas na lista Pagos/Resolvidos (SILVEIRA BUENO e PLASTIPEL aparecem 2x com mesmo NF/data) — removidas 13 duplicatas do banco + prevenção no sync
