@@ -27,6 +27,9 @@ function getDateFilter(startDate?: string, endDate?: string) {
   return { startDate: startDate || "2026-01-01", endDate: endDate || "2099-12-31" };
 }
 
+const TEST_CLIENTS = "('CLIENTE TESTE REGRA','CLIENTE MANUAL TICK TEST','CLIENTE LEGACY VIBRATION TEST','CLIENTE RECENT VIBRATION TEST','CLIENTE TESTE COBRANCA')";
+const THRESHOLD = 3;
+
 export const collectionMetricsRouter = router({
   /**
    * Métricas gerais de cobrança (KPIs)
@@ -68,32 +71,35 @@ export const collectionMetricsRouter = router({
             GROUP BY actionType ORDER BY cnt DESC`
       );
 
-      // Clientes de teste a excluir (mesma lista do card Pagos/Resolvidos)
-      const TEST_CLIENTS = "('CLIENTE TESTE REGRA','CLIENTE MANUAL TICK TEST','CLIENTE LEGACY VIBRATION TEST','CLIENTE RECENT VIBRATION TEST','CLIENTE TESTE COBRANCA')";
-      // Threshold de 3 dias (mesma regra do card Pagos/Resolvidos)
-      const THRESHOLD = 3;
-
-      // 5. Títulos resolvidos (pagos) no período — mesma regra do card Pagos/Resolvidos
+      // 5. Títulos resolvidos (pagos) no período — DEDUPLICATED por cliente+documento+vencimento
       const [resolvedStats] = await db.execute(
-        sql.raw(`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor 
+        sql.raw(`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor FROM (
+            SELECT MIN(id) as id, cliente, documento, vencimentoData, MAX(valorAReceber) as valorAReceber
             FROM resolved_receivables 
             WHERE diasAtrasoNaResolucao >= ${THRESHOLD}
             AND cliente NOT IN ${TEST_CLIENTS}
-            AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'`)
+            AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
+            GROUP BY cliente, documento, vencimentoData
+          ) deduped`)
       );
 
-      // 6. Total resolvidos (all time) — mesma regra do card Pagos/Resolvidos
+      // 6. Total resolvidos (all time) — DEDUPLICATED
       const [resolvedAllTime] = await db.execute(
-        sql.raw(`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor 
+        sql.raw(`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor FROM (
+            SELECT MIN(id) as id, cliente, documento, vencimentoData, MAX(valorAReceber) as valorAReceber
             FROM resolved_receivables 
             WHERE diasAtrasoNaResolucao >= ${THRESHOLD}
-            AND cliente NOT IN ${TEST_CLIENTS}`)
+            AND cliente NOT IN ${TEST_CLIENTS}
+            GROUP BY cliente, documento, vencimentoData
+          ) deduped`)
       );
 
-      // 7. Manual ticks por step (green = sucesso, red = falha, blue = auto)
+      // 7. Manual ticks por step (green = sucesso, blue = contato manual)
+      // EXCLUI ticks do SISTEMA (auto_red) — falhas do sistema não contam como falha do operador
       const [ticksByStep] = await db.execute(
         sql`SELECT step, tick_status, COUNT(*) as cnt FROM collection_manual_ticks 
-            WHERE ticked = 1 GROUP BY step, tick_status ORDER BY step, tick_status`
+            WHERE ticked = 1 AND ticked_by != 'SISTEMA'
+            GROUP BY step, tick_status ORDER BY step, tick_status`
       );
 
       // 8. Total de falhas (red ticks manuais — excluir SISTEMA/auto_red)
@@ -123,13 +129,16 @@ export const collectionMetricsRouter = router({
         sql`SELECT protestType, COUNT(*) as cnt FROM receivable_protest_config GROUP BY protestType`
       );
 
-      // 13. Resolved excluindo clientes Especial s/ Cobrança (para cálculo de eficiência)
+      // 13. Resolved excluindo clientes Especial s/ Cobrança (para cálculo de eficiência) — DEDUPLICATED
       const [resolvedExcludingSpecial] = await db.execute(
-        sql.raw(`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor 
+        sql.raw(`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor FROM (
+            SELECT MIN(id) as id, cliente, documento, vencimentoData, MAX(valorAReceber) as valorAReceber
             FROM resolved_receivables 
             WHERE diasAtrasoNaResolucao >= ${THRESHOLD}
             AND cliente NOT IN ${TEST_CLIENTS}
-            AND (statusCobranca IS NULL OR statusCobranca != 'especial_sem_cobranca')`)
+            AND (statusCobranca IS NULL OR statusCobranca != 'especial_sem_cobranca')
+            GROUP BY cliente, documento, vencimentoData
+          ) deduped`)
       );
 
       return {
@@ -173,7 +182,7 @@ export const collectionMetricsRouter = router({
 
   /**
    * Timeline de recuperações (resolvidos ao longo do tempo)
-   * Agrupado por dia, semana ou mês
+   * Agrupado por dia, semana ou mês — DEDUPLICATED
    */
   getRecoveryTimeline: publicProcedure
     .input(z.object({
@@ -197,14 +206,16 @@ export const collectionMetricsRouter = router({
         dateExpr = "DATE_FORMAT(resolvedAt, '%Y-%m-01')";
       }
 
-      const TEST_CLIENTS = "('CLIENTE TESTE REGRA','CLIENTE MANUAL TICK TEST','CLIENTE LEGACY VIBRATION TEST','CLIENTE RECENT VIBRATION TEST','CLIENTE TESTE COBRANCA')";
       const [timeline] = await db.execute(
-        sql.raw(`SELECT ${dateExpr} as period, COUNT(*) as cnt, SUM(valorAReceber) as totalValor 
-                 FROM resolved_receivables 
-                 WHERE diasAtrasoNaResolucao >= 3
-                 AND cliente NOT IN ${TEST_CLIENTS}
-                 AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
-                 GROUP BY ${dateExpr} ORDER BY ${dateExpr}`)
+        sql.raw(`SELECT period, SUM(cnt) as cnt, SUM(totalValor) as totalValor FROM (
+            SELECT ${dateExpr} as period, 1 as cnt, MAX(valorAReceber) as totalValor
+            FROM resolved_receivables 
+            WHERE diasAtrasoNaResolucao >= 3
+            AND cliente NOT IN ${TEST_CLIENTS}
+            AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
+            GROUP BY cliente, documento, vencimentoData, ${dateExpr}
+          ) deduped
+          GROUP BY period ORDER BY period`)
       );
 
       return (timeline as unknown as any[]).map((t: any) => ({
@@ -261,6 +272,10 @@ export const collectionMetricsRouter = router({
   /**
    * Breakdown detalhado de ticks por step (roteiro de cobrança)
    * Step 1 = Ação 1, Step 2 = Intervalo, Step 3 = Ação 2, Step 4 = Intervalo, Step 5 = Ação 3, Step 6 = Intervalo, Step 7 = Decisão
+   * 
+   * IMPORTANTE: Falhas (red) do SISTEMA (auto_red) são EXCLUÍDAS.
+   * Apenas falhas marcadas manualmente pelo operador contam.
+   * Atualmente: 0 falhas manuais (6 auto_red do sistema são ignoradas).
    */
   getStepBreakdown: publicProcedure
     .query(async () => {
@@ -277,10 +292,11 @@ export const collectionMetricsRouter = router({
         "Decisão (Dia 7)",
       ];
 
-      // All ticks grouped by step and status
+      // All ticks grouped by step and status — EXCLUINDO ticks do SISTEMA
       const [ticks] = await db.execute(
         sql`SELECT step, tick_status, ticked, COUNT(*) as cnt 
             FROM collection_manual_ticks 
+            WHERE ticked_by != 'SISTEMA'
             GROUP BY step, tick_status, ticked ORDER BY step`
       );
 
@@ -317,7 +333,7 @@ export const collectionMetricsRouter = router({
     }),
 
   /**
-   * Detalhes de recuperações (títulos resolvidos) com filtro de período
+   * Detalhes de recuperações (títulos resolvidos) com filtro de período — DEDUPLICATED
    */
   getRecoveryDetails: publicProcedure
     .input(z.object({
@@ -335,21 +351,30 @@ export const collectionMetricsRouter = router({
       const pageSize = input?.pageSize || 50;
       const offset = (page - 1) * pageSize;
 
-      const TEST_CLIENTS = "('CLIENTE TESTE REGRA','CLIENTE MANUAL TICK TEST','CLIENTE LEGACY VIBRATION TEST','CLIENTE RECENT VIBRATION TEST','CLIENTE TESTE COBRANCA')";
-
+      // Count deduplicated
       const [totalRow] = await db.execute(
-        sql.raw(`SELECT COUNT(*) as cnt FROM resolved_receivables 
+        sql.raw(`SELECT COUNT(*) as cnt FROM (
+            SELECT MIN(id) as id
+            FROM resolved_receivables 
             WHERE diasAtrasoNaResolucao >= 3
             AND cliente NOT IN ${TEST_CLIENTS}
-            AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'`)
+            AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
+            GROUP BY cliente, documento, vencimentoData
+          ) deduped`)
       );
 
+      // Fetch deduplicated rows
       const [rows] = await db.execute(
-        sql.raw(`SELECT * FROM resolved_receivables 
-                 WHERE diasAtrasoNaResolucao >= 3
-                 AND cliente NOT IN ${TEST_CLIENTS}
-                 AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
-                 ORDER BY resolvedAt DESC LIMIT ${pageSize} OFFSET ${offset}`)
+        sql.raw(`SELECT r.* FROM resolved_receivables r
+                 INNER JOIN (
+                   SELECT MIN(id) as id
+                   FROM resolved_receivables 
+                   WHERE diasAtrasoNaResolucao >= 3
+                   AND cliente NOT IN ${TEST_CLIENTS}
+                   AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
+                   GROUP BY cliente, documento, vencimentoData
+                 ) deduped ON r.id = deduped.id
+                 ORDER BY r.resolvedAt DESC LIMIT ${pageSize} OFFSET ${offset}`)
       );
 
       return {
@@ -449,18 +474,23 @@ export const collectionMetricsRouter = router({
     }),
 
   /**
-   * Resumo de recuperações por período (diário, semanal, mensal)
-   * Para tabela detalhada
+   * Resumo de recuperações por período (diário, semanal, mensal, anual)
+   * Suporta filtro de período específico (startDate/endDate)
+   * DEDUPLICATED por cliente+documento+vencimento
    */
   getRecoverySummaryByPeriod: publicProcedure
     .input(z.object({
       groupBy: z.enum(["day", "week", "month", "year"]).default("month"),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB indisponível");
 
       const groupBy = input?.groupBy || "month";
+      const startDate = input?.startDate;
+      const endDate = input?.endDate;
 
       let dateExpr: string;
       if (groupBy === "day") {
@@ -473,16 +503,31 @@ export const collectionMetricsRouter = router({
         dateExpr = "DATE_FORMAT(resolvedAt, '%Y')";
       }
 
-      const TEST_CLIENTS = "('CLIENTE TESTE REGRA','CLIENTE MANUAL TICK TEST','CLIENTE LEGACY VIBRATION TEST','CLIENTE RECENT VIBRATION TEST','CLIENTE TESTE COBRANCA')";
+      // Build WHERE clause with optional date filter
+      let dateFilter = "";
+      if (startDate && endDate) {
+        dateFilter = `AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'`;
+      } else if (startDate) {
+        dateFilter = `AND resolvedAt >= '${startDate}'`;
+      } else if (endDate) {
+        dateFilter = `AND resolvedAt <= '${endDate} 23:59:59'`;
+      }
+
       const [summary] = await db.execute(
-        sql.raw(`SELECT ${dateExpr} as period, COUNT(*) as cnt, 
-                 SUM(valorAReceber) as totalValor,
-                 AVG(diasAtrasoNaResolucao) as avgDiasAtraso,
-                 SUM(totalContatos) as totalContatos
-                 FROM resolved_receivables 
-                 WHERE diasAtrasoNaResolucao >= 3
-                 AND cliente NOT IN ${TEST_CLIENTS}
-                 GROUP BY ${dateExpr} ORDER BY ${dateExpr} DESC`)
+        sql.raw(`SELECT period, SUM(cnt) as cnt, SUM(totalValor) as totalValor, 
+                 AVG(avgDiasAtraso) as avgDiasAtraso, SUM(totalContatos) as totalContatos
+                 FROM (
+                   SELECT ${dateExpr} as period, 1 as cnt, 
+                   MAX(valorAReceber) as totalValor,
+                   MAX(diasAtrasoNaResolucao) as avgDiasAtraso,
+                   MAX(totalContatos) as totalContatos
+                   FROM resolved_receivables 
+                   WHERE diasAtrasoNaResolucao >= 3
+                   AND cliente NOT IN ${TEST_CLIENTS}
+                   ${dateFilter}
+                   GROUP BY cliente, documento, vencimentoData, ${dateExpr}
+                 ) deduped
+                 GROUP BY period ORDER BY period DESC`)
       );
 
       return (summary as unknown as any[]).map((s: any) => ({

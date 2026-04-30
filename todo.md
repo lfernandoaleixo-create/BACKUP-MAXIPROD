@@ -3245,13 +3245,20 @@
 - [x] Criar separação visual clara entre seção Despesas e seção Estornos (gradiente teal + espaçamento)
 
 ## Correções Métricas de Cobrança
-- [ ] Remover Guilherme das métricas de operador (apenas Thiago)
-- [ ] Corrigir valor recuperado para bater com Pagos/Resolvidos (R$ 149.457,62)
-- [ ] Zerar falhas (Thiago não teve falhas)
-- [ ] Clarear legendas: "Em andamento" não faz sentido no roteiro, explicar cada item
-- [ ] Traduzir termos em inglês (tick, manual_blue, untick, phone_mute, etc.) para português
-- [ ] Explicar detalhadamente cada barra/valor nos gráficos
+- [x] Remover Guilherme das métricas de operador (apenas Thiago)
+- [x] Corrigir valor recuperado para bater com Pagos/Resolvidos (deduplificado: R$ 89.613,29)
+- [x] Zerar falhas (Thiago não teve falhas — auto_red do sistema excluído)
+- [x] Clarear legendas: "Em andamento" não faz sentido no roteiro, explicar cada item
+- [x] Traduzir termos em inglês (tick, manual_blue, untick, phone_mute, etc.) para português
+- [x] Explicar detalhadamente cada barra/valor nos gráficos (tooltips detalhados)
 
 ## Correções KPIs Métricas v2
 - [x] Remover card "Edições de Ação" dos KPIs
 - [x] Recalcular Eficiência excluindo clientes "Especial s/ Cobrança" — 23 recuperações regulares / 91 ações = 25.3%
+
+## Correções Métricas de Cobrança v3
+- [x] Explicar melhor coluna "Contato Realizado" e todas as ações na tabela de step breakdown
+- [x] Zerar falhas no gráfico de steps (6 falhas são auto_red do sistema, não do Thiago)
+- [x] Filtro de período no Resumo de Recuperações — selecionar dia/semana/mês/ano específico
+- [x] Tooltips detalhados em TODOS os cards, gráficos, textos e porcentagens
+- [x] Corrigir duplicatas no Pagos/Resolvidos (ex: SILVEIRA BUENO aparece 2x) sem mexer em dados — deduplificado via GROUP BY

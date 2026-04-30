@@ -1,22 +1,27 @@
 /**
  * Painel de Métricas e Analytics de Cobrança
  * Exibe gráficos profissionais, tabelas e KPIs sobre o processo de cobrança
+ * 
+ * TOOLTIPS: Cada card, gráfico, porcentagem e texto tem tooltip detalhado
+ * explicando o que significa, como é calculado e quais exclusões se aplicam.
  */
 import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
   ComposedChart
 } from "recharts";
 import {
   X, TrendingUp, TrendingDown, Users, DollarSign, Phone, MessageCircle,
   Mail, CheckCircle2, AlertTriangle, BarChart3, Activity, Target, Clock,
   FileText, Shield, ChevronDown, ChevronUp, Calendar, Filter, ArrowRight,
-  Zap, Award, PieChart as PieChartIcon
+  Zap, Award, PieChart as PieChartIcon, Info, HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // ---- Helpers ----
 function formatCurrency(v: number) {
@@ -87,6 +92,49 @@ const TICK_ACTION_LABELS: Record<string, string> = {
   sync_red: "Sincronização (falha)",
 };
 
+// Explicações detalhadas de cada ação do histórico
+const TICK_ACTION_EXPLANATIONS: Record<string, string> = {
+  tick: "O operador marcou manualmente o checkbox verde de um step, indicando que a ação de cobrança daquele dia foi concluída com sucesso (ex: enviou WhatsApp, fez ligação).",
+  manual_blue: "O operador registrou manualmente um contato realizado com o cliente (marcação azul). Significa que houve comunicação efetiva com o devedor, independente do step do roteiro.",
+  untick: "O operador desmarcou um checkbox que estava marcado. Pode acontecer quando uma marcação foi feita por engano ou quando o status precisa ser corrigido.",
+  phone_mute: "O operador silenciou o telefone de um cliente. Usado quando o cliente pede para não ser mais contatado por ligação, ou quando o número está incorreto/inexistente.",
+  phone_unmute: "O operador reativou o telefone de um cliente que estava silenciado. O cliente volta a receber ligações de cobrança.",
+  auto_red: "O SISTEMA marcou automaticamente uma falha (vermelho) quando o prazo do step expirou sem que o operador tivesse concluído a ação. NÃO é uma falha do operador — é um registro automático do sistema.",
+  sync_green: "Uma sincronização automática do sistema marcou um step como concluído (verde). Acontece quando o sistema detecta que a ação foi realizada por outro meio.",
+  manual_red: "O operador marcou manualmente uma falha (vermelho) em um step. Indica que tentou realizar a ação de cobrança mas não conseguiu contato com o cliente.",
+  sync_red: "Uma sincronização do sistema registrou uma falha. Diferente do auto_red, esta é uma falha detectada durante processo de sincronização.",
+};
+
+// ---- InfoTooltip: ícone de info com tooltip explicativo ----
+function InfoTip({ text, className }: { text: string; className?: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={`inline-flex items-center cursor-help ${className || ""}`}>
+          <Info className="w-3.5 h-3.5 text-slate-400 hover:text-blue-500 transition-colors" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed whitespace-pre-line">
+        {text}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+// ---- HoverTip: wrap any element with a tooltip ----
+function HoverTip({ children, text, className }: { children: React.ReactNode; text: string; className?: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={`cursor-help ${className || ""}`}>{children}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-sm text-xs leading-relaxed whitespace-pre-line">
+        {text}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 // Custom tooltip for charts
 function CustomTooltip({ active, payload, label, valuePrefix, valueSuffix }: any) {
   if (!active || !payload?.length) return null;
@@ -122,14 +170,15 @@ function CurrencyTooltip({ active, payload, label }: any) {
   );
 }
 
-// ---- KPI Card ----
-function KpiCard({ icon: Icon, label, value, subValue, color, trend }: {
+// ---- KPI Card with tooltip ----
+function KpiCard({ icon: Icon, label, value, subValue, color, trend, tooltip }: {
   icon: React.ElementType;
   label: string;
   value: string | number;
   subValue?: string;
   color: string;
   trend?: "up" | "down" | "neutral";
+  tooltip?: string;
 }) {
   const colorMap: Record<string, { bg: string; icon: string; text: string; border: string }> = {
     blue: { bg: "bg-blue-50", icon: "text-blue-600", text: "text-blue-900", border: "border-blue-200" },
@@ -142,13 +191,15 @@ function KpiCard({ icon: Icon, label, value, subValue, color, trend }: {
     slate: { bg: "bg-slate-50", icon: "text-slate-600", text: "text-slate-900", border: "border-slate-200" },
   };
   const c = colorMap[color] || colorMap.blue;
-  return (
-    <div className={`${c.bg} border ${c.border} rounded-xl p-4 transition-all hover:shadow-md`}>
+
+  const card = (
+    <div className={`${c.bg} border ${c.border} rounded-xl p-4 transition-all hover:shadow-md ${tooltip ? "cursor-help" : ""}`}>
       <div className="flex items-center gap-2 mb-2">
         <div className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center`}>
           <Icon className={`w-4 h-4 ${c.icon}`} />
         </div>
         <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</span>
+        {tooltip && <Info className="w-3 h-3 text-slate-300 ml-auto flex-shrink-0" />}
       </div>
       <div className="flex items-end gap-2">
         <span className={`text-2xl font-bold ${c.text} tabular-nums`}>{value}</span>
@@ -158,14 +209,26 @@ function KpiCard({ icon: Icon, label, value, subValue, color, trend }: {
       {subValue && <p className="text-[11px] text-slate-500 mt-1">{subValue}</p>}
     </div>
   );
+
+  if (!tooltip) return card;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{card}</TooltipTrigger>
+      <TooltipContent side="top" className="max-w-sm text-xs leading-relaxed whitespace-pre-line">
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 // ---- Section Header ----
-function SectionHeader({ icon: Icon, title, subtitle, color }: {
+function SectionHeader({ icon: Icon, title, subtitle, color, tooltip }: {
   icon: React.ElementType;
   title: string;
   subtitle?: string;
   color: string;
+  tooltip?: string;
 }) {
   return (
     <div className="flex items-center gap-3 mb-4">
@@ -173,8 +236,212 @@ function SectionHeader({ icon: Icon, title, subtitle, color }: {
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div>
-        <h3 className="text-base font-bold text-slate-800">{title}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-bold text-slate-800">{title}</h3>
+          {tooltip && <InfoTip text={tooltip} />}
+        </div>
         {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ---- Period Selector for Recovery Summary ----
+function PeriodSelector({ groupBy, onGroupByChange, startDate, endDate, onStartDateChange, onEndDateChange }: {
+  groupBy: "day" | "week" | "month" | "year";
+  onGroupByChange: (v: "day" | "week" | "month" | "year") => void;
+  startDate: string;
+  endDate: string;
+  onStartDateChange: (v: string) => void;
+  onEndDateChange: (v: string) => void;
+}) {
+  // Generate month options (last 12 months)
+  const monthOptions = useMemo(() => {
+    const months: { value: string; label: string; start: string; end: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const lastDay = new Date(y, d.getMonth() + 1, 0).getDate();
+      months.push({
+        value: `${y}-${m}`,
+        label: d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
+        start: `${y}-${m}-01`,
+        end: `${y}-${m}-${String(lastDay).padStart(2, "0")}`,
+      });
+    }
+    return months;
+  }, []);
+
+  // Generate year options
+  const yearOptions = useMemo(() => {
+    const years: { value: string; label: string; start: string; end: string }[] = [];
+    const now = new Date();
+    for (let y = now.getFullYear(); y >= 2025; y--) {
+      years.push({
+        value: String(y),
+        label: String(y),
+        start: `${y}-01-01`,
+        end: `${y}-12-31`,
+      });
+    }
+    return years;
+  }, []);
+
+  // Generate week options (last 12 weeks)
+  const weekOptions = useMemo(() => {
+    const weeks: { value: string; label: string; start: string; end: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (i * 7));
+      // Get Monday of that week
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(d.setDate(diff));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const startStr = monday.toISOString().split("T")[0];
+      const endStr = sunday.toISOString().split("T")[0];
+      const label = `${monday.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} a ${sunday.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
+      weeks.push({ value: startStr, label, start: startStr, end: endStr });
+    }
+    return weeks;
+  }, []);
+
+  const handlePeriodSelect = (value: string, options: { value: string; start: string; end: string }[]) => {
+    const opt = options.find(o => o.value === value || o.start === value);
+    if (opt) {
+      onStartDateChange(opt.start);
+      onEndDateChange(opt.end);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {/* Granularity buttons */}
+      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
+        {(["day", "week", "month", "year"] as const).map(g => (
+          <button
+            key={g}
+            onClick={() => {
+              onGroupByChange(g);
+              // Clear date filter when switching granularity to show all
+              onStartDateChange("");
+              onEndDateChange("");
+            }}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              groupBy === g ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {g === "day" ? "Dia" : g === "week" ? "Semana" : g === "month" ? "Mês" : "Ano"}
+          </button>
+        ))}
+      </div>
+
+      {/* Specific period picker based on granularity */}
+      <div className="flex items-center gap-2">
+        {groupBy === "day" && (
+          <div className="flex items-center gap-1">
+            <Input
+              type="date"
+              value={startDate}
+              onChange={e => {
+                onStartDateChange(e.target.value);
+                onEndDateChange(e.target.value);
+              }}
+              className="w-40 h-8 text-xs"
+              placeholder="Selecionar dia"
+            />
+          </div>
+        )}
+
+        {groupBy === "week" && (
+          <Select
+            value={startDate || "all"}
+            onValueChange={(v) => {
+              if (v === "all") {
+                onStartDateChange("");
+                onEndDateChange("");
+              } else {
+                handlePeriodSelect(v, weekOptions);
+              }
+            }}
+          >
+            <SelectTrigger className="w-64 h-8 text-xs">
+              <SelectValue placeholder="Todas as semanas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as semanas</SelectItem>
+              {weekOptions.map(w => (
+                <SelectItem key={w.value} value={w.start}>{w.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {groupBy === "month" && (
+          <Select
+            value={startDate ? startDate.substring(0, 7) : "all"}
+            onValueChange={(v) => {
+              if (v === "all") {
+                onStartDateChange("");
+                onEndDateChange("");
+              } else {
+                const opt = monthOptions.find(m => m.value === v);
+                if (opt) {
+                  onStartDateChange(opt.start);
+                  onEndDateChange(opt.end);
+                }
+              }
+            }}
+          >
+            <SelectTrigger className="w-52 h-8 text-xs">
+              <SelectValue placeholder="Todos os meses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os meses</SelectItem>
+              {monthOptions.map(m => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {groupBy === "year" && (
+          <Select
+            value={startDate ? startDate.substring(0, 4) : "all"}
+            onValueChange={(v) => {
+              if (v === "all") {
+                onStartDateChange("");
+                onEndDateChange("");
+              } else {
+                const opt = yearOptions.find(y => y.value === v);
+                if (opt) {
+                  onStartDateChange(opt.start);
+                  onEndDateChange(opt.end);
+                }
+              }
+            }}
+          >
+            <SelectTrigger className="w-36 h-8 text-xs">
+              <SelectValue placeholder="Todos os anos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os anos</SelectItem>
+              {yearOptions.map(y => (
+                <SelectItem key={y.value} value={y.value}>{y.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {(startDate || endDate) && (
+          <Button variant="ghost" size="sm" onClick={() => { onStartDateChange(""); onEndDateChange(""); }} className="text-xs h-8 px-2">
+            Limpar
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -185,7 +452,9 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [recoveryGroupBy, setRecoveryGroupBy] = useState<"day" | "week" | "month">("day");
-  const [summaryGroupBy, setSummaryGroupBy] = useState<"day" | "week" | "month" | "year">("month");
+  const [summaryGroupBy, setSummaryGroupBy] = useState<"day" | "week" | "month" | "year">("day");
+  const [summaryStartDate, setSummaryStartDate] = useState("");
+  const [summaryEndDate, setSummaryEndDate] = useState("");
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     kpis: true,
     status: true,
@@ -207,6 +476,13 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
     return Object.keys(f).length > 0 ? f : undefined;
   }, [startDate, endDate]);
 
+  const summaryFilter = useMemo(() => {
+    const f: { groupBy: "day" | "week" | "month" | "year"; startDate?: string; endDate?: string } = { groupBy: summaryGroupBy };
+    if (summaryStartDate) f.startDate = summaryStartDate;
+    if (summaryEndDate) f.endDate = summaryEndDate;
+    return f;
+  }, [summaryGroupBy, summaryStartDate, summaryEndDate]);
+
   // ---- Queries ----
   const { data: overview, isLoading: loadingOverview } = trpc.collectionMetrics.getOverviewMetrics.useQuery(dateFilter);
   const { data: recoveryTimeline, isLoading: loadingTimeline } = trpc.collectionMetrics.getRecoveryTimeline.useQuery({
@@ -218,7 +494,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
   const { data: recoveryDetails } = trpc.collectionMetrics.getRecoveryDetails.useQuery(dateFilter);
   const { data: statusDist } = trpc.collectionMetrics.getStatusDistribution.useQuery();
   const { data: operatorMetrics } = trpc.collectionMetrics.getOperatorMetrics.useQuery(dateFilter);
-  const { data: recoverySummary } = trpc.collectionMetrics.getRecoverySummaryByPeriod.useQuery({ groupBy: summaryGroupBy });
+  const { data: recoverySummary } = trpc.collectionMetrics.getRecoverySummaryByPeriod.useQuery(summaryFilter);
 
   // ---- Derived Data ----
   const statusChartData = useMemo(() => {
@@ -283,6 +559,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
   const totalContatos = overview?.totalContatos || 0;
   const resolvedExcSpecial = overview?.resolvedExcludingSpecial?.count || 0;
   const taxaRecuperacao = totalInCollection > 0 ? ((totalResolved / (totalInCollection + totalResolved)) * 100).toFixed(1) : "0";
+  const eficiencia = totalActions > 0 ? (resolvedExcSpecial / totalActions * 100).toFixed(1) : "0";
 
   if (loadingOverview) {
     return (
@@ -317,8 +594,12 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
 
           {/* Date Filter */}
           <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-3">
-            <Filter className="w-4 h-4 text-slate-500" />
-            <span className="text-xs font-medium text-slate-600">Filtrar período:</span>
+            <HoverTip text="Use este filtro para restringir TODOS os dados do painel a um período específico. Afeta KPIs, gráficos e tabelas. Quando vazio, mostra dados de todo o histórico.">
+              <div className="flex items-center gap-1">
+                <Filter className="w-4 h-4 text-slate-500" />
+                <span className="text-xs font-medium text-slate-600">Filtrar período:</span>
+              </div>
+            </HoverTip>
             <Input
               type="date"
               value={startDate}
@@ -345,20 +626,90 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
             {/* ===== KPIs ===== */}
             <div>
               <button onClick={() => toggleSection("kpis")} className="flex items-center gap-2 w-full text-left mb-3">
-                <SectionHeader icon={Target} title="Indicadores Chave (KPIs)" subtitle="Visão geral do desempenho da cobrança" color="from-indigo-500 to-blue-600" />
+                <SectionHeader
+                  icon={Target}
+                  title="Indicadores Chave (KPIs)"
+                  subtitle="Visão geral do desempenho da cobrança"
+                  color="from-indigo-500 to-blue-600"
+                  tooltip="Estes indicadores resumem o desempenho geral do processo de cobrança. Cada card mostra um número-chave com explicação detalhada ao passar o mouse. Os dados são filtrados pelo período selecionado acima (quando aplicável). Apenas ações do operador Thiago são contabilizadas — Guilherme (gestor) é excluído de todas as métricas."
+                />
                 {expandedSections.kpis ? <ChevronUp className="w-5 h-5 text-slate-400 ml-auto" /> : <ChevronDown className="w-5 h-5 text-slate-400 ml-auto" />}
               </button>
               {expandedSections.kpis && (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  <KpiCard icon={FileText} label="Títulos em Cobrança" value={formatNumber(totalInCollection)} subValue="Títulos ativos no processo" color="blue" />
-                  <KpiCard icon={CheckCircle2} label="Recuperados" value={formatNumber(totalResolved)} subValue={`${taxaRecuperacao}% de taxa de recuperação`} color="green" trend="up" />
-                  <KpiCard icon={DollarSign} label="Valor Recuperado" value={formatCurrency(totalRecuperado)} subValue="Total de valores pagos" color="green" />
-                  <KpiCard icon={Activity} label="Ações Realizadas" value={formatNumber(totalActions)} subValue="WhatsApp, e-mail, ligações" color="purple" />
-                  <KpiCard icon={Shield} label="Decisões (Dia 7)" value={formatNumber(totalDecisoes)} subValue={`${totalDecisionPdfs} PDFs gerados`} color="amber" />
-                  <KpiCard icon={Phone} label="Contatos Registrados" value={formatNumber(totalContatos)} subValue="Registros de contato com clientes" color="cyan" />
-                  <KpiCard icon={AlertTriangle} label="Falhas do Operador" value={formatNumber(totalFalhas)} subValue={totalFalhas === 0 ? "Nenhuma falha manual do Thiago!" : "Tentativas sem sucesso pelo operador"} color={totalFalhas === 0 ? "green" : "red"} />
-                  <KpiCard icon={Zap} label="Taxa de Recuperação" value={`${taxaRecuperacao}%`} subValue={`${totalResolved} de ${totalInCollection + totalResolved} títulos`} color="orange" />
-                  <KpiCard icon={Target} label="Eficiência" value={totalActions > 0 ? (resolvedExcSpecial / totalActions * 100).toFixed(1) + "%" : "N/A"} subValue={`${resolvedExcSpecial} recuperações regulares / ${totalActions} ações (excl. Especiais)`} color="blue" />
+                  <KpiCard
+                    icon={FileText}
+                    label="Títulos em Cobrança"
+                    value={formatNumber(totalInCollection)}
+                    subValue="Títulos ativos no processo"
+                    color="blue"
+                    tooltip={`Quantidade total de títulos (boletos/duplicatas) que estão atualmente no processo de cobrança de inadimplência.\n\nInclui todos os status: Pendente, Contatado, Em Negociação, Promessa, etc.\n\nNÃO inclui títulos já pagos/resolvidos — esses saem da cobrança ativa.\n\nAtualmente: ${formatNumber(totalInCollection)} títulos ativos.`}
+                  />
+                  <KpiCard
+                    icon={CheckCircle2}
+                    label="Recuperados"
+                    value={formatNumber(totalResolved)}
+                    subValue={`${taxaRecuperacao}% de taxa de recuperação`}
+                    color="green"
+                    trend="up"
+                    tooltip={`Títulos que foram pagos/resolvidos após o processo de cobrança.\n\nCritério: título precisa ter sido pago pelo menos 3 dias úteis após o vencimento (para descartar pagamentos que já estavam em trânsito bancário antes da cobrança).\n\nExclui clientes de teste.\n\nDeduplificado: se o mesmo título (mesmo cliente + documento + vencimento) aparece mais de uma vez no banco, conta apenas 1 vez.\n\nAtualmente: ${formatNumber(totalResolved)} títulos recuperados.`}
+                  />
+                  <KpiCard
+                    icon={DollarSign}
+                    label="Valor Recuperado"
+                    value={formatCurrency(totalRecuperado)}
+                    subValue="Total de valores pagos"
+                    color="green"
+                    tooltip={`Soma dos valores (R$) de todos os títulos recuperados.\n\nMesmos critérios do card "Recuperados": mínimo 3 dias de atraso, exclui testes, deduplificado.\n\nEste valor representa o retorno financeiro direto do trabalho de cobrança.\n\nAtualmente: ${formatCurrency(totalRecuperado)}.`}
+                  />
+                  <KpiCard
+                    icon={Activity}
+                    label="Ações Realizadas"
+                    value={formatNumber(totalActions)}
+                    subValue="WhatsApp, e-mail, ligações"
+                    color="purple"
+                    tooltip={`Total de ações de cobrança registradas pelo operador Thiago.\n\nInclui: mensagens de WhatsApp, e-mails enviados, ligações telefônicas e outros tipos de contato.\n\nGuilherme (gestor/supervisor) é EXCLUÍDO desta contagem — apenas ações do operador de cobrança contam.\n\nCada ação representa uma tentativa de contato com um cliente inadimplente.\n\nAtualmente: ${formatNumber(totalActions)} ações.`}
+                  />
+                  <KpiCard
+                    icon={Shield}
+                    label="Decisões (Dia 7)"
+                    value={formatNumber(totalDecisoes)}
+                    subValue={`${totalDecisionPdfs} PDFs gerados`}
+                    color="amber"
+                    tooltip={`Decisões tomadas no Dia 7 do roteiro de cobrança.\n\nNo roteiro de 7 dias, o último step é a "Decisão": quando todas as tentativas de contato falharam, o operador decide o próximo passo (protesto, jurídico, negociação especial, etc.).\n\nPDFs gerados: documentos formais de decisão criados para registro.\n\nAtualmente: ${formatNumber(totalDecisoes)} decisões, ${totalDecisionPdfs} PDFs.`}
+                  />
+                  <KpiCard
+                    icon={Phone}
+                    label="Contatos Registrados"
+                    value={formatNumber(totalContatos)}
+                    subValue="Registros de contato com clientes"
+                    color="cyan"
+                    tooltip={`Total de registros de contato salvos no histórico de cada cliente.\n\nDiferente de "Ações Realizadas": aqui conta cada entrada no histórico de contato (contatoHistorico) de cada título.\n\nUm contato pode incluir: anotação de conversa, registro de promessa, observação sobre o cliente, etc.\n\nAtualmente: ${formatNumber(totalContatos)} registros.`}
+                  />
+                  <KpiCard
+                    icon={AlertTriangle}
+                    label="Falhas do Operador"
+                    value={formatNumber(totalFalhas)}
+                    subValue={totalFalhas === 0 ? "Nenhuma falha manual do Thiago!" : "Tentativas sem sucesso pelo operador"}
+                    color={totalFalhas === 0 ? "green" : "red"}
+                    tooltip={`Falhas MANUAIS do operador Thiago — quando ele marcou explicitamente que não conseguiu realizar o contato.\n\nIMPORTANTE: Falhas automáticas do sistema (auto_red) NÃO são contadas aqui. O sistema marca automaticamente como "falha" quando o prazo de um step expira, mas isso não é responsabilidade do operador.\n\nAtualmente existem 6 marcações auto_red do sistema no Step 3 (Ação 2), mas essas são IGNORADAS nesta métrica.\n\nApenas falhas que o Thiago marcou manualmente contam.\n\nAtualmente: ${formatNumber(totalFalhas)} falhas manuais.`}
+                  />
+                  <KpiCard
+                    icon={Zap}
+                    label="Taxa de Recuperação"
+                    value={`${taxaRecuperacao}%`}
+                    subValue={`${totalResolved} de ${totalInCollection + totalResolved} títulos`}
+                    color="orange"
+                    tooltip={`Porcentagem de títulos recuperados em relação ao total que passou pela cobrança.\n\nFórmula: Recuperados ÷ (Ativos + Recuperados) × 100\n= ${totalResolved} ÷ (${totalInCollection} + ${totalResolved}) × 100\n= ${taxaRecuperacao}%\n\nEsta taxa mostra a eficácia geral do processo de cobrança em converter títulos inadimplentes em pagos.\n\nInclui TODOS os títulos recuperados (inclusive clientes Especial s/ Cobrança).`}
+                  />
+                  <KpiCard
+                    icon={Target}
+                    label="Eficiência"
+                    value={`${eficiencia}%`}
+                    subValue={`${resolvedExcSpecial} recuperações regulares / ${totalActions} ações (excl. Especiais)`}
+                    color="blue"
+                    tooltip={`Eficiência do operador: quantas recuperações foram obtidas por ação realizada.\n\nFórmula: Recuperações de clientes regulares ÷ Total de ações × 100\n= ${resolvedExcSpecial} ÷ ${totalActions} × 100\n= ${eficiencia}%\n\nEXCLUI clientes com status "Especial s/ Cobrança" do numerador, pois esses clientes têm tratamento diferenciado e não são cobrados ativamente pelo operador.\n\nO denominador conta TODAS as ações do Thiago (WhatsApp, e-mail, ligação, outro).\n\nEsta métrica mede o retorno real do esforço de cobrança.`}
+                  />
                 </div>
               )}
             </div>
@@ -366,14 +717,23 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
             {/* ===== Status Distribution ===== */}
             <div>
               <button onClick={() => toggleSection("status")} className="flex items-center gap-2 w-full text-left mb-3">
-                <SectionHeader icon={PieChartIcon} title="Distribuição por Status" subtitle="Como os títulos estão distribuídos no processo de cobrança" color="from-purple-500 to-pink-600" />
+                <SectionHeader
+                  icon={PieChartIcon}
+                  title="Distribuição por Status"
+                  subtitle="Como os títulos estão distribuídos no processo de cobrança"
+                  color="from-purple-500 to-pink-600"
+                  tooltip="Mostra a distribuição dos títulos ativos por status de cobrança. Cada status representa uma etapa diferente do processo:\n\n• Pendente: título recém-incluído, ainda sem contato\n• Contatado: operador já fez contato com o cliente\n• Em Negociação: cliente respondeu e está negociando\n• Promessa de Pgto: cliente prometeu pagar em data específica\n• Não deu retorno: cliente foi contatado mas não respondeu\n• Não atendeu: tentativa de ligação sem atendimento\n• Protestado: título enviado para protesto cartorial\n• Jurídico: título encaminhado para cobrança judicial\n• Especial S/ Cobrança: cliente com tratamento especial, não é cobrado ativamente\n• Cheque em Compensação: pagamento via cheque aguardando compensação"
+                />
                 {expandedSections.status ? <ChevronUp className="w-5 h-5 text-slate-400 ml-auto" /> : <ChevronDown className="w-5 h-5 text-slate-400 ml-auto" />}
               </button>
               {expandedSections.status && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Pie Chart */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Títulos Ativos por Status</h4>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-semibold text-slate-700">Títulos Ativos por Status</h4>
+                      <InfoTip text="Gráfico de pizza mostrando a proporção de cada status entre os títulos ativos em cobrança. Quanto maior a fatia, mais títulos estão naquele status. Passe o mouse sobre cada fatia para ver o número exato." />
+                    </div>
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -392,7 +752,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                               <Cell key={i} fill={entry.fill} />
                             ))}
                           </Pie>
-                          <Tooltip content={<CustomTooltip />} />
+                          <RechartsTooltip content={<CustomTooltip />} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -400,39 +760,52 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
 
                   {/* Status Table */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Detalhamento por Status</h4>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-semibold text-slate-700">Detalhamento por Status</h4>
+                      <InfoTip text="Lista detalhada de cada status com quantidade absoluta, porcentagem relativa e barra de proporção visual. A barra mostra o tamanho relativo ao status com mais títulos." />
+                    </div>
                     <div className="space-y-2">
-                      {statusChartData.map((s, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: s.fill }} />
-                          <span className="text-sm text-slate-700 flex-1">{s.name}</span>
-                          <span className="text-sm font-bold text-slate-800 tabular-nums">{s.value}</span>
-                          <span className="text-xs text-slate-500 w-12 text-right tabular-nums">
-                            {pct(s.value, statusChartData.reduce((a, b) => a + b.value, 0))}
-                          </span>
-                          <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{
-                                width: `${(s.value / Math.max(...statusChartData.map(x => x.value))) * 100}%`,
-                                backgroundColor: s.fill,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                      {statusChartData.map((s, i) => {
+                        const totalActive = statusChartData.reduce((a, b) => a + b.value, 0);
+                        return (
+                          <HoverTip key={i} text={`${s.name}: ${s.value} títulos (${pct(s.value, totalActive)} do total de ${totalActive} títulos ativos)`}>
+                            <div className="flex items-center gap-3 w-full">
+                              <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: s.fill }} />
+                              <span className="text-sm text-slate-700 flex-1">{s.name}</span>
+                              <span className="text-sm font-bold text-slate-800 tabular-nums">{s.value}</span>
+                              <span className="text-xs text-slate-500 w-12 text-right tabular-nums">
+                                {pct(s.value, totalActive)}
+                              </span>
+                              <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all"
+                                  style={{
+                                    width: `${(s.value / Math.max(...statusChartData.map(x => x.value))) * 100}%`,
+                                    backgroundColor: s.fill,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </HoverTip>
+                        );
+                      })}
                     </div>
 
                     {/* Resolved status comparison */}
                     {statusDistData.resolved.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-slate-100">
-                        <h5 className="text-xs font-semibold text-emerald-700 mb-2">Status dos Títulos Recuperados</h5>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h5 className="text-xs font-semibold text-emerald-700">Status dos Títulos Recuperados</h5>
+                          <InfoTip text="Mostra qual era o status de cobrança dos títulos no momento em que foram pagos/resolvidos. Ajuda a entender em qual etapa do processo os clientes costumam pagar." />
+                        </div>
                         {statusDistData.resolved.map((s, i) => (
-                          <div key={i} className="flex items-center gap-3 py-1">
-                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.fill }} />
-                            <span className="text-xs text-slate-600 flex-1">{s.name}</span>
-                            <span className="text-xs font-bold text-slate-700 tabular-nums">{s.value}</span>
-                          </div>
+                          <HoverTip key={i} text={`${s.name}: ${s.value} títulos foram pagos quando estavam neste status de cobrança.`}>
+                            <div className="flex items-center gap-3 py-1 w-full">
+                              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.fill }} />
+                              <span className="text-xs text-slate-600 flex-1">{s.name}</span>
+                              <span className="text-xs font-bold text-slate-700 tabular-nums">{s.value}</span>
+                            </div>
+                          </HoverTip>
                         ))}
                       </div>
                     )}
@@ -444,14 +817,23 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
             {/* ===== Ações de Cobrança ===== */}
             <div>
               <button onClick={() => toggleSection("actions")} className="flex items-center gap-2 w-full text-left mb-3">
-                <SectionHeader icon={MessageCircle} title="Ações de Cobrança" subtitle="WhatsApp, e-mails, ligações e outros contatos realizados" color="from-green-500 to-emerald-600" />
+                <SectionHeader
+                  icon={MessageCircle}
+                  title="Ações de Cobrança"
+                  subtitle="WhatsApp, e-mails, ligações e outros contatos realizados"
+                  color="from-green-500 to-emerald-600"
+                  tooltip="Registra todas as ações de cobrança realizadas pelo operador Thiago. Cada vez que o Thiago envia um WhatsApp, e-mail, faz uma ligação ou outro tipo de contato, isso é registrado como uma ação.\n\nGuilherme (gestor) é excluído de todas as contagens.\n\nO gráfico de pizza mostra a proporção de cada tipo de ação, e o gráfico de barras mostra a evolução diária."
+                />
                 {expandedSections.actions ? <ChevronUp className="w-5 h-5 text-slate-400 ml-auto" /> : <ChevronDown className="w-5 h-5 text-slate-400 ml-auto" />}
               </button>
               {expandedSections.actions && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Action Pie */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Distribuição por Tipo de Ação</h4>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-semibold text-slate-700">Distribuição por Tipo de Ação</h4>
+                      <InfoTip text="Proporção de cada tipo de ação de cobrança:\n\n• WhatsApp (verde): mensagens enviadas via WhatsApp\n• E-mail (azul): e-mails de cobrança enviados\n• Ligação (laranja): chamadas telefônicas realizadas\n• Outro (roxo): outros tipos de contato (presencial, carta, etc.)\n\nApenas ações do operador Thiago são contadas." />
+                    </div>
                     <div className="h-64">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -468,7 +850,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                               <Cell key={i} fill={entry.fill} />
                             ))}
                           </Pie>
-                          <Tooltip content={<CustomTooltip />} />
+                          <RechartsTooltip content={<CustomTooltip />} />
                           <Legend />
                         </PieChart>
                       </ResponsiveContainer>
@@ -476,18 +858,23 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                     {/* Action summary cards */}
                     <div className="grid grid-cols-2 gap-2 mt-3">
                       {actionPieData.map((a, i) => (
-                        <div key={i} className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: a.fill }} />
-                          <span className="text-xs text-slate-600">{a.name}</span>
-                          <span className="text-xs font-bold text-slate-800 ml-auto tabular-nums">{a.value}</span>
-                        </div>
+                        <HoverTip key={i} text={`${a.name}: ${a.value} ações realizadas (${pct(a.value, actionPieData.reduce((s, x) => s + x.value, 0))} do total)`}>
+                          <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 w-full">
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: a.fill }} />
+                            <span className="text-xs text-slate-600">{a.name}</span>
+                            <span className="text-xs font-bold text-slate-800 ml-auto tabular-nums">{a.value}</span>
+                          </div>
+                        </HoverTip>
                       ))}
                     </div>
                   </div>
 
                   {/* Action Timeline */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Ações ao Longo do Tempo</h4>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-semibold text-slate-700">Ações ao Longo do Tempo</h4>
+                      <InfoTip text="Gráfico de barras empilhadas mostrando quantas ações de cobrança foram realizadas por dia, separadas por tipo (WhatsApp, E-mail, Ligação, Outro).\n\nCada barra representa um dia. As cores indicam o tipo de ação. A altura total da barra é o total de ações naquele dia.\n\nApenas ações do operador Thiago. Guilherme excluído." />
+                    </div>
                     {actionTimeline && actionTimeline.length > 0 ? (
                       <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
@@ -502,7 +889,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                               }}
                             />
                             <YAxis tick={{ fontSize: 10 }} />
-                            <Tooltip content={<CustomTooltip />} />
+                            <RechartsTooltip content={<CustomTooltip />} />
                             <Legend wrapperStyle={{ fontSize: 11 }} />
                             <Bar dataKey="whatsapp" name="WhatsApp" fill="#25D366" stackId="a" radius={[0, 0, 0, 0]} />
                             <Bar dataKey="email" name="E-mail" fill="#4285F4" stackId="a" />
@@ -523,6 +910,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                     <div className="bg-white border border-slate-200 rounded-xl p-4 lg:col-span-2">
                       <button onClick={() => toggleSection("operator")} className="flex items-center gap-2 w-full text-left mb-3">
                         <h4 className="text-sm font-semibold text-slate-700">Desempenho por Operador</h4>
+                        <InfoTip text="Tabela detalhada com o total de ações de cada operador, separado por tipo (WhatsApp, E-mail, Ligação, Outro).\n\nGuilherme (gestor/supervisor) é excluído — apenas operadores de cobrança aparecem.\n\nAtualmente o único operador ativo é o Thiago." />
                         {expandedSections.operator ? <ChevronUp className="w-4 h-4 text-slate-400 ml-auto" /> : <ChevronDown className="w-4 h-4 text-slate-400 ml-auto" />}
                       </button>
                       {expandedSections.operator && (
@@ -531,17 +919,27 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                             <thead>
                               <tr className="border-b border-slate-200">
                                 <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 uppercase">Operador</th>
-                                <th className="text-center py-2 px-3 text-xs font-semibold text-green-600">
-                                  <div className="flex items-center justify-center gap-1"><MessageCircle className="w-3 h-3" /> WhatsApp</div>
-                                </th>
-                                <th className="text-center py-2 px-3 text-xs font-semibold text-blue-600">
-                                  <div className="flex items-center justify-center gap-1"><Mail className="w-3 h-3" /> E-mail</div>
-                                </th>
-                                <th className="text-center py-2 px-3 text-xs font-semibold text-orange-600">
-                                  <div className="flex items-center justify-center gap-1"><Phone className="w-3 h-3" /> Ligação</div>
-                                </th>
-                                <th className="text-center py-2 px-3 text-xs font-semibold text-purple-600">Outro</th>
-                                <th className="text-center py-2 px-3 text-xs font-semibold text-slate-700">Total</th>
+                                <HoverTip text="Mensagens de WhatsApp enviadas pelo operador para clientes inadimplentes.">
+                                  <th className="text-center py-2 px-3 text-xs font-semibold text-green-600">
+                                    <div className="flex items-center justify-center gap-1"><MessageCircle className="w-3 h-3" /> WhatsApp</div>
+                                  </th>
+                                </HoverTip>
+                                <HoverTip text="E-mails de cobrança enviados pelo operador.">
+                                  <th className="text-center py-2 px-3 text-xs font-semibold text-blue-600">
+                                    <div className="flex items-center justify-center gap-1"><Mail className="w-3 h-3" /> E-mail</div>
+                                  </th>
+                                </HoverTip>
+                                <HoverTip text="Ligações telefônicas realizadas pelo operador para clientes inadimplentes.">
+                                  <th className="text-center py-2 px-3 text-xs font-semibold text-orange-600">
+                                    <div className="flex items-center justify-center gap-1"><Phone className="w-3 h-3" /> Ligação</div>
+                                  </th>
+                                </HoverTip>
+                                <HoverTip text="Outros tipos de contato: presencial, carta, mensagem por outro canal, etc.">
+                                  <th className="text-center py-2 px-3 text-xs font-semibold text-purple-600">Outro</th>
+                                </HoverTip>
+                                <HoverTip text="Soma de todas as ações (WhatsApp + E-mail + Ligação + Outro).">
+                                  <th className="text-center py-2 px-3 text-xs font-semibold text-slate-700">Total</th>
+                                </HoverTip>
                               </tr>
                             </thead>
                             <tbody>
@@ -568,26 +966,35 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
             {/* ===== Roteiro de Cobrança (Steps) ===== */}
             <div>
               <button onClick={() => toggleSection("steps")} className="flex items-center gap-2 w-full text-left mb-3">
-                <SectionHeader icon={FileText} title="Roteiro de Cobrança (7 Dias)" subtitle="Progresso das ações por step do roteiro" color="from-amber-500 to-orange-600" />
+                <SectionHeader
+                  icon={FileText}
+                  title="Roteiro de Cobrança (7 Dias)"
+                  subtitle="Progresso das ações por step do roteiro"
+                  color="from-amber-500 to-orange-600"
+                  tooltip={`O roteiro de cobrança tem 7 dias (steps):\n\n• Dia 1 — Ação 1: Primeiro contato (WhatsApp/e-mail/ligação)\n• Dia 2 — Intervalo: Aguarda retorno do cliente\n• Dia 3 — Ação 2: Segundo contato (reforço)\n• Dia 4 — Intervalo: Aguarda retorno\n• Dia 5 — Ação 3: Terceiro e último contato\n• Dia 6 — Intervalo: Último prazo para retorno\n• Dia 7 — Decisão: Definir próximo passo (protesto, jurídico, etc.)\n\nCada step pode ter 3 tipos de marcação:\n✅ Verde (Concluído): ação realizada com sucesso\n🔵 Azul (Contato Realizado): contato manual registrado\n🔴 Vermelho (Falha): operador não conseguiu contato\n\nFalhas automáticas do sistema (auto_red) são EXCLUÍDAS.`}
+                />
                 {expandedSections.steps ? <ChevronUp className="w-5 h-5 text-slate-400 ml-auto" /> : <ChevronDown className="w-5 h-5 text-slate-400 ml-auto" />}
               </button>
               {expandedSections.steps && stepChartData.length > 0 && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Stacked Bar Chart */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-1">Ações por Step</h4>
-                    <p className="text-[10px] text-slate-400 mb-3">Verde = ação concluída com sucesso | Azul = contato realizado manualmente | Vermelho = falha (não conseguiu contato)</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-sm font-semibold text-slate-700">Ações por Step</h4>
+                      <InfoTip text="Gráfico de barras empilhadas mostrando a quantidade de marcações em cada step do roteiro.\n\nVerde = ação concluída com sucesso pelo operador\nAzul = contato realizado manualmente (o operador registrou que houve comunicação efetiva com o cliente)\nVermelho = falha manual do operador (não conseguiu contato)\n\nFalhas automáticas do sistema (auto_red) NÃO aparecem neste gráfico — apenas marcações manuais do operador." />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mb-3">Verde = concluído | Azul = contato realizado | Vermelho = falha manual (sistema excluído)</p>
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={stepChartData} barSize={28}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                           <XAxis dataKey="shortName" tick={{ fontSize: 10 }} />
                           <YAxis tick={{ fontSize: 10 }} />
-                          <Tooltip content={<CustomTooltip />} />
+                          <RechartsTooltip content={<CustomTooltip />} />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
                           <Bar dataKey="concluido" name="Ação Concluída (verde)" fill={STEP_COLORS.green} stackId="a" radius={[0, 0, 0, 0]} />
                           <Bar dataKey="contato" name="Contato Realizado (azul)" fill={STEP_COLORS.blue} stackId="a" />
-                          <Bar dataKey="falha" name="Falha (vermelho)" fill={STEP_COLORS.red} stackId="a" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="falha" name="Falha Manual (vermelho)" fill={STEP_COLORS.red} stackId="a" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -595,31 +1002,57 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
 
                   {/* Step Table */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-1">Detalhamento por Step</h4>
-                    <p className="text-[10px] text-slate-400 mb-3">Cada step do roteiro de 7 dias — marcações feitas pelo operador Thiago</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-sm font-semibold text-slate-700">Detalhamento por Step</h4>
+                      <InfoTip text="Tabela com o número exato de marcações em cada step do roteiro de 7 dias.\n\nConcluído (verde): o operador marcou que realizou a ação de cobrança daquele dia com sucesso.\n\nContato Realizado (azul): o operador registrou manualmente que houve um contato efetivo com o cliente. Isso é diferente de 'Concluído' — o azul indica especificamente que houve comunicação bidirecional (o cliente respondeu ou atendeu).\n\nFalha (vermelho): o operador marcou manualmente que tentou mas não conseguiu contato. Falhas automáticas do sistema são EXCLUÍDAS.\n\nTotal: soma de Concluído + Contato + Falha para cada step." />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mb-3">Marcações feitas pelo operador Thiago — falhas do sistema (auto_red) excluídas</p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-slate-200">
-                            <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500">Step</th>
-                            <th className="text-center py-2 px-2 text-xs font-semibold text-emerald-600" title="Ação do roteiro concluída com sucesso pelo operador">Concluído</th>
-                            <th className="text-center py-2 px-2 text-xs font-semibold text-blue-600" title="Contato realizado manualmente pelo operador (marcação azul)">Contato Realizado</th>
-                            <th className="text-center py-2 px-2 text-xs font-semibold text-red-600" title="Ação marcada como falha (não conseguiu contato)">Falha</th>
-                            <th className="text-center py-2 px-2 text-xs font-semibold text-slate-700">Total</th>
+                            <HoverTip text="Cada step corresponde a um dia do roteiro de cobrança de 7 dias. Ação = dia de contato ativo. Intervalo = dia de espera por retorno. Decisão = definição do próximo passo.">
+                              <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500">Step</th>
+                            </HoverTip>
+                            <HoverTip text="Concluído (verde ✅): O operador Thiago marcou o checkbox verde, indicando que a ação de cobrança daquele step foi realizada com sucesso. Exemplo: enviou o WhatsApp de cobrança, mandou o e-mail, fez a ligação.">
+                              <th className="text-center py-2 px-2 text-xs font-semibold text-emerald-600">Concluído ✅</th>
+                            </HoverTip>
+                            <HoverTip text="Contato Realizado (azul 🔵): O operador registrou manualmente que houve contato efetivo com o cliente devedor. Diferente de 'Concluído', o azul indica que o cliente RESPONDEU ou ATENDEU — houve comunicação bidirecional. Exemplo: o cliente atendeu a ligação, respondeu o WhatsApp, enviou e-mail de volta.">
+                              <th className="text-center py-2 px-2 text-xs font-semibold text-blue-600">Contato Realizado 🔵</th>
+                            </HoverTip>
+                            <HoverTip text="Falha manual (vermelho 🔴): O operador marcou manualmente que tentou realizar a ação mas NÃO conseguiu contato com o cliente. Exemplo: ligou mas não atendeu, WhatsApp não entregue.\n\nIMPORTANTE: Falhas automáticas do sistema (auto_red) são EXCLUÍDAS desta coluna. Apenas falhas que o Thiago marcou manualmente aparecem aqui.">
+                              <th className="text-center py-2 px-2 text-xs font-semibold text-red-600">Falha 🔴</th>
+                            </HoverTip>
+                            <HoverTip text="Soma total de marcações neste step: Concluído + Contato Realizado + Falha.">
+                              <th className="text-center py-2 px-2 text-xs font-semibold text-slate-700">Total</th>
+                            </HoverTip>
                           </tr>
                         </thead>
                         <tbody>
                           {stepBreakdown?.steps.map((s, i) => (
                             <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
-                              <td className="py-2 px-2 font-medium text-slate-800 text-xs">{s.label}</td>
+                              <HoverTip text={
+                                s.step <= 2 ? `Step ${s.step} — ${s.label}: ${s.step === 1 ? "Primeiro dia de contato ativo. O operador deve enviar WhatsApp, e-mail ou fazer ligação para o cliente inadimplente." : "Dia de intervalo. Aguarda-se o retorno do cliente após o primeiro contato."}`
+                                : s.step <= 4 ? `Step ${s.step} — ${s.label}: ${s.step === 3 ? "Segundo dia de contato ativo. Reforço da cobrança para clientes que não responderam." : "Segundo intervalo. Aguarda retorno após o segundo contato."}`
+                                : s.step <= 6 ? `Step ${s.step} — ${s.label}: ${s.step === 5 ? "Terceiro e último dia de contato ativo. Última tentativa antes da decisão." : "Último intervalo. Prazo final para o cliente se manifestar."}`
+                                : `Step ${s.step} — ${s.label}: Dia da decisão final. O operador define o próximo passo: protesto, jurídico, negociação especial, etc.`
+                              }>
+                                <td className="py-2 px-2 font-medium text-slate-800 text-xs">{s.label}</td>
+                              </HoverTip>
                               <td className="py-2 px-2 text-center tabular-nums">
-                                <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold">{s.green}</span>
+                                <HoverTip text={`${s.green} ações concluídas com sucesso no ${s.label}`}>
+                                  <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold">{s.green}</span>
+                                </HoverTip>
                               </td>
                               <td className="py-2 px-2 text-center tabular-nums">
-                                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">{s.blue}</span>
+                                <HoverTip text={`${s.blue} contatos efetivos registrados manualmente no ${s.label}. Indica que o cliente respondeu/atendeu.`}>
+                                  <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">{s.blue}</span>
+                                </HoverTip>
                               </td>
                               <td className="py-2 px-2 text-center tabular-nums">
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${s.red > 0 ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-400"}`}>{s.red}</span>
+                                <HoverTip text={`${s.red} falhas manuais no ${s.label}. Apenas falhas marcadas pelo operador — falhas automáticas do sistema são excluídas.`}>
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${s.red > 0 ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-400"}`}>{s.red}</span>
+                                </HoverTip>
                               </td>
                               <td className="py-2 px-2 text-center tabular-nums font-bold text-slate-800">{s.total}</td>
                             </tr>
@@ -631,12 +1064,17 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                     {/* Tick history actions */}
                     {stepBreakdown?.tickHistoryActions && stepBreakdown.tickHistoryActions.length > 0 && (
                       <div className="mt-4 pt-3 border-t border-slate-100">
-                        <h5 className="text-xs font-semibold text-slate-600 mb-2">Histórico de Ações no Roteiro</h5>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h5 className="text-xs font-semibold text-slate-600">Histórico de Ações no Roteiro</h5>
+                          <InfoTip text="Contagem de cada tipo de ação registrada no histórico do roteiro de cobrança. Inclui marcações, desmarcações, contatos manuais, silenciamento de telefone, falhas automáticas do sistema e sincronizações.\n\nPasse o mouse sobre cada item para ver a explicação detalhada." />
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           {stepBreakdown.tickHistoryActions.map((a, i) => (
-                            <span key={i} className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-medium">
-                              {TICK_ACTION_LABELS[a.action] || a.action}: <strong>{a.count}</strong>
-                            </span>
+                            <HoverTip key={i} text={TICK_ACTION_EXPLANATIONS[a.action] || `Ação "${a.action}": ${a.count} ocorrências registradas no histórico.`}>
+                              <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-medium">
+                                {TICK_ACTION_LABELS[a.action] || a.action}: <strong>{a.count}</strong>
+                              </span>
+                            </HoverTip>
                           ))}
                         </div>
                       </div>
@@ -649,7 +1087,13 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
             {/* ===== Recuperações ===== */}
             <div>
               <button onClick={() => toggleSection("recovery")} className="flex items-center gap-2 w-full text-left mb-3">
-                <SectionHeader icon={TrendingUp} title="Recuperações (Pagos / Resolvidos)" subtitle="Títulos que saíram da inadimplência após cobrança" color="from-emerald-500 to-green-600" />
+                <SectionHeader
+                  icon={TrendingUp}
+                  title="Recuperações (Pagos / Resolvidos)"
+                  subtitle="Títulos que saíram da inadimplência após cobrança"
+                  color="from-emerald-500 to-green-600"
+                  tooltip={`Seção dedicada aos títulos que foram efetivamente pagos/resolvidos após o processo de cobrança.\n\nCritérios para contar como "recuperado":\n1. O título precisa ter sido pago pelo menos 3 dias úteis após o vencimento (para descartar pagamentos que já estavam em trânsito bancário, feriados e fins de semana)\n2. Clientes de teste são excluídos\n3. Registros duplicados (mesmo cliente + documento + vencimento) contam apenas 1 vez\n\nInclui: gráfico de evolução temporal, resumo por período com filtro, e tabela detalhada de cada título recuperado.`}
+                />
                 {expandedSections.recovery ? <ChevronUp className="w-5 h-5 text-slate-400 ml-auto" /> : <ChevronDown className="w-5 h-5 text-slate-400 ml-auto" />}
               </button>
               {expandedSections.recovery && (
@@ -657,7 +1101,10 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                   {/* Recovery Timeline Chart */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-semibold text-slate-700">Evolução de Recuperações</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-slate-700">Evolução de Recuperações</h4>
+                        <InfoTip text="Gráfico combinado mostrando a evolução das recuperações ao longo do tempo.\n\nBarras verdes (eixo esquerdo): quantidade de títulos recuperados por período.\nLinha amarela (eixo direito): valor total recuperado em R$.\n\nUse os botões Diário/Semanal/Mensal para alterar a granularidade do agrupamento." />
+                      </div>
                       <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
                         {(["day", "week", "month"] as const).map(g => (
                           <button
@@ -687,7 +1134,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                             />
                             <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
                             <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`} />
-                            <Tooltip content={<CurrencyTooltip />} />
+                            <RechartsTooltip content={<CurrencyTooltip />} />
                             <Legend wrapperStyle={{ fontSize: 11 }} />
                             <Bar yAxisId="left" dataKey="count" name="Qtd Recuperados" fill="#10b981" barSize={20} radius={[4, 4, 0, 0]} />
                             <Line yAxisId="right" type="monotone" dataKey="totalValor" name="Valor Recuperado" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
@@ -703,53 +1150,80 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
 
                   {/* Recovery Summary Table */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-semibold text-slate-700">Resumo de Recuperações por Período</h4>
-                      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
-                        {(["day", "week", "month", "year"] as const).map(g => (
-                          <button
-                            key={g}
-                            onClick={() => setSummaryGroupBy(g)}
-                            className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                              summaryGroupBy === g ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                            }`}
-                          >
-                            {g === "day" ? "Dia" : g === "week" ? "Semana" : g === "month" ? "Mês" : "Ano"}
-                          </button>
-                        ))}
+                    <div className="flex flex-col gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-slate-700">Resumo de Recuperações por Período</h4>
+                        <InfoTip text="Tabela resumo das recuperações agrupadas por período.\n\nEscolha a granularidade (Dia/Semana/Mês/Ano) e opcionalmente selecione um período específico para filtrar.\n\nQtd Recuperados: número de títulos pagos no período (deduplificado).\nValor Total: soma dos valores recuperados.\nMédia Dias Atraso: média de dias entre o vencimento e o pagamento.\nTotal Contatos: soma dos contatos registrados para os títulos recuperados.\n\nA linha TOTAL no final soma todos os períodos visíveis." />
                       </div>
+                      <PeriodSelector
+                        groupBy={summaryGroupBy}
+                        onGroupByChange={setSummaryGroupBy}
+                        startDate={summaryStartDate}
+                        endDate={summaryEndDate}
+                        onStartDateChange={setSummaryStartDate}
+                        onEndDateChange={setSummaryEndDate}
+                      />
                     </div>
                     {recoverySummary && recoverySummary.length > 0 ? (
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-slate-200 bg-slate-50">
-                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Período</th>
-                              <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Qtd Recuperados</th>
-                              <th className="text-right py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Valor Total</th>
-                              <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Média Dias Atraso</th>
-                              <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Total Contatos</th>
+                              <HoverTip text="O período de agrupamento. Formato depende da granularidade selecionada: data completa (dia), início da semana (semana), mês/ano (mês), ou ano (ano).">
+                                <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Período</th>
+                              </HoverTip>
+                              <HoverTip text="Quantidade de títulos únicos recuperados (pagos) neste período. Deduplificado: mesmo cliente + documento + vencimento conta apenas 1 vez.">
+                                <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Qtd Recuperados</th>
+                              </HoverTip>
+                              <HoverTip text="Soma dos valores (R$) dos títulos recuperados neste período.">
+                                <th className="text-right py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Valor Total</th>
+                              </HoverTip>
+                              <HoverTip text="Média de dias de atraso dos títulos recuperados neste período. Calculada como: média dos dias entre o vencimento e a data de resolução de cada título.">
+                                <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Média Dias Atraso</th>
+                              </HoverTip>
+                              <HoverTip text="Soma total de contatos registrados para os títulos recuperados neste período. Inclui WhatsApp, e-mail, ligação e outros contatos.">
+                                <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Total Contatos</th>
+                              </HoverTip>
                             </tr>
                           </thead>
                           <tbody>
-                            {recoverySummary.map((s, i) => (
-                              <tr key={i} className="border-b border-slate-100 hover:bg-emerald-50/50">
-                                <td className="py-2.5 px-3 font-semibold text-slate-800">{s.period}</td>
-                                <td className="py-2.5 px-3 text-center">
-                                  <span className="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full text-xs font-bold">{s.count}</span>
-                                </td>
-                                <td className="py-2.5 px-3 text-right font-bold text-emerald-700 tabular-nums">{formatCurrency(s.totalValor)}</td>
-                                <td className="py-2.5 px-3 text-center text-slate-600 tabular-nums">{s.avgDiasAtraso}d</td>
-                                <td className="py-2.5 px-3 text-center text-slate-600 tabular-nums">{s.totalContatos}</td>
-                              </tr>
-                            ))}
+                            {recoverySummary.map((s, i) => {
+                              // Format period label based on groupBy
+                              let periodLabel = s.period;
+                              if (summaryGroupBy === "day") {
+                                const d = new Date(s.period + "T12:00:00");
+                                periodLabel = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+                              } else if (summaryGroupBy === "week") {
+                                const d = new Date(s.period + "T12:00:00");
+                                const end = new Date(d);
+                                end.setDate(end.getDate() + 6);
+                                periodLabel = `${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} a ${end.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
+                              } else if (summaryGroupBy === "month") {
+                                const [y, m] = s.period.split("-");
+                                const d = new Date(Number(y), Number(m) - 1, 1);
+                                periodLabel = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+                              }
+                              return (
+                                <tr key={i} className="border-b border-slate-100 hover:bg-emerald-50/50">
+                                  <td className="py-2.5 px-3 font-semibold text-slate-800">{periodLabel}</td>
+                                  <td className="py-2.5 px-3 text-center">
+                                    <span className="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full text-xs font-bold">{s.count}</span>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-bold text-emerald-700 tabular-nums">{formatCurrency(s.totalValor)}</td>
+                                  <td className="py-2.5 px-3 text-center text-slate-600 tabular-nums">{s.avgDiasAtraso}d</td>
+                                  <td className="py-2.5 px-3 text-center text-slate-600 tabular-nums">{s.totalContatos}</td>
+                                </tr>
+                              );
+                            })}
                             {/* Totals row */}
                             <tr className="bg-emerald-50 font-bold">
                               <td className="py-2.5 px-3 text-emerald-800">TOTAL</td>
                               <td className="py-2.5 px-3 text-center text-emerald-800">{recoverySummary.reduce((a, b) => a + b.count, 0)}</td>
                               <td className="py-2.5 px-3 text-right text-emerald-800 tabular-nums">{formatCurrency(recoverySummary.reduce((a, b) => a + b.totalValor, 0))}</td>
                               <td className="py-2.5 px-3 text-center text-emerald-700">
-                                {Math.round(recoverySummary.reduce((a, b) => a + b.avgDiasAtraso * b.count, 0) / Math.max(recoverySummary.reduce((a, b) => a + b.count, 0), 1))}d
+                                <HoverTip text="Média ponderada: soma(diasAtraso × qtdRecuperados) ÷ totalRecuperados">
+                                  <span>{Math.round(recoverySummary.reduce((a, b) => a + b.avgDiasAtraso * b.count, 0) / Math.max(recoverySummary.reduce((a, b) => a + b.count, 0), 1))}d</span>
+                                </HoverTip>
                               </td>
                               <td className="py-2.5 px-3 text-center text-emerald-700">{recoverySummary.reduce((a, b) => a + b.totalContatos, 0)}</td>
                             </tr>
@@ -757,7 +1231,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                         </table>
                       </div>
                     ) : (
-                      <p className="text-sm text-slate-400 text-center py-8">Nenhuma recuperação registrada</p>
+                      <p className="text-sm text-slate-400 text-center py-8">Nenhuma recuperação registrada{(summaryStartDate || summaryEndDate) ? " no período selecionado" : ""}</p>
                     )}
                   </div>
 
@@ -765,6 +1239,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
                     <button onClick={() => toggleSection("recoveryTable")} className="flex items-center gap-2 w-full text-left mb-3">
                       <h4 className="text-sm font-semibold text-slate-700">Títulos Recuperados (Detalhado)</h4>
+                      <InfoTip text="Lista detalhada de cada título recuperado, com informações do cliente, valor, datas e status.\n\nDeduplificado: se o mesmo título aparece mais de uma vez no banco de dados (mesmo cliente + documento + vencimento), apenas um registro é exibido.\n\nDias Atraso: dias entre o vencimento e a data de resolução.\nContatos: número de contatos registrados para este título.\nStatus: status de cobrança no momento da resolução." />
                       <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold ml-2">{recoveryDetails?.total || 0}</span>
                       {expandedSections.recoveryTable ? <ChevronUp className="w-4 h-4 text-slate-400 ml-auto" /> : <ChevronDown className="w-4 h-4 text-slate-400 ml-auto" />}
                     </button>
@@ -773,21 +1248,39 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200 bg-slate-50">
-                              <th className="text-left py-2 px-2 font-semibold text-slate-500">Cliente</th>
-                              <th className="text-left py-2 px-2 font-semibold text-slate-500">Doc</th>
-                              <th className="text-left py-2 px-2 font-semibold text-slate-500">Empresa</th>
-                              <th className="text-right py-2 px-2 font-semibold text-slate-500">Valor</th>
-                              <th className="text-center py-2 px-2 font-semibold text-slate-500">Vencimento</th>
-                              <th className="text-center py-2 px-2 font-semibold text-slate-500">Resolvido em</th>
-                              <th className="text-center py-2 px-2 font-semibold text-slate-500">Dias Atraso</th>
-                              <th className="text-center py-2 px-2 font-semibold text-slate-500">Contatos</th>
-                              <th className="text-left py-2 px-2 font-semibold text-slate-500">Status</th>
+                              <HoverTip text="Nome/razão social do cliente que pagou o título.">
+                                <th className="text-left py-2 px-2 font-semibold text-slate-500">Cliente</th>
+                              </HoverTip>
+                              <HoverTip text="Número do documento (duplicata/boleto).">
+                                <th className="text-left py-2 px-2 font-semibold text-slate-500">Doc</th>
+                              </HoverTip>
+                              <HoverTip text="Empresa do Grupo Fox que emitiu o título.">
+                                <th className="text-left py-2 px-2 font-semibold text-slate-500">Empresa</th>
+                              </HoverTip>
+                              <HoverTip text="Valor a receber do título (valor original ou renegociado).">
+                                <th className="text-right py-2 px-2 font-semibold text-slate-500">Valor</th>
+                              </HoverTip>
+                              <HoverTip text="Data de vencimento original do título.">
+                                <th className="text-center py-2 px-2 font-semibold text-slate-500">Vencimento</th>
+                              </HoverTip>
+                              <HoverTip text="Data em que o título foi marcado como pago/resolvido no sistema.">
+                                <th className="text-center py-2 px-2 font-semibold text-slate-500">Resolvido em</th>
+                              </HoverTip>
+                              <HoverTip text="Quantidade de dias entre o vencimento e a data de resolução. Mínimo 3 dias (critério de filtro).">
+                                <th className="text-center py-2 px-2 font-semibold text-slate-500">Dias Atraso</th>
+                              </HoverTip>
+                              <HoverTip text="Número de contatos registrados no histórico deste título.">
+                                <th className="text-center py-2 px-2 font-semibold text-slate-500">Contatos</th>
+                              </HoverTip>
+                              <HoverTip text="Status de cobrança do título no momento em que foi resolvido.">
+                                <th className="text-left py-2 px-2 font-semibold text-slate-500">Status</th>
+                              </HoverTip>
                             </tr>
                           </thead>
                           <tbody>
                             {recoveryDetails.items.map((r, i) => (
-                              <tr key={i} className="border-b border-slate-100 hover:bg-emerald-50/30">
-                                <td className="py-2 px-2 font-medium text-slate-800 max-w-[180px] truncate">{r.cliente}</td>
+                              <tr key={r.id || i} className="border-b border-slate-100 hover:bg-emerald-50/30">
+                                <td className="py-2 px-2 font-medium text-slate-800 max-w-[180px] truncate" title={r.cliente}>{r.cliente}</td>
                                 <td className="py-2 px-2 text-slate-600">{r.documento || "-"}</td>
                                 <td className="py-2 px-2 text-slate-600">{r.empresa || "-"}</td>
                                 <td className="py-2 px-2 text-right font-bold text-emerald-700 tabular-nums">{formatCurrency(r.valorAReceber)}</td>
