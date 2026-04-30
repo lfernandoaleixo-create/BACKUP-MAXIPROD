@@ -1,12 +1,12 @@
 /**
- * E-commerce Router - Despesas da operação e-commerce (contas a pagar filial)
+ * E-commerce Router - Despesas e Estornos da operação e-commerce (contas a pagar filial)
  * Acesso restrito: Pedro, Flavio, Guilherme
  */
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { ecommerceExpenses } from "../drizzle/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { ecommerceExpenses, ecommerceRefunds } from "../drizzle/schema";
+import { eq, desc, sql, and } from "drizzle-orm";
 
 const ECOMMERCE_ALLOWED_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
 
@@ -128,6 +128,186 @@ export const ecommerceRouter = router({
             total: Number(r.total),
             count: Number(r.count),
           })),
+        },
+      };
+    }),
+
+  // ============================================================
+  // ESTORNOS
+  // ============================================================
+
+  /**
+   * List all refunds (sorted by date desc)
+   */
+  listRefunds: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+    }))
+    .query(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", refunds: [] };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", refunds: [] };
+      const rows = await db.select().from(ecommerceRefunds).orderBy(desc(ecommerceRefunds.dataEstorno));
+      return { success: true, refunds: rows };
+    }),
+
+  /**
+   * Add a new refund
+   */
+  addRefund: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      descricao: z.string().min(1).max(500),
+      fornecedor: z.string().max(300).optional(),
+      dataCompraOriginal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      dataEstorno: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      valorEstorno: z.number().min(0.01),
+      motivo: z.enum(["produto_defeituoso", "produto_errado", "cancelamento", "duplicidade", "acordo_comercial", "outro"]),
+      motivoDetalhe: z.string().max(1000).optional(),
+      status: z.enum(["pendente", "creditado"]).default("pendente"),
+      dataCreditado: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      observacao: z.string().max(1000).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      await db.insert(ecommerceRefunds).values({
+        descricao: input.descricao.trim(),
+        fornecedor: input.fornecedor?.trim() || null,
+        dataCompraOriginal: input.dataCompraOriginal,
+        dataEstorno: input.dataEstorno,
+        valorEstorno: String(input.valorEstorno),
+        motivo: input.motivo,
+        motivoDetalhe: input.motivoDetalhe?.trim() || null,
+        status: input.status,
+        dataCreditado: input.dataCreditado || null,
+        observacao: input.observacao?.trim() || null,
+        registradoPor: input.operatorName,
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Update refund status (mark as credited) or edit details
+   */
+  updateRefund: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+      descricao: z.string().min(1).max(500).optional(),
+      fornecedor: z.string().max(300).optional(),
+      dataCompraOriginal: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      dataEstorno: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      valorEstorno: z.number().min(0.01).optional(),
+      motivo: z.enum(["produto_defeituoso", "produto_errado", "cancelamento", "duplicidade", "acordo_comercial", "outro"]).optional(),
+      motivoDetalhe: z.string().max(1000).optional(),
+      status: z.enum(["pendente", "creditado"]).optional(),
+      dataCreditado: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+      observacao: z.string().max(1000).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      const [existing] = await db.select().from(ecommerceRefunds).where(eq(ecommerceRefunds.id, input.id));
+      if (!existing) return { success: false, error: "Estorno não encontrado" };
+
+      const updates: Record<string, any> = {};
+      if (input.descricao !== undefined) updates.descricao = input.descricao.trim();
+      if (input.fornecedor !== undefined) updates.fornecedor = input.fornecedor.trim() || null;
+      if (input.dataCompraOriginal !== undefined) updates.dataCompraOriginal = input.dataCompraOriginal;
+      if (input.dataEstorno !== undefined) updates.dataEstorno = input.dataEstorno;
+      if (input.valorEstorno !== undefined) updates.valorEstorno = String(input.valorEstorno);
+      if (input.motivo !== undefined) updates.motivo = input.motivo;
+      if (input.motivoDetalhe !== undefined) updates.motivoDetalhe = input.motivoDetalhe.trim() || null;
+      if (input.status !== undefined) updates.status = input.status;
+      if (input.dataCreditado !== undefined) updates.dataCreditado = input.dataCreditado;
+      if (input.observacao !== undefined) updates.observacao = input.observacao.trim() || null;
+
+      if (Object.keys(updates).length === 0) {
+        return { success: false, error: "Nenhum campo para atualizar" };
+      }
+
+      await db.update(ecommerceRefunds).set(updates).where(eq(ecommerceRefunds.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Delete a refund (only the person who registered or Guilherme)
+   */
+  deleteRefund: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      const [refund] = await db.select().from(ecommerceRefunds).where(eq(ecommerceRefunds.id, input.id));
+      if (!refund) return { success: false, error: "Estorno não encontrado" };
+      if (refund.registradoPor !== input.operatorName && input.operatorName !== "Guilherme") {
+        return { success: false, error: "Apenas quem registrou ou o admin pode excluir" };
+      }
+      await db.delete(ecommerceRefunds).where(eq(ecommerceRefunds.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Get refund summary totals
+   */
+  getRefundSummary: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+    }))
+    .query(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", summary: null };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", summary: null };
+
+      // Total geral
+      const [totalRow] = await db.select({
+        total: sql<string>`COALESCE(SUM(valor_estorno), 0)`,
+        count: sql<number>`COUNT(*)`,
+      }).from(ecommerceRefunds);
+
+      // Por status
+      const byStatus = await db.select({
+        status: ecommerceRefunds.status,
+        total: sql<string>`COALESCE(SUM(valor_estorno), 0)`,
+        count: sql<number>`COUNT(*)`,
+      }).from(ecommerceRefunds).groupBy(ecommerceRefunds.status);
+
+      // Total do mês atual
+      const now = new Date();
+      const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const [mesRow] = await db.select({
+        total: sql<string>`COALESCE(SUM(valor_estorno), 0)`,
+        count: sql<number>`COUNT(*)`,
+      }).from(ecommerceRefunds).where(sql`data_estorno LIKE ${mesAtual + '%'}`);
+
+      const pendente = byStatus.find(s => s.status === "pendente");
+      const creditado = byStatus.find(s => s.status === "creditado");
+
+      return {
+        success: true,
+        summary: {
+          totalGeral: Number(totalRow?.total || 0),
+          totalCount: Number(totalRow?.count || 0),
+          mesAtual: { total: Number(mesRow?.total || 0), count: Number(mesRow?.count || 0) },
+          pendente: { total: Number(pendente?.total || 0), count: Number(pendente?.count || 0) },
+          creditado: { total: Number(creditado?.total || 0), count: Number(creditado?.count || 0) },
         },
       };
     }),

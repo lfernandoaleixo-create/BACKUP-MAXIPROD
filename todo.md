@@ -3205,3 +3205,15 @@
 - [x] Geração de PDF sob demanda (mesmo formato do PDF de referência)
 - [x] Verificar se desconto de 29/04/2026 foi salvo (2 registros confirmados)
 - [x] Testes automatizados para endpoints de histórico (7 testes passando)
+
+## Estornos E-commerce (Financeiro → E-commerce)
+- [x] Criar tabela ecommerce_refunds no banco (14 colunas incluindo motivo enum, status enum)
+- [x] Endpoints CRUD: addRefund, listRefunds, updateRefund, deleteRefund, getRefundSummary
+- [x] UI: seção "Estornos" na aba E-commerce com listagem e formulário
+- [x] Formulário completo: data compra, data estorno, valor, motivo, descrição, fornecedor, status
+- [x] Cards resumo: total pendente, total creditado, total geral, mês atual
+- [x] Filtros por status (pendente/creditado), período, busca textual
+- [x] Pedro pode registrar e editar estornos
+- [x] Flávio tem visibilidade total dos estornos registrados
+- [x] Testes automatizados para endpoints de estornos (9 testes passando)
+- [x] Remover registro duplicado do histórico de descontos (ID 1 removido, mantido apenas ID 2)

@@ -1475,3 +1475,49 @@ export const annotationEntries = mysqlTable("annotation_entries", {
 });
 export type AnnotationEntry = typeof annotationEntries.$inferSelect;
 export type InsertAnnotationEntry = typeof annotationEntries.$inferInsert;
+
+
+/**
+ * Estornos do E-commerce.
+ * Pedro registra estornos de compras feitas no cartão da filial,
+ * para que Flávio tenha visibilidade sobre valores que retornam à matriz.
+ */
+export const ecommerceRefunds = mysqlTable("ecommerce_refunds", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Descrição do item/compra estornado */
+  descricao: varchar("descricao", { length: 500 }).notNull(),
+  /** Fornecedor/loja onde a compra foi feita */
+  fornecedor: varchar("fornecedor", { length: 300 }),
+  /** Data da compra original YYYY-MM-DD */
+  dataCompraOriginal: varchar("data_compra_original", { length: 10 }).notNull(),
+  /** Data do estorno YYYY-MM-DD */
+  dataEstorno: varchar("data_estorno", { length: 10 }).notNull(),
+  /** Valor do estorno (positivo) */
+  valorEstorno: decimal("valor_estorno", { precision: 12, scale: 2 }).notNull(),
+  /** Motivo do estorno */
+  motivo: mysqlEnum("motivo", [
+    "produto_defeituoso",
+    "produto_errado",
+    "cancelamento",
+    "duplicidade",
+    "acordo_comercial",
+    "outro",
+  ]).notNull(),
+  /** Descrição detalhada do motivo (quando "outro" ou para complementar) */
+  motivoDetalhe: text("motivo_detalhe"),
+  /** Status do estorno */
+  status: mysqlEnum("status", [
+    "pendente",
+    "creditado",
+  ]).default("pendente").notNull(),
+  /** Data em que o crédito foi efetivado na conta YYYY-MM-DD (null se pendente) */
+  dataCreditado: varchar("data_creditado", { length: 10 }),
+  /** Observações adicionais */
+  observacao: text("observacao"),
+  /** Quem registrou o estorno */
+  registradoPor: varchar("registrado_por", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type EcommerceRefund = typeof ecommerceRefunds.$inferSelect;
+export type InsertEcommerceRefund = typeof ecommerceRefunds.$inferInsert;

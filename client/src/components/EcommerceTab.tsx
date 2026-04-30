@@ -1,8 +1,9 @@
 /**
- * E-commerce Tab - Despesas da operação e-commerce (contas a pagar filial)
+ * E-commerce Tab - Despesas e Estornos da operação e-commerce (contas a pagar filial)
  * Acesso restrito: Pedro, Flavio, Guilherme
  */
 import React, { useState, useMemo } from "react";
+import RefundsSection from "@/components/RefundsSection";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Badge } from "@/components/ui/badge";
@@ -774,6 +775,11 @@ export default function EcommerceTab() {
           </table>
         </div>
       )}
+      {/* Divider */}
+      <div className="border-t border-slate-200 my-6" />
+
+      {/* Refunds Section */}
+      <RefundsSection />
     </div>
   );
 }
