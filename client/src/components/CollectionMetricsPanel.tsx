@@ -734,19 +734,32 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                       <h4 className="text-sm font-semibold text-slate-700">Títulos Ativos por Status</h4>
                       <InfoTip text="Gráfico de pizza mostrando a proporção de cada status entre os títulos ativos em cobrança. Quanto maior a fatia, mais títulos estão naquele status. Passe o mouse sobre cada fatia para ver o número exato." />
                     </div>
-                    <div className="h-72">
+                    <div className="h-80">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
                             data={statusChartData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
+                            innerRadius={50}
+                            outerRadius={85}
                             paddingAngle={2}
                             dataKey="value"
-                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                            labelLine={false}
+                            label={({ name, percent, x, y, midAngle }) => {
+                              // Abbreviate long names to prevent overflow
+                              const abbrev: Record<string, string> = {
+                                "Cheque em Compensação": "Cheque Comp.",
+                                "Especial S/ Cobrança": "Esp. S/ Cobr.",
+                                "Promessa de Pgto": "Prom. Pgto",
+                                "Em Negociação": "Negociação",
+                                "Não deu retorno": "S/ Retorno",
+                                "Não atendeu": "N/ Atendeu",
+                              };
+                              const displayName = abbrev[name] || name;
+                              return `${displayName} (${(percent * 100).toFixed(0)}%)`;
+                            }}
+                            labelLine={true}
+                            fontSize={11}
                           >
                             {statusChartData.map((entry, i) => (
                               <Cell key={i} fill={entry.fill} />
@@ -1169,21 +1182,31 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-slate-200 bg-slate-50">
-                              <HoverTip text="O período de agrupamento. Formato depende da granularidade selecionada: data completa (dia), início da semana (semana), mês/ano (mês), ou ano (ano).">
-                                <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Período</th>
-                              </HoverTip>
-                              <HoverTip text="Quantidade de títulos únicos recuperados (pagos) neste período. Deduplificado: mesmo cliente + documento + vencimento conta apenas 1 vez.">
-                                <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Qtd Recuperados</th>
-                              </HoverTip>
-                              <HoverTip text="Soma dos valores (R$) dos títulos recuperados neste período.">
-                                <th className="text-right py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Valor Total</th>
-                              </HoverTip>
-                              <HoverTip text="Média de dias de atraso dos títulos recuperados neste período. Calculada como: média dos dias entre o vencimento e a data de resolução de cada título.">
-                                <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Média Dias Atraso</th>
-                              </HoverTip>
-                              <HoverTip text="Soma total de contatos registrados para os títulos recuperados neste período. Inclui WhatsApp, e-mail, ligação e outros contatos.">
-                                <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Total Contatos</th>
-                              </HoverTip>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">
+                                <HoverTip text="O período de agrupamento. Formato depende da granularidade selecionada: data completa (dia), início da semana (semana), mês/ano (mês), ou ano (ano).">
+                                  <span>Período</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">
+                                <HoverTip text="Quantidade de títulos únicos recuperados (pagos) neste período. Deduplificado: mesmo cliente + documento + vencimento conta apenas 1 vez.">
+                                  <span>Qtd Recuperados</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-right py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">
+                                <HoverTip text="Soma dos valores (R$) dos títulos recuperados neste período.">
+                                  <span>Valor Total</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">
+                                <HoverTip text="Média de dias de atraso dos títulos recuperados neste período. Calculada como: média dos dias entre o vencimento e a data de resolução de cada título.">
+                                  <span>Média Dias Atraso</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">
+                                <HoverTip text="Soma total de contatos registrados para os títulos recuperados neste período. Inclui WhatsApp, e-mail, ligação e outros contatos.">
+                                  <span>Total Contatos</span>
+                                </HoverTip>
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1248,33 +1271,51 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="border-b border-slate-200 bg-slate-50">
-                              <HoverTip text="Nome/razão social do cliente que pagou o título.">
-                                <th className="text-left py-2 px-2 font-semibold text-slate-500">Cliente</th>
-                              </HoverTip>
-                              <HoverTip text="Número do documento (duplicata/boleto).">
-                                <th className="text-left py-2 px-2 font-semibold text-slate-500">Doc</th>
-                              </HoverTip>
-                              <HoverTip text="Empresa do Grupo Fox que emitiu o título.">
-                                <th className="text-left py-2 px-2 font-semibold text-slate-500">Empresa</th>
-                              </HoverTip>
-                              <HoverTip text="Valor a receber do título (valor original ou renegociado).">
-                                <th className="text-right py-2 px-2 font-semibold text-slate-500">Valor</th>
-                              </HoverTip>
-                              <HoverTip text="Data de vencimento original do título.">
-                                <th className="text-center py-2 px-2 font-semibold text-slate-500">Vencimento</th>
-                              </HoverTip>
-                              <HoverTip text="Data em que o título foi marcado como pago/resolvido no sistema.">
-                                <th className="text-center py-2 px-2 font-semibold text-slate-500">Resolvido em</th>
-                              </HoverTip>
-                              <HoverTip text="Quantidade de dias entre o vencimento e a data de resolução. Mínimo 3 dias (critério de filtro).">
-                                <th className="text-center py-2 px-2 font-semibold text-slate-500">Dias Atraso</th>
-                              </HoverTip>
-                              <HoverTip text="Número de contatos registrados no histórico deste título.">
-                                <th className="text-center py-2 px-2 font-semibold text-slate-500">Contatos</th>
-                              </HoverTip>
-                              <HoverTip text="Status de cobrança do título no momento em que foi resolvido.">
-                                <th className="text-left py-2 px-2 font-semibold text-slate-500">Status</th>
-                              </HoverTip>
+                              <th className="text-left py-2 px-2 font-semibold text-slate-500">
+                                <HoverTip text="Nome/razão social do cliente que pagou o título.">
+                                  <span>Cliente</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-left py-2 px-2 font-semibold text-slate-500">
+                                <HoverTip text="Número do documento (duplicata/boleto).">
+                                  <span>Doc</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-left py-2 px-2 font-semibold text-slate-500">
+                                <HoverTip text="Empresa do Grupo Fox que emitiu o título.">
+                                  <span>Empresa</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-right py-2 px-2 font-semibold text-slate-500">
+                                <HoverTip text="Valor a receber do título (valor original ou renegociado).">
+                                  <span>Valor</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-center py-2 px-2 font-semibold text-slate-500">
+                                <HoverTip text="Data de vencimento original do título.">
+                                  <span>Vencimento</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-center py-2 px-2 font-semibold text-slate-500">
+                                <HoverTip text="Data em que o título foi marcado como pago/resolvido no sistema.">
+                                  <span>Resolvido em</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-center py-2 px-2 font-semibold text-slate-500">
+                                <HoverTip text="Quantidade de dias entre o vencimento e a data de resolução. Mínimo 3 dias (critério de filtro).">
+                                  <span>Dias Atraso</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-center py-2 px-2 font-semibold text-slate-500">
+                                <HoverTip text="Número de contatos registrados no histórico deste título.">
+                                  <span>Contatos</span>
+                                </HoverTip>
+                              </th>
+                              <th className="text-left py-2 px-2 font-semibold text-slate-500">
+                                <HoverTip text="Status de cobrança do título no momento em que foi resolvido.">
+                                  <span>Status</span>
+                                </HoverTip>
+                              </th>
                             </tr>
                           </thead>
                           <tbody>

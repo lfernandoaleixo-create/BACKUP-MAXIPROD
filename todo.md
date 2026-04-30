@@ -3303,3 +3303,8 @@
 - [x] Distribuição por Setor: mostrar apenas quantidade absoluta (sem % entre unidades diferentes)
 - [x] Relatório PDF: Total ANTES da Média nas colunas
 - [x] Relatório PDF: aumentar mais as letras
+
+## Correção Alinhamento de Tabelas (30/04/2026)
+- [ ] Corrigir desalinhamento colunas tabela Pagos/Resolvidos (header vs valores)
+- [ ] Corrigir desalinhamento colunas tabela Resumo de Recuperações (header vs valores)
+- [x] Fix truncated labels in Títulos Ativos por Status pie chart (e.g. Cheque em Compensa... cut off)
