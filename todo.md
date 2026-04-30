@@ -3297,3 +3297,9 @@
 - [x] Aumentar tamanho da fonte dentro dos cards
 - [x] Unidades no plural: sacos, caixas, formas (não singular)
 - [x] Ordenar máquinas/mesas numericamente (1, 2, 3...)
+
+## Correção Card Distribuição por Setor (30/04/2026)
+- [x] Corrigir lógica do card "Distribuição por Setor" — mostra Multilâmina 2% como "maior" (incorreto)
+- [x] Distribuição por Setor: mostrar apenas quantidade absoluta (sem % entre unidades diferentes)
+- [x] Relatório PDF: Total ANTES da Média nas colunas
+- [x] Relatório PDF: aumentar mais as letras

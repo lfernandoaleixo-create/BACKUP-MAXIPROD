@@ -674,7 +674,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
         pct,
         daysWithData,
       };
-    }).filter(s => s.value > 0);
+    }).filter(s => s.value > 0).sort((a, b) => b.value - a.value);
 
     // 3. Machine breakdown for selected sector
     const machineData = selectedSector ? (() => {
@@ -1337,7 +1337,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
               </div>
               <div>
                 <h4 className="font-bold text-slate-700">Distribuição por Setor</h4>
-                {!openSections.has('distribuicao') && <p className="text-[10px] text-slate-400 mt-0.5">{sectorTotals.length} setores — maior: {sectorTotals[0]?.name} ({fmtNum(sectorTotals[0]?.pct || 0, 0)}%)</p>}
+                {!openSections.has('distribuicao') && <p className="text-[10px] text-slate-400 mt-0.5">{sectorTotals.length} setores — maior: {sectorTotals[0]?.name} ({fmtNum(sectorTotals[0]?.value || 0, 0)} {sectorTotals[0]?.unit})</p>}
               </div>
               <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">
                 {sectorTotals.length} setores ativos
@@ -1351,14 +1351,12 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
           <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
             <Info className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" />
             <p className="text-[11px] text-indigo-700 leading-relaxed">
-              <strong>O que este gráfico mostra:</strong> A participação (fatia) de cada setor na produção total da fábrica no período.
-              <br/><strong>Produção total do período:</strong> {fmtNum(grandTotal, 0)} unidades (soma de todos os setores).
-              <br/><strong>Como ler o gráfico de pizza:</strong> Cada fatia colorida representa um setor. O tamanho da fatia mostra quanto aquele setor contribuiu. Exemplo: se Vareteira mostra 20%, significa que de {fmtNum(grandTotal, 0)} unidades produzidas, a Vareteira foi responsável por 20% (≈{fmtNum(grandTotal * 0.2, 0)} unidades).
+              <strong>O que este gráfico mostra:</strong> A produção absoluta de cada setor da fábrica no período, com suas respectivas unidades.
+              <br/><strong>Nota importante:</strong> Cada setor tem sua própria unidade de medida (sacos, caixas, formas, m³). Não é possível comparar percentualmente setores com unidades diferentes.
               <br/><strong>Tabela ao lado — colunas:</strong>
               • <strong>Setor:</strong> Nome do setor da fábrica.
-              • <strong>Total:</strong> Quantidade total produzida por aquele setor no período inteiro.
-              • <strong>%:</strong> Participação percentual = (total do setor ÷ {fmtNum(grandTotal, 0)}) × 100.
-              • <strong>Média/Dia:</strong> Produção média diária daquele setor = total do setor ÷ dias em que o setor efetivamente produziu (dias de manutenção/parada NÃO entram).
+              • <strong>Total:</strong> Quantidade total produzida por aquele setor no período inteiro (na unidade do setor).
+              • <strong>Média/Dia:</strong> Produção média diária = total do setor ÷ dias em que efetivamente produziu (dias de manutenção/parada NÃO entram).
               • <strong>Dias:</strong> Quantos dias o setor teve produção real (não conta dias parados).
               <br/><strong>Dica:</strong> Clique em um setor na tabela para expandir e ver o detalhamento por máquina individual.
             </p>
@@ -1405,9 +1403,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                     </Pie>
                     <Tooltip content={({ active, payload }: any) => {
                       if (!active || !payload?.length) return null;
-                      const { name, value, color, pct } = payload[0].payload;
-                      const gt = _tooltipCtx.grandTotal || 0;
-                      const totalDays = _tooltipCtx.daysWithProdCount || 1;
+                      const { name, value, color, unit, avg, daysWithData } = payload[0].payload;
                       return (
                         <div className="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl shadow-2xl px-4 py-3 text-xs min-w-[260px] max-w-[360px]">
                           <div className="flex items-center gap-2 mb-1">
@@ -1415,13 +1411,9 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                             <span className="font-bold text-slate-700 text-sm">{name}</span>
                           </div>
                           <div className="space-y-1.5 mt-2">
-                            <p className="text-slate-600"><strong>Produção total:</strong> {fmtNum(value)} unidades</p>
-                            <p className="text-slate-600"><strong>Participação:</strong> {fmtNum(pct, 1)}% da produção total</p>
-                            <div className="bg-slate-50 rounded-lg px-2.5 py-1.5 mt-1">
-                              <p className="text-slate-500 leading-relaxed">
-                                → Isso significa que de tudo que a fábrica produziu no período ({fmtNum(gt, 0)} unidades em {totalDays} dias), o setor <strong>{name}</strong> foi responsável por <strong>{fmtNum(pct, 1)}%</strong> desse total, produzindo <strong>{fmtNum(value)}</strong> unidades.
-                              </p>
-                            </div>
+                            <p className="text-slate-600"><strong>Produção total:</strong> {fmtNum(value)} {unit}</p>
+                            <p className="text-slate-600"><strong>Média diária:</strong> {fmtNum(avg)} {unit}/dia</p>
+                            <p className="text-slate-600"><strong>Dias com produção:</strong> {daysWithData} dias</p>
                           </div>
                         </div>
                       );
@@ -1449,7 +1441,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                       <th className="text-left py-2.5 px-2 text-slate-500 font-semibold text-xs">Setor</th>
                       <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs cursor-help" title="Produção total acumulada do setor em todo o período selecionado (soma de todas as máquinas do setor)">Total</th>
                       <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs cursor-help" title="Total do setor ÷ número de dias em que o setor teve produção real. Dias de parada/manutenção não entram no cálculo">Média/Dia</th>
-                      <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs cursor-help" title={`Percentual da produção total do período (${fmtNum(grandTotal, 0)} unidades). Exemplo: 20% significa que este setor produziu 20% de tudo`}>% do Total</th>
+
                       <th className="text-right py-2.5 px-2 text-slate-500 font-semibold text-xs cursor-help" title="Número de dias em que o setor teve produção real registrada (quantidade > 0). Dias de manutenção/parada não contam">Dias</th>
                     </tr>
                   </thead>
@@ -1477,11 +1469,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                         <td className="py-2.5 px-2 text-right text-slate-600 tabular-nums">
                           {fmtNum(sector.avg)} <span className="text-[9px] text-slate-400 font-normal">{sector.unit}/dia</span>
                         </td>
-                        <td className="py-2.5 px-2 text-right">
-                          <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs font-medium tabular-nums" title={`Este setor produziu ${fmtNum(sector.pct, 1)}% de toda a produção do período (${fmtNum(grandTotal, 0)} unidades totais). Ou seja, de cada 100 unidades produzidas, ${fmtNum(sector.pct, 0)} vieram deste setor.`}>
-                            {fmtNum(sector.pct, 0)}%
-                          </span>
-                        </td>
+
                         <td className="py-2.5 px-2 text-right text-slate-500 tabular-nums" title={`Este setor teve produção em ${sector.daysWithData} dos ${totalDays} dias do período`}>{sector.daysWithData}</td>
                       </tr>
                     ))}
@@ -1491,7 +1479,7 @@ export default function ProductionCharts({ selectedDate, sectors }: ProductionCh
                       <td className="py-2.5 px-2 font-bold text-slate-800 text-xs">TOTAL</td>
                       <td className="py-2.5 px-2 text-right font-bold text-teal-700 tabular-nums">{fmtNum(grandTotal)}</td>
                       <td className="py-2.5 px-2 text-right font-bold text-teal-700 tabular-nums">{fmtNum(avgDaily)}</td>
-                      <td className="py-2.5 px-2 text-right font-bold text-teal-700">100%</td>
+
                       <td className="py-2.5 px-2 text-right font-bold text-teal-700 tabular-nums">{totalDays}</td>
                     </tr>
                   </tfoot>

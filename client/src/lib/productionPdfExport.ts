@@ -473,15 +473,15 @@ function drawSectorCardsGrid(
 
     // Sector name in header
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setTextColor(255, 255, 255);
     const sectorName = card.nome.length > 18 ? card.nome.substring(0, 16) + "…" : card.nome;
-    doc.text(sectorName, x + 3, y + 5.2);
+    doc.text(sectorName, x + 3, y + 5.5);
 
     // Unit badge in header
-    doc.setFontSize(6);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text(card.unit, x + cardW - 3, y + 5.2, { align: "right" });
+    doc.text(card.unit, x + cardW - 3, y + 5.5, { align: "right" });
 
     // Table area
     const tableY = y + headerH + 1;
@@ -490,15 +490,15 @@ function drawSectorCardsGrid(
 
     // Column headers (mini)
     const colHeaders = isWeeklyOrMonthly
-      ? ["Máquina", "Média", "Total", "Dias"]
+      ? ["Máquina", "Total", "Média", "Dias"]
       : ["Máquina", "Tipo", "Qtd", "Status"];
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(5.5);
+    doc.setFontSize(6);
     doc.setTextColor(...C.medium);
 
     const colWidths = isWeeklyOrMonthly
-      ? [cardW * 0.32, cardW * 0.22, cardW * 0.24, cardW * 0.22]
+      ? [cardW * 0.32, cardW * 0.24, cardW * 0.22, cardW * 0.22]
       : [cardW * 0.28, cardW * 0.24, cardW * 0.2, cardW * 0.28];
 
     let colX = x + 2;
@@ -514,7 +514,7 @@ function drawSectorCardsGrid(
 
     // Data rows
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.2);
+    doc.setFontSize(5.8);
     doc.setTextColor(...C.dark);
 
     for (let r = 0; r < displayRows.length; r++) {
@@ -538,15 +538,16 @@ function drawSectorCardsGrid(
         doc.text(mName, colX, rowY);
         colX += colWidths[0];
 
-        // Média
-        doc.setTextColor(...C.medium);
-        doc.text(rowData.tipo, colX, rowY);
-        colX += colWidths[1];
-
-        // Total
+        // Total (ANTES da Média)
         doc.setFont("helvetica", "bold");
         doc.setTextColor(...C.dark);
         doc.text(rowData.qtd, colX, rowY);
+        colX += colWidths[1];
+
+        // Média
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...C.medium);
+        doc.text(rowData.tipo, colX, rowY);
         colX += colWidths[2];
 
         // Dias
@@ -615,10 +616,10 @@ function drawSectorCardsGrid(
 
     // Total text
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
+    doc.setFontSize(7);
     doc.setTextColor(...sectorColor);
     doc.text("TOTAL:", x + 3, footerY + 4.5);
-    doc.setFontSize(8.5);
+    doc.setFontSize(9);
     doc.text(`${fmtNum(card.total, card.decimals)} ${card.unit}`, x + cardW - 3, footerY + 4.5, { align: "right" });
   }
 
