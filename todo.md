@@ -3194,3 +3194,14 @@
 - [x] Adicionar operadora Thalita (senha: Thalita) com mesmas permissões financeiras do Thiago
 - [x] BUG: Erro React #310 ao clicar nos gráficos de produção — crash da página (fix: mover useMemo sectorUnitMap antes dos early returns)
 - [x] ProductionCharts: reescrever TODOS os tooltips dos gráficos para serem extremamente detalhados e auto-explicativos — cada porcentagem explicada em linguagem simples
+
+## Histórico de Descontos (Financeiro → Recebíveis)
+- [x] Tabela discount_selection_history já existia com todos os dados necessários (reutilizada)
+- [x] Dados dos títulos armazenados como JSON (titulosJson) - sem necessidade de tabela separada
+- [x] Modificar saveDiscountSelection para salvar no histórico automaticamente
+- [x] Endpoint getDiscountHistoryAll (listar todos os descontos passados)
+- [x] Endpoint getDiscountHistoryById (detalhes de um desconto específico)
+- [x] UI de listagem de histórico na aba Recebíveis (botão "Histórico de Descontos")
+- [x] Geração de PDF sob demanda (mesmo formato do PDF de referência)
+- [x] Verificar se desconto de 29/04/2026 foi salvo (2 registros confirmados)
+- [x] Testes automatizados para endpoints de histórico (7 testes passando)

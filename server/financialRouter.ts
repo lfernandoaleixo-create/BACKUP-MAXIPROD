@@ -5578,6 +5578,32 @@ ${acoesTexto}
       return rows;
     }),
 
+  /** Buscar histórico completo de descontos (todos, sem filtro por conta/mês) */
+  getDiscountHistoryAll: publicProcedure
+    .input(z.object({ limit: z.number().default(100) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      const { discountSelectionHistory } = await import("../drizzle/schema");
+      const rows = await db!.select()
+        .from(discountSelectionHistory)
+        .orderBy(desc(discountSelectionHistory.createdAt))
+        .limit(input.limit);
+      return rows;
+    }),
+
+  /** Buscar um desconto específico por ID */
+  getDiscountHistoryById: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      const { discountSelectionHistory } = await import("../drizzle/schema");
+      const [row] = await db!.select()
+        .from(discountSelectionHistory)
+        .where(eq(discountSelectionHistory.id, input.id))
+        .limit(1);
+      return row || null;
+    }),
+
   /**
    * Editar uma ação de cobrança diária (tipo de ação e/ou notas).
    * Registra todas as alterações na tabela de auditoria (collection_action_edits).

@@ -52,6 +52,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
+import DiscountHistoryPanel from "@/components/DiscountHistoryPanel";
 
 
 /* ---- Helpers ---- */
@@ -1522,6 +1523,7 @@ export default function ReceivablesTab() {
   const [expandedItem, setExpandedItem] = useState<number | null>(null);
   const [selectedIdsByAccount, setSelectedIdsByAccount] = useState<Record<string, Set<number>>>({});
   const [showHistoryPanel, setShowHistoryPanel] = useState<string | null>(null);
+  const [showGlobalHistory, setShowGlobalHistory] = useState(false);
 
   // Discount alert cascading blink
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
@@ -1670,15 +1672,33 @@ export default function ReceivablesTab() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-          {(["EMITIDO", "RECEBIDO", "ALL"] as const).map(e => (
-            <button key={e} onClick={() => setEstado(e)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${estado === e ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"}`}>
-              {e === "EMITIDO" ? "A Receber" : e === "RECEBIDO" ? "Recebidos" : "Todos"}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowGlobalHistory(!showGlobalHistory)}
+            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              showGlobalHistory
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200"
+            }`}
+          >
+            <History className="w-3.5 h-3.5" />
+            Histórico de Descontos
+          </button>
+          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+            {(["EMITIDO", "RECEBIDO", "ALL"] as const).map(e => (
+              <button key={e} onClick={() => setEstado(e)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${estado === e ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"}`}>
+                {e === "EMITIDO" ? "A Receber" : e === "RECEBIDO" ? "Recebidos" : "Todos"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Painel de Histórico Global de Descontos */}
+      {showGlobalHistory && (
+        <DiscountHistoryPanel onClose={() => setShowGlobalHistory(false)} />
+      )}
 
       {/* Busca global */}
       <div className="relative">
