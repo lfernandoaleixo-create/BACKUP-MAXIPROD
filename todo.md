@@ -3217,3 +3217,21 @@
 - [x] Flávio tem visibilidade total dos estornos registrados
 - [x] Testes automatizados para endpoints de estornos (9 testes passando)
 - [x] Remover registro duplicado do histórico de descontos (ID 1 removido, mantido apenas ID 2)
+
+## Métricas e Analytics de Cobrança (Inadimplência)
+- [x] Analisar tabelas de cobrança existentes (collection_actions, collection_daily_actions, collection_status, resolved_receivables, etc.)
+- [x] Endpoints backend: getOverviewMetrics, getRecoveryTimeline, getActionTimeline, getStepBreakdown, getRecoveryDetails, getStatusDistribution, getOperatorMetrics, getRecoverySummaryByPeriod
+- [x] KPIs escritos: total títulos (126), clientes recuperados (35), valor recuperado (R$ 202.297,62), ações realizadas (97), falhas (6), decisões (0), contatos (23), taxa recuperação (21.7%), eficiência (36.1%)
+- [x] Tabela detalhada de ações por step (Ação 1-7, quantidades concluído/em andamento/falha)
+- [x] Tabela de recuperações por período (diário, semanal, mensal, anual) com filtro
+- [x] Tabela desempenho por operador (Guilherme, Thiago - WhatsApp/Email/Ligação/Outro)
+- [x] Tabela títulos recuperados detalhado (35 registros com cliente, doc, empresa, valor, vencimento, resolvido em, dias atraso)
+- [x] Gráfico: evolução de recuperações ao longo do tempo (area chart com filtro Diário/Semanal/Mensal)
+- [x] Gráfico: distribuição por status (pie chart - Especial 41%, Contatado 33%, Pendente 14%, etc.)
+- [x] Gráfico: ações por tipo (donut chart - WhatsApp 43, Email 29, Ligação 21, Outro 4)
+- [x] Gráfico: ações ao longo do tempo (stacked bar chart por dia)
+- [x] Gráfico: ações por step (bar chart - Ação 1 a Decisão)
+- [x] Filtro de período customizável em todos os gráficos e tabelas (dateFrom / dateTo)
+- [x] Botão "Analytics" na aba Inadimplência (entre PDFs de Decisão e Guia de Cobrança)
+- [x] Seções colapsáveis: Indicadores Chave, Distribuição por Status, Ações de Cobrança, Roteiro de Cobrança, Recuperações
+- [x] Testes automatizados para endpoints de métricas (10 testes passando)

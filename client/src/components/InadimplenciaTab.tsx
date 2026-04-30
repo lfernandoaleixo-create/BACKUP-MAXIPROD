@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
-import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp } from "lucide-react";
+import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3 } from "lucide-react";
+import CollectionMetricsPanel from "@/components/CollectionMetricsPanel";
 import { generateDecisionPdf } from "../lib/decisionPdfExport";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -572,6 +573,7 @@ export default function InadimplenciaTab() {
   const [decisaoTutorialData, setDecisaoTutorialData] = useState<{clienteName: string; vendedorName: string} | null>(null);
   const [decisionPdfTitleId, setDecisionPdfTitleId] = useState<number | null>(null);
   const [showDecisionPdfHistory, setShowDecisionPdfHistory] = useState(false);
+  const [showMetricsPanel, setShowMetricsPanel] = useState(false);
   const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
   const isVitoria = operator?.name === "Vitoria" || operator?.name === "Vitória";
 
@@ -1061,6 +1063,14 @@ export default function InadimplenciaTab() {
           >
             <Stamp className="w-4 h-4" />
             <span>PDFs de Decisão</span>
+          </button>
+          <button
+            onClick={() => setShowMetricsPanel(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02]"
+            title="Ver métricas e analytics de cobrança"
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Analytics</span>
           </button>
           {canSeeCobrancaGuide && (
             <button
@@ -1569,6 +1579,11 @@ export default function InadimplenciaTab() {
       {/* Histórico de PDFs de Decisão */}
       {showDecisionPdfHistory && (
         <DecisionPdfHistoryDialog onClose={() => setShowDecisionPdfHistory(false)} />
+      )}
+
+      {/* Analytics de Cobrança */}
+      {showMetricsPanel && (
+        <CollectionMetricsPanel onClose={() => setShowMetricsPanel(false)} />
       )}
 
       {/* Tutorial Decisão de Cobrança (Vitória) */}
