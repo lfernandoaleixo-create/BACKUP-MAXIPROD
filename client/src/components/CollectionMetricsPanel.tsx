@@ -74,6 +74,19 @@ const STEP_COLORS = {
   red: "#ef4444",
 };
 
+// Tradução das ações do histórico de ticks
+const TICK_ACTION_LABELS: Record<string, string> = {
+  tick: "Marcação (concluído)",
+  manual_blue: "Contato Realizado (manual)",
+  untick: "Desmarcação",
+  phone_mute: "Telefone Silenciado",
+  phone_unmute: "Telefone Reativado",
+  auto_red: "Falha Automática (sistema)",
+  sync_green: "Sincronização (concluído)",
+  manual_red: "Falha Manual",
+  sync_red: "Sincronização (falha)",
+};
+
 // Custom tooltip for charts
 function CustomTooltip({ active, payload, label, valuePrefix, valueSuffix }: any) {
   if (!active || !payload?.length) return null;
@@ -236,9 +249,9 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
     return stepBreakdown.steps.map(s => ({
       name: s.label.replace(" (Dia ", "\n(Dia ").replace(")", ")"),
       shortName: s.label.split(" (")[0],
-      green: s.green,
-      blue: s.blue,
-      red: s.red,
+      concluido: s.green,
+      contato: s.blue,
+      falha: s.red,
       total: s.total,
     }));
   }, [stepBreakdown]);
@@ -293,7 +306,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Analytics de Cobrança</h2>
+                <h2 className="text-xl font-bold text-white">Métricas de Cobrança</h2>
                 <p className="text-blue-100 text-sm">Métricas completas do processo de cobrança de inadimplentes</p>
               </div>
             </div>
@@ -343,7 +356,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                   <KpiCard icon={Activity} label="Ações Realizadas" value={formatNumber(totalActions)} subValue="WhatsApp, e-mail, ligações" color="purple" />
                   <KpiCard icon={Shield} label="Decisões (Dia 7)" value={formatNumber(totalDecisoes)} subValue={`${totalDecisionPdfs} PDFs gerados`} color="amber" />
                   <KpiCard icon={Phone} label="Contatos Registrados" value={formatNumber(totalContatos)} subValue="Registros de contato com clientes" color="cyan" />
-                  <KpiCard icon={AlertTriangle} label="Falhas" value={formatNumber(totalFalhas)} subValue={totalFalhas === 0 ? "Nenhuma falha registrada!" : "Tentativas sem sucesso"} color={totalFalhas === 0 ? "green" : "red"} />
+                  <KpiCard icon={AlertTriangle} label="Falhas do Operador" value={formatNumber(totalFalhas)} subValue={totalFalhas === 0 ? "Nenhuma falha manual do Thiago!" : "Tentativas sem sucesso pelo operador"} color={totalFalhas === 0 ? "green" : "red"} />
                   <KpiCard icon={Zap} label="Taxa de Recuperação" value={`${taxaRecuperacao}%`} subValue={`${totalResolved} de ${totalInCollection + totalResolved} títulos`} color="orange" />
                   <KpiCard icon={Award} label="Edições de Ação" value={formatNumber(totalEdits)} subValue="Ajustes no roteiro de cobrança" color="slate" />
                   <KpiCard icon={Target} label="Eficiência" value={totalActions > 0 ? (totalResolved / totalActions * 100).toFixed(1) + "%" : "N/A"} subValue="Recuperações por ação realizada" color="blue" />
@@ -563,7 +576,8 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Stacked Bar Chart */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Ações por Step</h4>
+                    <h4 className="text-sm font-semibold text-slate-700 mb-1">Ações por Step</h4>
+                    <p className="text-[10px] text-slate-400 mb-3">Verde = ação concluída com sucesso | Azul = contato realizado manualmente | Vermelho = falha (não conseguiu contato)</p>
                     <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={stepChartData} barSize={28}>
@@ -572,9 +586,9 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                           <YAxis tick={{ fontSize: 10 }} />
                           <Tooltip content={<CustomTooltip />} />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
-                          <Bar dataKey="green" name="Concluído" fill={STEP_COLORS.green} stackId="a" radius={[0, 0, 0, 0]} />
-                          <Bar dataKey="blue" name="Em andamento" fill={STEP_COLORS.blue} stackId="a" />
-                          <Bar dataKey="red" name="Falha" fill={STEP_COLORS.red} stackId="a" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="concluido" name="Ação Concluída (verde)" fill={STEP_COLORS.green} stackId="a" radius={[0, 0, 0, 0]} />
+                          <Bar dataKey="contato" name="Contato Realizado (azul)" fill={STEP_COLORS.blue} stackId="a" />
+                          <Bar dataKey="falha" name="Falha (vermelho)" fill={STEP_COLORS.red} stackId="a" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -582,15 +596,16 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
 
                   {/* Step Table */}
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Detalhamento por Step</h4>
+                    <h4 className="text-sm font-semibold text-slate-700 mb-1">Detalhamento por Step</h4>
+                    <p className="text-[10px] text-slate-400 mb-3">Cada step do roteiro de 7 dias — marcações feitas pelo operador Thiago</p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-slate-200">
                             <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500">Step</th>
-                            <th className="text-center py-2 px-2 text-xs font-semibold text-emerald-600">Concluído</th>
-                            <th className="text-center py-2 px-2 text-xs font-semibold text-blue-600">Em andamento</th>
-                            <th className="text-center py-2 px-2 text-xs font-semibold text-red-600">Falha</th>
+                            <th className="text-center py-2 px-2 text-xs font-semibold text-emerald-600" title="Ação do roteiro concluída com sucesso pelo operador">Concluído</th>
+                            <th className="text-center py-2 px-2 text-xs font-semibold text-blue-600" title="Contato realizado manualmente pelo operador (marcação azul)">Contato Realizado</th>
+                            <th className="text-center py-2 px-2 text-xs font-semibold text-red-600" title="Ação marcada como falha (não conseguiu contato)">Falha</th>
                             <th className="text-center py-2 px-2 text-xs font-semibold text-slate-700">Total</th>
                           </tr>
                         </thead>
@@ -621,7 +636,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                         <div className="flex flex-wrap gap-2">
                           {stepBreakdown.tickHistoryActions.map((a, i) => (
                             <span key={i} className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-medium">
-                              {a.action}: <strong>{a.count}</strong>
+                              {TICK_ACTION_LABELS[a.action] || a.action}: <strong>{a.count}</strong>
                             </span>
                           ))}
                         </div>

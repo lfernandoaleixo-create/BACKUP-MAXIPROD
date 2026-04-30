@@ -53,29 +53,41 @@ export const collectionMetricsRouter = router({
         sql`SELECT status, COUNT(*) as cnt FROM collection_actions GROUP BY status ORDER BY cnt DESC`
       );
 
-      // 3. Total de ações diárias registradas (no período)
+      // 3. Total de ações diárias registradas (no período) - apenas operadores de cobrança (excluir Guilherme)
       const [totalDailyActions] = await db.execute(
         sql`SELECT COUNT(*) as cnt FROM collection_daily_actions 
-            WHERE actionDate >= ${startDate} AND actionDate <= ${endDate}`
+            WHERE actionDate >= ${startDate} AND actionDate <= ${endDate}
+            AND operatorName != 'Guilherme'`
       );
 
-      // 4. Ações diárias por tipo (no período)
+      // 4. Ações diárias por tipo (no período) - apenas operadores de cobrança
       const [dailyActionsByType] = await db.execute(
         sql`SELECT actionType, COUNT(*) as cnt FROM collection_daily_actions 
             WHERE actionDate >= ${startDate} AND actionDate <= ${endDate}
+            AND operatorName != 'Guilherme'
             GROUP BY actionType ORDER BY cnt DESC`
       );
 
-      // 5. Títulos resolvidos (pagos) no período
+      // Clientes de teste a excluir (mesma lista do card Pagos/Resolvidos)
+      const TEST_CLIENTS = "('CLIENTE TESTE REGRA','CLIENTE MANUAL TICK TEST','CLIENTE LEGACY VIBRATION TEST','CLIENTE RECENT VIBRATION TEST','CLIENTE TESTE COBRANCA')";
+      // Threshold de 3 dias (mesma regra do card Pagos/Resolvidos)
+      const THRESHOLD = 3;
+
+      // 5. Títulos resolvidos (pagos) no período — mesma regra do card Pagos/Resolvidos
       const [resolvedStats] = await db.execute(
-        sql`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor 
+        sql.raw(`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor 
             FROM resolved_receivables 
-            WHERE resolvedAt >= ${startDate} AND resolvedAt <= ${endDate + ' 23:59:59'}`
+            WHERE diasAtrasoNaResolucao >= ${THRESHOLD}
+            AND cliente NOT IN ${TEST_CLIENTS}
+            AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'`)
       );
 
-      // 6. Total resolvidos (all time)
+      // 6. Total resolvidos (all time) — mesma regra do card Pagos/Resolvidos
       const [resolvedAllTime] = await db.execute(
-        sql`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor FROM resolved_receivables`
+        sql.raw(`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor 
+            FROM resolved_receivables 
+            WHERE diasAtrasoNaResolucao >= ${THRESHOLD}
+            AND cliente NOT IN ${TEST_CLIENTS}`)
       );
 
       // 7. Manual ticks por step (green = sucesso, red = falha, blue = auto)
@@ -84,9 +96,9 @@ export const collectionMetricsRouter = router({
             WHERE ticked = 1 GROUP BY step, tick_status ORDER BY step, tick_status`
       );
 
-      // 8. Total de falhas (red ticks)
+      // 8. Total de falhas (red ticks manuais — excluir SISTEMA/auto_red)
       const [totalFalhas] = await db.execute(
-        sql`SELECT COUNT(*) as cnt FROM collection_manual_ticks WHERE ticked = 1 AND tick_status = 'red'`
+        sql`SELECT COUNT(*) as cnt FROM collection_manual_ticks WHERE ticked = 1 AND tick_status = 'red' AND ticked_by != 'SISTEMA'`
       );
 
       // 9. Decisões tomadas (step 7 ticked)
@@ -178,10 +190,13 @@ export const collectionMetricsRouter = router({
         dateExpr = "DATE_FORMAT(resolvedAt, '%Y-%m-01')";
       }
 
+      const TEST_CLIENTS = "('CLIENTE TESTE REGRA','CLIENTE MANUAL TICK TEST','CLIENTE LEGACY VIBRATION TEST','CLIENTE RECENT VIBRATION TEST','CLIENTE TESTE COBRANCA')";
       const [timeline] = await db.execute(
         sql.raw(`SELECT ${dateExpr} as period, COUNT(*) as cnt, SUM(valorAReceber) as totalValor 
                  FROM resolved_receivables 
-                 WHERE resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
+                 WHERE diasAtrasoNaResolucao >= 3
+                 AND cliente NOT IN ${TEST_CLIENTS}
+                 AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
                  GROUP BY ${dateExpr} ORDER BY ${dateExpr}`)
       );
 
@@ -206,11 +221,12 @@ export const collectionMetricsRouter = router({
 
       const { startDate, endDate } = getDateFilter(input?.startDate, input?.endDate);
 
-      // Actions by date and type
+      // Actions by date and type - apenas operadores de cobrança (excluir Guilherme)
       const [actionsByDate] = await db.execute(
         sql`SELECT actionDate, actionType, COUNT(*) as cnt 
             FROM collection_daily_actions 
             WHERE actionDate >= ${startDate} AND actionDate <= ${endDate}
+            AND operatorName != 'Guilherme'
             GROUP BY actionDate, actionType ORDER BY actionDate`
       );
 
@@ -312,14 +328,20 @@ export const collectionMetricsRouter = router({
       const pageSize = input?.pageSize || 50;
       const offset = (page - 1) * pageSize;
 
+      const TEST_CLIENTS = "('CLIENTE TESTE REGRA','CLIENTE MANUAL TICK TEST','CLIENTE LEGACY VIBRATION TEST','CLIENTE RECENT VIBRATION TEST','CLIENTE TESTE COBRANCA')";
+
       const [totalRow] = await db.execute(
-        sql`SELECT COUNT(*) as cnt FROM resolved_receivables 
-            WHERE resolvedAt >= ${startDate} AND resolvedAt <= ${endDate + ' 23:59:59'}`
+        sql.raw(`SELECT COUNT(*) as cnt FROM resolved_receivables 
+            WHERE diasAtrasoNaResolucao >= 3
+            AND cliente NOT IN ${TEST_CLIENTS}
+            AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'`)
       );
 
       const [rows] = await db.execute(
         sql.raw(`SELECT * FROM resolved_receivables 
-                 WHERE resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
+                 WHERE diasAtrasoNaResolucao >= 3
+                 AND cliente NOT IN ${TEST_CLIENTS}
+                 AND resolvedAt >= '${startDate}' AND resolvedAt <= '${endDate} 23:59:59'
                  ORDER BY resolvedAt DESC LIMIT ${pageSize} OFFSET ${offset}`)
       );
 
@@ -389,10 +411,12 @@ export const collectionMetricsRouter = router({
 
       const { startDate, endDate } = getDateFilter(input?.startDate, input?.endDate);
 
+      // Filtrar apenas operadores de cobrança (excluir Guilherme que é gestor, não cobrador)
       const [byOperator] = await db.execute(
         sql`SELECT operatorName, actionType, COUNT(*) as cnt 
             FROM collection_daily_actions 
             WHERE actionDate >= ${startDate} AND actionDate <= ${endDate}
+            AND operatorName != 'Guilherme'
             GROUP BY operatorName, actionType ORDER BY operatorName, cnt DESC`
       );
 
@@ -442,12 +466,15 @@ export const collectionMetricsRouter = router({
         dateExpr = "DATE_FORMAT(resolvedAt, '%Y')";
       }
 
+      const TEST_CLIENTS = "('CLIENTE TESTE REGRA','CLIENTE MANUAL TICK TEST','CLIENTE LEGACY VIBRATION TEST','CLIENTE RECENT VIBRATION TEST','CLIENTE TESTE COBRANCA')";
       const [summary] = await db.execute(
         sql.raw(`SELECT ${dateExpr} as period, COUNT(*) as cnt, 
                  SUM(valorAReceber) as totalValor,
                  AVG(diasAtrasoNaResolucao) as avgDiasAtraso,
                  SUM(totalContatos) as totalContatos
                  FROM resolved_receivables 
+                 WHERE diasAtrasoNaResolucao >= 3
+                 AND cliente NOT IN ${TEST_CLIENTS}
                  GROUP BY ${dateExpr} ORDER BY ${dateExpr} DESC`)
       );
 

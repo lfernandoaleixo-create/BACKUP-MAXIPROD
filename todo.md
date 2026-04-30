@@ -3243,3 +3243,11 @@
 ## Ajustes UI - Estornos E-commerce
 - [x] Adicionar título "Estornos" com ícone e descrição antes dos cards de resumo
 - [x] Criar separação visual clara entre seção Despesas e seção Estornos (gradiente teal + espaçamento)
+
+## Correções Métricas de Cobrança
+- [ ] Remover Guilherme das métricas de operador (apenas Thiago)
+- [ ] Corrigir valor recuperado para bater com Pagos/Resolvidos (R$ 149.457,62)
+- [ ] Zerar falhas (Thiago não teve falhas)
+- [ ] Clarear legendas: "Em andamento" não faz sentido no roteiro, explicar cada item
+- [ ] Traduzir termos em inglês (tick, manual_blue, untick, phone_mute, etc.) para português
+- [ ] Explicar detalhadamente cada barra/valor nos gráficos
