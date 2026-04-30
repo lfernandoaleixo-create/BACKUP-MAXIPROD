@@ -3239,3 +3239,7 @@
 ## Ajustes UI - Botões Inadimplência
 - [x] Padronizar tamanho de todos os botões (Exportar PDF, Importar Planilha, PDFs de Decisão, Métricas de Cobrança, Guia de Cobrança) - w-[150px] h-[52px]
 - [x] Renomear "Analytics" para "Métricas de Cobrança"
+
+## Ajustes UI - Estornos E-commerce
+- [x] Adicionar título "Estornos" com ícone e descrição antes dos cards de resumo
+- [x] Criar separação visual clara entre seção Despesas e seção Estornos (gradiente teal + espaçamento)

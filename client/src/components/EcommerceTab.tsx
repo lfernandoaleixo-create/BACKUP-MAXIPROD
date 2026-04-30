@@ -775,8 +775,10 @@ export default function EcommerceTab() {
           </table>
         </div>
       )}
-      {/* Divider */}
-      <div className="border-t border-slate-200 my-6" />
+      {/* Separator between Despesas and Estornos */}
+      <div className="my-10">
+        <div className="h-[2px] bg-gradient-to-r from-transparent via-teal-400/60 to-transparent" />
+      </div>
 
       {/* Refunds Section */}
       <RefundsSection />

@@ -257,6 +257,20 @@ export default function RefundsSection() {
 
   return (
     <div className="space-y-5">
+      {/* Section divider */}
+      <div className="relative pt-4">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-300 to-transparent" />
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center shadow-md">
+            <ArrowDownLeft className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">Estornos</h2>
+            <p className="text-xs text-slate-500">Controle de valores estornados de compras no cartão (filial → matriz)</p>
+          </div>
+        </div>
+      </div>
+
       {/* KPI Cards */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
