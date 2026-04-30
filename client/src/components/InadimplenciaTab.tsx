@@ -1040,47 +1040,46 @@ export default function InadimplenciaTab() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => exportInadimplenciaPDF(filteredTitles, stats, protestConfigsMap)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02]"
+            className="flex items-center justify-center gap-2 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02]"
             title="Exportar lista de inadimplentes em PDF"
           >
-            <FileDown className="w-4 h-4" />
+            <FileDown className="w-4 h-4 shrink-0" />
             <span>Exportar PDF</span>
           </button>
           {canCobranca && (
             <button
               onClick={() => setShowImportDialog(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02]"
+              className="flex items-center justify-center gap-2 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02]"
               title="Importar planilha de cobrança (XLSX)"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="w-4 h-4 shrink-0" />
               <span>Importar Planilha</span>
             </button>
           )}
           <button
             onClick={() => setShowDecisionPdfHistory(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02]"
+            className="flex items-center justify-center gap-2 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02]"
             title="Ver histórico de PDFs de decisão gerados"
           >
-            <Stamp className="w-4 h-4" />
+            <Stamp className="w-4 h-4 shrink-0" />
             <span>PDFs de Decisão</span>
           </button>
           <button
             onClick={() => setShowMetricsPanel(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02]"
+            className="flex items-center justify-center gap-2 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02]"
             title="Ver métricas e analytics de cobrança"
           >
-            <BarChart3 className="w-4 h-4" />
-            <span>Analytics</span>
+            <BarChart3 className="w-4 h-4 shrink-0" />
+            <span className="text-center leading-tight">Métricas de<br/>Cobrança</span>
           </button>
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30"
+              className="flex items-center justify-center gap-2 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30"
               title="Ver guia completo do processo de cobrança"
             >
-              <Eye className="w-5 h-5" />
-              <span>Guia de Cobrança</span>
-              <span className="bg-white/20 rounded-full px-2 py-0.5 text-[10px] font-bold">PASSO A PASSO</span>
+              <Eye className="w-4 h-4 shrink-0" />
+              <span className="text-center leading-tight">Guia de<br/>Cobrança</span>
             </button>
           )}
           <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">

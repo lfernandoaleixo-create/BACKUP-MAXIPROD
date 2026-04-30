@@ -3235,3 +3235,7 @@
 - [x] Botão "Analytics" na aba Inadimplência (entre PDFs de Decisão e Guia de Cobrança)
 - [x] Seções colapsáveis: Indicadores Chave, Distribuição por Status, Ações de Cobrança, Roteiro de Cobrança, Recuperações
 - [x] Testes automatizados para endpoints de métricas (10 testes passando)
+
+## Ajustes UI - Botões Inadimplência
+- [x] Padronizar tamanho de todos os botões (Exportar PDF, Importar Planilha, PDFs de Decisão, Métricas de Cobrança, Guia de Cobrança) - w-[150px] h-[52px]
+- [x] Renomear "Analytics" para "Métricas de Cobrança"
