@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -155,17 +155,16 @@ export const salesRouter = router({
       // REGRA DE NEGÓCIO: Excluir itens "outros" (AMOSTRA, BONIFICAÇÃO, GILSON, NULL)
       const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
       // CANCELADO detectado pelo estadoNota (estado do pedido no Maxiprod), NÃO pelo estadoConfiguravel
-      // Cancelados são APENAS informativos — NÃO entram em nenhum cálculo, gráfico ou ranking
+      // REGRA DE NEGÓCIO (Fernando): Cancelados ENTRAM no valor total de vendas (para valorizar o vendedor)
+      // O botão vermelho mostra os cancelados do PERÍODO DE CANCELAMENTO (não emissão) para cálculo de comissão
       const isCancelado = (nota: string | null) => {
         if (!nota) return false;
         return nota.toUpperCase() === "CANCELADO";
       };
 
-      // Separar cancelados ANTES de qualquer cálculo (só para exibição informativa)
-      const canceledItems = allItems.filter(item => isCancelado(item.estadoNota));
-
-      // Apply hierarchical filters — EXCLUIR cancelados de todos os cálculos
-      let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isCancelado(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      // NOVA REGRA: Cancelados INCLUÍDOS no total de vendas (não são mais excluídos)
+      // Apenas Digitação e Outros são excluídos
+      let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
       if (effectiveGrupo !== "all") {
         items = items.filter(item => estadoToGrupo(item.estadoConfiguravel) === effectiveGrupo);
       }
@@ -190,7 +189,7 @@ export const salesRouter = router({
           totalBonificacao: 0,
           pedidosAmostraBonif: 0,
           totalCancelado: 0,
-          canceledOrders: [] as { pedido: string; cliente: string; valor: number; dataEmissao: string }[],
+          canceledOrders: [],
           ticketMedio: 0,
           bySegmentKPI: [],
           byMonth: [],
@@ -204,7 +203,7 @@ export const salesRouter = router({
       }
 
       // Compute analytics usando valorTotalPedido (inclui descontos e frete)
-      // Cancelados já foram excluídos de `items` — só existem em `canceledItems` para exibição
+      // REGRA: Cancelados INCLUÍDOS no total de vendas (valorizar vendedor)
       const uniqueOrders = new Set(items.map((i) => i.pedido).filter(Boolean));
       const uniqueClients = new Set(items.map((i) => i.cliente).filter(Boolean));
       // Total por pedido único usando valorTotalPedido quando disponível
@@ -230,34 +229,33 @@ export const salesRouter = router({
         }
       }
 
-      // Build canceled orders list APENAS para exibição informativa (botão vermelho + olho)
-      // Cancelados NÃO afetam nenhum cálculo, gráfico ou ranking
-      const canceledPedidoMap = new Map<string, { pedido: string; cliente: string; valor: number; dataEmissao: string }>();
-      for (const item of canceledItems) {
-        const pedido = item.pedido || 'sem-pedido';
-        if (!canceledPedidoMap.has(pedido)) {
-          canceledPedidoMap.set(pedido, {
-            pedido,
-            cliente: item.clienteApelido || item.cliente || "—",
-            valor: 0,
-            dataEmissao: item.dataEmissao || "",
-          });
-        }
-        const cp = canceledPedidoMap.get(pedido)!;
-        cp.valor += Number(item.valorTotal || 0);
+      // NOVA REGRA: Buscar cancelados da tabela order_cancellations filtrando por dataCancelamento no período
+      // O cancelado aparece no MÊS EM QUE FOI CANCELADO (não no mês de emissão)
+      // Isso permite calcular comissão correta: Total Vendas - Cancelados do Período = Base Comissão
+      let canceledOrders: { pedido: string; cliente: string; valor: number; dataEmissao: string; dataCancelamento: string; representante: string }[] = [];
+      let totalCancelado = 0;
+      try {
+        const cancelRows = await db.select()
+          .from(orderCancellations)
+          .where(
+            and(
+              sql`SUBSTRING(${orderCancellations.dataCancelamento}, 1, 10) >= ${startDay}`,
+              sql`SUBSTRING(${orderCancellations.dataCancelamento}, 1, 10) <= ${endDay}`,
+            )
+          );
+        canceledOrders = cancelRows.map(r => ({
+          pedido: r.pedido,
+          cliente: r.clienteApelido || r.cliente || "—",
+          valor: Math.round(Number(r.valorTotalPedido || 0) * 100) / 100,
+          dataEmissao: r.dataEmissao || "",
+          dataCancelamento: r.dataCancelamento || "",
+          representante: r.representante || "",
+        })).sort((a, b) => b.valor - a.valor);
+        totalCancelado = canceledOrders.reduce((sum, o) => sum + o.valor, 0);
+      } catch (e) {
+        // Table might not exist yet in some environments
+        console.error('[Sales] Error fetching order_cancellations:', e);
       }
-      // Use valorTotalPedido when available
-      for (const item of canceledItems) {
-        const pedido = item.pedido || 'sem-pedido';
-        if (item.valorTotalPedido) {
-          const cp = canceledPedidoMap.get(pedido);
-          if (cp) cp.valor = Number(item.valorTotalPedido);
-        }
-      }
-      const canceledOrders = Array.from(canceledPedidoMap.values())
-        .map(o => ({ ...o, valor: Math.round(o.valor * 100) / 100 }))
-        .sort((a, b) => b.valor - a.valor);
-      const totalCancelado = canceledOrders.reduce((sum, o) => sum + o.valor, 0);
 
       let totalValue = 0;
       let totalFaturado = 0;
@@ -314,7 +312,7 @@ export const salesRouter = router({
             sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) < ${startDay}`
           )
         );
-      let anteriorItems = allAFaturarAnterior.filter(item => !isDigitacao(item.estadoNota) && !isCancelado(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      let anteriorItems = allAFaturarAnterior.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
       if (effectiveGrupo !== "all") {
         anteriorItems = anteriorItems.filter(item => estadoToGrupo(item.estadoConfiguravel) === effectiveGrupo);
       }
@@ -705,7 +703,8 @@ export const salesRouter = router({
         return nota.toUpperCase() === "CANCELADO";
       };
 
-      let allItems = rawItems.filter(item => !isDigitacao(item.estadoNota) && !isCancelado(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      // REGRA: Cancelados INCLUÍDOS no total (valorizar vendedor). Apenas Digitação e Outros excluídos.
+      let allItems = rawItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
       if (effectiveGrupo !== "all") {
         allItems = allItems.filter(item => estadoToGrupo(item.estadoConfiguravel) === effectiveGrupo);
       }

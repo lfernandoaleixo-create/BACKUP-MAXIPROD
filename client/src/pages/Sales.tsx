@@ -3394,7 +3394,7 @@ export default function Sales() {
                       <span className="text-slate-400"> em pedidos cancelados ({analytics.canceledOrders.length} {analytics.canceledOrders.length === 1 ? 'pedido' : 'pedidos'})</span>
                     </p>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1 ml-7 italic">Cancelados não estão incluídos no valor total, nos gráficos, nem nos rankings. São exibidos apenas como informação.</p>
+                  <p className="text-[10px] text-slate-400 mt-1 ml-7 italic">Cancelados ESTÃO incluídos no valor total (para valorizar o vendedor). Use o botão vermelho para ver o impacto na comissão.</p>
                 </div>
               )}
             </div>
@@ -3415,7 +3415,7 @@ export default function Sales() {
                       <span className="text-lg font-extrabold text-red-700">{formatCurrencyFull(analytics.totalCancelado)}</span>
                     </div>
                     <p className="text-xs text-red-500 mt-1">
-                      Estes pedidos foram cancelados. O valor NÃO está incluído no Total de Vendas, nos gráficos, nem nos rankings. Esta informação é apenas para consulta.
+                      Estes pedidos foram cancelados neste período. O valor total de vendas INCLUI estes pedidos (para valorizar o vendedor). Para cálculo de comissão, subtraia este valor do total.
                     </p>
                   </div>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -3424,7 +3424,8 @@ export default function Sales() {
                       <div>
                         <p className="text-xs font-semibold text-amber-700">Impacto na Comissão</p>
                         <p className="text-xs text-amber-600 mt-0.5">
-                          Pedidos cancelados <span className="font-bold">não geram comissão</span> para o vendedor. O valor de {formatCurrencyFull(analytics.totalCancelado)} não entra em nenhum cálculo.
+                          <span className="font-bold">Base de comissão = Total Vendas - Cancelados</span><br/>
+                          Total Vendas: {formatCurrencyFull(analytics.totalValue)} - Cancelados: {formatCurrencyFull(analytics.totalCancelado)} = <span className="font-bold">{formatCurrencyFull(analytics.totalValue - analytics.totalCancelado)}</span> (base para comissão)
                         </p>
                       </div>
                     </div>
@@ -3440,12 +3441,15 @@ export default function Sales() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {analytics.canceledOrders.map((order: { pedido: string; cliente: string; valor: number; dataEmissao: string }, idx: number) => (
+                          {analytics.canceledOrders.map((order: { pedido: string; cliente: string; valor: number; dataEmissao: string; dataCancelamento?: string; representante?: string }, idx: number) => (
                             <tr key={idx} className="hover:bg-red-50/50 transition-colors">
                               <td className="px-4 py-2.5">
                                 <span className="font-mono font-semibold text-slate-700">#{order.pedido}</span>
                                 {order.dataEmissao && (
-                                  <p className="text-[10px] text-slate-400">{new Date(order.dataEmissao).toLocaleDateString('pt-BR')}</p>
+                                  <p className="text-[10px] text-slate-400">Emitido: {new Date(order.dataEmissao).toLocaleDateString('pt-BR')}</p>
+                                )}
+                                {order.dataCancelamento && (
+                                  <p className="text-[10px] text-red-400">Cancelado: {new Date(order.dataCancelamento).toLocaleDateString('pt-BR')}</p>
                                 )}
                               </td>
                               <td className="px-4 py-2.5 text-slate-600 text-xs">{order.cliente}</td>

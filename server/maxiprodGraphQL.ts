@@ -26,6 +26,7 @@ import {
   stockEditHistory,
   collectionActions,
   resolvedReceivables,
+  orderCancellations,
 } from "../drizzle/schema";
 import { eq, sql, inArray, and, ne } from "drizzle-orm";
 import { processStockData } from "./stockProcessor";
@@ -854,6 +855,51 @@ async function saveAllData(
       for (let i = 0; i < salesData.length; i += 200) {
         await tx.insert(salesOrders).values(salesData.slice(i, i + 200));
       }
+    }
+
+    // ═══ DETECÇÃO DE CANCELAMENTOS: Registrar novos cancelados na tabela order_cancellations ═══
+    // Quando um pedido aparece com estadoNota "Cancelado", registramos a data de hoje como dataCancelamento
+    // se ele ainda não existir na tabela order_cancellations
+    try {
+      const canceledSalesItems = salesData.filter((item: any) => {
+        const nota = item.estadoNota || "";
+        return nota.toUpperCase() === "CANCELADO";
+      });
+      // Group by pedido number to get unique cancelled orders
+      const canceledPedidos = new Map<string, any>();
+      for (const item of canceledSalesItems) {
+        const pedido = item.pedido || "";
+        if (pedido && !canceledPedidos.has(pedido)) {
+          canceledPedidos.set(pedido, item);
+        }
+      }
+      // Check which ones are already tracked
+      if (canceledPedidos.size > 0) {
+        const existingCancellations = await tx.select({ pedido: orderCancellations.pedido })
+          .from(orderCancellations);
+        const existingSet = new Set(existingCancellations.map(e => e.pedido));
+        const today = new Date().toISOString().substring(0, 10);
+        for (const [pedido, item] of Array.from(canceledPedidos.entries())) {
+          if (!existingSet.has(pedido)) {
+            await tx.insert(orderCancellations).values({
+              pedido,
+              cliente: item.cliente || null,
+              clienteApelido: item.clienteApelido || null,
+              valorTotalPedido: item.valorTotalPedido || null,
+              dataEmissao: item.dataEmissao || null,
+              dataCancelamento: today,
+              representante: item.representante || null,
+              empresa: item.empresa || null,
+              estadoConfiguravel: item.estadoConfiguravel || null,
+              crmSegmento: item.crmSegmento || null,
+              observacoes: item.observacoes || null,
+            });
+            console.log(`[Cancellation Tracker] Novo cancelamento detectado: Ped ${pedido} | ${item.clienteApelido || item.cliente} | R$ ${item.valorTotalPedido || '?'}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('[Cancellation Tracker] Erro ao registrar cancelamentos:', e);
     }
   });
 

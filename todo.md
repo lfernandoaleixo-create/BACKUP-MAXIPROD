@@ -3265,3 +3265,12 @@
 
 ## Correções Métricas de Cobrança v4
 - [x] Corrigir duplicatas na lista Pagos/Resolvidos (SILVEIRA BUENO e PLASTIPEL aparecem 2x com mesmo NF/data) — removidas 13 duplicatas do banco + prevenção no sync
+
+## Vendas Canceladas - Botão Vermelho (Comissão)
+- [x] Valor Total de Vendas NÃO abate cancelados (mostra bruto para valorizar vendedor)
+- [x] Botão vermelho no card Valor Total mostrando total cancelado no período
+- [x] Ao clicar no botão vermelho: modal com lista de pedidos cancelados (cliente, valor, data/hora, data cancelamento)
+- [x] Objetivo: dono calcula comissão = Total - Cancelados (comissão justa)
+- [x] Tabela order_cancellations para rastrear data real de cancelamento
+- [x] Sync automático detecta novos cancelamentos e registra dataCancelamento = hoje
+- [x] Cancelado aparece no MÊS EM QUE FOI CANCELADO (não no mês de emissão)

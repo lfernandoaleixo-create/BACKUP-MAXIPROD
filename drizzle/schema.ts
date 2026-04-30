@@ -1521,3 +1521,25 @@ export const ecommerceRefunds = mysqlTable("ecommerce_refunds", {
 });
 export type EcommerceRefund = typeof ecommerceRefunds.$inferSelect;
 export type InsertEcommerceRefund = typeof ecommerceRefunds.$inferInsert;
+
+
+// ==================== ORDER CANCELLATIONS ====================
+// Tracks when orders were cancelled (dataCancelamento) separately from emission date
+// Used for commission calculation: cancelled orders appear in the month they were cancelled
+export const orderCancellations = mysqlTable("order_cancellations", {
+  id: int("id").autoincrement().primaryKey(),
+  pedido: varchar("pedido", { length: 20 }).notNull(),
+  cliente: varchar("cliente", { length: 300 }),
+  clienteApelido: varchar("clienteApelido", { length: 200 }),
+  valorTotalPedido: decimal("valorTotalPedido", { precision: 18, scale: 2 }),
+  dataEmissao: varchar("dataEmissao", { length: 50 }),
+  dataCancelamento: varchar("dataCancelamento", { length: 50 }).notNull(),
+  representante: varchar("representante", { length: 200 }),
+  empresa: varchar("empresa", { length: 100 }),
+  estadoConfiguravel: varchar("estadoConfiguravel", { length: 100 }),
+  crmSegmento: varchar("crmSegmento", { length: 100 }),
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+export type OrderCancellation = typeof orderCancellations.$inferSelect;
+export type InsertOrderCancellation = typeof orderCancellations.$inferInsert;
