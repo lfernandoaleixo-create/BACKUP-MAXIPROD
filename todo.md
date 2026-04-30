@@ -3251,3 +3251,7 @@
 - [ ] Clarear legendas: "Em andamento" não faz sentido no roteiro, explicar cada item
 - [ ] Traduzir termos em inglês (tick, manual_blue, untick, phone_mute, etc.) para português
 - [ ] Explicar detalhadamente cada barra/valor nos gráficos
+
+## Correções KPIs Métricas v2
+- [x] Remover card "Edições de Ação" dos KPIs
+- [x] Recalcular Eficiência excluindo clientes "Especial s/ Cobrança" — 23 recuperações regulares / 91 ações = 25.3%

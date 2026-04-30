@@ -281,7 +281,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
   const totalDecisoes = overview?.totalDecisoes || 0;
   const totalDecisionPdfs = overview?.totalDecisionPdfs || 0;
   const totalContatos = overview?.totalContatos || 0;
-  const totalEdits = overview?.totalEdits || 0;
+  const resolvedExcSpecial = overview?.resolvedExcludingSpecial?.count || 0;
   const taxaRecuperacao = totalInCollection > 0 ? ((totalResolved / (totalInCollection + totalResolved)) * 100).toFixed(1) : "0";
 
   if (loadingOverview) {
@@ -358,8 +358,7 @@ export default function CollectionMetricsPanel({ onClose }: { onClose: () => voi
                   <KpiCard icon={Phone} label="Contatos Registrados" value={formatNumber(totalContatos)} subValue="Registros de contato com clientes" color="cyan" />
                   <KpiCard icon={AlertTriangle} label="Falhas do Operador" value={formatNumber(totalFalhas)} subValue={totalFalhas === 0 ? "Nenhuma falha manual do Thiago!" : "Tentativas sem sucesso pelo operador"} color={totalFalhas === 0 ? "green" : "red"} />
                   <KpiCard icon={Zap} label="Taxa de Recuperação" value={`${taxaRecuperacao}%`} subValue={`${totalResolved} de ${totalInCollection + totalResolved} títulos`} color="orange" />
-                  <KpiCard icon={Award} label="Edições de Ação" value={formatNumber(totalEdits)} subValue="Ajustes no roteiro de cobrança" color="slate" />
-                  <KpiCard icon={Target} label="Eficiência" value={totalActions > 0 ? (totalResolved / totalActions * 100).toFixed(1) + "%" : "N/A"} subValue="Recuperações por ação realizada" color="blue" />
+                  <KpiCard icon={Target} label="Eficiência" value={totalActions > 0 ? (resolvedExcSpecial / totalActions * 100).toFixed(1) + "%" : "N/A"} subValue={`${resolvedExcSpecial} recuperações regulares / ${totalActions} ações (excl. Especiais)`} color="blue" />
                 </div>
               )}
             </div>

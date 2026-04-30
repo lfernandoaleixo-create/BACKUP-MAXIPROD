@@ -123,9 +123,13 @@ export const collectionMetricsRouter = router({
         sql`SELECT protestType, COUNT(*) as cnt FROM receivable_protest_config GROUP BY protestType`
       );
 
-      // 13. Action edits count
-      const [totalEdits] = await db.execute(
-        sql`SELECT COUNT(*) as cnt FROM collection_action_edits`
+      // 13. Resolved excluindo clientes Especial s/ Cobrança (para cálculo de eficiência)
+      const [resolvedExcludingSpecial] = await db.execute(
+        sql.raw(`SELECT COUNT(*) as cnt, COALESCE(SUM(valorAReceber), 0) as totalValor 
+            FROM resolved_receivables 
+            WHERE diasAtrasoNaResolucao >= ${THRESHOLD}
+            AND cliente NOT IN ${TEST_CLIENTS}
+            AND (statusCobranca IS NULL OR statusCobranca != 'especial_sem_cobranca')`)
       );
 
       return {
@@ -160,7 +164,10 @@ export const collectionMetricsRouter = router({
           type: p.protestType as string,
           count: Number(p.cnt),
         })),
-        totalEdits: Number((totalEdits as any)[0]?.cnt || 0),
+        resolvedExcludingSpecial: {
+          count: Number((resolvedExcludingSpecial as any)[0]?.cnt || 0),
+          totalValor: Number((resolvedExcludingSpecial as any)[0]?.totalValor || 0),
+        },
       };
     }),
 
