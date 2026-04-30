@@ -3274,3 +3274,21 @@
 - [x] Tabela order_cancellations para rastrear data real de cancelamento
 - [x] Sync automático detecta novos cancelamentos e registra dataCancelamento = hoje
 - [x] Cancelado aparece no MÊS EM QUE FOI CANCELADO (não no mês de emissão)
+
+## BUG URGENTE: Reset de Contatos de Cobrança (30/04/2026 ~13:49)
+- [ ] Investigar causa do reset: títulos com 1º contato voltaram para Pendente (11 → 28 pendentes)
+- [ ] Restaurar dados perdidos se possível
+- [ ] Prevenir que isso aconteça novamente
+
+## BUG CRÍTICO: Sync perdendo dados de cobrança (30/04/2026)
+- [ ] Recuperar TODOS os collection_actions órfãos reconectando aos receivables corretos
+- [ ] Corrigir sync para NUNCA mais perder vínculos (usar maxiprodId como chave estável)
+- [ ] Migrar collection_actions para usar maxiprodId ao invés de auto-increment ID
+- [ ] Garantir que manual_ticks e tick_history também sejam preservados
+- [ ] Testar que sync não perde mais dados
+
+## Redesign Relatórios de Produção (30/04/2026)
+- [x] Redesenhar layout dos relatórios diários/semanais/mensais com cards por setor
+- [x] Setores: Multilâmina, Vareteira, Seletora de Toco, Seleção Automática, Seleção Visual, Flow Pack, Embalagem, Máquina de Pirografar
+- [x] Cada card: nome setor no topo, tabela (Máquina, Tipo/Medida, Quantidade, Unidade, Status, Obs), Total no rodapé
+- [x] Grid responsívo em uma única página, visual moderno e sofisticado

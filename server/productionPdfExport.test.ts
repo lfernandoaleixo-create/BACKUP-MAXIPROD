@@ -97,22 +97,19 @@ describe("Production PDF Export", () => {
       expect(mockDoc.save).toHaveBeenCalledWith("Producao_Diario_20260428.pdf");
     });
 
-    it("should call autoTable for the entries table", async () => {
+    it("should draw sector cards with text for each sector", async () => {
       const { generateDailyPdf } = await import("@/lib/productionPdfExport");
-      const autoTable = (await import("jspdf-autotable")).default;
 
       await generateDailyPdf(sampleSectors as any, sampleDailyEntries as any, "2026-04-28");
 
-      // autoTable should have been called at least once
-      expect(autoTable).toHaveBeenCalled();
+      // Should draw text for sector names (roundedRect for card backgrounds + text for sector names)
+      expect(mockDoc.roundedRect).toHaveBeenCalled();
+      expect(mockDoc.text).toHaveBeenCalled();
 
-      // Check that the table body includes entries
-      const lastCall = (autoTable as any).mock.calls[(autoTable as any).mock.calls.length - 1];
-      const config = lastCall[1];
-      expect(config.body.length).toBeGreaterThan(0);
-      expect(config.head[0]).toContain("Setor");
-      expect(config.head[0]).toContain("Máquina");
-      expect(config.head[0]).toContain("Observações");
+      // Verify sector names appear in text calls
+      const textCalls = mockDoc.text.mock.calls.map((c: any) => c[0]);
+      expect(textCalls.some((t: string) => t.includes("Multilamina"))).toBe(true);
+      expect(textCalls.some((t: string) => t.includes("Vareteira"))).toBe(true);
     });
 
     it("should handle empty entries gracefully", async () => {
@@ -120,6 +117,17 @@ describe("Production PDF Export", () => {
 
       // Should not throw with empty entries
       await expect(generateDailyPdf(sampleSectors as any, [], "2026-04-28")).resolves.not.toThrow();
+    });
+
+    it("should show TOTAL text for each sector card", async () => {
+      const { generateDailyPdf } = await import("@/lib/productionPdfExport");
+
+      await generateDailyPdf(sampleSectors as any, sampleDailyEntries as any, "2026-04-28");
+
+      const textCalls = mockDoc.text.mock.calls.map((c: any) => c[0]);
+      // Each sector card should have a TOTAL label
+      const totalCount = textCalls.filter((t: string) => t === "TOTAL:").length;
+      expect(totalCount).toBe(sampleSectors.length);
     });
   });
 
@@ -132,13 +140,17 @@ describe("Production PDF Export", () => {
       expect(mockDoc.save).toHaveBeenCalledWith("Producao_Semanal_20260427_20260503.pdf");
     });
 
-    it("should call autoTable for sector summary", async () => {
+    it("should draw sector cards with machine totals", async () => {
       const { generateWeeklyPdf } = await import("@/lib/productionPdfExport");
-      const autoTable = (await import("jspdf-autotable")).default;
 
       await generateWeeklyPdf(sampleSectors as any, sampleWeeklyEntries as any, "2026-04-27", "2026-05-03");
 
-      expect(autoTable).toHaveBeenCalled();
+      // Should draw rounded rects for cards
+      expect(mockDoc.roundedRect).toHaveBeenCalled();
+      // Should show TOTAL for each sector
+      const textCalls = mockDoc.text.mock.calls.map((c: any) => c[0]);
+      const totalCount = textCalls.filter((t: string) => t === "TOTAL:").length;
+      expect(totalCount).toBe(sampleSectors.length);
     });
   });
 
@@ -151,15 +163,16 @@ describe("Production PDF Export", () => {
       expect(mockDoc.save).toHaveBeenCalledWith("Producao_Mensal_202604.pdf");
     });
 
-    it("should call autoTable for sector and machine summaries", async () => {
+    it("should draw sector cards for monthly report", async () => {
       const { generateMonthlyPdf } = await import("@/lib/productionPdfExport");
-      const autoTable = (await import("jspdf-autotable")).default;
 
       await generateMonthlyPdf(sampleSectors as any, sampleWeeklyEntries as any, "2026-04");
 
-      // Should have at least 2 autoTable calls (sector summary + machine detail)
-      const callCount = (autoTable as any).mock.calls.length;
-      expect(callCount).toBeGreaterThanOrEqual(2);
+      // Should draw rounded rects for cards
+      expect(mockDoc.roundedRect).toHaveBeenCalled();
+      // Should show sector names
+      const textCalls = mockDoc.text.mock.calls.map((c: any) => c[0]);
+      expect(textCalls.some((t: string) => t.includes("Multilamina"))).toBe(true);
     });
   });
 });

@@ -1,7 +1,8 @@
 /**
  * Produção — Geração de PDFs (Diário, Semanal, Mensal)
- * Design profissional com cores vivas, zebra stripes e totais separados por unidade
- * Layout centralizado — todas as tabelas ocupam 100% da largura disponível
+ * Design profissional com CARDS POR SETOR em grid
+ * Cada setor = 1 retângulo com tabela interna + total
+ * Layout em página única A4 landscape
  */
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -47,7 +48,7 @@ const C = {
   white:      [255, 255, 255] as [number, number, number],
   black:      [15, 23, 42] as [number, number, number],
   rowEven:    [255, 255, 255] as [number, number, number],
-  rowOdd:     [232, 245, 239] as [number, number, number],
+  rowOdd:     [245, 250, 248] as [number, number, number],
   red:        [220, 38, 38] as [number, number, number],
   orange:     [234, 88, 12] as [number, number, number],
   indigo:     [79, 70, 229] as [number, number, number],
@@ -64,6 +65,23 @@ const C = {
   outroLt:    [243, 244, 246] as [number, number, number],
 };
 
+// Sector-specific accent colors for card headers
+const SECTOR_COLORS: [number, number, number][] = [
+  [0, 105, 62],     // Multilâmina - green
+  [37, 99, 235],    // Vareteira - blue
+  [168, 85, 247],   // Seletora de Toco - purple
+  [14, 165, 233],   // Seleção Automática - sky
+  [236, 72, 153],   // Seleção Visual - pink
+  [234, 88, 12],    // Flow Pack - orange
+  [13, 148, 136],   // Embalagem - teal
+  [79, 70, 229],    // Pirografar - indigo
+  [107, 114, 128],  // Extra - gray
+];
+
+function getSectorColor(index: number): [number, number, number] {
+  return SECTOR_COLORS[index % SECTOR_COLORS.length];
+}
+
 function getUnitColor(unit: string): { bg: [number, number, number]; fg: [number, number, number] } {
   const u = unit.toLowerCase();
   if (u === "caixa" || u === "cx") return { bg: C.caixaLt, fg: C.caixa };
@@ -75,11 +93,11 @@ function getUnitColor(unit: string): { bg: [number, number, number]; fg: [number
 
 // ─── Status labels ───
 const STATUS_LABELS: Record<string, string> = {
-  producao_normal: "Produção Normal",
-  falta_madeira: "Falta de Madeira",
-  producao_nao_necessaria: "Produção Não Necessária",
+  producao_normal: "Normal",
+  falta_madeira: "Falta Madeira",
+  producao_nao_necessaria: "Não Necessária",
   manutencao: "Manutenção",
-  manutencao_pontual: "Manutenção Pontual",
+  manutencao_pontual: "Manut. Pontual",
 };
 
 function statusLabel(status: string): string {
@@ -90,7 +108,7 @@ function statusLabel(status: string): string {
 // ─── Tipo madeira labels ───
 const TIPO_LABELS: Record<string, string> = {
   benazzi: "Benazzi",
-  madeira_dura: "Madeira Dura",
+  madeira_dura: "Mad. Dura",
   bambu: "Bambu",
   madeira: "Madeira",
 };
@@ -99,14 +117,14 @@ function tipoLabel(tipo: string | null): string {
   if (!tipo) return "—";
   const base = tipo.replace(/_saco$/, "").replace(/_cxp$/, "").replace(/_cxg$/, "");
   if (TIPO_LABELS[base]) {
-    const suffix = tipo.endsWith("_saco") ? " (Saco)" : tipo.endsWith("_cxp") ? " (Cx Peq)" : tipo.endsWith("_cxg") ? " (Cx Gr)" : "";
+    const suffix = tipo.endsWith("_saco") ? " (Sc)" : tipo.endsWith("_cxp") ? " (CxP)" : tipo.endsWith("_cxg") ? " (CxG)" : "";
     return TIPO_LABELS[base] + suffix;
   }
-  const suffix = tipo.endsWith("_saco") ? " (Saco)" : tipo.endsWith("_cxp") ? " (Cx Peq)" : tipo.endsWith("_cxg") ? " (Cx Gr)" : "";
+  const suffix = tipo.endsWith("_saco") ? " (Sc)" : tipo.endsWith("_cxp") ? " (CxP)" : tipo.endsWith("_cxg") ? " (CxG)" : "";
   return base.replace(".", ",") + suffix;
 }
 
-// ─── Fatores de conversão caixa → saco (setores dual-unit: Vareteira, Seletoras Toco, Seleção Automática) ───
+// ─── Fatores de conversão caixa → saco ───
 const CONVERSION_FACTORS: Record<string, { cxp: number; cxg: number }> = {
   "3.8x150mm": { cxp: 0, cxg: 0 },
   "3.8x180mm": { cxp: 0.5, cxg: 0 },
@@ -132,11 +150,6 @@ function convertCxgToSaco(medida: string, caixas: number): number {
   return caixas * fator;
 }
 
-/**
- * Convert a single entry's quantity to its display unit.
- * For dual-unit sectors (Vareteira, Seletoras Toco, Seleção Automática),
- * entries with _cxp or _cxg suffix are converted to sacos.
- */
 function convertedQty(entry: EntryData, sector: SectorData): number {
   const qty = Number(entry.quantidade);
   if (qty <= 0) return 0;
@@ -144,17 +157,13 @@ function convertedQty(entry: EntryData, sector: SectorData): number {
   const tipo = entry.tipoMadeira;
   if (!tipo) return qty;
   const parts = tipo.split("_");
-  const suffix = parts[parts.length - 1]; // "saco", "cxp", or "cxg"
-  const medida = parts.slice(0, -1).join("_"); // e.g. "3.8x200mm"
+  const suffix = parts[parts.length - 1];
+  const medida = parts.slice(0, -1).join("_");
   if (suffix === "cxp") return convertCxpToSaco(medida, qty);
   if (suffix === "cxg") return convertCxgToSaco(medida, qty);
-  return qty; // "_saco" or no suffix = raw saco count
+  return qty;
 }
 
-/**
- * Get the display unit for a sector.
- * Dual-unit sectors always display as "saco" after conversion.
- */
 function displayUnit(sector: SectorData): string {
   if (isDualUnitSector(sector.ordem)) return "saco";
   return sector.unidadeMedida;
@@ -182,13 +191,12 @@ export type EntryData = {
   lancadoPor: string | null;
 };
 
-// ─── Unit grouping helper (with cxp/cxg→saco conversion) ───
+// ─── Unit grouping helper ───
 type UnitGroup = { unit: string; label: string; total: number; decimals: number };
 
 function groupByUnit(sectors: SectorData[], entries: EntryData[]): UnitGroup[] {
   const result: UnitGroup[] = [];
   const nonSacoMap = new Map<string, { total: number; decimals: number }>();
-  
   const unitLabels: Record<string, string> = {
     "caixa": "Caixas", "cx": "Caixas", "saco": "Sacos", "m³": "Metro Cúbico (m³)",
     "forma": "Formas", "pç": "Peças", "un": "Unidades",
@@ -201,164 +209,58 @@ function groupByUnit(sectors: SectorData[], entries: EntryData[]): UnitGroup[] {
     const decimals = u === "m³" ? 3 : (u === "forma" ? 0 : 1);
 
     if (u === "saco") {
-      // Separar sacos por setor para não misturar Vareteira, Toco, Automática
-      result.push({
-        unit: "saco",
-        label: `Sacos (${sector.nome})`,
-        total,
-        decimals,
-      });
+      result.push({ unit: "saco", label: `Sacos (${sector.nome})`, total, decimals });
     } else {
       if (!nonSacoMap.has(u)) nonSacoMap.set(u, { total: 0, decimals });
       nonSacoMap.get(u)!.total += total;
     }
   }
 
-  // Add non-saco units
   for (const [unit, data] of Array.from(nonSacoMap.entries())) {
-    result.push({
-      unit,
-      label: unitLabels[unit.toLowerCase()] || unit,
-      total: data.total,
-      decimals: data.decimals,
-    });
+    result.push({ unit, label: unitLabels[unit.toLowerCase()] || unit, total: data.total, decimals: data.decimals });
   }
-
   return result;
 }
 
-// ─── Common header ───
+// ─── Common header (compact) ───
 async function drawHeader(doc: jsPDF, title: string, subtitle: string): Promise<number> {
   const pageW = doc.internal.pageSize.getWidth();
-  const marginL = 14;
-  let y = 10;
+  const marginL = 10;
+  let y = 7;
 
   const logo = await getLogoBase64();
   if (logo) {
-    const logoH = 14;
+    const logoH = 10;
     const logoW = logoH * LOGO_RATIO;
     doc.addImage(logo, "PNG", marginL, y, logoW, logoH);
   }
 
+  // Title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.setTextColor(...C.medium);
-  doc.text("GRUPO FOX", marginL + 35, y + 9);
-
-  y += 18;
-
-  // Title bar
-  doc.setFillColor(...C.primary);
-  doc.roundedRect(marginL, y, pageW - 2 * marginL, 12, 2, 2, "F");
-  doc.setFillColor(...C.primaryDk);
-  doc.rect(marginL, y, 4, 12, "F");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(...C.white);
-  doc.text(title, marginL + 8, y + 8);
+  doc.setTextColor(...C.primary);
+  doc.text(title, marginL + 28, y + 4);
 
   // Subtitle badge
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  const subW = doc.getTextWidth(subtitle) + 10;
-  doc.setFillColor(...C.accent);
-  doc.roundedRect(pageW - marginL - subW - 3, y + 2, subW, 8, 1.5, 1.5, "F");
-  doc.setTextColor(...C.white);
-  doc.text(subtitle, pageW - marginL - subW / 2 - 3, y + 7, { align: "center" });
+  doc.setTextColor(...C.accent);
+  doc.text(subtitle, marginL + 28, y + 9);
 
-  y += 15;
-
+  // Generated timestamp
   const now = new Date();
   doc.setFont("helvetica", "italic");
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setTextColor(...C.medium);
-  doc.text(`Gerado em ${now.toLocaleDateString("pt-BR")} às ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, marginL, y);
-  y += 5;
+  doc.text(`Gerado em ${now.toLocaleDateString("pt-BR")} às ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, pageW - 10, y + 4, { align: "right" });
 
-  return y;
-}
+  y += 13;
 
-// ─── Draw unit summary cards (centered) ───
-function drawUnitSummaryCards(doc: jsPDF, unitGroups: UnitGroup[], y: number, marginL: number, marginR: number): number {
-  const pageW = doc.internal.pageSize.getWidth();
-  const usableW = pageW - marginL - marginR;
-  const cardGap = 4;
-  const numCards = unitGroups.length;
-  if (numCards === 0) return y;
-
-  const cardW = (usableW - cardGap * (numCards - 1)) / numCards;
-  const cardH = 16;
-
-  for (let i = 0; i < numCards; i++) {
-    const ug = unitGroups[i];
-    const cx = marginL + i * (cardW + cardGap);
-    const colors = getUnitColor(ug.unit);
-
-    doc.setFillColor(...colors.bg);
-    doc.roundedRect(cx, y, cardW, cardH, 2, 2, "F");
-
-    doc.setFillColor(...colors.fg);
-    doc.rect(cx, y + 2, 2.5, cardH - 4, "F");
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
-    doc.setTextColor(...colors.fg);
-    doc.text(ug.label.toUpperCase(), cx + 6, y + 5.5);
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(...C.dark);
-    doc.text(fmtNum(ug.total, ug.decimals), cx + 6, y + 13);
-
-    doc.setFontSize(6);
-    doc.setTextColor(...colors.fg);
-    doc.text(ug.unit, cx + cardW - 4, y + 13, { align: "right" });
-  }
-
-  return y + cardH + 4;
-}
-
-// ─── Draw total bars by unit (full width) ───
-function drawUnitTotalBars(doc: jsPDF, unitGroups: UnitGroup[], y: number, marginL: number, marginR: number, periodLabel: string): number {
-  const pageW = doc.internal.pageSize.getWidth();
-  const barH = 8;
-  const barGap = 2;
-
-  // Check if there are multiple saco groups (separated by sector)
-  const sacoGroups = unitGroups.filter(ug => ug.unit === "saco");
-  const hasSeparatedSacos = sacoGroups.length > 1;
-
-  for (const ug of unitGroups) {
-    if (y + barH + barGap > doc.internal.pageSize.getHeight() - 15) {
-      doc.addPage();
-      y = 20;
-    }
-    const colors = getUnitColor(ug.unit);
-    doc.setFillColor(...colors.fg);
-    doc.roundedRect(marginL, y, pageW - marginL - marginR, barH, 1.5, 1.5, "F");
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(...C.white);
-    doc.text(`TOTAL ${ug.label.toUpperCase()} ${periodLabel}`, marginL + 4, y + 5.5);
-    doc.text(`${fmtNum(ug.total, ug.decimals)} ${ug.unit}`, pageW - marginR - 4, y + 5.5, { align: "right" });
-
-    y += barH + barGap;
-  }
-
-  // Add legend if sacos are separated by sector
-  if (hasSeparatedSacos) {
-    y += 1;
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(6);
-    doc.setTextColor(...C.medium);
-    doc.text(
-      "Nota: Totais de sacos s\u00e3o separados por setor (fatores de convers\u00e3o diferentes). N\u00e3o devem ser somados entre setores.",
-      marginL, y + 3
-    );
-    y += 6;
-  }
+  // Divider line
+  doc.setDrawColor(...C.primary);
+  doc.setLineWidth(0.5);
+  doc.line(marginL, y, pageW - 10, y);
+  y += 3;
 
   return y;
 }
@@ -370,42 +272,332 @@ function drawFooter(doc: jsPDF, label: string) {
   const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setDrawColor(...C.light);
-    doc.setLineWidth(0.3);
-    doc.line(14, pageH - 12, pageW - 14, pageH - 12);
-
+    doc.setDrawColor(200, 210, 220);
+    doc.setLineWidth(0.2);
+    doc.line(10, pageH - 8, pageW - 10, pageH - 8);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.5);
+    doc.setFontSize(6);
     doc.setTextColor(...C.medium);
-    doc.text(`Grupo Fox — ${label}`, 14, pageH - 7);
-    doc.text(`Página ${i}/${totalPages}`, pageW - 14, pageH - 7, { align: "right" });
+    doc.text(`Grupo Fox — ${label}`, 10, pageH - 4);
+    doc.text(`Página ${i}/${totalPages}`, pageW - 10, pageH - 4, { align: "right" });
   }
 }
 
-// ─── Section title (full width) ───
-function drawSectionTitle(doc: jsPDF, text: string, y: number, marginL: number): number {
+// ═══════════════════════════════════════════════════════════════
+// CARD-BASED SECTOR GRID RENDERER
+// ═══════════════════════════════════════════════════════════════
+
+interface SectorCardData {
+  nome: string;
+  ordem: number;
+  unit: string;
+  total: number;
+  decimals: number;
+  rows: { maquina: string; tipo: string; qtd: string; unidade: string; status: string; obs: string }[];
+}
+
+function prepareSectorCards(sectors: SectorData[], entries: EntryData[]): SectorCardData[] {
+  const cards: SectorCardData[] = [];
+
+  for (const sector of sectors) {
+    const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
+    const unit = displayUnit(sector);
+    const decimals = unit === "m³" ? 3 : 1;
+    const total = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
+
+    const rows: SectorCardData["rows"] = [];
+    if (sectorEntries.length === 0) {
+      rows.push({ maquina: "—", tipo: "—", qtd: "0", unidade: unit, status: "Sem lançamento", obs: "" });
+    } else {
+      for (const entry of sectorEntries) {
+        const machine = sector.machines.find(m => m.id === entry.machineId);
+        const machineName = machine ? machine.nome : (entry.machineId ? `#${entry.machineId}` : "—");
+        const obs = entry.observacoes && entry.observacoes !== "[REMOVIDO]" ? entry.observacoes : "";
+        const qty = convertedQty(entry, sector);
+        rows.push({
+          maquina: machineName,
+          tipo: tipoLabel(entry.tipoMadeira),
+          qtd: fmtNum(qty, decimals),
+          unidade: unit,
+          status: statusLabel(entry.status || ""),
+          obs: obs.length > 20 ? obs.substring(0, 18) + "…" : obs,
+        });
+      }
+    }
+
+    cards.push({ nome: sector.nome, ordem: sector.ordem, unit, total, decimals, rows });
+  }
+
+  return cards;
+}
+
+function prepareSectorCardsWeekly(sectors: SectorData[], entries: EntryData[], numDays: number): SectorCardData[] {
+  const cards: SectorCardData[] = [];
+
+  for (const sector of sectors) {
+    const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
+    const unit = displayUnit(sector);
+    const decimals = unit === "m³" ? 3 : 1;
+    const total = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
+    const daysWithEntries = new Set(sectorEntries.map(e => e.data)).size;
+    const avg = daysWithEntries > 0 ? total / daysWithEntries : 0;
+
+    // Group by machine for weekly/monthly
+    const machineMap = new Map<number | null, { nome: string; total: number; days: Set<string> }>();
+    for (const entry of sectorEntries) {
+      const key = entry.machineId;
+      const machine = sector.machines.find(m => m.id === entry.machineId);
+      const name = machine ? machine.nome : (entry.machineId ? `#${entry.machineId}` : "Geral");
+      if (!machineMap.has(key)) machineMap.set(key, { nome: name, total: 0, days: new Set() });
+      const m = machineMap.get(key)!;
+      m.total += convertedQty(entry, sector);
+      m.days.add(entry.data);
+    }
+
+    const rows: SectorCardData["rows"] = [];
+    if (machineMap.size === 0) {
+      rows.push({ maquina: "—", tipo: "—", qtd: "0", unidade: unit, status: `0/${numDays} dias`, obs: "" });
+    } else {
+      for (const [, m] of Array.from(machineMap.entries())) {
+        const mAvg = m.days.size > 0 ? m.total / m.days.size : 0;
+        rows.push({
+          maquina: m.nome,
+          tipo: fmtNum(mAvg, decimals) + "/dia",
+          qtd: fmtNum(m.total, decimals),
+          unidade: unit,
+          status: `${m.days.size}/${numDays} dias`,
+          obs: "",
+        });
+      }
+    }
+
+    cards.push({ nome: sector.nome, ordem: sector.ordem, unit, total, decimals, rows });
+  }
+
+  return cards;
+}
+
+/**
+ * Draw sector cards in a grid layout fitting one page
+ * Each card: rounded rect with colored header, mini table, and total footer
+ */
+function drawSectorCardsGrid(
+  doc: jsPDF,
+  cards: SectorCardData[],
+  startY: number,
+  isWeeklyOrMonthly: boolean,
+): number {
   const pageW = doc.internal.pageSize.getWidth();
-  const marginR = 14;
-  doc.setFillColor(...C.primaryLt);
-  doc.roundedRect(marginL, y, pageW - marginL - marginR, 8, 1.5, 1.5, "F");
-  doc.setFillColor(...C.primary);
-  doc.rect(marginL, y, 3, 8, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(...C.primary);
-  doc.text(text, marginL + 6, y + 5.5);
-  return y + 10;
-}
-
-// ─── Helper: calculate proportional column widths to fill full page width ───
-function calcColumnWidths(ratios: number[], marginL: number, marginR: number, pageW: number): Record<number, { cellWidth: number }> {
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginL = 10;
+  const marginR = 10;
   const usableW = pageW - marginL - marginR;
-  const totalRatio = ratios.reduce((s, r) => s + r, 0);
-  const result: Record<number, { cellWidth: number }> = {};
-  for (let i = 0; i < ratios.length; i++) {
-    result[i] = { cellWidth: (ratios[i] / totalRatio) * usableW };
+  const footerSpace = 12;
+  const availableH = pageH - startY - footerSpace;
+
+  // Calculate grid layout: try to fit all cards in available space
+  const numCards = cards.length;
+  // For 8-9 sectors: use 4 columns x 2 rows (or 3x3)
+  let cols = numCards <= 4 ? 2 : numCards <= 6 ? 3 : 4;
+  let rowCount = Math.ceil(numCards / cols);
+
+  // If too many rows, increase columns
+  if (rowCount > 3) { cols = 4; rowCount = Math.ceil(numCards / cols); }
+
+  const cardGap = 4;
+  const cardW = (usableW - cardGap * (cols - 1)) / cols;
+  const cardH = (availableH - cardGap * (rowCount - 1)) / rowCount;
+
+  // Minimum card height
+  const minCardH = 35;
+  const effectiveCardH = Math.max(minCardH, Math.min(cardH, 90));
+
+  for (let i = 0; i < numCards; i++) {
+    const card = cards[i];
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = marginL + col * (cardW + cardGap);
+    const y = startY + row * (effectiveCardH + cardGap);
+
+    // Check if we need a new page
+    if (y + effectiveCardH > pageH - footerSpace) {
+      doc.addPage();
+      // Recursively draw remaining cards on new page
+      const remaining = cards.slice(i);
+      drawSectorCardsGrid(doc, remaining, 15, isWeeklyOrMonthly);
+      return pageH - footerSpace;
+    }
+
+    const sectorColor = getSectorColor(i);
+    const headerH = 7;
+    const footerH = 7;
+    const tableAreaH = effectiveCardH - headerH - footerH - 2;
+
+    // Card background
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(210, 220, 225);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, cardW, effectiveCardH, 2, 2, "FD");
+
+    // Card header (colored bar)
+    doc.setFillColor(...sectorColor);
+    doc.roundedRect(x, y, cardW, headerH, 2, 2, "F");
+    // Fix bottom corners of header (make them square to blend with card body)
+    doc.setFillColor(...sectorColor);
+    doc.rect(x, y + headerH - 2, cardW, 2, "F");
+
+    // Sector name in header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(255, 255, 255);
+    const sectorName = card.nome.length > 18 ? card.nome.substring(0, 16) + "…" : card.nome;
+    doc.text(sectorName, x + 3, y + 5);
+
+    // Unit badge in header
+    doc.setFontSize(5);
+    doc.setFont("helvetica", "normal");
+    doc.text(card.unit, x + cardW - 3, y + 5, { align: "right" });
+
+    // Table area
+    const tableY = y + headerH + 1;
+    const maxRows = Math.floor(tableAreaH / 4.5);
+    const displayRows = card.rows.slice(0, maxRows);
+
+    // Column headers (mini)
+    const colHeaders = isWeeklyOrMonthly
+      ? ["Máquina", "Média", "Total", "Dias"]
+      : ["Máquina", "Tipo", "Qtd", "Status"];
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(4.5);
+    doc.setTextColor(...C.medium);
+
+    const colWidths = isWeeklyOrMonthly
+      ? [cardW * 0.32, cardW * 0.22, cardW * 0.24, cardW * 0.22]
+      : [cardW * 0.28, cardW * 0.24, cardW * 0.2, cardW * 0.28];
+
+    let colX = x + 2;
+    for (let c = 0; c < colHeaders.length; c++) {
+      doc.text(colHeaders[c], colX, tableY + 3);
+      colX += colWidths[c];
+    }
+
+    // Separator line under headers
+    doc.setDrawColor(220, 230, 235);
+    doc.setLineWidth(0.15);
+    doc.line(x + 2, tableY + 4.5, x + cardW - 2, tableY + 4.5);
+
+    // Data rows
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(4.2);
+    doc.setTextColor(...C.dark);
+
+    for (let r = 0; r < displayRows.length; r++) {
+      const rowData = displayRows[r];
+      const rowY = tableY + 5 + (r + 1) * 4.2;
+
+      if (rowY > y + effectiveCardH - footerH - 2) break;
+
+      // Alternate row background
+      if (r % 2 === 1) {
+        doc.setFillColor(245, 248, 250);
+        doc.rect(x + 1.5, rowY - 3, cardW - 3, 4, "F");
+      }
+
+      colX = x + 2;
+      if (isWeeklyOrMonthly) {
+        // Máquina
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...C.dark);
+        const mName = rowData.maquina.length > 12 ? rowData.maquina.substring(0, 10) + "…" : rowData.maquina;
+        doc.text(mName, colX, rowY);
+        colX += colWidths[0];
+
+        // Média
+        doc.setTextColor(...C.medium);
+        doc.text(rowData.tipo, colX, rowY);
+        colX += colWidths[1];
+
+        // Total
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...C.dark);
+        doc.text(rowData.qtd, colX, rowY);
+        colX += colWidths[2];
+
+        // Dias
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...C.medium);
+        doc.text(rowData.status, colX, rowY);
+      } else {
+        // Máquina
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...C.dark);
+        const mName = rowData.maquina.length > 10 ? rowData.maquina.substring(0, 8) + "…" : rowData.maquina;
+        doc.text(mName, colX, rowY);
+        colX += colWidths[0];
+
+        // Tipo/Medida
+        doc.setTextColor(...C.medium);
+        const tName = rowData.tipo.length > 10 ? rowData.tipo.substring(0, 8) + "…" : rowData.tipo;
+        doc.text(tName, colX, rowY);
+        colX += colWidths[1];
+
+        // Quantidade
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...C.dark);
+        doc.text(rowData.qtd, colX, rowY);
+        colX += colWidths[2];
+
+        // Status
+        doc.setFont("helvetica", "normal");
+        const statusText = rowData.status.length > 12 ? rowData.status.substring(0, 10) + "…" : rowData.status;
+        if (rowData.status.includes("Falta") || rowData.status.includes("Sem")) {
+          doc.setTextColor(...C.red);
+        } else if (rowData.status.includes("Manutenção") || rowData.status.includes("Manut")) {
+          doc.setTextColor(...C.indigo);
+        } else {
+          doc.setTextColor(...C.primary);
+        }
+        doc.text(statusText, colX, rowY);
+      }
+    }
+
+    // Show "+" indicator if rows were truncated
+    if (card.rows.length > displayRows.length) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(4);
+      doc.setTextColor(...C.medium);
+      doc.text(`+${card.rows.length - displayRows.length} itens`, x + cardW - 3, y + effectiveCardH - footerH - 1, { align: "right" });
+    }
+
+    // Footer: Total bar (light tinted background)
+    const footerY = y + effectiveCardH - footerH;
+    doc.setFillColor(
+      Math.min(255, sectorColor[0] + 210),
+      Math.min(255, sectorColor[1] + 210),
+      Math.min(255, sectorColor[2] + 210)
+    );
+    doc.rect(x + 0.5, footerY, cardW - 1, footerH, "F");
+    // Bottom rounded corners
+    doc.setFillColor(
+      Math.min(255, sectorColor[0] + 210),
+      Math.min(255, sectorColor[1] + 210),
+      Math.min(255, sectorColor[2] + 210)
+    );
+    doc.roundedRect(x, footerY, cardW, footerH, 2, 2, "F");
+    // Re-draw top part of footer rect to make it square on top
+    doc.rect(x, footerY, cardW, 2, "F");
+
+    // Total text
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(5.5);
+    doc.setTextColor(...sectorColor);
+    doc.text("TOTAL:", x + 3, footerY + 4.5);
+    doc.setFontSize(7);
+    doc.text(`${fmtNum(card.total, card.decimals)} ${card.unit}`, x + cardW - 3, footerY + 4.5, { align: "right" });
   }
-  return result;
+
+  return startY + rowCount * (effectiveCardH + cardGap);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -417,100 +609,14 @@ export async function generateDailyPdf(
   selectedDate: string,
 ) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const marginL = 14;
-  const marginR = 14;
 
-  let y = await drawHeader(doc, "RELATÓRIO DE PRODUÇÃO — LANÇAMENTO DIÁRIO", fmtDate(selectedDate));
+  let y = await drawHeader(doc, "RELATÓRIO DE PRODUÇÃO — DIÁRIO", fmtDate(selectedDate));
 
-  const unitGroups = groupByUnit(sectors, entries);
-  y = drawUnitSummaryCards(doc, unitGroups, y, marginL, marginR);
+  // Prepare sector cards
+  const cards = prepareSectorCards(sectors, entries);
 
-  // Table — one row per entry, grouped by sector
-  const tableHead = [["Setor", "Máquina", "Tipo/Medida", "Quantidade", "Unidade", "Status", "Observações"]];
-  const tableBody: (string | { content: string; styles?: any })[][] = [];
-
-  for (const sector of sectors) {
-    const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
-    const unit = displayUnit(sector);
-    if (sectorEntries.length === 0) {
-      tableBody.push([sector.nome, "—", "—", "0", unit, "—", "Sem lançamento"]);
-      continue;
-    }
-
-    for (const entry of sectorEntries) {
-      const machine = sector.machines.find(m => m.id === entry.machineId);
-      const machineName = machine ? machine.nome : (entry.machineId ? `#${entry.machineId}` : "—");
-      const obs = entry.observacoes && entry.observacoes !== "[REMOVIDO]" ? entry.observacoes : "";
-      const decimals = unit === "m³" ? 3 : 1;
-      const qty = convertedQty(entry, sector);
-      tableBody.push([
-        sector.nome,
-        machineName,
-        tipoLabel(entry.tipoMadeira),
-        fmtNum(qty, decimals),
-        unit,
-        statusLabel(entry.status || ""),
-        obs,
-      ]);
-    }
-  }
-
-  // Column ratios: Setor(3), Máquina(2.5), Tipo(3), Qtd(2), Unid(1.5), Status(3.5), Obs(4)
-  const dailyColWidths = calcColumnWidths([3, 2.5, 3, 2, 1.5, 3.5, 4], marginL, marginR, pageW);
-  // Add alignment and style to each column
-  const dailyColStyles: Record<number, any> = {};
-  for (const [k, v] of Object.entries(dailyColWidths)) {
-    dailyColStyles[Number(k)] = { ...v };
-  }
-  dailyColStyles[0].fontStyle = "bold";
-  dailyColStyles[3].halign = "right";
-  dailyColStyles[3].fontStyle = "bold";
-  dailyColStyles[4].halign = "center";
-
-  autoTable(doc, {
-    startY: y,
-    head: tableHead,
-    body: tableBody,
-    margin: { left: marginL, right: marginR },
-    tableWidth: "auto",
-    theme: "grid",
-    headStyles: {
-      fillColor: C.primary,
-      textColor: C.white,
-      fontSize: 7,
-      fontStyle: "bold",
-      cellPadding: 2.5,
-      lineColor: C.primaryDk,
-      lineWidth: 0.2,
-    },
-    bodyStyles: { fontSize: 6.5, cellPadding: 2, textColor: C.dark, lineColor: [200, 215, 210], lineWidth: 0.15 },
-    columnStyles: dailyColStyles,
-    alternateRowStyles: { fillColor: C.rowOdd },
-    didParseCell: (data: any) => {
-      if (data.section === "body" && data.row.index % 2 === 0) {
-        data.cell.styles.fillColor = C.rowEven;
-      }
-      if (data.section === "body" && data.column.index === 5) {
-        const val = String(data.cell.raw);
-        if (val.includes("Manutenção")) {
-          data.cell.styles.textColor = C.indigo;
-          data.cell.styles.fontStyle = "bold";
-        } else if (val.includes("Falta")) {
-          data.cell.styles.textColor = C.red;
-          data.cell.styles.fontStyle = "bold";
-        }
-      }
-      if (data.section === "body" && data.column.index === 4) {
-        const colors = getUnitColor(String(data.cell.raw));
-        data.cell.styles.textColor = colors.fg;
-        data.cell.styles.fontStyle = "bold";
-      }
-    },
-  });
-
-  let finalY = ((doc as any).lastAutoTable?.finalY || y + 20) + 4;
-  finalY = drawUnitTotalBars(doc, unitGroups, finalY, marginL, marginR, "DO DIA");
+  // Draw cards grid
+  drawSectorCardsGrid(doc, cards, y, false);
 
   drawFooter(doc, "Relatório Diário de Produção");
   doc.save(`Producao_Diario_${selectedDate.replace(/-/g, "")}.pdf`);
@@ -526,12 +632,8 @@ export async function generateWeeklyPdf(
   weekEnd: string,
 ) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const marginL = 14;
-  const marginR = 14;
-  const usableW = pageW - marginL - marginR;
 
-  let y = await drawHeader(doc, "RELATÓRIO DE PRODUÇÃO — FECHAMENTO SEMANAL", `${fmtDate(weekStart)} a ${fmtDate(weekEnd)}`);
+  let y = await drawHeader(doc, "RELATÓRIO DE PRODUÇÃO — SEMANAL", `${fmtDate(weekStart)} a ${fmtDate(weekEnd)}`);
 
   // Calculate working days
   const workingDays = new Set<string>();
@@ -543,111 +645,11 @@ export async function generateWeeklyPdf(
   }
   const numDays = workingDays.size || 1;
 
-  const unitGroups = groupByUnit(sectors, entries);
-  y = drawUnitSummaryCards(doc, unitGroups, y, marginL, marginR);
+  // Prepare sector cards (weekly mode)
+  const cards = prepareSectorCardsWeekly(sectors, entries, numDays);
 
-  // KPI mini-cards row (full width, evenly distributed)
-  const kpiH = 10;
-  const kpiGap = 3;
-  const kpis = [
-    { label: "SETORES ATIVOS", value: String(sectors.length), color: C.primary },
-    { label: "DIAS ÚTEIS", value: String(numDays), color: C.teal },
-  ];
-  for (const ug of unitGroups) {
-    kpis.push({
-      label: `MÉDIA DIÁRIA (${ug.unit.toUpperCase()})`,
-      value: fmtNum(ug.total / numDays, ug.decimals),
-      color: getUnitColor(ug.unit).fg,
-    });
-  }
-  const kpiW = (usableW - kpiGap * (kpis.length - 1)) / kpis.length;
-
-  for (let i = 0; i < kpis.length; i++) {
-    const cx = marginL + i * (kpiW + kpiGap);
-    doc.setFillColor(...C.light);
-    doc.roundedRect(cx, y, kpiW, kpiH, 1.5, 1.5, "F");
-    doc.setDrawColor(210, 220, 230);
-    doc.roundedRect(cx, y, kpiW, kpiH, 1.5, 1.5, "S");
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.5);
-    doc.setTextColor(...C.medium);
-    doc.text(kpis[i].label, cx + kpiW / 2, y + 3.5, { align: "center" });
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(...(kpis[i].color as [number, number, number]));
-    doc.text(kpis[i].value, cx + kpiW / 2, y + 8.5, { align: "center" });
-  }
-  y += kpiH + 4;
-
-  // Table: full width — proportional columns
-  const tableHead = [["Setor", "Total da Semana", "Média Diária", "Unidade", "Dias c/ Lançamento"]];
-  const tableBody: string[][] = [];
-
-  for (const sector of sectors) {
-    const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
-    const total = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
-    const daysWithEntries = new Set(sectorEntries.map(e => e.data)).size;
-    const avg = daysWithEntries > 0 ? total / daysWithEntries : 0;
-    const unit = displayUnit(sector);
-    const decimals = unit === "m³" ? 3 : 1;
-
-    tableBody.push([
-      sector.nome,
-      fmtNum(total, decimals),
-      fmtNum(avg, decimals),
-      unit,
-      `${daysWithEntries} / ${numDays}`,
-    ]);
-  }
-
-  // Proportional widths: Setor(3.5), Total(2.5), Média(2.5), Unidade(1.5), Dias(2)
-  const weeklyColWidths = calcColumnWidths([3.5, 2.5, 2.5, 1.5, 2], marginL, marginR, pageW);
-  const weeklyColStyles: Record<number, any> = {};
-  for (const [k, v] of Object.entries(weeklyColWidths)) {
-    weeklyColStyles[Number(k)] = { ...v };
-  }
-  weeklyColStyles[0].fontStyle = "bold";
-  weeklyColStyles[1].halign = "right";
-  weeklyColStyles[1].fontStyle = "bold";
-  weeklyColStyles[2].halign = "right";
-  weeklyColStyles[3].halign = "center";
-  weeklyColStyles[4].halign = "center";
-
-  autoTable(doc, {
-    startY: y,
-    head: tableHead,
-    body: tableBody,
-    margin: { left: marginL, right: marginR },
-    tableWidth: "auto",
-    theme: "grid",
-    headStyles: {
-      fillColor: C.primary,
-      textColor: C.white,
-      fontSize: 8,
-      fontStyle: "bold",
-      cellPadding: 3,
-      lineColor: C.primaryDk,
-      lineWidth: 0.2,
-    },
-    bodyStyles: { fontSize: 8, cellPadding: 2.5, textColor: C.dark, lineColor: [200, 215, 210], lineWidth: 0.15 },
-    columnStyles: weeklyColStyles,
-    alternateRowStyles: { fillColor: C.rowOdd },
-    didParseCell: (data: any) => {
-      if (data.section === "body" && data.row.index % 2 === 0) {
-        data.cell.styles.fillColor = C.rowEven;
-      }
-      if (data.section === "body" && data.column.index === 3) {
-        const colors = getUnitColor(String(data.cell.raw));
-        data.cell.styles.textColor = colors.fg;
-        data.cell.styles.fontStyle = "bold";
-      }
-    },
-  });
-
-  let finalY = ((doc as any).lastAutoTable?.finalY || y + 20) + 4;
-  finalY = drawUnitTotalBars(doc, unitGroups, finalY, marginL, marginR, "DA SEMANA");
+  // Draw cards grid
+  drawSectorCardsGrid(doc, cards, y, true);
 
   drawFooter(doc, "Relatório Semanal de Produção");
   doc.save(`Producao_Semanal_${weekStart.replace(/-/g, "")}_${weekEnd.replace(/-/g, "")}.pdf`);
@@ -662,16 +664,12 @@ export async function generateMonthlyPdf(
   month: string,
 ) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const marginL = 14;
-  const marginR = 14;
-  const usableW = pageW - marginL - marginR;
 
   const [year, mon] = month.split("-");
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const monthLabel = `${monthNames[parseInt(mon) - 1]} ${year}`;
 
-  let y = await drawHeader(doc, "RELATÓRIO DE PRODUÇÃO — FECHAMENTO MENSAL", monthLabel);
+  let y = await drawHeader(doc, "RELATÓRIO DE PRODUÇÃO — MENSAL", monthLabel);
 
   // Calculate working days
   const workingDays = new Set<string>();
@@ -684,204 +682,11 @@ export async function generateMonthlyPdf(
   }
   const numDays = workingDays.size || 1;
 
-  const unitGroups = groupByUnit(sectors, entries);
-  y = drawUnitSummaryCards(doc, unitGroups, y, marginL, marginR);
+  // Prepare sector cards (monthly mode = same as weekly)
+  const cards = prepareSectorCardsWeekly(sectors, entries, numDays);
 
-  // KPI mini-cards (full width, evenly distributed)
-  const kpiH = 10;
-  const kpiGap = 3;
-  const kpis = [
-    { label: "SETORES ATIVOS", value: String(sectors.length), color: C.primary },
-    { label: "DIAS ÚTEIS", value: String(numDays), color: C.teal },
-  ];
-  for (const ug of unitGroups) {
-    kpis.push({
-      label: `MÉDIA DIÁRIA (${ug.unit.toUpperCase()})`,
-      value: fmtNum(ug.total / numDays, ug.decimals),
-      color: getUnitColor(ug.unit).fg,
-    });
-  }
-  const kpiW = (usableW - kpiGap * (kpis.length - 1)) / kpis.length;
-
-  for (let i = 0; i < kpis.length; i++) {
-    const cx = marginL + i * (kpiW + kpiGap);
-    doc.setFillColor(...C.light);
-    doc.roundedRect(cx, y, kpiW, kpiH, 1.5, 1.5, "F");
-    doc.setDrawColor(210, 220, 230);
-    doc.roundedRect(cx, y, kpiW, kpiH, 1.5, 1.5, "S");
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.5);
-    doc.setTextColor(...C.medium);
-    doc.text(kpis[i].label, cx + kpiW / 2, y + 3.5, { align: "center" });
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(...(kpis[i].color as [number, number, number]));
-    doc.text(kpis[i].value, cx + kpiW / 2, y + 8.5, { align: "center" });
-  }
-  y += kpiH + 4;
-
-  // Sector summaries (with cxp/cxg→saco conversion)
-  const sectorSummaries: { nome: string; total: number; avg: number; unidade: string; machines: { nome: string; total: number; avg: number }[] }[] = [];
-  for (const sector of sectors) {
-    const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
-    const total = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
-    const daysWithEntries = new Set(sectorEntries.map(e => e.data)).size;
-    const avg = daysWithEntries > 0 ? total / daysWithEntries : 0;
-    const unit = displayUnit(sector);
-
-    const machineMap = new Map<number, { nome: string; total: number; days: Set<string> }>();
-    for (const entry of sectorEntries) {
-      if (entry.machineId === null) continue;
-      const machine = sector.machines.find(m => m.id === entry.machineId);
-      const name = machine ? machine.nome : `#${entry.machineId}`;
-      if (!machineMap.has(entry.machineId)) {
-        machineMap.set(entry.machineId, { nome: name, total: 0, days: new Set() });
-      }
-      const m = machineMap.get(entry.machineId)!;
-      m.total += convertedQty(entry, sector);
-      m.days.add(entry.data);
-    }
-
-    const machines = Array.from(machineMap.values()).map(m => ({
-      nome: m.nome,
-      total: m.total,
-      avg: m.days.size > 0 ? m.total / m.days.size : 0,
-    })).sort((a, b) => a.nome.localeCompare(b.nome));
-
-    sectorSummaries.push({ nome: sector.nome, total, avg, unidade: unit, machines });
-  }
-
-  // Section: Summary by sector — FULL WIDTH TABLE
-  y = drawSectionTitle(doc, "RESUMO POR SETOR", y, marginL);
-
-  const sectorTableHead = [["Setor", "Total do Mês", "Média Diária", "Unidade", "Máquinas"]];
-  const sectorTableBody: string[][] = [];
-  for (const s of sectorSummaries) {
-    const decimals = s.unidade === "m³" ? 3 : 1;
-    sectorTableBody.push([
-      s.nome,
-      fmtNum(s.total, decimals),
-      fmtNum(s.avg, decimals),
-      s.unidade,
-      String(s.machines.length),
-    ]);
-  }
-
-  // Proportional widths: Setor(3.5), Total(2.5), Média(2.5), Unidade(1.5), Máquinas(1.5)
-  const sectorColWidths = calcColumnWidths([3.5, 2.5, 2.5, 1.5, 1.5], marginL, marginR, pageW);
-  const sectorColStyles: Record<number, any> = {};
-  for (const [k, v] of Object.entries(sectorColWidths)) {
-    sectorColStyles[Number(k)] = { ...v };
-  }
-  sectorColStyles[0].fontStyle = "bold";
-  sectorColStyles[1].halign = "right";
-  sectorColStyles[1].fontStyle = "bold";
-  sectorColStyles[2].halign = "right";
-  sectorColStyles[3].halign = "center";
-  sectorColStyles[4].halign = "center";
-
-  autoTable(doc, {
-    startY: y,
-    head: sectorTableHead,
-    body: sectorTableBody,
-    margin: { left: marginL, right: marginR },
-    tableWidth: "auto",
-    theme: "grid",
-    headStyles: {
-      fillColor: C.primary,
-      textColor: C.white,
-      fontSize: 8,
-      fontStyle: "bold",
-      cellPadding: 3,
-      lineColor: C.primaryDk,
-      lineWidth: 0.2,
-    },
-    bodyStyles: { fontSize: 8, cellPadding: 2.5, textColor: C.dark, lineColor: [200, 215, 210], lineWidth: 0.15 },
-    columnStyles: sectorColStyles,
-    alternateRowStyles: { fillColor: C.rowOdd },
-    didParseCell: (data: any) => {
-      if (data.section === "body" && data.row.index % 2 === 0) {
-        data.cell.styles.fillColor = C.rowEven;
-      }
-      if (data.section === "body" && data.column.index === 3) {
-        const colors = getUnitColor(String(data.cell.raw));
-        data.cell.styles.textColor = colors.fg;
-        data.cell.styles.fontStyle = "bold";
-      }
-    },
-  });
-
-  // Section: Detail by machine — FULL WIDTH TABLE
-  let machineY = ((doc as any).lastAutoTable?.finalY || y + 20) + 5;
-  if (machineY + 30 > doc.internal.pageSize.getHeight() - 15) {
-    doc.addPage();
-    machineY = 20;
-  }
-
-  machineY = drawSectionTitle(doc, "DETALHAMENTO POR MÁQUINA", machineY, marginL);
-
-  const machineTableHead = [["Setor", "Máquina", "Total do Mês", "Média Diária", "Unidade"]];
-  const machineTableBody: string[][] = [];
-
-  for (const s of sectorSummaries) {
-    const decimals = s.unidade === "m³" ? 3 : 1;
-    if (s.machines.length === 0) {
-      machineTableBody.push([s.nome, "—", fmtNum(s.total, decimals), fmtNum(s.avg, decimals), s.unidade]);
-    } else {
-      for (const m of s.machines) {
-        machineTableBody.push([s.nome, m.nome, fmtNum(m.total, decimals), fmtNum(m.avg, decimals), s.unidade]);
-      }
-    }
-  }
-
-  // Proportional widths: Setor(3), Máquina(3), Total(2.5), Média(2.5), Unidade(1.5)
-  const machineColWidths = calcColumnWidths([3, 3, 2.5, 2.5, 1.5], marginL, marginR, pageW);
-  const machineColStyles: Record<number, any> = {};
-  for (const [k, v] of Object.entries(machineColWidths)) {
-    machineColStyles[Number(k)] = { ...v };
-  }
-  machineColStyles[0].fontStyle = "bold";
-  machineColStyles[2].halign = "right";
-  machineColStyles[2].fontStyle = "bold";
-  machineColStyles[3].halign = "right";
-  machineColStyles[4].halign = "center";
-
-  autoTable(doc, {
-    startY: machineY,
-    head: machineTableHead,
-    body: machineTableBody,
-    margin: { left: marginL, right: marginR },
-    tableWidth: "auto",
-    theme: "grid",
-    headStyles: {
-      fillColor: C.teal,
-      textColor: C.white,
-      fontSize: 7.5,
-      fontStyle: "bold",
-      cellPadding: 2.5,
-      lineColor: [10, 120, 110],
-      lineWidth: 0.2,
-    },
-    bodyStyles: { fontSize: 7, cellPadding: 2, textColor: C.dark, lineColor: [200, 215, 210], lineWidth: 0.15 },
-    columnStyles: machineColStyles,
-    alternateRowStyles: { fillColor: C.rowOdd },
-    didParseCell: (data: any) => {
-      if (data.section === "body" && data.row.index % 2 === 0) {
-        data.cell.styles.fillColor = C.rowEven;
-      }
-      if (data.section === "body" && data.column.index === 4) {
-        const colors = getUnitColor(String(data.cell.raw));
-        data.cell.styles.textColor = colors.fg;
-        data.cell.styles.fontStyle = "bold";
-      }
-    },
-  });
-
-  // Total bars by unit
-  let finalY = ((doc as any).lastAutoTable?.finalY || machineY + 20) + 4;
-  finalY = drawUnitTotalBars(doc, unitGroups, finalY, marginL, marginR, "DO MÊS");
+  // Draw cards grid
+  drawSectorCardsGrid(doc, cards, y, true);
 
   drawFooter(doc, `Relatório Mensal de Produção — ${monthLabel}`);
   doc.save(`Producao_Mensal_${month.replace(/-/g, "")}.pdf`);
