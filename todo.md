@@ -3340,3 +3340,9 @@
 - [x] Remover truncate/corte de nomes de clientes e descrições na tabela de cheques
 - [x] Barra de pesquisa no painel de Cheques (buscar por cliente, palavras-chave, forma de pagamento)
 - [x] Adicionar filtro de mês (dropdown) no cabeçalho do painel Controle de Cheques para filtrar cheques por data de vencimento
+- [x] Campo opcional "Responsável" (custodian) para cheques classificados como "1 - Cheque Disponível"
+- [x] Tabela cheque_custodians no banco para armazenar registros de responsável por cheque
+- [x] Endpoints getCustodians e setCustodian no backend
+- [x] Coluna "Responsável" na tabela de cheques com badge verde destacado
+- [x] Campo editável inline (clique para definir, Enter para salvar, Esc para cancelar)
+- [x] Testes automatizados para endpoints de custodian (5 testes passando)

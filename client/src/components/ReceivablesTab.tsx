@@ -1550,6 +1550,20 @@ export default function ReceivablesTab() {
     { enabled: !!chequesOpenEmpresa }
   );
 
+  // Custodians for cheques (who holds the cheque)
+  const custodiansQuery = trpc.financial.getCustodians.useQuery(
+    {},
+    { enabled: !!chequesOpenEmpresa }
+  );
+  const custodianMap = custodiansQuery.data || {};
+  const setCustodianMutation = trpc.financial.setCustodian.useMutation({
+    onSuccess: () => {
+      custodiansQuery.refetch();
+    },
+  });
+  const [editingCustodianId, setEditingCustodianId] = useState<number | null>(null);
+  const [editingCustodianValue, setEditingCustodianValue] = useState("");
+
   // Discount alert cascading blink
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
@@ -2118,6 +2132,9 @@ export default function ReceivablesTab() {
                                     <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Valor</th>
                                     <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Forma de Pagamento</th>
                                     <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Descrição</th>
+                                    {(chequeSelectedFilter === "DISPONIVEL" || displayCheques.some((c: any) => c.estadoCheque === "DISPONIVEL")) && (
+                                      <th className="px-3 py-2 text-center font-semibold text-emerald-700 whitespace-nowrap bg-emerald-50">Responsável</th>
+                                    )}
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -2154,6 +2171,54 @@ export default function ReceivablesTab() {
                                         <td className="px-3 py-2 text-center text-slate-500">
                                           {cheque.descricao}{cheque.parcela ? ` (${cheque.parcela}/${cheque.parcelasTotal || "?"})` : ""}
                                         </td>
+                                        {(chequeSelectedFilter === "DISPONIVEL" || displayCheques.some((c: any) => c.estadoCheque === "DISPONIVEL")) && (
+                                          <td className="px-3 py-2 text-center bg-emerald-50/50">
+                                            {cheque.estadoCheque === "DISPONIVEL" ? (
+                                              editingCustodianId === cheque.id ? (
+                                                <div className="flex items-center gap-1 justify-center">
+                                                  <input
+                                                    type="text"
+                                                    value={editingCustodianValue}
+                                                    onChange={(e) => setEditingCustodianValue(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === "Enter") {
+                                                        setCustodianMutation.mutate({ chequeId: cheque.id, responsavel: editingCustodianValue });
+                                                        setEditingCustodianId(null);
+                                                      }
+                                                      if (e.key === "Escape") setEditingCustodianId(null);
+                                                    }}
+                                                    onBlur={() => {
+                                                      setCustodianMutation.mutate({ chequeId: cheque.id, responsavel: editingCustodianValue });
+                                                      setEditingCustodianId(null);
+                                                    }}
+                                                    className="w-24 px-1.5 py-0.5 text-[11px] border border-emerald-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                                                    placeholder="Nome..."
+                                                    autoFocus
+                                                  />
+                                                </div>
+                                              ) : (
+                                                <button
+                                                  onClick={() => {
+                                                    setEditingCustodianId(cheque.id);
+                                                    setEditingCustodianValue((custodianMap as any)[cheque.id] || "");
+                                                  }}
+                                                  className="group inline-flex items-center gap-1 px-2 py-0.5 rounded-full transition-all hover:bg-emerald-100"
+                                                  title="Clique para definir quem está com este cheque"
+                                                >
+                                                  {(custodianMap as any)[cheque.id] ? (
+                                                    <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-200 text-emerald-800 border border-emerald-300">
+                                                      {(custodianMap as any)[cheque.id]}
+                                                    </span>
+                                                  ) : (
+                                                    <span className="text-[10px] text-slate-400 group-hover:text-emerald-600 italic">+ definir</span>
+                                                  )}
+                                                </button>
+                                              )
+                                            ) : (
+                                              <span className="text-slate-300">—</span>
+                                            )}
+                                          </td>
+                                        )}
                                       </tr>
                                     );
                                   })}
@@ -2162,7 +2227,7 @@ export default function ReceivablesTab() {
                                   <tr className="bg-amber-50 border-t-2 border-amber-300">
                                     <td colSpan={3} className="px-3 py-2.5 text-left text-xs font-bold text-amber-800 whitespace-nowrap">TOTAL ({displayCheques.length} cheques)</td>
                                     <td className="px-3 py-2.5 text-center text-sm font-extrabold text-amber-700 whitespace-nowrap">R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                    <td colSpan={2}></td>
+                                    <td colSpan={(chequeSelectedFilter === "DISPONIVEL" || displayCheques.some((c: any) => c.estadoCheque === "DISPONIVEL")) ? 3 : 2}></td>
                                   </tr>
                                 </tfoot>
                               </table>

@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
@@ -6613,5 +6613,62 @@ ${acoesTexto}
         totalFiltradoCount: filtered.length,
         totaisPorEstado,
       };
+    }),
+
+  /**
+   * getCustodians - Retorna todos os responsáveis registrados para cheques
+   */
+  getCustodians: publicProcedure
+    .input(z.object({
+      empresaNome: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      const rows = await db.select().from(chequeCustodians);
+      // Return as a map: chequeId -> responsavel
+      const map: Record<number, string> = {};
+      for (const row of rows) {
+        map[row.chequeId] = row.responsavel;
+      }
+      return map;
+    }),
+
+  /**
+   * setCustodian - Define ou atualiza o responsável por um cheque disponível
+   */
+  setCustodian: publicProcedure
+    .input(z.object({
+      chequeId: z.number(),
+      responsavel: z.string(), // empty string to remove
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      if (!input.responsavel.trim()) {
+        // Remove custodian
+        await db.delete(chequeCustodians).where(eq(chequeCustodians.chequeId, input.chequeId));
+        return { success: true, removed: true };
+      }
+
+      // Upsert: check if exists
+      const existing = await db.select().from(chequeCustodians)
+        .where(eq(chequeCustodians.chequeId, input.chequeId))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db.update(chequeCustodians)
+          .set({ responsavel: input.responsavel.trim() })
+          .where(eq(chequeCustodians.chequeId, input.chequeId));
+      } else {
+        await db.insert(chequeCustodians).values({
+          chequeId: input.chequeId,
+          responsavel: input.responsavel.trim(),
+        });
+      }
+
+      return { success: true, removed: false };
     }),
 });

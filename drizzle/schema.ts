@@ -1543,3 +1543,18 @@ export const orderCancellations = mysqlTable("order_cancellations", {
 });
 export type OrderCancellation = typeof orderCancellations.$inferSelect;
 export type InsertOrderCancellation = typeof orderCancellations.$inferInsert;
+
+
+/**
+ * Cheque custodians - registra quem está com o cheque fisicamente
+ * Aplicável apenas a cheques com estado "DISPONIVEL" (em nossas mãos)
+ */
+export const chequeCustodians = mysqlTable("cheque_custodians", {
+  id: int("id").autoincrement().primaryKey(),
+  chequeId: int("chequeId").notNull(), // accounts_receivable.id
+  responsavel: varchar("responsavel", { length: 100 }).notNull(), // nome da pessoa
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ChequeCustodian = typeof chequeCustodians.$inferSelect;
+export type InsertChequeCustodian = typeof chequeCustodians.$inferInsert;
