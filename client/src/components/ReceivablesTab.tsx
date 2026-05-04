@@ -39,6 +39,7 @@ import {
   MessageCircle,
   Send,
   ChevronUp,
+  Receipt,
 } from "lucide-react";
 import {
   Dialog,
@@ -1524,6 +1525,7 @@ export default function ReceivablesTab() {
   const [selectedIdsByAccount, setSelectedIdsByAccount] = useState<Record<string, Set<number>>>({});
   const [showHistoryPanel, setShowHistoryPanel] = useState<string | null>(null);
   const [showGlobalHistory, setShowGlobalHistory] = useState(false);
+  const [chequesOpenEmpresa, setChequesOpenEmpresa] = useState<string | null>(null);
 
   // Discount alert cascading blink
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
@@ -1864,10 +1866,56 @@ export default function ReceivablesTab() {
                     <span className="text-xs text-slate-500">{emp.count} títulos · {formatCurrency(emp.total)}</span>
                   </div>
                 </div>
-                <button onClick={() => toggleSet(setExpandedEmpresas, emp.nome)} className="text-slate-400 hover:text-slate-600 p-1">
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setChequesOpenEmpresa(prev => prev === emp.nome ? null : emp.nome);
+                    }}
+                    className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 text-white shadow-md hover:shadow-lg hover:shadow-amber-300/40 hover:scale-[1.04] active:scale-[0.98] border border-amber-300/30"
+                  >
+                    <Receipt className="w-4 h-4 transition-transform group-hover:rotate-[-8deg]" />
+                    <span>Cheques</span>
+                    <span className="ml-0.5 w-5 h-5 rounded-full bg-white/25 flex items-center justify-center text-[10px] font-extrabold">
+                      {chequesOpenEmpresa === emp.nome ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </span>
+                    <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                  <button onClick={() => toggleSet(setExpandedEmpresas, emp.nome)} className="text-slate-400 hover:text-slate-600 p-1">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
+
+              {/* Cheques Panel */}
+              {chequesOpenEmpresa === emp.nome && (
+                <div className="mx-4 my-3 rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50/80 via-white to-orange-50/50 shadow-lg overflow-hidden">
+                  <div className="px-5 py-4 bg-gradient-to-r from-amber-500 via-amber-500 to-orange-500 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-inner">
+                        <Receipt className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-white font-bold text-base tracking-wide">Controle de Cheques</h4>
+                        <p className="text-amber-100 text-xs">{shortEmpresaName(emp.nome)} — Gestão completa de cheques</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setChequesOpenEmpresa(null)}
+                      className="text-white/70 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="px-6 py-10 flex flex-col items-center justify-center text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mb-4 shadow-sm">
+                      <Receipt className="w-8 h-8 text-amber-500" />
+                    </div>
+                    <h5 className="text-lg font-bold text-slate-700 mb-1">Em breve</h5>
+                    <p className="text-sm text-slate-500 max-w-md">O controle detalhado de cheques desta empresa será configurado aqui. Aguardando definição das informações a serem exibidas.</p>
+                  </div>
+                </div>
+              )}
 
               <div className="bg-white">
                 {emp.meses.map((mes, mi) => {

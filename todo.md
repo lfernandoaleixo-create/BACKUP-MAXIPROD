@@ -3319,3 +3319,7 @@
 - [ ] Exibir: data vencimento, estado, valor, empresa, forma de pagamento, descrição
 - [x] Legendas/tooltips explicando cada estado de cheque
 - [x] Testes automatizados para o endpoint de cheques
+
+## Botão Cheques no card de empresa (Recebíveis)
+- [ ] Adicionar botão "Cheques" estiloso no header de cada empresa (Palitos, Varetas, Espetos)
+- [ ] Ao clicar, abrir card amplo e completo (conteúdo a definir pelo usuário)
