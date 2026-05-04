@@ -6520,6 +6520,7 @@ ${acoesTexto}
         cliente: accountsReceivable.cliente,
         valorOriginal: accountsReceivable.valorOriginal,
         valorLiquido: accountsReceivable.valorLiquido,
+        valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
         formaCobranca: accountsReceivable.formaCobranca,
         empresaNome: accountsReceivable.empresaNome,
         parcela: accountsReceivable.parcela,
@@ -6570,7 +6571,10 @@ ${acoesTexto}
 
       const cheques = rows.map(row => {
         const estadoCheque = parseChequeState(row.formaCobranca);
-        const valor = parseFloat(row.valorLiquido || row.valorOriginal || "0");
+        // Valor a receber = valorLiquido - valorRecebidoLiquido (desconta abatimentos/recebimentos parciais)
+        const valorBruto = parseFloat(row.valorLiquido || row.valorOriginal || "0");
+        const valorRecebido = parseFloat(row.valorRecebidoLiquido || "0");
+        const valor = valorBruto - valorRecebido;
         return {
           id: row.id,
           maxiprodId: row.maxiprodId,
