@@ -1536,10 +1536,17 @@ export default function ReceivablesTab() {
   const [chequesOpenEmpresa, setChequesOpenEmpresa] = useState<string | null>(null);
   const [chequeSelectedFilter, setChequeSelectedFilter] = useState<string | null>(null);
   const [chequeSearchQuery, setChequeSearchQuery] = useState("");
+  const [chequeMesKey, setChequeMesKey] = useState<string | null>(null);
 
   // Fetch cheques data from backend
+  const chequesInput = useMemo(() => {
+    const inp: { empresaNome?: string; mesKey?: string } = {};
+    if (chequesOpenEmpresa) inp.empresaNome = chequesOpenEmpresa;
+    if (chequeMesKey) inp.mesKey = chequeMesKey;
+    return inp;
+  }, [chequesOpenEmpresa, chequeMesKey]);
   const chequesQuery = trpc.financial.getCheques.useQuery(
-    { empresaNome: chequesOpenEmpresa || undefined },
+    chequesInput,
     { enabled: !!chequesOpenEmpresa }
   );
 
@@ -1913,15 +1920,43 @@ export default function ReceivablesTab() {
                       </div>
                       <div>
                         <h4 className="text-white font-bold text-base tracking-wide">Controle de Cheques</h4>
-                        <p className="text-amber-100 text-xs">{shortEmpresaName(emp.nome)} — Gestão completa de cheques</p>
+                        <p className="text-amber-100 text-xs">{shortEmpresaName(emp.nome)} — {chequeMesKey ? formatMonth(chequeMesKey) : "Gestão completa de cheques"}</p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setChequesOpenEmpresa(null)}
-                      className="text-white/70 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {/* Month filter dropdown */}
+                      <div className="relative">
+                        <select
+                          value={chequeMesKey || ""}
+                          onChange={(e) => {
+                            setChequeMesKey(e.target.value || null);
+                            setChequeSelectedFilter(null);
+                          }}
+                          className="appearance-none bg-white/20 backdrop-blur-sm text-white text-xs font-medium border border-white/30 rounded-lg pl-7 pr-7 py-1.5 cursor-pointer hover:bg-white/30 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 [&>option]:text-slate-800 [&>option]:bg-white"
+                        >
+                          <option value="">Todos os Meses</option>
+                          {(() => {
+                            // Generate months from current -6 to +12
+                            const options: { value: string; label: string }[] = [];
+                            const now = new Date();
+                            for (let i = -6; i <= 12; i++) {
+                              const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                              const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                              options.push({ value: val, label: formatMonth(val) });
+                            }
+                            return options.map(o => <option key={o.value} value={o.value}>{o.label}</option>);
+                          })()}
+                        </select>
+                        <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/80 pointer-events-none" />
+                        <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-white/80 pointer-events-none" />
+                      </div>
+                      <button
+                        onClick={() => { setChequesOpenEmpresa(null); setChequeMesKey(null); }}
+                        className="text-white/70 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   <div className="px-5 py-4">
                     {/* Search bar */}

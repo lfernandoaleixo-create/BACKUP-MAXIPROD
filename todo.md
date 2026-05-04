@@ -3339,3 +3339,4 @@
 - [x] Corrigir "à Receber" para "a Receber" (sem crase) em todos os lugares
 - [x] Remover truncate/corte de nomes de clientes e descrições na tabela de cheques
 - [x] Barra de pesquisa no painel de Cheques (buscar por cliente, palavras-chave, forma de pagamento)
+- [x] Adicionar filtro de mês (dropdown) no cabeçalho do painel Controle de Cheques para filtrar cheques por data de vencimento
