@@ -1558,3 +1558,21 @@ export const chequeCustodians = mysqlTable("cheque_custodians", {
 });
 export type ChequeCustodian = typeof chequeCustodians.$inferSelect;
 export type InsertChequeCustodian = typeof chequeCustodians.$inferInsert;
+
+/**
+ * Cheque exchanges - histórico de trocas de cheques
+ * Cada registro representa uma operação de troca com PDF gerado
+ */
+export const chequeExchanges = mysqlTable("cheque_exchanges", {
+  id: int("id").autoincrement().primaryKey(),
+  empresaNome: varchar("empresaNome", { length: 100 }).notNull(),
+  operador: varchar("operador", { length: 100 }).notNull(), // quem autorizou (Fernando)
+  chequesJson: text("chequesJson").notNull(), // JSON com dados dos cheques selecionados
+  totalValor: decimal("totalValor", { precision: 18, scale: 2 }).notNull(),
+  totalCheques: int("totalCheques").notNull(),
+  pdfUrl: text("pdfUrl"), // URL do PDF gerado no S3
+  pdfKey: text("pdfKey"), // Key do PDF no S3
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ChequeExchange = typeof chequeExchanges.$inferSelect;
+export type InsertChequeExchange = typeof chequeExchanges.$inferInsert;

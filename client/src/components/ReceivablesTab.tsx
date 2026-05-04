@@ -48,6 +48,7 @@ import {
   Scissors,
   Info,
   Layers,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -1564,6 +1565,85 @@ export default function ReceivablesTab() {
   const [editingCustodianId, setEditingCustodianId] = useState<number | null>(null);
   const [editingCustodianValue, setEditingCustodianValue] = useState("");
 
+  // Cheque Exchange (Troca) state
+  const [exchangeMode, setExchangeMode] = useState(false);
+  const [exchangeSelectedIds, setExchangeSelectedIds] = useState<Set<number>>(new Set());
+  const [showExchangePasswordDialog, setShowExchangePasswordDialog] = useState(false);
+  const [exchangePasswordInput, setExchangePasswordInput] = useState("");
+  const [exchangePasswordError, setExchangePasswordError] = useState(false);
+  const [exchangeAuthenticated, setExchangeAuthenticated] = useState(false);
+  const [exchangeProcessing, setExchangeProcessing] = useState(false);
+  const [showExchangeHistory, setShowExchangeHistory] = useState(false);
+
+  const createExchangeMutation = trpc.financial.createExchange.useMutation();
+  const exchangeHistoryQuery = trpc.financial.getExchangeHistory.useQuery(
+    { empresaNome: chequesOpenEmpresa || undefined },
+    { enabled: !!chequesOpenEmpresa && showExchangeHistory }
+  );
+
+  const handleExchangePasswordSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (exchangePasswordInput === "Fernando") {
+      setExchangeAuthenticated(true);
+      setShowExchangePasswordDialog(false);
+      setExchangePasswordError(false);
+      setExchangeMode(true);
+      toast.success("Acesso autorizado para troca de cheques!");
+    } else {
+      setExchangePasswordError(true);
+    }
+  };
+
+  const handleExchangeToggle = (chequeId: number) => {
+    setExchangeSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(chequeId)) next.delete(chequeId);
+      else next.add(chequeId);
+      return next;
+    });
+  };
+
+  const handleExchangeComplete = async () => {
+    if (exchangeSelectedIds.size === 0) return;
+    const allCheques = chequesQuery.data?.cheques || [];
+    const selectedCheques = allCheques.filter((c: any) => exchangeSelectedIds.has(c.id));
+    if (selectedCheques.length === 0) return;
+
+    setExchangeProcessing(true);
+    try {
+      const result = await createExchangeMutation.mutateAsync({
+        password: "Fernando",
+        empresaNome: chequesOpenEmpresa || "",
+        cheques: selectedCheques.map((c: any) => ({
+          id: c.id,
+          cliente: c.cliente || "",
+          valor: c.valor,
+          vencimentoData: c.vencimentoData || undefined,
+          emissaoData: c.emissaoData || undefined,
+          formaPagamento: c.formaPagamento || undefined,
+          descricao: c.descricao || undefined,
+          parcela: c.parcela || undefined,
+          parcelasTotal: c.parcelasTotal || undefined,
+        })),
+      });
+      if (result.success && result.pdfUrl) {
+        toast.success(`Troca concluída! ${result.totalCheques} cheques — R$ ${result.totalValor?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`);
+        window.open(result.pdfUrl, "_blank");
+        // Reset exchange mode
+        setExchangeMode(false);
+        setExchangeSelectedIds(new Set());
+        setExchangeAuthenticated(false);
+        exchangeHistoryQuery.refetch();
+      } else {
+        toast.error(result.error || "Erro ao processar troca");
+      }
+    } catch (err: any) {
+      toast.error("Erro ao processar troca: " + (err.message || "erro desconhecido"));
+    } finally {
+      setExchangeProcessing(false);
+    }
+  };
+
   // Discount alert cascading blink
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
@@ -2114,18 +2194,88 @@ export default function ReceivablesTab() {
                         return (
                           <div className="border border-slate-200 rounded-xl overflow-hidden">
                             <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                              <span className="text-xs font-semibold text-slate-600">
-                                {displayCheques.length} cheque{displayCheques.length !== 1 ? "s" : ""}
-                                {chequeSelectedFilter ? " filtrado" + (displayCheques.length !== 1 ? "s" : "") : ""}
-                              </span>
-                              <span className="text-xs font-bold text-amber-600">
-                                Total: R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                              </span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-semibold text-slate-600">
+                                  {displayCheques.length} cheque{displayCheques.length !== 1 ? "s" : ""}
+                                  {chequeSelectedFilter ? " filtrado" + (displayCheques.length !== 1 ? "s" : "") : ""}
+                                </span>
+                                {exchangeMode && exchangeSelectedIds.size > 0 && (
+                                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                                    {exchangeSelectedIds.size} selecionado{exchangeSelectedIds.size !== 1 ? "s" : ""}
+                                    {" "}— R$ {displayCheques.filter((c: any) => exchangeSelectedIds.has(c.id)).reduce((s: number, c: any) => s + c.valor, 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-amber-600">
+                                  Total: R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                </span>
+                                {!exchangeMode ? (
+                                  <button
+                                    onClick={() => {
+                                      if (!exchangeAuthenticated) {
+                                        setShowExchangePasswordDialog(true);
+                                        setExchangePasswordInput("");
+                                        setExchangePasswordError(false);
+                                      } else {
+                                        setExchangeMode(true);
+                                      }
+                                    }}
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200 transition-colors"
+                                    title="Selecionar cheques para troca"
+                                  >
+                                    <Scissors className="w-3 h-3" />
+                                    Troca
+                                  </button>
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      onClick={() => { setExchangeMode(false); setExchangeSelectedIds(new Set()); }}
+                                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 transition-colors"
+                                    >
+                                      <X className="w-3 h-3" />
+                                      Cancelar
+                                    </button>
+                                    <button
+                                      onClick={handleExchangeComplete}
+                                      disabled={exchangeSelectedIds.size === 0 || exchangeProcessing}
+                                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {exchangeProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                                      Concluído
+                                    </button>
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => setShowExchangeHistory(true)}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-200 transition-colors"
+                                  title="Histórico de trocas"
+                                >
+                                  <History className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
                             <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                               <table className="w-full text-xs">
                                 <thead className="bg-slate-50 sticky top-0 z-10">
                                   <tr className="border-b border-slate-200">
+                                    {exchangeMode && (
+                                      <th className="px-2 py-2 text-center w-8">
+                                        <input
+                                          type="checkbox"
+                                          checked={displayCheques.length > 0 && displayCheques.every((c: any) => exchangeSelectedIds.has(c.id))}
+                                          onChange={(e) => {
+                                            if (e.target.checked) {
+                                              setExchangeSelectedIds(new Set(displayCheques.map((c: any) => c.id)));
+                                            } else {
+                                              setExchangeSelectedIds(new Set());
+                                            }
+                                          }}
+                                          className="w-3.5 h-3.5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                          title="Selecionar todos"
+                                        />
+                                      </th>
+                                    )}
                                     <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Vencimento</th>
                                     <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Emissão</th>
                                     <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Cliente</th>
@@ -2158,7 +2308,17 @@ export default function ReceivablesTab() {
                                     };
                                     const badgeColor = estadoColors[cheque.estadoCheque] || "bg-slate-100 text-slate-700";
                                     return (
-                                      <tr key={cheque.id || idx} className={`border-b border-slate-100 hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
+                                      <tr key={cheque.id || idx} className={`border-b border-slate-100 hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/30"} ${exchangeMode && exchangeSelectedIds.has(cheque.id) ? "!bg-indigo-50 ring-1 ring-inset ring-indigo-200" : ""}`}>
+                                        {exchangeMode && (
+                                          <td className="px-2 py-2 text-center">
+                                            <input
+                                              type="checkbox"
+                                              checked={exchangeSelectedIds.has(cheque.id)}
+                                              onChange={() => handleExchangeToggle(cheque.id)}
+                                              className="w-3.5 h-3.5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            />
+                                          </td>
+                                        )}
                                         <td className={`px-3 py-2 text-center whitespace-nowrap font-medium ${isVencido ? "text-red-600" : "text-slate-700"}`}>{venc}</td>
                                         <td className="px-3 py-2 text-center whitespace-nowrap text-slate-500">{emis}</td>
                                         <td className="px-3 py-2 text-center text-slate-700">{cheque.cliente}</td>
@@ -2225,7 +2385,7 @@ export default function ReceivablesTab() {
                                 </tbody>
                                 <tfoot>
                                   <tr className="bg-amber-50 border-t-2 border-amber-300">
-                                    <td colSpan={3} className="px-3 py-2.5 text-left text-xs font-bold text-amber-800 whitespace-nowrap">TOTAL ({displayCheques.length} cheques)</td>
+                                    <td colSpan={exchangeMode ? 4 : 3} className="px-3 py-2.5 text-left text-xs font-bold text-amber-800 whitespace-nowrap">TOTAL ({displayCheques.length} cheques)</td>
                                     <td className="px-3 py-2.5 text-center text-sm font-extrabold text-amber-700 whitespace-nowrap">R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                                     <td colSpan={(chequeSelectedFilter === "DISPONIVEL" || displayCheques.some((c: any) => c.estadoCheque === "DISPONIVEL")) ? 3 : 2}></td>
                                   </tr>
@@ -2377,6 +2537,122 @@ export default function ReceivablesTab() {
           <p>Nenhum recebível encontrado</p>
         </div>
       )}
+
+      {/* Exchange Password Dialog */}
+      <Dialog open={showExchangePasswordDialog} onOpenChange={(v) => { if (!v) { setExchangePasswordInput(""); setExchangePasswordError(false); } setShowExchangePasswordDialog(v); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-indigo-600" />
+              Autorização para Troca de Cheques
+            </DialogTitle>
+            <DialogDescription>
+              Digite a senha do Fernando para selecionar cheques para troca.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleExchangePasswordSubmit}>
+            <div className="py-4">
+              <Input
+                type="password"
+                placeholder="Digite a senha..."
+                value={exchangePasswordInput}
+                onChange={(e) => { setExchangePasswordInput(e.target.value); setExchangePasswordError(false); }}
+                autoFocus
+                className={exchangePasswordError ? "border-red-500 focus-visible:ring-red-500" : ""}
+              />
+              {exchangePasswordError && (
+                <p className="text-xs text-red-500 mt-2">Senha incorreta. Tente novamente.</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setExchangePasswordInput(""); setExchangePasswordError(false); setShowExchangePasswordDialog(false); }}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={!exchangePasswordInput.trim()} className="bg-indigo-600 hover:bg-indigo-700">
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Confirmar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Exchange History Panel */}
+      <Dialog open={showExchangeHistory} onOpenChange={setShowExchangeHistory}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-indigo-600" />
+              Histórico de Trocas de Cheques
+            </DialogTitle>
+            <DialogDescription>
+              Registro de todas as trocas realizadas com PDFs salvos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            {exchangeHistoryQuery.isLoading ? (
+              <div className="text-center py-8 text-slate-400">
+                <Loader2 className="w-6 h-6 mx-auto animate-spin mb-2" />
+                Carregando histórico...
+              </div>
+            ) : !exchangeHistoryQuery.data || exchangeHistoryQuery.data.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                Nenhuma troca registrada ainda.
+              </div>
+            ) : (
+              exchangeHistoryQuery.data.map((exchange: any) => (
+                <div key={exchange.id} className="border border-slate-200 rounded-xl p-4 hover:border-indigo-200 hover:bg-indigo-50/30 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                        {exchange.totalCheques} cheque{exchange.totalCheques !== 1 ? "s" : ""}
+                      </span>
+                      <span className="text-xs font-bold text-amber-700">
+                        R$ {exchange.totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400">
+                        {new Date(exchange.createdAt).toLocaleDateString("pt-BR")} às {new Date(exchange.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      {exchange.pdfUrl && (
+                        <a
+                          href={exchange.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors"
+                        >
+                          <FileDown className="w-3 h-3" />
+                          PDF
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-slate-500">
+                    <span className="font-medium">Empresa:</span> {exchange.empresaNome} • <span className="font-medium">Autorizado por:</span> {exchange.operador}
+                  </div>
+                  {exchange.cheques && exchange.cheques.length > 0 && (
+                    <div className="mt-2 border-t border-slate-100 pt-2">
+                      <div className="grid grid-cols-1 gap-0.5">
+                        {exchange.cheques.slice(0, 5).map((c: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between text-[10px] text-slate-500 py-0.5">
+                            <span className="truncate max-w-[200px]">{c.cliente || "-"}</span>
+                            <span className="font-medium text-slate-700">R$ {c.valor?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        ))}
+                        {exchange.cheques.length > 5 && (
+                          <div className="text-[10px] text-slate-400 italic">... e mais {exchange.cheques.length - 5} cheque(s)</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

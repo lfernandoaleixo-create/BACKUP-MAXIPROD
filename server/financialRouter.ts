@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
@@ -6633,6 +6633,163 @@ ${acoesTexto}
         map[row.chequeId] = row.responsavel;
       }
       return map;
+    }),
+
+  /**
+   * validateExchangePassword - Valida a senha do Fernando para autorizar troca de cheques
+   */
+  validateExchangePassword: publicProcedure
+    .input(z.object({
+      password: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const EXCHANGE_PASSWORDS = ["Fernando"];
+      if (!EXCHANGE_PASSWORDS.includes(input.password)) {
+        return { success: false, error: "Senha incorreta" };
+      }
+      return { success: true };
+    }),
+
+  /**
+   * createExchange - Cria um registro de troca de cheques e gera PDF
+   */
+  createExchange: publicProcedure
+    .input(z.object({
+      password: z.string(),
+      empresaNome: z.string(),
+      cheques: z.array(z.object({
+        id: z.number(),
+        cliente: z.string(),
+        valor: z.number(),
+        vencimentoData: z.string().optional(),
+        emissaoData: z.string().optional(),
+        formaPagamento: z.string().optional(),
+        descricao: z.string().optional(),
+        parcela: z.union([z.string(), z.number()]).optional(),
+        parcelasTotal: z.union([z.string(), z.number()]).optional(),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      // Validate password
+      const EXCHANGE_PASSWORDS = ["Fernando"];
+      if (!EXCHANGE_PASSWORDS.includes(input.password)) {
+        return { success: false, error: "Senha incorreta" };
+      }
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      const totalValor = input.cheques.reduce((s, c) => s + c.valor, 0);
+      const totalCheques = input.cheques.length;
+
+      // Generate PDF
+      const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+      const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
+      let page = pdfDoc.addPage([595, 842]); // A4
+      let y = 800;
+      const margin = 40;
+      const pageWidth = 595 - 2 * margin;
+
+      // Header
+      page.drawText("CONTROLE DE TROCA DE CHEQUES", { x: margin, y, font: fontBold, size: 16, color: rgb(0.2, 0.2, 0.2) });
+      y -= 25;
+      page.drawText(`Empresa: ${input.empresaNome}`, { x: margin, y, font, size: 11, color: rgb(0.3, 0.3, 0.3) });
+      y -= 18;
+      page.drawText(`Data: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, { x: margin, y, font, size: 11, color: rgb(0.3, 0.3, 0.3) });
+      y -= 18;
+      page.drawText(`Autorizado por: Fernando`, { x: margin, y, font, size: 11, color: rgb(0.3, 0.3, 0.3) });
+      y -= 30;
+
+      // Line separator
+      page.drawLine({ start: { x: margin, y }, end: { x: 595 - margin, y }, thickness: 1, color: rgb(0.8, 0.8, 0.8) });
+      y -= 20;
+
+      // Table header
+      const colWidths = [30, 160, 70, 70, 80, 105];
+      const colX = [margin];
+      for (let i = 1; i < colWidths.length; i++) colX.push(colX[i-1] + colWidths[i-1]);
+      
+      const headers = ["#", "Cliente", "Valor", "Vencimento", "Emissão", "Forma Pgto"];
+      headers.forEach((h, i) => {
+        page.drawText(h, { x: colX[i], y, font: fontBold, size: 9, color: rgb(0.3, 0.3, 0.3) });
+      });
+      y -= 5;
+      page.drawLine({ start: { x: margin, y }, end: { x: 595 - margin, y }, thickness: 0.5, color: rgb(0.85, 0.85, 0.85) });
+      y -= 15;
+
+      // Table rows
+      for (let i = 0; i < input.cheques.length; i++) {
+        if (y < 80) {
+          page = pdfDoc.addPage([595, 842]);
+          y = 800;
+        }
+        const c = input.cheques[i];
+        const venc = c.vencimentoData ? new Date(c.vencimentoData).toLocaleDateString("pt-BR") : "-";
+        const emis = c.emissaoData ? new Date(c.emissaoData).toLocaleDateString("pt-BR") : "-";
+        const valorStr = `R$ ${c.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+        const forma = (c.formaPagamento || "").replace(/^Cheque\s*/i, "").trim() || c.formaPagamento || "-";
+        const clienteShort = (c.cliente || "-").substring(0, 28);
+
+        const rowData = [String(i + 1), clienteShort, valorStr, venc, emis, forma];
+        rowData.forEach((text, j) => {
+          page.drawText(text, { x: colX[j], y, font, size: 8.5, color: rgb(0.2, 0.2, 0.2) });
+        });
+        y -= 16;
+      }
+
+      // Total footer
+      y -= 10;
+      page.drawLine({ start: { x: margin, y: y + 5 }, end: { x: 595 - margin, y: y + 5 }, thickness: 1, color: rgb(0.8, 0.6, 0) });
+      y -= 5;
+      page.drawText(`TOTAL: ${totalCheques} cheque${totalCheques !== 1 ? "s" : ""} — R$ ${totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, {
+        x: margin, y, font: fontBold, size: 12, color: rgb(0.6, 0.4, 0)
+      });
+
+      const pdfBytes = await pdfDoc.save();
+      const pdfBuffer = Buffer.from(pdfBytes);
+
+      // Upload to S3
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const fileKey = `cheque-exchanges/${input.empresaNome}-${timestamp}.pdf`;
+      const { url: pdfUrl } = await storagePut(fileKey, pdfBuffer, "application/pdf");
+
+      // Save to database
+      await db.insert(chequeExchanges).values({
+        empresaNome: input.empresaNome,
+        operador: "Fernando",
+        chequesJson: JSON.stringify(input.cheques),
+        totalValor: totalValor.toFixed(2),
+        totalCheques,
+        pdfUrl,
+        pdfKey: fileKey,
+      });
+
+      return { success: true, pdfUrl, totalValor, totalCheques };
+    }),
+
+  /**
+   * getExchangeHistory - Retorna histórico de trocas de cheques
+   */
+  getExchangeHistory: publicProcedure
+    .input(z.object({
+      empresaNome: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+      const conditions = input?.empresaNome
+        ? eq(chequeExchanges.empresaNome, input.empresaNome)
+        : undefined;
+      const rows = conditions
+        ? await db.select().from(chequeExchanges).where(conditions).orderBy(desc(chequeExchanges.createdAt))
+        : await db.select().from(chequeExchanges).orderBy(desc(chequeExchanges.createdAt));
+      return rows.map(r => ({
+        ...r,
+        totalValor: parseFloat(r.totalValor as string),
+        cheques: JSON.parse(r.chequesJson as string),
+      }));
     }),
 
   /**

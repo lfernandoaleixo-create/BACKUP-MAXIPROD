@@ -3346,3 +3346,9 @@
 - [x] Coluna "Responsável" na tabela de cheques com badge verde destacado
 - [x] Campo editável inline (clique para definir, Enter para salvar, Esc para cancelar)
 - [x] Testes automatizados para endpoints de custodian (5 testes passando)
+- [x] Checkbox ao lado de cada cheque na tabela para seleção de troca
+- [x] Validação por senha ("Fernando") ao ticar o primeiro cheque
+- [x] Botão "Concluído" aparece após selecionar cheques para troca
+- [x] Geração de PDF com cheques selecionados (todas informações + valor total)
+- [x] Tabela cheque_exchanges no banco para histórico de trocas com PDF salvo
+- [x] Painel de histórico de trocas com PDFs salvos para consulta futura
