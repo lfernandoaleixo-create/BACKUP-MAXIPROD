@@ -1610,7 +1610,7 @@ export const supplierContacts = mysqlTable("supplier_contacts", {
   formaContato: mysqlEnum("formaContato", ["ligacao", "email", "whatsapp", "outra"]).notNull(),
   formaContatoOutra: text("formaContatoOutra"), // obrigatório se formaContato = "outra"
   observacao: text("observacao"),
-  status: mysqlEnum("status", ["ja_cliente", "possivel_cliente", "novo_cliente", "sem_interesse"]).notNull(),
+  status: mysqlEnum("status", ["ja_cliente", "possivel_cliente", "novo_cliente", "sem_interesse", "nao_possivel_contato"]).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type SupplierContact = typeof supplierContacts.$inferSelect;

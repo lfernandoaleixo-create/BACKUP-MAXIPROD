@@ -1,0 +1,1 @@
+ALTER TABLE `supplier_contacts` MODIFY COLUMN `status` enum('ja_cliente','possivel_cliente','novo_cliente','sem_interesse','nao_possivel_contato') NOT NULL;
