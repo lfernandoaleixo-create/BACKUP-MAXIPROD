@@ -104,10 +104,10 @@ export default function FornecedoresBrasileirosTab() {
   return (
     <div className="space-y-4">
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
           <p className="text-2xl font-bold text-slate-800">{stats.data?.totalSuppliers || 0}</p>
-          <p className="text-xs text-slate-500 mt-1">Possíveis Clientes</p>
+          <p className="text-xs text-slate-500 mt-1">Cadastros</p>
         </div>
         <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
           <p className="text-2xl font-bold text-teal-600">{stats.data?.totalContacts || 0}</p>
@@ -120,6 +120,14 @@ export default function FornecedoresBrasileirosTab() {
         <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
           <p className="text-2xl font-bold text-amber-600">{stats.data?.possivelCliente || 0}</p>
           <p className="text-xs text-slate-500 mt-1">Possíveis Clientes</p>
+        </div>
+        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+          <p className="text-2xl font-bold text-blue-600">{stats.data?.jaCliente || 0}</p>
+          <p className="text-xs text-slate-500 mt-1">Já é Cliente</p>
+        </div>
+        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+          <p className="text-2xl font-bold text-red-600">{stats.data?.semInteresse || 0}</p>
+          <p className="text-xs text-slate-500 mt-1">Sem Interesse</p>
         </div>
       </div>
 
