@@ -3339,3 +3339,9 @@
 - [x] Corrigir "à Receber" para "a Receber" (sem crase) em todos os lugares
 - [x] Remover truncate/corte de nomes de clientes e descrições na tabela de cheques
 - [x] Barra de pesquisa no painel de Cheques (buscar por cliente, palavras-chave, forma de pagamento)
+- [x] Ao clicar no filtro "Cheque" dentro de um mês específico, abrir o card Controle de Cheques filtrado por aquele mês
+- [x] Backend: parâmetro mesKey (YYYY-MM) no endpoint getCheques para filtrar cheques por mês de vencimento
+- [x] Frontend: estado chequeMesKey + callback onOpenCheques no ContaFiltersAndTable
+- [x] Subtítulo do painel mostra "Empresa — Mês Ano" quando filtrado por mês
+- [x] Botão "Todos os Meses" no cabeçalho do painel para limpar filtro de mês
+- [x] Fechar painel (X) também reseta o filtro de mês

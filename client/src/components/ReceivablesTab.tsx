@@ -506,6 +506,7 @@ function ContaFiltersAndTable({
   mesKey,
   showHistoryPanel,
   setShowHistoryPanel,
+  onOpenCheques,
 }: {
   allContaItems: ItemData[];
   contaLabel: string;
@@ -524,6 +525,7 @@ function ContaFiltersAndTable({
   mesKey: string;
   showHistoryPanel: boolean;
   setShowHistoryPanel: (show: boolean) => void;
+  onOpenCheques?: (mesKey: string) => void;
 }) {
   const { operator } = useOperator();
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
@@ -712,7 +714,12 @@ function ContaFiltersAndTable({
             const Icon = opt.icon;
             const isActive = formaFilter === opt.value;
             return (
-              <button key={opt.value} onClick={() => setFormaFilter(opt.value)}
+              <button key={opt.value} onClick={() => {
+                  setFormaFilter(opt.value);
+                  if (opt.value === "Cheque" && onOpenCheques) {
+                    onOpenCheques(mesKey);
+                  }
+                }}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-bold transition-all duration-200 ${
                   isActive
                     ? `${opt.activeBg} ${opt.activeBorder} ${opt.activeText} ${opt.glow} scale-[1.02]`
@@ -1536,10 +1543,11 @@ export default function ReceivablesTab() {
   const [chequesOpenEmpresa, setChequesOpenEmpresa] = useState<string | null>(null);
   const [chequeSelectedFilter, setChequeSelectedFilter] = useState<string | null>(null);
   const [chequeSearchQuery, setChequeSearchQuery] = useState("");
+  const [chequeMesKey, setChequeMesKey] = useState<string | null>(null);
 
   // Fetch cheques data from backend
   const chequesQuery = trpc.financial.getCheques.useQuery(
-    { empresaNome: chequesOpenEmpresa || undefined },
+    { empresaNome: chequesOpenEmpresa || undefined, mesKey: chequeMesKey || undefined },
     { enabled: !!chequesOpenEmpresa }
   );
 
@@ -1886,7 +1894,15 @@ export default function ReceivablesTab() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setChequesOpenEmpresa(prev => prev === emp.nome ? null : emp.nome);
+                      if (chequesOpenEmpresa === emp.nome) {
+                        setChequesOpenEmpresa(null);
+                        setChequeMesKey(null);
+                      } else {
+                        setChequesOpenEmpresa(emp.nome);
+                        setChequeMesKey(null);
+                        setChequeSelectedFilter(null);
+                        setChequeSearchQuery("");
+                      }
                     }}
                     className="group relative inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 text-white shadow-md hover:shadow-lg hover:shadow-amber-300/40 hover:scale-[1.04] active:scale-[0.98] border border-amber-300/30"
                   >
@@ -1913,15 +1929,28 @@ export default function ReceivablesTab() {
                       </div>
                       <div>
                         <h4 className="text-white font-bold text-base tracking-wide">Controle de Cheques</h4>
-                        <p className="text-amber-100 text-xs">{shortEmpresaName(emp.nome)} — Gestão completa de cheques</p>
+                        <p className="text-amber-100 text-xs">
+                          {shortEmpresaName(emp.nome)} — {chequeMesKey ? formatMonth(chequeMesKey) : "Gestão completa de cheques"}
+                        </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setChequesOpenEmpresa(null)}
-                      className="text-white/70 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {chequeMesKey && (
+                        <button
+                          onClick={() => setChequeMesKey(null)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white/90 bg-white/15 hover:bg-white/25 border border-white/20 transition-all"
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>Todos os Meses</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => { setChequesOpenEmpresa(null); setChequeMesKey(null); }}
+                        className="text-white/70 hover:text-white hover:bg-white/10 rounded-lg p-1.5 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   <div className="px-5 py-4">
                     {/* Search bar */}
@@ -2246,6 +2275,12 @@ export default function ReceivablesTab() {
                                     mesKey={mes.mes}
                                     showHistoryPanel={showHistoryPanel === contaKey}
                                     setShowHistoryPanel={(show: boolean) => setShowHistoryPanel(show ? contaKey : null)}
+                                    onOpenCheques={(mk) => {
+                                      setChequesOpenEmpresa(emp.nome);
+                                      setChequeMesKey(mk);
+                                      setChequeSelectedFilter(null);
+                                      setChequeSearchQuery("");
+                                    }}
                                   />
                                 )}
                               </div>

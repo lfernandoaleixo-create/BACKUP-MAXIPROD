@@ -6488,6 +6488,7 @@ ${acoesTexto}
     .input(z.object({
       empresaNome: z.string().optional(),
       estadoCheque: z.string().optional(), // DISPONIVEL, A_RECEBER, COMPENSACAO, etc.
+      mesKey: z.string().optional(), // YYYY-MM to filter by month
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -6502,6 +6503,13 @@ ${acoesTexto}
 
       if (input?.empresaNome) {
         conditions.push(eq(accountsReceivable.empresaNome, input.empresaNome));
+      }
+
+      // Filter by month (vencimentoData) if specified
+      // Dates are stored as ISO strings like '2026-05-07T12:00:00.000-03:00'
+      // Use LIKE to match YYYY-MM prefix
+      if (input?.mesKey) {
+        conditions.push(sql`${accountsReceivable.vencimentoData} LIKE ${input.mesKey + '%'}`);
       }
 
       const rows = await db.select({
