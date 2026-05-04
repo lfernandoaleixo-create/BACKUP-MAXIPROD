@@ -68,7 +68,6 @@ import WeekReconciliationCard from "@/components/WeekReconciliationCard";
 import ResumoFinanceiroCard from "@/components/ResumoFinanceiroCard";
 import InadimplenciaTab from "@/components/InadimplenciaTab";
 import ReceivablesTab from "@/components/ReceivablesTab";
-import ChequesPanel from "@/components/ChequesPanel";
 import EcommerceTab from "@/components/EcommerceTab";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -2066,7 +2065,6 @@ export default function Financial() {
   const ECOMMERCE_TAB_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
   const canSeeEcommerce = operator && ECOMMERCE_TAB_OPERATORS.includes(operator.name);
   const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce">("visao-geral");
-  const [recebiveisSubTab, setRecebiveisSubTab] = useState<"contas" | "cheques">("contas");
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
   const recebiveisBlinking = discountAlerts?.isAlertOperator && discountAlerts.blinkLevel === "recebiveis-tab" && discountAlerts.unreadCount > 0;
@@ -2198,27 +2196,7 @@ export default function Financial() {
         {activeTab === "inadimplencia" && <InadimplenciaTab />}
 
         {/* Tab: Recebíveis */}
-        {activeTab === "recebiveis" && (
-          <div className="space-y-4">
-            {/* Sub-tabs within Recebíveis */}
-            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-              <button
-                onClick={() => setRecebiveisSubTab("contas")}
-                className={`px-4 py-2 rounded-md text-xs font-medium transition-all ${recebiveisSubTab === "contas" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"}`}
-              >
-                Contas a Receber
-              </button>
-              <button
-                onClick={() => setRecebiveisSubTab("cheques")}
-                className={`px-4 py-2 rounded-md text-xs font-medium transition-all ${recebiveisSubTab === "cheques" ? "bg-white text-amber-700 shadow-sm" : "text-slate-600 hover:text-slate-800"}`}
-              >
-                Cheques
-              </button>
-            </div>
-            {recebiveisSubTab === "contas" && <ReceivablesTab />}
-            {recebiveisSubTab === "cheques" && <ChequesPanel />}
-          </div>
-        )}
+        {activeTab === "recebiveis" && <ReceivablesTab />}
 
         {/* Tab: E-commerce */}
         {activeTab === "ecommerce" && canSeeEcommerce && <EcommerceTab />}
