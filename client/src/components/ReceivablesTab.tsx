@@ -2125,8 +2125,9 @@ export default function ReceivablesTab() {
                                 </tbody>
                                 <tfoot>
                                   <tr className="bg-amber-50 border-t-2 border-amber-300">
-                                    <td className="px-3 py-2.5 text-left text-xs font-bold text-amber-800 whitespace-nowrap">TOTAL ({displayCheques.length} cheques)</td>
-                                    <td className="px-3 py-2.5 text-left text-sm font-extrabold text-amber-700 whitespace-nowrap" colSpan={5}>R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                    <td colSpan={3} className="px-3 py-2.5 text-left text-xs font-bold text-amber-800 whitespace-nowrap">TOTAL ({displayCheques.length} cheques)</td>
+                                    <td className="px-3 py-2.5 text-center text-sm font-extrabold text-amber-700 whitespace-nowrap">R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                    <td colSpan={2}></td>
                                   </tr>
                                 </tfoot>
                               </table>
