@@ -3323,3 +3323,7 @@
 ## Botão Cheques no card de empresa (Recebíveis)
 - [ ] Adicionar botão "Cheques" estiloso no header de cada empresa (Palitos, Varetas, Espetos)
 - [ ] Ao clicar, abrir card amplo e completo (conteúdo a definir pelo usuário)
+- [x] 9 estados de cheque como cards clicáveis/filtros dentro do painel Cheques
+- [x] Legendas explicativas para cada estado de cheque
+- [x] Opção "Todos" para ver todos os cheques de todos os estados
+- [x] Visual moderno e sofisticado nos cards de filtro

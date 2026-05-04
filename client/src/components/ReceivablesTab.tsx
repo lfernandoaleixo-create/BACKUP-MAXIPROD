@@ -40,6 +40,14 @@ import {
   Send,
   ChevronUp,
   Receipt,
+  HandCoins,
+  Timer,
+  Building,
+  RotateCcw,
+  Ban,
+  Scissors,
+  Info,
+  Layers,
 } from "lucide-react";
 import {
   Dialog,
@@ -1526,6 +1534,7 @@ export default function ReceivablesTab() {
   const [showHistoryPanel, setShowHistoryPanel] = useState<string | null>(null);
   const [showGlobalHistory, setShowGlobalHistory] = useState(false);
   const [chequesOpenEmpresa, setChequesOpenEmpresa] = useState<string | null>(null);
+  const [chequeSelectedFilter, setChequeSelectedFilter] = useState<string | null>(null);
 
   // Discount alert cascading blink
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
@@ -1907,12 +1916,92 @@ export default function ReceivablesTab() {
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="px-6 py-10 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mb-4 shadow-sm">
-                      <Receipt className="w-8 h-8 text-amber-500" />
+                  <div className="px-5 py-4">
+                    {/* Filter: Todos */}
+                    <button
+                      onClick={() => setChequeSelectedFilter(chequeSelectedFilter === null ? null : null)}
+                      className={`w-full mb-3 px-4 py-3 rounded-xl border-2 transition-all duration-200 flex items-center gap-3 ${
+                        chequeSelectedFilter === null
+                          ? "border-amber-400 bg-amber-50 shadow-md ring-2 ring-amber-300/50"
+                          : "border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/30"
+                      }`}
+                    >
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                        chequeSelectedFilter === null ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500"
+                      }`}>
+                        <Layers className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className={`text-sm font-bold ${chequeSelectedFilter === null ? "text-amber-700" : "text-slate-700"}`}>TODOS OS CHEQUES</div>
+                        <div className="text-xs text-slate-500">Visualizar todos os cheques de todos os estados</div>
+                      </div>
+                      {chequeSelectedFilter === null && <CheckCircle2 className="w-5 h-5 text-amber-500" />}
+                    </button>
+
+                    {/* Grid of 9 cheque states */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                      {[
+                        { id: "DISPONIVEL", num: 1, label: "Cheque Disponível", desc: "Cheques que estão em nossas mãos", icon: HandCoins, color: "emerald" },
+                        { id: "A_RECEBER", num: 2, label: "Cheque à Receber de Clientes", desc: "Clientes se comprometeram a encaminhar para empresa", icon: Clock, color: "blue" },
+                        { id: "COMPENSACAO", num: 3, label: "Cheque em Compensação", desc: "Depositados no banco aguardando creditar na conta", icon: Timer, color: "cyan" },
+                        { id: "CUSTODIA_SICOOB", num: 4, label: "Cheque Custódia Sicoob", desc: "Depositados no Sicoob aguardando depósito automático", icon: Building, color: "violet" },
+                        { id: "CUSTODIA_SICREDI", num: 5, label: "Cheque Custódia Sicredi", desc: "Depositados no Sicredi aguardando depósito automático", icon: Building, color: "purple" },
+                        { id: "LINHA_11", num: 6, label: "Cheque Linha 11", desc: "Voltaram porque não tinha valor na conta do cliente", icon: RotateCcw, color: "red" },
+                        { id: "LINHA_12", num: 7, label: "Cheque Linha 12", desc: "Já foi 2 vezes na conta do cliente e não tinha saldo", icon: Ban, color: "rose" },
+                        { id: "VOLTOU_OUTROS", num: 8, label: "Cheque Voltou Outros Motivos", desc: "Voltaram por vários motivos (rasuras, assinaturas, etc.)", icon: AlertTriangle, color: "orange" },
+                        { id: "FACTORING", num: 9, label: "Cheque em Factoring", desc: "Estão em factoring aguardando desconto", icon: Scissors, color: "amber" },
+                      ].map((state) => {
+                        const isActive = chequeSelectedFilter === state.id;
+                        const colorMap: Record<string, { bg: string; activeBg: string; border: string; activeBorder: string; iconBg: string; activeIconBg: string; text: string; activeText: string; num: string; activeNum: string }> = {
+                          emerald: { bg: "bg-white", activeBg: "bg-emerald-50", border: "border-slate-200", activeBorder: "border-emerald-400", iconBg: "bg-emerald-100 text-emerald-600", activeIconBg: "bg-emerald-500 text-white", text: "text-slate-700", activeText: "text-emerald-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-emerald-500 text-white" },
+                          blue: { bg: "bg-white", activeBg: "bg-blue-50", border: "border-slate-200", activeBorder: "border-blue-400", iconBg: "bg-blue-100 text-blue-600", activeIconBg: "bg-blue-500 text-white", text: "text-slate-700", activeText: "text-blue-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-blue-500 text-white" },
+                          cyan: { bg: "bg-white", activeBg: "bg-cyan-50", border: "border-slate-200", activeBorder: "border-cyan-400", iconBg: "bg-cyan-100 text-cyan-600", activeIconBg: "bg-cyan-500 text-white", text: "text-slate-700", activeText: "text-cyan-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-cyan-500 text-white" },
+                          violet: { bg: "bg-white", activeBg: "bg-violet-50", border: "border-slate-200", activeBorder: "border-violet-400", iconBg: "bg-violet-100 text-violet-600", activeIconBg: "bg-violet-500 text-white", text: "text-slate-700", activeText: "text-violet-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-violet-500 text-white" },
+                          purple: { bg: "bg-white", activeBg: "bg-purple-50", border: "border-slate-200", activeBorder: "border-purple-400", iconBg: "bg-purple-100 text-purple-600", activeIconBg: "bg-purple-500 text-white", text: "text-slate-700", activeText: "text-purple-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-purple-500 text-white" },
+                          red: { bg: "bg-white", activeBg: "bg-red-50", border: "border-slate-200", activeBorder: "border-red-400", iconBg: "bg-red-100 text-red-600", activeIconBg: "bg-red-500 text-white", text: "text-slate-700", activeText: "text-red-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-red-500 text-white" },
+                          rose: { bg: "bg-white", activeBg: "bg-rose-50", border: "border-slate-200", activeBorder: "border-rose-400", iconBg: "bg-rose-100 text-rose-600", activeIconBg: "bg-rose-500 text-white", text: "text-slate-700", activeText: "text-rose-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-rose-500 text-white" },
+                          orange: { bg: "bg-white", activeBg: "bg-orange-50", border: "border-slate-200", activeBorder: "border-orange-400", iconBg: "bg-orange-100 text-orange-600", activeIconBg: "bg-orange-500 text-white", text: "text-slate-700", activeText: "text-orange-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-orange-500 text-white" },
+                          amber: { bg: "bg-white", activeBg: "bg-amber-50", border: "border-slate-200", activeBorder: "border-amber-400", iconBg: "bg-amber-100 text-amber-600", activeIconBg: "bg-amber-500 text-white", text: "text-slate-700", activeText: "text-amber-700", num: "bg-slate-100 text-slate-500", activeNum: "bg-amber-500 text-white" },
+                        };
+                        const c = colorMap[state.color] || colorMap.amber;
+                        const StateIcon = state.icon;
+                        return (
+                          <button
+                            key={state.id}
+                            onClick={() => setChequeSelectedFilter(isActive ? null : state.id)}
+                            className={`group relative px-3 py-3 rounded-xl border-2 transition-all duration-200 text-left flex items-start gap-2.5 ${
+                              isActive
+                                ? `${c.activeBg} ${c.activeBorder} shadow-md ring-1 ring-offset-1 ${c.activeBorder.replace("border", "ring")}`
+                                : `${c.bg} ${c.border} hover:shadow-sm hover:${c.activeBorder}`
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                              isActive ? c.activeIconBg : c.iconBg
+                            }`}>
+                              <StateIcon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 ${
+                                  isActive ? c.activeNum : c.num
+                                }`}>{state.num}</span>
+                                <span className={`text-xs font-bold leading-tight truncate ${
+                                  isActive ? c.activeText : c.text
+                                }`}>{state.label}</span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 leading-snug mt-0.5 line-clamp-2">{state.desc}</p>
+                            </div>
+                            {isActive && <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${c.activeText}`} />}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <h5 className="text-lg font-bold text-slate-700 mb-1">Em breve</h5>
-                    <p className="text-sm text-slate-500 max-w-md">O controle detalhado de cheques desta empresa será configurado aqui. Aguardando definição das informações a serem exibidas.</p>
+
+                    {/* Info legend toggle */}
+                    <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+                      <Info className="w-3.5 h-3.5" />
+                      <span>Clique em um estado para filtrar os cheques. Os dados serão carregados em breve.</span>
+                    </div>
                   </div>
                 </div>
               )}
