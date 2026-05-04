@@ -222,4 +222,81 @@ export const suppliersRouter = router({
       naoPossivelContato: statusCounts?.naoPossivelContato || 0,
     };
   }),
+
+  /**
+   * Get migration history - all contacts showing status transitions over time
+   * For each supplier with multiple contacts, shows the status change timeline
+   */
+  getMigrationHistory: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    // Get all contacts ordered by date desc, with supplier info
+    const allContacts = await db
+      .select({
+        id: supplierContacts.id,
+        supplierId: supplierContacts.supplierId,
+        vendedor: supplierContacts.vendedor,
+        formaContato: supplierContacts.formaContato,
+        formaContatoOutra: supplierContacts.formaContatoOutra,
+        observacao: supplierContacts.observacao,
+        status: supplierContacts.status,
+        createdAt: supplierContacts.createdAt,
+        supplierNome: suppliers.nome,
+        supplierEstado: suppliers.estado,
+        supplierSegmento: suppliers.segmento,
+        supplierCidade: suppliers.cidade,
+      })
+      .from(supplierContacts)
+      .innerJoin(suppliers, eq(supplierContacts.supplierId, suppliers.id))
+      .orderBy(desc(supplierContacts.createdAt));
+    
+    // Group by supplier to detect migrations
+    const bySupplier = new Map<number, typeof allContacts>();
+    for (const c of allContacts) {
+      if (!bySupplier.has(c.supplierId)) bySupplier.set(c.supplierId, []);
+      bySupplier.get(c.supplierId)!.push(c);
+    }
+    
+    // Build migration entries: for each contact, if there's a previous contact with different status, it's a migration
+    const migrations: Array<{
+      id: number;
+      supplierId: number;
+      supplierNome: string;
+      supplierEstado: string;
+      supplierSegmento: string;
+      vendedor: string;
+      statusAnterior: string | null;
+      statusNovo: string;
+      formaContato: string;
+      formaContatoOutra: string | null;
+      observacao: string | null;
+      createdAt: Date;
+    }> = [];
+    
+    Array.from(bySupplier.values()).forEach((contacts) => {
+      // contacts are ordered desc by date
+      for (let i = 0; i < contacts.length; i++) {
+        const current = contacts[i];
+        const previous = contacts[i + 1]; // older contact
+        migrations.push({
+          id: current.id,
+          supplierId: current.supplierId,
+          supplierNome: current.supplierNome,
+          supplierEstado: current.supplierEstado,
+          supplierSegmento: current.supplierSegmento,
+          vendedor: current.vendedor,
+          statusAnterior: previous ? previous.status : null,
+          statusNovo: current.status,
+          formaContato: current.formaContato,
+          formaContatoOutra: current.formaContatoOutra,
+          observacao: current.observacao,
+          createdAt: current.createdAt,
+        });
+      }
+    });
+    
+    // Sort by date desc
+    migrations.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return migrations;
+  }),
 });

@@ -10,7 +10,7 @@ import {
   Truck, Building2, MapPin, Phone, Mail, Globe, FileText,
   ChevronRight, ArrowLeft, Users, Trophy, TrendingUp,
   MessageSquare, CheckCircle2, XCircle, UserCheck, HelpCircle,
-  Send, Loader2
+  Send, Loader2, History
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,7 +29,7 @@ const FORMA_CONTATO_OPTIONS = [
   { value: "outra" as const, label: "Outra", icon: FileText },
 ];
 
-type ViewMode = "segments" | "states" | "suppliers" | "ranking" | "vendedorDetail" | "statusCards";
+type ViewMode = "segments" | "states" | "suppliers" | "ranking" | "vendedorDetail" | "statusCards" | "history";
 
 export default function FornecedoresBrasileirosTab() {
 
@@ -168,6 +168,15 @@ export default function FornecedoresBrasileirosTab() {
         >
           <Users className="w-4 h-4 inline mr-1" />
           Por Status
+        </button>
+        <button
+          onClick={() => setView("history")}
+          className={`px-3 py-1.5 rounded text-sm font-medium transition-colors cursor-pointer ${
+            view === "history" ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <History className="w-4 h-4 inline mr-1" />
+          Histórico
         </button>
       </div>
 
@@ -556,6 +565,9 @@ export default function FornecedoresBrasileirosTab() {
           })}
         </div>
       )}
+
+      {/* HISTORY VIEW - Migrações de Status */}
+      {view === "history" && <MigrationHistory />}
     </div>
   );
 }
@@ -600,6 +612,105 @@ function SupplierContactHistory({ supplierId }: { supplierId: number }) {
               </span>
             </div>
             {c.observacao && <p className="text-xs text-slate-600 mt-1 italic">{c.observacao}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Sub-component: Migration History */
+function MigrationHistory() {
+  const history = trpc.suppliers.getMigrationHistory.useQuery();
+
+  const statusLabel = (s: string) => {
+    switch (s) {
+      case "ja_cliente": return "Já é cliente";
+      case "possivel_cliente": return "Possível cliente";
+      case "novo_cliente": return "Novo cliente";
+      case "sem_interesse": return "Sem interesse";
+      case "nao_possivel_contato": return "S/ Contato";
+      default: return s;
+    }
+  };
+
+  const statusColor = (s: string) => {
+    switch (s) {
+      case "ja_cliente": return "bg-blue-100 text-blue-700";
+      case "possivel_cliente": return "bg-amber-100 text-amber-700";
+      case "novo_cliente": return "bg-emerald-100 text-emerald-700";
+      case "sem_interesse": return "bg-red-100 text-red-700";
+      case "nao_possivel_contato": return "bg-purple-100 text-purple-700";
+      default: return "bg-slate-100 text-slate-700";
+    }
+  };
+
+  if (history.isLoading) {
+    return (
+      <div className="text-center py-8">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-500 mx-auto" />
+      </div>
+    );
+  }
+
+  if (!history.data?.length) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-500">
+        Nenhum registro de contato ainda. O histórico aparecerá aqui quando os vendedores registrarem contatos.
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+        <History className="w-5 h-5 text-teal-600" />
+        <h3 className="font-semibold text-slate-800">Histórico de Migrações</h3>
+        <span className="ml-auto text-sm text-slate-500">{history.data.length} registros</span>
+      </div>
+      <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
+        {history.data.map((m) => (
+          <div key={m.id} className="p-4 hover:bg-slate-50 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-slate-800">{m.supplierNome}</span>
+                <span className="text-xs text-slate-400">({m.supplierEstado})</span>
+              </div>
+              <span className="text-xs text-slate-400">
+                {new Date(m.createdAt).toLocaleDateString("pt-BR")} {new Date(m.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              {m.statusAnterior ? (
+                <>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor(m.statusAnterior)}`}>
+                    {statusLabel(m.statusAnterior)}
+                  </span>
+                  <span className="text-slate-400">→</span>
+                </>
+              ) : (
+                <>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">Primeiro contato</span>
+                  <span className="text-slate-400">→</span>
+                </>
+              )}
+              <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor(m.statusNovo)}`}>
+                {statusLabel(m.statusNovo)}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+              <span>Vendedor: <strong className="text-slate-700">{m.vendedor}</strong></span>
+              <span>•</span>
+              <span>
+                via {m.formaContato === "ligacao" ? "Ligação" :
+                     m.formaContato === "email" ? "Email" :
+                     m.formaContato === "whatsapp" ? "WhatsApp" :
+                     m.formaContatoOutra || "Outra"}
+              </span>
+            </div>
+            {m.observacao && (
+              <p className="text-xs text-slate-600 mt-2 italic bg-slate-50 p-2 rounded">{m.observacao}</p>
+            )}
           </div>
         ))}
       </div>

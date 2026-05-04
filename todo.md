@@ -3365,3 +3365,4 @@
 - [x] Ranking de vendedores: total de contatos, eficiência (novos clientes conquistados)
 - [x] Detalhe do vendedor: lista de clientes contatados com observações e status
 - [x] Criar aba "Métrica de Vendas" dentro da página Vendas (acesso restrito: Guilherme e Fernando)
+- [x] Histórico de migrações de status (mostrar todas as transições de um status para outro, com vendedor e data)
