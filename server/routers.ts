@@ -22,6 +22,7 @@ import { ecommerceRouter } from "./ecommerceRouter";
 import { annotationRouter } from "./annotationRouter";
 import { collectionMetricsRouter } from "./collectionMetricsRouter";
 import { suppliersRouter } from "./suppliersRouter";
+import { salesMetricsRouter } from "./salesMetricsRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -35,6 +36,7 @@ export const appRouter = router({
   ecommerce: ecommerceRouter,
   annotations: annotationRouter,
   collectionMetrics: collectionMetricsRouter,
+  salesMetrics: salesMetricsRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

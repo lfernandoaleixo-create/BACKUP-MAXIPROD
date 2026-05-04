@@ -3366,3 +3366,7 @@
 - [x] Detalhe do vendedor: lista de clientes contatados com observações e status
 - [x] Criar aba "Métrica de Vendas" dentro da página Vendas (acesso restrito: Guilherme e Fernando)
 - [x] Histórico de migrações de status (mostrar todas as transições de um status para outro, com vendedor e data)
+- [x] Métrica de Vendas: ranking de vendedores por total vendido no mês
+- [x] Métrica de Vendas: detalhe por vendedor (clientes atendidos, valores)
+- [x] Métrica de Vendas: inadimplência por vendedor (quantos clientes inadimplentes cada um tem)
+- [x] Métrica de Vendas: filtro por mês (Atual / Anterior)
