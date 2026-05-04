@@ -3355,3 +3355,4 @@
 - [x] Trocar "+ definir" por "Com quem está o cheque?" na coluna Responsável
 - [x] Remover retângulo verde com traço (—) para cheques não-Disponível (só mostrar para Disponível)
 - [x] Corrigir valores dos cheques: usar saldo (valorLiquido - valorRecebidoLiquido) em vez do valor original — total agora R$ 384.040,52 = Maxiprod
+- [x] Saldo Bancário deve refletir o mês selecionado (Mês Anterior) em vez de sempre mostrar o mês atual

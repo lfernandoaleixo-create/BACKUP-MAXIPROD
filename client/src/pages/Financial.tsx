@@ -1434,8 +1434,38 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
 }
 
 /* ---- Bank Balance Card ---- */
+type BankPeriodPreset = "mes_atual" | "mes_anterior";
+
+function getBankPeriodDates(preset: BankPeriodPreset): { start: string; end: string } {
+  const now = new Date();
+  const curY = now.getFullYear();
+  const curM = now.getMonth() + 1;
+  const today = `${curY}-${String(curM).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  switch (preset) {
+    case "mes_atual": {
+      const start = `${curY}-${String(curM).padStart(2, '0')}-01`;
+      return { start, end: today };
+    }
+    case "mes_anterior": {
+      const prevDate = new Date(curY, curM - 2, 1);
+      const prevY = prevDate.getFullYear();
+      const prevM = prevDate.getMonth() + 1;
+      const lastDay = new Date(prevY, prevM, 0).getDate();
+      return {
+        start: `${prevY}-${String(prevM).padStart(2, '0')}-01`,
+        end: `${prevY}-${String(prevM).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+      };
+    }
+  }
+}
+
 function BankBalanceCard() {
-  const { data, isLoading } = trpc.financial.getBankBalancesDetailed.useQuery();
+  const [bankPeriod, setBankPeriod] = useState<BankPeriodPreset>("mes_atual");
+  const bankDates = useMemo(() => getBankPeriodDates(bankPeriod), [bankPeriod]);
+  const { data, isLoading } = trpc.financial.getBankBalancesDetailed.useQuery(
+    { startDate: bankDates.start, endDate: bankDates.end }
+  );
   const [collapsed, setCollapsed] = useState(true);
   const { data: reconStatus, refetch: refetchRecon } = trpc.financial.getBankReconciliationStatus.useQuery();
   const setReconMutation = trpc.financial.setBankReconciliation.useMutation({
@@ -1507,6 +1537,29 @@ function BankBalanceCard() {
             <p className="text-xs text-slate-500">
               {activeAccounts.length} contas | {data.periodLabel}
             </p>
+          </div>
+          {/* Period filter */}
+          <div className="ml-3 flex gap-1 bg-slate-100 rounded-md p-0.5" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setBankPeriod("mes_atual")}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded transition-colors ${
+                bankPeriod === "mes_atual"
+                  ? "bg-white text-indigo-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Mês Atual
+            </button>
+            <button
+              onClick={() => setBankPeriod("mes_anterior")}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded transition-colors ${
+                bankPeriod === "mes_anterior"
+                  ? "bg-white text-indigo-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Mês Anterior
+            </button>
           </div>
           {/* Checkbox Conciliação Feita */}
           <div
