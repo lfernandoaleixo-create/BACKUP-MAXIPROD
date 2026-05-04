@@ -92,6 +92,10 @@ export default function FornecedoresBrasileirosTab() {
       toast.error("Descreva a forma de contato");
       return;
     }
+    if (contactForm.status === "nao_possivel_contato" && !contactForm.observacao.trim()) {
+      toast.error("Informe o motivo pelo qual não foi possível estabelecer contato");
+      return;
+    }
     addContact.mutate(contactForm);
   };
 
@@ -389,13 +393,15 @@ export default function FornecedoresBrasileirosTab() {
 
                           {/* Observação */}
                           <div>
-                            <label className="text-xs font-medium text-slate-600 mb-1 block">Observação</label>
+                            <label className="text-xs font-medium text-slate-600 mb-1 block">
+                              Observação {contactForm.status === "nao_possivel_contato" && <span className="text-red-500">* (obrigatório)</span>}
+                            </label>
                             <textarea
-                              placeholder="Escreva uma observação sobre o contato..."
+                              placeholder={contactForm.status === "nao_possivel_contato" ? "Informe o motivo: não atendeu, sem telefone, sem WhatsApp, não respondeu email..." : "Escreva uma observação sobre o contato..."}
                               value={contactForm.observacao}
                               onChange={(e) => setContactForm({ ...contactForm, observacao: e.target.value })}
                               rows={3}
-                              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                              className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none ${contactForm.status === "nao_possivel_contato" && !contactForm.observacao.trim() ? "border-red-300 bg-red-50/30" : "border-slate-200"}`}
                             />
                           </div>
 
@@ -461,7 +467,8 @@ export default function FornecedoresBrasileirosTab() {
           ) : (
             <div className="divide-y divide-slate-100">
               {ranking.data.map((v, idx) => {
-                const efficiency = v.totalContatos > 0 ? ((Number(v.novosClientes) / v.totalContatos) * 100).toFixed(1) : "0.0";
+                const conversoes = Number((v as any).conversoes || 0);
+                const efficiency = v.totalContatos > 0 ? ((conversoes / v.totalContatos) * 100).toFixed(1) : "0.0";
                 return (
                   <button
                     key={v.vendedor}
@@ -486,7 +493,7 @@ export default function FornecedoresBrasileirosTab() {
                       <div className="text-right">
                         <div className="flex items-center gap-1 text-emerald-600">
                           <TrendingUp className="w-4 h-4" />
-                          <span className="text-sm font-semibold">{Number(v.novosClientes)} novos</span>
+                          <span className="text-sm font-semibold">{conversoes} conversões</span>
                         </div>
                         <p className="text-xs text-slate-500">Eficiência: {efficiency}%</p>
                       </div>
@@ -577,11 +584,13 @@ function SupplierContactHistory({ supplierId }: { supplierId: number }) {
                 c.status === "novo_cliente" ? "bg-emerald-100 text-emerald-700" :
                 c.status === "possivel_cliente" ? "bg-amber-100 text-amber-700" :
                 c.status === "ja_cliente" ? "bg-blue-100 text-blue-700" :
+                c.status === "nao_possivel_contato" ? "bg-purple-100 text-purple-700" :
                 "bg-red-100 text-red-700"
               }`}>
                 {c.status === "ja_cliente" ? "Já é cliente" :
                  c.status === "possivel_cliente" ? "Possível cliente" :
-                 c.status === "novo_cliente" ? "Novo cliente" : "Sem interesse"}
+                 c.status === "novo_cliente" ? "Novo cliente" :
+                 c.status === "nao_possivel_contato" ? "S/ Contato" : "Sem interesse"}
               </span>
               <span className="text-xs text-slate-500">
                 via {c.formaContato === "ligacao" ? "Ligação" :

@@ -108,6 +108,7 @@ export const suppliersRouter = router({
   getContactsByStatus: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
+    // Only show the LATEST contact per supplier (so each supplier appears in only one status card)
     const contacts = await db
       .select({
         id: supplierContacts.id,
@@ -125,6 +126,9 @@ export const suppliersRouter = router({
       })
       .from(supplierContacts)
       .innerJoin(suppliers, eq(supplierContacts.supplierId, suppliers.id))
+      .where(
+        sql`${supplierContacts.createdAt} = (SELECT MAX(sc2.createdAt) FROM supplier_contacts sc2 WHERE sc2.supplierId = ${supplierContacts.supplierId})`
+      )
       .orderBy(desc(supplierContacts.createdAt));
     return contacts;
   }),
@@ -135,6 +139,7 @@ export const suppliersRouter = router({
   getVendedorRanking: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
+    // Total contacts per vendedor (all contacts, not just latest)
     const result = await db
       .select({
         vendedor: supplierContacts.vendedor,
@@ -144,6 +149,8 @@ export const suppliersRouter = router({
         jaClientes: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'ja_cliente' THEN 1 ELSE 0 END)`.as("jaClientes"),
         semInteresse: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'sem_interesse' THEN 1 ELSE 0 END)`.as("semInteresse"),
         naoPossivelContato: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'nao_possivel_contato' THEN 1 ELSE 0 END)`.as("naoPossivelContato"),
+        // Conversions: count suppliers where this vendedor made the LATEST contact and that contact converted to novo_cliente
+        conversoes: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'novo_cliente' AND ${supplierContacts.createdAt} = (SELECT MAX(sc3.createdAt) FROM supplier_contacts sc3 WHERE sc3.supplierId = ${supplierContacts.supplierId}) THEN 1 ELSE 0 END)`.as("conversoes"),
       })
       .from(supplierContacts)
       .groupBy(supplierContacts.vendedor)
@@ -193,15 +200,18 @@ export const suppliersRouter = router({
     const [totalContacts] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(supplierContacts);
+    // Count by LATEST status per supplier (each supplier only counts once, in its most recent status)
     const [statusCounts] = await db
       .select({
-        jaCliente: sql<number>`SUM(CASE WHEN status = 'ja_cliente' THEN 1 ELSE 0 END)`,
-        possivelCliente: sql<number>`SUM(CASE WHEN status = 'possivel_cliente' THEN 1 ELSE 0 END)`,
-        novoCliente: sql<number>`SUM(CASE WHEN status = 'novo_cliente' THEN 1 ELSE 0 END)`,
-        semInteresse: sql<number>`SUM(CASE WHEN status = 'sem_interesse' THEN 1 ELSE 0 END)`,
-        naoPossivelContato: sql<number>`SUM(CASE WHEN status = 'nao_possivel_contato' THEN 1 ELSE 0 END)`,
+        jaCliente: sql<number>`SUM(CASE WHEN latest_status = 'ja_cliente' THEN 1 ELSE 0 END)`,
+        possivelCliente: sql<number>`SUM(CASE WHEN latest_status = 'possivel_cliente' THEN 1 ELSE 0 END)`,
+        novoCliente: sql<number>`SUM(CASE WHEN latest_status = 'novo_cliente' THEN 1 ELSE 0 END)`,
+        semInteresse: sql<number>`SUM(CASE WHEN latest_status = 'sem_interesse' THEN 1 ELSE 0 END)`,
+        naoPossivelContato: sql<number>`SUM(CASE WHEN latest_status = 'nao_possivel_contato' THEN 1 ELSE 0 END)`,
       })
-      .from(supplierContacts);
+      .from(
+        sql`(SELECT supplierId, status AS latest_status FROM supplier_contacts sc1 WHERE createdAt = (SELECT MAX(createdAt) FROM supplier_contacts sc2 WHERE sc2.supplierId = sc1.supplierId)) AS latest`
+      );
     return {
       totalSuppliers: totalSuppliers.count,
       totalContacts: totalContacts.count,
