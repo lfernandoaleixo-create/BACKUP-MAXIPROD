@@ -57,7 +57,44 @@ export const suppliersRouter = router({
           eq(suppliers.estado, input.estado)
         ))
         .orderBy(suppliers.nome);
-      return result;
+      
+      // Get contact counts per supplier
+      if (result.length === 0) return [];
+      
+      const supplierIds = result.map(r => sql`${r.id}`);
+      const contactCounts = await db
+        .select({
+          supplierId: supplierContacts.supplierId,
+          count: sql<number>`count(*)`.as('count'),
+        })
+        .from(supplierContacts)
+        .where(sql`${supplierContacts.supplierId} IN (${sql.join(supplierIds, sql`, `)})`)
+        .groupBy(supplierContacts.supplierId);
+      
+      // Get contact details (vendedor + date) per supplier
+      const contactDetails = await db
+        .select({
+          supplierId: supplierContacts.supplierId,
+          vendedor: supplierContacts.vendedor,
+          formaContato: supplierContacts.formaContato,
+          createdAt: supplierContacts.createdAt,
+        })
+        .from(supplierContacts)
+        .where(sql`${supplierContacts.supplierId} IN (${sql.join(supplierIds, sql`, `)})`)
+        .orderBy(desc(supplierContacts.createdAt));
+      
+      const countMap = new Map(contactCounts.map(c => [c.supplierId, c.count]));
+      const detailsMap = new Map<number, Array<{vendedor: string; formaContato: string; createdAt: Date | number}>>();
+      for (const d of contactDetails) {
+        if (!detailsMap.has(d.supplierId)) detailsMap.set(d.supplierId, []);
+        detailsMap.get(d.supplierId)!.push({ vendedor: d.vendedor, formaContato: d.formaContato, createdAt: d.createdAt });
+      }
+      
+      return result.map(r => ({
+        ...r,
+        contactCount: countMap.get(r.id) || 0,
+        contactHistory: detailsMap.get(r.id) || [],
+      }));
     }),
 
   /**

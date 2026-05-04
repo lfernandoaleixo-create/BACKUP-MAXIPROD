@@ -265,8 +265,32 @@ export default function FornecedoresBrasileirosTab() {
                     className="w-full p-4 text-left hover:bg-slate-50 transition-colors cursor-pointer"
                   >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-slate-800">{supplier.nome}</h4>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-semibold text-slate-800">{supplier.nome}</h4>
+                          {(supplier as any).contactCount > 0 && (
+                            <div className="relative group/tooltip">
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 cursor-default whitespace-nowrap">
+                                Contatado {(supplier as any).contactCount}x
+                              </span>
+                              <div className="absolute z-50 bottom-full left-0 mb-2 hidden group-hover/tooltip:block w-64 bg-slate-800 text-white text-xs rounded-lg p-3 shadow-lg">
+                                <p className="font-semibold mb-1.5 border-b border-slate-600 pb-1">Hist. de contatos:</p>
+                                <div className="space-y-1 max-h-40 overflow-y-auto">
+                                  {(supplier as any).contactHistory?.map((c: any, i: number) => (
+                                    <div key={i} className="flex justify-between items-center">
+                                      <span className="font-medium">{c.vendedor}</span>
+                                      <span className="text-slate-300 text-[10px]">
+                                        {c.formaContato === 'ligacao' ? 'Tel' : c.formaContato === 'email' ? 'Email' : c.formaContato === 'whatsapp' ? 'WhatsApp' : 'Outro'}
+                                        {' '}{new Date(c.createdAt).toLocaleDateString('pt-BR')}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800"></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                         <p className="text-sm text-slate-500 mt-0.5">
                           {supplier.cidade && <span>{supplier.cidade}</span>}
                           {supplier.confianca && (
@@ -280,7 +304,7 @@ export default function FornecedoresBrasileirosTab() {
                           )}
                         </p>
                       </div>
-                      <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${expandedSupplier === supplier.id ? "rotate-90" : ""}`} />
+                      <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform shrink-0 ${expandedSupplier === supplier.id ? "rotate-90" : ""}`} />
                     </div>
                   </button>
 
