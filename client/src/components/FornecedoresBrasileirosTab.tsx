@@ -20,6 +20,7 @@ const STATUS_OPTIONS = [
   { value: "possivel_cliente" as const, label: "Possível cliente", icon: HelpCircle, color: "text-amber-600 bg-amber-50 border-amber-200" },
   { value: "novo_cliente" as const, label: "Novo cliente", icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
   { value: "sem_interesse" as const, label: "Sem interesse", icon: XCircle, color: "text-red-600 bg-red-50 border-red-200" },
+  { value: "nao_possivel_contato" as const, label: "Não foi possível estabelecer contato", icon: Phone, color: "text-purple-600 bg-purple-50 border-purple-200" },
 ];
 const FORMA_CONTATO_OPTIONS = [
   { value: "ligacao" as const, label: "Ligação", icon: Phone },
@@ -45,7 +46,7 @@ export default function FornecedoresBrasileirosTab() {
     formaContato: "ligacao" | "email" | "whatsapp" | "outra";
     formaContatoOutra: string;
     observacao: string;
-    status: "ja_cliente" | "possivel_cliente" | "novo_cliente" | "sem_interesse";
+    status: "ja_cliente" | "possivel_cliente" | "novo_cliente" | "sem_interesse" | "nao_possivel_contato";
   } | null>(null);
 
   // Queries
@@ -104,7 +105,7 @@ export default function FornecedoresBrasileirosTab() {
   return (
     <div className="space-y-4">
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
           <p className="text-2xl font-bold text-slate-800">{stats.data?.totalSuppliers || 0}</p>
           <p className="text-xs text-slate-500 mt-1">Cadastros</p>
@@ -128,6 +129,10 @@ export default function FornecedoresBrasileirosTab() {
         <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
           <p className="text-2xl font-bold text-red-600">{stats.data?.semInteresse || 0}</p>
           <p className="text-xs text-slate-500 mt-1">Sem Interesse</p>
+        </div>
+        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+          <p className="text-2xl font-bold text-purple-600">{stats.data?.naoPossivelContato || 0}</p>
+          <p className="text-xs text-slate-500 mt-1">S/ Contato</p>
         </div>
       </div>
 

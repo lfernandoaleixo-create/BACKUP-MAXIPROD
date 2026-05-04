@@ -86,7 +86,7 @@ export const suppliersRouter = router({
       formaContato: z.enum(["ligacao", "email", "whatsapp", "outra"]),
       formaContatoOutra: z.string().optional(),
       observacao: z.string().optional(),
-      status: z.enum(["ja_cliente", "possivel_cliente", "novo_cliente", "sem_interesse"]),
+      status: z.enum(["ja_cliente", "possivel_cliente", "novo_cliente", "sem_interesse", "nao_possivel_contato"]),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -143,6 +143,7 @@ export const suppliersRouter = router({
         possiveisClientes: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'possivel_cliente' THEN 1 ELSE 0 END)`.as("possiveisClientes"),
         jaClientes: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'ja_cliente' THEN 1 ELSE 0 END)`.as("jaClientes"),
         semInteresse: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'sem_interesse' THEN 1 ELSE 0 END)`.as("semInteresse"),
+        naoPossivelContato: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'nao_possivel_contato' THEN 1 ELSE 0 END)`.as("naoPossivelContato"),
       })
       .from(supplierContacts)
       .groupBy(supplierContacts.vendedor)
@@ -198,6 +199,7 @@ export const suppliersRouter = router({
         possivelCliente: sql<number>`SUM(CASE WHEN status = 'possivel_cliente' THEN 1 ELSE 0 END)`,
         novoCliente: sql<number>`SUM(CASE WHEN status = 'novo_cliente' THEN 1 ELSE 0 END)`,
         semInteresse: sql<number>`SUM(CASE WHEN status = 'sem_interesse' THEN 1 ELSE 0 END)`,
+        naoPossivelContato: sql<number>`SUM(CASE WHEN status = 'nao_possivel_contato' THEN 1 ELSE 0 END)`,
       })
       .from(supplierContacts);
     return {
@@ -207,6 +209,7 @@ export const suppliersRouter = router({
       possivelCliente: statusCounts?.possivelCliente || 0,
       novoCliente: statusCounts?.novoCliente || 0,
       semInteresse: statusCounts?.semInteresse || 0,
+      naoPossivelContato: statusCounts?.naoPossivelContato || 0,
     };
   }),
 });
