@@ -3335,3 +3335,7 @@
 - [x] Somatório de valores no rodapé da tabela (total geral e por filtro)
 - [x] Filtro funcional pelos 9 estados de cheque com contadores em cada card
 - [x] Filtro por empresa (Palitos/Varetas/Espetos) automático
+- [x] Centralizar títulos das colunas da tabela de cheques com os dados abaixo
+- [x] Corrigir "à Receber" para "a Receber" (sem crase) em todos os lugares
+- [x] Remover truncate/corte de nomes de clientes e descrições na tabela de cheques
+- [x] Barra de pesquisa no painel de Cheques (buscar por cliente, palavras-chave, forma de pagamento)

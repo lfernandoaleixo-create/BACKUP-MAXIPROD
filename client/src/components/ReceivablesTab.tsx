@@ -1535,6 +1535,7 @@ export default function ReceivablesTab() {
   const [showGlobalHistory, setShowGlobalHistory] = useState(false);
   const [chequesOpenEmpresa, setChequesOpenEmpresa] = useState<string | null>(null);
   const [chequeSelectedFilter, setChequeSelectedFilter] = useState<string | null>(null);
+  const [chequeSearchQuery, setChequeSearchQuery] = useState("");
 
   // Fetch cheques data from backend
   const chequesQuery = trpc.financial.getCheques.useQuery(
@@ -1923,6 +1924,25 @@ export default function ReceivablesTab() {
                     </button>
                   </div>
                   <div className="px-5 py-4">
+                    {/* Search bar */}
+                    <div className="relative mb-4">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Buscar por cliente, forma de pagamento, descrição..."
+                        value={chequeSearchQuery}
+                        onChange={(e) => setChequeSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2.5 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 transition-all placeholder:text-slate-400"
+                      />
+                      {chequeSearchQuery && (
+                        <button
+                          onClick={() => setChequeSearchQuery("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                     {/* Filter: Todos */}
                     <button
                       onClick={() => setChequeSelectedFilter(chequeSelectedFilter === null ? null : null)}
@@ -1950,7 +1970,7 @@ export default function ReceivablesTab() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                       {[
                         { id: "DISPONIVEL", num: 1, label: "Cheque Disponível", desc: "Cheques que estão em nossas mãos", icon: HandCoins, color: "emerald" },
-                        { id: "A_RECEBER", num: 2, label: "Cheque à Receber de Clientes", desc: "Clientes se comprometeram a encaminhar para empresa", icon: Clock, color: "blue" },
+                        { id: "A_RECEBER", num: 2, label: "Cheque a Receber de Clientes", desc: "Clientes se comprometeram a encaminhar para empresa", icon: Clock, color: "blue" },
                         { id: "COMPENSACAO", num: 3, label: "Cheque em Compensação", desc: "Depositados no banco aguardando creditar na conta", icon: Timer, color: "cyan" },
                         { id: "CUSTODIA_SICOOB", num: 4, label: "Cheque Custódia Sicoob", desc: "Depositados no Sicoob aguardando depósito automático", icon: Building, color: "violet" },
                         { id: "CUSTODIA_SICREDI", num: 5, label: "Cheque Custódia Sicredi", desc: "Depositados no Sicredi aguardando depósito automático", icon: Building, color: "purple" },
@@ -2021,9 +2041,18 @@ export default function ReceivablesTab() {
                         <div className="text-center py-6 text-red-500 text-sm">Erro ao carregar cheques</div>
                       ) : (() => {
                         const allCheques = chequesQuery.data?.cheques || [];
-                        const displayCheques = chequeSelectedFilter
-                          ? allCheques.filter((c: any) => c.estadoCheque === chequeSelectedFilter)
+                        const searchLower = chequeSearchQuery.toLowerCase().trim();
+                        const searchFiltered = searchLower
+                          ? allCheques.filter((c: any) =>
+                              (c.cliente || "").toLowerCase().includes(searchLower) ||
+                              (c.formaPagamento || "").toLowerCase().includes(searchLower) ||
+                              (c.descricao || "").toLowerCase().includes(searchLower) ||
+                              (c.estadoCheque || "").toLowerCase().includes(searchLower)
+                            )
                           : allCheques;
+                        const displayCheques = chequeSelectedFilter
+                          ? searchFiltered.filter((c: any) => c.estadoCheque === chequeSelectedFilter)
+                          : searchFiltered;
                         const totalDisplay = displayCheques.reduce((s: number, c: any) => s + c.valor, 0);
                         if (displayCheques.length === 0) {
                           return (
@@ -2048,12 +2077,12 @@ export default function ReceivablesTab() {
                               <table className="w-full text-xs">
                                 <thead className="bg-slate-50 sticky top-0 z-10">
                                   <tr className="border-b border-slate-200">
-                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Vencimento</th>
-                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Emissão</th>
-                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Cliente</th>
-                                    <th className="px-3 py-2 text-right font-semibold text-slate-600 whitespace-nowrap">Valor</th>
-                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Forma de Pagamento</th>
-                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Descrição</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Vencimento</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Emissão</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Cliente</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Valor</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Forma de Pagamento</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Descrição</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -2062,7 +2091,7 @@ export default function ReceivablesTab() {
                                     const emis = cheque.emissaoData ? new Date(cheque.emissaoData).toLocaleDateString("pt-BR") : "-";
                                     const isVencido = cheque.vencimentoData && new Date(cheque.vencimentoData) < new Date();
                                     // Extract short forma name (after "Cheque ")
-                                    const formaShort = (cheque.formaPagamento || "").replace(/^Cheque\s*/i, "").trim() || cheque.formaPagamento;
+                                    const formaShort = (cheque.formaPagamento || "").replace(/^Cheque\s*/i, "").replace(/\u00c0/g, "A").replace(/\u00e0/g, "a").trim() || cheque.formaPagamento;
                                     // Color badge for estado
                                     const estadoColors: Record<string, string> = {
                                       DISPONIVEL: "bg-emerald-100 text-emerald-700",
@@ -2078,16 +2107,16 @@ export default function ReceivablesTab() {
                                     const badgeColor = estadoColors[cheque.estadoCheque] || "bg-slate-100 text-slate-700";
                                     return (
                                       <tr key={cheque.id || idx} className={`border-b border-slate-100 hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
-                                        <td className={`px-3 py-2 whitespace-nowrap font-medium ${isVencido ? "text-red-600" : "text-slate-700"}`}>{venc}</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-slate-500">{emis}</td>
-                                        <td className="px-3 py-2 text-slate-700 max-w-[200px] truncate" title={cheque.cliente}>{cheque.cliente}</td>
-                                        <td className="px-3 py-2 text-right font-semibold text-slate-800 whitespace-nowrap">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-2">
+                                        <td className={`px-3 py-2 text-center whitespace-nowrap font-medium ${isVencido ? "text-red-600" : "text-slate-700"}`}>{venc}</td>
+                                        <td className="px-3 py-2 text-center whitespace-nowrap text-slate-500">{emis}</td>
+                                        <td className="px-3 py-2 text-center text-slate-700">{cheque.cliente}</td>
+                                        <td className="px-3 py-2 text-center font-semibold text-slate-800 whitespace-nowrap">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                        <td className="px-3 py-2 text-center">
                                           <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${badgeColor}`}>
                                             {formaShort}
                                           </span>
                                         </td>
-                                        <td className="px-3 py-2 text-slate-500 max-w-[250px] truncate" title={cheque.descricao}>
+                                        <td className="px-3 py-2 text-center text-slate-500">
                                           {cheque.descricao}{cheque.parcela ? ` (${cheque.parcela}/${cheque.parcelasTotal || "?"})` : ""}
                                         </td>
                                       </tr>
@@ -2096,8 +2125,8 @@ export default function ReceivablesTab() {
                                 </tbody>
                                 <tfoot>
                                   <tr className="bg-amber-50 border-t-2 border-amber-300">
-                                    <td colSpan={3} className="px-3 py-2.5 text-xs font-bold text-amber-800">TOTAL ({displayCheques.length} cheques)</td>
-                                    <td className="px-3 py-2.5 text-right text-sm font-extrabold text-amber-700">R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                    <td colSpan={3} className="px-3 py-2.5 text-center text-xs font-bold text-amber-800">TOTAL ({displayCheques.length} cheques)</td>
+                                    <td className="px-3 py-2.5 text-center text-sm font-extrabold text-amber-700">R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                                     <td colSpan={2}></td>
                                   </tr>
                                 </tfoot>
