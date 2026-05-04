@@ -2370,13 +2370,11 @@ export default function ReceivablesTab() {
                                                       {(custodianMap as any)[cheque.id]}
                                                     </span>
                                                   ) : (
-                                                    <span className="text-[10px] text-slate-400 group-hover:text-emerald-600 italic">+ definir</span>
+                                                    <span className="text-[10px] text-slate-400 group-hover:text-emerald-600 italic">Com quem está o cheque?</span>
                                                   )}
                                                 </button>
                                               )
-                                            ) : (
-                                              <span className="text-slate-300">—</span>
-                                            )}
+                                            ) : null}
                                           </td>
                                         )}
                                       </tr>

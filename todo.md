@@ -3352,3 +3352,5 @@
 - [x] Geração de PDF com cheques selecionados (todas informações + valor total)
 - [x] Tabela cheque_exchanges no banco para histórico de trocas com PDF salvo
 - [x] Painel de histórico de trocas com PDFs salvos para consulta futura
+- [x] Trocar "+ definir" por "Com quem está o cheque?" na coluna Responsável
+- [x] Remover retângulo verde com traço (—) para cheques não-Disponível (só mostrar para Disponível)
