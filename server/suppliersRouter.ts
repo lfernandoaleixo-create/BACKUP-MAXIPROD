@@ -1,0 +1,212 @@
+/**
+ * Suppliers Router - Fornecedores Brasileiros
+ * Procedures for listing suppliers, recording contacts, and ranking vendedores
+ */
+import { publicProcedure, router } from "./_core/trpc";
+import { z } from "zod";
+import { getDb } from "./db";
+import { suppliers, supplierContacts } from "../drizzle/schema";
+import { sql, eq, and, desc } from "drizzle-orm";
+
+export const suppliersRouter = router({
+  /**
+   * Get distinct segments
+   */
+  getSegments: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const result = await db
+      .selectDistinct({ segmento: suppliers.segmento })
+      .from(suppliers)
+      .orderBy(suppliers.segmento);
+    return result.map(r => r.segmento);
+  }),
+
+  /**
+   * Get states for a given segment
+   */
+  getStates: publicProcedure
+    .input(z.object({ segmento: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const result = await db
+        .selectDistinct({ estado: suppliers.estado })
+        .from(suppliers)
+        .where(eq(suppliers.segmento, input.segmento))
+        .orderBy(suppliers.estado);
+      return result.map(r => r.estado);
+    }),
+
+  /**
+   * Get suppliers for a given segment + state
+   */
+  getSuppliers: publicProcedure
+    .input(z.object({
+      segmento: z.string(),
+      estado: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const result = await db
+        .select()
+        .from(suppliers)
+        .where(and(
+          eq(suppliers.segmento, input.segmento),
+          eq(suppliers.estado, input.estado)
+        ))
+        .orderBy(suppliers.nome);
+      return result;
+    }),
+
+  /**
+   * Get contacts for a specific supplier
+   */
+  getSupplierContacts: publicProcedure
+    .input(z.object({ supplierId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const result = await db
+        .select()
+        .from(supplierContacts)
+        .where(eq(supplierContacts.supplierId, input.supplierId))
+        .orderBy(desc(supplierContacts.createdAt));
+      return result;
+    }),
+
+  /**
+   * Record a contact with a supplier
+   */
+  addContact: publicProcedure
+    .input(z.object({
+      supplierId: z.number(),
+      vendedor: z.string(),
+      formaContato: z.enum(["ligacao", "email", "whatsapp", "outra"]),
+      formaContatoOutra: z.string().optional(),
+      observacao: z.string().optional(),
+      status: z.enum(["ja_cliente", "possivel_cliente", "novo_cliente", "sem_interesse"]),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.insert(supplierContacts).values({
+        supplierId: input.supplierId,
+        vendedor: input.vendedor,
+        formaContato: input.formaContato,
+        formaContatoOutra: input.formaContatoOutra || null,
+        observacao: input.observacao || null,
+        status: input.status,
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Get all contacts grouped by status (for status cards)
+   */
+  getContactsByStatus: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const contacts = await db
+      .select({
+        id: supplierContacts.id,
+        supplierId: supplierContacts.supplierId,
+        vendedor: supplierContacts.vendedor,
+        formaContato: supplierContacts.formaContato,
+        formaContatoOutra: supplierContacts.formaContatoOutra,
+        observacao: supplierContacts.observacao,
+        status: supplierContacts.status,
+        createdAt: supplierContacts.createdAt,
+        supplierNome: suppliers.nome,
+        supplierEstado: suppliers.estado,
+        supplierSegmento: suppliers.segmento,
+        supplierCidade: suppliers.cidade,
+      })
+      .from(supplierContacts)
+      .innerJoin(suppliers, eq(supplierContacts.supplierId, suppliers.id))
+      .orderBy(desc(supplierContacts.createdAt));
+    return contacts;
+  }),
+
+  /**
+   * Get vendedor ranking with contact counts and efficiency
+   */
+  getVendedorRanking: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const result = await db
+      .select({
+        vendedor: supplierContacts.vendedor,
+        totalContatos: sql<number>`COUNT(*)`.as("totalContatos"),
+        novosClientes: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'novo_cliente' THEN 1 ELSE 0 END)`.as("novosClientes"),
+        possiveisClientes: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'possivel_cliente' THEN 1 ELSE 0 END)`.as("possiveisClientes"),
+        jaClientes: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'ja_cliente' THEN 1 ELSE 0 END)`.as("jaClientes"),
+        semInteresse: sql<number>`SUM(CASE WHEN ${supplierContacts.status} = 'sem_interesse' THEN 1 ELSE 0 END)`.as("semInteresse"),
+      })
+      .from(supplierContacts)
+      .groupBy(supplierContacts.vendedor)
+      .orderBy(sql`COUNT(*) DESC`);
+    return result;
+  }),
+
+  /**
+   * Get contacts for a specific vendedor (detail view)
+   */
+  getVendedorContacts: publicProcedure
+    .input(z.object({ vendedor: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const contacts = await db
+        .select({
+          id: supplierContacts.id,
+          supplierId: supplierContacts.supplierId,
+          vendedor: supplierContacts.vendedor,
+          formaContato: supplierContacts.formaContato,
+          formaContatoOutra: supplierContacts.formaContatoOutra,
+          observacao: supplierContacts.observacao,
+          status: supplierContacts.status,
+          createdAt: supplierContacts.createdAt,
+          supplierNome: suppliers.nome,
+          supplierEstado: suppliers.estado,
+          supplierSegmento: suppliers.segmento,
+          supplierCidade: suppliers.cidade,
+        })
+        .from(supplierContacts)
+        .innerJoin(suppliers, eq(supplierContacts.supplierId, suppliers.id))
+        .where(eq(supplierContacts.vendedor, input.vendedor))
+        .orderBy(desc(supplierContacts.createdAt));
+      return contacts;
+    }),
+
+  /**
+   * Get overview stats
+   */
+  getStats: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const [totalSuppliers] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(suppliers);
+    const [totalContacts] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(supplierContacts);
+    const [statusCounts] = await db
+      .select({
+        jaCliente: sql<number>`SUM(CASE WHEN status = 'ja_cliente' THEN 1 ELSE 0 END)`,
+        possivelCliente: sql<number>`SUM(CASE WHEN status = 'possivel_cliente' THEN 1 ELSE 0 END)`,
+        novoCliente: sql<number>`SUM(CASE WHEN status = 'novo_cliente' THEN 1 ELSE 0 END)`,
+        semInteresse: sql<number>`SUM(CASE WHEN status = 'sem_interesse' THEN 1 ELSE 0 END)`,
+      })
+      .from(supplierContacts);
+    return {
+      totalSuppliers: totalSuppliers.count,
+      totalContacts: totalContacts.count,
+      jaCliente: statusCounts?.jaCliente || 0,
+      possivelCliente: statusCounts?.possivelCliente || 0,
+      novoCliente: statusCounts?.novoCliente || 0,
+      semInteresse: statusCounts?.semInteresse || 0,
+    };
+  }),
+});

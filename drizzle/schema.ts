@@ -1576,3 +1576,42 @@ export const chequeExchanges = mysqlTable("cheque_exchanges", {
 });
 export type ChequeExchange = typeof chequeExchanges.$inferSelect;
 export type InsertChequeExchange = typeof chequeExchanges.$inferInsert;
+
+/**
+ * Fornecedores Brasileiros - possíveis clientes para prospecção
+ * Dados extraídos do diretório de fornecedores
+ */
+export const suppliers = mysqlTable("suppliers", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: text("nome").notNull(),
+  segmento: varchar("segmento", { length: 100 }).notNull(),
+  estado: varchar("estado", { length: 50 }).notNull(),
+  cidade: varchar("cidade", { length: 100 }),
+  endereco: text("endereco"),
+  telefone: text("telefone"),
+  email: varchar("email", { length: 320 }),
+  website: text("website"),
+  cnpj: varchar("cnpj", { length: 20 }),
+  notas: text("notas"),
+  confianca: varchar("confianca", { length: 10 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Supplier = typeof suppliers.$inferSelect;
+export type InsertSupplier = typeof suppliers.$inferInsert;
+
+/**
+ * Registros de contato com fornecedores (prospecção)
+ * Cada registro = um contato feito por um vendedor
+ */
+export const supplierContacts = mysqlTable("supplier_contacts", {
+  id: int("id").autoincrement().primaryKey(),
+  supplierId: int("supplierId").notNull(),
+  vendedor: varchar("vendedor", { length: 50 }).notNull(),
+  formaContato: mysqlEnum("formaContato", ["ligacao", "email", "whatsapp", "outra"]).notNull(),
+  formaContatoOutra: text("formaContatoOutra"), // obrigatório se formaContato = "outra"
+  observacao: text("observacao"),
+  status: mysqlEnum("status", ["ja_cliente", "possivel_cliente", "novo_cliente", "sem_interesse"]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SupplierContact = typeof supplierContacts.$inferSelect;
+export type InsertSupplierContact = typeof supplierContacts.$inferInsert;

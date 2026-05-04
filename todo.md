@@ -3357,3 +3357,11 @@
 - [x] Corrigir valores dos cheques: usar saldo (valorLiquido - valorRecebidoLiquido) em vez do valor original — total agora R$ 384.040,52 = Maxiprod
 - [x] Saldo Bancário deve refletir o mês selecionado (Mês Anterior) em vez de sempre mostrar o mês atual
 - [x] Saldo Bancário deve seguir automaticamente o filtro global do Resumo Financeiro (sem botões separados)
+- [x] Criar aba "Fornecedores Brasileiros" dentro da página Vendas (acesso restrito: Guilherme e Fernando)
+- [x] Extrair 3439 fornecedores do PDF (segmento, estado, nome, cidade, endereço, telefone, email, website, CNPJ, notas)
+- [x] UI navegação: Segmento → Estado (nome+sigla) → Lista de possíveis clientes com dados de contato
+- [x] Formulário pós-contato: vendedor (Paula, Gilson, Jordão, Juvenal, Pedro), forma de contato (Ligação, Email, WhatsApp, Outra+campo obrigatório), observação, status (Já é cliente, Possível cliente, Novo cliente, Sem interesse)
+- [x] Cards organizados por status
+- [x] Ranking de vendedores: total de contatos, eficiência (novos clientes conquistados)
+- [x] Detalhe do vendedor: lista de clientes contatados com observações e status
+- [x] Criar aba "Métrica de Vendas" dentro da página Vendas (acesso restrito: Guilherme e Fernando)

@@ -73,6 +73,8 @@ import { generateSalesPDF } from "@/lib/salesPdfExport";
 import { useOperator } from "@/contexts/OperatorContext";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import type { VerifySection } from "@/components/MaxiprodAutoVerifier";
+import FornecedoresBrasileirosTab from "@/components/FornecedoresBrasileirosTab";
+import MetricaVendasTab from "@/components/MetricaVendasTab";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
@@ -2788,6 +2790,9 @@ function SalesVerifyModal({ card, startDate, endDate, dashboardValue, onClose }:
 export default function Sales() {
   const { operator } = useOperator();
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
+  const FORNECEDORES_OPERATORS = ["Guilherme", "Fernando"];
+  const canSeeFornecedores = operator && FORNECEDORES_OPERATORS.includes(operator.name);
+  const [salesTab, setSalesTab] = useState<"vendas" | "fornecedores" | "metricas">("vendas");
   const [verifyingCard, setVerifyingCard] = useState<{ card: string; startDate: string; endDate: string; dashboardValue: number } | null>(null);
   const [simulatorCard, setSimulatorCard] = useState<{ section: string; title: string; subtitle: string; value: number } | null>(null);
   const [showCanceledDialog, setShowCanceledDialog] = useState(false);
@@ -3078,6 +3083,58 @@ export default function Sales() {
           <p className="text-sm text-slate-400 mt-1.5 tracking-widest uppercase">Pedidos, Faturamento e Inadimplência</p>
         </div>
 
+        {/* Sub-abas Vendas */}
+        {canSeeFornecedores && (
+          <div className="flex items-center justify-center gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1">
+            <button
+              onClick={() => setSalesTab("vendas")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                salesTab === "vendas"
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              Vendas
+            </button>
+            <button
+              onClick={() => setSalesTab("fornecedores")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                salesTab === "fornecedores"
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Truck className="w-4 h-4" />
+              Fornecedores Brasileiros
+            </button>
+            <button
+              onClick={() => setSalesTab("metricas")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                salesTab === "metricas"
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              Métrica de Vendas
+            </button>
+          </div>
+        )}
+
+        {/* Tab: Fornecedores Brasileiros */}
+        {salesTab === "fornecedores" && canSeeFornecedores && (
+          <FornecedoresBrasileirosTab />
+        )}
+
+        {/* Tab: Métrica de Vendas */}
+        {salesTab === "metricas" && canSeeFornecedores && (
+          <MetricaVendasTab />
+        )}
+
+        {/* Tab: Vendas (conteúdo original) */}
+        {salesTab === "vendas" && (
+        <>
         <ConnectionStatusCard />
 
         <ClientSearchCard />
@@ -3590,6 +3647,8 @@ export default function Sales() {
             )}
           </>
         ) : null}
+        </>
+        )}
       </main>
 
       {/* Maxiprod Auto-Verifier Modal */}

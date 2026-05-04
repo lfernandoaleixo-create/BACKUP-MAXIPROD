@@ -680,6 +680,13 @@
       "when": 1777902487561,
       "tag": "0096_gigantic_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "5",
+      "when": 1777917231186,
+      "tag": "0097_magical_pet_avengers",
+      "breakpoints": true
     }
   ]
 }

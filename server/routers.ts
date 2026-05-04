@@ -21,10 +21,12 @@ import { productionRouter } from "./productionRouter";
 import { ecommerceRouter } from "./ecommerceRouter";
 import { annotationRouter } from "./annotationRouter";
 import { collectionMetricsRouter } from "./collectionMetricsRouter";
+import { suppliersRouter } from "./suppliersRouter";
 
 export const appRouter = router({
   system: systemRouter,
   sales: salesRouter,
+  suppliers: suppliersRouter,
   settings: settingsRouter,
   financial: financialRouter,
   billing: billingRouter,
