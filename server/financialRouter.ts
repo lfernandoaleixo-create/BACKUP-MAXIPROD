@@ -6478,4 +6478,133 @@ ${acoesTexto}
       await db.delete(paymentPriorityMarks).where(eq(paymentPriorityMarks.date, input.date));
       return { success: true };
     }),
+
+  /**
+   * getCheques - Retorna todos os cheques do Contas a Receber
+   * Filtra accounts_receivable onde formaCobranca começa com 'Cheque'
+   * Parseia o estado do cheque a partir do campo formaCobranca
+   */
+  getCheques: publicProcedure
+    .input(z.object({
+      empresaNome: z.string().optional(),
+      estadoCheque: z.string().optional(), // DISPONIVEL, A_RECEBER, COMPENSACAO, etc.
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      // Fetch all cheques (formaCobranca starts with 'Cheque')
+      const conditions = [
+        sql`${accountsReceivable.formaCobranca} LIKE 'Cheque%'`,
+        eq(accountsReceivable.estado, "EMITIDO"),
+        inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+      ];
+
+      if (input?.empresaNome) {
+        conditions.push(eq(accountsReceivable.empresaNome, input.empresaNome));
+      }
+
+      const rows = await db.select({
+        id: accountsReceivable.id,
+        maxiprodId: accountsReceivable.maxiprodId,
+        vencimentoData: accountsReceivable.vencimentoData,
+        emissaoData: accountsReceivable.emissaoData,
+        referenteA: accountsReceivable.referenteA,
+        cliente: accountsReceivable.cliente,
+        valorOriginal: accountsReceivable.valorOriginal,
+        valorLiquido: accountsReceivable.valorLiquido,
+        formaCobranca: accountsReceivable.formaCobranca,
+        empresaNome: accountsReceivable.empresaNome,
+        parcela: accountsReceivable.parcela,
+        parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
+        documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+      })
+        .from(accountsReceivable)
+        .where(and(...conditions))
+        .orderBy(asc(accountsReceivable.vencimentoData));
+
+      // Parse cheque state from formaCobranca
+      const stateMap: Record<string, string> = {
+        "CHEQUE DISPONIVEL": "DISPONIVEL",
+        "CHEQUE DISPONIVEL ": "DISPONIVEL",
+        "CHEQUE À RECEBER DE CLIENTES": "A_RECEBER",
+        "CHEQUE A RECEBER DE CLIENTES": "A_RECEBER",
+        "CHEQUE EM COMPENSACAO": "COMPENSACAO",
+        "CHEQUE EM COMPENSAÇÃO": "COMPENSACAO",
+        "CHEQUE CUSTODIA SICOOB": "CUSTODIA_SICOOB",
+        "CHEQUE CUSTÓDIA SICOOB": "CUSTODIA_SICOOB",
+        "CHEQUE CUSTODIA SICREDI": "CUSTODIA_SICREDI",
+        "CHEQUE CUSTÓDIA SICREDI": "CUSTODIA_SICREDI",
+        "CHEQUE LINHA 11": "LINHA_11",
+        "CHEQUE LINHA 12": "LINHA_12",
+        "CHEQUE VOLTOU OUTROS MOTIVOS": "VOLTOU_OUTROS",
+        "CHEQUE EM FACTORING": "FACTORING",
+      };
+
+      function parseChequeState(formaCobranca: string | null): string {
+        if (!formaCobranca) return "OUTROS";
+        // Remove "Cheque " prefix and try to match
+        const afterCheque = formaCobranca.replace(/^Cheque\s*/i, "").trim().toUpperCase();
+        for (const [key, value] of Object.entries(stateMap)) {
+          if (afterCheque.startsWith(key)) return value;
+        }
+        // Try partial matches
+        if (afterCheque.includes("DISPONIVEL") || afterCheque.includes("DISPONÍVEL")) return "DISPONIVEL";
+        if (afterCheque.includes("RECEBER")) return "A_RECEBER";
+        if (afterCheque.includes("COMPENSAC")) return "COMPENSACAO";
+        if (afterCheque.includes("SICOOB")) return "CUSTODIA_SICOOB";
+        if (afterCheque.includes("SICREDI")) return "CUSTODIA_SICREDI";
+        if (afterCheque.includes("LINHA 11")) return "LINHA_11";
+        if (afterCheque.includes("LINHA 12")) return "LINHA_12";
+        if (afterCheque.includes("VOLTOU")) return "VOLTOU_OUTROS";
+        if (afterCheque.includes("FACTORING")) return "FACTORING";
+        return "OUTROS";
+      }
+
+      const cheques = rows.map(row => {
+        const estadoCheque = parseChequeState(row.formaCobranca);
+        const valor = parseFloat(row.valorLiquido || row.valorOriginal || "0");
+        return {
+          id: row.id,
+          maxiprodId: row.maxiprodId,
+          vencimentoData: row.vencimentoData,
+          emissaoData: row.emissaoData,
+          descricao: row.referenteA || row.documentoVinculadoNumero || "",
+          cliente: row.cliente || "",
+          valor,
+          formaPagamento: row.formaCobranca || "",
+          estadoCheque,
+          empresaNome: row.empresaNome || "",
+          parcela: row.parcela,
+          parcelasTotal: row.parcelasQuantidadeTotal,
+        };
+      });
+
+      // Filter by cheque state if specified
+      const filtered = input?.estadoCheque
+        ? cheques.filter(c => c.estadoCheque === input.estadoCheque)
+        : cheques;
+
+      // Calculate totals per state
+      const totaisPorEstado: Record<string, { count: number; valor: number }> = {};
+      for (const c of cheques) {
+        if (!totaisPorEstado[c.estadoCheque]) {
+          totaisPorEstado[c.estadoCheque] = { count: 0, valor: 0 };
+        }
+        totaisPorEstado[c.estadoCheque].count++;
+        totaisPorEstado[c.estadoCheque].valor += c.valor;
+      }
+
+      const totalGeral = cheques.reduce((sum, c) => sum + c.valor, 0);
+      const totalFiltrado = filtered.reduce((sum, c) => sum + c.valor, 0);
+
+      return {
+        cheques: filtered,
+        totalGeral,
+        totalGeralCount: cheques.length,
+        totalFiltrado,
+        totalFiltradoCount: filtered.length,
+        totaisPorEstado,
+      };
+    }),
 });

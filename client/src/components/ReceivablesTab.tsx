@@ -1536,6 +1536,12 @@ export default function ReceivablesTab() {
   const [chequesOpenEmpresa, setChequesOpenEmpresa] = useState<string | null>(null);
   const [chequeSelectedFilter, setChequeSelectedFilter] = useState<string | null>(null);
 
+  // Fetch cheques data from backend
+  const chequesQuery = trpc.financial.getCheques.useQuery(
+    { empresaNome: chequesOpenEmpresa || undefined },
+    { enabled: !!chequesOpenEmpresa }
+  );
+
   // Discount alert cascading blink
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
@@ -1933,7 +1939,9 @@ export default function ReceivablesTab() {
                       </div>
                       <div className="flex-1 text-left">
                         <div className={`text-sm font-bold ${chequeSelectedFilter === null ? "text-amber-700" : "text-slate-700"}`}>TODOS OS CHEQUES</div>
-                        <div className="text-xs text-slate-500">Visualizar todos os cheques de todos os estados</div>
+                        <div className="text-xs text-slate-500">
+                          {chequesQuery.data ? `${chequesQuery.data.totalGeralCount} cheques — R$ ${chequesQuery.data.totalGeral.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "Visualizar todos os cheques de todos os estados"}
+                        </div>
                       </div>
                       {chequeSelectedFilter === null && <CheckCircle2 className="w-5 h-5 text-amber-500" />}
                     </button>
@@ -1990,6 +1998,11 @@ export default function ReceivablesTab() {
                                 }`}>{state.label}</span>
                               </div>
                               <p className="text-[10px] text-slate-500 leading-snug mt-0.5 line-clamp-2">{state.desc}</p>
+                              {chequesQuery.data?.totaisPorEstado?.[state.id] && (
+                                <p className={`text-[10px] font-bold mt-0.5 ${isActive ? c.activeText : "text-slate-600"}`}>
+                                  {chequesQuery.data.totaisPorEstado[state.id].count} cheques — R$ {chequesQuery.data.totaisPorEstado[state.id].valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                </p>
+                              )}
                             </div>
                             {isActive && <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${c.activeText}`} />}
                           </button>
@@ -1997,10 +2010,102 @@ export default function ReceivablesTab() {
                       })}
                     </div>
 
-                    {/* Info legend toggle */}
-                    <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
-                      <Info className="w-3.5 h-3.5" />
-                      <span>Clique em um estado para filtrar os cheques. Os dados serão carregados em breve.</span>
+                    {/* Cheques Data Table */}
+                    <div className="mt-4">
+                      {chequesQuery.isLoading ? (
+                        <div className="flex items-center justify-center py-8 gap-2 text-slate-400">
+                          <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm">Carregando cheques...</span>
+                        </div>
+                      ) : chequesQuery.error ? (
+                        <div className="text-center py-6 text-red-500 text-sm">Erro ao carregar cheques</div>
+                      ) : (() => {
+                        const allCheques = chequesQuery.data?.cheques || [];
+                        const displayCheques = chequeSelectedFilter
+                          ? allCheques.filter((c: any) => c.estadoCheque === chequeSelectedFilter)
+                          : allCheques;
+                        const totalDisplay = displayCheques.reduce((s: number, c: any) => s + c.valor, 0);
+                        if (displayCheques.length === 0) {
+                          return (
+                            <div className="text-center py-6 text-slate-400 text-sm">
+                              <Receipt className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                              Nenhum cheque encontrado{chequeSelectedFilter ? " para este filtro" : ""}
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="border border-slate-200 rounded-xl overflow-hidden">
+                            <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                              <span className="text-xs font-semibold text-slate-600">
+                                {displayCheques.length} cheque{displayCheques.length !== 1 ? "s" : ""}
+                                {chequeSelectedFilter ? " filtrado" + (displayCheques.length !== 1 ? "s" : "") : ""}
+                              </span>
+                              <span className="text-xs font-bold text-amber-600">
+                                Total: R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                              <table className="w-full text-xs">
+                                <thead className="bg-slate-50 sticky top-0 z-10">
+                                  <tr className="border-b border-slate-200">
+                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Vencimento</th>
+                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Emissão</th>
+                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Cliente</th>
+                                    <th className="px-3 py-2 text-right font-semibold text-slate-600 whitespace-nowrap">Valor</th>
+                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Forma de Pagamento</th>
+                                    <th className="px-3 py-2 text-left font-semibold text-slate-600 whitespace-nowrap">Descrição</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {displayCheques.map((cheque: any, idx: number) => {
+                                    const venc = cheque.vencimentoData ? new Date(cheque.vencimentoData).toLocaleDateString("pt-BR") : "-";
+                                    const emis = cheque.emissaoData ? new Date(cheque.emissaoData).toLocaleDateString("pt-BR") : "-";
+                                    const isVencido = cheque.vencimentoData && new Date(cheque.vencimentoData) < new Date();
+                                    // Extract short forma name (after "Cheque ")
+                                    const formaShort = (cheque.formaPagamento || "").replace(/^Cheque\s*/i, "").trim() || cheque.formaPagamento;
+                                    // Color badge for estado
+                                    const estadoColors: Record<string, string> = {
+                                      DISPONIVEL: "bg-emerald-100 text-emerald-700",
+                                      A_RECEBER: "bg-blue-100 text-blue-700",
+                                      COMPENSACAO: "bg-cyan-100 text-cyan-700",
+                                      CUSTODIA_SICOOB: "bg-violet-100 text-violet-700",
+                                      CUSTODIA_SICREDI: "bg-purple-100 text-purple-700",
+                                      LINHA_11: "bg-red-100 text-red-700",
+                                      LINHA_12: "bg-rose-100 text-rose-700",
+                                      VOLTOU_OUTROS: "bg-orange-100 text-orange-700",
+                                      FACTORING: "bg-amber-100 text-amber-700",
+                                    };
+                                    const badgeColor = estadoColors[cheque.estadoCheque] || "bg-slate-100 text-slate-700";
+                                    return (
+                                      <tr key={cheque.id || idx} className={`border-b border-slate-100 hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
+                                        <td className={`px-3 py-2 whitespace-nowrap font-medium ${isVencido ? "text-red-600" : "text-slate-700"}`}>{venc}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap text-slate-500">{emis}</td>
+                                        <td className="px-3 py-2 text-slate-700 max-w-[200px] truncate" title={cheque.cliente}>{cheque.cliente}</td>
+                                        <td className="px-3 py-2 text-right font-semibold text-slate-800 whitespace-nowrap">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                        <td className="px-3 py-2">
+                                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${badgeColor}`}>
+                                            {formaShort}
+                                          </span>
+                                        </td>
+                                        <td className="px-3 py-2 text-slate-500 max-w-[250px] truncate" title={cheque.descricao}>
+                                          {cheque.descricao}{cheque.parcela ? ` (${cheque.parcela}/${cheque.parcelasTotal || "?"})` : ""}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                                <tfoot>
+                                  <tr className="bg-amber-50 border-t-2 border-amber-300">
+                                    <td colSpan={3} className="px-3 py-2.5 text-xs font-bold text-amber-800">TOTAL ({displayCheques.length} cheques)</td>
+                                    <td className="px-3 py-2.5 text-right text-sm font-extrabold text-amber-700">R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                    <td colSpan={2}></td>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

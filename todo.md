@@ -3321,9 +3321,17 @@
 - [x] Testes automatizados para o endpoint de cheques
 
 ## Botão Cheques no card de empresa (Recebíveis)
-- [ ] Adicionar botão "Cheques" estiloso no header de cada empresa (Palitos, Varetas, Espetos)
-- [ ] Ao clicar, abrir card amplo e completo (conteúdo a definir pelo usuário)
+- [x] Adicionar botão "Cheques" estiloso no header de cada empresa (Palitos, Varetas, Espetos)
+- [x] Ao clicar, abrir card amplo e completo (conteúdo a definir pelo usuário)
 - [x] 9 estados de cheque como cards clicáveis/filtros dentro do painel Cheques
 - [x] Legendas explicativas para cada estado de cheque
 - [x] Opção "Todos" para ver todos os cheques de todos os estados
 - [x] Visual moderno e sofisticado nos cards de filtro
+- [x] Usar dados existentes de accounts_receivable (já sincronizados com Maxiprod) filtrados por meioPagamento = Cheque
+- [x] Query GraphQL já sincroniza Contas a Receber com meio de pagamento = Cheque automaticamente
+- [x] Cheques sincronizam junto com o sync geral do Maxiprod (accounts_receivable)
+- [x] Endpoint tRPC getCheques para servir cheques com filtros por estado e empresa
+- [x] Tabela de cheques no frontend com colunas: Vencimento, Emissão, Cliente, Valor, Forma de Pagamento, Descrição
+- [x] Somatório de valores no rodapé da tabela (total geral e por filtro)
+- [x] Filtro funcional pelos 9 estados de cheque com contadores em cada card
+- [x] Filtro por empresa (Palitos/Varetas/Espetos) automático
