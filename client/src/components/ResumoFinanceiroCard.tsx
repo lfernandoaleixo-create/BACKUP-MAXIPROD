@@ -465,7 +465,7 @@ function MaxiprodVerifyModalFinanceiro({
   );
 }
 
-export default function ResumoFinanceiroCard() {
+export default function ResumoFinanceiroCard({ onPeriodChange }: { onPeriodChange?: (dates: { start: string; end: string }) => void } = {}) {
   const [period, setPeriod] = useState<PeriodPreset>("mes_atual");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -503,6 +503,13 @@ export default function ResumoFinanceiroCard() {
       setCustomEnd("");
     }
   };
+
+  // Notify parent whenever dates change
+  useEffect(() => {
+    if (dates.start && dates.end && onPeriodChange) {
+      onPeriodChange(dates);
+    }
+  }, [dates.start, dates.end, onPeriodChange]);
 
   const applyCustomDates = () => {
     const startEl = document.getElementById("resumo-custom-start") as HTMLInputElement | null;

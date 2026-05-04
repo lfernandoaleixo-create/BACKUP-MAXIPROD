@@ -1434,37 +1434,21 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
 }
 
 /* ---- Bank Balance Card ---- */
-type BankPeriodPreset = "mes_atual" | "mes_anterior";
-
-function getBankPeriodDates(preset: BankPeriodPreset): { start: string; end: string } {
+function getDefaultBankDates(): { start: string; end: string } {
   const now = new Date();
   const curY = now.getFullYear();
   const curM = now.getMonth() + 1;
   const today = `${curY}-${String(curM).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-  switch (preset) {
-    case "mes_atual": {
-      const start = `${curY}-${String(curM).padStart(2, '0')}-01`;
-      return { start, end: today };
-    }
-    case "mes_anterior": {
-      const prevDate = new Date(curY, curM - 2, 1);
-      const prevY = prevDate.getFullYear();
-      const prevM = prevDate.getMonth() + 1;
-      const lastDay = new Date(prevY, prevM, 0).getDate();
-      return {
-        start: `${prevY}-${String(prevM).padStart(2, '0')}-01`,
-        end: `${prevY}-${String(prevM).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
-      };
-    }
-  }
+  const start = `${curY}-${String(curM).padStart(2, '0')}-01`;
+  return { start, end: today };
 }
 
-function BankBalanceCard() {
-  const [bankPeriod, setBankPeriod] = useState<BankPeriodPreset>("mes_atual");
-  const bankDates = useMemo(() => getBankPeriodDates(bankPeriod), [bankPeriod]);
+function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?: string } = {}) {
+  const defaultDates = useMemo(() => getDefaultBankDates(), []);
+  const effectiveStart = startDate || defaultDates.start;
+  const effectiveEnd = endDate || defaultDates.end;
   const { data, isLoading } = trpc.financial.getBankBalancesDetailed.useQuery(
-    { startDate: bankDates.start, endDate: bankDates.end }
+    { startDate: effectiveStart, endDate: effectiveEnd }
   );
   const [collapsed, setCollapsed] = useState(true);
   const { data: reconStatus, refetch: refetchRecon } = trpc.financial.getBankReconciliationStatus.useQuery();
@@ -1538,29 +1522,7 @@ function BankBalanceCard() {
               {activeAccounts.length} contas | {data.periodLabel}
             </p>
           </div>
-          {/* Period filter */}
-          <div className="ml-3 flex gap-1 bg-slate-100 rounded-md p-0.5" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setBankPeriod("mes_atual")}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded transition-colors ${
-                bankPeriod === "mes_atual"
-                  ? "bg-white text-indigo-700 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Mês Atual
-            </button>
-            <button
-              onClick={() => setBankPeriod("mes_anterior")}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded transition-colors ${
-                bankPeriod === "mes_anterior"
-                  ? "bg-white text-indigo-700 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Mês Anterior
-            </button>
-          </div>
+
           {/* Checkbox Conciliação Feita */}
           <div
             className={`ml-4 flex items-center gap-1.5 px-2.5 py-1 rounded-md cursor-pointer transition-colors ${
@@ -2124,6 +2086,7 @@ export default function Financial() {
   const [verifyingMonth, setVerifyingMonth] = useState<{ label: string; type: "receber" | "pagar"; from: string; to: string; total: number } | null>(null);
   const [showTotalReceberSim, setShowTotalReceberSim] = useState(false);
   const [showTotalPagarSim, setShowTotalPagarSim] = useState(false);
+  const [resumoPeriodDates, setResumoPeriodDates] = useState<{ start: string; end: string } | null>(null);
   const { data: summary, isLoading: loadingSummary } = trpc.financial.getSummary.useQuery(undefined, { refetchInterval: 60000 });
   const { data: calendarData, isLoading: loadingCalendar } = trpc.financial.getPaymentCalendar.useQuery(undefined, { refetchInterval: 60000 });
   const { data: monthlyData, isLoading: loadingMonthly } = trpc.financial.getMonthlyBreakdown.useQuery(undefined, { refetchInterval: 60000 });
@@ -2310,7 +2273,7 @@ export default function Financial() {
 
 
             {/* Resumo Financeiro (Faturamento + Vendas vs Contas Pagas) */}
-            {hasGranularAccess("fin.verResumoFinanceiro") && <ResumoFinanceiroCard />}
+            {hasGranularAccess("fin.verResumoFinanceiro") && <ResumoFinanceiroCard onPeriodChange={setResumoPeriodDates} />}
 
             {/* Cards mensais lado a lado: A Receber vs A Pagar */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -2479,7 +2442,7 @@ export default function Financial() {
             )}
 
             {/* Saldo Bancário */}
-            {hasGranularAccess("fin.verSaldoBancario") && <BankBalanceCard />}
+            {hasGranularAccess("fin.verSaldoBancario") && <BankBalanceCard startDate={resumoPeriodDates?.start} endDate={resumoPeriodDates?.end} />}
 
             {/* Calendários lado a lado */}
             <OverviewCalendars
