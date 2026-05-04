@@ -92,8 +92,8 @@ export default function FornecedoresBrasileirosTab() {
       toast.error("Descreva a forma de contato");
       return;
     }
-    if (contactForm.status === "nao_possivel_contato" && !contactForm.observacao.trim()) {
-      toast.error("Informe o motivo pelo qual não foi possível estabelecer contato");
+    if (!contactForm.observacao.trim()) {
+      toast.error("Preencha a observação antes de salvar");
       return;
     }
     addContact.mutate(contactForm);
@@ -403,14 +403,14 @@ export default function FornecedoresBrasileirosTab() {
                           {/* Observação */}
                           <div>
                             <label className="text-xs font-medium text-slate-600 mb-1 block">
-                              Observação {contactForm.status === "nao_possivel_contato" && <span className="text-red-500">* (obrigatório)</span>}
+                              Observação <span className="text-red-500">* (obrigatório)</span>
                             </label>
                             <textarea
-                              placeholder={contactForm.status === "nao_possivel_contato" ? "Informe o motivo: não atendeu, sem telefone, sem WhatsApp, não respondeu email..." : "Escreva uma observação sobre o contato..."}
+                              placeholder="Descreva o que aconteceu no contato..."
                               value={contactForm.observacao}
                               onChange={(e) => setContactForm({ ...contactForm, observacao: e.target.value })}
                               rows={3}
-                              className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none ${contactForm.status === "nao_possivel_contato" && !contactForm.observacao.trim() ? "border-red-300 bg-red-50/30" : "border-slate-200"}`}
+                              className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none ${!contactForm.observacao.trim() ? "border-red-300 bg-red-50/30" : "border-slate-200"}`}
                             />
                           </div>
 
