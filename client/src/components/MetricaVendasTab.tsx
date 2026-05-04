@@ -256,31 +256,38 @@ export default function MetricaVendasTab() {
           ) : !inadimplencia || inadimplencia.length === 0 ? (
             <div className="p-8 text-center text-slate-400">Nenhum cliente inadimplente encontrado</div>
           ) : (
-            <div className="divide-y divide-slate-50">
-              {inadimplencia.map((v) => (
-                <div
-                  key={v.vendedor}
-                  className="flex items-center justify-between p-4 hover:bg-red-50/30 cursor-pointer transition-colors"
-                  onClick={() => { setSelectedVendedor(v.vendedor); setView("inadimplenciaDetail"); }}
-                >
-                  <div>
-                    <p className="font-semibold text-slate-800">{v.vendedor}</p>
-                    <p className="text-xs text-slate-500">
-                      {v.qtdClientesInadimplentes} cliente{v.qtdClientesInadimplentes > 1 ? "s" : ""} inadimplente{v.qtdClientesInadimplentes > 1 ? "s" : ""}
-                    </p>
+            <>
+              <div className="p-3 border-b border-slate-100 bg-red-50/30">
+                <p className="text-xs text-slate-500">
+                  Dados da aba Inadimplência (títulos vencidos até o último dia útil)
+                </p>
+              </div>
+              <div className="divide-y divide-slate-50">
+                {inadimplencia.map((v) => (
+                  <div
+                    key={v.vendedor}
+                    className="flex items-center justify-between p-4 hover:bg-red-50/30 cursor-pointer transition-colors"
+                    onClick={() => { setSelectedVendedor(v.vendedor); setView("inadimplenciaDetail"); }}
+                  >
+                    <div>
+                      <p className="font-semibold text-slate-800">{v.vendedor}</p>
+                      <p className="text-xs text-slate-500">
+                        {v.qtdClientesInadimplentes} cliente{v.qtdClientesInadimplentes > 1 ? "s" : ""} inadimplente{v.qtdClientesInadimplentes > 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-red-600">{formatCurrency(v.totalDevido)}</p>
+                      <p className="text-xs text-slate-400">em aberto</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-red-600">{formatCurrency(v.totalDevido)}</p>
-                    <p className="text-xs text-slate-400">em aberto</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
 
-      {/* Inadimplência Detail View */}
+      {/* Inadimplência Detail View - Clientes do vendedor com valores */}
       {view === "inadimplenciaDetail" && (
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {(() => {
@@ -300,9 +307,14 @@ export default function MetricaVendasTab() {
                 </div>
                 <div className="divide-y divide-slate-50 max-h-[500px] overflow-y-auto">
                   {vendedorData.clientes.map((cliente) => (
-                    <div key={cliente} className="flex items-center justify-between p-4">
-                      <p className="font-medium text-slate-800">{cliente}</p>
-                      <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full font-medium">Inadimplente</span>
+                    <div key={cliente.nome} className="flex items-center justify-between p-4">
+                      <div>
+                        <p className="font-medium text-slate-800">{cliente.nome}</p>
+                        <p className="text-xs text-slate-500">
+                          {cliente.qtdTitulos} título{cliente.qtdTitulos > 1 ? "s" : ""} vencido{cliente.qtdTitulos > 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <p className="font-semibold text-red-600">{formatCurrency(cliente.totalDevido)}</p>
                     </div>
                   ))}
                 </div>

@@ -3371,3 +3371,4 @@
 - [x] Métrica de Vendas: inadimplência por vendedor (quantos clientes inadimplentes cada um tem)
 - [x] Métrica de Vendas: filtro por mês (Atual / Anterior)
 - [x] Fornecedores: badge "Contatado X vezes" na lista de possíveis clientes com tooltip mostrando quem fez cada contato
+- [x] Métrica de Vendas: inadimplência puxada da aba Inadimplência (dados reais atualizados)
