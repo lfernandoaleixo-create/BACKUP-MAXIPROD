@@ -3372,3 +3372,5 @@
 - [x] Métrica de Vendas: filtro por mês (Atual / Anterior)
 - [x] Fornecedores: badge "Contatado X vezes" na lista de possíveis clientes com tooltip mostrando quem fez cada contato
 - [x] Métrica de Vendas: inadimplência puxada da aba Inadimplência (dados reais atualizados)
+- [x] PDF Cobrança: ocultar coluna "Observações"
+- [x] PDF Cobrança: alterar mensagem "Próximo Passo" baseada na decisão de protesto do vendedor

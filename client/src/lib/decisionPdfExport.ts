@@ -251,13 +251,12 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
         step.label,
         formatDate(step.data),
         statusLabel,
-        step.motivo || "—",
       ];
     });
 
     autoTable(doc, {
       startY: y,
-      head: [["#", "Etapa", "Data", "Status", "Observação"]],
+      head: [["#", "Etapa", "Data", "Status"]],
       body: tableBody,
       margin: { left: margin, right: margin },
       styles: {
@@ -277,11 +276,10 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
         fillColor: COLORS.lightGreen,
       },
       columnStyles: {
-        0: { cellWidth: 8, halign: "center" },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 22, halign: "center" },
-        3: { cellWidth: 22, halign: "center" },
-        4: { cellWidth: "auto" },
+        0: { cellWidth: 10, halign: "center" },
+        1: { cellWidth: "auto" },
+        2: { cellWidth: 28, halign: "center" },
+        3: { cellWidth: 28, halign: "center" },
       },
       didParseCell: (data) => {
         // Color the status column
@@ -382,26 +380,36 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
     y += 20;
   }
 
-  // ── Responsabilidade do Vendedor ──
-  if (y + 28 > 280) { doc.addPage(); y = 15; }
+  // ── Próximo Passo ──
+  const vendorName = title.vendedor || "Vendedor responsável";
+  let respText: string;
+  if (isComProtesto) {
+    respText = `Todos os passos de cobrança foram executados corretamente. Como a decisão do vendedor ${vendorName} foi de Protesto, esse cliente será encaminhado para protesto em cartório.`;
+  } else {
+    respText = `Todos os passos de cobrança foram executados corretamente. Como o vendedor responsável ${vendorName} escolheu não protestar, cabe a ele escolher qual o próximo passo a ser feito, para que a equipe de cobrança dê continuidade no processo.`;
+  }
+  
+  // Calculate box height dynamically based on text
+  doc.setFontSize(8);
+  const respLines = doc.splitTextToSize(respText, contentW - 8);
+  const boxH = 10 + respLines.length * 4;
+  
+  if (y + boxH > 280) { doc.addPage(); y = 15; }
   doc.setFillColor(...COLORS.redLight);
   doc.setDrawColor(...COLORS.red);
   doc.setLineWidth(0.4);
-  doc.roundedRect(margin, y, contentW, 22, 2, 2, "FD");
+  doc.roundedRect(margin, y, contentW, boxH, 2, 2, "FD");
   
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(...COLORS.red);
-  doc.text("PRÓXIMO PASSO — RESPONSABILIDADE DO VENDEDOR", margin + 4, y + 6);
+  doc.text("PRÓXIMO PASSO", margin + 4, y + 6);
   
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(...COLORS.darkSlate);
-  const vendorName = title.vendedor || "Vendedor responsável";
-  const respText = `A partir desta data, a responsabilidade de negociação e resolução deste título é transferida para ${vendorName}. O setor financeiro encerra as tentativas de cobrança administrativa e aguarda retorno do vendedor com posicionamento do cliente.`;
-  const respLines = doc.splitTextToSize(respText, contentW - 8);
   doc.text(respLines, margin + 4, y + 12);
-  y += 26;
+  y += boxH + 4;
 
   // ── Footer ──
   const pageH = 297;
