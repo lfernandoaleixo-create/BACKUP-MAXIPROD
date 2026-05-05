@@ -219,7 +219,7 @@ export default function MetricaVendasTab() {
                         <p className="font-semibold text-slate-800 truncate">{v.vendedor}</p>
                         <p className="font-bold text-teal-700">{formatCurrency(v.totalVendas)}</p>
                       </div>
-                      {v.vendedoresReais && v.vendedoresReais.length > 0 && (
+                      {v.vendedor === "Grupo Fox" && v.vendedoresReais && v.vendedoresReais.length > 0 && (
                         <p className="text-[11px] text-slate-400 italic -mt-0.5 mb-0.5">Vendido por: {v.vendedoresReais.join(", ")}</p>
                       )}
                       <div className="flex items-center gap-4 text-xs text-slate-500">

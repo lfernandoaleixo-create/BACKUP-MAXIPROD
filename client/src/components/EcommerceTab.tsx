@@ -361,60 +361,12 @@ export default function EcommerceTab() {
   return (
     <div className="space-y-5 mt-4">
       {/* Title */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-orange-600" />
-          <h3 className="text-lg font-semibold text-slate-800">Despesas E-commerce</h3>
-          <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-[10px]">
-            {hasActiveFilters ? `${filteredExpenses.length}/${allExpenses.length}` : allExpenses.length}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Exportar PDF */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleExportPdf}
-                size="sm"
-                variant="outline"
-                disabled={filteredExpenses.length === 0}
-                className="gap-1.5 border-slate-300 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FileDown className="w-3.5 h-3.5" />
-                Exportar PDF
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {filteredExpenses.length === 0
-                ? "Nenhuma despesa para exportar"
-                : hasActiveFilters
-                  ? `Exportar ${filteredExpenses.length} itens filtrados (${formatCurrency(filteredTotal)})`
-                  : `Exportar todas as ${allExpenses.length} despesas`}
-            </TooltipContent>
-          </Tooltip>
-          <Button
-            onClick={() => setShowFilters(!showFilters)}
-            size="sm"
-            variant="outline"
-            className={`gap-1.5 ${hasActiveFilters ? "border-orange-300 bg-orange-50 text-orange-700" : ""}`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            Filtros
-            {hasActiveFilters && (
-              <Badge className="bg-orange-600 text-white text-[9px] px-1.5 py-0 ml-1">
-                {[filterDescricao, filterFormaPagamento, filterDataInicio, filterDataFim, filterRegistradoPor].filter(Boolean).length}
-              </Badge>
-            )}
-          </Button>
-          <Button
-            onClick={() => setShowForm(!showForm)}
-            size="sm"
-            className={showForm ? "bg-slate-500 hover:bg-slate-600" : "bg-orange-600 hover:bg-orange-700"}
-          >
-            {showForm ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
-            {showForm ? "Cancelar" : "Nova Despesa"}
-          </Button>
-        </div>
+      <div className="flex items-center gap-2">
+        <ShoppingCart className="w-5 h-5 text-orange-600" />
+        <h3 className="text-lg font-semibold text-slate-800">Despesas E-commerce</h3>
+        <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-[10px]">
+          {hasActiveFilters ? `${filteredExpenses.length}/${allExpenses.length}` : allExpenses.length}
+        </Badge>
       </div>
 
       {/* KPI Cards */}
@@ -654,6 +606,53 @@ export default function EcommerceTab() {
           )}
         </form>
       )}
+
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleExportPdf}
+              size="sm"
+              variant="outline"
+              disabled={filteredExpenses.length === 0}
+              className="gap-1.5 border-slate-300 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              Exportar PDF
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {filteredExpenses.length === 0
+              ? "Nenhuma despesa para exportar"
+              : hasActiveFilters
+                ? `Exportar ${filteredExpenses.length} itens filtrados (${formatCurrency(filteredTotal)})`
+                : `Exportar todas as ${allExpenses.length} despesas`}
+          </TooltipContent>
+        </Tooltip>
+        <Button
+          onClick={() => setShowFilters(!showFilters)}
+          size="sm"
+          variant="outline"
+          className={`gap-1.5 ${hasActiveFilters ? "border-orange-300 bg-orange-50 text-orange-700" : ""}`}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5" />
+          Filtros
+          {hasActiveFilters && (
+            <Badge className="bg-orange-600 text-white text-[9px] px-1.5 py-0 ml-1">
+              {[filterDescricao, filterFormaPagamento, filterDataInicio, filterDataFim, filterRegistradoPor].filter(Boolean).length}
+            </Badge>
+          )}
+        </Button>
+        <Button
+          onClick={() => setShowForm(!showForm)}
+          size="sm"
+          className={showForm ? "bg-slate-500 hover:bg-slate-600" : "bg-orange-600 hover:bg-orange-700"}
+        >
+          {showForm ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+          {showForm ? "Cancelar" : "Nova Despesa"}
+        </Button>
+      </div>
 
       {/* Expenses List */}
       {filteredExpenses.length === 0 ? (

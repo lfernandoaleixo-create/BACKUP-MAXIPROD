@@ -3393,3 +3393,4 @@
 - [x] Vendas: adicionar observação no card da semana quando houver venda em dia não útil (fim de semana/cinza)
 - [x] Vendas: no card Grupo Fox do ranking, mostrar o vendedor real (representanteOuVendedor1) como informação adicional, sem alterar o cômputo do ranking
 - [x] Financeiro: mover título "Despesas E-commerce" para acima dos cards (não abaixo)
+- [x] E-commerce: separar botões (Exportar PDF, Filtros, Nova Despesa) do título - botões ficam acima do card branco da tabela
