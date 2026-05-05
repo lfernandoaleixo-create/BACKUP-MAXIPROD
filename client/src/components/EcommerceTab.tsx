@@ -360,42 +360,7 @@ export default function EcommerceTab() {
 
   return (
     <div className="space-y-5 mt-4">
-      {/* KPI Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Geral</span>
-              <DollarSign className="w-4 h-4 text-orange-500" />
-            </div>
-            <p className="text-xl font-bold text-slate-800">{formatCurrency(summary.totalGeral)}</p>
-            <p className="text-[11px] text-slate-400 mt-1">{summary.totalCount} lançamentos</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Mês Atual</span>
-              <Calendar className="w-4 h-4 text-teal-500" />
-            </div>
-            <p className="text-xl font-bold text-slate-800">{formatCurrency(summary.mesAtual.total)}</p>
-            <p className="text-[11px] text-slate-400 mt-1">{summary.mesAtual.count} lançamentos</p>
-          </div>
-          {summary.porFormaPagamento.map((fp: any) => {
-            const info = FORMA_PAGAMENTO_LABELS[fp.forma] || { label: fp.forma, icon: null, color: "" };
-            return (
-              <div key={fp.forma} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{info.label}</span>
-                  {info.icon}
-                </div>
-                <p className="text-xl font-bold text-slate-800">{formatCurrency(fp.total)}</p>
-                <p className="text-[11px] text-slate-400 mt-1">{fp.count} lançamentos</p>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Header + Buttons */}
+      {/* Title */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-5 h-5 text-orange-600" />
@@ -451,6 +416,43 @@ export default function EcommerceTab() {
           </Button>
         </div>
       </div>
+
+      {/* KPI Cards */}
+      {summary && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Geral</span>
+              <DollarSign className="w-4 h-4 text-orange-500" />
+            </div>
+            <p className="text-xl font-bold text-slate-800">{formatCurrency(summary.totalGeral)}</p>
+            <p className="text-[11px] text-slate-400 mt-1">{summary.totalCount} lançamentos</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Mês Atual</span>
+              <Calendar className="w-4 h-4 text-teal-500" />
+            </div>
+            <p className="text-xl font-bold text-slate-800">{formatCurrency(summary.mesAtual.total)}</p>
+            <p className="text-[11px] text-slate-400 mt-1">{summary.mesAtual.count} lançamentos</p>
+          </div>
+          {summary.porFormaPagamento.map((fp: any) => {
+            const info = FORMA_PAGAMENTO_LABELS[fp.forma] || { label: fp.forma, icon: null, color: "" };
+            return (
+              <div key={fp.forma} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{info.label}</span>
+                  {info.icon}
+                </div>
+                <p className="text-xl font-bold text-slate-800">{formatCurrency(fp.total)}</p>
+                <p className="text-[11px] text-slate-400 mt-1">{fp.count} lançamentos</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+
 
       {/* Filtros */}
       {showFilters && (
