@@ -3375,3 +3375,4 @@
 - [x] PDF Cobrança: ocultar coluna "Observações"
 - [x] PDF Cobrança: alterar mensagem "Próximo Passo" baseada na decisão de protesto do vendedor
 - [x] PDF Decisão Cobrança: corrigir upload corrompido do S3 (enviava "[object Blob]" em vez de bytes reais)
+- [x] Produção: adicionar média total consolidada em cada card (Multilâmina, Vareteiras, Seleção toco, Seleção automática, Seleção visual, Flow Pack)

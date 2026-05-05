@@ -287,6 +287,7 @@ export default function Production() {
   const { data: sectors, isLoading: loadingSectors } = trpc.production.getSectors.useQuery();
   const { data: entries } = trpc.production.getEntries.useQuery({ data: selectedDate });
   const { data: dailySummary } = trpc.production.getDailySummary.useQuery({ data: selectedDate });
+  const { data: monthlyAverage } = trpc.production.getMonthlyAverage.useQuery({ data: selectedDate });
 
   const weekRange = useMemo(() => getWeekRange(selectedDate), [selectedDate]);
   const { data: weeklySummary } = trpc.production.getWeeklySummary.useQuery({
@@ -1042,6 +1043,8 @@ export default function Production() {
               {sectors?.map(sector => {
                 const total = getSectorTotal(sector.id);
                 const Icon = getSectorIcon(sector.ordem);
+                const avgData = monthlyAverage?.find(a => a.sectorId === sector.id);
+                const decimals = sector.unidadeMedida === "m³" ? 3 : isDualUnitSector(sector.ordem) ? 1 : 0;
                 return (
                   <div key={sector.id} className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => toggleSector(sector.id)}>
                     <div className="flex items-start gap-1.5 mb-1">
@@ -1050,8 +1053,16 @@ export default function Production() {
                       </div>
                       <span className="text-[10px] font-semibold text-slate-500 uppercase leading-tight break-words hyphens-auto" style={{ wordBreak: 'break-word' }}>{sector.nome}</span>
                     </div>
-                    <div className="text-lg font-bold text-slate-800 tabular-nums">{fmtNum(total, sector.unidadeMedida === "m³" ? 3 : isDualUnitSector(sector.ordem) ? 1 : 0)}</div>
+                    <div className="text-lg font-bold text-slate-800 tabular-nums">{fmtNum(total, decimals)}</div>
                     <div className="text-[10px] text-slate-400">{isDualUnitSector(sector.ordem) ? "sacos produzidos" : sector.unidadeLabel}</div>
+                    {avgData && avgData.mediaDiaria > 0 && (
+                      <div className="mt-1.5 pt-1.5 border-t border-slate-100">
+                        <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3 text-teal-500" />
+                          <span>média: <span className="font-bold text-teal-600">{fmtNum(avgData.mediaDiaria, decimals)}</span></span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1066,6 +1077,7 @@ export default function Production() {
                 const hasMachines = sector.machines && sector.machines.length > 0;
                 const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
                 const expandable = hasExpandableFeatures(sector.ordem);
+                const sectorAvg = monthlyAverage?.find(a => a.sectorId === sector.id);
 
                 return (
                   <div key={sector.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1085,6 +1097,9 @@ export default function Production() {
                         <div className="text-xs text-slate-400 mt-0.5">
                           {hasMachines ? `${sector.quantidadeEquipamentos} ${sector.tipoEquipamento === "mesa" ? "mesas" : "máquinas"}` : "Sem equipamento"}
                           {" · "}{sector.unidadeLabel}
+                          {sectorAvg && sectorAvg.mediaDiaria > 0 && (
+                            <span className="ml-1 text-teal-600 font-semibold">· média: {fmtNum(sectorAvg.mediaDiaria, isDualUnitSector(sector.ordem) ? 1 : decimals)}</span>
+                          )}
                         </div>
                       </div>
                       <div className="text-right mr-3">

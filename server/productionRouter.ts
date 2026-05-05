@@ -451,6 +451,45 @@ export const productionRouter = router({
         .orderBy(productionEntries.data, productionEntries.sectorId);
     }),
 
+  /**
+   * Get monthly average per sector.
+   * Returns total produced in the month and the daily average (total / distinct working days with entries).
+   */
+  getMonthlyAverage: publicProcedure
+    .input(z.object({ data: z.string().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      // Determine month range from the given date (or today)
+      const refDate = input.data || new Date().toISOString().slice(0, 10);
+      const [y, m] = refDate.split("-").map(Number);
+      const startDate = `${y}-${String(m).padStart(2, "0")}-01`;
+      const lastDay = new Date(y, m, 0).getDate();
+      const endDate = `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+      
+      // Get total per sector and count of distinct days with production
+      const rows = await db
+        .select({
+          sectorId: productionEntries.sectorId,
+          total: sql<string>`SUM(${productionEntries.quantidade})`,
+          diasTrabalhados: sql<number>`COUNT(DISTINCT ${productionEntries.data})`,
+        })
+        .from(productionEntries)
+        .where(and(
+          gte(productionEntries.data, startDate),
+          lte(productionEntries.data, endDate),
+          sql`${productionEntries.quantidade} > 0`,
+        ))
+        .groupBy(productionEntries.sectorId);
+      
+      return rows.map(r => ({
+        sectorId: r.sectorId,
+        totalMes: parseFloat(String(r.total)) || 0,
+        diasTrabalhados: r.diasTrabalhados || 0,
+        mediaDiaria: r.diasTrabalhados > 0 ? (parseFloat(String(r.total)) || 0) / r.diasTrabalhados : 0,
+      }));
+    }),
+
   getStatusOptions: publicProcedure.query(() => {
     return {
       statusOptions: MACHINE_STATUS_OPTIONS,
