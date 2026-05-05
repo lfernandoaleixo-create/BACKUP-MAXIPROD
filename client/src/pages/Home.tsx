@@ -5247,7 +5247,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                         <th className="px-2 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Descrição do Produto</th>
                         <th className="px-2 py-1.5 text-right text-[9px] font-semibold text-purple-600 uppercase tracking-wider" style={{width:'10%'}}>Caixas</th>
                         <th className="px-2 py-1.5 text-right text-[9px] font-semibold text-amber-600 uppercase tracking-wider" style={{width:'10%'}}>Pacotes</th>
-                        <th className="px-2 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'22%'}}>Observação</th>
+                        <th className="px-2 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell" style={{width:'22%'}}>Observação</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -5273,7 +5273,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                               <span className="text-[13px] font-semibold text-amber-700">{formatNumber(h.quantidadeOriginal)} <span className="text-[9px] text-amber-400 font-bold">pc</span></span>
                             )}
                           </td>
-                          <td className="px-2.5 py-1.5">
+                          <td className="px-2.5 py-1.5 hidden md:table-cell">
                             {isDirectCx ? (
                               <span className="inline-flex items-center gap-1 text-[10px] text-cyan-700 bg-cyan-50 border border-cyan-200 px-1.5 py-0.5 rounded">
                                 <Info className="w-2.5 h-2.5" />
@@ -5283,7 +5283,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                               <span className="text-[10px] text-slate-400">Convertido de {formatNumber(h.quantidadeOriginal)} pc → {formatNumber(h.quantidadeCx)} cx (mãe: {h.produtoMae})</span>
                             )}
                           </td>
-                          <td className="px-2.5 py-1.5 text-center">
+                          <td className="px-2.5 py-1.5 text-center hidden md:table-cell">
                             <Badge className="text-[9px] border-0 px-1.5 py-0 bg-green-100 text-green-700">
                               Faturado
                             </Badge>
@@ -5310,8 +5310,8 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                             );
                           })()}
                         </td>
-                        <td></td>
-                        <td></td>
+                        <td className="hidden md:table-cell"></td>
+                        <td className="hidden md:table-cell"></td>
                       </tr>
                     </tfoot>
                   </table>
@@ -5595,7 +5595,8 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
                       <span className="text-xs font-extrabold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-lg">{formatNumber(group.totalCx)} cx</span>
                     </div>
                   </div>
-                  <table className="w-full">
+                  <div className="overflow-x-auto">
+                  <table className="w-full min-w-[580px]">
                     <thead className="bg-slate-50/80">
                       <tr>
                         <th className="px-2.5 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'3%'}}>#</th>
@@ -5603,8 +5604,8 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
                         <th className="px-2.5 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Descrição do Produto</th>
                         <th className="px-2.5 py-1.5 text-right text-[9px] font-semibold text-emerald-600 uppercase tracking-wider" style={{width:'8%'}}>Caixas</th>
                         <th className="px-2.5 py-1.5 text-right text-[9px] font-semibold text-amber-600 uppercase tracking-wider" style={{width:'8%'}}>Pacotes</th>
-                        <th className="px-2.5 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'24%'}}>Observação</th>
-                        <th className="px-2.5 py-1.5 text-center text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'7%'}}>Status</th>
+                        <th className="px-2.5 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell" style={{width:'24%'}}>Observação</th>
+                        <th className="px-2.5 py-1.5 text-center text-[9px] font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell" style={{width:'7%'}}>Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -5630,7 +5631,7 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
                               <span className="text-[13px] font-semibold text-amber-700">{formatNumber(h.quantidadeOriginal)} <span className="text-[9px] text-amber-400 font-bold">pc</span></span>
                             )}
                           </td>
-                          <td className="px-2.5 py-1.5">
+                          <td className="px-2.5 py-1.5 hidden md:table-cell">
                             {isDirectCx ? (
                               <span className="inline-flex items-center gap-1 text-[10px] text-cyan-700 bg-cyan-50 border border-cyan-200 px-1.5 py-0.5 rounded">
                                 <Info className="w-2.5 h-2.5" />
@@ -5640,7 +5641,7 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
                               <span className="text-[10px] text-slate-400">Convertido de {formatNumber(h.quantidadeOriginal)} pc → {formatNumber(h.quantidadeCx)} cx (mãe: {h.produtoMae})</span>
                             )}
                           </td>
-                          <td className="px-2.5 py-1.5 text-center">
+                          <td className="px-2.5 py-1.5 text-center hidden md:table-cell">
                             <Badge className="text-[9px] border-0 px-1.5 py-0 bg-green-100 text-green-700">
                               Faturado
                             </Badge>
@@ -5666,11 +5667,12 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
                             );
                           })()}
                         </td>
-                        <td></td>
-                        <td></td>
+                        <td className="hidden md:table-cell"></td>
+                        <td className="hidden md:table-cell"></td>
                       </tr>
                     </tfoot>
                   </table>
+                  </div>
                 </div>
               ))}
 
