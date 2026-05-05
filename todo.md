@@ -3433,3 +3433,7 @@
 - [x] Mobile: Verificar fluxo completo de autorização + exportar PDF no celular
 - [x] Mobile: Exportar PDF - melhorar compatibilidade com iOS Safari (Blob download)
 - [x] Renomear botões Inadimplência: Importar → Importar Planilha, Decisão → PDF de Decisão de Cobrança, Guia → Guia de Cobrança
+- [ ] Mobile: E-commerce tabela - coluna Observações cortada na direita
+- [ ] Mobile: Valorização do Estoque - VLR ESTOQUE valor cortado (R$ 2.09...)
+- [ ] Mobile: Financeiro BucketCards (Recebimentos/Pagamentos) - lado a lado muito apertado, textos cortados
+- [x] Renomear abas Vendas: Fornecedores → Fornecedores Brasileiros, Métricas → Métricas de Vendas

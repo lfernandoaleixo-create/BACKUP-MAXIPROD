@@ -3131,7 +3131,7 @@ export default function Sales() {
               }`}
             >
               <Truck className="w-4 h-4" />
-              Fornecedores
+              Fornecedores Brasileiros
             </button>
             <button
               onClick={() => setSalesTab("metricas")}
@@ -3142,7 +3142,7 @@ export default function Sales() {
               }`}
             >
               <TrendingUp className="w-4 h-4" />
-              Métricas
+              Métricas de Vendas
             </button>
           </div>
         )}

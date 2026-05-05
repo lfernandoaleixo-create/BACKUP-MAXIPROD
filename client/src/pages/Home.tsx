@@ -2469,25 +2469,25 @@ function MadeiraValorizacaoCard({
   }, [madeiraItems, pricingOverrides, precosMap]);
 
   return (
-    <div className="flex items-stretch gap-4">
+    <div className="flex flex-col md:flex-row items-stretch gap-4">
       {/* Valuation Card - same layout as bambu */}
       {showMadeiraFinancial && (
-        <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3 transition-all">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-3 md:px-5 py-3 transition-all">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
             <DollarSign className="w-4 h-4 text-emerald-600" />
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
+            <p className="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
             <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
-              <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
-              <p className="text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
+          <div className="grid grid-cols-2 gap-2 md:gap-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg px-2 md:px-4 py-2">
+              <p className="text-[9px] md:text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
+              <p className="text-sm md:text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
-                  <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
-                  <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-2 md:px-4 py-2 cursor-help">
+                  <p className="text-[9px] md:text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
+                  <p className="text-sm md:text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
@@ -4491,26 +4491,26 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           <div className="flex flex-col sm:flex-row items-stretch gap-4">
             {/* Global Valuation Card */}
             {showFinancial && (
-              <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3 transition-all">
-                <div className="flex items-center gap-2 mb-3">
+              <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-3 md:px-5 py-3 transition-all">
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <DollarSign className="w-4 h-4 text-emerald-600" />
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
+                  <p className="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
                   <span className="text-[10px] text-slate-400 ml-auto">{globalValuation.comPreco}/{parentOnlyItems.length} com preço</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
-                    <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
-                    <p className="text-lg font-extrabold text-green-800">{formatCurrency(globalValuation.valorEstoque)}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg px-2 md:px-4 py-2">
+                    <p className="text-[9px] md:text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
+                    <p className="text-sm md:text-lg font-extrabold text-green-800">{formatCurrency(globalValuation.valorEstoque)}</p>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
-                    <p className="text-[10px] text-blue-700 font-semibold uppercase tracking-wider">Vlr PO</p>
-                    <p className="text-lg font-extrabold text-blue-800">{formatCurrency(globalValuation.valorPO)}</p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-2 md:px-4 py-2">
+                    <p className="text-[9px] md:text-[10px] text-blue-700 font-semibold uppercase tracking-wider">Vlr PO</p>
+                    <p className="text-sm md:text-lg font-extrabold text-blue-800">{formatCurrency(globalValuation.valorPO)}</p>
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2.5 cursor-help">
-                        <p className="text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
-                        <p className="text-lg font-extrabold text-indigo-800">{formatCurrency(globalValuation.valorProjetado)}</p>
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-2 md:px-4 py-2 cursor-help">
+                        <p className="text-[9px] md:text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
+                        <p className="text-sm md:text-lg font-extrabold text-indigo-800">{formatCurrency(globalValuation.valorProjetado)}</p>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
@@ -5237,17 +5237,17 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                       <span className="text-xs font-extrabold text-purple-700 bg-purple-100 px-2.5 py-0.5 rounded-lg">{formatNumber(group.totalCx)} cx</span>
                     </div>
                   </div>
-                  {/* Group table - full width, no scroll needed */}
-                  <table className="w-full">
+                  {/* Group table - scrollable on mobile */}
+                  <div className="overflow-x-auto">
+                  <table className="w-full min-w-[580px]">
                     <thead className="bg-slate-50/80">
                       <tr>
-                        <th className="px-2.5 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'3%'}}>#</th>
-                        <th className="px-2.5 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'6%'}}>Código</th>
-                        <th className="px-2.5 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Descrição do Produto</th>
-                        <th className="px-2.5 py-1.5 text-right text-[9px] font-semibold text-purple-600 uppercase tracking-wider" style={{width:'8%'}}>Caixas</th>
-                        <th className="px-2.5 py-1.5 text-right text-[9px] font-semibold text-amber-600 uppercase tracking-wider" style={{width:'8%'}}>Pacotes</th>
-                        <th className="px-2.5 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'24%'}}>Observação</th>
-                        <th className="px-2.5 py-1.5 text-center text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'7%'}}>Status</th>
+                        <th className="px-2 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'3%'}}>#</th>
+                        <th className="px-2 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'8%'}}>Código</th>
+                        <th className="px-2 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Descrição do Produto</th>
+                        <th className="px-2 py-1.5 text-right text-[9px] font-semibold text-purple-600 uppercase tracking-wider" style={{width:'10%'}}>Caixas</th>
+                        <th className="px-2 py-1.5 text-right text-[9px] font-semibold text-amber-600 uppercase tracking-wider" style={{width:'10%'}}>Pacotes</th>
+                        <th className="px-2 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider" style={{width:'22%'}}>Observação</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -5315,6 +5315,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                       </tr>
                     </tfoot>
                   </table>
+                  </div>
                 </div>
               ))}
 
