@@ -820,6 +820,17 @@ async function saveAllData(
   // Snapshot de pedidos anteriores não é mais necessário pois a baixa automática foi desativada.
   // O estoque agora é controlado manualmente e, a partir de 17/04/2026, pela produção da Maria.
 
+  // ═══ DETECÇÃO DE NOVAS VENDAS: Snapshot dos pedidos de venda ANTES de deletar ═══
+  let previousSalesPedidos = new Set<string>();
+  try {
+    const currentSales = await db.select({ pedido: salesOrders.pedido }).from(salesOrders);
+    for (const s of currentSales) {
+      if (s.pedido) previousSalesPedidos.add(s.pedido);
+    }
+  } catch (e) {
+    console.warn(`[Sales Notification] Erro ao capturar snapshot anterior:`, e);
+  }
+
   // Usar transação atômica para evitar dados inconsistentes durante a sincronização
   await db.transaction(async (tx) => {
     // Save stock items
@@ -907,6 +918,56 @@ async function saveAllData(
   });
 
   console.log(`[GraphQL Sync] Dados de estoque/pedidos salvos atomicamente: ${stockData.length} est, ${orderData.length} ped, ${poData.length} po, ${salesData.length} vnd`);
+
+  // ═══ NOTIFICAÇÃO DE NOVAS VENDAS: Comparar pedidos anteriores vs novos ═══
+  try {
+    if (previousSalesPedidos.size > 0) {
+      const newSalesPedidos = new Set<string>();
+      for (const item of salesData) {
+        const pedido = item.pedido || item.numeroPedido || "";
+        if (pedido) newSalesPedidos.add(pedido);
+      }
+      // Pedidos que existem agora mas não existiam antes = vendas novas
+      const brandNewPedidos: string[] = [];
+      for (const p of Array.from(newSalesPedidos)) {
+        if (!previousSalesPedidos.has(p)) brandNewPedidos.push(p);
+      }
+      if (brandNewPedidos.length > 0) {
+        // Coletar info dos novos pedidos para a notificação
+        const newPedidoDetails = salesData.filter((item: any) => {
+          const pedido = item.pedido || item.numeroPedido || "";
+          return brandNewPedidos.includes(pedido);
+        });
+        // Agrupar por pedido para resumo
+        const pedidoMap = new Map<string, { cliente: string; valor: number }>(); 
+        for (const item of newPedidoDetails) {
+          const pedido = item.pedido || item.numeroPedido || "";
+          const existing = pedidoMap.get(pedido);
+          const valorItem = parseFloat(String(item.valorTotal || item.valorContabil || 0));
+          if (existing) {
+            existing.valor += valorItem;
+          } else {
+            pedidoMap.set(pedido, { cliente: item.clienteApelido || item.cliente || "Cliente", valor: valorItem });
+          }
+        }
+        // Montar mensagem
+        const lines: string[] = [];
+        let totalGeral = 0;
+        for (const [ped, info] of Array.from(pedidoMap.entries())) {
+          lines.push(`Ped #${ped} - ${info.cliente} - R$ ${info.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
+          totalGeral += info.valor;
+        }
+        const title = `\ud83d\udcb0 ${brandNewPedidos.length} nova(s) venda(s) detectada(s)!`;
+        const content = lines.slice(0, 5).join('\n') + (lines.length > 5 ? `\n... e mais ${lines.length - 5} pedido(s)` : '') + `\n\nTotal: R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        
+        const { notifyOwner } = await import("./_core/notification");
+        await notifyOwner({ title, content });
+        console.log(`[Sales Notification] Push enviado: ${brandNewPedidos.length} novos pedidos detectados`);
+      }
+    }
+  } catch (e) {
+    console.error(`[Sales Notification] Erro ao enviar notifica\u00e7\u00e3o de vendas:`, e);
+  }
 
   // ═══ BAIXA AUTOMÁTICA DE INDUSTRIALIZADOS: REATIVADA em 27/04/2026 ═══
   // Quando um item industrializado (MADEIRA/MADEIRA CONTABILIZADO) é faturado,

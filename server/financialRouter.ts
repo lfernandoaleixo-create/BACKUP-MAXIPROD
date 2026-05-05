@@ -2748,6 +2748,21 @@ export const financialRouter = router({
         });
       }
 
+      // Enviar push notification quando conciliação é marcada como pronta
+      if (input.reconciled) {
+        try {
+          const { notifyOwner } = await import("./_core/notification");
+          const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+          await notifyOwner({
+            title: `\u2705 Concilia\u00e7\u00e3o banc\u00e1ria pronta!`,
+            content: `Thiago marcou a concilia\u00e7\u00e3o banc\u00e1ria do dia ${today} como conclu\u00edda.`,
+          });
+          console.log(`[Reconciliation] Push notification sent: concilia\u00e7\u00e3o ${today} marcada como pronta`);
+        } catch (e) {
+          console.error(`[Reconciliation] Erro ao enviar push:`, e);
+        }
+      }
+
       return { success: true };
     }),
 

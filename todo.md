@@ -3399,3 +3399,10 @@
 - [x] Tooltip com informações extras ao passar o mouse no nome do produto (grupo, estoque, etc)
 - [x] Highlight no texto encontrado ao pesquisar na tabela de estoque
 - [x] PWA: transformar o site em Progressive Web App (manifest, service worker, ícone, standalone mode) para funcionar como app nativo no iPhone
+- [x] Corrigir layout mobile: Vendas - cards "Média Diária" cortados, valores truncados, semanas cortadas
+- [x] Corrigir layout mobile: Financeiro - KPIs apertados, valores cortados (R$ 180.198, R$ 160.535 etc)
+- [x] Corrigir layout mobile: Estoque - botões "Histórico E-commerce" cortados
+- [x] Corrigir layout mobile: date picker "Ir para Hoje" quebrando layout
+- [x] Novo ícone PWA: fundo preto quadrado, texto "GRUPO FOX" e raposa em dourado reluzente
+- [x] Notificação push: alertar Fernando e Guilherme quando venda for realizada
+- [x] Notificação push: alertar Fernando e Guilherme quando Thiago marcar conciliação como pronta

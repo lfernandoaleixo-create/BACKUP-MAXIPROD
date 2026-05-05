@@ -4488,7 +4488,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         })();
 
         return (
-          <div className="flex items-stretch gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch gap-4">
             {/* Global Valuation Card */}
             {showFinancial && (
               <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3 transition-all">
@@ -4497,7 +4497,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
                   <span className="text-[10px] text-slate-400 ml-auto">{globalValuation.comPreco}/{parentOnlyItems.length} com preço</span>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5">
                     <p className="text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
                     <p className="text-lg font-extrabold text-green-800">{formatCurrency(globalValuation.valorEstoque)}</p>
@@ -4570,9 +4570,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
             <div className="flex items-center">
               <button
                 onClick={() => setShowEcommerceHistory(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all sm:whitespace-nowrap bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 shadow-sm"
               >
-                <Store className="w-4 h-4" />
+                <Store className="w-4 h-4 flex-shrink-0" />
                 Histórico E-commerce — Importação
               </button>
             </div>

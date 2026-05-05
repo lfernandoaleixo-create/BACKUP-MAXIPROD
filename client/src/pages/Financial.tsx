@@ -246,7 +246,7 @@ function AgingBar({ aging }: { aging: any }) {
           );
         })}
       </div>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
         {segments.map((seg) => (
           <div key={seg.key} className="text-center">
             <div className={`w-3 h-3 rounded-full ${seg.color} mx-auto mb-1`} />

@@ -440,7 +440,7 @@ function DailyChart({ data, mode, period, comparison }: {
       {showLines && (
         <>
         {/* --- Painel de Médias Diárias --- */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           {/* Mês Atual */}
           <div className="relative bg-gradient-to-br from-teal-50 via-white to-teal-50/30 border border-teal-200/50 rounded-2xl p-5 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
             <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-400 via-emerald-500 to-teal-600" />
@@ -450,7 +450,7 @@ function DailyChart({ data, mode, period, comparison }: {
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal-600/70">Média diária do mês atual</span>
                 <span className="text-[9px] text-teal-600 bg-teal-100/80 px-2 py-0.5 rounded-full font-semibold">Total de {currentDays} dias do mês</span>
               </div>
-              <div className="text-2xl font-black text-teal-800 tracking-tight leading-none">{formatCurrencyFull(currentAvg)}</div>
+              <div className="text-lg sm:text-2xl font-black text-teal-800 tracking-tight leading-none">{formatCurrencyFull(currentAvg)}</div>
               <div className="mt-3 pt-3 border-t border-teal-100/80 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
@@ -472,7 +472,7 @@ function DailyChart({ data, mode, period, comparison }: {
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-600/70">Média diária do mês anterior</span>
                 <span className="text-[9px] text-blue-600 bg-blue-100/80 px-2 py-0.5 rounded-full font-semibold">Total de {lastDays} dias do mês</span>
               </div>
-              <div className="text-2xl font-black text-blue-800 tracking-tight leading-none">{formatCurrencyFull(lastAvg)}</div>
+              <div className="text-lg sm:text-2xl font-black text-blue-800 tracking-tight leading-none">{formatCurrencyFull(lastAvg)}</div>
               <div className="mt-3 pt-3 border-t border-blue-100/80 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
@@ -495,7 +495,7 @@ function DailyChart({ data, mode, period, comparison }: {
                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-600/70">Média diária do melhor mês de vendas</span>
                   <span className="text-[9px] text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">Total de {bestDays} dias do mês</span>
                 </div>
-                <div className="text-2xl font-black text-amber-800 tracking-tight leading-none">{formatCurrencyFull(bestAvg)}</div>
+                <div className="text-lg sm:text-2xl font-black text-amber-800 tracking-tight leading-none">{formatCurrencyFull(bestAvg)}</div>
                 <div className="mt-3 pt-3 border-t border-amber-100/80 space-y-1.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
@@ -728,7 +728,7 @@ function DailyChart({ data, mode, period, comparison }: {
         };
 
         return (
-          <div className="grid gap-2.5 mt-4" style={{ gridTemplateColumns: `repeat(${weeks.length}, 1fr)` }}>
+          <div className="grid gap-2.5 mt-4 overflow-x-auto" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(140px, 1fr))` }}>
             {weeks.map((week, idx) => {
               const colors = weekColors[idx % weekColors.length];
               const hasValue = week.total > 0;
@@ -3606,12 +3606,12 @@ export default function Sales() {
                 onClick={() => setChartExpanded(!chartExpanded)}
                 className="w-full flex items-center justify-between px-5 py-4 hover:bg-emerald-50/50 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <BarChart3 className="w-6 h-6 text-emerald-600" />
-                  <h3 className="text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Diaria</h3>
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 flex-shrink-0" />
+                  <h3 className="text-sm sm:text-base font-semibold text-slate-700 uppercase tracking-wide">Evolucao Diaria</h3>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-base font-bold text-slate-800">{formatCurrencyFull(analytics.totalValue)}</span>
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <span className="text-sm sm:text-base font-bold text-slate-800">{formatCurrencyFull(analytics.totalValue)}</span>
                   {chartExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                 </div>
               </button>

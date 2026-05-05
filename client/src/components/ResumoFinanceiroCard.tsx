@@ -727,7 +727,7 @@ function CompactSummary({
       onClick={onToggle}
     >
       {/* 4 cards alinhados: Entradas | Faturamento | Vendas | Contas Pagas */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         {/* Card 1: Entradas (Recebimentos + Outras = Total) */}
         <div className={`px-3.5 py-3.5 rounded-lg relative group transition-all ${
           divEntradas ? "bg-red-50/80 border-2 border-red-300 shadow-md shadow-red-100" : "bg-amber-50/60 border border-amber-100"
@@ -744,7 +744,7 @@ function CompactSummary({
               </button>
             )}
           </div>
-          <p className="text-lg font-bold text-amber-700 leading-tight text-center">{formatCurrency(totalEntradas)}</p>
+          <p className="text-base sm:text-lg font-bold text-amber-700 leading-tight text-center">{formatCurrency(totalEntradas)}</p>
           <div className="mt-2 pt-2 border-t border-amber-200/60 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[11px] text-slate-500 flex items-center gap-1">
@@ -793,7 +793,7 @@ function CompactSummary({
               </button>
             )}
           </div>
-          <p className="text-lg font-bold text-emerald-700 leading-tight">{formatCurrency(faturamento)}</p>
+          <p className="text-base sm:text-lg font-bold text-emerald-700 leading-tight">{formatCurrency(faturamento)}</p>
           <p className="text-[11px] text-slate-400 mt-1">{billingData?.faturamento?.count ?? 0} NFs emitidas</p>
           {canVerifyMaxiprod && (
             <div className="mt-2 pt-2 border-t border-emerald-200/40">
@@ -827,7 +827,7 @@ function CompactSummary({
               </button>
             )}
           </div>
-          <p className="text-lg font-bold text-blue-700 leading-tight">{formatCurrency(vendas)}</p>
+          <p className="text-base sm:text-lg font-bold text-blue-700 leading-tight">{formatCurrency(vendas)}</p>
           <p className="text-[11px] text-slate-400 mt-1">{salesData?.vendas?.pedidos ?? 0} pedidos</p>
           {canVerifyMaxiprod && (
             <div className="mt-2 pt-2 border-t border-blue-200/40">
@@ -861,7 +861,7 @@ function CompactSummary({
               </button>
             )}
           </div>
-          <p className="text-lg font-bold text-red-600 leading-tight">{formatCurrency(contasPagas)}</p>
+          <p className="text-base sm:text-lg font-bold text-red-600 leading-tight">{formatCurrency(contasPagas)}</p>
           <p className="text-[11px] text-slate-400 mt-1">{billingData?.contasPagar?.count ?? salesData?.contasPagas?.count ?? 0} contas</p>
           {canVerifyMaxiprod && (
             <div className="mt-2 pt-2 border-t border-red-200/40">
@@ -882,7 +882,7 @@ function CompactSummary({
 
       {/* Saldo row: Cards de confrontamento sofisticados */}
       <div className="pt-3 border-t border-slate-100 space-y-2">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {/* Entradas vs Saídas */}
           <div className={`rounded-lg p-3 border transition-all hover:shadow-md ${
             variacaoSaldo >= 0 ? "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-300" : "bg-gradient-to-br from-red-50 to-rose-50 border-red-300"
@@ -891,7 +891,7 @@ function CompactSummary({
               {variacaoSaldo >= 0 ? <TrendingUp className="w-4 h-4 text-emerald-600" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
               <span className={`text-xs font-bold uppercase tracking-wider ${variacaoSaldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>Entradas vs Saidas</span>
             </div>
-            <p className={`text-xl font-extrabold ${variacaoSaldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+            <p className={`text-lg sm:text-xl font-extrabold ${variacaoSaldo >= 0 ? "text-emerald-700" : "text-red-600"}`}>
               {variacaoSaldo >= 0 ? "+" : ""}{formatCurrency(variacaoSaldo)}
             </p>
             <p className={`text-sm mt-1.5 leading-snug font-medium ${variacaoSaldo >= 0 ? "text-emerald-600/70" : "text-red-500/70"}`}>
@@ -909,7 +909,7 @@ function CompactSummary({
               {faturamento - contasPagas >= 0 ? <TrendingUp className="w-4 h-4 text-emerald-600" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
               <span className={`text-xs font-bold uppercase tracking-wider ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>Fat. vs Pago</span>
             </div>
-            <p className={`text-xl font-extrabold ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+            <p className={`text-lg sm:text-xl font-extrabold ${faturamento - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>
               {faturamento - contasPagas >= 0 ? "+" : ""}{formatCurrency(faturamento - contasPagas)}
             </p>
             <p className={`text-sm mt-1.5 leading-snug font-medium ${faturamento - contasPagas >= 0 ? "text-emerald-600/70" : "text-red-500/70"}`}>
@@ -927,7 +927,7 @@ function CompactSummary({
               {vendas - contasPagas >= 0 ? <TrendingUp className="w-4 h-4 text-emerald-600" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
               <span className={`text-xs font-bold uppercase tracking-wider ${vendas - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>Vendas vs Pago</span>
             </div>
-            <p className={`text-xl font-extrabold ${vendas - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+            <p className={`text-lg sm:text-xl font-extrabold ${vendas - contasPagas >= 0 ? "text-emerald-700" : "text-red-600"}`}>
               {vendas - contasPagas >= 0 ? "+" : ""}{formatCurrency(vendas - contasPagas)}
             </p>
             <p className={`text-sm mt-1.5 leading-snug font-medium ${vendas - contasPagas >= 0 ? "text-emerald-600/70" : "text-red-500/70"}`}>

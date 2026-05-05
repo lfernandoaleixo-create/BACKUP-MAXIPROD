@@ -981,22 +981,22 @@ export default function Production() {
         </div>
 
         {/* Date selector */}
-        <div className="flex items-center gap-3 mb-6 bg-white rounded-xl border border-slate-200 px-4 py-3 shadow-sm">
-          <Calendar className="w-5 h-5 text-teal-600" />
-          <button onClick={() => changeDate(-1)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 bg-white rounded-xl border border-slate-200 px-3 sm:px-4 py-3 shadow-sm">
+          <Calendar className="w-5 h-5 text-teal-600 flex-shrink-0" />
+          <button onClick={() => changeDate(-1)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors flex-shrink-0">
             <ArrowLeft className="w-4 h-4 text-slate-600" />
           </button>
-          <div className="flex items-center gap-2">
-            <input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); resetEditState(); }} className="text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500" />
-            <span className="text-sm text-slate-500 font-medium">
+          <div className="flex items-center gap-2 min-w-0">
+            <input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); resetEditState(); }} className="text-sm font-medium text-slate-700 border border-slate-200 rounded-lg px-2 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-0" />
+            <span className="text-sm text-slate-500 font-medium whitespace-nowrap">
               {dayOfWeek}
               {isToday && <span className="ml-1.5 text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full font-semibold">Hoje</span>}
             </span>
           </div>
-          <button onClick={() => changeDate(1)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors">
+          <button onClick={() => changeDate(1)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors flex-shrink-0">
             <ArrowRight className="w-4 h-4 text-slate-600" />
           </button>
-          <button onClick={() => { setSelectedDate(getTodayBR()); resetEditState(); }} className="ml-auto text-xs text-teal-600 hover:text-teal-700 font-medium px-2 py-1 rounded hover:bg-teal-50 transition-colors">
+          <button onClick={() => { setSelectedDate(getTodayBR()); resetEditState(); }} className="ml-auto text-xs text-teal-600 hover:text-teal-700 font-medium px-2 py-1 rounded hover:bg-teal-50 transition-colors whitespace-nowrap">
             Ir para Hoje
           </button>
           {viewMode === "lancamento" && canEdit && !isFutureDate && (
