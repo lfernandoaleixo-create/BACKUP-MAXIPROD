@@ -3398,3 +3398,4 @@
 - [x] Layout responsivo mobile para o dashboard (otimizado para iPhone 17 Pro Max 6.7" / 430px viewport)
 - [x] Tooltip com informações extras ao passar o mouse no nome do produto (grupo, estoque, etc)
 - [x] Highlight no texto encontrado ao pesquisar na tabela de estoque
+- [x] PWA: transformar o site em Progressive Web App (manifest, service worker, ícone, standalone mode) para funcionar como app nativo no iPhone
