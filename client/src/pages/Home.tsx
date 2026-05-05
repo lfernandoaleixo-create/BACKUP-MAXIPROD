@@ -282,6 +282,24 @@ function timeAgo(date: Date | string | null): string {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
+/* --- Highlight Search Text Helper --- */
+function HighlightText({ text, search }: { text: string; search: string }) {
+  if (!search.trim()) return <>{text}</>;
+  const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-yellow-200 text-slate-900 rounded-sm px-0.5">{part}</mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
 /* --- Connection Status Card --- */
 function ConnectionStatusCard() {
   const { data: status, isLoading } = trpc.dashboard.getStatus.useQuery(undefined, {
@@ -318,23 +336,23 @@ function ConnectionStatusCard() {
   const isSyncing = forceSync.isPending;
 
   return (
-    <div className={`rounded-lg border p-3 shadow-sm ${
+    <div className={`rounded-lg border p-2 md:p-3 shadow-sm ${
       isConnected ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200"
     }`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
             isSyncing ? "bg-blue-500 animate-pulse" : isConnected ? "bg-emerald-500" : "bg-slate-400"
           }`}>
-            {isSyncing ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : isConnected ? <Wifi className="w-4 h-4 text-white" /> : <WifiOff className="w-4 h-4 text-white" />}
+            {isSyncing ? <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-white animate-spin" /> : isConnected ? <Wifi className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" /> : <WifiOff className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />}
           </div>
-          <div>
-            <p className={`text-sm font-semibold ${
+          <div className="min-w-0">
+            <p className={`text-xs md:text-sm font-semibold ${
               isSyncing ? "text-blue-800" : isConnected ? "text-emerald-800" : "text-slate-600"
             }`}>
-              {isSyncing ? "Sincronizando com Maxiprod..." : isConnected ? "Conectado ao Maxiprod" : "Aguardando sincronizacao"}
+              {isSyncing ? "Sincronizando..." : isConnected ? "Conectado ao Maxiprod" : "Aguardando sincronizacao"}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-[10px] md:text-xs text-slate-500 truncate">
               {isSyncing ? (
                 "Buscando dados via API GraphQL..."
               ) : status?.lastSyncAt ? (
@@ -350,13 +368,13 @@ function ConnectionStatusCard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
           {syncResult && (
-            <span className={`text-xs flex items-center gap-1 ${
+            <span className={`text-[10px] md:text-xs flex items-center gap-1 ${
               syncResult.success ? "text-emerald-600" : "text-red-600"
             }`}>
               {syncResult.success ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-              {syncResult.success ? "Sincronizado!" : "Erro"}
+              <span className="hidden sm:inline">{syncResult.success ? "Sincronizado!" : "Erro"}</span>
             </span>
           )}
           <Button
@@ -364,7 +382,7 @@ function ConnectionStatusCard() {
             size="sm"
             onClick={handleSync}
             disabled={isSyncing}
-            className={`text-xs ${!isConnected ? "bg-teal-600 hover:bg-teal-700 text-white" : ""}`}
+            className={`text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 ${!isConnected ? "bg-teal-600 hover:bg-teal-700 text-white" : ""}`}
           >
             {isSyncing ? (
               <><Loader2 className="w-3 h-3 animate-spin mr-1" /> Sincronizando...</>
@@ -484,17 +502,17 @@ function KPICard({ label, value, sub, icon: Icon, theme, onClick, tooltip }: {
   return (
     <div className={`group relative bg-white rounded-xl border border-slate-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 h-full ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
       <div className={`h-1 ${s.bar}`} />
-      <div className="px-4 py-3.5">
-        <div className="flex items-start justify-between mb-3">
-          <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider leading-tight max-w-[100px]">{label}</p>
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${s.iconBg} transition-transform group-hover:scale-110`}>
-            <Icon className={`w-[18px] h-[18px] ${s.iconColor}`} />
+      <div className="px-3 py-2.5 md:px-4 md:py-3.5">
+        <div className="flex items-start justify-between mb-2 md:mb-3">
+          <p className="text-[10px] md:text-[11px] text-slate-400 font-semibold uppercase tracking-wider leading-tight max-w-[80px] md:max-w-[100px]">{label}</p>
+          <div className={`w-7 h-7 md:w-9 md:h-9 rounded-lg md:rounded-xl flex items-center justify-center ${s.iconBg} transition-transform group-hover:scale-110`}>
+            <Icon className={`w-4 h-4 md:w-[18px] md:h-[18px] ${s.iconColor}`} />
           </div>
         </div>
-        <p className="text-[26px] font-extrabold text-slate-900 tracking-tight leading-none">{value}</p>
+        <p className="text-lg md:text-[26px] font-extrabold text-slate-900 tracking-tight leading-none">{value}</p>
         {(sub || tooltip) && (
-          <div className="flex items-center gap-1.5 mt-2">
-            {sub && <p className="text-[11px] text-slate-400 font-medium">{sub}</p>}
+          <div className="flex items-center gap-1.5 mt-1.5 md:mt-2">
+            {sub && <p className="text-[10px] md:text-[11px] text-slate-400 font-medium leading-tight">{sub}</p>}
             {tooltip && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -748,7 +766,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
       <div className="max-h-[60vh] overflow-auto relative">
-        <table className={`${showFinancial ? 'w-full min-w-[1100px]' : 'w-full'}`} style={!showFinancial ? { tableLayout: 'fixed', ...(showSalesColumns ? { width: 1500 } : {}) } : undefined}>
+        <table className={`${showFinancial ? 'w-full min-w-[1100px]' : 'w-full min-w-[700px]'}`} style={!showFinancial ? { tableLayout: 'fixed', ...(showSalesColumns ? { width: 1500 } : {}) } : undefined}>
           <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 shadow-sm">
             <tr>
               {showFinancial ? (
@@ -914,11 +932,11 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                           {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                         </button>
                       )}
-                      <span className={`font-medium text-slate-800 ${showFinancial ? 'text-[10px]' : 'text-sm'}`}>{item.descricaoItem}</span>
+                      <span className={`font-medium text-slate-800 ${showFinancial ? 'text-[10px]' : 'text-sm'}`}><HighlightText text={item.descricaoItem} search={search} /></span>
                     </div>
                     <div className={`text-slate-400 mt-0.5 ${showFinancial ? 'text-[9px]' : 'text-xs'} ${hasVariants ? 'ml-5' : ''}`}>
-                      {showFinancial ? item.codigoItem : `Cod: ${item.codigoItem}`}
-                      {!showFinancial && item.descricaoGrupo && <span className="ml-2 text-slate-300">| {item.descricaoGrupo}</span>}
+                      {showFinancial ? <HighlightText text={item.codigoItem} search={search} /> : <>Cod: <HighlightText text={item.codigoItem} search={search} /></>}
+                      {!showFinancial && item.descricaoGrupo && <span className="ml-2 text-slate-300">| <HighlightText text={item.descricaoGrupo} search={search} /></span>}
                       {hasVariants && <span className="ml-2 text-teal-500 font-medium">· {item.variants!.length} variaç{item.variants!.length > 1 ? 'ões' : 'ão'}</span>}
                     </div>
                   </td>
@@ -2791,18 +2809,18 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
       <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEditItem(null); }} onConfirm={handlePasswordConfirm} title="Quem está editando?" />
       <StockHistoryModal open={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(undefined); }} card="madeira" codigoItem={historyItem?.codigo} descricaoItem={historyItem?.descricao} />
 
-      <div onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer" role="button" tabIndex={0}>
+      <div onClick={onToggle} className="w-full px-3 md:px-5 py-3 md:py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer" role="button" tabIndex={0}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-              <TreePine className="w-6 h-6 text-green-700" />
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="w-9 h-9 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+              <TreePine className="w-5 h-5 md:w-6 md:h-6 text-green-700" />
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold text-slate-800">Madeira - Produto Acabado</h3>
-                <span className="text-sm font-extrabold text-green-700 bg-green-100 border border-green-300 px-3 py-1 rounded-full">{parentItems.length} itens</span>
+              <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                <h3 className="text-sm md:text-lg font-bold text-slate-800">Madeira - Produto Acabado</h3>
+                <span className="text-[10px] md:text-sm font-extrabold text-green-700 bg-green-100 border border-green-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full">{parentItems.length} itens</span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque (somente aumento)</p>
+              <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">{parentItems.length} produtos industrializados de madeira - estoque (somente aumento)</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -2875,27 +2893,27 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
       {isOpen && (
         <div className="border-t border-slate-100">
           {/* Search & Filter */}
-          <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100">
+          <div className="px-3 md:px-5 py-2 md:py-3 bg-slate-50/50 border-b border-slate-100">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input placeholder="Buscar produto, código, grupo..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-white h-9 text-sm" />
+                <Input placeholder="Buscar produto, código..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-white h-8 md:h-9 text-sm" />
               </div>
               {currentOperator && (
-                <span className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full whitespace-nowrap self-center">
+                <span className="text-[10px] md:text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full whitespace-nowrap self-center">
                   Editando: {currentOperator}
                 </span>
               )}
             </div>
           </div>
-          <div className="px-3 py-2 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <p className="text-xs text-amber-700"><strong>Regra:</strong> Estoque de Madeira PA só pode ser <strong>aumentado</strong> manualmente. Reduções são bloqueadas e registradas.</p>
+          <div className="px-3 py-1.5 md:py-2 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
+            <ShieldAlert className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-600 flex-shrink-0" />
+            <p className="text-[10px] md:text-xs text-amber-700"><strong>Regra:</strong> Estoque de Madeira PA só pode ser <strong>aumentado</strong> manualmente. Reduções são bloqueadas e registradas.</p>
           </div>
           <div className="bg-white rounded-lg">
             <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
-                <thead className="bg-slate-50 border-b border-slate-200 sticky top-[48px] z-20 shadow-sm">
+              <table className="w-full text-[11px] md:text-[13px]">
+                <thead className="bg-slate-50 border-b border-slate-200 sticky top-[40px] md:top-[48px] z-20 shadow-sm">
                   <tr>
                     <th className="px-2 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" style={{ minWidth: '220px', width: '25%' }} onClick={() => handleMadeiraSort('descricaoItem')}>
                       <div className="flex items-center gap-1">Produto <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
@@ -3002,13 +3020,43 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                                 {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                               </button>
                             )}
-                            <div>
-                              <div className="font-medium text-slate-800 text-[13px] break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</div>
-                              <div className="text-[11px] text-slate-400 mt-0.5">
-                                Cod: {item.codigoItem}
-                                {hasVariants && <span className="ml-2 text-green-500 font-medium">· {item.variants!.length} variaç{item.variants!.length > 1 ? 'ões' : 'ão'}</span>}
-                              </div>
-                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">
+                                  <div className="font-medium text-slate-800 text-[13px] break-words leading-snug"><HighlightText text={item.descricaoItem} search={search} /></div>
+                                  <div className="text-[11px] text-slate-400 mt-0.5">
+                                    Cod: <HighlightText text={item.codigoItem} search={search} />
+                                    {hasVariants && <span className="ml-2 text-green-500 font-medium">· {item.variants!.length} variaç{item.variants!.length > 1 ? 'ões' : 'ão'}</span>}
+                                  </div>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-[280px] p-0 bg-white border border-slate-200 shadow-xl rounded-lg" sideOffset={8}>
+                                <div className="p-3 space-y-2">
+                                  <p className="font-semibold text-sm text-slate-800 leading-snug break-words">{item.descricaoItem}</p>
+                                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                    <span className="text-slate-400">Código:</span>
+                                    <span className="text-slate-700 font-medium">{item.codigoItem}</span>
+                                    <span className="text-slate-400">Grupo:</span>
+                                    <span className="text-slate-700 font-medium">{item.descricaoGrupo || '—'}</span>
+                                    <span className="text-slate-400">Subgrupo:</span>
+                                    <span className="text-slate-700 font-medium capitalize">{item.subgrupo || '—'}</span>
+                                    <span className="text-slate-400">Un/Cx:</span>
+                                    <span className="text-slate-700 font-medium">{item.isKgProduct ? 'kg' : (item.unidadesPorCaixa ? `${formatNumber(item.unidadesPorCaixa, true)} un` : '—')}</span>
+                                    <span className="text-slate-400">Estoque:</span>
+                                    <span className="text-teal-700 font-semibold">{formatNumber(manualQty)} {item.isKgProduct ? 'kg' : 'cx'}</span>
+                                    <span className="text-slate-400">Pedidos:</span>
+                                    <span className="text-orange-600 font-semibold">{formatNumber(pedidosVal)} {item.isKgProduct ? 'kg' : 'cx'}</span>
+                                    <span className="text-slate-400">Disponível:</span>
+                                    <span className={`font-bold ${disponivelManual < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatNumber(disponivelManual)} {item.isKgProduct ? 'kg' : 'cx'}</span>
+                                  </div>
+                                  {item.poLotes && item.poLotes.length > 0 && (
+                                    <div className="pt-1 border-t border-slate-100">
+                                      <span className="text-[10px] text-blue-600 font-semibold">PO a receber: {formatNumber(item.poCx ?? 0)} {item.isKgProduct ? 'kg' : 'cx'}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         </td>
                         {/* Un/Cx */}
@@ -3130,10 +3178,10 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                         <tr key={`${item.codigoItem}-${variant.codigoItem}`} className="bg-green-50/30 border-l-4 border-green-300">
                           <td className="px-2 py-1 pl-8" style={{ minWidth: '220px' }}>
                             <span className="text-slate-600 text-xs break-words">
-                              └ {variant.descricaoItem}
+                              └ <HighlightText text={variant.descricaoItem} search={search} />
                             </span>
                             <div className="text-[10px] text-slate-400 ml-3">
-                              {variant.codigoItem} · Fator: {variant.conversionFactor}x
+                              <HighlightText text={variant.codigoItem} search={search} /> · Fator: {variant.conversionFactor}x
                             </div>
                           </td>
                           <td className="px-1.5 py-1 text-xs text-slate-500 text-center whitespace-nowrap">
@@ -4249,17 +4297,17 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     <div className="space-y-5">
       {/* ═══ TÍTULO IMPORTAÇÃO ═══ */}
       <div className="mb-1">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent" />
-          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-5 py-2">
-            <Ship className="w-5 h-5 text-blue-700" />
-            <span className="text-sm font-bold text-blue-800 uppercase tracking-wider">Importação</span>
+          <div className="flex items-center gap-1.5 md:gap-2 bg-blue-50 border border-blue-200 rounded-full px-3 md:px-5 py-1.5 md:py-2">
+            <Ship className="w-4 h-4 md:w-5 md:h-5 text-blue-700" />
+            <span className="text-xs md:text-sm font-bold text-blue-800 uppercase tracking-wider">Importação</span>
           </div>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent" />
         </div>
       </div>
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
         <KPICard
           label="Estoque Total"
           value={`${formatNumber(totalEstoqueCx, true)} cx`}
@@ -4593,18 +4641,18 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       />
 
       {/* ═══ SEÇÃO MADEIRA ═══ */}
-      <div className="mt-10 mb-5">
-        <div className="flex items-center gap-3">
+      <div className="mt-6 md:mt-10 mb-3 md:mb-5">
+        <div className="flex items-center gap-2 md:gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-green-300 to-transparent" />
-          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-5 py-2">
-            <TreePine className="w-5 h-5 text-green-700" />
-            <span className="text-sm font-bold text-green-800 uppercase tracking-wider">Industrialização Madeira</span>
+          <div className="flex items-center gap-1.5 md:gap-2 bg-green-50 border border-green-200 rounded-full px-3 md:px-5 py-1.5 md:py-2">
+            <TreePine className="w-4 h-4 md:w-5 md:h-5 text-green-700" />
+            <span className="text-xs md:text-sm font-bold text-green-800 uppercase tracking-wider">Industrialização Madeira</span>
           </div>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-green-300 to-transparent" />
         </div>
-        <p className="text-center text-xs text-slate-400 mt-2">Madeira + Semi Pronto + Aguardando Escolha</p>
+        <p className="text-center text-[10px] md:text-xs text-slate-400 mt-1.5 md:mt-2">Madeira + Semi Pronto + Aguardando Escolha</p>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
         <KPICard
           label="Estoque Total"
           value={`${formatNumber(estoqueCaixas, true)} cx`}
@@ -5694,13 +5742,13 @@ export default function Home() {
       } />
 
       {/* Main */}
-      <main className="container py-6 space-y-5">
-        <div className="text-center py-2">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+      <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
+        <div className="text-center py-1 md:py-2">
+          <h2 className="text-xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
             <span className="text-slate-700">Dashboard de Estoque</span>
-            <span className="text-teal-600 ml-2">Grupo Fox</span>
+            <span className="text-teal-600 ml-1 md:ml-2">Grupo Fox</span>
           </h2>
-          <p className="text-sm text-slate-400 mt-1.5 tracking-widest uppercase">Controle de Produtos e Pedidos de Compra</p>
+          <p className="text-[10px] md:text-sm text-slate-400 mt-1 md:mt-1.5 tracking-widest uppercase">Controle de Produtos e Pedidos de Compra</p>
         </div>
 
         <ConnectionStatusCard />

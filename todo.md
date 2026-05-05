@@ -3395,3 +3395,6 @@
 - [x] Financeiro: mover título "Despesas E-commerce" para acima dos cards (não abaixo)
 - [x] E-commerce: separar botões (Exportar PDF, Filtros, Nova Despesa) do título - botões ficam acima do card branco da tabela
 - [x] Estoque Madeira PA: nome do produto cortado na tabela ao pesquisar - mostrar nome completo sem truncar
+- [x] Layout responsivo mobile para o dashboard (otimizado para iPhone 17 Pro Max 6.7" / 430px viewport)
+- [x] Tooltip com informações extras ao passar o mouse no nome do produto (grupo, estoque, etc)
+- [x] Highlight no texto encontrado ao pesquisar na tabela de estoque
