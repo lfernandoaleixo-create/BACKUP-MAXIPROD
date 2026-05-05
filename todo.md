@@ -3442,3 +3442,4 @@
 - [x] Mobile: Vendas - tabs cortadas na direita (ícones hidden no mobile, padding reduzido)
 - [x] Mobile: Financeiro - título reduzido no mobile (text-xl md:text-4xl)
 - [x] Mobile: Faturamento - título reduzido no mobile (text-xl md:text-4xl)
+- [x] Mobile: PO cards - número e "cx" quebrando em linhas separadas (whitespace-nowrap, fontes menores, layout compacto)

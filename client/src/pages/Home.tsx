@@ -1653,17 +1653,17 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
               <Ship className="w-5 h-5 text-blue-600" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-800">Pedidos de Compra (POs)</h3>
-              <p className="text-xs text-slate-500">
-                {poSummaries.length} POs pendentes de chegada &middot; Total: <strong>{formatNumber(totalPOCx, true)} caixas</strong>
+            <div className="min-w-0">
+              <h3 className="text-sm md:text-base font-bold text-slate-800">Pedidos de Compra (POs)</h3>
+              <p className="text-[10px] md:text-xs text-slate-500">
+                {poSummaries.length} POs pendentes &middot; Total: <strong>{formatNumber(totalPOCx, true)} cx</strong>
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <div className="text-right">
-              <p className="text-2xl font-extrabold text-blue-600">{formatNumber(totalPOCx, true)} cx</p>
-              <p className="text-xs text-slate-400">{poSummaries.length} embarques</p>
+              <p className="text-lg md:text-2xl font-extrabold text-blue-600 whitespace-nowrap">{formatNumber(totalPOCx, true)} <span className="text-xs md:text-base">cx</span></p>
+              <p className="text-[10px] md:text-xs text-slate-400">{poSummaries.length} embarques</p>
             </div>
             {isListOpen ? (
               <ChevronUp className="w-5 h-5 text-blue-400" />
@@ -1703,39 +1703,39 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
               {/* PO Row - Clickable */}
               <button
                 onClick={() => setExpandedPO(isExpanded ? null : po.referenciaPO)}
-                className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left"
+                className="w-full px-3 md:px-5 py-3 md:py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left gap-2"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center text-white font-bold text-xs leading-tight ${
+                <div className="flex items-center gap-2.5 md:gap-4 min-w-0">
+                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex flex-col items-center justify-center text-white font-bold text-xs leading-tight shrink-0 ${
                     isPast ? "bg-red-500" : isUrgent ? "bg-amber-500" : "bg-blue-500"
                   }`}>
-                    <Anchor className="w-4 h-4 mb-0.5" />
-                    <span className="text-[10px]">{po.referenciaPO}</span>
+                    <Anchor className="w-3.5 h-3.5 md:w-4 md:h-4 mb-0.5" />
+                    <span className="text-[9px] md:text-[10px]">{po.referenciaPO}</span>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 text-sm">{po.referenciaPO}</span>
-                      {isPast && <Badge className="bg-red-100 text-red-700 text-[10px] border-0 px-1.5 py-0">Atrasada</Badge>}
-                      {isUrgent && !isPast && <Badge className="bg-amber-100 text-amber-700 text-[10px] border-0 px-1.5 py-0">Esta semana</Badge>}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                      <span className="font-bold text-slate-800 text-xs md:text-sm">{po.referenciaPO}</span>
+                      {isPast && <Badge className="bg-red-100 text-red-700 text-[9px] md:text-[10px] border-0 px-1 md:px-1.5 py-0">Atrasada</Badge>}
+                      {isUrgent && !isPast && <Badge className="bg-amber-100 text-amber-700 text-[9px] md:text-[10px] border-0 px-1 md:px-1.5 py-0">Esta semana</Badge>}
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-slate-500 flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {po.fornecedor || "Fornecedor"}
+                    <div className="flex items-center gap-2 md:gap-3 mt-0.5 flex-wrap">
+                      <span className="text-[10px] md:text-xs text-slate-500 flex items-center gap-0.5 md:gap-1">
+                        <MapPin className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                        <span className="truncate max-w-[100px] md:max-w-none">{po.fornecedor || "Fornecedor"}</span>
                       </span>
-                      <span className="text-xs text-slate-500 flex items-center gap-1">
-                        <CalendarDays className="w-3 h-3" />
+                      <span className="text-[10px] md:text-xs text-slate-500 flex items-center gap-0.5 md:gap-1">
+                        <CalendarDays className="w-2.5 h-2.5 md:w-3 md:h-3" />
                         {po.dataEntrega || "Sem data"}
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-[10px] md:text-xs text-slate-400">
                         {po.produtos.length} {po.produtos.length === 1 ? "produto" : "produtos"}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3 shrink-0">
                   <div className="text-right">
-                    <p className="font-bold text-blue-600 text-sm">{formatNumber(po.totalCx, true)} cx</p>
+                    <p className="font-bold text-blue-600 text-xs md:text-sm whitespace-nowrap">{formatNumber(po.totalCx, true)} <span className="text-[10px] md:text-xs">cx</span></p>
                   </div>
                   {isExpanded ? (
                     <ChevronUp className="w-4 h-4 text-slate-400" />
