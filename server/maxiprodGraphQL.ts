@@ -679,29 +679,31 @@ function isEditorNaoVendedorSync(nome: string): boolean {
  * 2. representanteOuVendedor1.razaoSocial (fallback if nomeFantasia is null)
  * 3. responsavelUsuario.nome (fallback, excluding editors Brenda/Larissa)
  * 4. Override: Johnson/Keure clients → "Grupo Fox"
+ * 
+ * Returns { representante, vendedorReal } where vendedorReal is the actual seller
+ * (useful when representante is overridden to "Grupo Fox")
  */
-function resolveRepresentante(pv: any): string {
+function resolveRepresentante(pv: any): { representante: string; vendedorReal: string } {
+  // Resolve the real seller first (before any override)
+  let vendedorReal = pv.representanteOuVendedor1?.nomeFantasia 
+    || pv.representanteOuVendedor1?.razaoSocial 
+    || "";
+  
+  if (!vendedorReal) {
+    const responsavel = pv.responsavelUsuario?.nome || "";
+    if (responsavel && !isEditorNaoVendedorSync(responsavel)) {
+      vendedorReal = responsavel;
+    }
+  }
+
   const clienteNome = pv.cliente?.nomeFantasia || pv.cliente?.razaoSocial || "";
   
   // Override manual: clientes Johnson e Keure → "Grupo Fox"
   if (clienteNome && isClienteGrupoFoxSync(clienteNome)) {
-    return "Grupo Fox";
+    return { representante: "Grupo Fox", vendedorReal };
   }
   
-  // 1. Prioridade: representanteOuVendedor1
-  let rep = pv.representanteOuVendedor1?.nomeFantasia 
-    || pv.representanteOuVendedor1?.razaoSocial 
-    || "";
-  
-  // 2. Fallback: responsavelUsuario (se não for editor)
-  if (!rep) {
-    const responsavel = pv.responsavelUsuario?.nome || "";
-    if (responsavel && !isEditorNaoVendedorSync(responsavel)) {
-      rep = responsavel;
-    }
-  }
-  
-  return rep;
+  return { representante: vendedorReal, vendedorReal };
 }
 
 /**
@@ -733,7 +735,7 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
     };
 
     // Resolve representante with fallback logic
-    const representante = resolveRepresentante(pv);
+    const { representante, vendedorReal } = resolveRepresentante(pv);
     
     // Resolve transportadora with razaoSocial fallback
     const transportadoraNome = pv.transportadora?.nomeFantasia 
@@ -760,6 +762,7 @@ function transformSalesOrders(graphqlItems: any[]): any[] {
       idGrupoItem: i.grupoId || null,
       empresa: getCompanyName(pv.minhaEmpresaId),
       representante: representante,
+      vendedorReal: vendedorReal || null,
       segmento: cliente.crmSegmento?.descricao || "",
       regiao: uf || "",
       // Novos campos

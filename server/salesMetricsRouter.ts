@@ -245,6 +245,7 @@ export const salesMetricsRouter = router({
         clienteApelido: salesOrders.clienteApelido,
         razaoSocial: salesOrders.razaoSocial,
         representante: salesOrders.representante,
+        vendedorReal: salesOrders.vendedorReal,
         valorTotalPedido: salesOrders.valorTotalPedido,
         valorTotal: salesOrders.valorTotal,
         estadoNota: salesOrders.estadoNota,
@@ -278,12 +279,13 @@ export const salesMetricsRouter = router({
 
       // Group by pedido using same logic as Vendas tab:
       // Use valorTotalPedido when available, otherwise sum item valorTotal values
-      const pedidoMap = new Map<string, { cliente: string; vendedor: string; valorTotalPedido: number; somaItens: number; items: typeof filtered }>();
+      const pedidoMap = new Map<string, { cliente: string; vendedor: string; vendedorReal: string; valorTotalPedido: number; somaItens: number; items: typeof filtered }>();
       for (const o of filtered) {
         const pedido = o.pedido || `item-${Math.random()}`;
         if (!pedidoMap.has(pedido)) {
           const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
           let vendedor = o.representante || "";
+          const vendedorRealValue = o.vendedorReal || o.representante || "";
           if (!vendedor || isEditorNaoVendedor(vendedor)) {
             vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
           }
@@ -295,6 +297,7 @@ export const salesMetricsRouter = router({
           pedidoMap.set(pedido, {
             cliente: clienteName,
             vendedor,
+            vendedorReal: vendedorRealValue,
             valorTotalPedido: o.valorTotalPedido ? Number(o.valorTotalPedido) : 0,
             somaItens: Number(o.valorTotal || 0),
             items: [o],
@@ -310,16 +313,20 @@ export const salesMetricsRouter = router({
       }
 
       // Aggregate by vendedor (same value logic as Vendas tab)
-      const vendedorStats: Record<string, { totalVendas: number; pedidos: Set<string>; clientes: Set<string> }> = {};
+      const vendedorStats: Record<string, { totalVendas: number; pedidos: Set<string>; clientes: Set<string>; vendedoresReais: Set<string> }> = {};
       for (const [pedido, data] of Array.from(pedidoMap.entries())) {
         // Use valorTotalPedido if available, otherwise sum of items (same as Vendas tab)
         const valor = data.valorTotalPedido || data.somaItens;
         if (!vendedorStats[data.vendedor]) {
-          vendedorStats[data.vendedor] = { totalVendas: 0, pedidos: new Set(), clientes: new Set() };
+          vendedorStats[data.vendedor] = { totalVendas: 0, pedidos: new Set(), clientes: new Set(), vendedoresReais: new Set() };
         }
         vendedorStats[data.vendedor].totalVendas += valor;
         vendedorStats[data.vendedor].pedidos.add(pedido);
         vendedorStats[data.vendedor].clientes.add(data.cliente);
+        // Track the real seller (before Grupo Fox override)
+        if (data.vendedorReal && data.vendedorReal !== "Grupo Fox") {
+          vendedorStats[data.vendedor].vendedoresReais.add(data.vendedorReal);
+        }
       }
 
       // Convert to array and sort by totalVendas desc
@@ -328,6 +335,7 @@ export const salesMetricsRouter = router({
         totalVendas: Math.round(stats.totalVendas * 100) / 100,
         qtdPedidos: stats.pedidos.size,
         qtdClientes: stats.clientes.size,
+        vendedoresReais: Array.from(stats.vendedoresReais),
       })).sort((a, b) => b.totalVendas - a.totalVendas);
 
       return ranking;

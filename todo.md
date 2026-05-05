@@ -3391,3 +3391,4 @@
 - [x] Métricas Cobrança: remover gráficos, manter apenas KPIs + Resumo de Recuperações + Títulos Recuperados
 - [x] Vendas: corrigir card SEMANA 1 que está mostrando dias da semana 2 (Dias 4-6 deveria ser semana 2)
 - [x] Vendas: adicionar observação no card da semana quando houver venda em dia não útil (fim de semana/cinza)
+- [x] Vendas: no card Grupo Fox do ranking, mostrar o vendedor real (representanteOuVendedor1) como informação adicional, sem alterar o cômputo do ranking

@@ -1,0 +1,1 @@
+ALTER TABLE `sales_orders` ADD `vendedorReal` varchar(200);

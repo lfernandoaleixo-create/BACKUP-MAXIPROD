@@ -192,6 +192,7 @@ export const salesOrders = mysqlTable("sales_orders", {
   idGrupoItem: bigint("idGrupoItem", { mode: "number" }),
   empresa: varchar("empresa", { length: 100 }),
   representante: varchar("representante", { length: 200 }),
+  vendedorReal: varchar("vendedorReal", { length: 200 }), // Vendedor real do Maxiprod (antes do override Grupo Fox)
   segmento: varchar("segmento", { length: 100 }),
   regiao: varchar("regiao", { length: 100 }),
   // Novos campos (detalhes do pedido)
