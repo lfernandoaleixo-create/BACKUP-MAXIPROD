@@ -380,14 +380,37 @@ function exportAuthPDF(
     </html>
   `;
 
-  // Abrir em nova janela para impressão/PDF
-  const printWindow = window.open('', '_blank', 'width=800,height=600');
-  if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    setTimeout(() => {
-      printWindow.print();
-    }, 300);
+  // Mobile-friendly: usar Blob para download direto no iOS Safari
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  if (isMobile) {
+    // No mobile, criar um Blob HTML e abrir em nova aba para o usuário salvar/compartilhar
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    // Tentar abrir em nova aba primeiro
+    const opened = window.open(url, '_blank');
+    if (!opened) {
+      // Fallback: download direto
+      a.download = `autorizacao-pagamentos-${dayLabel.replace(/[^a-zA-Z0-9]/g, '-')}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } else {
+    // Desktop: abrir janela de impressão
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 300);
+    }
   }
 }
 

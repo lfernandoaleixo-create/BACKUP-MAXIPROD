@@ -3427,3 +3427,8 @@
 - [x] Mobile: InadimplenciaTab - title rows com layout compacto no mobile (ocultar colunas secundárias)
 - [x] Mobile: Billing TopNav Select - reduzir largura no mobile
 - [x] Mobile: Adicionar utilitário CSS scrollbar-hide para scroll horizontal limpo
+- [x] Mobile: Corrigir cards de Fluxo de Caixa - valores cortados no celular
+- [x] Mobile: Corrigir card Saldo Bancário - "Conciliação Feita..." cortado
+- [x] Mobile: Corrigir botões "Recebimentos" e "Pagamentos" cortados
+- [x] Mobile: Verificar fluxo completo de autorização + exportar PDF no celular
+- [x] Mobile: Exportar PDF - melhorar compatibilidade com iOS Safari (Blob download)

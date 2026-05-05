@@ -666,9 +666,9 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
     <div className={`rounded-lg border ${colorClass} p-3`}>
 
       {/* Header row */}
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-sm font-semibold ${textColorClass}`}>{bucket.label}</span>
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-between mb-2 gap-1">
+        <span className={`text-xs md:text-sm font-semibold ${textColorClass} shrink-0`}>{bucket.label}</span>
+        <div className="flex items-center gap-1 md:gap-1.5 min-w-0">
           {/* Calculator total badge */}
           {calcMode && selectedIds.size > 0 && (
             <div className="flex items-center gap-1 bg-violet-100 border border-violet-300 rounded-md px-2 py-0.5">
@@ -813,20 +813,20 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                       className="w-3.5 h-3.5 shrink-0 border-violet-400 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
                     />
                   )}
-                  <span className="text-[13px] font-medium text-slate-700 truncate min-w-0" style={{ flex: '1 1 0' }}>
+                  <span className="text-[11px] md:text-[13px] font-medium text-slate-700 truncate min-w-0" style={{ flex: '1 1 0' }}>
                     {item.fornecedor || item.referenteA || "—"}
                   </span>
                   <span
-                    className="text-[11px] text-slate-400 whitespace-nowrap text-right shrink-0"
-                    style={{ width: '72px', fontVariantNumeric: 'tabular-nums' }}
+                    className="text-[10px] md:text-[11px] text-slate-400 whitespace-nowrap text-right shrink-0"
+                    style={{ width: '62px', fontVariantNumeric: 'tabular-nums' }}
                   >
                     {formatDate(item.vencimento)}
                   </span>
                   <span
-                    className={`text-[13px] font-bold whitespace-nowrap text-right shrink-0 ${
+                    className={`text-[11px] md:text-[13px] font-bold whitespace-nowrap text-right shrink-0 ${
                       calcMode && isChecked ? 'text-violet-700' : isPagar ? 'text-red-700' : 'text-emerald-700'
                     }`}
-                    style={{ width: '90px', fontVariantNumeric: 'tabular-nums' }}
+                    style={{ width: '80px', fontVariantNumeric: 'tabular-nums' }}
                   >
                     {formatCurrency(item.valor)}
                   </span>
@@ -1514,11 +1514,11 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
         onClick={() => setCollapsed(!collapsed)}
         className="w-full p-3 md:p-4 flex flex-wrap md:flex-nowrap items-center justify-between hover:bg-slate-50 transition-colors gap-2"
       >
-        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+        <div className="flex items-center gap-2 md:gap-3 flex-wrap min-w-0">
           <div className="w-8 h-8 md:w-9 md:h-9 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
             <Landmark className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
           </div>
-          <div className="text-left">
+          <div className="text-left min-w-0">
             <h3 className="font-bold text-slate-800 text-xs md:text-sm">Saldo Bancário</h3>
             <p className="text-[10px] md:text-xs text-slate-500">
               {activeAccounts.length} contas | {data.periodLabel}
@@ -1527,7 +1527,7 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
 
           {/* Checkbox Conciliação Feita */}
           <div
-            className={`ml-0 md:ml-4 flex items-center gap-1 md:gap-1.5 px-2 py-1 rounded-md cursor-pointer transition-colors ${
+            className={`ml-0 md:ml-4 flex items-center gap-1 md:gap-1.5 px-1.5 md:px-2 py-1 rounded-md cursor-pointer transition-colors ${
               reconStatus?.reconciled
                 ? "bg-emerald-100 text-emerald-700"
                 : "bg-slate-100 text-slate-500 hover:bg-slate-200"
@@ -1544,8 +1544,8 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
             ) : (
               <Square className="w-3.5 h-3.5 md:w-4 md:h-4" />
             )}
-            <span className="text-[10px] md:text-xs font-medium whitespace-nowrap">
-              {reconStatus?.reconciled ? "Conciliação Feita" : "Conciliação"}
+            <span className="text-[9px] md:text-xs font-medium whitespace-nowrap">
+              {reconStatus?.reconciled ? "Conciliado" : "Conciliar"}
             </span>
           </div>
         </div>
@@ -1773,37 +1773,37 @@ function CashFlowCard() {
           <div className="px-4 pb-3 pt-0">
             <div className="grid grid-cols-3 gap-1.5 md:gap-2">
               {/* A Receber mini card */}
-              <div className="bg-white/80 border border-emerald-200/60 rounded-lg px-2 md:px-3 py-2 flex flex-col md:flex-row items-start md:items-center gap-1 md:gap-2.5">
-                <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-600" />
+              <div className="bg-white/80 border border-emerald-200/60 rounded-lg px-1.5 md:px-3 py-2 flex flex-col items-start gap-0.5">
+                <div className="flex items-center gap-1 md:gap-1.5">
+                  <div className="w-5 h-5 md:w-7 md:h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-emerald-600" />
+                  </div>
+                  <p className="text-[8px] md:text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">A Receber</p>
                 </div>
-                <div className="min-w-0 w-full">
-                  <p className="text-[9px] md:text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">A Receber</p>
-                  <p className="text-xs md:text-base font-bold text-emerald-700 tabular-nums truncate">{formatCurrency(totalReceber)}</p>
-                  <p className="text-[8px] md:text-[9px] text-slate-400">8 semanas + vencidas</p>
-                </div>
+                <p className="text-[11px] md:text-base font-bold text-emerald-700 tabular-nums leading-tight">{formatCurrency(totalReceber)}</p>
+                <p className="text-[7px] md:text-[9px] text-slate-400 hidden md:block">8 semanas + vencidas</p>
               </div>
               {/* A Pagar mini card */}
-              <div className="bg-white/80 border border-red-200/60 rounded-lg px-2 md:px-3 py-2 flex flex-col md:flex-row items-start md:items-center gap-1 md:gap-2.5">
-                <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                  <TrendingDown className="w-3 h-3 md:w-3.5 md:h-3.5 text-red-600" />
+              <div className="bg-white/80 border border-red-200/60 rounded-lg px-1.5 md:px-3 py-2 flex flex-col items-start gap-0.5">
+                <div className="flex items-center gap-1 md:gap-1.5">
+                  <div className="w-5 h-5 md:w-7 md:h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <TrendingDown className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-red-600" />
+                  </div>
+                  <p className="text-[8px] md:text-[10px] font-semibold text-red-600 uppercase tracking-wider">A Pagar</p>
                 </div>
-                <div className="min-w-0 w-full">
-                  <p className="text-[9px] md:text-[10px] font-semibold text-red-600 uppercase tracking-wider">A Pagar</p>
-                  <p className="text-xs md:text-base font-bold text-red-700 tabular-nums truncate">{formatCurrency(totalPagar)}</p>
-                  <p className="text-[8px] md:text-[9px] text-slate-400">8 semanas + vencidas</p>
-                </div>
+                <p className="text-[11px] md:text-base font-bold text-red-700 tabular-nums leading-tight">{formatCurrency(totalPagar)}</p>
+                <p className="text-[7px] md:text-[9px] text-slate-400 hidden md:block">8 semanas + vencidas</p>
               </div>
               {/* Saldo Projetado mini card */}
-              <div className={`bg-white/80 border ${saldoTotal >= 0 ? "border-blue-200/60" : "border-amber-200/60"} rounded-lg px-2 md:px-3 py-2 flex flex-col md:flex-row items-start md:items-center gap-1 md:gap-2.5`}>
-                <div className={`w-6 h-6 md:w-7 md:h-7 rounded-full ${saldoTotal >= 0 ? "bg-blue-100" : "bg-amber-100"} flex items-center justify-center flex-shrink-0`}>
-                  <Wallet className={`w-3 h-3 md:w-3.5 md:h-3.5 ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"}`} />
+              <div className={`bg-white/80 border ${saldoTotal >= 0 ? "border-blue-200/60" : "border-amber-200/60"} rounded-lg px-1.5 md:px-3 py-2 flex flex-col items-start gap-0.5`}>
+                <div className="flex items-center gap-1 md:gap-1.5">
+                  <div className={`w-5 h-5 md:w-7 md:h-7 rounded-full ${saldoTotal >= 0 ? "bg-blue-100" : "bg-amber-100"} flex items-center justify-center flex-shrink-0`}>
+                    <Wallet className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"}`} />
+                  </div>
+                  <p className={`text-[8px] md:text-[10px] font-semibold ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"} uppercase tracking-wider`}>Saldo</p>
                 </div>
-                <div className="min-w-0 w-full">
-                  <p className={`text-[9px] md:text-[10px] font-semibold ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"} uppercase tracking-wider`}>Saldo</p>
-                  <p className={`text-xs md:text-base font-bold tabular-nums truncate ${saldoTotal >= 0 ? "text-blue-700" : "text-red-700"}`}>{formatCurrency(saldoTotal)}</p>
-                  <p className="text-[8px] md:text-[9px] text-slate-400">Receber - Pagar</p>
-                </div>
+                <p className={`text-[11px] md:text-base font-bold tabular-nums leading-tight ${saldoTotal >= 0 ? "text-blue-700" : "text-red-700"}`}>{formatCurrency(saldoTotal)}</p>
+                <p className="text-[7px] md:text-[9px] text-slate-400 hidden md:block">Receber - Pagar</p>
               </div>
             </div>
           </div>
@@ -1813,39 +1813,39 @@ function CashFlowCard() {
       {!collapsed && (
         <div className="p-4">
           {/* Summary Cards - Receber / Pagar / Saldo */}
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-3 gap-2 md:gap-3 mb-4">
             {/* A Receber */}
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-3.5 shadow-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-2 md:p-3.5 shadow-sm">
+              <div className="flex items-center gap-1 md:gap-2 mb-1">
+                <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <TrendingUp className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-emerald-600" />
                 </div>
-                <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">A Receber</span>
+                <span className="text-[8px] md:text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">A Receber</span>
               </div>
-              <p className="text-lg font-bold text-emerald-700 tabular-nums">{formatCurrency(totalReceber)}</p>
-              <p className="text-[9px] text-slate-500 mt-1 leading-tight">Total de contas a receber nas proximas 8 semanas (incluindo vencidas)</p>
+              <p className="text-xs md:text-lg font-bold text-emerald-700 tabular-nums">{formatCurrency(totalReceber)}</p>
+              <p className="text-[8px] md:text-[9px] text-slate-500 mt-1 leading-tight hidden md:block">Total de contas a receber nas proximas 8 semanas (incluindo vencidas)</p>
             </div>
             {/* A Pagar */}
-            <div className="bg-gradient-to-br from-red-50 to-rose-50 border border-red-200 rounded-xl p-3.5 shadow-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
-                  <TrendingDown className="w-3.5 h-3.5 text-red-600" />
+            <div className="bg-gradient-to-br from-red-50 to-rose-50 border border-red-200 rounded-xl p-2 md:p-3.5 shadow-sm">
+              <div className="flex items-center gap-1 md:gap-2 mb-1">
+                <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-red-100 flex items-center justify-center">
+                  <TrendingDown className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-red-600" />
                 </div>
-                <span className="text-[10px] font-semibold text-red-600 uppercase tracking-wider">A Pagar</span>
+                <span className="text-[8px] md:text-[10px] font-semibold text-red-600 uppercase tracking-wider">A Pagar</span>
               </div>
-              <p className="text-lg font-bold text-red-700 tabular-nums">{formatCurrency(totalPagar)}</p>
-              <p className="text-[9px] text-slate-500 mt-1 leading-tight">Total de contas a pagar nas proximas 8 semanas (incluindo vencidas)</p>
+              <p className="text-xs md:text-lg font-bold text-red-700 tabular-nums">{formatCurrency(totalPagar)}</p>
+              <p className="text-[8px] md:text-[9px] text-slate-500 mt-1 leading-tight hidden md:block">Total de contas a pagar nas proximas 8 semanas (incluindo vencidas)</p>
             </div>
             {/* Saldo */}
-            <div className={`bg-gradient-to-br ${saldoTotal >= 0 ? "from-blue-50 to-indigo-50 border-blue-200" : "from-amber-50 to-orange-50 border-amber-200"} border rounded-xl p-3.5 shadow-sm`}>
-              <div className="flex items-center gap-2 mb-1">
-                <div className={`w-6 h-6 rounded-full ${saldoTotal >= 0 ? "bg-blue-100" : "bg-amber-100"} flex items-center justify-center`}>
-                  <Wallet className={`w-3.5 h-3.5 ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"}`} />
+            <div className={`bg-gradient-to-br ${saldoTotal >= 0 ? "from-blue-50 to-indigo-50 border-blue-200" : "from-amber-50 to-orange-50 border-amber-200"} border rounded-xl p-2 md:p-3.5 shadow-sm`}>
+              <div className="flex items-center gap-1 md:gap-2 mb-1">
+                <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full ${saldoTotal >= 0 ? "bg-blue-100" : "bg-amber-100"} flex items-center justify-center`}>
+                  <Wallet className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"}`} />
                 </div>
-                <span className={`text-[10px] font-semibold ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"} uppercase tracking-wider`}>Saldo Projetado</span>
+                <span className={`text-[8px] md:text-[10px] font-semibold ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"} uppercase tracking-wider`}>Saldo</span>
               </div>
-              <p className={`text-lg font-bold tabular-nums ${saldoTotal >= 0 ? "text-blue-700" : "text-red-700"}`}>{formatCurrency(saldoTotal)}</p>
-              <p className="text-[9px] text-slate-500 mt-1 leading-tight">{saldoTotal >= 0 ? "Recebimentos cobrem os pagamentos no periodo" : "Pagamentos excedem os recebimentos no periodo"} (Receber - Pagar)</p>
+              <p className={`text-xs md:text-lg font-bold tabular-nums ${saldoTotal >= 0 ? "text-blue-700" : "text-red-700"}`}>{formatCurrency(saldoTotal)}</p>
+              <p className="text-[8px] md:text-[9px] text-slate-500 mt-1 leading-tight hidden md:block">{saldoTotal >= 0 ? "Recebimentos cobrem os pagamentos no periodo" : "Pagamentos excedem os recebimentos no periodo"} (Receber - Pagar)</p>
             </div>
           </div>
           {/* Legend */}
