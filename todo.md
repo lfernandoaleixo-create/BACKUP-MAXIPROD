@@ -3432,3 +3432,4 @@
 - [x] Mobile: Corrigir botões "Recebimentos" e "Pagamentos" cortados
 - [x] Mobile: Verificar fluxo completo de autorização + exportar PDF no celular
 - [x] Mobile: Exportar PDF - melhorar compatibilidade com iOS Safari (Blob download)
+- [x] Renomear botões Inadimplência: Importar → Importar Planilha, Decisão → PDF de Decisão de Cobrança, Guia → Guia de Cobrança

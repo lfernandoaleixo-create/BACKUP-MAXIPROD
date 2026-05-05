@@ -1049,20 +1049,20 @@ export default function InadimplenciaTab() {
           {canCobranca && (
             <button
               onClick={() => setShowImportDialog(true)}
-              className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-2 md:px-3"
+              className="flex items-center justify-center gap-1.5 min-w-[100px] md:min-w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-3 md:px-4"
               title="Importar planilha de cobrança (XLSX)"
             >
               <Upload className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-              <span className="text-center leading-tight">Importar</span>
+              <span className="text-center leading-tight">Importar Planilha</span>
             </button>
           )}
           <button
             onClick={() => setShowDecisionPdfHistory(true)}
-            className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-2 md:px-3"
+            className="flex items-center justify-center gap-1.5 min-w-[100px] md:min-w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-3 md:px-4"
             title="Ver histórico de PDFs de decisão gerados"
           >
             <Stamp className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-            <span className="text-center leading-tight">Decisão</span>
+            <span className="text-center leading-tight">PDF de Decisão de Cobrança</span>
           </button>
           <button
             onClick={() => setShowMetricsPanel(true)}
@@ -1075,11 +1075,11 @@ export default function InadimplenciaTab() {
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
-              className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[11px] md:text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-2 md:px-3"
+              className="flex items-center justify-center gap-1.5 min-w-[100px] md:min-w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[11px] md:text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-3 md:px-4"
               title="Ver guia completo do processo de cobrança"
             >
               <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-              <span className="text-center leading-tight">Guia</span>
+              <span className="text-center leading-tight">Guia de Cobrança</span>
             </button>
           )}
           <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
