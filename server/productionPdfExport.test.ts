@@ -152,6 +152,38 @@ describe("Production PDF Export", () => {
       const totalCount = textCalls.filter((t: string) => t === "TOTAL:").length;
       expect(totalCount).toBe(sampleSectors.length);
     });
+
+    it("should show weekly and monthly averages when monthlyAverages is provided", async () => {
+      const { generateWeeklyPdf } = await import("@/lib/productionPdfExport");
+
+      const monthlyAverages = [
+        { sectorId: 1, mediaDiaria: 350 },
+        { sectorId: 2, mediaDiaria: 80 },
+      ];
+
+      await generateWeeklyPdf(sampleSectors as any, sampleWeeklyEntries as any, "2026-04-27", "2026-05-03", monthlyAverages);
+
+      // Should render average text containing "M\u00e9d. Sem" and "M\u00e9d. M\u00eas"
+      const textCalls = mockDoc.text.mock.calls.map((c: any) => c[0]);
+      const avgTexts = textCalls.filter((t: string) => typeof t === "string" && t.includes("M\u00e9d."));
+      // At least some sectors should have averages
+      expect(avgTexts.length).toBeGreaterThan(0);
+      // Should contain both weekly and monthly labels
+      expect(avgTexts.some((t: string) => t.includes("M\u00e9d. Sem"))).toBe(true);
+      expect(avgTexts.some((t: string) => t.includes("M\u00e9d. M\u00eas"))).toBe(true);
+    });
+
+    it("should show only weekly average when no monthlyAverages provided", async () => {
+      const { generateWeeklyPdf } = await import("@/lib/productionPdfExport");
+
+      await generateWeeklyPdf(sampleSectors as any, sampleWeeklyEntries as any, "2026-04-27", "2026-05-03");
+
+      // Should render weekly average text
+      const textCalls = mockDoc.text.mock.calls.map((c: any) => c[0]);
+      const avgTexts = textCalls.filter((t: string) => typeof t === "string" && t.includes("M\u00e9d. Sem"));
+      // Sectors with entries should have weekly average
+      expect(avgTexts.length).toBeGreaterThan(0);
+    });
   });
 
   describe("generateMonthlyPdf", () => {

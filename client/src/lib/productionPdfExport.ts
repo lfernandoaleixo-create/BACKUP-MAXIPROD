@@ -307,6 +307,8 @@ interface SectorCardData {
   total: number;
   decimals: number;
   rows: { maquina: string; tipo: string; qtd: string; unidade: string; status: string; obs: string }[];
+  weeklyAvg?: number;
+  monthlyAvg?: number;
 }
 
 function prepareSectorCards(sectors: SectorData[], entries: EntryData[]): SectorCardData[] {
@@ -455,7 +457,8 @@ function drawSectorCardsGrid(
 
     const sectorColor = getSectorColor(i);
     const headerH = 7;
-    const footerH = 7;
+    const hasAverages = card.weeklyAvg !== undefined || card.monthlyAvg !== undefined;
+    const footerH = hasAverages ? 14 : 7;
     const tableAreaH = effectiveCardH - headerH - footerH - 2;
 
     // Card background
@@ -621,6 +624,22 @@ function drawSectorCardsGrid(
     doc.text("TOTAL:", x + 3, footerY + 4.5);
     doc.setFontSize(9);
     doc.text(`${fmtNum(card.total, card.decimals)} ${card.unit}`, x + cardW - 3, footerY + 4.5, { align: "right" });
+
+    // Averages line (below total)
+    if (hasAverages) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(5.5);
+      doc.setTextColor(...C.medium);
+      let avgText = "";
+      if (card.weeklyAvg !== undefined) {
+        avgText += `Méd. Sem: ${fmtNum(card.weeklyAvg, card.decimals)}`;
+      }
+      if (card.monthlyAvg !== undefined) {
+        if (avgText) avgText += "  |  ";
+        avgText += `Méd. Mês: ${fmtNum(card.monthlyAvg, card.decimals)}`;
+      }
+      doc.text(avgText, x + cardW / 2, footerY + 10.5, { align: "center" });
+    }
   }
 
   return startY + rowCount * (effectiveCardH + cardGap);
@@ -656,6 +675,7 @@ export async function generateWeeklyPdf(
   entries: EntryData[],
   weekStart: string,
   weekEnd: string,
+  monthlyAverages?: { sectorId: number; mediaDiaria: number }[],
 ) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
@@ -673,6 +693,20 @@ export async function generateWeeklyPdf(
 
   // Prepare sector cards (weekly mode)
   const cards = prepareSectorCardsWeekly(sectors, entries, numDays);
+
+  // Inject averages into cards
+  for (const card of cards) {
+    // Weekly average = total / numDays
+    card.weeklyAvg = numDays > 0 ? card.total / numDays : 0;
+    // Monthly average from backend
+    if (monthlyAverages) {
+      const sector = sectors.find(s => s.nome === card.nome);
+      if (sector) {
+        const ma = monthlyAverages.find(m => m.sectorId === sector.id);
+        if (ma) card.monthlyAvg = ma.mediaDiaria;
+      }
+    }
+  }
 
   // Draw cards grid
   drawSectorCardsGrid(doc, cards, y, true);
@@ -710,6 +744,11 @@ export async function generateMonthlyPdf(
 
   // Prepare sector cards (monthly mode = same as weekly)
   const cards = prepareSectorCardsWeekly(sectors, entries, numDays);
+
+  // Inject monthly average into cards (total / numDays)
+  for (const card of cards) {
+    card.monthlyAvg = numDays > 0 ? card.total / numDays : 0;
+  }
 
   // Draw cards grid
   drawSectorCardsGrid(doc, cards, y, true);

@@ -933,7 +933,9 @@ export default function Production() {
                         try {
                           const range = getWeekRange(selectedDate);
                           const histData = await utils.production.getHistory.fetch({ dataInicio: range.start, dataFim: range.end });
-                          await generateWeeklyPdf(sectors as any, histData as any, range.start, range.end);
+                          // Fetch monthly averages for the same month
+                          const monthlyAvg = await utils.production.getMonthlyAverage.fetch({ data: range.start });
+                          await generateWeeklyPdf(sectors as any, histData as any, range.start, range.end, monthlyAvg as any);
                           toast.success("PDF Semanal gerado!");
                         } catch (err: any) { toast.error("Erro ao gerar PDF: " + err.message); }
                         finally { setPdfLoading(null); }
