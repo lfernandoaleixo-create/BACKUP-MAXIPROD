@@ -4051,9 +4051,10 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   // IMPORTANTE: excluir filhos (isChild) para não duplicar estoque de variações PC já somadas no mãe
   const importItems = useMemo(() => items.filter(i => i.grupo !== "industrializacao" && !i.isChild), [items]);
   const totalEstoqueCx = importItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
-  // Pedidos de venda: soma TODOS os produtos (importação + industrialização), excluindo filhos
-  const totalPedidosCx = items.filter(i => !i.isChild).reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
-  // Disponível = Estoque Total - Pedidos (Venda) = 19.501 - 2.505 = 16.996
+  // Pedidos de venda: soma APENAS produtos de importação (excluir industrialização/madeira)
+  // Industrialização tem seus próprios pedidos na seção Madeira Produto Acabado
+  const totalPedidosCx = importItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
+  // Disponível = Estoque Total (importação) - Pedidos (apenas importação)
   const totalDisponivelCx = totalEstoqueCx - totalPedidosCx;
   // KPI PO: somar em caixas usando poLotes (quantidade original da PO)
   // Para produtos kg (ex: 00058), poCx está em kg para a tabela, mas o KPI deve mostrar caixas
@@ -4063,7 +4064,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     }
     return sum + (i.poCx ?? 0);
   }, 0);
-  // Projetado = Disponível + PO = 16.996 + 9.639 = 26.635
+  // Projetado = Disponível + PO
   const totalProjetadoCx = totalDisponivelCx + totalPOCx;
 
   // Madeira KPI totals (Madeira card + Semi Pronto + Aguardando Escolha)
