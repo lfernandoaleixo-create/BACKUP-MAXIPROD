@@ -3406,3 +3406,8 @@
 - [x] Novo ícone PWA: fundo preto quadrado, texto "GRUPO FOX" e raposa em dourado reluzente
 - [x] Notificação push: alertar Fernando e Guilherme quando venda for realizada
 - [x] Notificação push: alertar Fernando e Guilherme quando Thiago marcar conciliação como pronta
+- [x] Ícone PWA: redesenhar maior, preenchendo todo o quadrado do app (sem margem), texto e raposa maiores e mais legíveis
+- [x] Corrigir mobile: tabs Financeiro (Visão Geral/Inadimplência/Recebíveis/E-commerce) quebrando layout
+- [x] Corrigir mobile: tabs Config (Senhas/Produto Importado/Alertas/Visibilidade/Bancos/Variações/Dados/Madeira) grudadas e cortadas
+- [x] Corrigir mobile: botão "Sincronizar" cortado no card de conexão
+- [x] Corrigir mobile: datas cortadas (04/0..., 06/0...) e botão "Históri..." cortado nos Recebíveis

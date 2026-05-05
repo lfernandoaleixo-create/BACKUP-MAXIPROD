@@ -382,7 +382,7 @@ function ConnectionStatusCard() {
             size="sm"
             onClick={handleSync}
             disabled={isSyncing}
-            className={`text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 ${!isConnected ? "bg-teal-600 hover:bg-teal-700 text-white" : ""}`}
+            className={`text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 whitespace-nowrap ${!isConnected ? "bg-teal-600 hover:bg-teal-700 text-white" : ""}`}
           >
             {isSyncing ? (
               <><Loader2 className="w-3 h-3 animate-spin mr-1" /> Sincronizando...</>

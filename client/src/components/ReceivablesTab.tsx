@@ -884,13 +884,13 @@ function ContaFiltersAndTable({
                   <div className="text-teal-100 text-xs">{selectedIds.size} {selectedIds.size === 1 ? "título" : "títulos"} marcados para antecipação</div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
 
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <div className="text-[10px] text-teal-200 uppercase tracking-wide">Valor Total</div>
-                  <div className="text-xl font-bold" style={{ textShadow: "0 0 20px rgba(255,255,255,0.4)" }}>{formatCurrency(selectedContaTotal)}</div>
+                  <div className="text-lg sm:text-xl font-bold" style={{ textShadow: "0 0 20px rgba(255,255,255,0.4)" }}>{formatCurrency(selectedContaTotal)}</div>
                 </div>
-                <div className="flex gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                   <button onClick={exportSelectedPDF}
                     className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-medium transition-all flex items-center gap-1">
                     <FileText className="w-3.5 h-3.5" /> Exportar PDF
@@ -1004,7 +1004,7 @@ function ContaFiltersAndTable({
       {/* ---- TABELA DE TÍTULOS ---- */}
       {filteredItems.length > 0 ? (
         <>
-          <div className="grid grid-cols-[36px_1fr_120px_100px_90px_80px] gap-2 px-4 py-2 bg-slate-100 border-b border-slate-200">
+          <div className="grid grid-cols-[28px_1fr_80px_70px] md:grid-cols-[36px_1fr_120px_100px_90px_80px] gap-1.5 md:gap-2 px-2 md:px-4 py-2 bg-slate-100 border-b border-slate-200">
             <div className="flex items-center justify-center">
               <button onClick={(e) => { e.stopPropagation(); toggleSelectAll(filteredItems); }}
                 className="text-slate-500 hover:text-teal-600 transition-colors" title="Selecionar todos">
@@ -1014,10 +1014,10 @@ function ContaFiltersAndTable({
               </button>
             </div>
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider self-center">Cliente / Documento</div>
-            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Forma de Pagamento</div>
+            <div className="hidden md:block text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Forma de Pagamento</div>
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right self-center">Valor</div>
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider self-center">Vencimento</div>
-            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Status</div>
+            <div className="hidden md:block text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Status</div>
           </div>
 
           <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-100">
@@ -1027,7 +1027,7 @@ function ContaFiltersAndTable({
 
               return (
                 <div key={item.id}>
-                  <div className={`grid grid-cols-[36px_1fr_120px_100px_90px_80px] gap-2 px-4 py-2.5 items-center transition-all cursor-pointer ${
+                  <div className={`grid grid-cols-[28px_1fr_80px_70px] md:grid-cols-[36px_1fr_120px_100px_90px_80px] gap-1.5 md:gap-2 px-2 md:px-4 py-2.5 items-center transition-all cursor-pointer ${
                     isSelected ? "bg-teal-50/70 hover:bg-teal-50" : item.isOverdue ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-slate-50"
                   }`}>
                     <div className="flex items-center justify-center">
@@ -1057,7 +1057,7 @@ function ContaFiltersAndTable({
                     {(() => {
                       const fc = shortFormaCobranca(item.formaCobranca);
                       return (
-                        <div className="text-center" onClick={() => setExpandedItem(isExp ? null : item.id)} title={item.formaCobranca || "Não informado"}>
+                        <div className="hidden md:block text-center" onClick={() => setExpandedItem(isExp ? null : item.id)} title={item.formaCobranca || "Não informado"}>
                           {fc.label ? (
                             <span className={`text-xs font-semibold ${fc.color}`}>{fc.label}</span>
                           ) : (
@@ -1068,17 +1068,17 @@ function ContaFiltersAndTable({
                     })()}
 
                     <div className="text-right" onClick={() => setExpandedItem(isExp ? null : item.id)}>
-                      <span className={`font-bold text-sm ${isSelected ? "text-teal-700" : item.isOverdue ? "text-red-600" : "text-slate-800"}`}>
+                      <span className={`font-bold text-xs md:text-sm ${isSelected ? "text-teal-700" : item.isOverdue ? "text-red-600" : "text-slate-800"}`}>
                         {formatCurrency(item.valorAReceber)}
                       </span>
                     </div>
 
-                    <div className={`text-sm ${item.isOverdue ? "text-red-600 font-semibold" : "text-slate-600"}`}
+                    <div className={`text-xs md:text-sm whitespace-nowrap ${item.isOverdue ? "text-red-600 font-semibold" : "text-slate-600"}`}
                       onClick={() => setExpandedItem(isExp ? null : item.id)}>
                       {formatDate(item.vencimento)}
                     </div>
 
-                    <div className="text-center" onClick={() => setExpandedItem(isExp ? null : item.id)}>
+                    <div className="hidden md:block text-center" onClick={() => setExpandedItem(isExp ? null : item.id)}>
                       {item.isOverdue ? (
                         <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">
                           <AlertTriangle className="w-3 h-3" /> Vencido

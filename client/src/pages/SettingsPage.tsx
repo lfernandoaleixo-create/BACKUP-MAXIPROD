@@ -2489,12 +2489,12 @@ export default function SettingsPage() {
       {/* Navigation Tabs */}
       <div className="bg-white border-b border-slate-200">
         <div className="container">
-          <div className="flex gap-1 overflow-x-auto">
+          <div className="flex gap-1 overflow-x-auto pb-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-3 text-xs md:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? `${tab.color} border-current`
                     : "text-slate-400 border-transparent hover:text-slate-600"

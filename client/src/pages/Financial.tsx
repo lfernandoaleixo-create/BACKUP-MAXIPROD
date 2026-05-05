@@ -2146,10 +2146,10 @@ export default function Financial() {
         </div>
 
         {/* Sub-abas */}
-        <div className="flex items-center justify-center gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1">
+        <div className="flex items-center md:justify-center gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1 overflow-x-auto">
           <button
             onClick={() => setActiveTab("visao-geral")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === "visao-geral"
                 ? "bg-teal-600 text-white shadow-sm"
                 : "text-slate-600 hover:bg-slate-100"
@@ -2160,7 +2160,7 @@ export default function Financial() {
           </button>
           <button
             onClick={() => setActiveTab("inadimplencia")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === "inadimplencia"
                 ? "bg-red-600 text-white shadow-sm"
                 : "text-slate-600 hover:bg-slate-100"
@@ -2181,7 +2181,7 @@ export default function Financial() {
               }
               setActiveTab("recebiveis");
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === "recebiveis"
                 ? "bg-blue-600 text-white shadow-sm"
                 : "text-slate-600 hover:bg-slate-100"
@@ -2196,7 +2196,7 @@ export default function Financial() {
           {canSeeEcommerce && (
             <button
               onClick={() => setActiveTab("ecommerce")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 activeTab === "ecommerce"
                   ? "bg-orange-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100"
