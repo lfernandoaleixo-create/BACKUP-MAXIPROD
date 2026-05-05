@@ -153,7 +153,7 @@ describe("Production PDF Export", () => {
       expect(totalCount).toBe(sampleSectors.length);
     });
 
-    it("should show weekly and monthly averages when monthlyAverages is provided", async () => {
+    it("should show monthly averages when monthlyAverages is provided", async () => {
       const { generateWeeklyPdf } = await import("@/lib/productionPdfExport");
 
       const monthlyAverages = [
@@ -163,26 +163,22 @@ describe("Production PDF Export", () => {
 
       await generateWeeklyPdf(sampleSectors as any, sampleWeeklyEntries as any, "2026-04-27", "2026-05-03", monthlyAverages);
 
-      // Should render average text containing "M\u00e9d. Sem" and "M\u00e9d. M\u00eas"
+      // Should render "M\u00e9dia M\u00eas:" label (bold, prominent)
       const textCalls = mockDoc.text.mock.calls.map((c: any) => c[0]);
-      const avgTexts = textCalls.filter((t: string) => typeof t === "string" && t.includes("M\u00e9d."));
-      // At least some sectors should have averages
-      expect(avgTexts.length).toBeGreaterThan(0);
-      // Should contain both weekly and monthly labels
-      expect(avgTexts.some((t: string) => t.includes("M\u00e9d. Sem"))).toBe(true);
-      expect(avgTexts.some((t: string) => t.includes("M\u00e9d. M\u00eas"))).toBe(true);
+      const monthlyLabels = textCalls.filter((t: string) => typeof t === "string" && t.includes("M\u00e9dia M\u00eas"));
+      // Sectors with monthlyAverages should have the label
+      expect(monthlyLabels.length).toBeGreaterThan(0);
     });
 
-    it("should show only weekly average when no monthlyAverages provided", async () => {
+    it("should show weekly average when no monthlyAverages provided", async () => {
       const { generateWeeklyPdf } = await import("@/lib/productionPdfExport");
 
       await generateWeeklyPdf(sampleSectors as any, sampleWeeklyEntries as any, "2026-04-27", "2026-05-03");
 
-      // Should render weekly average text
+      // Should render "M\u00e9dia Semana:" label for sectors with entries
       const textCalls = mockDoc.text.mock.calls.map((c: any) => c[0]);
-      const avgTexts = textCalls.filter((t: string) => typeof t === "string" && t.includes("M\u00e9d. Sem"));
-      // Sectors with entries should have weekly average
-      expect(avgTexts.length).toBeGreaterThan(0);
+      const weeklyLabels = textCalls.filter((t: string) => typeof t === "string" && t.includes("M\u00e9dia Semana"));
+      expect(weeklyLabels.length).toBeGreaterThan(0);
     });
   });
 

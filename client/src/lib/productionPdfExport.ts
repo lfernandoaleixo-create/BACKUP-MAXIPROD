@@ -627,18 +627,24 @@ function drawSectorCardsGrid(
 
     // Averages line (below total)
     if (hasAverages) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(5.5);
-      doc.setTextColor(...C.medium);
-      let avgText = "";
-      if (card.weeklyAvg !== undefined) {
-        avgText += `Méd. Sem: ${fmtNum(card.weeklyAvg, card.decimals)}`;
-      }
+      // Monthly average - prominent, bold, full label
       if (card.monthlyAvg !== undefined) {
-        if (avgText) avgText += "  |  ";
-        avgText += `Méd. Mês: ${fmtNum(card.monthlyAvg, card.decimals)}`;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.setTextColor(...C.dark);
+        doc.text("Média Mês:", x + 3, footerY + 10.5);
+        doc.setFontSize(8);
+        doc.setTextColor(...sectorColor);
+        doc.text(`${fmtNum(card.monthlyAvg, card.decimals)} ${card.unit}/dia`, x + cardW - 3, footerY + 10.5, { align: "right" });
+      } else if (card.weeklyAvg !== undefined) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.setTextColor(...C.dark);
+        doc.text("Média Semana:", x + 3, footerY + 10.5);
+        doc.setFontSize(8);
+        doc.setTextColor(...sectorColor);
+        doc.text(`${fmtNum(card.weeklyAvg, card.decimals)} ${card.unit}/dia`, x + cardW - 3, footerY + 10.5, { align: "right" });
       }
-      doc.text(avgText, x + cardW / 2, footerY + 10.5, { align: "center" });
     }
   }
 
