@@ -10,9 +10,12 @@ import {
   Truck, Building2, MapPin, Phone, Mail, Globe, FileText,
   ChevronRight, ArrowLeft, Users, Trophy, TrendingUp,
   MessageSquare, CheckCircle2, XCircle, UserCheck, HelpCircle,
-  Send, Loader2, History
+  Send, Loader2, History, FileDown
 } from "lucide-react";
 import { toast } from "sonner";
+import { exportProspeccaoPdf, exportRankingFornecedoresPdf, exportStatusPdf, exportHistoricoPdf } from "@/lib/tabsPdfExport";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const VENDEDORES = ["Paula", "Gilson", "Jordão", "Juvenal", "Pedro"];
 const STATUS_OPTIONS = [
@@ -66,6 +69,40 @@ export default function FornecedoresBrasileirosTab() {
     { enabled: view === "vendedorDetail" && !!selectedVendedor }
   );
   const contactsByStatus = trpc.suppliers.getContactsByStatus.useQuery(undefined, { enabled: view === "statusCards" });
+  const migrationHistory = trpc.suppliers.getMigrationHistory.useQuery(undefined, { enabled: view === "history" });
+
+  const handleExportPdf = () => {
+    if (view === "segments" || view === "states" || view === "suppliers") {
+      const suppliers = suppliersList.data || [];
+      if (suppliers.length === 0) {
+        toast.error("Nenhum fornecedor para exportar. Navegue até um segmento/estado.");
+        return;
+      }
+      exportProspeccaoPdf({ suppliers: suppliers as any, segmento: selectedSegment, estado: selectedState });
+      toast.success("PDF de Prospecção gerado!");
+    } else if (view === "ranking" || view === "vendedorDetail") {
+      if (!ranking.data?.length) {
+        toast.error("Nenhum dado de ranking para exportar.");
+        return;
+      }
+      exportRankingFornecedoresPdf({ ranking: ranking.data.map(v => ({ vendedor: v.vendedor, totalContatos: v.totalContatos, conversoes: Number((v as any).conversoes || 0) })) });
+      toast.success("PDF de Ranking gerado!");
+    } else if (view === "statusCards") {
+      if (!contactsByStatus.data?.length) {
+        toast.error("Nenhum dado de status para exportar.");
+        return;
+      }
+      exportStatusPdf({ contacts: contactsByStatus.data as any });
+      toast.success("PDF de Status gerado!");
+    } else if (view === "history") {
+      if (!migrationHistory.data?.length) {
+        toast.error("Nenhum histórico para exportar.");
+        return;
+      }
+      exportHistoricoPdf({ history: migrationHistory.data as any });
+      toast.success("PDF de Histórico gerado!");
+    }
+  };
 
   // Mutation
   const addContact = trpc.suppliers.addContact.useMutation({
@@ -142,6 +179,20 @@ export default function FornecedoresBrasileirosTab() {
 
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleExportPdf}
+              size="sm"
+              variant="outline"
+              className="gap-1.5 ml-auto border-slate-300 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 transition-all"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              Exportar PDF
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Exportar dados da aba atual em PDF</TooltipContent>
+        </Tooltip>
         <button
           onClick={() => { setView("segments"); setSelectedSegment(""); setSelectedState(""); }}
           className={`px-3 py-1.5 rounded text-sm font-medium transition-colors cursor-pointer ${

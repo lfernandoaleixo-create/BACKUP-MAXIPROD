@@ -235,8 +235,11 @@ export const salesMetricsRouter = router({
       const db = await getDb();
       if (!db) return [];
 
-      // Get all sales orders in the period (exclude Digitação and Outros)
-      const orders = await db.select({
+      const startDay = input.startDate.substring(0, 10);
+      const endDay = input.endDate.substring(0, 10);
+
+      // Use same date comparison as Vendas tab (SUBSTRING for consistency)
+      const allItems = await db.select({
         pedido: salesOrders.pedido,
         cliente: salesOrders.cliente,
         clienteApelido: salesOrders.clienteApelido,
@@ -249,51 +252,72 @@ export const salesMetricsRouter = router({
         dataEmissao: salesOrders.dataEmissao,
       }).from(salesOrders)
         .where(and(
-          gte(salesOrders.dataEmissao, input.startDate),
-          lte(salesOrders.dataEmissao, input.endDate),
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`,
         ));
 
-      // Filter: exclude Digitação and Outros (AMOSTRA, BONIFICAÇÃO)
-      const filtered = orders.filter(o => {
-        const nota = (o.estadoNota || "").toUpperCase();
-        if (nota === "DIGITAÇÃO" || nota === "DIGITACAO") return false;
-        const estado = (o.estadoConfiguravel || "").toUpperCase();
-        if (estado.includes("AMOSTRA") || estado.includes("BONIFICA") || estado === "GILSON") return false;
-        return true;
-      });
+      // Same filter as Vendas tab: exclude Digitação and Outros (AMOSTRA, BONIFICAÇÃO, GILSON, NULL estadoConfiguravel)
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+      const isOutros = (estado: string | null) => {
+        if (!estado) return true;
+        const e = estado.toUpperCase();
+        if (e === 'BAMBU' || e === 'FIBRA') return false;
+        if (e === 'MADEIRA' || e === 'MADEIRA CONTABILIZADO') return false;
+        if (e === 'MADEIRA IMPORTAÇÃO' || e === 'MADEIRA IMPORTACAO' || e === 'MADEIRA IMPORTADA') return false;
+        return true; // AMOSTRA, BONIFICAÇÃO, GILSON, etc.
+      };
+
+      const filtered = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
 
       // Get vendedor map from GraphQL
       const vendedorMap = await fetchVendedorMap();
 
-      // Group by pedido to avoid double-counting items from same order
-      const pedidoMap = new Map<string, { cliente: string; vendedor: string; valor: number }>();
+      // Group by pedido using same logic as Vendas tab:
+      // Use valorTotalPedido when available, otherwise sum item valorTotal values
+      const pedidoMap = new Map<string, { cliente: string; vendedor: string; valorTotalPedido: number; somaItens: number; items: typeof filtered }>();
       for (const o of filtered) {
         const pedido = o.pedido || `item-${Math.random()}`;
-        if (pedidoMap.has(pedido)) continue;
+        if (!pedidoMap.has(pedido)) {
+          const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
+          let vendedor = o.representante || "";
+          if (!vendedor || isEditorNaoVendedor(vendedor)) {
+            vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
+          }
+          if (isClienteGrupoFox(clienteName)) {
+            vendedor = "Grupo Fox";
+          }
+          if (!vendedor) vendedor = "Não identificado";
 
-        const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
-        
-        // Determine vendedor: priority is representante field, then graphQL map
-        let vendedor = o.representante || "";
-        if (!vendedor || isEditorNaoVendedor(vendedor)) {
-          vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
+          pedidoMap.set(pedido, {
+            cliente: clienteName,
+            vendedor,
+            valorTotalPedido: o.valorTotalPedido ? Number(o.valorTotalPedido) : 0,
+            somaItens: Number(o.valorTotal || 0),
+            items: [o],
+          });
+        } else {
+          const p = pedidoMap.get(pedido)!;
+          if (!p.valorTotalPedido && o.valorTotalPedido) {
+            p.valorTotalPedido = Number(o.valorTotalPedido);
+          }
+          p.somaItens += Number(o.valorTotal || 0);
+          p.items.push(o);
         }
-        if (isClienteGrupoFox(clienteName)) {
-          vendedor = "Grupo Fox";
-        }
-        if (!vendedor) vendedor = "Não identificado";
-
-        const valor = Number(o.valorTotalPedido || o.valorTotal || 0);
-        pedidoMap.set(pedido, { cliente: clienteName, vendedor, valor });
       }
 
-      // Aggregate by vendedor
+      // Aggregate by vendedor (same value logic as Vendas tab)
       const vendedorStats: Record<string, { totalVendas: number; pedidos: Set<string>; clientes: Set<string> }> = {};
       for (const [pedido, data] of Array.from(pedidoMap.entries())) {
+        // Use valorTotalPedido if available, otherwise sum of items (same as Vendas tab)
+        const valor = data.valorTotalPedido || data.somaItens;
         if (!vendedorStats[data.vendedor]) {
           vendedorStats[data.vendedor] = { totalVendas: 0, pedidos: new Set(), clientes: new Set() };
         }
-        vendedorStats[data.vendedor].totalVendas += data.valor;
+        vendedorStats[data.vendedor].totalVendas += valor;
         vendedorStats[data.vendedor].pedidos.add(pedido);
         vendedorStats[data.vendedor].clientes.add(data.cliente);
       }
@@ -323,7 +347,10 @@ export const salesMetricsRouter = router({
       const db = await getDb();
       if (!db) return [];
 
-      const orders = await db.select({
+      const startDay = input.startDate.substring(0, 10);
+      const endDay = input.endDate.substring(0, 10);
+
+      const allItems = await db.select({
         pedido: salesOrders.pedido,
         cliente: salesOrders.cliente,
         clienteApelido: salesOrders.clienteApelido,
@@ -336,52 +363,67 @@ export const salesMetricsRouter = router({
         dataEmissao: salesOrders.dataEmissao,
       }).from(salesOrders)
         .where(and(
-          gte(salesOrders.dataEmissao, input.startDate),
-          lte(salesOrders.dataEmissao, input.endDate),
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`,
         ));
 
-      // Filter: exclude Digitação and Outros
-      const filtered = orders.filter(o => {
-        const nota = (o.estadoNota || "").toUpperCase();
-        if (nota === "DIGITAÇÃO" || nota === "DIGITACAO") return false;
-        const estado = (o.estadoConfiguravel || "").toUpperCase();
-        if (estado.includes("AMOSTRA") || estado.includes("BONIFICA") || estado === "GILSON") return false;
+      // Same filter as Vendas tab
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+      const isOutros = (estado: string | null) => {
+        if (!estado) return true;
+        const e = estado.toUpperCase();
+        if (e === 'BAMBU' || e === 'FIBRA') return false;
+        if (e === 'MADEIRA' || e === 'MADEIRA CONTABILIZADO') return false;
+        if (e === 'MADEIRA IMPORTAÇÃO' || e === 'MADEIRA IMPORTACAO' || e === 'MADEIRA IMPORTADA') return false;
         return true;
-      });
+      };
+
+      const filtered = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
 
       const vendedorMap = await fetchVendedorMap();
 
-      // Group by pedido, filter for this vendedor
-      const pedidoMap = new Map<string, { cliente: string; vendedor: string; valor: number; data: string }>();
+      // Group by pedido using same logic as Vendas tab, filter for this vendedor
+      const pedidoMap = new Map<string, { cliente: string; vendedor: string; valorTotalPedido: number; somaItens: number; data: string }>();
       for (const o of filtered) {
         const pedido = o.pedido || `item-${Math.random()}`;
-        if (pedidoMap.has(pedido)) continue;
+        if (!pedidoMap.has(pedido)) {
+          const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
+          let vendedor = o.representante || "";
+          if (!vendedor || isEditorNaoVendedor(vendedor)) {
+            vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
+          }
+          if (isClienteGrupoFox(clienteName)) vendedor = "Grupo Fox";
+          if (!vendedor) vendedor = "Não identificado";
 
-        const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
-        let vendedor = o.representante || "";
-        if (!vendedor || isEditorNaoVendedor(vendedor)) {
-          vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
-        }
-        if (isClienteGrupoFox(clienteName)) vendedor = "Grupo Fox";
-        if (!vendedor) vendedor = "Não identificado";
-
-        if (vendedor.toUpperCase() === input.vendedor.toUpperCase()) {
           pedidoMap.set(pedido, {
             cliente: clienteName,
             vendedor,
-            valor: Number(o.valorTotalPedido || o.valorTotal || 0),
+            valorTotalPedido: o.valorTotalPedido ? Number(o.valorTotalPedido) : 0,
+            somaItens: Number(o.valorTotal || 0),
             data: o.dataEmissao || "",
           });
+        } else {
+          const p = pedidoMap.get(pedido)!;
+          if (!p.valorTotalPedido && o.valorTotalPedido) {
+            p.valorTotalPedido = Number(o.valorTotalPedido);
+          }
+          p.somaItens += Number(o.valorTotal || 0);
         }
       }
 
-      // Group by client
+      // Filter for this vendedor and group by client
       const clienteMap: Record<string, { totalVendas: number; pedidos: number; ultimoPedido: string }> = {};
       for (const [_, data] of Array.from(pedidoMap.entries())) {
+        if (data.vendedor.toUpperCase() !== input.vendedor.toUpperCase()) continue;
+        const valor = data.valorTotalPedido || data.somaItens;
         if (!clienteMap[data.cliente]) {
           clienteMap[data.cliente] = { totalVendas: 0, pedidos: 0, ultimoPedido: "" };
         }
-        clienteMap[data.cliente].totalVendas += data.valor;
+        clienteMap[data.cliente].totalVendas += valor;
         clienteMap[data.cliente].pedidos += 1;
         if (data.data > clienteMap[data.cliente].ultimoPedido) {
           clienteMap[data.cliente].ultimoPedido = data.data;

@@ -1,6 +1,10 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award } from "lucide-react";
+import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award, FileDown } from "lucide-react";
+import { exportRankingVendasPdf, exportInadimplenciaPdf } from "@/lib/tabsPdfExport";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 type ViewMode = "ranking" | "detail" | "inadimplencia" | "inadimplenciaDetail";
 
@@ -149,6 +153,30 @@ export default function MetricaVendasTab() {
       {/* Navigation tabs */}
       {(view === "ranking" || view === "inadimplencia") && (
         <div className="flex gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => {
+                  if (view === "ranking") {
+                    if (!ranking?.length) { toast.error("Nenhum dado para exportar."); return; }
+                    exportRankingVendasPdf({ ranking: ranking.map(v => ({ vendedor: v.vendedor, totalVendas: v.totalVendas, qtdPedidos: v.qtdPedidos, qtdClientes: v.qtdClientes })), periodLabel });
+                    toast.success("PDF de Ranking gerado!");
+                  } else {
+                    if (!inadimplencia?.length) { toast.error("Nenhum dado para exportar."); return; }
+                    exportInadimplenciaPdf({ inadimplencia: inadimplencia as any });
+                    toast.success("PDF de Inadimplência gerado!");
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="gap-1.5 ml-auto border-slate-300 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 transition-all"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                Exportar PDF
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Exportar dados da aba atual em PDF</TooltipContent>
+          </Tooltip>
           <button
             onClick={() => setView("ranking")}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${

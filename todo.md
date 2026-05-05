@@ -3377,3 +3377,12 @@
 - [x] PDF Decisão Cobrança: corrigir upload corrompido do S3 (enviava "[object Blob]" em vez de bytes reais)
 - [x] Produção: adicionar média total consolidada em cada card (Multilâmina, Vareteiras, Seleção toco, Seleção automática, Seleção visual, Flow Pack)
 - [x] PDF Semanal Produção: adicionar média semanal e média mensal consolidada dentro de cada card de setor
+- [x] Gráfico Vendas: tooltip/card deve abrir próximo ao cursor do mouse (não longe)
+- [x] Exportar PDF: aba Prospecção (Fornecedores Brasileiros)
+- [x] Exportar PDF: aba Ranking (Fornecedores Brasileiros)
+- [x] Exportar PDF: aba Por Status (Fornecedores Brasileiros)
+- [x] Exportar PDF: aba Histórico (Fornecedores Brasileiros)
+- [x] Exportar PDF: aba Ranking de Vendedores (Métrica de Vendas)
+- [x] Exportar PDF: aba Inadimplentes (Métrica de Vendas)
+- [x] Métrica de Vendas: sincronizar valores com aba Vendas (mesma fonte de dados/filtros)
+- [x] Gráfico Vendas: tooltip/card deve abrir próximo ao cursor do mouse

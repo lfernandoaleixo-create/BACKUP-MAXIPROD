@@ -611,10 +611,19 @@ function DailyChart({ data, mode, period, comparison }: {
                   style={{ cursor: "pointer" }}
                   onMouseEnter={(e) => {
                     setHoveredDay(item.day);
-                    const svgRect = (e.target as SVGElement).closest("svg")?.getBoundingClientRect();
-                    if (svgRect) {
-                      const relX = e.clientX - svgRect.left;
-                      setTooltipPos({ x: relX, y: 0 });
+                    const containerRect = (e.target as SVGElement).closest('.relative')?.getBoundingClientRect();
+                    if (containerRect) {
+                      const relX = e.clientX - containerRect.left;
+                      const relY = e.clientY - containerRect.top;
+                      setTooltipPos({ x: relX, y: relY });
+                    }
+                  }}
+                  onMouseMove={(e) => {
+                    const containerRect = (e.target as SVGElement).closest('.relative')?.getBoundingClientRect();
+                    if (containerRect) {
+                      const relX = e.clientX - containerRect.left;
+                      const relY = e.clientY - containerRect.top;
+                      setTooltipPos({ x: relX, y: relY });
                     }
                   }}
                   onMouseLeave={() => setHoveredDay(null)}
@@ -771,10 +780,11 @@ function DailyChart({ data, mode, period, comparison }: {
         const dayNum = parseInt(hoveredDay.split("-")[2]);
         const orders = hoveredItem.orderList || [];
         const tooltipLeft = tooltipPos.x > 500 ? tooltipPos.x - 260 : tooltipPos.x + 10;
+        const tooltipTop = Math.max(0, tooltipPos.y - 20);
         return (
           <div
             className="absolute bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50 pointer-events-none"
-            style={{ left: `${tooltipLeft}px`, top: "10px", minWidth: "240px", maxWidth: "300px" }}
+            style={{ left: `${tooltipLeft}px`, top: `${tooltipTop}px`, minWidth: "240px", maxWidth: "300px" }}
           >
             <div className="flex items-center justify-between mb-2 border-b border-slate-100 pb-2">
               <span className="text-xs font-bold text-slate-700">Dia {dayNum} ({formatWeekday(hoveredDay)})</span>
