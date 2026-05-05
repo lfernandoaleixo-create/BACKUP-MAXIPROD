@@ -3315,8 +3315,8 @@ function SemiProntoValorizacaoInline({
       if (item.isChild) continue;
       const preco = precosMap.get(item.codigoItem);
       const estoque = semiProntoMap.get(item.codigoItem) || 0;
-      const pedidos = item.pedidosCx ?? 0;
-      const disponivel = estoque - pedidos;
+      // Semi Pronto não tem pedidos de venda
+      const disponivel = estoque;
       if (preco && preco > 0) {
         comPreco++;
         valorEstoque += estoque * preco;
@@ -3393,8 +3393,8 @@ function AguardandoValorizacaoInline({
       if (item.isChild) continue;
       const preco = precosMap.get(item.codigoItem);
       const estoque = aguardandoMap.get(item.codigoItem) || 0;
-      const pedidos = item.pedidosCx ?? 0;
-      const disponivel = estoque - pedidos;
+      // Aguardando Escolha não tem pedidos de venda
+      const disponivel = estoque;
       if (preco && preco > 0) {
         comPreco++;
         valorEstoque += estoque * preco;
@@ -3496,15 +3496,9 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
     return total;
   }, [parentItems, semiProntoMap]);
 
-  const totalPedidos = useMemo(() => {
-    let total = 0;
-    for (const item of parentItems) {
-      total += item.pedidosCx ?? item.pedidosUn;
-    }
-    return total;
-  }, [parentItems]);
-
-  const totalDisponivel = totalEstoque - totalPedidos;
+  // Semi Pronto não tem pedidos de venda (apenas Produto Acabado tem)
+  const totalPedidos = 0;
+  const totalDisponivel = totalEstoque;
 
   const handleStartEdit = useCallback((codigoItem: string) => {
     if (!currentOperator) {
@@ -3640,8 +3634,8 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
                 {filtered.map((item) => {
                   const qty = semiProntoMap.get(item.codigoItem) || 0;
                   const isEditing = editingItem === item.codigoItem;
-                  const pedidosVal = item.pedidosCx ?? item.pedidosUn;
-                  const disponivel = qty - pedidosVal;
+                  const pedidosVal = 0; // Semi Pronto não tem pedidos de venda
+                  const disponivel = qty;
                   return (
                     <tr key={item.codigoItem} className={`border-b border-slate-100 hover:bg-slate-50/50 ${disponivel < 0 ? 'bg-red-50/50' : ''}`}>
                       <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>
@@ -3744,15 +3738,9 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
     return total;
   }, [parentItems, aguardandoMap]);
 
-  const totalPedidos = useMemo(() => {
-    let total = 0;
-    for (const item of parentItems) {
-      total += item.pedidosCx ?? item.pedidosUn;
-    }
-    return total;
-  }, [parentItems]);
-
-  const totalDisponivel = totalEstoque - totalPedidos;
+  // Aguardando Escolha não tem pedidos de venda (apenas Produto Acabado tem)
+  const totalPedidos = 0;
+  const totalDisponivel = totalEstoque;
 
   const handleStartEdit = useCallback((codigoItem: string) => {
     if (!currentOperator) {
@@ -3889,8 +3877,8 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
                 {filtered.map((item) => {
                   const qty = aguardandoMap.get(item.codigoItem) || 0;
                   const isEditing = editingItem === item.codigoItem;
-                  const pedidosVal = item.pedidosCx ?? item.pedidosUn;
-                  const disponivel = qty - pedidosVal;
+                  const pedidosVal = 0; // Aguardando Escolha não tem pedidos de venda
+                  const disponivel = qty;
                   return (
                     <tr key={item.codigoItem} className={`border-b border-slate-100 hover:bg-slate-50/50 ${disponivel < 0 ? 'bg-red-50/50' : ''}`}>
                       <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>

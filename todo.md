@@ -3386,3 +3386,4 @@
 - [x] Exportar PDF: aba Inadimplentes (Métrica de Vendas)
 - [x] Métrica de Vendas: sincronizar valores com aba Vendas (mesma fonte de dados/filtros)
 - [x] Gráfico Vendas: tooltip/card deve abrir próximo ao cursor do mouse
+- [x] Estoque: zerar pedidos de venda de Madeira Semi Pronto e Madeira Aguardando Escolha (só Produto Acabado tem pedidos reais)
