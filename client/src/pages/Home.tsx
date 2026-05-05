@@ -2897,7 +2897,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
               <table className="w-full text-[13px]">
                 <thead className="bg-slate-50 border-b border-slate-200 sticky top-[48px] z-20 shadow-sm">
                   <tr>
-                    <th className="px-2 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" style={{ minWidth: '180px', width: '25%' }} onClick={() => handleMadeiraSort('descricaoItem')}>
+                    <th className="px-2 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" style={{ minWidth: '220px', width: '25%' }} onClick={() => handleMadeiraSort('descricaoItem')}>
                       <div className="flex items-center gap-1">Produto <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
                     </th>
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ width: '50px' }}>Un/Cx</th>
@@ -2991,7 +2991,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                       <React.Fragment key={item.codigoItem}>
                       <tr className={`hover:bg-slate-50 transition-colors ${isNegative ? 'bg-red-50/50' : isZero ? 'bg-amber-50/30' : ''}`}>
                         {/* Produto */}
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2" style={{ minWidth: '220px' }}>
                           <div className="flex items-start gap-1">
                             {hasVariants && (
                               <button
@@ -3128,8 +3128,8 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                       {/* Sub-linhas de variações (expandidas) */}
                       {hasVariants && isExpanded && item.variants!.map((variant) => (
                         <tr key={`${item.codigoItem}-${variant.codigoItem}`} className="bg-green-50/30 border-l-4 border-green-300">
-                          <td className="px-2 py-1 pl-8">
-                            <span className="text-slate-600 text-xs">
+                          <td className="px-2 py-1 pl-8" style={{ minWidth: '220px' }}>
+                            <span className="text-slate-600 text-xs break-words">
                               └ {variant.descricaoItem}
                             </span>
                             <div className="text-[10px] text-slate-400 ml-3">

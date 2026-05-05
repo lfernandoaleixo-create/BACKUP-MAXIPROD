@@ -3394,3 +3394,4 @@
 - [x] Vendas: no card Grupo Fox do ranking, mostrar o vendedor real (representanteOuVendedor1) como informação adicional, sem alterar o cômputo do ranking
 - [x] Financeiro: mover título "Despesas E-commerce" para acima dos cards (não abaixo)
 - [x] E-commerce: separar botões (Exportar PDF, Filtros, Nova Despesa) do título - botões ficam acima do card branco da tabela
+- [x] Estoque Madeira PA: nome do produto cortado na tabela ao pesquisar - mostrar nome completo sem truncar
