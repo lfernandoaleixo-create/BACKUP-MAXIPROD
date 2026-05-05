@@ -2488,19 +2488,19 @@ export default function SettingsPage() {
 
       {/* Navigation Tabs */}
       <div className="bg-white border-b border-slate-200">
-        <div className="container">
-          <div className="flex gap-1 overflow-x-auto pb-1">
+        <div className="container px-0 md:px-4">
+          <div className="flex gap-0.5 md:gap-1 overflow-x-auto pb-1 scrollbar-thin px-2 md:px-0" style={{ WebkitOverflowScrolling: 'touch' }}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-3 text-xs md:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2.5 md:py-3 text-[10px] md:text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 ${
                   activeTab === tab.id
                     ? `${tab.color} border-current`
                     : "text-slate-400 border-transparent hover:text-slate-600"
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="w-3 h-3 md:w-4 md:h-4 hidden md:block" />
                 {tab.label}
               </button>
             ))}

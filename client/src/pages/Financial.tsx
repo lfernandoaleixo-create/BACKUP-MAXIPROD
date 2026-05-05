@@ -663,30 +663,30 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
   }, [isPagar, bucket.items]);
 
   return (
-    <div className={`rounded-lg border ${colorClass} p-3`}>
+    <div className={`rounded-lg border ${colorClass} p-2 md:p-3`}>
 
       {/* Header row */}
-      <div className="flex items-center justify-between mb-2 gap-1">
-        <span className={`text-xs md:text-sm font-semibold ${textColorClass} shrink-0`}>{bucket.label}</span>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-0.5 md:gap-1">
+        <div className="flex items-center justify-between md:justify-start gap-1">
+          <span className={`text-[10px] md:text-sm font-semibold ${textColorClass} whitespace-nowrap`}>{bucket.label}</span>
+          <span className={`text-xs md:text-sm font-bold ${textColorClass} whitespace-nowrap`}>{formatCurrency(filteredTotal)}</span>
+          <span className="text-[9px] md:text-xs text-slate-400">({searchTerm.trim() ? processedItems.length : bucket.count})</span>
+        </div>
         <div className="flex items-center gap-1 md:gap-1.5 min-w-0">
           {/* Calculator total badge */}
           {calcMode && selectedIds.size > 0 && (
-            <div className="flex items-center gap-1 bg-violet-100 border border-violet-300 rounded-md px-2 py-0.5">
-              <Calculator className="w-4 h-4 text-violet-600" />
-              <span className="text-xs font-bold text-violet-700 tabular-nums">{formatCurrency(calcTotal)}</span>
-              <span className="text-[9px] text-violet-500">({selectedIds.size})</span>
+            <div className="flex items-center gap-0.5 md:gap-1 bg-violet-100 border border-violet-300 rounded-md px-1.5 md:px-2 py-0.5">
+              <Calculator className="w-3 h-3 md:w-4 md:h-4 text-violet-600" />
+              <span className="text-[10px] md:text-xs font-bold text-violet-700 tabular-nums">{formatCurrency(calcTotal)}</span>
+              <span className="text-[8px] md:text-[9px] text-violet-500">({selectedIds.size})</span>
             </div>
           )}
-          <div className="text-right">
-            <span className={`text-sm font-bold ${textColorClass}`}>{formatCurrency(filteredTotal)}</span>
-            <span className="text-xs text-slate-400 ml-1">({searchTerm.trim() ? processedItems.length : bucket.count})</span>
-          </div>
           {/* Sort arrows + Search + Calculator toggle */}
           {hasItems && (
-            <div className="flex items-end gap-1.5">
+            <div className="flex items-end gap-1">
               {/* DATA: label + ↑↓ */}
               <div className="flex flex-col items-center gap-0">
-                <span className="text-[8px] font-semibold text-slate-400 uppercase leading-none">Data</span>
+                <span className="text-[8px] font-semibold text-slate-400 uppercase leading-none hidden md:block">Data</span>
                 <button
                   onClick={() => {
                     if (sortMode === 'data_desc') setSortMode('data_asc');
@@ -703,7 +703,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
               </div>
               {/* VALOR: label + ↑↓ */}
               <div className="flex flex-col items-center gap-0">
-                <span className="text-[8px] font-semibold text-slate-400 uppercase leading-none">Valor</span>
+                <span className="text-[8px] font-semibold text-slate-400 uppercase leading-none hidden md:block">Valor</span>
                 <button
                   onClick={() => {
                     if (sortMode === 'valor_desc') setSortMode('valor_asc');
@@ -1346,7 +1346,7 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
     <div className="space-y-6">
       {/* Calendar comparison header */}
       <div className="grid grid-cols-2 gap-2 md:gap-4">
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2 md:p-3">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-1.5 md:p-3">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1.5">
             <h3 className="text-xs md:text-sm font-bold text-emerald-700 flex items-center gap-1.5 md:gap-2">
               <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -1366,7 +1366,7 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
             </button>
           </div>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-2 md:p-3">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-1.5 md:p-3">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1.5">
             <h3 className="text-xs md:text-sm font-bold text-red-700 flex items-center gap-1.5 md:gap-2">
               <TrendingDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -1390,7 +1390,7 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
 
       {/* History panels */}
       {(showHistoryReceber || showHistoryPagar) && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           {showHistoryReceber ? (
             <FinancialHistoryPanel tipo="receber" onClose={() => setShowHistoryReceber(false)} />
           ) : <div />}
@@ -1409,7 +1409,7 @@ function OverviewCalendars({ calendarPagar, loadingPagar, canAuthorize = true, c
 
         return (
           <React.Fragment key={idx}>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {canViewReceber && <BucketCard
                 bucket={{ ...row.receber, label: row.label }}
                 colorClass={isVencida ? "border-emerald-300 bg-emerald-50" : `border-emerald-200 bg-emerald-50/50`}
