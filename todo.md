@@ -3389,3 +3389,5 @@
 - [x] Estoque: zerar pedidos de venda de Madeira Semi Pronto e Madeira Aguardando Escolha (só Produto Acabado tem pedidos reais)
 - [x] KPI Importação: card Pedidos (Venda) deve somar apenas pedidos de produtos de importação (excluir industrialização/madeira do total)
 - [x] Métricas Cobrança: remover gráficos, manter apenas KPIs + Resumo de Recuperações + Títulos Recuperados
+- [x] Vendas: corrigir card SEMANA 1 que está mostrando dias da semana 2 (Dias 4-6 deveria ser semana 2)
+- [x] Vendas: adicionar observação no card da semana quando houver venda em dia não útil (fim de semana/cinza)

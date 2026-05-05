@@ -665,42 +665,48 @@ function DailyChart({ data, mode, period, comparison }: {
         </svg>
       </div>
 
-      {/* Weekly Summaries (business days) */}
+      {/* Weekly Summaries (business weeks Mon-Sun) */}
       {(period === "current_month" || period === "last_month") && allDays.length > 0 && (() => {
-        // Group days into business weeks (Mon-Fri)
-        const weeks: Array<{ weekNum: number; days: typeof allDays; startDay: number; endDay: number; total: number; totalOrders: number }> = [];
-        let currentWeek: typeof allDays = [];
-        let weekStart = 0;
+        // Group days into calendar weeks (Mon-Sun), tracking business vs weekend days
+        const weeks: Array<{ weekNum: number; days: typeof allDays; startDay: number; endDay: number; total: number; totalOrders: number; weekendSales: number; weekendDaysWithSales: number }> = [];
+        let currentWeekAll: typeof allDays = []; // all days in this calendar week
 
         for (let i = 0; i < allDays.length; i++) {
           const d = new Date(allDays[i].day + "T12:00:00");
           const dow = d.getDay(); // 0=Sun, 1=Mon...6=Sat
-          const isBusinessDay = dow >= 1 && dow <= 5;
 
-          if (isBusinessDay) {
-            if (currentWeek.length === 0) weekStart = i;
-            currentWeek.push(allDays[i]);
-          }
+          currentWeekAll.push(allDays[i]);
 
-          // End of week (Friday) or last day of month
+          // End of week = Sunday (dow===0) or last day of month
           const isLastDay = i === allDays.length - 1;
-          const nextDow = i < allDays.length - 1 ? new Date(allDays[i + 1].day + "T12:00:00").getDay() : -1;
-          const isEndOfWeek = dow === 5 || (isBusinessDay && (nextDow === 0 || nextDow === 6 || isLastDay));
+          const isEndOfWeek = dow === 0 || isLastDay;
 
-          if (currentWeek.length > 0 && (isEndOfWeek || isLastDay)) {
-            const total = currentWeek.reduce((s, d) => s + (d.isFuture ? 0 : d.value), 0);
-            const totalOrders = currentWeek.reduce((s, d) => s + (d.isFuture ? 0 : d.orders), 0);
-            const startDayNum = parseInt(currentWeek[0].day.split("-")[2]);
-            const endDayNum = parseInt(currentWeek[currentWeek.length - 1].day.split("-")[2]);
+          if (isEndOfWeek) {
+            const businessDays = currentWeekAll.filter(day => {
+              const dd = new Date(day.day + "T12:00:00").getDay();
+              return dd >= 1 && dd <= 5;
+            });
+            const weekendDays = currentWeekAll.filter(day => {
+              const dd = new Date(day.day + "T12:00:00").getDay();
+              return dd === 0 || dd === 6;
+            });
+            const total = currentWeekAll.reduce((s, d) => s + (d.isFuture ? 0 : d.value), 0);
+            const totalOrders = currentWeekAll.reduce((s, d) => s + (d.isFuture ? 0 : d.orders), 0);
+            const weekendSales = weekendDays.reduce((s, d) => s + (d.isFuture ? 0 : d.value), 0);
+            const weekendDaysWithSales = weekendDays.filter(d => !d.isFuture && d.value > 0).length;
+            const startDayNum = parseInt(currentWeekAll[0].day.split("-")[2]);
+            const endDayNum = parseInt(currentWeekAll[currentWeekAll.length - 1].day.split("-")[2]);
             weeks.push({
               weekNum: weeks.length + 1,
-              days: [...currentWeek],
+              days: businessDays,
               startDay: startDayNum,
               endDay: endDayNum,
               total,
               totalOrders,
+              weekendSales,
+              weekendDaysWithSales,
             });
-            currentWeek = [];
+            currentWeekAll = [];
           }
         }
 
@@ -761,7 +767,16 @@ function DailyChart({ data, mode, period, comparison }: {
                       </div>
                     )}
 
-                    {/* Row 4: Dias úteis - at the bottom, separated */}
+                    {/* Row 4: Weekend sales note */}
+                    {week.weekendSales > 0 && mode === "value" && (
+                      <div className="flex items-center gap-1" style={{ whiteSpace: 'nowrap' }}>
+                        <span className="text-[10px] text-amber-600 font-medium">
+                          +R$ {formatVal(week.weekendSales)} em {week.weekendDaysWithSales} dia{week.weekendDaysWithSales > 1 ? 's' : ''} não útil{week.weekendDaysWithSales > 1 ? 'eis' : ''}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Row 5: Dias úteis - at the bottom, separated */}
                     <div className="pt-1.5 mt-auto border-t border-slate-200/50" style={{ whiteSpace: 'nowrap' }}>
                       <span className="text-[10px] text-slate-400 font-medium">{week.days.length} dias úteis</span>
                     </div>
