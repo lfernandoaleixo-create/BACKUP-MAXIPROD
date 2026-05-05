@@ -3388,3 +3388,4 @@
 - [x] Gráfico Vendas: tooltip/card deve abrir próximo ao cursor do mouse
 - [x] Estoque: zerar pedidos de venda de Madeira Semi Pronto e Madeira Aguardando Escolha (só Produto Acabado tem pedidos reais)
 - [x] KPI Importação: card Pedidos (Venda) deve somar apenas pedidos de produtos de importação (excluir industrialização/madeira do total)
+- [x] Métricas Cobrança: remover gráficos, manter apenas KPIs + Resumo de Recuperações + Títulos Recuperados
