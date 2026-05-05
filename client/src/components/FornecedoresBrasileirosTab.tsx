@@ -178,7 +178,7 @@ export default function FornecedoresBrasileirosTab() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-1">
+      <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-1 overflow-x-auto scrollbar-hide">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

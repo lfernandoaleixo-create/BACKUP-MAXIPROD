@@ -3411,3 +3411,19 @@
 - [x] Corrigir mobile: tabs Config (Senhas/Produto Importado/Alertas/Visibilidade/Bancos/Variações/Dados/Madeira) grudadas e cortadas
 - [x] Corrigir mobile: botão "Sincronizar" cortado no card de conexão
 - [x] Corrigir mobile: datas cortadas (04/0..., 06/0...) e botão "Históri..." cortado nos Recebíveis
+- [ ] Mobile: Fluxo de Caixa - valores cortados (R$ 1.4..., R$ 2..., R$ -1...) nos 3 cards
+- [x] Mobile: Inadimplência - textos sobrepostos (títulos, valores, "Confere" grudados)
+- [ ] Mobile: Saldo Bancário - "Conciliação Feita..." cortado, sobrepondo saldo
+- [ ] Mobile: Botões "Recebimentos" e "Pagamentos" cortados
+- [x] Mobile: Autorização de Pagamentos - valores sobrepostos nos nomes dos fornecedores
+- [x] Mobile: Saldo sem Caixa / Autorizado / Exportar PDF sobrepostos na mesma linha
+- [x] Mobile: Varredura geral em todas as abas para adaptar ao celular
+- [x] Mobile: Adicionar padding-bottom em todas as páginas para não esconder conteúdo atrás do bottom nav
+- [x] Mobile: Financial tabs - reduzir padding e font-size para caber melhor no celular
+- [x] Mobile: Sales tabs - adicionar overflow-x-auto e scrollbar-hide
+- [x] Mobile: FornecedoresBrasileirosTab - overflow-x-auto e scrollbar-hide na navegação
+- [x] Mobile: EcommerceTab - overflow-x-auto na tabela
+- [x] Mobile: InadimplenciaTab - botões de ação com flex-wrap e tamanhos responsivos
+- [x] Mobile: InadimplenciaTab - title rows com layout compacto no mobile (ocultar colunas secundárias)
+- [x] Mobile: Billing TopNav Select - reduzir largura no mobile
+- [x] Mobile: Adicionar utilitário CSS scrollbar-hide para scroll horizontal limpo

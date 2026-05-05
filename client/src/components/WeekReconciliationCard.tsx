@@ -235,16 +235,16 @@ function PayableRow({
       </div>
       {/* Value column */}
       <div className="flex-shrink-0">
-        <div className="min-w-[120px] text-right">
+        <div className="min-w-[80px] md:min-w-[120px] text-right">
           <span
-            className={`text-base font-bold tabular-nums ${
+            className={`text-sm md:text-base font-bold tabular-nums ${
               item.authorized ? "text-emerald-700" : "text-red-600"
             }`}
           >
             {formatCurrency(item.valor)}
           </span>
           <div
-            className={`text-sm ${
+            className={`text-[10px] md:text-sm ${
               item.authorized ? "text-emerald-400" : "text-slate-500"
             }`}
           >
@@ -252,13 +252,13 @@ function PayableRow({
           </div>
           {item.vencimentoOriginal && (
             <div
-              className={`text-sm font-medium ${
+              className={`text-[10px] md:text-sm font-medium ${
                 item.vencimentoOriginal !== item.vencimento
                   ? "text-orange-500"
                   : item.authorized ? "text-emerald-400/70" : "text-slate-300"
               }`}
             >
-              Venc. Orig. {item.vencimentoOriginal.split("-").reverse().join("/")}
+              Orig. {item.vencimentoOriginal.split("-").reverse().join("/")}
             </div>
           )}
         </div>
@@ -515,26 +515,26 @@ function DayCard({
         className="w-full cursor-pointer hover:brightness-95 transition-all"
       >
         {/* Top bar: Saldo (verde) | Autorizado (vermelho) | Total do dia (azul) */}
-        <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100">
+        <div className="flex flex-wrap md:flex-nowrap items-center justify-between px-2 md:px-4 py-2 md:py-3 bg-white border-b border-slate-100 gap-1 md:gap-0">
           {/* Saldo Bancário - VERDE */}
-          <div className="flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-emerald-600" />
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <Landmark className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 flex-shrink-0" />
             <div>
-              <span className="text-[10px] text-emerald-500 font-medium block leading-tight">Saldo sem Caixa Dinheiro</span>
-              <span className="text-lg font-extrabold tabular-nums text-emerald-600">
+              <span className="text-[8px] md:text-[10px] text-emerald-500 font-medium block leading-tight">Saldo s/ Cx Din.</span>
+              <span className="text-sm md:text-lg font-extrabold tabular-nums text-emerald-600">
                 {formatCurrency(saldoBancario)}
               </span>
             </div>
           </div>
 
           {/* Autorizado - VERMELHO + Botão Exportar PDF */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 md:gap-3">
             {day.authorizedTotal > 0 && (
               <>
-                <ShieldCheck className="w-5 h-5 text-red-500" />
+                <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-red-500 flex-shrink-0" />
                 <div>
-                  <span className="text-[10px] text-red-400 font-medium block leading-tight">Autorizado</span>
-                  <span className="text-lg font-extrabold tabular-nums text-red-600">
+                  <span className="text-[8px] md:text-[10px] text-red-400 font-medium block leading-tight">Autorizado</span>
+                  <span className="text-sm md:text-lg font-extrabold tabular-nums text-red-600">
                     {formatCurrency(day.authorizedTotal)}
                   </span>
                 </div>
@@ -546,20 +546,20 @@ function DayCard({
                     exportAuthPDF(sortedItems.filter(i => i.authorized), saldoBancario, day.authorizedTotal, day.dayLabel);
                   }}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); exportAuthPDF(sortedItems.filter(i => i.authorized), saldoBancario, day.authorizedTotal, day.dayLabel); } }}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 hover:bg-red-100 border border-red-200 cursor-pointer transition-colors"
+                  className="flex items-center gap-1 px-1.5 md:px-2 py-1 rounded-md bg-red-50 hover:bg-red-100 border border-red-200 cursor-pointer transition-colors"
                 >
-                  <FileDown className="w-3.5 h-3.5 text-red-600" />
-                  <span className="text-[10px] font-semibold text-red-600 whitespace-nowrap">Exportar PDF</span>
+                  <FileDown className="w-3 h-3 md:w-3.5 md:h-3.5 text-red-600" />
+                  <span className="text-[9px] md:text-[10px] font-semibold text-red-600 whitespace-nowrap">PDF</span>
                 </div>
               </>
             )}
           </div>
 
           {/* Total do dia - AZUL (direita) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 md:gap-2">
             <div className="text-right">
-              <span className="text-[10px] text-blue-400 font-medium block leading-tight">Total</span>
-              <span className="text-lg font-extrabold tabular-nums text-blue-600">
+              <span className="text-[8px] md:text-[10px] text-blue-400 font-medium block leading-tight">Total</span>
+              <span className="text-sm md:text-lg font-extrabold tabular-nums text-blue-600">
                 {formatCurrency(day.total)}
               </span>
             </div>
@@ -661,28 +661,56 @@ function DayCard({
                           : "bg-amber-50 border-amber-200 border-t-amber-100"
                       }`}
                     >
-                      <div className="grid py-1.5 px-3" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
-                        {/* Lado esquerdo: seta + nome + contagem */}
-                        <button
-                          onClick={() => toggleGroupCollapse(group.fornecedor)}
-                          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity justify-self-start"
-                        >
-                          {isGroupCollapsed ? (
-                            <ChevronRight className={`w-3.5 h-3.5 ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`} />
-                          ) : (
-                            <ChevronDown className={`w-3.5 h-3.5 ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`} />
-                          )}
-                          <span className={`text-xs font-bold uppercase tracking-wide ${
-                            groupAllAuthorized ? "text-emerald-900" : "text-amber-900"
-                          }`}>
-                            {group.fornecedor}
-                          </span>
-                          <span className={`text-[9px] ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`}>({group.items.length})</span>
-                        </button>
+                      <div className="flex flex-col md:grid py-1.5 px-2 md:px-3 gap-1 md:gap-0" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
+                        {/* Linha 1 mobile / Lado esquerdo desktop: seta + nome + contagem */}
+                        <div className="flex items-center justify-between md:justify-start">
+                          <button
+                            onClick={() => toggleGroupCollapse(group.fornecedor)}
+                            className="flex items-center gap-1 md:gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                          >
+                            {isGroupCollapsed ? (
+                              <ChevronRight className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`} />
+                            ) : (
+                              <ChevronDown className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`} />
+                            )}
+                            <span className={`text-[10px] md:text-xs font-bold uppercase tracking-wide ${
+                              groupAllAuthorized ? "text-emerald-900" : "text-amber-900"
+                            }`}>
+                              {group.fornecedor}
+                            </span>
+                            <span className={`text-[8px] md:text-[9px] ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`}>({group.items.length})</span>
+                          </button>
+                          {/* Selecionar Tudo - inline on mobile */}
+                          <label
+                            className="flex items-center gap-1 md:gap-1.5 cursor-pointer select-none md:hidden"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Checkbox
+                              checked={groupAllAuthorized}
+                              onCheckedChange={() => {
+                                if (groupAllAuthorized) {
+                                  handleProtectedToggleAll(groupAllIds, false);
+                                } else {
+                                  handleProtectedToggleAll(groupPendingIds, true);
+                                }
+                              }}
+                              className={`w-3.5 h-3.5 ${
+                                groupAllAuthorized
+                                  ? "border-emerald-600 bg-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                                  : "border-amber-400 bg-white"
+                              }`}
+                            />
+                            <span className={`text-[9px] font-semibold whitespace-nowrap ${
+                              groupAllAuthorized ? "text-emerald-700" : "text-amber-700"
+                            }`}>
+                              Sel. tudo
+                            </span>
+                          </label>
+                        </div>
 
-                        {/* Centro: Checkbox Selecionar Tudo */}
+                        {/* Centro desktop: Checkbox Selecionar Tudo (hidden on mobile, shown above) */}
                         <label
-                          className="flex items-center gap-1.5 cursor-pointer select-none justify-self-center"
+                          className="hidden md:flex items-center gap-1.5 cursor-pointer select-none justify-self-center"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Checkbox
@@ -707,21 +735,21 @@ function DayCard({
                           </span>
                         </label>
 
-                        {/* Lado direito: Valor Autorizado + Valor Total */}
-                        <div className="flex items-center gap-4 justify-self-end" onClick={(e) => e.stopPropagation()}>
+                        {/* Linha 2 mobile / Lado direito desktop: Valor Autorizado + Valor Total */}
+                        <div className="flex items-center gap-3 md:gap-4 md:justify-self-end" onClick={(e) => e.stopPropagation()}>
                           {/* Valor Autorizado (azul) */}
-                          <div className="flex flex-col items-start min-w-[120px]">
-                            <span className="text-[9px] text-blue-500 font-medium leading-none">Autorizado</span>
-                            <span className="text-xs font-bold tabular-nums text-blue-600">
+                          <div className="flex flex-col items-start md:min-w-[120px]">
+                            <span className="text-[8px] md:text-[9px] text-blue-500 font-medium leading-none">Autorizado</span>
+                            <span className="text-[10px] md:text-xs font-bold tabular-nums text-blue-600">
                               {formatCurrency(group.items.filter(i => i.authorized).reduce((s, i) => s + i.valor, 0))}
                             </span>
                           </div>
-                          {/* Valor Total (castanho amarelado) */}
-                          <div className="flex flex-col items-start min-w-[120px]">
-                            <span className={`text-[9px] font-medium leading-none ${
+                          {/* Valor Total */}
+                          <div className="flex flex-col items-start md:min-w-[120px]">
+                            <span className={`text-[8px] md:text-[9px] font-medium leading-none ${
                               groupAllAuthorized ? "text-emerald-500" : "text-amber-500"
                             }`}>Total</span>
-                            <span className={`text-xs font-bold tabular-nums ${
+                            <span className={`text-[10px] md:text-xs font-bold tabular-nums ${
                               groupAllAuthorized ? "text-emerald-800" : "text-amber-800"
                             }`}>
                               {formatCurrency(groupTotal)}

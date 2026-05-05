@@ -2310,7 +2310,7 @@ export default function Billing() {
           <div className="flex items-center gap-2">
             {empresas.length > 1 && (
               <Select value={empresa} onValueChange={setEmpresa}>
-                <SelectTrigger className="w-48 bg-white h-8 text-sm">
+                <SelectTrigger className="w-28 md:w-48 bg-white h-8 text-xs md:text-sm">
                   <SelectValue placeholder="Empresa" />
                 </SelectTrigger>
                 <SelectContent>
@@ -2324,7 +2324,7 @@ export default function Billing() {
           </div>
         }
       />
-      <main className="container py-6 space-y-6">
+      <main className="container py-6 pb-20 md:pb-6 space-y-6">
         {/* Titulo */}
         <div className="text-center py-2">
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>

@@ -2509,7 +2509,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Content */}
-      <main className={`container py-6 ${(activeTab === "products" || activeTab === "passwords") ? "max-w-7xl px-6" : "max-w-3xl"}`}>
+      <main className={`container py-6 pb-20 md:pb-6 ${(activeTab === "products" || activeTab === "passwords") ? "max-w-7xl px-6" : "max-w-3xl"}`}>
         {activeTab === "passwords" && <OperatorManagementPanel />}
         {activeTab === "products" && <ProductSegmentsPanel adminPassword={adminPassword} />}
         {activeTab === "alerts" && <AlertSettingsPanel adminPassword={adminPassword} />}

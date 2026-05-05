@@ -860,30 +860,30 @@ export function InadimplenciaCard({ summary, grupo, crmSegmento }: { summary: an
     <div className="bg-red-50/40 rounded-lg border border-red-200 shadow-sm overflow-hidden">
       {/* Header */}
       <button
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-red-50/70 transition-colors"
+        className="w-full flex flex-col md:flex-row md:items-center md:justify-between px-3 md:px-5 py-3 md:py-4 hover:bg-red-50/70 transition-colors gap-2"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <div className="flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-600" />
-          <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Inadimplência</h3>
-          <Badge variant="outline" className="text-xs">{displayCount} títulos</Badge>
-          <Badge variant="outline" className="text-xs">{clientesCount} clientes</Badge>
+        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+          <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-600" />
+          <h3 className="text-xs md:text-sm font-semibold text-slate-700 uppercase tracking-wide">Inadimplência</h3>
+          <Badge variant="outline" className="text-[10px] md:text-xs">{displayCount} títulos</Badge>
+          <Badge variant="outline" className="text-[10px] md:text-xs">{clientesCount} clientes</Badge>
           {hasGrupoCrmFilter && <Badge className="bg-red-100 text-red-700 text-[10px] border-0">Filtrado</Badge>}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap justify-end">
           {/* Contraprova Maxiprod inline */}
           {canVerifyMaxiprod && cpInadimplencia && !cpInadimplenciaLoading && (
-            <div className="flex flex-col items-end mr-2" onClick={e => e.stopPropagation()}>
-              <span className="text-[9px] text-slate-400 uppercase tracking-wider leading-none">Maxiprod</span>
-              <span className={`text-xs font-semibold ${
+            <div className="flex flex-col items-end mr-1 md:mr-2" onClick={e => e.stopPropagation()}>
+              <span className="text-[8px] md:text-[9px] text-slate-400 uppercase tracking-wider leading-none">Maxiprod</span>
+              <span className={`text-[10px] md:text-xs font-semibold ${
                 Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod) > 1 ? "text-red-600" : "text-emerald-600"
               }`}>{formatCurrency(cpInadimplencia.valorMaxiprod)}</span>
               {Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod) > 1 ? (
-                <span className="text-[9px] text-red-500 font-bold flex items-center gap-0.5">
+                <span className="text-[8px] md:text-[9px] text-red-500 font-bold flex items-center gap-0.5">
                   <AlertTriangle className="w-2.5 h-2.5" /> Dif: {formatCurrency(Math.abs(totaisClientes.faltaPagar - cpInadimplencia.valorMaxiprod))}
                 </span>
               ) : (
-                <span className="text-[9px] text-emerald-500 font-semibold">Confere</span>
+                <span className="text-[8px] md:text-[9px] text-emerald-500 font-semibold">Confere</span>
               )}
             </div>
           )}
@@ -895,10 +895,10 @@ export function InadimplenciaCard({ summary, grupo, crmSegmento }: { summary: an
               <Eye className="w-4 h-4 text-red-400 group-hover:text-red-600" />
             </button>
           )}
-          <div className="flex items-center gap-3 text-right">
+          <div className="flex items-center gap-2 md:gap-3 text-right">
             <div className="flex flex-col items-end">
-              <span className="text-[9px] text-red-500 uppercase tracking-wider leading-none">Falta Pagar</span>
-              <span className="text-sm font-bold text-red-700">{formatCurrency(totaisClientes.faltaPagar)}</span>
+              <span className="text-[8px] md:text-[9px] text-red-500 uppercase tracking-wider leading-none">Falta Pagar</span>
+              <span className="text-xs md:text-sm font-bold text-red-700">{formatCurrency(totaisClientes.faltaPagar)}</span>
             </div>
           </div>
           {collapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}

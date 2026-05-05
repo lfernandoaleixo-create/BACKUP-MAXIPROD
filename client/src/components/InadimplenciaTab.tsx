@@ -1037,67 +1037,67 @@ export default function InadimplenciaTab() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => exportInadimplenciaPDF(filteredTitles, stats, protestConfigsMap)}
-            className="flex items-center justify-center gap-1.5 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02] px-3"
+            className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02] px-2 md:px-3"
             title="Exportar lista de inadimplentes em PDF"
           >
-            <FileDown className="w-4 h-4 shrink-0" />
-            <span>Exportar PDF</span>
+            <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+            <span>PDF</span>
           </button>
           {canCobranca && (
             <button
               onClick={() => setShowImportDialog(true)}
-              className="flex items-center justify-center gap-1.5 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-3"
+              className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-2 md:px-3"
               title="Importar planilha de cobrança (XLSX)"
             >
-              <Upload className="w-4 h-4 shrink-0" />
-              <span className="text-center leading-tight">Importar<br/>Planilha</span>
+              <Upload className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+              <span className="text-center leading-tight">Importar</span>
             </button>
           )}
           <button
             onClick={() => setShowDecisionPdfHistory(true)}
-            className="flex items-center justify-center gap-1.5 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-3"
+            className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-2 md:px-3"
             title="Ver histórico de PDFs de decisão gerados"
           >
-            <Stamp className="w-4 h-4 shrink-0" />
-            <span className="text-center leading-tight">PDFs de<br/>Decisão</span>
+            <Stamp className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+            <span className="text-center leading-tight">Decisão</span>
           </button>
           <button
             onClick={() => setShowMetricsPanel(true)}
-            className="flex items-center justify-center gap-1.5 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02] px-3"
+            className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02] px-2 md:px-3"
             title="Ver métricas e analytics de cobrança"
           >
-            <BarChart3 className="w-4 h-4 shrink-0" />
-            <span className="text-center leading-tight">Métricas de<br/>Cobrança</span>
+            <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+            <span className="text-center leading-tight">Métricas</span>
           </button>
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
-              className="flex items-center justify-center gap-1.5 w-[150px] h-[52px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-3"
+              className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[11px] md:text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-2 md:px-3"
               title="Ver guia completo do processo de cobrança"
             >
-              <Eye className="w-4 h-4 shrink-0" />
-              <span className="text-center leading-tight">Guia de<br/>Cobrança</span>
+              <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+              <span className="text-center leading-tight">Guia</span>
             </button>
           )}
           <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode("titulos")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`px-2 md:px-3 py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all flex items-center gap-1 md:gap-1.5 ${
                 viewMode === "titulos" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
               }`}
             >
-              <FileText className="w-3.5 h-3.5" /> Por Título
+              <FileText className="w-3 h-3 md:w-3.5 md:h-3.5" /> Título
             </button>
             <button
               onClick={() => setViewMode("clientes")}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`px-2 md:px-3 py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all flex items-center gap-1 md:gap-1.5 ${
                 viewMode === "clientes" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
               }`}
             >
-              <Users className="w-3.5 h-3.5" /> Por Cliente
+              <Users className="w-3 h-3 md:w-3.5 md:h-3.5" /> Cliente
             </button>
           </div>
         </div>
@@ -1845,11 +1845,11 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
   return (
     <div className={`${getAgingBg(title.diasAtraso)} transition-all`}>
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px] cursor-pointer hover:bg-white/50 items-center"
+        className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px] cursor-pointer hover:bg-white/50 items-center"
         onClick={onToggle}
       >
         {/* Cliente + Referência + Badges */}
-        <div className="flex flex-col min-w-0 px-3 py-3 border-r border-slate-300">
+        <div className="flex flex-col min-w-0 px-3 py-3 md:border-r border-slate-300">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-[13px] text-slate-800 break-words leading-tight">{title.cliente}</span>
             {canCobranca && dayBadge && (
@@ -1879,10 +1879,29 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
             {title.documento && <span className="shrink-0">· {title.documento}</span>}
             {title.parcela && <span className="shrink-0">· {title.parcela}</span>}
           </div>
+          {/* Mobile-only: key info inline */}
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap md:hidden">
+            <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
+              {formatCurrency(title.valorAReceber)}
+            </span>
+            <span className="text-[10px] text-slate-500">{formatDate(title.vencimento)}</span>
+            <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold ${getAgingColor(title.diasAtraso)}`}>
+              {title.diasAtraso}d
+            </span>
+            {title.vendedor && <span className="text-[10px] text-blue-600">{title.vendedor}</span>}
+          </div>
+        </div>
+
+        {/* Mobile: Ações compactas */}
+        <div className="flex items-center justify-end gap-0.5 px-2 py-3 md:hidden" onClick={e => e.stopPropagation()}>
+          {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
+          <button onClick={onToggle} className="p-1 rounded-md hover:bg-white/80 text-slate-400">
+            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
         </div>
 
         {/* Vendedor */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-2 py-3 border-r border-slate-300">
           {title.vendedor ? (
             <span className="text-[11px] font-medium text-blue-600 break-words text-center leading-tight" title={title.vendedor}>{title.vendedor}</span>
           ) : (
@@ -1891,7 +1910,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Forma de Cobrança */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-2 py-3 border-r border-slate-300">
           {(() => {
             const fc = title.formaCobranca || "";
             const d = fc.toUpperCase();
@@ -1911,7 +1930,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Decisão de Cobrança */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-2 py-3 border-r border-slate-300">
           {title.decisaoCobranca ? (
             <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${
               title.decisaoCobranca.toUpperCase().includes('COM PROTESTO')
@@ -1935,24 +1954,24 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Valor */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-2 py-3 border-r border-slate-300">
           <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
             {formatCurrency(title.valorAReceber)}
           </span>
         </div>
 
         {/* Vencimento */}
-        <div className="flex items-center justify-center px-1 py-3 border-r border-slate-300 text-[12px] text-slate-600 whitespace-nowrap">{formatDate(title.vencimento)}</div>
+        <div className="hidden md:flex items-center justify-center px-1 py-3 border-r border-slate-300 text-[12px] text-slate-600 whitespace-nowrap">{formatDate(title.vencimento)}</div>
 
         {/* Dias atraso */}
-        <div className="flex items-center justify-center px-1 py-3 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-1 py-3 border-r border-slate-300">
           <span className={`inline-block px-1.5 py-0.5 rounded-full text-[11px] font-bold ${getAgingColor(title.diasAtraso)}`} title="Dias úteis de atraso">
             {title.diasAtraso}d
           </span>
         </div>
 
         {/* Status */}
-        <div className="flex items-center justify-center px-2 py-3 border-r border-slate-300" onClick={e => e.stopPropagation()}>
+        <div className="hidden md:flex items-center justify-center px-2 py-3 border-r border-slate-300" onClick={e => e.stopPropagation()}>
           {canCobranca ? (
             <select
               value={title.cobranca?.status || "pendente"}
@@ -1971,7 +1990,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
         </div>
 
         {/* Ações */}
-        <div className="flex items-center justify-center gap-0.5 px-1 py-3 flex-wrap" onClick={e => e.stopPropagation()}>
+        <div className="hidden md:flex items-center justify-center gap-0.5 px-1 py-3 flex-wrap" onClick={e => e.stopPropagation()}>
           {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
           {hasDocument && (
             <button onClick={onOpenDocument} title="Ver documento de cobrança" className="p-1 rounded-md hover:bg-amber-100 text-amber-700 hover:text-amber-900 transition-colors border border-amber-200">
@@ -2239,10 +2258,10 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
   return (
     <div className="transition-all">
       <div
-        className="grid grid-cols-1 md:grid-cols-[1fr_100px_85px_130px_95px_85px_55px_100px_120px] cursor-pointer hover:bg-slate-50/80 items-center"
+        className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_100px_85px_130px_95px_85px_55px_100px_120px] cursor-pointer hover:bg-slate-50/80 items-center"
         onClick={onToggle}
       >
-        <div className="min-w-0 px-3 py-2.5 border-r border-slate-300">
+        <div className="min-w-0 px-3 py-2.5 md:border-r border-slate-300">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[12px] text-slate-700 break-words leading-tight">
               {title.referenteA}
@@ -2265,9 +2284,26 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
               </span>
             )}
           </div>
+          {/* Mobile-only: key info inline */}
+          <div className="flex items-center gap-2 mt-1 flex-wrap md:hidden">
+            <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
+              {formatCurrency(title.valorAReceber)}
+            </span>
+            <span className="text-[10px] text-slate-500">{formatDate(title.vencimento)}</span>
+            <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold ${getAgingColor(title.diasAtraso)}`}>
+              {title.diasAtraso}d
+            </span>
+          </div>
+        </div>
+        {/* Mobile: Ações compactas */}
+        <div className="flex items-center justify-end gap-0.5 px-2 py-2.5 md:hidden" onClick={e => e.stopPropagation()}>
+          {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
+          <button onClick={onToggle} className="p-1 rounded-md hover:bg-white/80 text-slate-400">
+            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
         </div>
         {/* Vendedor */}
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
           {title.vendedor ? (
             <span className="text-[10px] font-medium text-blue-600 break-words text-center leading-tight" title={title.vendedor}>{title.vendedor}</span>
           ) : (
@@ -2275,7 +2311,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
           )}
         </div>
         {/* Forma de Cobrança */}
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
           {(() => {
             const fc = title.formaCobranca || "";
             const d = fc.toUpperCase();
@@ -2294,7 +2330,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
           })()}
         </div>
         {/* Decisão de Cobrança */}
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
           {title.decisaoCobranca ? (
             <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
               title.decisaoCobranca.toUpperCase().includes('COM PROTESTO')
@@ -2317,18 +2353,18 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
           )}
         </div>
         {/* Valor */}
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
           <span className={`font-bold text-sm ${getAgingColor(title.diasAtraso)}`}>
             {formatCurrency(title.valorAReceber)}
           </span>
         </div>
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
+        <div className="hidden md:flex items-center justify-center px-2 py-2.5 border-r border-slate-300 text-sm text-slate-600">{formatDate(title.vencimento)}</div>
+        <div className="hidden md:flex items-center justify-center px-2 py-2.5 border-r border-slate-300">
           <span className={`inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold ${getAgingColor(title.diasAtraso)}`}>
             {title.diasAtraso}d
           </span>
         </div>
-        <div className="flex items-center justify-center px-2 py-2.5 border-r border-slate-300" onClick={e => e.stopPropagation()}>
+        <div className="hidden md:flex items-center justify-center px-2 py-2.5 border-r border-slate-300" onClick={e => e.stopPropagation()}>
           {canCobranca ? (
             <select
               value={title.cobranca?.status || "pendente"}
@@ -2345,7 +2381,7 @@ function ClienteTitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenCont
             </span>
           )}
         </div>
-        <div className="flex items-center justify-center gap-0.5 px-2 py-2.5" onClick={e => e.stopPropagation()}>
+        <div className="hidden md:flex items-center justify-center gap-0.5 px-2 py-2.5" onClick={e => e.stopPropagation()}>
           {canCobranca && <PhoneIcon state={phoneState} onClick={() => onPhoneClick(phoneState, hasDocument, needsPlan)} />}
           {hasDocument && (
             <button onClick={onOpenDocument} title="Ver documento" className="p-1 rounded-md hover:bg-amber-100 text-amber-700 border border-amber-200">

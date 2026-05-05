@@ -3099,7 +3099,7 @@ export default function Sales() {
         </div>
       </div>
 
-      <main className="container py-6 space-y-6">
+      <main className="container py-6 pb-20 md:pb-6 space-y-6">
         <div className="text-center py-2">
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
             <span className="text-slate-700">Dashboard de Vendas</span>
@@ -3110,10 +3110,10 @@ export default function Sales() {
 
         {/* Sub-abas Vendas */}
         {canSeeFornecedores && (
-          <div className="flex items-center justify-center gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1">
+          <div className="flex items-center md:justify-center gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setSalesTab("vendas")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 salesTab === "vendas"
                   ? "bg-teal-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100"
@@ -3124,25 +3124,25 @@ export default function Sales() {
             </button>
             <button
               onClick={() => setSalesTab("fornecedores")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 salesTab === "fornecedores"
                   ? "bg-teal-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               <Truck className="w-4 h-4" />
-              Fornecedores Brasileiros
+              Fornecedores
             </button>
             <button
               onClick={() => setSalesTab("metricas")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 salesTab === "metricas"
                   ? "bg-teal-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               <TrendingUp className="w-4 h-4" />
-              Métrica de Vendas
+              Métricas
             </button>
           </div>
         )}
