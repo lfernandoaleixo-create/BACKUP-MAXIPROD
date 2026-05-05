@@ -3101,47 +3101,47 @@ export default function Sales() {
 
       <main className="container py-6 pb-20 md:pb-6 space-y-6">
         <div className="text-center py-2">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+          <h2 className="text-xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
             <span className="text-slate-700">Dashboard de Vendas</span>
-            <span className="text-teal-600 ml-2">Grupo Fox</span>
+            <span className="text-teal-600 ml-1 md:ml-2">Grupo Fox</span>
           </h2>
-          <p className="text-sm text-slate-400 mt-1.5 tracking-widest uppercase">Pedidos, Faturamento e Inadimplência</p>
+          <p className="text-[10px] md:text-sm text-slate-400 mt-1 md:mt-1.5 tracking-widest uppercase">Pedidos, Faturamento e Inadimplência</p>
         </div>
 
         {/* Sub-abas Vendas */}
         {canSeeFornecedores && (
-          <div className="flex items-center md:justify-center gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center md:justify-center gap-0.5 md:gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setSalesTab("vendas")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 salesTab === "vendas"
                   ? "bg-teal-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              <BarChart3 className="w-4 h-4" />
+              <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 hidden md:block" />
               Vendas
             </button>
             <button
               onClick={() => setSalesTab("fornecedores")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 salesTab === "fornecedores"
                   ? "bg-teal-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              <Truck className="w-4 h-4" />
+              <Truck className="w-3.5 h-3.5 md:w-4 md:h-4 hidden md:block" />
               Fornecedores Brasileiros
             </button>
             <button
               onClick={() => setSalesTab("metricas")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 salesTab === "metricas"
                   ? "bg-teal-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              <TrendingUp className="w-4 h-4" />
+              <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 hidden md:block" />
               Métricas de Vendas
             </button>
           </div>

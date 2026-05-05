@@ -63,45 +63,45 @@ export default function ConnectionStatusCard() {
   const isSyncing = forceSync.isPending;
 
   return (
-    <div className={`rounded-lg border p-3 shadow-sm ${
+    <div className={`rounded-lg border p-2.5 md:p-3 shadow-sm ${
       isConnected ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200"
     }`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 ${
             isSyncing ? "bg-blue-500 animate-pulse" : isConnected ? "bg-emerald-500" : "bg-slate-400"
           }`}>
-            {isSyncing ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : isConnected ? <Wifi className="w-4 h-4 text-white" /> : <WifiOff className="w-4 h-4 text-white" />}
+            {isSyncing ? <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-white animate-spin" /> : isConnected ? <Wifi className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" /> : <WifiOff className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />}
           </div>
-          <div>
-            <p className={`text-sm font-semibold ${
+          <div className="min-w-0">
+            <p className={`text-xs md:text-sm font-semibold ${
               isSyncing ? "text-blue-800" : isConnected ? "text-emerald-800" : "text-slate-600"
             }`}>
-              {isSyncing ? "Sincronizando com Maxiprod..." : isConnected ? "Conectado ao Maxiprod" : "Aguardando sincronizacao"}
+              {isSyncing ? "Sincronizando..." : isConnected ? "Conectado ao Maxiprod" : "Aguardando sincronizacao"}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-[10px] md:text-xs text-slate-500 truncate">
               {isSyncing ? (
                 "Buscando dados via API GraphQL..."
               ) : status?.lastSyncAt ? (
                 <>
-                  Ultima atualizacao: {timeAgo(status.lastSyncAt)}
+                  {timeAgo(status.lastSyncAt)}
                   {status?.lastSyncStatus && status.lastSyncStatus !== "error" && (
-                    <span className="ml-2 text-slate-400">({status.lastSyncStatus})</span>
+                    <span className="ml-1 text-slate-400">({status.lastSyncStatus})</span>
                   )}
                 </>
               ) : (
-                "Nenhuma sincronizacao realizada — clique em Sincronizar"
+                "Clique em Sincronizar"
               )}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           {syncResult && (
-            <span className={`text-xs flex items-center gap-1 ${
+            <span className={`text-[10px] md:text-xs flex items-center gap-1 ${
               syncResult.success ? "text-emerald-600" : "text-red-600"
             }`}>
               {syncResult.success ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-              {syncResult.success ? "Sincronizado!" : "Erro"}
+              <span className="hidden md:inline">{syncResult.success ? "Sincronizado!" : "Erro"}</span>
             </span>
           )}
           <Button
@@ -109,18 +109,18 @@ export default function ConnectionStatusCard() {
             size="sm"
             onClick={handleSync}
             disabled={isSyncing}
-            className={`text-xs ${!isConnected ? "bg-teal-600 hover:bg-teal-700 text-white" : ""}`}
+            className={`text-[10px] md:text-xs px-2 md:px-3 h-7 md:h-8 ${!isConnected ? "bg-teal-600 hover:bg-teal-700 text-white" : ""}`}
           >
             {isSyncing ? (
-              <><Loader2 className="w-3 h-3 animate-spin mr-1" /> Sincronizando...</>
+              <><Loader2 className="w-3 h-3 animate-spin mr-0.5 md:mr-1" /> <span className="hidden md:inline">Sincronizando...</span><span className="md:hidden">Sync...</span></>
             ) : (
-              <><RefreshCw className="w-3 h-3 mr-1" /> Sincronizar</>
+              <><RefreshCw className="w-3 h-3 mr-0.5 md:mr-1" /> Sincronizar</>
             )}
           </Button>
         </div>
       </div>
       {syncResult && !syncResult.success && (
-        <p className="text-xs text-red-500 mt-2 pl-11">{syncResult.message}</p>
+        <p className="text-[10px] md:text-xs text-red-500 mt-2 pl-9 md:pl-11">{syncResult.message}</p>
       )}
     </div>
   );

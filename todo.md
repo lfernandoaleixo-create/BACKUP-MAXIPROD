@@ -3433,7 +3433,12 @@
 - [x] Mobile: Verificar fluxo completo de autorização + exportar PDF no celular
 - [x] Mobile: Exportar PDF - melhorar compatibilidade com iOS Safari (Blob download)
 - [x] Renomear botões Inadimplência: Importar → Importar Planilha, Decisão → PDF de Decisão de Cobrança, Guia → Guia de Cobrança
-- [ ] Mobile: E-commerce tabela - coluna Observações cortada na direita
+- [x] Mobile: E-commerce tabela - coluna Observações cortada na direita (hidden md:table-cell + overflow-x-auto)
 - [ ] Mobile: Valorização do Estoque - VLR ESTOQUE valor cortado (R$ 2.09...)
 - [ ] Mobile: Financeiro BucketCards (Recebimentos/Pagamentos) - lado a lado muito apertado, textos cortados
 - [x] Renomear abas Vendas: Fornecedores → Fornecedores Brasileiros, Métricas → Métricas de Vendas
+- [x] Mobile: Vendas - título "Dashboard de Vendas Grupo Fox" muito grande, quebrando em várias linhas (text-xl md:text-4xl)
+- [x] Mobile: Vendas - card "Conectado ao Maxiprod" texto quebrando e botão Sincronizar apertado (layout compacto com truncate)
+- [x] Mobile: Vendas - tabs cortadas na direita (ícones hidden no mobile, padding reduzido)
+- [x] Mobile: Financeiro - título reduzido no mobile (text-xl md:text-4xl)
+- [x] Mobile: Faturamento - título reduzido no mobile (text-xl md:text-4xl)

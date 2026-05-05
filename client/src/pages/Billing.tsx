@@ -2327,11 +2327,11 @@ export default function Billing() {
       <main className="container py-6 pb-20 md:pb-6 space-y-6">
         {/* Titulo */}
         <div className="text-center py-2">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+          <h2 className="text-xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
             <span className="text-slate-700">Dashboard de Faturamento</span>
-            <span className="text-teal-600 ml-2">Grupo Fox</span>
+            <span className="text-teal-600 ml-1 md:ml-2">Grupo Fox</span>
           </h2>
-          <p className="text-sm text-slate-400 mt-1.5 tracking-widest uppercase">Pedidos em Aberto e Faturados</p>
+          <p className="text-[10px] md:text-sm text-slate-400 mt-1 md:mt-1.5 tracking-widest uppercase">Pedidos em Aberto e Faturados</p>
         </div>
 
         <ConnectionStatusCard />
