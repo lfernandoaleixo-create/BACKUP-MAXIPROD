@@ -3471,3 +3471,4 @@
 - [x] Bug mobile: Inadimplência - bolinhas do ROTEIRO (Ação, Intervalo, etc.) encavalando com números e labels
 - [x] Bug mobile: Recebíveis - card Resultado do Filtro (TOTAL, VENCIDO, A VENCER) com valores cortados/sobrepostos
 - [x] Bug mobile: Recebíveis - badges/pills de resumo precisam de melhor alinhamento
+- [x] Bug mobile: Painel de notificações (sininho) cortado no mobile - texto sobrepõe conteúdo da página, precisa ser full-width

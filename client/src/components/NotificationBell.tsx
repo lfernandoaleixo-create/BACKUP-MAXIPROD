@@ -164,7 +164,10 @@ export default function NotificationBell() {
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-96 max-h-[70vh] bg-white rounded-xl border border-slate-200 shadow-2xl shadow-slate-200/60 z-[100] overflow-hidden flex flex-col">
+        <>
+        {/* Mobile backdrop */}
+        <div className="fixed inset-0 bg-black/20 z-[99] md:hidden" onClick={() => setOpen(false)} />
+        <div className="fixed inset-x-0 top-[60px] bottom-0 md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:w-96 md:max-h-[70vh] md:rounded-xl md:bottom-auto bg-white border border-slate-200 shadow-2xl shadow-slate-200/60 z-[100] overflow-hidden flex flex-col rounded-t-xl">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-2">
@@ -261,6 +264,7 @@ export default function NotificationBell() {
             )}
           </div>
         </div>
+        </>
       )}
     </div>
   );
