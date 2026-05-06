@@ -2913,7 +2913,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
           <div className="bg-white rounded-lg">
             <div className="overflow-x-auto scrollbar-hide">
               <table className="w-full text-[11px] md:text-[13px]" style={{ minWidth: '700px' }}>
-                <thead className="bg-slate-50 border-b border-slate-200 sticky top-[40px] md:top-[48px] z-20 shadow-sm">
+                <thead className="bg-slate-50 border-b border-slate-200 z-10">
                   <tr>
                     <th className="px-2 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" style={{ minWidth: '220px', width: '25%' }} onClick={() => handleMadeiraSort('descricaoItem')}>
                       <div className="flex items-center gap-1">Produto <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
@@ -3020,43 +3020,13 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                                 {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                               </button>
                             )}
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="cursor-help">
-                                  <div className="font-medium text-slate-800 text-[13px] break-words leading-snug"><HighlightText text={item.descricaoItem} search={search} /></div>
+                            <div>
+                                  <div className="font-semibold text-slate-800 text-[12px] md:text-[13px] break-words leading-snug"><HighlightText text={item.descricaoItem} search={search} /></div>
                                   <div className="text-[11px] text-slate-400 mt-0.5">
                                     Cod: <HighlightText text={item.codigoItem} search={search} />
                                     {hasVariants && <span className="ml-2 text-green-500 font-medium">· {item.variants!.length} variaç{item.variants!.length > 1 ? 'ões' : 'ão'}</span>}
                                   </div>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="right" className="max-w-[280px] p-0 bg-white border border-slate-200 shadow-xl rounded-lg" sideOffset={8}>
-                                <div className="p-3 space-y-2">
-                                  <p className="font-semibold text-sm text-slate-800 leading-snug break-words">{item.descricaoItem}</p>
-                                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                                    <span className="text-slate-400">Código:</span>
-                                    <span className="text-slate-700 font-medium">{item.codigoItem}</span>
-                                    <span className="text-slate-400">Grupo:</span>
-                                    <span className="text-slate-700 font-medium">{item.descricaoGrupo || '—'}</span>
-                                    <span className="text-slate-400">Subgrupo:</span>
-                                    <span className="text-slate-700 font-medium capitalize">{item.subgrupo || '—'}</span>
-                                    <span className="text-slate-400">Un/Cx:</span>
-                                    <span className="text-slate-700 font-medium">{item.isKgProduct ? 'kg' : (item.unidadesPorCaixa ? `${formatNumber(item.unidadesPorCaixa, true)} un` : '—')}</span>
-                                    <span className="text-slate-400">Estoque:</span>
-                                    <span className="text-teal-700 font-semibold">{formatNumber(manualQty)} {item.isKgProduct ? 'kg' : 'cx'}</span>
-                                    <span className="text-slate-400">Pedidos:</span>
-                                    <span className="text-orange-600 font-semibold">{formatNumber(pedidosVal)} {item.isKgProduct ? 'kg' : 'cx'}</span>
-                                    <span className="text-slate-400">Disponível:</span>
-                                    <span className={`font-bold ${disponivelManual < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatNumber(disponivelManual)} {item.isKgProduct ? 'kg' : 'cx'}</span>
-                                  </div>
-                                  {item.poLotes && item.poLotes.length > 0 && (
-                                    <div className="pt-1 border-t border-slate-100">
-                                      <span className="text-[10px] text-blue-600 font-semibold">PO a receber: {formatNumber(item.poCx ?? 0)} {item.isKgProduct ? 'kg' : 'cx'}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
+                            </div>
                           </div>
                         </td>
                         {/* Un/Cx */}

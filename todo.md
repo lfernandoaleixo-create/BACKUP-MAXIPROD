@@ -3460,3 +3460,5 @@
 - [x] Bug: Kit Amostra não aparece no card de Madeira Produto Acabado (já existe no sistema, mas está filtrado)
 - [x] Bug: Busca no card de Madeira corta o produto - nome e dados (Estoque, Pedidos, Disponível) ficam invisíveis/cortados
 - [x] Bug: Vareta Glade Reeds 00808 mostrando pedidos em 'kg' quando deveria ser 'cx' (comercial lançou em caixas)
+- [x] Bug: Tooltip/popup do produto cobre dados da tabela Madeira PA ao clicar/hover - remover ou reposicionar
+- [x] Bug: Mobile Madeira PA - nome do produto não aparece na linha (só Cod:), dados cortados
