@@ -95,7 +95,7 @@ function MesDetalhePanel({ mes, clienteFilter, grupo, crmSegmento }: { mes: stri
 
   return (
     <div className="h-full flex flex-col">
-      <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50">
+      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50">
         <p className="text-xs font-semibold text-slate-700">{formatMonth(mes)}</p>
         <div className="flex items-center justify-between mt-0.5">
           <span className="text-sm font-bold text-red-700">{formatCurrency(data.total)}</span>
@@ -552,7 +552,7 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
               <th className="px-3 py-2 text-right text-slate-500 font-semibold">% do Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {filteredClientes.map((c: any, idx: number) => {
               const pct = totalGeral > 0 ? (c.total / totalGeral) * 100 : 0;
               const clienteKey = c.cliente;
@@ -561,7 +561,7 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
               return (
                 <React.Fragment key={clienteKey}>
                   <tr
-                    className={`transition-colors cursor-pointer ${isExpanded ? "bg-red-50" : "hover:bg-slate-50"}`}
+                    className={`transition-colors cursor-pointer ${isExpanded ? "bg-red-50" : "hover:bg-slate-50 dark:hover:bg-slate-700"}`}
                     onClick={() => setExpandedCliente(isExpanded ? null : clienteKey)}
                   >
                     <td className="px-4 py-2.5 text-slate-400 font-mono">{idx + 1}</td>
@@ -621,7 +621,7 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
                           <div className="bg-white rounded border border-red-100 overflow-hidden">
                             <table className="w-full text-[11px]">
                               <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200">
+                                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
                                   <th className="px-3 py-1.5 text-left text-slate-500 font-semibold">Vencimento</th>
                                   <th className="px-3 py-1.5 text-left text-slate-500 font-semibold">Dias</th>
                                   <th className="px-3 py-1.5 text-right text-slate-500 font-semibold">Valor</th>
@@ -629,7 +629,7 @@ function ClientesTab({ grupo, crmSegmento }: { grupo?: string; crmSegmento?: str
                                   <th className="px-3 py-1.5 text-center text-slate-500 font-semibold">Parcela</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-slate-50">
+                              <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                                 {c.titulos.map((t: any, i: number) => {
                                   const dias = daysUntil(t.vencimento);
                                   return (
@@ -774,7 +774,7 @@ function MaxiprodVerifyModalInadimplencia({
           </div>
           {steps.map(st => (
             <div key={st.step} className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
-              st.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 border border-slate-200"
+              st.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 dark:bg-slate-800/50 border border-slate-200"
             }`}>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
                 st.highlight ? "bg-amber-500 text-white shadow-md shadow-amber-500/30" : "bg-red-600 text-white"
@@ -785,7 +785,7 @@ function MaxiprodVerifyModalInadimplencia({
             </div>
           ))}
         </div>
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 flex items-center justify-between">
           <a href={MAXIPROD_LOGIN_URL} target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-bold shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all hover:scale-[1.02]">
             <ExternalLink className="w-4 h-4" /> Abrir Maxiprod

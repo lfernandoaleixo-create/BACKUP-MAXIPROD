@@ -155,7 +155,7 @@ function KPICard({ label, value, sub, icon: Icon, theme, showValues = true }: {
 }) {
   const s = kpiStyles[theme];
   return (
-    <div className="group relative bg-white rounded-xl border border-slate-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+    <div className="group relative bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
       <div className={`h-1.5 ${s.bar}`} />
       <div className={`px-5 ${showValues ? 'py-4' : 'py-5'}`}>
         <div className="flex items-start justify-between mb-2">
@@ -666,7 +666,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
     <div className={`transition-all duration-300 ${
       expanded 
         ? "border-2 border-teal-400 bg-teal-50/40 rounded-xl my-3 mx-2 shadow-xl shadow-teal-200/60 relative z-10 ring-4 ring-teal-200/40" 
-        : "border-b border-slate-100"
+        : "border-b border-slate-100 dark:border-slate-700"
     }`}>
       <div
         onClick={() => setExpanded(!expanded)}
@@ -677,7 +677,7 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
               ? "bg-emerald-50/70 hover:bg-emerald-100/70 border-l-4 border-l-emerald-400"
               : isPendingColeta
                 ? "bg-amber-50/60 hover:bg-amber-100/60 border-l-4 border-l-amber-400"
-                : "hover:bg-slate-50"
+                : "hover:bg-slate-50 dark:hover:bg-slate-700"
         }`}
         role="button"
         tabIndex={0}
@@ -1186,21 +1186,21 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
           )}
 
           {/* Info grid — same 4-col layout as ProductionAcceptanceCard */}
-          <div className="px-4 pl-12 py-3 bg-slate-50/40 border-b border-slate-100">
+          <div className="px-4 pl-12 py-3 bg-slate-50/40 border-b border-slate-100 dark:border-slate-700">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-white rounded-lg border border-slate-100 px-3 py-2">
+              <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 px-3 py-2">
                 <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Representante</p>
                 <p className="text-sm font-medium text-slate-700 mt-0.5">{order.representante || "—"}</p>
               </div>
-              <div className="bg-white rounded-lg border border-slate-100 px-3 py-2">
+              <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 px-3 py-2">
                 <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Segmento</p>
                 <p className="text-sm font-medium text-slate-700 mt-0.5">{order.segmento || order.crmSegmento || "—"}</p>
               </div>
-              <div className="bg-white rounded-lg border border-slate-100 px-3 py-2">
+              <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 px-3 py-2">
                 <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Cond. Pagamento</p>
                 <p className="text-sm font-medium text-slate-700 mt-0.5">{order.condicaoPagamento ? `${order.condicaoPagamento} dias` : "—"}</p>
               </div>
-              <div className="bg-white rounded-lg border border-slate-100 px-3 py-2">
+              <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 px-3 py-2">
                 <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Transportadora</p>
                 <p className="text-sm font-medium text-slate-700 mt-0.5">{order.transportadora || "—"}</p>
               </div>
@@ -1333,13 +1333,13 @@ function BillingOrderRow({ order, nfs, showNf, showAuthorize, showDeauthorize, o
           )}
 
           {/* Items table — same header style as ProductionAcceptanceCard */}
-          <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+          <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
             <span className="text-sm font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
               <Package className="w-4 h-4 text-teal-600" />
               Itens do Pedido ({order.itens.length})
             </span>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {order.itens.map((item, idx) => (
               <div key={idx} className="px-4 pl-12 py-3 hover:bg-slate-50/80 transition-colors">
                 <div className="flex items-start justify-between gap-4">
@@ -1696,7 +1696,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
           {/* Table header + orders with horizontal scroll */}
           <div className="overflow-x-auto">
           <div style={{ minWidth: compact ? '1050px' : '1200px' }}>
-          <div className={`flex items-center gap-0 px-3 ${compact ? 'py-1.5' : 'py-2'} bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold`}>
+          <div className={`flex items-center gap-0 px-3 ${compact ? 'py-1.5' : 'py-2'} bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold`}>
             {(showAuthorize || showDeauthorize) && (
               <div className="flex-shrink-0" style={{ width: compact ? '90px' : '120px' }}>
                 <span className="text-[10px]">Ação</span>
@@ -2304,7 +2304,7 @@ export default function Billing() {
   }, [openOrders, billedOrders]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
       <TopNav
         rightContent={
           <div className="flex items-center gap-2">

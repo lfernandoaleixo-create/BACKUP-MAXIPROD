@@ -147,10 +147,10 @@ export default function NotificationBell() {
         onClick={() => setOpen(!open)}
         className={`relative w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
           open
-            ? "bg-teal-100 text-teal-700"
+            ? "bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
             : unreadCount > 0
-              ? "text-amber-600 hover:bg-amber-50"
-              : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              ? "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+              : "text-slate-400 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-200"
         }`}
         title={unreadCount > 0 ? `${unreadCount} notificações não lidas` : "Notificações"}
       >
@@ -167,12 +167,12 @@ export default function NotificationBell() {
         <>
         {/* Mobile backdrop */}
         <div className="fixed inset-0 bg-black/20 z-[99] md:hidden" onClick={() => setOpen(false)} />
-        <div className="fixed inset-x-0 top-[60px] bottom-0 md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:w-96 md:max-h-[70vh] md:rounded-xl md:bottom-auto bg-white border border-slate-200 shadow-2xl shadow-slate-200/60 z-[100] overflow-hidden flex flex-col rounded-t-xl">
+        <div className="fixed inset-x-0 top-[60px] bottom-0 md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:w-96 md:max-h-[70vh] md:rounded-xl md:bottom-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl shadow-slate-200/60 dark:shadow-slate-900/60 z-[100] overflow-hidden flex flex-col rounded-t-xl">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/80">
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-slate-500" />
-              <span className="text-sm font-semibold text-slate-700">Notificações</span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Notificações</span>
               {unreadCount > 0 && (
                 <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">
                   {unreadCount} nova{unreadCount !== 1 ? "s" : ""}
@@ -194,7 +194,7 @@ export default function NotificationBell() {
               )}
               <button
                 onClick={() => setOpen(false)}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>

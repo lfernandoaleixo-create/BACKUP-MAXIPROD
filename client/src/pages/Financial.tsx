@@ -195,7 +195,7 @@ function KPICard({ label, value, sub, icon: Icon, theme, onClick }: {
 
   return (
     <div
-      className={`bg-white rounded-lg border border-slate-200 p-4 shadow-sm transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-slate-300" : ""}`}
+      className={`bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 shadow-sm transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-slate-300" : ""}`}
       onClick={onClick}
     >
       <div className="flex items-center gap-3">
@@ -450,7 +450,7 @@ function MonthDetailTable({ items, isLoading, nameField, colorScheme }: {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {sortedItems.map((item: any, i: number) => {
                 const saldo = getSaldo(item);
                 const temAbatimento = Number(item.valorPagoLiquido || item.valorRecebidoLiquido || 0) > 0;
@@ -537,7 +537,7 @@ function PaymentCommentDialog({ item, onClose }: { item: any; onClose: () => voi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl w-80 p-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-80 p-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-bold text-slate-700">Comentario</h4>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
@@ -960,7 +960,7 @@ function ContasAPagarTable() {
     <div className="space-y-4">
       {/* Period filter + status filter */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
+        <div className="flex gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-1 shadow-sm">
           {([
             { value: "mes_corrente" as PeriodKey, label: "Mes Corrente" },
             { value: "proximo_mes" as PeriodKey, label: "Proximo Mes" },
@@ -979,7 +979,7 @@ function ContasAPagarTable() {
             </button>
           ))}
         </div>
-        <div className="flex gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
+        <div className="flex gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-1 shadow-sm">
           {[
             { value: "EMITIDO", label: "Em Aberto" },
             { value: "PAGO", label: "Pagas" },
@@ -1010,10 +1010,10 @@ function ContasAPagarTable() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Fornecedor</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Referente a</th>
@@ -1025,7 +1025,7 @@ function ContasAPagarTable() {
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Parcela</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {items.map((item: any, idx: number) => {
                 const isOverdue = daysUntil(item.vencimentoData) !== null && daysUntil(item.vencimentoData)! < 0 && item.estado === "EMITIDO";
                 return (
@@ -1113,7 +1113,7 @@ function ContasAReceberTable() {
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
+        <div className="flex gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-1 shadow-sm">
           {[
             { value: "EMITIDO", label: "Em Aberto" },
             { value: "RECEBIDO", label: "Recebidas" },
@@ -1136,10 +1136,10 @@ function ContasAReceberTable() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Cliente</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Referente a</th>
@@ -1151,7 +1151,7 @@ function ContasAReceberTable() {
                 <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Parcela</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {items.map((item: any, idx: number) => {
                 const isOverdue = daysUntil(item.vencimentoData) !== null && daysUntil(item.vencimentoData)! < 0 && item.estado === "EMITIDO";
                 return (
@@ -1257,7 +1257,7 @@ function OverviewReceberTable() {
       </div>
       <div className="overflow-y-auto max-h-[400px]">
         <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 sticky top-0">
             <tr>
               <th className="px-2 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Cliente</th>
               <th className="px-2 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Valor</th>
@@ -1265,7 +1265,7 @@ function OverviewReceberTable() {
               <th className="px-2 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Prazo</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {items.map((item: any, idx: number) => {
               const isOverdue = daysUntil(item.vencimentoData) !== null && daysUntil(item.vencimentoData)! < 0;
               return (
@@ -1482,7 +1482,7 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-6">
         <div className="flex items-center gap-2 text-slate-400">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span className="text-sm">Carregando saldos bancários...</span>
@@ -1508,7 +1508,7 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
   const totalVariacao = Math.round(activeAccounts.reduce((sum, a) => sum + a.variacao, 0) * 100) / 100;
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
       {/* Header */}
       <button
         onClick={() => setCollapsed(!collapsed)}
@@ -1572,7 +1572,7 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
+                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
                   <th className="text-left py-2.5 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Conta Bancária</th>
                   <th className="text-right py-2.5 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Saldo Inicial</th>
                   <th className="text-right py-2.5 px-4 font-semibold text-slate-600 text-xs uppercase tracking-wide">Saldo Atual</th>
@@ -1683,7 +1683,7 @@ function CashFlowCard() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-6">
         <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
       </div>
     );
@@ -2039,7 +2039,7 @@ function CashFlowCard() {
               </thead>
               <tbody>
                 {vencidas.recebimentos > 0 || vencidas.pagamentos > 0 ? (
-                  <tr className="border-b border-slate-100 bg-red-50/30">
+                  <tr className="border-b border-slate-100 dark:border-slate-700 bg-red-50/30">
                     <td className="py-1.5 px-2 font-medium text-red-700">Vencidas</td>
                     <td className="py-1.5 px-2 text-right text-emerald-700 font-semibold">{formatCurrency(vencidas.recebimentos)}</td>
                     <td className="py-1.5 px-2 text-right text-red-700 font-semibold">{formatCurrency(vencidas.pagamentos)}</td>
@@ -2048,7 +2048,7 @@ function CashFlowCard() {
                   </tr>
                 ) : null}
                 {weeks.map((w: any, i: number) => (
-                  <tr key={i} className={`border-b border-slate-100 ${i % 2 === 0 ? "" : "bg-slate-50/30"}`}>
+                  <tr key={i} className={`border-b border-slate-100 dark:border-slate-700 ${i % 2 === 0 ? "" : "bg-slate-50/30"}`}>
                     <td className="py-1.5 px-2 font-medium text-slate-700">{w.label}</td>
                     <td className="py-1.5 px-2 text-right text-emerald-700">{formatCurrency(w.recebimentos)}</td>
                     <td className="py-1.5 px-2 text-right text-red-700">{formatCurrency(w.pagamentos)}</td>
@@ -2135,7 +2135,7 @@ export default function Financial() {
   const hasData = summary && (summary.pagar.emAberto.count > 0 || summary.receber.emAberto.count > 0 || summary.pagar.pagas.count > 0 || summary.receber.recebidas.count > 0);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <TopNav />
       <main className="container py-6 pb-20 md:pb-6 space-y-6">
         {/* Título elegante */}
@@ -2148,7 +2148,7 @@ export default function Financial() {
         </div>
 
         {/* Sub-abas */}
-        <div className="flex items-center justify-center gap-1.5 md:gap-2 bg-white rounded-xl border border-slate-200 shadow-sm p-1.5 md:p-2 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center justify-center gap-1.5 md:gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1.5 md:p-2 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveTab("visao-geral")}
             className={`flex items-center justify-center gap-1 md:gap-1.5 px-3 md:px-5 py-2 md:py-2.5 rounded-lg text-[11px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${

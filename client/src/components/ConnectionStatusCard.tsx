@@ -53,8 +53,8 @@ export default function ConnectionStatusCard() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-sm animate-pulse">
-        <div className="h-6 bg-slate-100 rounded w-48" />
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3 shadow-sm animate-pulse">
+        <div className="h-6 bg-slate-100 dark:bg-slate-700 rounded w-48" />
       </div>
     );
   }
@@ -64,7 +64,7 @@ export default function ConnectionStatusCard() {
 
   return (
     <div className={`rounded-lg border p-2.5 md:p-3 shadow-sm ${
-      isConnected ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200"
+      isConnected ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700" : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
     }`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 md:gap-3 min-w-0">
@@ -75,11 +75,11 @@ export default function ConnectionStatusCard() {
           </div>
           <div className="min-w-0">
             <p className={`text-xs md:text-sm font-semibold ${
-              isSyncing ? "text-blue-800" : isConnected ? "text-emerald-800" : "text-slate-600"
+              isSyncing ? "text-blue-800 dark:text-blue-300" : isConnected ? "text-emerald-800 dark:text-emerald-300" : "text-slate-600 dark:text-slate-300"
             }`}>
               {isSyncing ? "Sincronizando..." : isConnected ? "Conectado ao Maxiprod" : "Aguardando sincronizacao"}
             </p>
-            <p className="text-[10px] md:text-xs text-slate-500 truncate">
+            <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 truncate">
               {isSyncing ? (
                 "Buscando dados via API GraphQL..."
               ) : status?.lastSyncAt ? (

@@ -283,7 +283,7 @@ function DivergenceDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 flex items-center justify-end">
           <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 font-medium">
             Fechar
           </button>
@@ -442,7 +442,7 @@ function MaxiprodVerifyModalFinanceiro({
           </div>
           {steps.map(st => (
             <div key={st.step} className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
-              st.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 border border-slate-200"
+              st.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 dark:bg-slate-800/50 border border-slate-200"
             }`}>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
                 st.highlight ? "bg-amber-500 text-white shadow-md shadow-amber-500/30" : "bg-indigo-600 text-white"
@@ -453,7 +453,7 @@ function MaxiprodVerifyModalFinanceiro({
             </div>
           ))}
         </div>
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 flex items-center justify-between">
           <a href={MAXIPROD_LOGIN_URL} target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:scale-[1.02]">
             <ExternalLink className="w-4 h-4" /> Abrir Maxiprod
@@ -533,9 +533,9 @@ export default function ResumoFinanceiroCard({ onPeriodChange }: { onPeriodChang
   }, [dates]);
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden border-l-4 border-l-teal-500">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden border-l-4 border-l-teal-500">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+      <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-slate-50/80 to-white">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-teal-100 flex items-center justify-center">
@@ -1494,7 +1494,7 @@ function ReceivedDetailTable({ startDate, endDate }: { startDate: string; endDat
               <SortHeader label="Valor" field="valor" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="right" colorClass="text-amber-700" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {sorted.map((item, idx) => (
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className="px-3 py-1.5 text-slate-700 max-w-[250px] truncate" title={item.descricao}>{item.descricao}</td>
@@ -1602,7 +1602,7 @@ function OtherInflowsDetailTable({ startDate, endDate }: { startDate: string; en
         Demais receitas (não-venda): empréstimos, rendimentos, reembolsos e outras receitas operacionais
       </div>
       {/* Category summary */}
-      <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-2">
+      <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 flex flex-wrap gap-2">
         {categoryTotals.map((cat) => (
           <span key={cat.categoria} className="inline-flex items-center gap-1 text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-full">
             <span className="font-semibold text-slate-600">{cat.categoria}</span>
@@ -1621,7 +1621,7 @@ function OtherInflowsDetailTable({ startDate, endDate }: { startDate: string; en
               <SortHeader label="Valor" field="valor" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="right" colorClass="text-slate-600" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {sorted.map((item, idx) => (
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className="px-3 py-1.5 text-slate-700 max-w-[250px] truncate" title={item.descricao}>{item.descricao}</td>
@@ -1723,7 +1723,7 @@ function BillingDetailTable({ startDate, endDate }: { startDate: string; endDate
               <SortHeader label="Total" field="total" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="right" colorClass="text-emerald-700" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {sorted.map((item, idx) => (
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className="px-3 py-1.5 font-medium text-slate-700">{item.pedido}</td>
@@ -1825,7 +1825,7 @@ function SalesDetailTable({ startDate, endDate }: { startDate: string; endDate: 
               <SortHeader label="Total" field="total" currentField={sortField} currentDir={sortDir} onSort={handleSort} align="right" colorClass="text-blue-700" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {sorted.map((item, idx) => {
               const detail = item.observacoes || (item.descricoes && item.descricoes.length > 0 ? item.descricoes.join(", ") : "");
               return (
@@ -1953,7 +1953,7 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
             placeholder="Buscar fornecedor, descri\u00e7\u00e3o ou documento..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
-            className="w-full h-7 pl-7 pr-3 text-[11px] bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/20 text-slate-700 placeholder:text-slate-400"
+            className="w-full h-7 pl-7 pr-3 text-[11px] bg-slate-50 dark:bg-slate-800/50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/20 text-slate-700 placeholder:text-slate-400"
           />
           <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
         </div>
@@ -1975,7 +1975,7 @@ function PaidDetailTable({ startDate, endDate }: { startDate: string; endDate: s
                 <th className="px-2 py-1.5 text-red-700 text-[10px] font-semibold w-8"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {sorted.map((item, idx) => (
                 <>
                   <tr
@@ -2137,7 +2137,7 @@ function EntradasStackedChart() {
   const maxTotal = Math.max(...months.map(m => m.total), 1);
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-amber-600" />

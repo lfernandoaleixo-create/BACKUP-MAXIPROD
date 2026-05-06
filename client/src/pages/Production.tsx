@@ -239,7 +239,7 @@ export default function Production() {
   // Guard: redirecionar se não tem acesso à produção
   if (!hasAccess("producao")) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         <TopNav />
         <div className="flex flex-col items-center justify-center py-20">
           <div className="bg-white rounded-2xl shadow-lg border border-red-100 p-8 max-w-md text-center">
@@ -867,7 +867,7 @@ export default function Production() {
 
   if (loadingSectors) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         <TopNav />
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
@@ -877,7 +877,7 @@ export default function Production() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <TopNav />
       <div className="container py-6 pb-20 md:pb-6">
         {/* Header */}
@@ -914,7 +914,7 @@ export default function Production() {
               {showPdfMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowPdfMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl border border-slate-200 shadow-lg py-1 w-56">
+                  <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg py-1 w-56">
                     <button
                       onClick={async () => {
                         if (!sectors || !entries) return;
@@ -991,7 +991,7 @@ export default function Production() {
         </div>
 
         {/* Date selector */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 bg-white rounded-xl border border-slate-200 px-3 sm:px-4 py-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-3 shadow-sm">
           <Calendar className="w-5 h-5 text-teal-600 flex-shrink-0" />
           <button onClick={() => changeDate(-1)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors flex-shrink-0">
             <ArrowLeft className="w-4 h-4 text-slate-600" />
@@ -1061,7 +1061,7 @@ export default function Production() {
                 // Averages can show 1 decimal for dual-unit sectors
                 const avgDecimals = sector.unidadeMedida === "m³" ? 3 : isDualUnitSector(sector.ordem) ? 1 : 0;
                 return (
-                  <div key={sector.id} className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => toggleSector(sector.id)}>
+                  <div key={sector.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => toggleSector(sector.id)}>
                     <div className="flex items-start gap-1.5 mb-1">
                       <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
                         <Icon className="w-3.5 h-3.5" style={{ color: sector.cor || "#6b7280" }} />
@@ -1095,7 +1095,7 @@ export default function Production() {
                 const sectorAvg = monthlyAverage?.find(a => a.sectorId === sector.id);
 
                 return (
-                  <div key={sector.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div key={sector.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                     <div
                       onClick={() => toggleSector(sector.id)}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
@@ -1134,7 +1134,7 @@ export default function Production() {
                             operatorName={operator?.name || "Desconhecido"}
                           />
                         ) : hasMachines ? (
-                          <div className="divide-y divide-slate-100">
+                          <div className="divide-y divide-slate-100 dark:divide-slate-700">
                             {sector.machines.map((machine: any) => {
                               if (expandable) {
                                 return (
@@ -1469,7 +1469,7 @@ function ExpandableMachineRow({
       {/* Comment box */}
       {commentIsOpen && (
         <div className="px-4 pb-2 pl-16">
-          <div className="bg-white rounded-lg border border-slate-200 p-2">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2">
             <textarea value={currentComment} onChange={(e) => onSetComment(e.target.value)} placeholder="Adicionar comentário ou observação..." rows={2} className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400" disabled={!canEdit} />
             {canEdit && (
               <div className="flex justify-end mt-1.5">
@@ -1491,7 +1491,7 @@ function ExpandableMachineRow({
       {machineExpanded && (
         <div className="px-4 pb-3 pl-16 space-y-2">
           {/* Status selector - MULTI-SELECT: pode marcar vários */}
-          <div className="bg-white rounded-lg border border-slate-200 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
             <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Status da Máquina <span className="text-slate-400 font-normal">(pode marcar vários)</span></p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               {MACHINE_STATUS_OPTIONS.map(opt => {
@@ -1513,7 +1513,7 @@ function ExpandableMachineRow({
 
           {/* Variant inputs or simple production input */}
           {variantOptions.length > 0 ? (
-          <div className="bg-white rounded-lg border border-slate-200 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2 mb-3">
               <VariantIcon className="w-3.5 h-3.5 text-slate-500" />
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Produção por {variantLabel}</p>
@@ -1676,7 +1676,7 @@ function ExpandableMachineRow({
             )}
           </div>
           ) : (
-          <div className="bg-white rounded-lg border border-slate-200 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-2 mb-3">
               <Package className="w-3.5 h-3.5 text-slate-500" />
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Produção</p>
@@ -1750,7 +1750,7 @@ function SimpleMachineRow({ sector, machine, commentIsOpen, isSaving, currentVal
       </div>
       {commentIsOpen && (
         <div className="px-4 pb-2 pl-16">
-          <div className="bg-white rounded-lg border border-slate-200 p-2">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2">
             <textarea value={currentComment} onChange={(e) => onSetComment(e.target.value)} placeholder="Adicionar comentário ou observação..." rows={2} className="w-full text-xs text-slate-600 border-0 bg-transparent resize-none focus:outline-none placeholder:text-slate-400" disabled={!canEdit} />
             {canEdit && (
               <div className="flex justify-end mt-1.5">
@@ -2064,7 +2064,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
 
                   {/* Expanded: quantity input - only editable for Maria */}
                   {isSelected && canEdit && (
-                    <div className="ml-6 mt-1 mb-2 flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-2">
+                    <div className="ml-6 mt-1 mb-2 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-2">
                       <Package className="w-4 h-4 text-slate-400 shrink-0" />
                       <span className="text-xs text-slate-500 shrink-0">Qtd:</span>
                       <input
@@ -2321,7 +2321,7 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
         const isExpanded = expandedMachines.has(machine.id);
 
         return (
-          <div key={machine.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div key={machine.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* Machine header */}
             <div
               onClick={() => toggleMachineExpand(machine.id)}
@@ -2366,7 +2366,7 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
             {isExpanded && (
               <div className="border-t border-slate-100 px-4 py-3 space-y-3">
                 {/* Status selector for Pirografia machine */}
-                <div className="bg-white rounded-lg border border-slate-200 p-3">
+                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                   <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Status da Máquina</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                     {MACHINE_STATUS_OPTIONS.map(opt => {
@@ -2575,7 +2575,7 @@ function PirografiaSector({ sector, selectedDate, canEdit, operatorName }: Pirog
 
                             {/* Expanded: name + quantity input - only editable for Maria */}
                             {isSelected && canEdit && (
-                              <div className="ml-4 mt-1 mb-2 space-y-2 bg-white rounded-lg border border-slate-200 p-3">
+                              <div className="ml-4 mt-1 mb-2 space-y-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                                 {/* Nome pirografado */}
                                 <div className="flex items-center gap-2">
                                   <Flame className="w-4 h-4 text-orange-500 shrink-0" />
@@ -2725,7 +2725,7 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
   }, [sectors, weekDays, weeklySummary]);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-teal-600" />
@@ -2735,7 +2735,7 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
+            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
               <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase w-48 border-r border-slate-200">Setor</th>
               {weekDays.map(day => {
                 const d = new Date(day + "T12:00:00");
@@ -2760,7 +2760,7 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
               const rawWeekTotal = weekDays.reduce((sum, day) => sum + (matrix[sector.id]?.[day] || 0), 0);
               const weekTotal = sector.unidadeMedida === "m\u00b3" ? rawWeekTotal : Math.floor(rawWeekTotal);
               return (
-                <tr key={sector.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                <tr key={sector.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50">
                   <td className="px-4 py-2.5 border-r border-slate-200">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: (sector.cor || "#6b7280") + "15" }}>
@@ -2827,7 +2827,7 @@ function PirografiaHistoryView() {
   return (
     <div className="space-y-6">
       {/* Header + Period Filter */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -2889,8 +2889,8 @@ function PirografiaHistoryView() {
       {data && !isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Nomes */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50">
               <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                 <Type className="w-4 h-4 text-orange-500" />
                 Top Nomes Pirografados
@@ -2899,7 +2899,7 @@ function PirografiaHistoryView() {
             {data.topNomes.length === 0 ? (
               <div className="text-center py-8 text-sm text-slate-400">Nenhum registro no período</div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
                 {data.topNomes.map((item, idx) => {
                   const maxQty = data.topNomes[0]?.quantidade || 1;
                   const pct = (item.quantidade / maxQty) * 100;
@@ -2933,8 +2933,8 @@ function PirografiaHistoryView() {
           </div>
 
           {/* Top Produtos */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50">
               <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                 <Package className="w-4 h-4 text-teal-500" />
                 Top Produtos Pirografados
@@ -2943,7 +2943,7 @@ function PirografiaHistoryView() {
             {data.topProdutos.length === 0 ? (
               <div className="text-center py-8 text-sm text-slate-400">Nenhum registro no período</div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
                 {data.topProdutos.map((item, idx) => {
                   const maxQty = data.topProdutos[0]?.quantidade || 1;
                   const pct = (item.quantidade / maxQty) * 100;
@@ -3208,7 +3208,7 @@ function AnnotationCards({ selectedDate, sectorId, canEdit, operatorName }: Anno
 
       {/* Weekly Trend Chart */}
       {showChart && (
-        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-4 h-4 text-teal-600" />
             <span className="text-xs font-semibold text-slate-700">Últimos 7 dias</span>

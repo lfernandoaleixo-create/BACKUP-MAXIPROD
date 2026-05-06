@@ -147,38 +147,38 @@ export default function FornecedoresBrasileirosTab() {
     <div className="space-y-4">
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 text-center">
           <p className="text-2xl font-bold text-slate-800">{stats.data?.totalSuppliers || 0}</p>
           <p className="text-xs text-slate-500 mt-1">Cadastros</p>
         </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 text-center">
           <p className="text-2xl font-bold text-teal-600">{stats.data?.totalContacts || 0}</p>
           <p className="text-xs text-slate-500 mt-1">Contatos Feitos</p>
         </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 text-center">
           <p className="text-2xl font-bold text-emerald-600">{stats.data?.novoCliente || 0}</p>
           <p className="text-xs text-slate-500 mt-1">Novos Clientes</p>
         </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 text-center">
           <p className="text-2xl font-bold text-amber-600">{stats.data?.possivelCliente || 0}</p>
           <p className="text-xs text-slate-500 mt-1">Possíveis Clientes</p>
         </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 text-center">
           <p className="text-2xl font-bold text-blue-600">{stats.data?.jaCliente || 0}</p>
           <p className="text-xs text-slate-500 mt-1">Já é Cliente</p>
         </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 text-center">
           <p className="text-2xl font-bold text-red-600">{stats.data?.semInteresse || 0}</p>
           <p className="text-xs text-slate-500 mt-1">Sem Interesse</p>
         </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 text-center">
           <p className="text-2xl font-bold text-purple-600">{stats.data?.naoPossivelContato || 0}</p>
           <p className="text-xs text-slate-500 mt-1">S/ Contato</p>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-1 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-1 overflow-x-auto scrollbar-hide">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -255,7 +255,7 @@ export default function FornecedoresBrasileirosTab() {
             <button
               key={seg}
               onClick={() => { setSelectedSegment(seg); setView("states"); }}
-              className="bg-white rounded-xl border border-slate-200 p-5 text-left hover:border-teal-300 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 text-left hover:border-teal-300 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -282,7 +282,7 @@ export default function FornecedoresBrasileirosTab() {
             <button
               key={estado}
               onClick={() => { setSelectedState(estado); setView("suppliers"); }}
-              className="bg-white rounded-xl border border-slate-200 p-5 text-left hover:border-teal-300 hover:shadow-md transition-all cursor-pointer group"
+              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 text-left hover:border-teal-300 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -309,7 +309,7 @@ export default function FornecedoresBrasileirosTab() {
             <>
               <p className="text-sm text-slate-500">{suppliersList.data?.length || 0} possíveis clientes encontrados</p>
               {suppliersList.data?.map((supplier) => (
-                <div key={supplier.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div key={supplier.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                   {/* Supplier Header */}
                   <button
                     onClick={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
@@ -537,8 +537,8 @@ export default function FornecedoresBrasileirosTab() {
 
       {/* RANKING VIEW */}
       {view === "ranking" && (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
             <Trophy className="w-5 h-5 text-amber-500" />
             <h3 className="font-semibold text-slate-800">Ranking de Vendedores</h3>
           </div>
@@ -549,7 +549,7 @@ export default function FornecedoresBrasileirosTab() {
           ) : !ranking.data?.length ? (
             <div className="text-center py-8 text-slate-500">Nenhum contato registrado ainda</div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 dark:divide-slate-700">
               {ranking.data.map((v, idx) => {
                 const conversoes = Number((v as any).conversoes || 0);
                 const efficiency = v.totalContatos > 0 ? ((conversoes / v.totalContatos) * 100).toFixed(1) : "0.0";
@@ -593,7 +593,7 @@ export default function FornecedoresBrasileirosTab() {
       {/* VENDEDOR DETAIL VIEW */}
       {view === "vendedorDetail" && (
         <div className="space-y-3">
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
             <h3 className="font-semibold text-slate-800 text-lg">{selectedVendedor}</h3>
             <p className="text-sm text-slate-500">{vendedorContacts.data?.length || 0} contatos realizados</p>
           </div>
@@ -622,7 +622,7 @@ export default function FornecedoresBrasileirosTab() {
                 {filtered.length === 0 ? (
                   <div className="p-4 text-center text-sm text-slate-400">Nenhum registro</div>
                 ) : (
-                  <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700 max-h-80 overflow-y-auto">
                     {filtered.map((c) => (
                       <div key={c.id} className="p-3 text-sm">
                         <div className="flex items-center justify-between">
@@ -730,20 +730,20 @@ function MigrationHistory() {
 
   if (!history.data?.length) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-500">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-500">
         Nenhum registro de contato ainda. O histórico aparecerá aqui quando os vendedores registrarem contatos.
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
         <History className="w-5 h-5 text-teal-600" />
         <h3 className="font-semibold text-slate-800">Histórico de Migrações</h3>
         <span className="ml-auto text-sm text-slate-500">{history.data.length} registros</span>
       </div>
-      <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
+      <div className="divide-y divide-slate-100 dark:divide-slate-700 max-h-[600px] overflow-y-auto">
         {history.data.map((m) => (
           <div key={m.id} className="p-4 hover:bg-slate-50 transition-colors">
             <div className="flex items-center justify-between">
@@ -796,7 +796,7 @@ function MigrationHistory() {
 /* Sub-component: Contact Card for ranking detail */
 function ContactCard({ contact }: { contact: any }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
       <div className="flex items-center justify-between">
         <h4 className="font-medium text-slate-800">{contact.supplierNome}</h4>
         <span className="text-xs text-slate-400">

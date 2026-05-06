@@ -545,7 +545,7 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
 
       {/* Summary badges */}
       {hasChanges && !isLoading && (
-        <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center gap-3">
+        <div className="px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
             <TrendingUp className="w-3.5 h-3.5 text-green-600" />
             <span className="text-xs font-bold text-green-700">Acrescentados: +{formatCurrency(totalAdicionado)}</span>
@@ -578,13 +578,13 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
       ) : (
         <>
           {/* Tabs + Sort toggle */}
-          <div className="flex items-center border-b border-slate-100">
+          <div className="flex items-center border-b border-slate-100 dark:border-slate-700">
             <button
               onClick={() => setActiveTab("adicionado")}
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all cursor-pointer border-b-2 ${
                 activeTab === "adicionado"
                   ? "bg-green-50/80 text-green-700 border-green-500"
-                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-transparent"
+                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 dark:bg-slate-800/50 border-transparent"
               }`}
             >
               <Plus className="w-4 h-4" />
@@ -600,7 +600,7 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all cursor-pointer border-b-2 ${
                 activeTab === "removido"
                   ? "bg-red-50/80 text-red-700 border-red-500"
-                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-transparent"
+                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50 dark:bg-slate-800/50 border-transparent"
               }`}
             >
               <Minus className="w-4 h-4" />
@@ -629,7 +629,7 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
                 Nenhum item {activeTab === "adicionado" ? "acrescentado" : "retirado"} nesta semana
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
                 {groupedByDay.map(([date, items]) => {
                   const isExpanded = expandedDays.has(date);
                   const dayTotal = items.reduce((s: number, i: any) => s + Number(i.valor || 0), 0);
@@ -664,7 +664,7 @@ export function WeekHistoryPanel({ tipo, semanaLabel, onClose }: WeekHistoryPane
                       {isExpanded && (
                         <div className="px-5 pb-4 space-y-2">
                           {items.map((item: any, idx: number) => (
-                            <div key={item.maxiprodId || idx} className="bg-white rounded-xl border border-slate-100 px-4 py-3 hover:border-slate-200 hover:shadow-sm transition-all">
+                            <div key={item.maxiprodId || idx} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 px-4 py-3 hover:border-slate-200 hover:shadow-sm transition-all">
                               <div className="flex items-start gap-x-3">
                                 {item.changeType === "adicionado" ? (
                                   <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -901,7 +901,7 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
       </div>
 
       {/* ── Tab Switcher + Sort Toggle ── */}
-      <div className="flex bg-slate-50 border-b border-slate-200">
+      <div className="flex bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
         <button
           onClick={() => setActiveTab("adicionado")}
           className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-3 sm:py-3.5 text-xs sm:text-sm font-bold transition-all cursor-pointer border-b-[3px] ${
@@ -1002,7 +1002,7 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
                       className={`w-full px-5 py-4 flex items-center justify-between transition-all cursor-pointer ${
                         isWeekExpanded
                           ? activeTab === "adicionado" ? "bg-green-50" : "bg-red-50"
-                          : "bg-white hover:bg-slate-50"
+                          : "bg-white hover:bg-slate-50 dark:hover:bg-slate-700"
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -1135,7 +1135,7 @@ export default function FullHistoryPanel({ tipo, onClose }: FullHistoryPanelProp
 
       {/* ── Footer ── */}
       {!isLoading && totalCount > 0 && (
-        <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 flex items-center justify-between">
           <span className="text-xs text-slate-400 font-medium">
             {totalCount} movimentações registradas neste mês
           </span>

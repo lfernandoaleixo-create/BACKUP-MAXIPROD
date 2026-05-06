@@ -355,7 +355,7 @@ function MaxiprodVerifyModal({
           </div>
           {steps.map(s => (
             <div key={s.step} className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
-              s.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 border border-slate-200"
+              s.highlight ? "bg-amber-50 border-2 border-amber-300 shadow-sm" : "bg-slate-50 dark:bg-slate-800/50 border border-slate-200"
             }`}>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
                 s.highlight ? "bg-amber-500 text-white shadow-md shadow-amber-500/30" : "bg-indigo-600 text-white"
@@ -372,7 +372,7 @@ function MaxiprodVerifyModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 flex items-center justify-between">
           <a
             href={MAXIPROD_LOGIN_URL}
             target="_blank"
@@ -698,7 +698,7 @@ function ContaFiltersAndTable({
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-bold transition-all duration-200 ${
                   isActive
                     ? `${opt.activeBg} ${opt.activeBorder} ${opt.activeText} ${opt.glow} scale-[1.02]`
-                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                 }`}>
                 <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : opt.color}`} />
                 {opt.label}
@@ -717,7 +717,7 @@ function ContaFiltersAndTable({
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-xs font-bold transition-all duration-200 ${
                   isActive
                     ? `${opt.activeBg} ${opt.activeBorder} ${opt.activeText} ${opt.glow} scale-[1.02]`
-                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                 }`}>
                 <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : opt.color}`} />
                 {opt.label}
@@ -969,7 +969,7 @@ function ContaFiltersAndTable({
                 ? "bg-emerald-50 border-emerald-400 shadow-md shadow-emerald-100"
                 : isAuthorizer
                   ? "bg-white border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 cursor-pointer"
-                  : "bg-slate-50 border-slate-200 cursor-not-allowed opacity-70"
+                  : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 cursor-not-allowed opacity-70"
             }`}
           >
             <input
@@ -1020,7 +1020,7 @@ function ContaFiltersAndTable({
             <div className="hidden md:block text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center self-center">Status</div>
           </div>
 
-          <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-100">
+          <div className="max-h-[60vh] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
             {filteredItems.map((item) => {
               const isSelected = selectedIds.has(item.id);
               const isExp = expandedItem === item.id;
@@ -1028,7 +1028,7 @@ function ContaFiltersAndTable({
               return (
                 <div key={item.id}>
                   <div className={`grid grid-cols-[28px_1fr_80px_70px] md:grid-cols-[36px_1fr_120px_100px_90px_80px] gap-1.5 md:gap-2 px-2 md:px-4 py-2.5 items-center transition-all cursor-pointer ${
-                    isSelected ? "bg-teal-50/70 hover:bg-teal-50" : item.isOverdue ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-slate-50"
+                    isSelected ? "bg-teal-50/70 hover:bg-teal-50" : item.isOverdue ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-slate-50 dark:hover:bg-slate-700"
                   }`}>
                     <div className="flex items-center justify-center">
                       <button onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
@@ -1105,7 +1105,7 @@ function ContaFiltersAndTable({
                           <p className="text-sm font-semibold text-blue-900">{item.referenteA}</p>
                         </div>
                       )}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
                         <DetailItem label="Valor Original" value={formatCurrency(item.valorOriginal)} />
                         <DetailItem label="Valor Pago" value={formatCurrency(item.valorPago)} />
                         <DetailItem label="Emissão" value={formatDate(item.emissao)} />
@@ -1163,7 +1163,7 @@ function ContaFiltersAndTable({
             {passwordError && <p className="text-red-500 text-xs mb-2">{passwordError}</p>}
             <div className="flex gap-2 mt-3">
               <button onClick={() => setShowFinalizeDialog(false)}
-                className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50">
+                className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700">
                 Cancelar
               </button>
               <button onClick={handleFinalize}
@@ -1318,7 +1318,7 @@ function SicoobInfoCard({ title, subtitle, icon: Icon, colorScheme, queryHook, m
       {/* Dialog de confirmação */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4 border border-slate-200">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 max-w-sm mx-4 border border-slate-200">
             <h3 className="text-lg font-bold text-slate-800 mb-2">Confirmar alteração</h3>
             <p className="text-sm text-slate-600 mb-1">Tem certeza que deseja alterar o valor?</p>
             <div className="bg-slate-50 rounded-lg p-3 mb-4">
@@ -2198,7 +2198,7 @@ export default function ReceivablesTab() {
                         }
                         return (
                           <div className="border border-slate-200 rounded-xl overflow-hidden">
-                            <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                            <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <span className="text-xs font-semibold text-slate-600">
                                   {displayCheques.length} cheque{displayCheques.length !== 1 ? "s" : ""}
@@ -2321,7 +2321,7 @@ export default function ReceivablesTab() {
                                     };
                                     const badgeColor = estadoColors[cheque.estadoCheque] || "bg-slate-100 text-slate-700";
                                     return (
-                                      <tr key={cheque.id || idx} className={`border-b border-slate-100 hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/30"} ${exchangeMode && exchangeSelectedIds.has(cheque.id) ? "!bg-indigo-50 ring-1 ring-inset ring-indigo-200" : ""}`}>
+                                      <tr key={cheque.id || idx} className={`border-b border-slate-100 dark:border-slate-700 hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/30"} ${exchangeMode && exchangeSelectedIds.has(cheque.id) ? "!bg-indigo-50 ring-1 ring-inset ring-indigo-200" : ""}`}>
                                         {exchangeMode && (
                                           <td className="px-2 py-2 text-center">
                                             <input
@@ -2670,7 +2670,7 @@ export default function ReceivablesTab() {
                           return `${day}/${m}/${y}`;
                         };
                         return (
-                          <tr key={cheque.id} className="border-b border-slate-100 hover:bg-slate-50">
+                          <tr key={cheque.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700">
                             <td className="px-3 py-2 text-slate-700 font-medium max-w-[180px] truncate" title={cheque.cliente}>{cheque.cliente}</td>
                             <td className="px-3 py-2 text-right font-bold text-slate-800 whitespace-nowrap">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                             <td className="px-3 py-2 text-center">

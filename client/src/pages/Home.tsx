@@ -326,7 +326,7 @@ function ConnectionStatusCard() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-sm animate-pulse">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3 shadow-sm animate-pulse">
         <div className="h-6 bg-slate-100 rounded w-48" />
       </div>
     );
@@ -337,7 +337,7 @@ function ConnectionStatusCard() {
 
   return (
     <div className={`rounded-lg border p-2 md:p-3 shadow-sm ${
-      isConnected ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200"
+      isConnected ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200"
     }`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 md:gap-3 min-w-0">
@@ -500,7 +500,7 @@ function KPICard({ label, value, sub, icon: Icon, theme, onClick, tooltip }: {
 }) {
   const s = kpiStyles[theme];
   return (
-    <div className={`group relative bg-white rounded-xl border border-slate-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 h-full ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
+    <div className={`group relative bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 h-full ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
       <div className={`h-1 ${s.bar}`} />
       <div className="px-3 py-2.5 md:px-4 md:py-3.5">
         <div className="flex items-start justify-between mb-2 md:mb-3">
@@ -589,7 +589,7 @@ function POCell({ item }: { item: StockItem }) {
                 </thead>
                 <tbody className="divide-y">
                   {lotes.map((lote, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50">
+                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                       <td className="px-2 py-1 font-semibold text-blue-700">
                         {lote.referenciaPO || lote.numeroPedido || "?"}
                       </td>
@@ -764,10 +764,10 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
   );
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
       <div className="max-h-[60vh] overflow-auto relative scrollbar-hide">
         <table className={`${showFinancial ? 'w-full min-w-[1100px]' : 'w-full'}`} style={!showFinancial ? { minWidth: showSalesColumns ? 1500 : 800, tableLayout: showSalesColumns ? 'fixed' : undefined, ...(showSalesColumns ? { width: 1500 } : {}) } : undefined}>
-          <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 sticky top-0 z-20 shadow-sm">
             <tr>
               {showFinancial ? (
                 <>
@@ -894,7 +894,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {filtered.map((item) => {
               const isNegative = (item.disponivelCx ?? item.disponivelUn) < 0;
               const isZero = (item.disponivelCx ?? item.disponivelUn) === 0;
@@ -964,7 +964,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="max-w-md w-[400px] p-0" sideOffset={8}>
-                          <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden">
+                          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 overflow-hidden">
                             {/* Header */}
                             <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-5 py-4 border-b border-purple-100">
                               <div className="flex items-center gap-2">
@@ -1053,7 +1053,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                               </span>
                             </TooltipTrigger>
                             <TooltipContent side="left" className="max-w-4xl w-[750px] p-0" sideOffset={8}>
-                              <div className="bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden">
+                              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 overflow-hidden">
 
                                 {/* Detalhamento por cliente (pedidos próprios do pai se for pai, ou todos se não for) */}
                                 {(() => {
@@ -1077,9 +1077,9 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                                   <th className="text-center px-4 py-2.5 font-semibold text-sm">Status</th>
                                                 </tr>
                                               </thead>
-                                              <tbody className="divide-y divide-slate-100">
+                                              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                 {clienteReservados.map((pc, idx) => (
-                                                  <tr key={idx} className="hover:bg-slate-50">
+                                                  <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                                                     <td className="px-4 py-3 text-slate-700 max-w-[450px] truncate text-sm" title={pc.cliente}>
                                                       {pc.cliente}
                                                     </td>
@@ -1112,9 +1112,9 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                                             </div>
                                             <div className="max-h-72 overflow-y-auto">
                                               <table className="w-full text-base">
-                                                <tbody className="divide-y divide-slate-100">
+                                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                                   {vReservados.map((pc, idx) => (
-                                                    <tr key={idx} className="hover:bg-slate-50">
+                                                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                                                       <td className="px-4 py-3 text-slate-700 max-w-[450px] truncate text-sm" title={pc.cliente}>
                                                         {pc.cliente}
                                                       </td>
@@ -1642,11 +1642,11 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
   const totalPOCx = poSummaries.reduce((sum, po) => sum + po.totalCx, 0);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
       {/* Header - Clickable to expand/collapse */}
       <button
         onClick={() => { setIsListOpen(!isListOpen); if (isListOpen) setExpandedPO(null); }}
-        className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 px-5 py-4 border-b border-slate-100 text-left hover:from-blue-100/60 hover:to-indigo-100/60 transition-colors cursor-pointer"
+        className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 px-5 py-4 border-b border-slate-100 dark:border-slate-700 text-left hover:from-blue-100/60 hover:to-indigo-100/60 transition-colors cursor-pointer"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -1675,7 +1675,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
       </button>
 
       {/* PO List - Collapsible */}
-      {isListOpen && <div className="divide-y divide-slate-100">
+      {isListOpen && <div className="divide-y divide-slate-100 dark:divide-slate-700">
         {poSummaries.map((po) => {
           const isExpanded = expandedPO === po.referenciaPO;
           // Parse date for proximity indicator
@@ -1908,7 +1908,7 @@ function StockHistoryModal({ open, onClose, card, codigoItem, descricaoItem }: {
                 {data.history.map((h: any, i: number) => {
                   const isReduction = h.tipo === "tentativa_reducao";
                   return (
-                    <tr key={i} className={`border-b border-slate-100 ${isReduction ? "bg-red-50" : "hover:bg-slate-50/50"}`}>
+                    <tr key={i} className={`border-b border-slate-100 dark:border-slate-700 ${isReduction ? "bg-red-50" : "hover:bg-slate-50/50"}`}>
                       <td className="py-2 px-2 text-xs text-slate-600 whitespace-nowrap">
                         {new Date(h.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                       </td>
@@ -2262,7 +2262,7 @@ function ClassificationCard({
       {isOpen && (
         <div className="border-t border-slate-100">
           {/* Search & Filter inside card */}
-          <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100">
+          <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100 dark:border-slate-700">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -2472,7 +2472,7 @@ function MadeiraValorizacaoCard({
     <div className="flex flex-col md:flex-row items-stretch gap-4">
       {/* Valuation Card - same layout as bambu */}
       {showMadeiraFinancial && (
-        <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-3 md:px-5 py-3 transition-all">
+        <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm px-3 md:px-5 py-3 transition-all">
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <DollarSign className="w-4 h-4 text-emerald-600" />
             <p className="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
@@ -2606,7 +2606,7 @@ function AutoFeedReportModal({ open, onClose }: { open: boolean; onClose: () => 
                   {filtered.length === 0 ? (
                     <tr><td colSpan={6} className="text-center py-12 text-slate-400"><CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-40" /><p className="text-sm">Nenhum produto embalado hoje</p></td></tr>
                   ) : filtered.map(r => (
-                    <tr key={r.codigoItem} className={`border-b border-slate-100 hover:bg-slate-50/50 ${!r.bateu ? 'bg-red-50/30' : ''}`}>
+                    <tr key={r.codigoItem} className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 ${!r.bateu ? 'bg-red-50/30' : ''}`}>
                       <td className="py-2 px-3">
                         <p className="text-xs font-medium text-slate-700 truncate max-w-[200px]">{r.descricaoItem}</p>
                         <p className="text-[10px] text-slate-400">{r.codigoItem}</p>
@@ -2893,7 +2893,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
       {isOpen && (
         <div className="border-t border-slate-100">
           {/* Search & Filter */}
-          <div className="px-3 md:px-5 py-2 md:py-3 bg-slate-50/50 border-b border-slate-100">
+          <div className="px-3 md:px-5 py-2 md:py-3 bg-slate-50/50 border-b border-slate-100 dark:border-slate-700">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -2913,7 +2913,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
           <div className="bg-white rounded-lg">
             <div className="overflow-x-auto scrollbar-hide">
               <table className="w-full text-[11px] md:text-[13px]" style={{ minWidth: '700px' }}>
-                <thead className="bg-slate-50 border-b border-slate-200 z-10">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 z-10">
                   <tr>
                     <th className="px-2 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" style={{ minWidth: '220px', width: '25%' }} onClick={() => handleMadeiraSort('descricaoItem')}>
                       <div className="flex items-center gap-1">Produto <ArrowUpDown className={`w-3 h-3 ${madeiraSort === 'descricaoItem' ? 'text-teal-600' : 'text-slate-300'}`} /></div>
@@ -2985,7 +2985,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
                     <th className="px-1.5 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {filtered.map((item) => {
                     const manualQty = madeiraStockMap.get(item.codigoItem) || 0;
                     const isEditing = editingItem === item.codigoItem;
@@ -3655,7 +3655,7 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
                   const pedidosVal = 0; // Semi Pronto não tem pedidos de venda
                   const disponivel = qty;
                   return (
-                    <tr key={item.codigoItem} className={`border-b border-slate-100 hover:bg-slate-50/50 ${disponivel < 0 ? 'bg-red-50/50' : ''}`}>
+                    <tr key={item.codigoItem} className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 ${disponivel < 0 ? 'bg-red-50/50' : ''}`}>
                       <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>
 <td className="py-2 px-2 text-sm text-slate-700 break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</td>
                        <td className="py-2 px-2 text-right">
@@ -3898,7 +3898,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
                   const pedidosVal = 0; // Aguardando Escolha não tem pedidos de venda
                   const disponivel = qty;
                   return (
-                    <tr key={item.codigoItem} className={`border-b border-slate-100 hover:bg-slate-50/50 ${disponivel < 0 ? 'bg-red-50/50' : ''}`}>
+                    <tr key={item.codigoItem} className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 ${disponivel < 0 ? 'bg-red-50/50' : ''}`}>
                       <td className="py-2 px-2 text-xs text-slate-500 font-mono">{item.codigoItem}</td>
                       <td className="py-2 px-2 text-sm text-slate-700 break-words leading-snug" title={item.descricaoItem}>{item.descricaoItem}</td>
                       <td className="py-2 px-2 text-right">
@@ -4328,7 +4328,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setAlertsDialogOpen(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-slate-800">Detalhes dos Alertas</h3>
                 <p className="text-sm text-slate-400 mt-0.5">{alertDetails.total} produtos com alerta</p>
@@ -4461,7 +4461,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           <div className="flex flex-col sm:flex-row items-stretch gap-4">
             {/* Global Valuation Card */}
             {showFinancial && (
-              <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm px-3 md:px-5 py-3 transition-all">
+              <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm px-3 md:px-5 py-3 transition-all">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <DollarSign className="w-4 h-4 text-emerald-600" />
                   <p className="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
@@ -4668,11 +4668,11 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           </div>
           <div className="space-y-1.5">
             <div className="flex justify-between items-baseline">
-              <span className="text-[10px] text-slate-900 font-semibold">Estoque</span>
+              <span className="text-[10px] text-slate-900 dark:text-slate-100 font-semibold">Estoque</span>
               <span className="text-sm font-extrabold text-slate-900">{formatNumber(estoqueDuzias)} dz</span>
             </div>
             <div className="flex justify-between items-baseline">
-              <span className="text-[10px] text-slate-900 font-semibold">Pedidos</span>
+              <span className="text-[10px] text-slate-900 dark:text-slate-100 font-semibold">Pedidos</span>
               <span className="text-sm font-extrabold text-slate-900">{formatNumber(pedidosDuzias)} dz</span>
             </div>
             <div className="h-px bg-slate-100" />
@@ -4899,7 +4899,7 @@ function IndustrializedBaixaDialog({ open, onClose }: { open: boolean; onClose: 
             </div>
           ) : (
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 sticky top-0">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Data Baixa</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Pedido</th>
@@ -4913,7 +4913,7 @@ function IndustrializedBaixaDialog({ open, onClose }: { open: boolean; onClose: 
               </thead>
               <tbody>
                 {items.map((h: any, i: number) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50/50">
+                  <tr key={i} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50">
                     <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">
                       {h.dataBaixa ? new Date(h.dataBaixa + 'T12:00:00').toLocaleDateString("pt-BR") : '—'}
                     </td>
@@ -4927,7 +4927,7 @@ function IndustrializedBaixaDialog({ open, onClose }: { open: boolean; onClose: 
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+              <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t-2 border-slate-200">
                 <tr>
                   <td colSpan={5} className="px-3 py-2 text-xs font-bold text-slate-600 uppercase">Total ({totalBaixas} baixas)</td>
                   <td className="px-3 py-2 text-right text-sm font-extrabold text-red-700">-{formatNumber(totalQuantidade)}</td>
@@ -5067,7 +5067,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                   <Store className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-800 font-bold text-base">Histórico E-commerce — Importação</span>
+                  <span className="text-slate-800 dark:text-slate-100 font-bold text-base">Histórico E-commerce — Importação</span>
                   <p className="text-[10px] font-normal text-slate-500">Transferências faturadas da matriz para filial E-commerce (Grupo 12)</p>
                 </div>
               </DialogTitle>
@@ -5220,7 +5220,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                         <th className="px-2 py-1.5 text-left text-[9px] font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell" style={{width:'22%'}}>Observação</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                       {group.items.map((h: any, idx: number) => {
                         const isDirectCx = !h.produtoMae || h.unidadeOriginal === 'CX';
                         return (
@@ -5263,7 +5263,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                       })}
                     </tbody>
                     {/* Subtotal per group */}
-                    <tfoot className="bg-slate-50 border-t border-slate-200">
+                    <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200">
                       <tr>
                         <td colSpan={3} className="px-2.5 py-1.5 text-[11px] font-bold text-slate-500 uppercase">Subtotal Pedido #{group.pedido}</td>
                         <td className="px-2.5 py-1.5 text-right bg-purple-50/30">
@@ -5426,7 +5426,7 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
                   <Store className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <span className="text-slate-800 font-bold text-base">Histórico E-commerce — Industrialização</span>
+                  <span className="text-slate-800 dark:text-slate-100 font-bold text-base">Histórico E-commerce — Industrialização</span>
                   <p className="text-[10px] font-normal text-slate-500">Transferências faturadas de produtos de madeira para filial E-commerce</p>
                 </div>
               </DialogTitle>
@@ -5578,7 +5578,7 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
                         <th className="px-2.5 py-1.5 text-center text-[9px] font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell" style={{width:'7%'}}>Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                       {group.items.map((h: any, idx: number) => {
                         const isDirectCx = !h.produtoMae || h.unidadeOriginal === 'CX';
                         return (
@@ -5620,7 +5620,7 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
                         );
                       })}
                     </tbody>
-                    <tfoot className="bg-slate-50 border-t border-slate-200">
+                    <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200">
                       <tr>
                         <td colSpan={3} className="px-2.5 py-1.5 text-[11px] font-bold text-slate-500 uppercase">Subtotal Pedido #{group.pedido}</td>
                         <td className="px-2.5 py-1.5 text-right bg-emerald-50/30">
@@ -5703,7 +5703,7 @@ export default function Home() {
   }, [data?.items, hiddenProducts]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <TopNav rightContent={
         <div className="text-right text-xs text-slate-400">
           {data?.lastSync ? (

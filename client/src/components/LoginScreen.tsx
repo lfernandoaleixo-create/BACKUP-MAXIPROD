@@ -107,11 +107,11 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-slate-100 flex flex-col items-center pt-[6vh] px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col items-center pt-[6vh] px-4">
       {/* Frase motivacional */}
       <div className="text-center px-4 mb-2">
         <p
-          className="text-slate-600 italic max-w-xl mx-auto"
+          className="text-slate-600 dark:text-slate-300 italic max-w-xl mx-auto"
           style={{
             fontFamily: "'Playfair Display', 'Georgia', serif",
             fontSize: "clamp(1rem, 2vw, 1.25rem)",
@@ -121,7 +121,7 @@ export default function LoginScreen() {
           &ldquo;{quote.text}&rdquo;
         </p>
         <p
-          className="mt-1 text-teal-600 font-medium tracking-wide"
+          className="mt-1 text-teal-600 dark:text-teal-400 font-medium tracking-wide"
           style={{
             fontFamily: "'Inter', 'Helvetica Neue', sans-serif",
             fontSize: "0.8rem",
@@ -156,7 +156,7 @@ export default function LoginScreen() {
 
       {/* Login Card */}
       <div
-        className="w-72 bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 px-6 py-5"
+        className="w-72 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-2xl border border-white/60 dark:border-slate-700/60 px-6 py-5"
         style={{
           boxShadow: "0 20px 40px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(255,255,255,0.5) inset",
         }}
@@ -168,7 +168,7 @@ export default function LoginScreen() {
           >
             <Lock className="w-5 h-5 text-white" />
           </div>
-          <p className="text-sm text-slate-500 font-medium">Digite sua senha para acessar</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Digite sua senha para acessar</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -178,7 +178,7 @@ export default function LoginScreen() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Senha"
-              className="h-11 text-center text-base pr-10 rounded-xl border-slate-200 focus:border-teal-400 focus:ring-teal-400/20"
+              className="h-11 text-center text-base pr-10 rounded-xl border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-teal-400 focus:ring-teal-400/20"
               autoFocus
             />
             <button
@@ -204,7 +204,7 @@ export default function LoginScreen() {
         </form>
       </div>
 
-      <p className="mt-3 text-xs text-slate-400 font-mono tracking-wider">{APP_VERSION}</p>
+      <p className="mt-3 text-xs text-slate-400 dark:text-slate-500 font-mono tracking-wider">{APP_VERSION}</p>
     </div>
   );
 }

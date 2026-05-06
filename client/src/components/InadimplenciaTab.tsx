@@ -486,7 +486,7 @@ function MultiSelectFilter({ label, options, selected, onChange }: {
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
           selected.length > 0
             ? "bg-blue-50 border-blue-300 text-blue-700 shadow-sm"
-            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
         }`}
       >
         <Filter className="w-3 h-3" />
@@ -501,7 +501,7 @@ function MultiSelectFilter({ label, options, selected, onChange }: {
           {selected.length > 0 && (
             <button
               onClick={() => onChange([])}
-              className="w-full px-3 py-1.5 text-left text-xs text-red-500 hover:bg-red-50 font-medium border-b border-slate-100"
+              className="w-full px-3 py-1.5 text-left text-xs text-red-500 hover:bg-red-50 font-medium border-b border-slate-100 dark:border-slate-700"
             >
               Limpar seleção ({selected.length})
             </button>
@@ -513,7 +513,7 @@ function MultiSelectFilter({ label, options, selected, onChange }: {
                 key={opt}
                 onClick={() => toggle(opt)}
                 className={`w-full px-3 py-2 text-left text-xs flex items-center gap-2 transition-colors ${
-                  isSelected ? "bg-blue-50 text-blue-700 font-medium" : "text-slate-700 hover:bg-slate-50"
+                  isSelected ? "bg-blue-50 text-blue-700 font-medium" : "text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
                 }`}
               >
                 <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
@@ -1367,7 +1367,7 @@ export default function InadimplenciaTab() {
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-300">Status</span>
                       <span className="flex items-center justify-center px-2 py-2">Ações</span>
                     </div>
-                    <div className="divide-y divide-slate-50">
+                    <div className="divide-y divide-slate-50 dark:divide-slate-700">
                       {[...group.titulos].sort((a, b) => {
                         let cmp = 0;
                         if (clientSortBy === "valor") cmp = a.valorAReceber - b.valorAReceber;
@@ -1408,8 +1408,8 @@ export default function InadimplenciaTab() {
 
       {/* Vista por Título */}
       {viewMode === "titulos" && (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="hidden md:grid grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px] bg-slate-50 border-b border-slate-300 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+          <div className="hidden md:grid grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px] bg-slate-50 dark:bg-slate-800/50 border-b border-slate-300 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
             <button onClick={() => toggleSort("cliente")} className="flex items-center justify-start gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-300">
               Cliente {sortBy === "cliente" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
             </button>
@@ -1429,7 +1429,7 @@ export default function InadimplenciaTab() {
             <div className="flex items-center justify-center px-3 py-2.5">Ações</div>
           </div>
 
-          <div className="divide-y divide-slate-100 max-h-[70vh] overflow-y-auto">
+          <div className="divide-y divide-slate-100 dark:divide-slate-700 max-h-[70vh] overflow-y-auto">
             {filteredTitles.length === 0 && (
               <div className="py-12 text-center text-slate-400">
                 <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -2107,7 +2107,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                                           : 'bg-emerald-500 border-emerald-600 text-white shadow-sm shadow-emerald-200'
                                         : canTickStep
                                           ? 'bg-white border-slate-300 group-hover:border-emerald-400 group-hover:bg-emerald-50 group-hover:shadow-sm cursor-pointer'
-                                          : 'bg-slate-50 border-slate-200 cursor-not-allowed'
+                                          : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 cursor-not-allowed'
                               }`}>
                                 {isPendingBlink ? <Phone className="w-3.5 h-3.5 animate-bounce" /> :
                                  isRed ? <XCircle className="w-3.5 h-3.5" /> :
@@ -2147,7 +2147,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                         </Tooltip>
                         {/* Popover de escolha verde/vermelho */}
                         {tickChoiceStep?.recId === title.id && tickChoiceStep?.step === step && (
-                          <div className="absolute z-50 mt-1 bg-white rounded-lg shadow-xl border border-slate-200 p-2 flex gap-2 animate-in fade-in slide-in-from-top-1" style={{ top: '100%', left: '50%', transform: 'translateX(-50%)' }}>
+                          <div className="absolute z-50 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 p-2 flex gap-2 animate-in fade-in slide-in-from-top-1" style={{ top: '100%', left: '50%', transform: 'translateX(-50%)' }}>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -2993,8 +2993,8 @@ function HistoryDialog({ title, onClose }: {
       case "vermelho": return "bg-red-50 border-red-200";
       case "neutro": return "bg-blue-50 border-blue-200";
       case "pendente": return "bg-blue-50 border-blue-200";
-      case "futuro": return "bg-slate-50 border-slate-200";
-      default: return "bg-slate-50 border-slate-200";
+      case "futuro": return "bg-slate-50 dark:bg-slate-800/50 border-slate-200";
+      default: return "bg-slate-50 dark:bg-slate-800/50 border-slate-200";
     }
   }
 
@@ -3591,7 +3591,7 @@ function HistoryTabContent({ title, history, isLoading, exportHistoryPDF }: {
                   : isSemContato
                   ? "bg-red-50 border-red-200"
                   : isAutomatic
-                  ? "bg-slate-50 border-slate-200"
+                  ? "bg-slate-50 dark:bg-slate-800/50 border-slate-200"
                   : "bg-green-50 border-green-200"
               }`}
             >
@@ -4061,7 +4061,7 @@ Documento para Tomada de Decisão
                     const bgClass = step.status === "verde" ? "bg-emerald-50 border-emerald-200" :
                       step.status === "dispensado" ? "bg-amber-50 border-amber-200" :
                       step.status === "vermelho" ? "bg-red-50 border-red-200" :
-                      step.status === "pendente" ? "bg-blue-50 border-blue-200" : "bg-slate-50 border-slate-200";
+                      step.status === "pendente" ? "bg-blue-50 border-blue-200" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200";
                     const textClass = step.status === "verde" ? "text-emerald-700" :
                       step.status === "dispensado" ? "text-amber-700" :
                       step.status === "vermelho" ? "text-red-700" :

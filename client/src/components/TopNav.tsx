@@ -15,8 +15,11 @@ import {
   Settings,
   LogOut,
   ShieldAlert,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useOperator } from "@/contexts/OperatorContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import { useDiscountAlerts } from "@/contexts/DiscountAlertContext";
@@ -39,6 +42,7 @@ interface TopNavProps {
 export default function TopNav({ rightContent }: TopNavProps) {
   const [location, setLocation] = useLocation();
   const { operator, hasAccess, logout } = useOperator();
+  const { theme, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
@@ -69,7 +73,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
     return (
       <>
         {/* Compact mobile top header */}
-        <header className="bg-white border-b border-slate-200/80 sticky top-0 z-50">
+        <header className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-700/80 sticky top-0 z-50">
           <div className="px-3 py-0">
             <div className="flex items-center justify-between h-12">
               {/* Logo */}
@@ -83,20 +87,29 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 </div>
               </Link>
 
-              {/* Right: notification + operator + logout */}
+              {/* Right: theme toggle + notification + operator + logout */}
               <div className="flex items-center gap-2">
                 {rightContent}
+                {toggleTheme && (
+                  <button
+                    onClick={toggleTheme}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+                  >
+                    {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                  </button>
+                )}
                 {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (
                   <NotificationBell />
                 )}
                 {operator && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-slate-500 font-medium">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                       {operator.name}
                     </span>
                     <button
                       onClick={logout}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                       title="Sair"
                     >
                       <LogOut className="w-3.5 h-3.5" />
@@ -109,7 +122,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
         </header>
 
         {/* Fixed bottom navigation bar */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-around h-14 px-1">
             {navItems.map((item) => {
               const active = isActive(item.href);
@@ -157,7 +170,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
             })}
           </div>
           {/* Safe area for iPhones with home indicator */}
-          <div className="h-[env(safe-area-inset-bottom,0px)] bg-white" />
+          <div className="h-[env(safe-area-inset-bottom,0px)] bg-white dark:bg-slate-900" />
         </nav>
       </>
     );
@@ -165,7 +178,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
 
   // Desktop: original top navigation
   return (
-    <header className="bg-white border-b border-slate-200/80 sticky top-0 z-50">
+    <header className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-700/80 sticky top-0 z-50">
       <div className="container py-0">
         <div className="flex items-center justify-between h-16">
           {/* Logo / Brand */}
@@ -232,20 +245,29 @@ export default function TopNav({ rightContent }: TopNavProps) {
             })}
           </nav>
 
-          {/* Right content: notification bell + operator info + logout */}
+          {/* Right content: theme toggle + notification bell + operator info + logout */}
           <div className="flex items-center gap-3">
             {rightContent}
+            {toggleTheme && (
+              <button
+                onClick={toggleTheme}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+              >
+                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+            )}
             {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (
               <NotificationBell />
             )}
             {operator && (
               <div className="flex items-center gap-2 ml-2">
-                <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
                   {operator.name}
                 </span>
                 <button
                   onClick={logout}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                   title="Sair"
                 >
                   <LogOut className="w-4 h-4" />

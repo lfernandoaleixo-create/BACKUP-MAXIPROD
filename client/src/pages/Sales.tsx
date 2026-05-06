@@ -182,7 +182,7 @@ function KPICard({ label, value, sub, icon: Icon, theme }: {
 }) {
   const s = kpiStyles[theme];
   return (
-    <div className="group relative bg-white rounded-xl border border-slate-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+    <div className="group relative bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
       <div className={`h-1 ${s.bar}`} />
       <div className="px-4 py-3.5">
         <div className="flex items-start justify-between mb-2">
@@ -208,7 +208,7 @@ function KPICardWithBreakdown({ label, value, sub, icon: Icon, theme, segments }
 }) {
   const s = kpiStyles[theme];
   return (
-    <div className="group relative bg-white rounded-xl border border-slate-100 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+    <div className="group relative bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
       <div className={`h-1 ${s.bar}`} />
       <div className="px-4 py-3.5">
         <div className="flex items-start justify-between mb-2">
@@ -245,7 +245,7 @@ function SegmentTableBody({ segments, totalValue }: { segments: SegmentRow[]; to
   const [outrosExpanded, setOutrosExpanded] = useState(false);
 
   return (
-    <tbody className="divide-y divide-slate-50">
+    <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
       {segments.map((seg) => {
         const pctTotal = totalValue > 0 ? ((seg.value / totalValue) * 100) : 0;
         const segColor = seg.name.includes("Revenda") ? "bg-teal-500" : seg.name.includes("Industrializado") ? "bg-violet-500" : seg.name.includes("Matéria") ? "bg-blue-500" : "bg-slate-400";
@@ -801,7 +801,7 @@ function DailyChart({ data, mode, period, comparison }: {
             className="absolute bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50 pointer-events-none"
             style={{ left: `${tooltipLeft}px`, top: `${tooltipTop}px`, minWidth: "240px", maxWidth: "300px" }}
           >
-            <div className="flex items-center justify-between mb-2 border-b border-slate-100 pb-2">
+            <div className="flex items-center justify-between mb-2 border-b border-slate-100 dark:border-slate-700 pb-2">
               <span className="text-xs font-bold text-slate-700">Dia {dayNum} ({formatWeekday(hoveredDay)})</span>
               <span className="text-xs font-bold text-teal-600">{formatCurrencyFull(hoveredItem.value)}</span>
             </div>
@@ -1113,7 +1113,7 @@ function ClientRanking({ data }: { data: Array<{ name: string; value: number; or
   return (
     <div>
       {/* Filters */}
-      <div className="p-4 border-b border-slate-100 space-y-3">
+      <div className="p-4 border-b border-slate-100 dark:border-slate-700 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
             Ranking de Clientes
@@ -1160,7 +1160,7 @@ function ClientRanking({ data }: { data: Array<{ name: string; value: number; or
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
             <tr>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase w-10">#</th>
               <SortHeader field="name">Cliente</SortHeader>
@@ -1171,7 +1171,7 @@ function ClientRanking({ data }: { data: Array<{ name: string; value: number; or
               <th className="px-3 py-2.5 text-right text-xs font-semibold text-slate-500 uppercase">% Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {filtered.map((client, idx) => (
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className="px-3 py-2 text-xs text-slate-400 font-mono">{idx + 1}</td>
@@ -1255,7 +1255,7 @@ function ProductRanking({ data }: { data: Array<{ name: string; value: number; q
   return (
     <div>
       {/* Filters */}
-      <div className="p-4 border-b border-slate-100 space-y-3">
+      <div className="p-4 border-b border-slate-100 dark:border-slate-700 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
             Ranking de Produtos
@@ -1278,7 +1278,7 @@ function ProductRanking({ data }: { data: Array<{ name: string; value: number; q
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
             <tr>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase w-10">#</th>
               <SortHeader field="name">Produto</SortHeader>
@@ -1288,7 +1288,7 @@ function ProductRanking({ data }: { data: Array<{ name: string; value: number; q
               <th className="px-3 py-2.5 text-right text-xs font-semibold text-slate-500 uppercase">% Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {filtered.map((product, idx) => (
               <tr key={idx} className="hover:bg-slate-50 transition-colors">
                 <td className="px-3 py-2 text-xs text-slate-400 font-mono">{idx + 1}</td>
@@ -1426,14 +1426,14 @@ function OrderRow({ order }: { order: OrderData }) {
     <div className={`transition-all duration-300 ${
       expanded 
         ? "border-2 border-teal-400 bg-teal-50/40 rounded-xl my-3 mx-2 shadow-xl shadow-teal-200/60 relative z-10 ring-4 ring-teal-200/40" 
-        : "border-b border-slate-100"
+        : "border-b border-slate-100 dark:border-slate-700"
     }`}>
       <div
         onClick={() => setExpanded(!expanded)}
         className={`w-full flex items-center gap-2 px-4 py-3 transition-colors text-left cursor-pointer ${
           expanded 
             ? "bg-gradient-to-r from-teal-100/80 via-teal-50 to-white border-b-2 border-teal-400 py-4 rounded-t-xl" 
-            : "hover:bg-slate-50"
+            : "hover:bg-slate-50 dark:hover:bg-slate-700"
         }`}
         role="button"
         tabIndex={0}
@@ -1590,7 +1590,7 @@ function OrderRow({ order }: { order: OrderData }) {
           )}
 
           {/* Items table */}
-          <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+          <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
             <span className="text-sm font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
               <Package className="w-3.5 h-3.5 text-teal-600" />
               Itens do Pedido ({order.itens.length})
@@ -1796,7 +1796,7 @@ function OrdersCard({ orders, title = "Pedidos", variant = "all" }: { orders: Or
           </div>
 
           {/* Table header */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
             {/* Status */}
             <div className="w-28 flex-shrink-0">
               <SortableHeader field="status" label="Status" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
@@ -1974,7 +1974,7 @@ function PreviousUnbilledCard({ months, orders }: { months: string[]; orders: Pr
         <div className="border-t border-orange-200">
           {/* Filters: month + search */}
           <div className="px-4 py-3 bg-orange-50/30 border-b border-orange-100 flex flex-col sm:flex-row gap-2">
-            <div className="flex gap-1 bg-white rounded-md border border-slate-200 p-0.5 flex-shrink-0 flex-wrap">
+            <div className="flex gap-1 bg-white dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 p-0.5 flex-shrink-0 flex-wrap">
               <button
                 onClick={() => setSelectedMonth("all")}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${selectedMonth === "all" ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
@@ -2007,7 +2007,7 @@ function PreviousUnbilledCard({ months, orders }: { months: string[]; orders: Pr
           </div>
 
           {/* Table header */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
             {/* Status */}
             <div className="w-28 flex-shrink-0">
               <SortableHeader field="status" label="Status" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
@@ -2186,10 +2186,10 @@ function UnifiedUnbilledCard({ months, orders, totalValue }: { months: string[];
           {/* Filters: month tabs + search */}
           <div className="px-4 py-3 bg-orange-50/30 border-b border-orange-100 flex flex-col gap-2">
             {/* Month tabs */}
-            <div className="flex gap-1 bg-white rounded-md border border-slate-200 p-0.5 flex-shrink-0 flex-wrap">
+            <div className="flex gap-1 bg-white dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 p-0.5 flex-shrink-0 flex-wrap">
               <button
                 onClick={() => setSelectedMonth("all")}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${selectedMonth === "all" ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${selectedMonth === "all" ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
               >
                 Todos ({orders.length})
               </button>
@@ -2197,7 +2197,7 @@ function UnifiedUnbilledCard({ months, orders, totalValue }: { months: string[];
                 <button
                   key={m}
                   onClick={() => setSelectedMonth(m)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${selectedMonth === m ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${selectedMonth === m ? "bg-orange-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
                 >
                   {getMonthLabelFull(m)} ({monthCounts[m]?.count || 0}) • {formatCurrencyFull(monthCounts[m]?.value || 0)}
                 </button>
@@ -2222,7 +2222,7 @@ function UnifiedUnbilledCard({ months, orders, totalValue }: { months: string[];
           </div>
 
           {/* Table header */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
             {/* Status */}
             <div className="w-28 flex-shrink-0">
               <SortableHeader field="status" label="Status" currentSort={sortField} currentDir={sortDir} onSort={handleSort} />
@@ -2299,14 +2299,14 @@ function UnifiedOrderRow({ order }: { order: UnifiedOrderData }) {
     <div className={`transition-all duration-300 ${
       expanded 
         ? "border-2 border-orange-400 bg-orange-50/40 rounded-xl my-3 mx-2 shadow-xl shadow-orange-200/60 relative z-10 ring-4 ring-orange-200/40" 
-        : "border-b border-slate-100"
+        : "border-b border-slate-100 dark:border-slate-700"
     }`}>
       <div
         onClick={() => setExpanded(!expanded)}
         className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors text-left cursor-pointer ${
           expanded 
             ? "bg-gradient-to-r from-orange-100/80 via-orange-50 to-white border-b-2 border-orange-400 py-3.5 rounded-t-xl" 
-            : "hover:bg-slate-50"
+            : "hover:bg-slate-50 dark:hover:bg-slate-700"
         }`}
         role="button"
         tabIndex={0}
@@ -2501,7 +2501,7 @@ function UnifiedOrderRow({ order }: { order: UnifiedOrderData }) {
           </div>
 
           {/* Items table */}
-          <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+          <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
             <span className="text-sm font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
               <Package className="w-3.5 h-3.5 text-orange-600" />
               Itens do Pedido ({order.itens.length})
@@ -2574,7 +2574,7 @@ function DraftOrderRow({ order }: { order: DraftOrderData }) {
   const dateStr = order.dataEmissao ? new Date(order.dataEmissao).toLocaleDateString("pt-BR") : "—";
 
   return (
-    <div className="border-b border-slate-100 last:border-b-0">
+    <div className="border-b border-slate-100 dark:border-slate-700 last:border-b-0">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50/50 transition-colors text-left"
@@ -2601,7 +2601,7 @@ function DraftOrderRow({ order }: { order: DraftOrderData }) {
 
       {/* Expanded items */}
       {expanded && (
-        <div className="bg-slate-50 border-t border-slate-100">
+        <div className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100">
           <table className="w-full">
             <thead>
               <tr className="text-xs text-slate-500 uppercase">
@@ -2673,7 +2673,7 @@ function DraftOrdersCard({ orders }: { orders: DraftOrderData[] }) {
       {expanded && (
         <div className="border-t border-dashed border-slate-300">
           {/* Search */}
-          <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100">
+          <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 dark:border-slate-700">
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
@@ -2686,7 +2686,7 @@ function DraftOrdersCard({ orders }: { orders: DraftOrderData[] }) {
           </div>
 
           {/* Table header */}
-          <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+          <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
             <div className="w-4 flex-shrink-0" />
             <div className="w-16 flex-shrink-0">Pedido</div>
             <div className="flex-1">Cliente</div>
@@ -2743,7 +2743,7 @@ function SalesVerifyModal({ card, startDate, endDate, dashboardValue, onClose }:
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
         <div className={`bg-${cfg.color}-50 border-b border-${cfg.color}-200 px-5 py-4 rounded-t-xl flex items-center justify-between`}>
           <div>
             <h3 className={`text-sm font-bold text-${cfg.color}-700`}>Contraprova Maxiprod</h3>
@@ -2985,7 +2985,7 @@ export default function Sales() {
   }, [analytics, pdfExporting, chartExpanded, label, grupo, crmSegmento, comparison, period]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <TopNav />
       {/* Filters bar - hidden, moved below */}
       <div className="hidden">
@@ -3110,7 +3110,7 @@ export default function Sales() {
 
         {/* Sub-abas Vendas */}
         {canSeeFornecedores && (
-          <div className="flex items-center md:justify-center gap-0.5 md:gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center md:justify-center gap-0.5 md:gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-1 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setSalesTab("vendas")}
               className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
@@ -3182,7 +3182,7 @@ export default function Sales() {
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Grupo filter */}
                 <Select value={grupo} onValueChange={handleGrupoChange}>
-                  <SelectTrigger className="w-72 bg-slate-50 border-slate-200 font-medium">
+                  <SelectTrigger className="w-72 bg-slate-50 dark:bg-slate-800/50 border-slate-200 font-medium">
                     <SelectValue placeholder="Grupo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -3205,7 +3205,7 @@ export default function Sales() {
                 {/* Subgrupo filter */}
                 {grupo !== "all" && subgrupoOptions.length > 1 && (
                   <Select value={subgrupo} onValueChange={setSubgrupo}>
-                    <SelectTrigger className="w-48 bg-slate-50 border-slate-200 font-medium">
+                    <SelectTrigger className="w-48 bg-slate-50 dark:bg-slate-800/50 border-slate-200 font-medium">
                       <SelectValue placeholder="Subgrupo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -3220,7 +3220,7 @@ export default function Sales() {
                 {/* CRM Segmento filter */}
                 {(availableFilters?.crmSegmentos || []).length > 0 && (
                   <Select value={crmSegmento} onValueChange={setCrmSegmento}>
-                    <SelectTrigger className="w-48 bg-slate-50 border-slate-200 font-medium">
+                    <SelectTrigger className="w-48 bg-slate-50 dark:bg-slate-800/50 border-slate-200 font-medium">
                       <SelectValue placeholder="Segmento CRM" />
                     </SelectTrigger>
                     <SelectContent>
@@ -3237,7 +3237,7 @@ export default function Sales() {
                   value={period.startsWith("custom:") ? "custom" : period}
                   onValueChange={handlePeriodChange}
                 >
-                  <SelectTrigger className="w-48 bg-slate-50 border-slate-200 font-medium">
+                  <SelectTrigger className="w-48 bg-slate-50 dark:bg-slate-800/50 border-slate-200 font-medium">
                     <SelectValue placeholder="Periodo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -3334,7 +3334,7 @@ export default function Sales() {
             </div>
 
             {/* KPI Principal - Valor Total + Faturado + A Faturar */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
               <div className="h-1.5 bg-gradient-to-r from-teal-400 to-teal-600" />
               <div className="grid grid-cols-1 md:grid-cols-4">
                 {/* Valor Total */}
@@ -3516,13 +3516,13 @@ export default function Sales() {
                     <div className="border border-slate-200 rounded-lg overflow-hidden">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200">
+                          <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
                             <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase">Pedido</th>
                             <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase">Cliente</th>
                             <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-600 uppercase">Valor</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                           {analytics.canceledOrders.map((order: { pedido: string; cliente: string; valor: number; dataEmissao: string; dataCancelamento?: string; representante?: string }, idx: number) => (
                             <tr key={idx} className="hover:bg-red-50/50 transition-colors">
                               <td className="px-4 py-2.5">
@@ -3559,14 +3559,14 @@ export default function Sales() {
               const title = showCrm ? "Detalhamento por CRM" : "Detalhamento por Segmento";
               const colLabel = showCrm ? "Segmento CRM" : "Segmento";
               return segments.length > 0 ? (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-3 bg-slate-50 border-b border-slate-200">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
                   <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{title}</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-slate-100">
+                      <tr className="border-b border-slate-100 dark:border-slate-700">
                         <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{colLabel}</th>
                         <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Valor Total</th>
                         <th className="px-4 py-3 text-right text-xs font-semibold text-emerald-600 uppercase tracking-wider">Faturado</th>

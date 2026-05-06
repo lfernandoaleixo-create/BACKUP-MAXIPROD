@@ -79,10 +79,10 @@ function PasswordGate({ onUnlock }: { onUnlock: (pwd: string) => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <TopNav />
       <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
-      <div className="bg-white rounded-xl border border-slate-200 shadow-lg p-8 w-full max-w-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg p-8 w-full max-w-sm">
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-slate-500" />
@@ -200,8 +200,8 @@ function SalesTargetsPanel({ adminPassword }: { adminPassword: string }) {
   }, [targets]);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-      <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center">
             <Target className="w-5 h-5 text-teal-600" />
@@ -223,7 +223,7 @@ function SalesTargetsPanel({ adminPassword }: { adminPassword: string }) {
 
       {/* Add new target form */}
       {showAdd && (
-        <div className="p-5 bg-teal-50/50 border-b border-slate-100">
+        <div className="p-5 bg-teal-50/50 border-b border-slate-100 dark:border-slate-700">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
             <div>
               <label className="text-xs font-medium text-slate-600 mb-1 block">Mês</label>
@@ -286,10 +286,10 @@ function SalesTargetsPanel({ adminPassword }: { adminPassword: string }) {
           <div className="space-y-4">
             {Object.entries(grouped).map(([month, monthTargets]) => (
               <div key={month} className="border border-slate-100 rounded-lg overflow-hidden">
-                <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
+                <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 dark:border-slate-700">
                   <span className="font-semibold text-sm text-slate-700">{formatMonth(month)}</span>
                 </div>
-                <div className="divide-y divide-slate-50">
+                <div className="divide-y divide-slate-50 dark:divide-slate-700">
                   {monthTargets.map((t) => (
                     <div key={t.id} className="px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
                       <div className="flex items-center gap-3">
@@ -368,8 +368,8 @@ function AlertSettingsPanel({ adminPassword }: { adminPassword: string }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-      <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
         <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
           <Bell className="w-5 h-5 text-amber-600" />
         </div>
@@ -397,7 +397,7 @@ function AlertSettingsPanel({ adminPassword }: { adminPassword: string }) {
                   onClick={() => setStockMinEnabled(!stockMinEnabled)}
                   className={`w-11 h-6 rounded-full transition-colors relative ${stockMinEnabled ? "bg-teal-500" : "bg-slate-200"}`}
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-transform ${stockMinEnabled ? "translate-x-5.5" : "translate-x-0.5"}`} />
+                  <div className={`w-5 h-5 bg-white dark:bg-slate-800 rounded-full shadow-sm absolute top-0.5 transition-transform ${stockMinEnabled ? "translate-x-5.5" : "translate-x-0.5"}`} />
                 </button>
               </div>
               <p className="text-xs text-slate-500 mb-2">Alerta quando um produto tiver estoque disponível abaixo do limite</p>
@@ -425,7 +425,7 @@ function AlertSettingsPanel({ adminPassword }: { adminPassword: string }) {
                   onClick={() => setSalesDailyEnabled(!salesDailyEnabled)}
                   className={`w-11 h-6 rounded-full transition-colors relative ${salesDailyEnabled ? "bg-teal-500" : "bg-slate-200"}`}
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-transform ${salesDailyEnabled ? "translate-x-5.5" : "translate-x-0.5"}`} />
+                  <div className={`w-5 h-5 bg-white dark:bg-slate-800 rounded-full shadow-sm absolute top-0.5 transition-transform ${salesDailyEnabled ? "translate-x-5.5" : "translate-x-0.5"}`} />
                 </button>
               </div>
               <p className="text-xs text-slate-500 mb-2">Alerta quando as vendas do dia ficarem abaixo do valor esperado</p>
@@ -467,8 +467,8 @@ function FeatureTogglesPanel() {
   const utils = trpc.useUtils();
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-      <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
         <div className="w-10 h-10 bg-cyan-50 rounded-lg flex items-center justify-center">
           <Eye className="w-5 h-5 text-cyan-600" />
         </div>
@@ -511,7 +511,7 @@ function FeatureToggleRow({ featureKey, label, description, utils }: { featureKe
             enabled ? "bg-teal-500" : "bg-slate-200"
           } ${(isLoading || toggleMutation.isPending) ? "opacity-50" : ""}`}
         >
-          <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-transform ${
+          <div className={`w-5 h-5 bg-white dark:bg-slate-800 rounded-full shadow-sm absolute top-0.5 transition-transform ${
             enabled ? "translate-x-5.5" : "translate-x-0.5"
           }`} />
         </button>
@@ -707,15 +707,15 @@ function OperatorManagementPanel() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-10 flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-      <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
             <Lock className="w-5 h-5 text-red-500" />
@@ -730,7 +730,7 @@ function OperatorManagementPanel() {
 
       <div className="overflow-x-auto">
         <table className="w-full table-fixed" style={{ minWidth: "800px" }}>
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
             <tr>
               <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" style={{ width: "120px" }}>Operador</th>
               <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" style={{ width: "130px" }}>Senha</th>
@@ -746,7 +746,7 @@ function OperatorManagementPanel() {
               <th className="px-1 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider" style={{ width: "50px" }}>Ação</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {operatorList?.map((op) => {
               const isEditing = editingPasswords[op.id] !== undefined;
               const displayPwd = isEditing ? editingPasswords[op.id] : op.password;
@@ -944,8 +944,8 @@ function DataInfoPanel() {
   const stockCount = dashData?.items?.length || 0;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-      <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center gap-3">
         <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
           <Package className="w-5 h-5 text-blue-600" />
         </div>
@@ -1292,8 +1292,8 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
   }).length;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-      <div className="p-5 border-b border-slate-100">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-violet-50 rounded-lg flex items-center justify-center">
@@ -1438,7 +1438,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
           </div>
         ) : (
           <table className="w-full" style={{ minWidth: "1400px" }}>
-            <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 sticky top-0 z-10">
               <tr>
                 <th className="px-2 py-2.5 text-center text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "50px" }}>Vis.</th>
                 <th className="px-2 py-2.5 text-left text-[10px] font-semibold text-slate-500 uppercase" style={{ width: "70px" }}>Cód</th>
@@ -1473,7 +1473,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
               {filtered.map((product) => {
                 const pricing = pricingMap.get(product.codigoItem || "");
                 const isManual = pricing?.mode === "manual";
@@ -1816,8 +1816,8 @@ function BankBalancesPanel() {
   const accounts = data?.accounts || [];
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-      <div className="p-5 border-b border-slate-100">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
@@ -1874,7 +1874,7 @@ function BankBalancesPanel() {
             <p className="text-xs mt-1">Clique em "Atualizar Saldos" para buscar do Maxiprod</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {accounts.map((acc: any) => (
               <div key={acc.maxiprodId} className="flex items-center justify-between py-3 px-3 hover:bg-slate-50 transition-colors">
                 <div className="flex flex-col">
@@ -1970,7 +1970,7 @@ function VariantsPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
@@ -2075,11 +2075,11 @@ function VariantsPanel() {
                     </div>
                     <Badge variant="outline" className="text-xs text-teal-600">{children.length} variaç{children.length > 1 ? 'ões' : 'ão'}</Badge>
                   </div>
-                  <div className="divide-y divide-slate-100">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700">
                     {children.map((child) => {
                       const childInfo = productMap.get(child.childCode);
                       return (
-                        <div key={child.childCode} className="px-4 py-2 flex items-center gap-3 hover:bg-slate-50">
+                        <div key={child.childCode} className="px-4 py-2 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700">
                           <span className="text-slate-300 text-sm">└</span>
                           <div className="flex-1">
                             <span className="text-sm text-slate-700">{child.childCode}</span>
@@ -2277,7 +2277,7 @@ function MadeiraVisibilityPanel() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
             <TreePine className="w-5 h-5 text-green-700" />
@@ -2335,11 +2335,11 @@ function MadeiraVisibilityPanel() {
       </div>
 
       {/* Products table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
+            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
               <th className="text-left px-4 py-3 font-medium text-slate-600">Código</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Descrição</th>
               <th className="text-center px-4 py-3 font-medium text-emerald-600">
@@ -2373,7 +2373,7 @@ function MadeiraVisibilityPanel() {
               filtered.map((item: any, idx: number) => {
                 const vis = getVisibility(item.codigoItem);
                 return (
-                  <tr key={item.codigoItem || idx} className={`border-b border-slate-100 hover:bg-slate-50 ${idx % 2 === 0 ? "bg-white" : "bg-slate-25"}`}>
+                  <tr key={item.codigoItem || idx} className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 ${idx % 2 === 0 ? "bg-white" : "bg-slate-25"}`}>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{item.codigoItem}</td>
                     <td className="px-4 py-2.5 text-slate-700 text-xs">{item.descricaoItem}</td>
                     <td className="px-4 py-2.5 text-center">
@@ -2473,7 +2473,7 @@ export default function SettingsPage() {
     : allTabs.filter(t => t.id === "madeira" && hasGranularAccess(t.perm));
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <TopNav />
 
       <div className="container">
