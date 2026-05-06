@@ -1107,47 +1107,45 @@ function ExpandedDetails({
         </div>
 
         {/* Legend + expandable details */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            {/* Vendas/Revenda */}
-            <div
-              className="flex items-center gap-2 cursor-pointer hover:bg-amber-50 rounded-md px-2 py-1 -mx-2 transition-colors"
-              onClick={() => setShowReceivedDetail(!showReceivedDetail)}
-            >
-              <div className="w-3 h-3 rounded-sm bg-amber-500" />
-              <span className="text-xs text-slate-600 font-medium">Vendas/Revenda</span>
-              <span className="text-xs font-bold text-amber-700">{formatCurrency(recebimentos)}</span>
-              <span className="text-[10px] text-slate-400">({receivedData?.recebimentos?.count ?? 0})</span>
-              {showReceivedDetail ? (
-                <ChevronUp className="w-3.5 h-3.5 text-amber-600" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5 text-amber-600" />
-              )}
-            </div>
+        <div className="flex flex-col gap-1.5">
+          {/* Vendas/Revenda */}
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:bg-amber-50 rounded-md px-2 py-1.5 transition-colors"
+            onClick={() => setShowReceivedDetail(!showReceivedDetail)}
+          >
+            <div className="w-3 h-3 rounded-sm bg-amber-500 shrink-0" />
+            <span className="text-xs text-slate-600 font-medium whitespace-nowrap">Vendas/Revenda</span>
+            <span className="text-xs font-bold text-amber-700 ml-auto whitespace-nowrap">{formatCurrency(recebimentos)}</span>
+            <span className="text-[10px] text-slate-400">({receivedData?.recebimentos?.count ?? 0})</span>
+            {showReceivedDetail ? (
+              <ChevronUp className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            )}
+          </div>
 
-            {/* Demais Receitas */}
-            <div
-              className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 rounded-md px-2 py-1 -mx-2 transition-colors"
-              onClick={() => setShowOtherInflowsDetail(!showOtherInflowsDetail)}
-            >
-              <div className="w-3 h-3 rounded-sm bg-slate-400" />
-              <span className="text-xs text-slate-600 font-medium">Demais Receitas</span>
-              <span className="text-xs font-bold text-slate-600">{formatCurrency(outrasEntradas)}</span>
-              <span className="text-[10px] text-slate-400">({otherInflowsData?.outrasEntradas?.count ?? 0})</span>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="w-2.5 h-2.5 text-slate-400" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs text-xs">
-                  Receitas que não são de venda/revenda: empréstimos, rendimentos, reembolsos e outras receitas operacionais.
-                </TooltipContent>
-              </Tooltip>
-              {showOtherInflowsDetail ? (
-                <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-              )}
-            </div>
+          {/* Demais Receitas */}
+          <div
+            className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 rounded-md px-2 py-1.5 transition-colors"
+            onClick={() => setShowOtherInflowsDetail(!showOtherInflowsDetail)}
+          >
+            <div className="w-3 h-3 rounded-sm bg-slate-400 shrink-0" />
+            <span className="text-xs text-slate-600 font-medium whitespace-nowrap">Demais Receitas</span>
+            <span className="text-xs font-bold text-slate-600 ml-auto whitespace-nowrap">{formatCurrency(outrasEntradas)}</span>
+            <span className="text-[10px] text-slate-400">({otherInflowsData?.outrasEntradas?.count ?? 0})</span>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-xs">
+                Receitas que não são de venda/revenda: empréstimos, rendimentos, reembolsos e outras receitas operacionais.
+              </TooltipContent>
+            </Tooltip>
+            {showOtherInflowsDetail ? (
+              <ChevronUp className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            )}
           </div>
         </div>
 
@@ -1166,19 +1164,19 @@ function ExpandedDetails({
           className="flex items-center justify-between cursor-pointer hover:bg-slate-50 rounded-md px-1.5 py-1 -mx-1.5 transition-colors"
           onClick={() => setShowBillingDetail(!showBillingDetail)}
         >
-          <div className="flex items-center gap-2.5">
-            <Receipt className="w-5 h-5 text-emerald-500" />
-            <span className="text-base font-medium text-slate-600">Faturado (NFs emitidas)</span>
-            <span className="text-[11px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Receipt className="w-5 h-5 text-emerald-500 shrink-0" />
+            <span className="text-sm sm:text-base font-medium text-slate-600 truncate">Faturado (NFs)</span>
+            <span className="text-[10px] sm:text-[11px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
               {billingData?.faturamento?.count ?? 0} NFs
             </span>
-            <button className="text-[11px] text-teal-600 hover:text-teal-700 flex items-center gap-0.5">
-              <List className="w-3.5 h-3.5" />
+            <button className="text-[10px] sm:text-[11px] text-teal-600 hover:text-teal-700 flex items-center gap-0.5 whitespace-nowrap shrink-0">
+              <List className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               {showBillingDetail ? "Ocultar" : "Ver itens"}
             </button>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-emerald-700">{formatCurrency(faturamento)}</span>
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            <span className="text-sm sm:text-base font-bold text-emerald-700 whitespace-nowrap">{formatCurrency(faturamento)}</span>
             {showBillingDetail ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
           </div>
         </div>
@@ -1199,19 +1197,19 @@ function ExpandedDetails({
           className="flex items-center justify-between cursor-pointer hover:bg-slate-50 rounded-md px-1.5 py-1 -mx-1.5 transition-colors"
           onClick={() => setShowSalesDetail(!showSalesDetail)}
         >
-          <div className="flex items-center gap-2.5">
-            <ShoppingCart className="w-5 h-5 text-blue-500" />
-            <span className="text-base font-medium text-slate-600">Vendas (Pedidos)</span>
-            <span className="text-[11px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <ShoppingCart className="w-5 h-5 text-blue-500 shrink-0" />
+            <span className="text-sm sm:text-base font-medium text-slate-600 truncate">Vendas (Pedidos)</span>
+            <span className="text-[10px] sm:text-[11px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
               {salesData?.vendas?.pedidos ?? 0} pedidos
             </span>
-            <button className="text-[11px] text-teal-600 hover:text-teal-700 flex items-center gap-0.5">
-              <List className="w-3.5 h-3.5" />
+            <button className="text-[10px] sm:text-[11px] text-teal-600 hover:text-teal-700 flex items-center gap-0.5 whitespace-nowrap shrink-0">
+              <List className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               {showSalesDetail ? "Ocultar" : "Ver itens"}
             </button>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-blue-700">{formatCurrency(vendas)}</span>
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            <span className="text-sm sm:text-base font-bold text-blue-700 whitespace-nowrap">{formatCurrency(vendas)}</span>
             {showSalesDetail ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
           </div>
         </div>
@@ -1232,10 +1230,10 @@ function ExpandedDetails({
           className="flex items-center justify-between cursor-pointer hover:bg-slate-50 rounded-md px-1.5 py-1 -mx-1.5 transition-colors"
           onClick={() => setShowPaidDetail(!showPaidDetail)}
         >
-          <div className="flex items-center gap-2.5">
-            <CreditCard className="w-5 h-5 text-red-500" />
-            <span className="text-base font-medium text-slate-600">Contas Pagas</span>
-            <span className="text-[11px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+          <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
+            <CreditCard className="w-5 h-5 text-red-500 shrink-0" />
+            <span className="text-sm sm:text-base font-medium text-slate-600 whitespace-nowrap">Contas Pagas</span>
+            <span className="text-[10px] sm:text-[11px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
               {paidInfo?.count ?? 0} contas
             </span>
             {(billingData?.contasPagar?.excludedCount ?? 0) > 0 && (
@@ -1282,8 +1280,8 @@ function ExpandedDetails({
               </button>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-red-600">{formatCurrency(contasPagas)}</span>
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            <span className="text-sm sm:text-base font-bold text-red-600 whitespace-nowrap">{formatCurrency(contasPagas)}</span>
             {!hasNoPaidData && !isFromCache && (
               showPaidDetail ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />
             )}
@@ -1351,34 +1349,34 @@ function ExpandedDetails({
         </div>
 
         {/* Grid 2 colunas: Fat. vs Pago + Vendas vs Pago */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Faturamento vs Pago */}
           <div className={`rounded-lg overflow-hidden shadow-sm border ${
             faturamento - contasPagas >= 0 ? "border-emerald-200" : "border-red-200/60"
           }`}>
-            <div className={`px-3.5 py-2.5 ${
+            <div className={`px-3 py-2.5 ${
               faturamento - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gradient-to-r from-red-700/75 to-red-600/70"
             }`}>
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
                   <p className="text-white font-semibold text-sm">Faturamento vs Pago</p>
-                  <p className="text-white/80 text-[11px] mt-0.5">
+                  <p className="text-white/80 text-[10px] sm:text-[11px] mt-0.5 leading-tight">
 {faturamento - contasPagas >= 0
-                       ? "O valor faturado é suficiente para cobrir os pagamentos"
-                       : "O valor faturado é inferior ao total de pagamentos"}
+                       ? "Faturado cobre os pagamentos"
+                       : "Faturado inferior aos pagamentos"}
                   </p>
                 </div>
-                <span className="text-lg font-bold text-white">
+                <span className="text-base sm:text-lg font-bold text-white whitespace-nowrap shrink-0">
                   {faturamento - contasPagas >= 0 ? "+" : ""}{formatCurrency(faturamento - contasPagas)}
                 </span>
               </div>
             </div>
-            <div className={`px-3.5 py-2 text-sm flex items-center justify-between ${
+            <div className={`px-3 py-2 text-xs sm:text-sm flex items-center justify-between ${
               faturamento - contasPagas >= 0 ? "bg-emerald-50" : "bg-red-50/40"
             }`}>
-              <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrency(faturamento)}</span> faturamento</span>
+              <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrency(faturamento)}</span></span>
               <span className="text-slate-400">vs</span>
-              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrency(contasPagas)}</span> pago</span>
+              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrency(contasPagas)}</span></span>
             </div>
           </div>
 
@@ -1386,29 +1384,29 @@ function ExpandedDetails({
           <div className={`rounded-lg overflow-hidden shadow-sm border ${
             vendas - contasPagas >= 0 ? "border-emerald-200" : "border-red-200/60"
           }`}>
-            <div className={`px-3.5 py-2.5 ${
+            <div className={`px-3 py-2.5 ${
               vendas - contasPagas >= 0 ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-gradient-to-r from-red-700/75 to-red-600/70"
             }`}>
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
                   <p className="text-white font-semibold text-sm">Vendas vs Pago</p>
-                  <p className="text-white/80 text-[11px] mt-0.5">
+                  <p className="text-white/80 text-[10px] sm:text-[11px] mt-0.5 leading-tight">
 {vendas - contasPagas >= 0
-                       ? "O volume de vendas é suficiente para cobrir os pagamentos"
-                       : "O volume de vendas é inferior ao total de pagamentos"}
+                       ? "Vendas cobrem os pagamentos"
+                       : "Vendas inferiores aos pagamentos"}
                   </p>
                 </div>
-                <span className="text-lg font-bold text-white">
+                <span className="text-base sm:text-lg font-bold text-white whitespace-nowrap shrink-0">
                   {vendas - contasPagas >= 0 ? "+" : ""}{formatCurrency(vendas - contasPagas)}
                 </span>
               </div>
             </div>
-            <div className={`px-3.5 py-2 text-sm flex items-center justify-between ${
+            <div className={`px-3 py-2 text-xs sm:text-sm flex items-center justify-between ${
               vendas - contasPagas >= 0 ? "bg-emerald-50" : "bg-red-50/40"
             }`}>
-              <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrency(vendas)}</span> vendas</span>
+              <span className="text-slate-500"><span className="font-semibold text-emerald-700">{formatCurrency(vendas)}</span></span>
               <span className="text-slate-400">vs</span>
-              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrency(contasPagas)}</span> pago</span>
+              <span className="text-slate-500"><span className="font-semibold text-amber-700">{formatCurrency(contasPagas)}</span></span>
             </div>
           </div>
         </div>

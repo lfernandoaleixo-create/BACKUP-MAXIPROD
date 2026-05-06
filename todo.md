@@ -3452,3 +3452,8 @@
 - [x] PDF Vendas: cards semanais desconfigurados - reescrito computeWeeklySummaries para gerar todas as semanas do mês
 - [x] PDF Vendas: Semana 1 vazia - corrigido: total agora inclui vendas de dias não úteis + exibe "+R$ 6K em 1 dia nao util"
 - [x] Flow Pack rounding: valores individuais ficam quebrados (como Maria lançou), somatório total usa Math.floor, relatório/histórico sempre mostra inteiros arredondados (sem decimais)
+- [x] Mobile: Madeira Semi Pronto / Aguardando Escolha cards - título e "X itens" badge quebrando linha, desalinhados (deve ficar igual Madeira Produto Acabado)
+- [x] Mobile: Financeiro Entradas card - texto "Vendas/Revenda" sobreposto ao valor R$
+- [x] Mobile: Financeiro cards (Faturado/Vendas/Contas Pagas) - "Ver itens" e contadores com quebra de texto
+- [x] Mobile: Financeiro cards comparação (Faturamento vs Pago / Vendas vs Pago) - valores cortados
+- [x] Mobile: Estoque tabela - colunas sobrepostas (DISPONÍVEL, ESTOQUE, P/VENDA, PROJETADO, etc.)

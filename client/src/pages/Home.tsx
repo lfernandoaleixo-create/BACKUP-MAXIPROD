@@ -765,8 +765,8 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
-      <div className="max-h-[60vh] overflow-auto relative">
-        <table className={`${showFinancial ? 'w-full min-w-[1100px]' : 'w-full min-w-[700px]'}`} style={!showFinancial ? { tableLayout: 'fixed', ...(showSalesColumns ? { width: 1500 } : {}) } : undefined}>
+      <div className="max-h-[60vh] overflow-auto relative scrollbar-hide">
+        <table className={`${showFinancial ? 'w-full min-w-[1100px]' : 'w-full min-w-[800px]'}`} style={!showFinancial ? { tableLayout: 'fixed', ...(showSalesColumns ? { width: 1500 } : {}) } : undefined}>
           <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 shadow-sm">
             <tr>
               {showFinancial ? (
@@ -3594,16 +3594,16 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
 
       <div onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-              <Hammer className="w-6 h-6 text-amber-700" />
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+              <Hammer className="w-5 h-5 md:w-6 md:h-6 text-amber-700" />
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold text-slate-800">Madeira Semi Pronto</h3>
-                <span className="text-sm font-extrabold text-blue-700 bg-blue-100 border border-blue-300 px-3 py-1 rounded-full">{parentItems.length} itens</span>
+              <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                <h3 className="text-sm md:text-lg font-bold text-slate-800">Madeira Semi Pronto</h3>
+                <span className="text-[10px] md:text-sm font-extrabold text-blue-700 bg-blue-100 border border-blue-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{parentItems.length} itens</span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - estoque</p>
+              <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">{parentItems.length} produtos industrializados de madeira - estoque</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -3836,16 +3836,16 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
 
       <div onClick={onToggle} className="w-full px-5 py-4 text-left hover:bg-slate-50/50 transition-colors cursor-pointer" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-              <Clock className="w-6 h-6 text-purple-700" />
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 md:w-6 md:h-6 text-purple-700" />
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold text-slate-800">Madeira Aguardando Escolha</h3>
-                <span className="text-sm font-extrabold text-amber-700 bg-amber-100 border border-amber-300 px-3 py-1 rounded-full">{parentItems.length} itens</span>
+              <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                <h3 className="text-sm md:text-lg font-bold text-slate-800">Madeira Aguardando Escolha</h3>
+                <span className="text-[10px] md:text-sm font-extrabold text-amber-700 bg-amber-100 border border-amber-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{parentItems.length} itens</span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">{parentItems.length} produtos industrializados de madeira - aguardando escolha</p>
+              <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">{parentItems.length} produtos industrializados de madeira - aguardando escolha</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
