@@ -264,13 +264,16 @@ export default function MetricaVendasTab() {
               <div className="divide-y divide-slate-50 max-h-[500px] overflow-y-auto">
                 {vendedorDetail.map((c) => (
                   <div key={c.cliente} className="flex items-center justify-between p-4">
-                    <div>
+                    <div className="min-w-0 flex-1 mr-3">
                       <p className="font-medium text-slate-800">{c.cliente}</p>
+                      {selectedVendedor === "Grupo Fox" && c.vendedoresReais && c.vendedoresReais.length > 0 && (
+                        <p className="text-[11px] text-slate-400 italic">Vendido por: {c.vendedoresReais.join(", ")}</p>
+                      )}
                       <p className="text-xs text-slate-500">
                         {c.qtdPedidos} pedido{c.qtdPedidos > 1 ? "s" : ""} • Último: {formatDate(c.ultimoPedido)}
                       </p>
                     </div>
-                    <p className="font-semibold text-slate-700">{formatCurrency(c.totalVendas)}</p>
+                    <p className="font-semibold text-slate-700 flex-shrink-0">{formatCurrency(c.totalVendas)}</p>
                   </div>
                 ))}
               </div>

@@ -364,6 +364,7 @@ export const salesMetricsRouter = router({
         clienteApelido: salesOrders.clienteApelido,
         razaoSocial: salesOrders.razaoSocial,
         representante: salesOrders.representante,
+        vendedorReal: salesOrders.vendedorReal,
         valorTotalPedido: salesOrders.valorTotalPedido,
         valorTotal: salesOrders.valorTotal,
         estadoNota: salesOrders.estadoNota,
@@ -395,12 +396,13 @@ export const salesMetricsRouter = router({
       const vendedorMap = await fetchVendedorMap();
 
       // Group by pedido using same logic as Vendas tab, filter for this vendedor
-      const pedidoMap = new Map<string, { cliente: string; vendedor: string; valorTotalPedido: number; somaItens: number; data: string }>();
+      const pedidoMap = new Map<string, { cliente: string; vendedor: string; vendedorReal: string; valorTotalPedido: number; somaItens: number; data: string }>();
       for (const o of filtered) {
         const pedido = o.pedido || `item-${Math.random()}`;
         if (!pedidoMap.has(pedido)) {
           const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
           let vendedor = o.representante || "";
+          const vendedorRealValue = o.vendedorReal || o.representante || "";
           if (!vendedor || isEditorNaoVendedor(vendedor)) {
             vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
           }
@@ -410,6 +412,7 @@ export const salesMetricsRouter = router({
           pedidoMap.set(pedido, {
             cliente: clienteName,
             vendedor,
+            vendedorReal: vendedorRealValue,
             valorTotalPedido: o.valorTotalPedido ? Number(o.valorTotalPedido) : 0,
             somaItens: Number(o.valorTotal || 0),
             data: o.dataEmissao || "",
@@ -424,17 +427,21 @@ export const salesMetricsRouter = router({
       }
 
       // Filter for this vendedor and group by client
-      const clienteMap: Record<string, { totalVendas: number; pedidos: number; ultimoPedido: string }> = {};
+      const clienteMap: Record<string, { totalVendas: number; pedidos: number; ultimoPedido: string; vendedoresReais: Set<string> }> = {};
       for (const [_, data] of Array.from(pedidoMap.entries())) {
         if (data.vendedor.toUpperCase() !== input.vendedor.toUpperCase()) continue;
         const valor = data.valorTotalPedido || data.somaItens;
         if (!clienteMap[data.cliente]) {
-          clienteMap[data.cliente] = { totalVendas: 0, pedidos: 0, ultimoPedido: "" };
+          clienteMap[data.cliente] = { totalVendas: 0, pedidos: 0, ultimoPedido: "", vendedoresReais: new Set() };
         }
         clienteMap[data.cliente].totalVendas += valor;
         clienteMap[data.cliente].pedidos += 1;
         if (data.data > clienteMap[data.cliente].ultimoPedido) {
           clienteMap[data.cliente].ultimoPedido = data.data;
+        }
+        // Track real seller per client (for Grupo Fox)
+        if (data.vendedorReal && !isEditorNaoVendedor(data.vendedorReal)) {
+          clienteMap[data.cliente].vendedoresReais.add(data.vendedorReal);
         }
       }
 
@@ -444,6 +451,7 @@ export const salesMetricsRouter = router({
           totalVendas: Math.round(stats.totalVendas * 100) / 100,
           qtdPedidos: stats.pedidos,
           ultimoPedido: stats.ultimoPedido,
+          vendedoresReais: Array.from(stats.vendedoresReais),
         }))
         .sort((a, b) => b.totalVendas - a.totalVendas);
     }),

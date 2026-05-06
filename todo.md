@@ -3463,3 +3463,4 @@
 - [x] Bug: Tooltip/popup do produto cobre dados da tabela Madeira PA ao clicar/hover - remover ou reposicionar
 - [x] Bug: Mobile Madeira PA - nome do produto não aparece na linha (só Cod:), dados cortados
 - [x] Bug: Badge "95" da Inadimplência saindo do card de navegação, tabs selecionadas desproporcionais e desalinhadas
+- [x] Vendas: mostrar nome do vendedor ao lado de cada pedido/cliente quando expandir Grupo Fox no ranking
