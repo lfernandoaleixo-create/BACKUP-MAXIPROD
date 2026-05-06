@@ -3446,3 +3446,4 @@
 - [x] Mobile: Admin tabs (Senhas, Produto, Importação, Alertas, Visibilidade, Bancos, Variações, Dados, Madeira) - texto sobreposto (shrink-0, text-[10px], hidden icons, scroll)
 - [x] Mobile: Financeiro - cards Recebimentos/Pagamentos lado a lado muito apertados (p-1.5 mobile)
 - [x] Mobile: Financeiro - bucket cards (Vencidas, Semanal) empilhados verticalmente no mobile (grid-cols-1 md:grid-cols-2)
+- [x] Mobile: VLR ESTOQUE card cortado na versão mobile (whitespace-nowrap, text-[11px], grid-cols-3 compacto, Custo Est. Regulador empilhado)

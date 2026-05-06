@@ -2233,20 +2233,20 @@ function ClassificationCard({
 
         {/* Mobile financial summary */}
         {showFinancial && !isOpen && (
-          <div className="grid sm:hidden grid-cols-3 gap-2 mt-2 ml-16">
-            <div className="text-center bg-green-50 border border-green-200 rounded px-2 py-1">
-              <p className="text-[9px] text-green-700 font-semibold">Vlr Estoque</p>
-              <p className="text-xs font-bold text-green-800">{formatCurrencyCompact(valuation.valorEstoque)}</p>
+          <div className="grid sm:hidden grid-cols-3 gap-1 mt-2 ml-12">
+            <div className="text-center bg-green-50 border border-green-200 rounded px-1 py-1">
+              <p className="text-[8px] text-green-700 font-semibold whitespace-nowrap">Vlr Estoque</p>
+              <p className="text-[10px] font-bold text-green-800 whitespace-nowrap">{formatCurrencyCompact(valuation.valorEstoque)}</p>
             </div>
-            <div className="text-center bg-blue-50 border border-blue-200 rounded px-2 py-1">
-              <p className="text-[9px] text-blue-700 font-semibold">Vlr PO</p>
-              <p className="text-xs font-bold text-blue-800">{formatCurrencyCompact(valuation.valorPO)}</p>
+            <div className="text-center bg-blue-50 border border-blue-200 rounded px-1 py-1">
+              <p className="text-[8px] text-blue-700 font-semibold whitespace-nowrap">Vlr PO</p>
+              <p className="text-[10px] font-bold text-blue-800 whitespace-nowrap">{formatCurrencyCompact(valuation.valorPO)}</p>
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="text-center bg-indigo-50 border border-indigo-200 rounded px-2 py-1 cursor-help">
-                  <p className="text-[9px] text-indigo-700 font-semibold">Vlr Projetado</p>
-                  <p className="text-xs font-bold text-indigo-800">{formatCurrencyCompact(valuation.valorProjetado)}</p>
+                <div className="text-center bg-indigo-50 border border-indigo-200 rounded px-1 py-1 cursor-help">
+                  <p className="text-[8px] text-indigo-700 font-semibold whitespace-nowrap">Vlr Projetado</p>
+                  <p className="text-[10px] font-bold text-indigo-800 whitespace-nowrap">{formatCurrencyCompact(valuation.valorProjetado)}</p>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
@@ -2478,16 +2478,16 @@ function MadeiraValorizacaoCard({
             <p className="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
             <span className="text-[10px] text-slate-400 ml-auto">{valuation.comPreco}/{valuation.totalItens} com preço</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 md:gap-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg px-2 md:px-4 py-2">
-              <p className="text-[9px] md:text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
-              <p className="text-sm md:text-lg font-extrabold text-green-800">{formatCurrency(valuation.valorEstoque)}</p>
+          <div className="grid grid-cols-2 gap-1.5 md:gap-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg px-1.5 md:px-4 py-1.5 md:py-2">
+              <p className="text-[8px] md:text-[10px] text-green-700 font-semibold uppercase tracking-wider whitespace-nowrap">Vlr Estoque</p>
+              <p className="text-[11px] md:text-lg font-extrabold text-green-800 whitespace-nowrap">{formatCurrency(valuation.valorEstoque)}</p>
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-2 md:px-4 py-2 cursor-help">
-                  <p className="text-[9px] md:text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
-                  <p className="text-sm md:text-lg font-extrabold text-indigo-800">{formatCurrency(valuation.valorProjetado)}</p>
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-1.5 md:px-4 py-1.5 md:py-2 cursor-help">
+                  <p className="text-[8px] md:text-[10px] text-indigo-700 font-semibold uppercase tracking-wider whitespace-nowrap">Vlr Projetado</p>
+                  <p className="text-[11px] md:text-lg font-extrabold text-indigo-800 whitespace-nowrap">{formatCurrency(valuation.valorProjetado)}</p>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
@@ -2497,15 +2497,15 @@ function MadeiraValorizacaoCard({
             </Tooltip>
           </div>
           {custoEstRegMadeira && custoEstRegMadeira.total > 0 && (
-            <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5">
-              <div className="flex items-center justify-between">
+            <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-2 md:px-4 py-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                 <div>
-                  <p className="text-[10px] text-purple-700 font-semibold uppercase tracking-wider flex items-center gap-1">
-                    <Package className="w-3 h-3" />Custo do Estoque Regulador
+                  <p className="text-[9px] md:text-[10px] text-purple-700 font-semibold uppercase tracking-wider flex items-center gap-1">
+                    <Package className="w-3 h-3" />Custo Est. Regulador
                   </p>
-                  <p className="text-[9px] text-purple-500 mt-0.5">Valor para manter estoque regulador ({custoEstRegMadeira.itensComCalculo} itens)</p>
+                  <p className="text-[8px] md:text-[9px] text-purple-500 mt-0.5">({custoEstRegMadeira.itensComCalculo} itens)</p>
                 </div>
-                <p className="text-lg font-extrabold text-purple-800">{formatCurrency(custoEstRegMadeira.total)}</p>
+                <p className="text-sm md:text-lg font-extrabold text-purple-800 whitespace-nowrap">{formatCurrency(custoEstRegMadeira.total)}</p>
               </div>
             </div>
           )}
@@ -4497,20 +4497,20 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                   <p className="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Valorização Total do Estoque</p>
                   <span className="text-[10px] text-slate-400 ml-auto">{globalValuation.comPreco}/{parentOnlyItems.length} com preço</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-4">
-                  <div className="bg-green-50 border border-green-200 rounded-lg px-2 md:px-4 py-2">
-                    <p className="text-[9px] md:text-[10px] text-green-700 font-semibold uppercase tracking-wider">Vlr Estoque</p>
-                    <p className="text-sm md:text-lg font-extrabold text-green-800">{formatCurrency(globalValuation.valorEstoque)}</p>
+                <div className="grid grid-cols-3 gap-1.5 md:gap-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg px-1.5 md:px-4 py-1.5 md:py-2">
+                    <p className="text-[8px] md:text-[10px] text-green-700 font-semibold uppercase tracking-wider whitespace-nowrap">Vlr Estoque</p>
+                    <p className="text-[11px] md:text-lg font-extrabold text-green-800 whitespace-nowrap">{formatCurrency(globalValuation.valorEstoque)}</p>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-2 md:px-4 py-2">
-                    <p className="text-[9px] md:text-[10px] text-blue-700 font-semibold uppercase tracking-wider">Vlr PO</p>
-                    <p className="text-sm md:text-lg font-extrabold text-blue-800">{formatCurrency(globalValuation.valorPO)}</p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-1.5 md:px-4 py-1.5 md:py-2">
+                    <p className="text-[8px] md:text-[10px] text-blue-700 font-semibold uppercase tracking-wider whitespace-nowrap">Vlr PO</p>
+                    <p className="text-[11px] md:text-lg font-extrabold text-blue-800 whitespace-nowrap">{formatCurrency(globalValuation.valorPO)}</p>
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-2 md:px-4 py-2 cursor-help">
-                        <p className="text-[9px] md:text-[10px] text-indigo-700 font-semibold uppercase tracking-wider">Vlr Projetado</p>
-                        <p className="text-sm md:text-lg font-extrabold text-indigo-800">{formatCurrency(globalValuation.valorProjetado)}</p>
+                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-1.5 md:px-4 py-1.5 md:py-2 cursor-help">
+                        <p className="text-[8px] md:text-[10px] text-indigo-700 font-semibold uppercase tracking-wider whitespace-nowrap">Vlr Projetado</p>
+                        <p className="text-[11px] md:text-lg font-extrabold text-indigo-800 whitespace-nowrap">{formatCurrency(globalValuation.valorProjetado)}</p>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs bg-white border border-indigo-200 shadow-lg text-slate-700 p-3">
@@ -4520,15 +4520,15 @@ function DashboardContent({ items }: { items: StockItem[] }) {
                   </Tooltip>
                 </div>
                 {custoEstRegGlobal && custoEstRegGlobal.total > 0 && (
-                  <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2.5">
-                    <div className="flex items-center justify-between">
+                  <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-2 md:px-4 py-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                       <div>
-                        <p className="text-[10px] text-purple-700 font-semibold uppercase tracking-wider flex items-center gap-1">
-                          <Package className="w-3 h-3" />Custo do Estoque Regulador
+                        <p className="text-[9px] md:text-[10px] text-purple-700 font-semibold uppercase tracking-wider flex items-center gap-1">
+                          <Package className="w-3 h-3" />Custo Est. Regulador
                         </p>
-                        <p className="text-[9px] text-purple-500 mt-0.5">Valor para manter estoque regulador ({custoEstRegGlobal.itensComCalculo} itens)</p>
+                        <p className="text-[8px] md:text-[9px] text-purple-500 mt-0.5">({custoEstRegGlobal.itensComCalculo} itens)</p>
                       </div>
-                      <p className="text-lg font-extrabold text-purple-800">{formatCurrency(custoEstRegGlobal.total)}</p>
+                      <p className="text-sm md:text-lg font-extrabold text-purple-800 whitespace-nowrap">{formatCurrency(custoEstRegGlobal.total)}</p>
                     </div>
                   </div>
                 )}
