@@ -80,7 +80,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
               <Link href="/">
                 <div className="flex items-center cursor-pointer">
                   <img
-                    src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark-centered_19250187.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
+                    src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark-dashbg_cde22bd2.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
                     alt="Grupo Fox"
                     className="h-9 w-auto object-contain"
                   />
@@ -186,7 +186,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
           <Link href="/">
             <div className="flex items-center cursor-pointer group">
               <img
-                src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark-centered_19250187.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
+                src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark-dashbg_cde22bd2.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
                 alt="Grupo Fox"
                 className="h-12 w-auto object-contain group-hover:opacity-80 transition-opacity"
               />
