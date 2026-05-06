@@ -369,6 +369,7 @@ export const salesMetricsRouter = router({
         valorTotal: salesOrders.valorTotal,
         estadoNota: salesOrders.estadoNota,
         estadoConfiguravel: salesOrders.estadoConfiguravel,
+        crmSegmento: salesOrders.crmSegmento,
         dataEmissao: salesOrders.dataEmissao,
       }).from(salesOrders)
         .where(and(
@@ -396,7 +397,7 @@ export const salesMetricsRouter = router({
       const vendedorMap = await fetchVendedorMap();
 
       // Group by pedido using same logic as Vendas tab, filter for this vendedor
-      const pedidoMap = new Map<string, { cliente: string; vendedor: string; vendedorReal: string; valorTotalPedido: number; somaItens: number; data: string }>();
+      const pedidoMap = new Map<string, { cliente: string; vendedor: string; vendedorReal: string; valorTotalPedido: number; somaItens: number; data: string; estadosConfiguraveis: Set<string>; segmentos: Set<string> }>();
       for (const o of filtered) {
         const pedido = o.pedido || `item-${Math.random()}`;
         if (!pedidoMap.has(pedido)) {
@@ -409,6 +410,11 @@ export const salesMetricsRouter = router({
           if (isClienteGrupoFox(clienteName)) vendedor = "Grupo Fox";
           if (!vendedor) vendedor = "Não identificado";
 
+          const estadosSet = new Set<string>();
+          if (o.estadoConfiguravel) estadosSet.add(o.estadoConfiguravel);
+          const segmentosSet = new Set<string>();
+          if (o.crmSegmento) segmentosSet.add(o.crmSegmento);
+
           pedidoMap.set(pedido, {
             cliente: clienteName,
             vendedor,
@@ -416,6 +422,8 @@ export const salesMetricsRouter = router({
             valorTotalPedido: o.valorTotalPedido ? Number(o.valorTotalPedido) : 0,
             somaItens: Number(o.valorTotal || 0),
             data: o.dataEmissao || "",
+            estadosConfiguraveis: estadosSet,
+            segmentos: segmentosSet,
           });
         } else {
           const p = pedidoMap.get(pedido)!;
@@ -423,16 +431,18 @@ export const salesMetricsRouter = router({
             p.valorTotalPedido = Number(o.valorTotalPedido);
           }
           p.somaItens += Number(o.valorTotal || 0);
+          if (o.estadoConfiguravel) p.estadosConfiguraveis.add(o.estadoConfiguravel);
+          if (o.crmSegmento) p.segmentos.add(o.crmSegmento);
         }
       }
 
       // Filter for this vendedor and group by client
-      const clienteMap: Record<string, { totalVendas: number; pedidos: number; ultimoPedido: string; vendedoresReais: Set<string> }> = {};
+      const clienteMap: Record<string, { totalVendas: number; pedidos: number; ultimoPedido: string; vendedoresReais: Set<string>; estadosConfiguraveis: Set<string>; segmentos: Set<string>; byEstado: Record<string, number>; bySegmento: Record<string, number> }> = {};
       for (const [_, data] of Array.from(pedidoMap.entries())) {
         if (data.vendedor.toUpperCase() !== input.vendedor.toUpperCase()) continue;
         const valor = data.valorTotalPedido || data.somaItens;
         if (!clienteMap[data.cliente]) {
-          clienteMap[data.cliente] = { totalVendas: 0, pedidos: 0, ultimoPedido: "", vendedoresReais: new Set() };
+          clienteMap[data.cliente] = { totalVendas: 0, pedidos: 0, ultimoPedido: "", vendedoresReais: new Set(), estadosConfiguraveis: new Set(), segmentos: new Set(), byEstado: {}, bySegmento: {} };
         }
         clienteMap[data.cliente].totalVendas += valor;
         clienteMap[data.cliente].pedidos += 1;
@@ -443,6 +453,15 @@ export const salesMetricsRouter = router({
         if (data.vendedorReal && !isEditorNaoVendedor(data.vendedorReal)) {
           clienteMap[data.cliente].vendedoresReais.add(data.vendedorReal);
         }
+        // Track estados configuráveis and segmentos per client with values
+        Array.from(data.estadosConfiguraveis).forEach(ec => {
+          clienteMap[data.cliente].estadosConfiguraveis.add(ec);
+          clienteMap[data.cliente].byEstado[ec] = (clienteMap[data.cliente].byEstado[ec] || 0) + valor;
+        });
+        Array.from(data.segmentos).forEach(seg => {
+          clienteMap[data.cliente].segmentos.add(seg);
+          clienteMap[data.cliente].bySegmento[seg] = (clienteMap[data.cliente].bySegmento[seg] || 0) + valor;
+        });
       }
 
       return Object.entries(clienteMap)
@@ -452,6 +471,10 @@ export const salesMetricsRouter = router({
           qtdPedidos: stats.pedidos,
           ultimoPedido: stats.ultimoPedido,
           vendedoresReais: Array.from(stats.vendedoresReais),
+          estadosConfiguraveis: Array.from(stats.estadosConfiguraveis),
+          segmentos: Array.from(stats.segmentos),
+          byEstado: stats.byEstado,
+          bySegmento: stats.bySegmento,
         }))
         .sort((a, b) => b.totalVendas - a.totalVendas);
     }),

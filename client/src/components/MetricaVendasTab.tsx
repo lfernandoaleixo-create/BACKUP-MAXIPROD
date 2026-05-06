@@ -37,7 +37,9 @@ function formatCurrency(value: number) {
 
 function formatDate(dateStr: string) {
   if (!dateStr) return "-";
-  const parts = dateStr.split("-");
+  // Handle ISO datetime strings like "2026-05-04T12:00:00.000-03:00"
+  const datePart = dateStr.split("T")[0];
+  const parts = datePart.split("-");
   if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
   return dateStr;
 }
@@ -46,6 +48,8 @@ export default function MetricaVendasTab() {
   const [period, setPeriod] = useState("current");
   const [view, setView] = useState<ViewMode>("ranking");
   const [selectedVendedor, setSelectedVendedor] = useState("");
+  const [filterEstado, setFilterEstado] = useState<string>("all");
+  const [filterSegmento, setFilterSegmento] = useState<string>("all");
 
   const { startDate, endDate } = useMemo(() => getDateRange(period), [period]);
 
@@ -64,9 +68,31 @@ export default function MetricaVendasTab() {
   const periodLabel = period === "current" ? "Mês Atual" : "Mês Anterior";
 
   const goBack = () => {
-    if (view === "detail") { setView("ranking"); setSelectedVendedor(""); }
+    if (view === "detail") { setView("ranking"); setSelectedVendedor(""); setFilterEstado("all"); setFilterSegmento("all"); }
     else if (view === "inadimplenciaDetail") { setView("inadimplencia"); setSelectedVendedor(""); }
   };
+
+  // Compute available filter options from vendedorDetail data
+  const detailFilterOptions = useMemo(() => {
+    if (!vendedorDetail) return { estados: [] as string[], segmentos: [] as string[] };
+    const estadosSet = new Set<string>();
+    const segmentosSet = new Set<string>();
+    for (const c of vendedorDetail) {
+      if (c.estadosConfiguraveis) c.estadosConfiguraveis.forEach((e: string) => estadosSet.add(e));
+      if (c.segmentos) c.segmentos.forEach((s: string) => segmentosSet.add(s));
+    }
+    return { estados: Array.from(estadosSet).sort(), segmentos: Array.from(segmentosSet).sort() };
+  }, [vendedorDetail]);
+
+  // Filter vendedorDetail based on selected filters
+  const filteredDetail = useMemo(() => {
+    if (!vendedorDetail) return [];
+    return vendedorDetail.filter((c) => {
+      if (filterEstado !== "all" && c.estadosConfiguraveis && !c.estadosConfiguraveis.includes(filterEstado)) return false;
+      if (filterSegmento !== "all" && c.segmentos && !c.segmentos.includes(filterSegmento)) return false;
+      return true;
+    });
+  }, [vendedorDetail, filterEstado, filterSegmento]);
 
   const getRankIcon = (index: number) => {
     if (index === 0) return <Trophy className="w-5 h-5 text-yellow-500" />;
@@ -251,18 +277,55 @@ export default function MetricaVendasTab() {
             <div className="p-8 text-center text-slate-400">Nenhuma venda encontrada para {selectedVendedor} no período</div>
           ) : (
             <>
+              {/* Filters */}
+              {(detailFilterOptions.estados.length > 0 || detailFilterOptions.segmentos.length > 0) && (
+                <div className="p-3 border-b border-slate-100 bg-slate-50/30 flex flex-wrap gap-2">
+                  {detailFilterOptions.estados.length > 0 && (
+                    <select
+                      value={filterEstado}
+                      onChange={(e) => setFilterEstado(e.target.value)}
+                      className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-400"
+                    >
+                      <option value="all">Todos os Estados</option>
+                      {detailFilterOptions.estados.map((e) => (
+                        <option key={e} value={e}>{e}</option>
+                      ))}
+                    </select>
+                  )}
+                  {detailFilterOptions.segmentos.length > 0 && (
+                    <select
+                      value={filterSegmento}
+                      onChange={(e) => setFilterSegmento(e.target.value)}
+                      className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-400"
+                    >
+                      <option value="all">Todos os Segmentos</option>
+                      {detailFilterOptions.segmentos.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  )}
+                  {(filterEstado !== "all" || filterSegmento !== "all") && (
+                    <button
+                      onClick={() => { setFilterEstado("all"); setFilterSegmento("all"); }}
+                      className="text-[10px] text-teal-600 hover:text-teal-800 underline"
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
+              )}
               <div className="p-4 border-b border-slate-100 bg-slate-50/50">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-slate-600">
-                    <span className="font-semibold">{vendedorDetail.length}</span> clientes atendidos
+                    <span className="font-semibold">{filteredDetail.length}</span> clientes{filteredDetail.length !== vendedorDetail.length ? ` (de ${vendedorDetail.length})` : " atendidos"}
                   </p>
                   <p className="text-sm font-semibold text-teal-700">
-                    Total: {formatCurrency(vendedorDetail.reduce((s, c) => s + c.totalVendas, 0))}
+                    Total: {formatCurrency(filteredDetail.reduce((s, c) => s + c.totalVendas, 0))}
                   </p>
                 </div>
               </div>
               <div className="divide-y divide-slate-50 max-h-[500px] overflow-y-auto">
-                {vendedorDetail.map((c) => (
+                {filteredDetail.map((c) => (
                   <div key={c.cliente} className="flex items-center justify-between p-4">
                     <div className="min-w-0 flex-1 mr-3">
                       <p className="font-medium text-slate-800">{c.cliente}</p>
@@ -272,6 +335,16 @@ export default function MetricaVendasTab() {
                       <p className="text-xs text-slate-500">
                         {c.qtdPedidos} pedido{c.qtdPedidos > 1 ? "s" : ""} • Último: {formatDate(c.ultimoPedido)}
                       </p>
+                      {(c.estadosConfiguraveis && c.estadosConfiguraveis.length > 0) && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {c.estadosConfiguraveis.map((ec: string) => (
+                            <span key={ec} className="text-[9px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-100">{ec}</span>
+                          ))}
+                          {c.segmentos && c.segmentos.map((seg: string) => (
+                            <span key={seg} className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100">{seg}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <p className="font-semibold text-slate-700 flex-shrink-0">{formatCurrency(c.totalVendas)}</p>
                   </div>

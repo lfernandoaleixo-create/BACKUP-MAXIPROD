@@ -3466,3 +3466,4 @@
 - [x] Vendas: mostrar nome do vendedor ao lado de cada pedido/cliente quando expandir Grupo Fox no ranking
 - [x] Bug: Estoque Importação tabela mobile - colunas sobrepostas/encavaladas, precisa min-width e scroll horizontal
 - [x] Bug: Financeiro aba - cards ENTRADAS com texto sobreposto no mobile (Vendas/Reve + R$ valor encavalados)
+- [x] Vendas: Métricas - adicionar filtros de Estado Configurável (Bambu, Madeira, Fibra) e Segmento (Indústria, Lojas) no detalhe de cada vendedor no ranking
