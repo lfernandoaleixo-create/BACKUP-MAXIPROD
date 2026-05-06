@@ -256,6 +256,38 @@
       color: oklch(0.50 0.01 80) !important;
     }
 
+    /* ---- Fractional opacity backgrounds (bg-*-50/60, bg-*-50/80, etc.) ---- */
+    & [class*="bg-amber-50"],
+    & [class*="bg-emerald-50"],
+    & [class*="bg-teal-50"],
+    & [class*="bg-green-50"],
+    & [class*="bg-cyan-50"],
+    & [class*="bg-red-50"],
+    & [class*="bg-rose-50"],
+    & [class*="bg-blue-50"],
+    & [class*="bg-orange-50"],
+    & [class*="bg-yellow-50"],
+    & [class*="bg-pink-50"],
+    & [class*="bg-indigo-50"],
+    & [class*="bg-violet-50"],
+    & [class*="bg-purple-50"],
+    & [class*="bg-slate-50"] {
+      background-color: oklch(0.18 0.015 240) !important;
+    }
+    & [class*="bg-amber-100"],
+    & [class*="bg-emerald-100"],
+    & [class*="bg-teal-100"],
+    & [class*="bg-green-100"],
+    & [class*="bg-cyan-100"],
+    & [class*="bg-red-100"],
+    & [class*="bg-rose-100"],
+    & [class*="bg-blue-100"],
+    & [class*="bg-orange-100"],
+    & [class*="bg-yellow-100"],
+    & [class*="bg-slate-100"] {
+      background-color: oklch(0.20 0.015 240) !important;
+    }
+
     /* ---- SHADOWS ---- */
     & .shadow-sm, & .shadow-md, & .shadow-lg, & .shadow-xl {
       --tw-shadow-color: oklch(0 0 0 / 0.4);
