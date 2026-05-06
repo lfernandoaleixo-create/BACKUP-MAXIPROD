@@ -370,23 +370,23 @@ function drawWeekCard(
     doc.text(`media ${fmtCurrency(week.avg)}/dia`, x + 2, y + 14.5);
   }
 
-  // Row 3b: weekend sales (y + 17.5)
+  // Row 3b: weekend sales (y + 16) - gold color
   if (week.weekendSales > 0 && week.weekendDaysWithSales > 0) {
     doc.setFontSize(3.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...colors.main);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(180, 130, 0); // gold/amber color
     const plural = week.weekendDaysWithSales > 1 ? "dias nao uteis" : "dia nao util";
-    doc.text(`+${fmtCompactCurrency(week.weekendSales)} em ${week.weekendDaysWithSales} ${plural}`, x + 2, y + 17.5);
+    doc.text(`+${fmtCompactCurrency(week.weekendSales)} em ${week.weekendDaysWithSales} ${plural}`, x + 2, y + 16.5);
   }
 
-  // Row 4: dias úteis (bottom)
+  // Row 4: dias úteis (bottom - well separated)
   doc.setDrawColor(...C.slate200);
   doc.setLineWidth(0.1);
-  doc.line(x + 2, y + h - 5, x + w - 2, y + h - 5);
-  doc.setFontSize(4);
+  doc.line(x + 2, y + h - 4.5, x + w - 2, y + h - 4.5);
+  doc.setFontSize(3.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.slate400);
-  doc.text(`${week.businessDays} dias uteis`, x + 2, y + h - 2);
+  doc.text(`${week.businessDays} dias uteis`, x + 2, y + h - 1.5);
 }
 
 // ─── Draw Bar+Line Chart (compact) ──────────────────────────────
