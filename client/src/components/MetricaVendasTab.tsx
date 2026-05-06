@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon } from "lucide-react";
-import { exportRankingVendasPdf, exportInadimplenciaPdf, exportVendedorDetailPdf } from "@/lib/tabsPdfExport";
+import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon, Share2 } from "lucide-react";
+import { exportRankingVendasPdf, exportInadimplenciaPdf, exportVendedorDetailPdf, exportInadimplenciaDetailPdf } from "@/lib/tabsPdfExport";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -273,14 +273,14 @@ export default function MetricaVendasTab() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   if (view === "ranking") {
                     if (!ranking?.length) { toast.error("Nenhum dado para exportar."); return; }
-                    exportRankingVendasPdf({ ranking: ranking.map(v => ({ vendedor: v.vendedor, totalVendas: v.totalVendas, qtdPedidos: v.qtdPedidos, qtdClientes: v.qtdClientes })), periodLabel });
+                    await exportRankingVendasPdf({ ranking: ranking.map(v => ({ vendedor: v.vendedor, totalVendas: v.totalVendas, qtdPedidos: v.qtdPedidos, qtdClientes: v.qtdClientes })), periodLabel });
                     toast.success("PDF de Ranking gerado!");
                   } else {
                     if (!inadimplencia?.length) { toast.error("Nenhum dado para exportar."); return; }
-                    exportInadimplenciaPdf({ inadimplencia: inadimplencia as any });
+                    await exportInadimplenciaPdf({ inadimplencia: inadimplencia as any });
                     toast.success("PDF de Inadimplência gerado!");
                   }
                 }}
@@ -459,9 +459,9 @@ export default function MetricaVendasTab() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          onClick={() => {
+                          onClick={async () => {
                             if (!filteredDetail.length) { toast.error("Nenhum dado para exportar."); return; }
-                            exportVendedorDetailPdf({
+                            await exportVendedorDetailPdf({
                               vendedor: selectedVendedor,
                               periodLabel,
                               filterEstados,
@@ -488,6 +488,43 @@ export default function MetricaVendasTab() {
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Exportar detalhes do vendedor em PDF</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={async () => {
+                            if (!filteredDetail.length) { toast.error("Nenhum dado para compartilhar."); return; }
+                            const safeName = selectedVendedor.replace(/[^a-zA-Z0-9]/g, "_");
+                            const fileName = `Vendas_${safeName}_${periodLabel.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+                            const totalVendas = filteredDetail.reduce((s, c) => s + c.totalVendas, 0);
+                            // Download the PDF first, then open WhatsApp
+                            await exportVendedorDetailPdf({
+                              vendedor: selectedVendedor,
+                              periodLabel,
+                              filterEstados,
+                              filterSegmentos,
+                              clientes: filteredDetail.map(c => ({
+                                cliente: c.cliente,
+                                totalVendas: c.totalVendas,
+                                qtdPedidos: c.qtdPedidos,
+                                ultimoPedido: c.ultimoPedido,
+                                estadosConfiguraveis: c.estadosConfiguraveis,
+                                segmentos: c.segmentos,
+                                vendedoresReais: c.vendedoresReais,
+                              })),
+                              estadoBreakdown: estadoBreakdown,
+                            });
+                            const whatsappText = encodeURIComponent(`\ud83d\udcca Vendas de ${selectedVendedor} (${periodLabel}): ${filteredDetail.length} clientes, ${formatCurrency(totalVendas)} total`);
+                            window.open(`https://wa.me/?text=${whatsappText}`, "_blank");
+                          }}
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 h-7 px-2 border-green-200 hover:border-green-400 hover:bg-green-50 hover:text-green-700 transition-all"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Compartilhar via WhatsApp</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
@@ -575,9 +612,51 @@ export default function MetricaVendasTab() {
                     <p className="text-sm text-slate-600">
                       <span className="font-semibold">{vendedorData.qtdClientesInadimplentes}</span> clientes inadimplentes
                     </p>
-                    <p className="text-sm font-bold text-red-600">
-                      Total: {formatCurrency(vendedorData.totalDevido)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-red-600">
+                        Total: {formatCurrency(vendedorData.totalDevido)}
+                      </p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={async () => {
+                              await exportInadimplenciaDetailPdf({
+                                vendedor: selectedVendedor,
+                                clientes: vendedorData.clientes,
+                              });
+                              toast.success("PDF gerado com sucesso!");
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 h-7 px-2 border-red-200 hover:border-red-300 hover:bg-red-50 hover:text-red-700 transition-all"
+                          >
+                            <FileDown className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline text-xs">PDF</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Exportar inadimplência em PDF</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={async () => {
+                              await exportInadimplenciaDetailPdf({
+                                vendedor: selectedVendedor,
+                                clientes: vendedorData.clientes,
+                              });
+                              const whatsappText = encodeURIComponent(`\ud83d\udcca Inadimpl\u00eancia - ${selectedVendedor}: ${vendedorData.qtdClientesInadimplentes} clientes, ${formatCurrency(vendedorData.totalDevido)} em aberto`);
+                              window.open(`https://wa.me/?text=${whatsappText}`, "_blank");
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 h-7 px-2 border-green-200 hover:border-green-400 hover:bg-green-50 hover:text-green-700 transition-all"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Compartilhar via WhatsApp</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
                 </div>
                 <div className="divide-y divide-slate-50 max-h-[500px] overflow-y-auto">

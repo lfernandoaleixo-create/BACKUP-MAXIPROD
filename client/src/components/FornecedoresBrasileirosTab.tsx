@@ -71,35 +71,35 @@ export default function FornecedoresBrasileirosTab() {
   const contactsByStatus = trpc.suppliers.getContactsByStatus.useQuery(undefined, { enabled: view === "statusCards" });
   const migrationHistory = trpc.suppliers.getMigrationHistory.useQuery(undefined, { enabled: view === "history" });
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     if (view === "segments" || view === "states" || view === "suppliers") {
       const suppliers = suppliersList.data || [];
       if (suppliers.length === 0) {
         toast.error("Nenhum fornecedor para exportar. Navegue até um segmento/estado.");
         return;
       }
-      exportProspeccaoPdf({ suppliers: suppliers as any, segmento: selectedSegment, estado: selectedState });
+      await exportProspeccaoPdf({ suppliers: suppliers as any, segmento: selectedSegment, estado: selectedState });
       toast.success("PDF de Prospecção gerado!");
     } else if (view === "ranking" || view === "vendedorDetail") {
       if (!ranking.data?.length) {
         toast.error("Nenhum dado de ranking para exportar.");
         return;
       }
-      exportRankingFornecedoresPdf({ ranking: ranking.data.map(v => ({ vendedor: v.vendedor, totalContatos: v.totalContatos, conversoes: Number((v as any).conversoes || 0) })) });
+      await exportRankingFornecedoresPdf({ ranking: ranking.data.map(v => ({ vendedor: v.vendedor, totalContatos: v.totalContatos, conversoes: Number((v as any).conversoes || 0) })) });
       toast.success("PDF de Ranking gerado!");
     } else if (view === "statusCards") {
       if (!contactsByStatus.data?.length) {
         toast.error("Nenhum dado de status para exportar.");
         return;
       }
-      exportStatusPdf({ contacts: contactsByStatus.data as any });
+      await exportStatusPdf({ contacts: contactsByStatus.data as any });
       toast.success("PDF de Status gerado!");
     } else if (view === "history") {
       if (!migrationHistory.data?.length) {
         toast.error("Nenhum histórico para exportar.");
         return;
       }
-      exportHistoricoPdf({ history: migrationHistory.data as any });
+      await exportHistoricoPdf({ history: migrationHistory.data as any });
       toast.success("PDF de Histórico gerado!");
     }
   };

@@ -4,6 +4,34 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+// Logo B&W for PDF headers
+const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png";
+const LOGO_RATIO = 2.11; // width/height
+
+let logoBase64Cache: string | null = null;
+
+async function getLogoBase64(): Promise<string | null> {
+  if (logoBase64Cache) return logoBase64Cache;
+  try {
+    const response = await fetch(LOGO_URL);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        logoBase64Cache = reader.result as string;
+        resolve(logoBase64Cache);
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+// Pre-load logo on module init
+getLogoBase64();
+
 function formatCurrency(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -14,7 +42,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("pt-BR");
 }
 
-function drawHeader(doc: jsPDF, title: string, subtitle?: string) {
+async function drawHeader(doc: jsPDF, title: string, subtitle?: string) {
   const pageW = doc.internal.pageSize.getWidth();
   // Dark header bar
   doc.setFillColor(15, 23, 42); // slate-900
@@ -22,6 +50,14 @@ function drawHeader(doc: jsPDF, title: string, subtitle?: string) {
   // Teal accent line
   doc.setFillColor(13, 148, 136); // teal-600
   doc.rect(0, 36, pageW, 2, "F");
+
+  // Logo
+  const logoData = await getLogoBase64();
+  if (logoData) {
+    const logoH = 12;
+    const logoW = logoH * LOGO_RATIO;
+    doc.addImage(logoData, "PNG", pageW - 14 - logoW, 4, logoW, logoH);
+  }
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(18);
@@ -51,14 +87,14 @@ function drawFooter(doc: jsPDF, finalY: number, text: string) {
 }
 
 // ===== PROSPECÇÃO (Fornecedores por segmento/estado) =====
-export function exportProspeccaoPdf(data: {
+export async function exportProspeccaoPdf(data: {
   suppliers: Array<{ nome: string; cidade: string; estado: string; segmento: string; contactCount: number }>;
   segmento?: string;
   estado?: string;
 }) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const subtitle = [data.segmento, data.estado].filter(Boolean).join(" / ") || "Todos os segmentos";
-  drawHeader(doc, "Prospecção — Fornecedores Brasileiros", subtitle);
+  await drawHeader(doc, "Prospecção — Fornecedores Brasileiros", subtitle);
 
   let y = 44;
 
@@ -130,11 +166,11 @@ export function exportProspeccaoPdf(data: {
 }
 
 // ===== RANKING DE VENDEDORES (Fornecedores Brasileiros) =====
-export function exportRankingFornecedoresPdf(data: {
+export async function exportRankingFornecedoresPdf(data: {
   ranking: Array<{ vendedor: string; totalContatos: number; conversoes: number }>;
 }) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  drawHeader(doc, "Ranking de Vendedores — Fornecedores Brasileiros");
+  await drawHeader(doc, "Ranking de Vendedores — Fornecedores Brasileiros");
 
   let y = 44;
 
@@ -214,11 +250,11 @@ export function exportRankingFornecedoresPdf(data: {
 }
 
 // ===== POR STATUS (Fornecedores Brasileiros) =====
-export function exportStatusPdf(data: {
+export async function exportStatusPdf(data: {
   contacts: Array<{ supplierNome: string; supplierEstado: string; supplierCidade: string; vendedor: string; status: string; observacao?: string }>;
 }) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  drawHeader(doc, "Fornecedores por Status — Prospecção");
+  await drawHeader(doc, "Fornecedores por Status — Prospecção");
 
   let y = 44;
 
@@ -306,7 +342,7 @@ export function exportStatusPdf(data: {
 }
 
 // ===== HISTÓRICO DE MIGRAÇÕES =====
-export function exportHistoricoPdf(data: {
+export async function exportHistoricoPdf(data: {
   history: Array<{
     supplierNome: string;
     supplierEstado: string;
@@ -320,7 +356,7 @@ export function exportHistoricoPdf(data: {
   }>;
 }) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  drawHeader(doc, "Histórico de Migrações — Prospecção", `${data.history.length} registros`);
+  await drawHeader(doc, "Histórico de Migrações — Prospecção", `${data.history.length} registros`);
 
   let y = 44;
 
@@ -385,12 +421,12 @@ export function exportHistoricoPdf(data: {
 }
 
 // ===== RANKING DE VENDEDORES (Métrica de Vendas) =====
-export function exportRankingVendasPdf(data: {
+export async function exportRankingVendasPdf(data: {
   ranking: Array<{ vendedor: string; totalVendas: number; qtdPedidos: number; qtdClientes: number }>;
   periodLabel: string;
 }) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  drawHeader(doc, "Ranking de Vendedores — Métrica de Vendas", data.periodLabel);
+  await drawHeader(doc, "Ranking de Vendedores — Métrica de Vendas", data.periodLabel);
 
   let y = 44;
 
@@ -473,7 +509,7 @@ export function exportRankingVendasPdf(data: {
 }
 
 // ===== INADIMPLÊNCIA (Métrica de Vendas) =====
-export function exportInadimplenciaPdf(data: {
+export async function exportInadimplenciaPdf(data: {
   inadimplencia: Array<{
     vendedor: string;
     qtdClientesInadimplentes: number;
@@ -482,7 +518,7 @@ export function exportInadimplenciaPdf(data: {
   }>;
 }) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  drawHeader(doc, "Inadimplência por Vendedor — Métrica de Vendas");
+  await drawHeader(doc, "Inadimplência por Vendedor — Métrica de Vendas");
 
   let y = 44;
 
@@ -582,7 +618,7 @@ export function exportInadimplenciaPdf(data: {
 }
 
 // ===== DETALHE DO VENDEDOR (Métrica de Vendas) =====
-export function exportVendedorDetailPdf(data: {
+export async function exportVendedorDetailPdf(data: {
   vendedor: string;
   periodLabel: string;
   filterEstados: string[];
@@ -606,7 +642,7 @@ export function exportVendedorDetailPdf(data: {
   if (data.filterSegmentos.length > 0) filterParts.push(`Segmento: ${data.filterSegmentos.join(", ")}`);
   const subtitle = filterParts.join(" | ");
 
-  drawHeader(doc, `Vendas de ${data.vendedor}`, subtitle);
+  await drawHeader(doc, `Vendas de ${data.vendedor}`, subtitle);
 
   let y = 44;
   const pageW = doc.internal.pageSize.getWidth();
@@ -735,4 +771,142 @@ export function exportVendedorDetailPdf(data: {
 
   const safeName = data.vendedor.replace(/[^a-zA-Z0-9]/g, "_");
   doc.save(`Vendas_${safeName}_${data.periodLabel.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`);
+}
+
+// ===== WHATSAPP SHARE UTILITY =====
+/**
+ * Generates a PDF using the provided generator function and shares it via WhatsApp.
+ * Since WhatsApp Web doesn't support direct file sharing via URL, we:
+ * 1. Generate the PDF blob
+ * 2. Use the Web Share API if available (mobile), or
+ * 3. Download the PDF and open WhatsApp with a text message
+ */
+export async function sharePdfViaWhatsApp(
+  generatePdf: () => Promise<jsPDF>,
+  fileName: string,
+  message?: string
+) {
+  const doc = await generatePdf();
+  const pdfBlob = doc.output("blob");
+  const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+  // Try Web Share API first (works on mobile)
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: fileName.replace(".pdf", ""),
+        text: message || "Relatório Grupo Fox",
+      });
+      return true;
+    } catch (err: any) {
+      if (err.name === "AbortError") return false;
+      // Fallback below
+    }
+  }
+
+  // Fallback: download the file and open WhatsApp with message
+  const url = URL.createObjectURL(pdfBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  // Open WhatsApp with a text message
+  const whatsappText = encodeURIComponent(message || `📊 Relatório: ${fileName.replace(".pdf", "").replace(/_/g, " ")}`);
+  window.open(`https://wa.me/?text=${whatsappText}`, "_blank");
+  return true;
+}
+
+// ===== INADIMPLÊNCIA DETALHE POR VENDEDOR =====
+export async function exportInadimplenciaDetailPdf(data: {
+  vendedor: string;
+  clientes: Array<{
+    nome: string;
+    qtdTitulos: number;
+    totalDevido: number;
+    titulos?: Array<{ descricao: string; valor: number; vencimento: string; diasAtraso: number }>;
+  }>;
+}) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  await drawHeader(doc, `Inadimplência — ${data.vendedor}`, `${data.clientes.length} clientes inadimplentes`);
+
+  let y = 44;
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // KPI boxes
+  const totalDevido = data.clientes.reduce((s, c) => s + c.totalDevido, 0);
+  const totalTitulos = data.clientes.reduce((s, c) => s + c.qtdTitulos, 0);
+  const totalClientes = data.clientes.length;
+
+  // Box 1 - Total em Aberto
+  doc.setFillColor(220, 38, 38); // red-600
+  doc.roundedRect(14, y, 55, 18, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("TOTAL EM ABERTO", 18, y + 6);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(totalDevido), 18, y + 14);
+
+  // Box 2 - Títulos Vencidos
+  doc.setFillColor(71, 85, 105); // slate-600
+  doc.roundedRect(75, y, 55, 18, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("TÍTULOS VENCIDOS", 79, y + 6);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(String(totalTitulos), 79, y + 14);
+
+  // Box 3 - Clientes
+  doc.setFillColor(245, 158, 11); // amber-500
+  doc.roundedRect(136, y, 55, 18, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("CLIENTES INADIMPLENTES", 140, y + 6);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(String(totalClientes), 140, y + 14);
+
+  y += 26;
+
+  // Table with client details
+  const tableData = data.clientes.map((c, idx) => [
+    String(idx + 1),
+    c.nome,
+    String(c.qtdTitulos),
+    formatCurrency(c.totalDevido),
+  ]);
+
+  autoTable(doc, {
+    startY: y,
+    head: [["#", "Cliente", "Títulos", "Total Devido"]],
+    body: tableData,
+    theme: "grid",
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold", cellPadding: 3 },
+    bodyStyles: { fontSize: 8, cellPadding: 3 },
+    columnStyles: {
+      0: { cellWidth: 10, halign: "center" },
+      1: { cellWidth: 95 },
+      2: { cellWidth: 22, halign: "center" },
+      3: { cellWidth: 40, halign: "right", fontStyle: "bold" },
+    },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    didParseCell: (d: any) => {
+      if (d.section === "body" && d.column.index === 3) {
+        d.cell.styles.textColor = [220, 38, 38]; // red
+      }
+    },
+  });
+
+  const finalY = (doc as any).lastAutoTable?.finalY || y + 20;
+  drawFooter(doc, finalY, `Grupo Fox — Inadimplência de ${data.vendedor}`);
+
+  const safeName = data.vendedor.replace(/[^a-zA-Z0-9]/g, "_");
+  doc.save(`Inadimplencia_${safeName}_${new Date().toISOString().split("T")[0]}.pdf`);
 }

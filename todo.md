@@ -3478,3 +3478,6 @@
 - [x] Bug mobile: Card ENTRADAS - textos "Vendas..." e "Demais Re..." cortados, precisa mostrar completo
 - [x] Bug mobile: Financeiro Histórico - cards de resumo (Títulos Acrescentados, Retirados, Saldo Líquido) com valores cortados no mobile
 - [x] Vendas Métricas: Botão exportar PDF no detalhe do vendedor (com filtros aplicados, KPIs e lista de clientes)
+- [x] PDF: Incluir logo do Grupo Fox no cabeçalho de todos os PDFs gerados
+- [x] PDF: Botão compartilhar via WhatsApp (link de download do PDF)
+- [x] Vendas Métricas: Exportar PDF na view de Inadimplência por vendedor (detalhe dos clientes inadimplentes)
