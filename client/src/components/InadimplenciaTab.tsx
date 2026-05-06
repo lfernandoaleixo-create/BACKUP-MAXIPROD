@@ -1139,7 +1139,7 @@ export default function InadimplenciaTab() {
       })()}
 
       {/* Cards de faixa de atraso (aging) */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="flex overflow-x-auto gap-3 pb-2 md:grid md:grid-cols-5 md:overflow-x-visible">
         {AGING_RANGES.map(r => {
           const c = agingCounts[r.key] || { count: 0, total: 0 };
           const isActive = agingFilter === r.key;
@@ -1147,7 +1147,7 @@ export default function InadimplenciaTab() {
             <button
               key={r.key}
               onClick={() => setAgingFilter(isActive ? null : r.key)}
-              className={`rounded-lg border p-3 text-left transition-all hover:shadow-md ${r.color} ${
+              className={`rounded-lg border p-3 text-left transition-all hover:shadow-md min-w-[140px] md:min-w-0 shrink-0 md:shrink ${r.color} ${
                 isActive ? "ring-2 ring-blue-500 shadow-md" : ""
               }`}
             >
@@ -1160,7 +1160,7 @@ export default function InadimplenciaTab() {
       </div>
 
       {/* Cards de status */}
-      <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-3">
+      <div className="flex overflow-x-auto gap-3 pb-2 md:grid md:grid-cols-5 lg:grid-cols-10 md:overflow-x-visible">
         {STATUS_OPTIONS.map(s => {
           const c = statusCounts[s.value] || { count: 0, total: 0 };
           const isActive = statusFilter === s.value;
@@ -1168,7 +1168,7 @@ export default function InadimplenciaTab() {
             <button
               key={s.value}
               onClick={() => setStatusFilter(isActive ? "todos" : s.value)}
-              className={`rounded-lg border p-2.5 text-left transition-all hover:shadow-md ${
+              className={`rounded-lg border p-2.5 text-left transition-all hover:shadow-md min-w-[120px] md:min-w-0 shrink-0 md:shrink ${
                 isActive ? "ring-2 ring-blue-500 shadow-md" : ""
               } ${s.color}`}
             >
@@ -1363,8 +1363,8 @@ export default function InadimplenciaTab() {
                 </button>
 
                 {isOpen && (
-                  <div className="bg-white/80 border-t border-slate-100">
-                    <div className="hidden md:grid grid-cols-[1fr_100px_85px_130px_95px_85px_55px_100px_120px] bg-slate-50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-300">
+                  <div className="bg-white/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700">
+                    <div className="hidden md:grid grid-cols-[1fr_100px_85px_130px_95px_85px_55px_100px_120px] bg-slate-50 dark:bg-slate-800/50 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-300 dark:border-slate-600">
                       <span className="flex items-center justify-start px-3 py-2 border-r border-slate-300">Referência / Documento</span>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-300">Vendedor</span>
                       <span className="flex items-center justify-center px-2 py-2 border-r border-slate-300">Forma Cobr.</span>
@@ -2120,15 +2120,15 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                                           ? 'bg-blue-500 border-blue-600 text-white shadow-sm shadow-blue-200'
                                           : 'bg-emerald-500 border-emerald-600 text-white shadow-sm shadow-emerald-200'
                                         : canTickStep
-                                          ? 'bg-white border-slate-300 group-hover:border-emerald-400 group-hover:bg-emerald-50 group-hover:shadow-sm cursor-pointer'
-                                          : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 cursor-not-allowed'
+                                          ? 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-500 group-hover:border-emerald-400 group-hover:bg-emerald-50 group-hover:shadow-sm cursor-pointer'
+                                          : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-500 cursor-not-allowed'
                               }`}>
                                 {isPendingBlink ? <Phone className="w-3.5 h-3.5 animate-bounce" /> :
                                  isRed ? <XCircle className="w-3.5 h-3.5" /> :
                                  isBlue ? <Circle className="w-3.5 h-3.5 fill-white" /> :
                                  isGreen ? <Check className="w-3.5 h-3.5" /> : (
                                   <span className={`text-[9px] font-bold ${
-                                    canTickStep ? 'text-slate-400 group-hover:text-emerald-500' : 'text-slate-300'
+                                    canTickStep ? 'text-slate-400 dark:text-slate-200 group-hover:text-emerald-500' : 'text-slate-300 dark:text-slate-400'
                                   }`}>{step}</span>
                                 )}
                               </div>

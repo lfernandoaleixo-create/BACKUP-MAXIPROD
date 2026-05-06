@@ -662,8 +662,19 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
       .map(opt => ({ ...opt, count: grouped[opt.value].count, total: grouped[opt.value].total }));
   }, [isPagar, bucket.items]);
 
+  // Dark mode: gold neon when not all authorized, green neon when all authorized
+  const allAuthorized = useMemo(() => {
+    if (!isPagar || bucket.items.length === 0) return false;
+    return bucket.items.every((item: any) => item.authStatus === "autorizado" || item.authStatus === "autorizado_ressalva");
+  }, [isPagar, bucket.items]);
+  const darkBorderClass = isPagar
+    ? allAuthorized
+      ? "dark:border-green-400 dark:shadow-[0_0_12px_rgba(74,222,128,0.4)]"
+      : "dark:border-amber-400 dark:shadow-[0_0_12px_rgba(251,191,36,0.4)]"
+    : "dark:border-emerald-500/60";
+
   return (
-    <div className={`rounded-lg border ${colorClass} p-2 md:p-3`}>
+    <div className={`rounded-lg border ${colorClass} ${darkBorderClass} p-2 md:p-3`}>
 
       {/* Header row */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-0.5 md:gap-1">
@@ -1749,10 +1760,10 @@ function CashFlowCard() {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-blue-200 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-blue-200 dark:border-slate-700 shadow-sm overflow-hidden">
       {/* Header */}
       <div
-        className="bg-blue-50 border-b border-blue-200 cursor-pointer hover:bg-blue-100/50 transition-colors"
+        className="bg-blue-50 dark:bg-slate-800/80 border-b border-blue-200 dark:border-slate-700 cursor-pointer hover:bg-blue-100/50 dark:hover:bg-slate-700/50 transition-colors"
         onClick={() => setCollapsed(!collapsed)}
       >
         <div className="px-4 py-3 flex items-center justify-between">
@@ -1773,7 +1784,7 @@ function CashFlowCard() {
           <div className="px-4 pb-3 pt-0">
             <div className="grid grid-cols-3 gap-1.5 md:gap-2">
               {/* A Receber mini card */}
-              <div className="bg-white/80 border border-emerald-200/60 rounded-lg px-1.5 md:px-3 py-2 flex flex-col items-start gap-0.5">
+              <div className="bg-white/80 dark:bg-slate-700/80 border border-emerald-200/60 dark:border-emerald-700/40 rounded-lg px-1.5 md:px-3 py-2 flex flex-col items-start gap-0.5">
                 <div className="flex items-center gap-1 md:gap-1.5">
                   <div className="w-5 h-5 md:w-7 md:h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
                     <TrendingUp className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-emerald-600" />
@@ -1784,7 +1795,7 @@ function CashFlowCard() {
                 <p className="text-[7px] md:text-[9px] text-slate-400 hidden md:block">8 semanas + vencidas</p>
               </div>
               {/* A Pagar mini card */}
-              <div className="bg-white/80 border border-red-200/60 rounded-lg px-1.5 md:px-3 py-2 flex flex-col items-start gap-0.5">
+              <div className="bg-white/80 dark:bg-slate-700/80 border border-red-200/60 dark:border-red-700/40 rounded-lg px-1.5 md:px-3 py-2 flex flex-col items-start gap-0.5">
                 <div className="flex items-center gap-1 md:gap-1.5">
                   <div className="w-5 h-5 md:w-7 md:h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                     <TrendingDown className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-red-600" />
@@ -1795,7 +1806,7 @@ function CashFlowCard() {
                 <p className="text-[7px] md:text-[9px] text-slate-400 hidden md:block">8 semanas + vencidas</p>
               </div>
               {/* Saldo Projetado mini card */}
-              <div className={`bg-white/80 border ${saldoTotal >= 0 ? "border-blue-200/60" : "border-amber-200/60"} rounded-lg px-1.5 md:px-3 py-2 flex flex-col items-start gap-0.5`}>
+              <div className={`bg-white/80 dark:bg-slate-700/80 border ${saldoTotal >= 0 ? "border-blue-200/60 dark:border-blue-700/40" : "border-amber-200/60 dark:border-amber-700/40"} rounded-lg px-1.5 md:px-3 py-2 flex flex-col items-start gap-0.5`}>
                 <div className="flex items-center gap-1 md:gap-1.5">
                   <div className={`w-5 h-5 md:w-7 md:h-7 rounded-full ${saldoTotal >= 0 ? "bg-blue-100" : "bg-amber-100"} flex items-center justify-center flex-shrink-0`}>
                     <Wallet className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 ${saldoTotal >= 0 ? "text-blue-600" : "text-amber-600"}`} />
@@ -2141,7 +2152,7 @@ export default function Financial() {
         {/* Título elegante */}
         <div className="text-center py-2">
           <h2 className="text-xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-            <span className="text-slate-700">Dashboard de Análise Financeira</span>
+            <span className="text-slate-700 dark:text-slate-100">Dashboard de Análise Financeira</span>
             <span className="text-teal-600 ml-1 md:ml-2">Grupo Fox</span>
           </h2>
           <p className="text-[10px] md:text-sm text-slate-400 mt-1 md:mt-1.5 tracking-widest uppercase">Contas a Pagar e Receber</p>

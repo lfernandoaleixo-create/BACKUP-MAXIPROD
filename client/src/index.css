@@ -147,6 +147,10 @@
   .dark {
     /* ---- BACKGROUNDS: Force ALL to dark ---- */
     & .bg-white,
+    & .bg-white\/60,
+    & .bg-white\/80,
+    & .bg-white\/50,
+    & .bg-white\/30,
     & .bg-slate-50,
     & .bg-slate-100,
     & .bg-teal-50,
@@ -296,16 +300,58 @@
       background-color: oklch(0.20 0.015 240) !important;
     }
 
-    /* ---- LOGIN LOGO: Golden in dark mode ---- */
+    /* ---- LOGIN LOGO: Rich metallic golden in dark mode ---- */
     & .login-logo {
-      filter: sepia(1) saturate(3) brightness(0.85) hue-rotate(15deg)
-              drop-shadow(0 10px 25px rgba(212, 175, 55, 0.4))
-              drop-shadow(0 4px 10px rgba(212, 175, 55, 0.2)) !important;
+      filter: sepia(1) saturate(4) brightness(1.0) hue-rotate(5deg) contrast(1.1)
+              drop-shadow(0 0 30px rgba(255, 215, 0, 0.5))
+              drop-shadow(0 10px 25px rgba(184, 134, 11, 0.5))
+              drop-shadow(0 4px 10px rgba(218, 165, 32, 0.3)) !important;
     }
     & .login-logo:hover {
-      filter: sepia(1) saturate(3.5) brightness(0.95) hue-rotate(15deg)
-              drop-shadow(0 14px 30px rgba(212, 175, 55, 0.5))
-              drop-shadow(0 6px 14px rgba(212, 175, 55, 0.3)) !important;
+      filter: sepia(1) saturate(4.5) brightness(1.1) hue-rotate(5deg) contrast(1.15)
+              drop-shadow(0 0 40px rgba(255, 215, 0, 0.6))
+              drop-shadow(0 14px 30px rgba(184, 134, 11, 0.6))
+              drop-shadow(0 6px 14px rgba(218, 165, 32, 0.4)) !important;
+    }
+
+    /* ---- GRADIENT BACKGROUNDS: Force dark in dark mode ---- */
+    & [class*="bg-gradient"][class*="from-slate-50"],
+    & [class*="bg-gradient"][class*="from-emerald-50"],
+    & [class*="bg-gradient"][class*="from-teal-50"],
+    & [class*="bg-gradient"][class*="from-green-50"],
+    & [class*="bg-gradient"][class*="from-cyan-50"],
+    & [class*="bg-gradient"][class*="from-amber-50"],
+    & [class*="bg-gradient"][class*="from-orange-50"],
+    & [class*="bg-gradient"][class*="from-red-50"],
+    & [class*="bg-gradient"][class*="from-rose-50"],
+    & [class*="bg-gradient"][class*="from-blue-50"],
+    & [class*="bg-gradient"][class*="from-indigo-50"],
+    & [class*="bg-gradient"][class*="from-purple-50"],
+    & [class*="bg-gradient"][class*="from-violet-50"],
+    & [class*="bg-gradient"][class*="to-white"] {
+      background: oklch(0.18 0.015 240) !important;
+    }
+
+    /* ---- COLORED CARDS: Keep subtle colored tint in dark mode ---- */
+    & [class*="bg-gradient"][class*="from-emerald-50"][class*="border-emerald"],
+    & [class*="bg-gradient"][class*="from-green-50"][class*="border-emerald"] {
+      background: oklch(0.20 0.04 160) !important;
+      border-color: oklch(0.40 0.08 160) !important;
+    }
+    & [class*="bg-gradient"][class*="from-red-50"][class*="border-red"],
+    & [class*="bg-gradient"][class*="from-rose-50"][class*="border-red"] {
+      background: oklch(0.20 0.04 25) !important;
+      border-color: oklch(0.40 0.08 25) !important;
+    }
+    & [class*="bg-gradient"][class*="from-blue-50"][class*="border-blue"],
+    & [class*="bg-gradient"][class*="from-indigo-50"][class*="border-blue"] {
+      background: oklch(0.20 0.04 260) !important;
+      border-color: oklch(0.40 0.08 260) !important;
+    }
+    & [class*="bg-gradient"][class*="from-amber-50"][class*="border-amber"],
+    & [class*="bg-gradient"][class*="from-orange-50"][class*="border-amber"] {
+      background: oklch(0.20 0.04 80) !important;
+      border-color: oklch(0.40 0.08 80) !important;
     }
 
     /* ---- SHADOWS ---- */
@@ -358,9 +404,43 @@
 
 
 /* Fix: ensure row backgrounds extend full width inside horizontal scroll containers */
-.overflow-x-auto > div {
+/* Use a more specific selector to avoid breaking flex containers like the roteiro bolinhas */
+.overflow-x-auto > table,
+.overflow-x-auto > svg {
   width: fit-content;
   min-width: 100%;
+}
+
+/* Wave animation for "Seja bem-vindo(a)" text on login */
+@keyframes wave-letter {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-12px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  70% {
+    transform: translateY(-2px);
+  }
+}
+
+.wave-letter {
+  display: inline-block;
+  animation: wave-letter 1.2s ease-in-out forwards;
+  animation-play-state: paused;
+}
+
+/* Shimmer effect for gold gradient text */
+@keyframes gold-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.login-wave-text {
+  animation: gold-shimmer 4s linear infinite;
 }
 
 /* Bell ring animation - pisca continuamente quando há notificações não lidas */

@@ -3494,3 +3494,33 @@
 - [x] Inadimplência: sistema de alertas (ícone telefone) deve respeitar datas editadas no cronograma, não a programação original
 - [x] Inadimplência: campo "valor prometido" no Gerenciar Cobrança deve exibir símbolo R$
 - [x] Dark mode login: logo Grupo Fox e frase do artista em dourado brilhante (profissional e sofisticado)
+- [x] Dark mode: Cards com fundo branco (Resumo Financeiro, Total Consolidado, Inadimplência, médias diárias) → fundo escuro + letras douradas
+- [x] Dark mode: Logo Grupo Fox no header → fundo escuro, texto e raposa dourados brilhantes grandes
+- [x] Dark mode: Gráfico Evolução Diária (Vendas) → barras douradas, letras legíveis (dourada ou branca)
+- [x] Dark mode: Tabelas Faturamento (Pedidos a Faturar, Faturado, Anterior) → scroll horizontal, não cortar
+- [x] Dark mode: Aceite de Produção → nome produto não cortado, scroll horizontal mobile
+- [x] Dark mode: Financeiro Autorização pagamentos → cards dourado neon (não ticado) / verde neon (ticado)
+- [x] Dark mode: Configurações → quadradinhos com cores originais (não preto e branco)
+- [x] Dark mode: Inadimplência → aba travada, filtro Keure inacessível, scroll horizontal
+- [x] Dark mode: Bolinha número 3 → fundo escuro, escrita branco/dourado/rosa
+- [x] Dark mode: Madeira Aguardando Escolha → quebra de texto no local dos itens e número
+- [x] Dark mode: Card PO (Pedidos de Compra) → fundo escuro (não branco), letra dourada
+
+- [x] Bug: apenas 1 bolinha do roteiro aparecendo (CSS overflow-x-auto > div forçava width:100% em cada bolinha)
+- [x] Login modo noturno: logo dourado metálico (Grupo Fox + raposa em ouro rico sobre fundo preto)
+- [x] Login modo noturno: "SEJA BEM-VINDO(A)" em fonte Playfair Display serif, dourado grosso, animação wave contínua
+- [x] Login modo noturno: versão V.2.1.1 em branco para ficar visível
+- [x] Login modo noturno: fundo preto puro, tudo centralizado
+- [x] Login modo claro: mantido como estava (logo verde original)
+
+- [x] Dark mode: Financeiro header text ilegível
+- [x] Dark mode: Financeiro autorização de pagamentos cards pretos sem divisão (não ticado → dourado neon, ticado → verde neon)
+- [x] Dark mode: Estoque card POs fundo branco → fundo escuro + letra dourada
+- [x] Dark mode: Estoque card "Madeira aguardando escolha" quebra de texto
+- [x] Dark mode: Vendas gráfico evolução diária desconfigurado (azul → dourado brilhante, letras legíveis)
+- [x] Mobile: Vendas cards pedidos encavalados (scroll horizontal para deslizar)
+- [x] Mobile: Aceite de Produção nome produto cortado sem scroll horizontal
+- [x] Dark mode: Configurações quadradinhos perderam cores (restaurar)
+- [x] Dark mode/Mobile: Inadimplência aba cortada, filtros inacessíveis
+- [x] Dark mode: Inadimplência bolinha nº3 branca → fundo escuro + texto branco/dourado
+- [x] Dark mode: Login logo fundo escuro com letras e raposa dourados grandes e brilhantes

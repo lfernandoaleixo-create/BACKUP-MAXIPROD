@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Lock, Loader2, Eye, EyeOff } from "lucide-react";
@@ -8,6 +8,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
 
 const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_ai_transparent_7e0dd68e.png";
+const LOGO_GOLD_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark_6da0c96d.png";
 const APP_VERSION = "V.2.1.1";
 
 const QUOTES = [
@@ -80,6 +81,34 @@ function getWeeklyQuote() {
   return QUOTES[index];
 }
 
+/** Wave animation component for "Seja bem-vindo(a)" - loops continuously */
+function WaveText({ text, isDark }: { text: string; isDark: boolean }) {
+  const [animate, setAnimate] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimate(true), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <span className="inline-flex flex-wrap justify-center" aria-label={text}>
+      {text.split("").map((char, i) => (
+        <span
+          key={i}
+          className="inline-block"
+          style={{
+            animation: animate ? `wave-letter 2s ease-in-out ${i * 0.07}s infinite` : "none",
+            color: isDark ? "#DAA520" : "#0d9488",
+            textShadow: isDark ? "0 0 12px rgba(255,215,0,0.6), 0 2px 4px rgba(184,134,11,0.4)" : "none",
+          }}
+        >
+          {char === " " ? "\u00A0" : char}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -110,20 +139,35 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col items-center pt-[6vh] px-4">
+    <div
+      className="min-h-screen flex flex-col items-center pt-[5vh] px-4"
+      style={{
+        background: isDark
+          ? "#000000"
+          : "linear-gradient(135deg, #f8fafc 0%, #ecfdf5 30%, #f1f5f9 100%)",
+        // 4K text rendering
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
+        textRendering: "optimizeLegibility",
+      }}
+    >
       {/* Frase motivacional */}
-      <div className="text-center px-4 mb-2">
+      <div className="text-center px-4 mb-3">
         <p
           className="italic max-w-xl mx-auto"
           style={{
             fontFamily: "'Playfair Display', 'Georgia', serif",
             fontSize: "clamp(1rem, 2vw, 1.25rem)",
             lineHeight: 1.4,
+            letterSpacing: "0.01em",
             ...(isDark ? {
-              background: "linear-gradient(90deg, #f6d365, #fef9c3, #f6d365)",
+              background: "linear-gradient(90deg, #B8860B, #FFD700, #DAA520, #FFD700, #B8860B)",
+              backgroundSize: "200% 100%",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
+              textShadow: "none",
+              filter: "drop-shadow(0 0 6px rgba(255,215,0,0.3))",
             } : {
               color: "#475569",
             }),
@@ -132,11 +176,16 @@ export default function LoginScreen() {
           &ldquo;{quote.text}&rdquo;
         </p>
         <p
-          className="mt-1 font-medium tracking-wide"
+          className="mt-1.5 font-semibold tracking-wide"
           style={{
             fontFamily: "'Inter', 'Helvetica Neue', sans-serif",
             fontSize: "0.8rem",
-            color: isDark ? "#fbbf24" : "#0d9488",
+            ...(isDark ? {
+              color: "#DAA520",
+              textShadow: "0 0 8px rgba(218,165,32,0.4)",
+            } : {
+              color: "#0d9488",
+            }),
           }}
         >
           &mdash; {quote.author}
@@ -146,38 +195,73 @@ export default function LoginScreen() {
       {/* Logo */}
       <div className="mb-2 flex justify-center">
         <img
-          src={LOGO_URL}
+          src={isDark ? LOGO_GOLD_URL : LOGO_URL}
           alt="Grupo Fox"
-          className="h-auto block login-logo"
+          className={`h-auto block ${isDark ? '' : 'login-logo'}`}
           style={{
-            width: "min(320px, 70vw)",
-            transform: "perspective(800px) rotateX(2deg) translateX(14px)",
+            width: isDark ? "min(340px, 75vw)" : "min(320px, 70vw)",
+            transform: "perspective(800px) rotateX(2deg)",
             transition: "transform 0.3s ease, filter 0.3s ease",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "perspective(800px) rotateX(0deg) scale(1.04) translateX(14px)";
+            e.currentTarget.style.transform = "perspective(800px) rotateX(0deg) scale(1.04)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "perspective(800px) rotateX(2deg) translateX(14px)";
+            e.currentTarget.style.transform = "perspective(800px) rotateX(2deg)";
           }}
         />
       </div>
 
+      {/* "Seja bem-vindo(a)" wave text */}
+      <div className="mb-4 text-center">
+        <h2
+          style={{
+            fontFamily: "'Playfair Display', 'Georgia', serif",
+            fontSize: "clamp(1.4rem, 3.5vw, 1.9rem)",
+            fontWeight: 700,
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+          }}
+        >
+          <WaveText text="Seja bem-vindo(a)" isDark={isDark} />
+        </h2>
+      </div>
+
       {/* Login Card */}
       <div
-        className="w-72 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-2xl border border-white/60 dark:border-slate-700/60 px-6 py-5"
+        className="w-72 backdrop-blur-sm rounded-2xl px-6 py-5"
         style={{
-          boxShadow: "0 20px 40px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(255,255,255,0.5) inset",
+          background: isDark
+            ? "rgba(15, 15, 15, 0.9)"
+            : "rgba(255, 255, 255, 0.92)",
+          border: isDark
+            ? "1px solid rgba(218, 165, 32, 0.25)"
+            : "1px solid rgba(255, 255, 255, 0.6)",
+          boxShadow: isDark
+            ? "0 20px 40px rgba(0,0,0,0.5), 0 0 30px rgba(218,165,32,0.08), inset 0 1px 0 rgba(218,165,32,0.1)"
+            : "0 20px 40px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(255,255,255,0.5) inset",
         }}
       >
         <div className="text-center mb-4">
           <div
-            className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-2"
-            style={{ boxShadow: "0 4px 12px rgba(13,148,136,0.35)" }}
+            className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2"
+            style={{
+              background: isDark
+                ? "linear-gradient(135deg, #B8860B, #DAA520)"
+                : "linear-gradient(135deg, #14b8a6, #0d9488)",
+              boxShadow: isDark
+                ? "0 4px 12px rgba(218,165,32,0.4)"
+                : "0 4px 12px rgba(13,148,136,0.35)",
+            }}
           >
             <Lock className="w-5 h-5 text-white" />
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Digite sua senha para acessar</p>
+          <p
+            className="text-sm font-medium"
+            style={{ color: isDark ? "#a3a3a3" : "#64748b" }}
+          >
+            Digite sua senha para acessar
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -187,7 +271,12 @@ export default function LoginScreen() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Senha"
-              className="h-11 text-center text-base pr-10 rounded-xl border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-teal-400 focus:ring-teal-400/20"
+              className="h-11 text-center text-base pr-10 rounded-xl"
+              style={{
+                background: isDark ? "#1a1a1a" : "#ffffff",
+                border: isDark ? "1px solid rgba(218,165,32,0.3)" : "1px solid #e2e8f0",
+                color: isDark ? "#ffffff" : "#1e293b",
+              }}
               autoFocus
             />
             <button
@@ -201,8 +290,15 @@ export default function LoginScreen() {
           <Button
             type="submit"
             disabled={validateMutation.isPending || !password.trim()}
-            className="w-full h-11 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold text-sm rounded-xl transition-all duration-200"
-            style={{ boxShadow: "0 4px 12px rgba(13,148,136,0.3)" }}
+            className="w-full h-11 text-white font-semibold text-sm rounded-xl transition-all duration-200"
+            style={{
+              background: isDark
+                ? "linear-gradient(135deg, #B8860B, #DAA520, #B8860B)"
+                : "linear-gradient(135deg, #14b8a6, #0d9488)",
+              boxShadow: isDark
+                ? "0 4px 12px rgba(218,165,32,0.35)"
+                : "0 4px 12px rgba(13,148,136,0.3)",
+            }}
           >
             {validateMutation.isPending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -213,7 +309,12 @@ export default function LoginScreen() {
         </form>
       </div>
 
-      <p className="mt-3 text-xs text-slate-400 dark:text-slate-500 font-mono tracking-wider">{APP_VERSION}</p>
+      <p
+        className="mt-3 text-xs font-mono tracking-wider"
+        style={{ color: isDark ? "#ffffff" : "#94a3b8" }}
+      >
+        {APP_VERSION}
+      </p>
     </div>
   );
 }

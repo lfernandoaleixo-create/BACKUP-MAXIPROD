@@ -332,12 +332,12 @@ function OrderRow({
               Itens do Pedido ({order.itens.length})
             </span>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 overflow-x-auto">
             {order.itens.map((item, idx) => (
-              <div key={idx} className="px-4 pl-12 py-3 hover:bg-slate-50/80 transition-colors">
-                <div className="flex items-start justify-between gap-4">
+              <div key={idx} className="px-3 md:px-4 pl-4 md:pl-12 py-3 hover:bg-slate-50/80 transition-colors">
+                <div className="flex items-start justify-between gap-2 md:gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-bold text-slate-800 leading-tight">{item.descricao}</p>
+                    <p className="text-sm md:text-base font-bold text-slate-800 leading-tight break-words">{item.descricao}</p>
                     {item.codigoItem && (
                       <span className="text-[10px] text-slate-400 font-mono">Cód: {item.codigoItem}</span>
                     )}

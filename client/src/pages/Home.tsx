@@ -566,7 +566,7 @@ function POCell({ item }: { item: StockItem }) {
           )}
         </div>
       </TooltipTrigger>
-      <TooltipContent side="left" className="max-w-[380px] p-0 bg-white text-slate-800 border border-slate-200 shadow-xl">
+      <TooltipContent side="left" className="max-w-[380px] p-0 bg-white dark:bg-slate-900 text-slate-800 dark:text-amber-100 border border-slate-200 dark:border-amber-500/50 shadow-xl">
         <div className="p-3 space-y-2">
           <p className="font-semibold text-sm flex items-center gap-1.5">
             <Ship className="w-4 h-4 text-blue-500" />
@@ -577,9 +577,9 @@ function POCell({ item }: { item: StockItem }) {
             {isKg && <span className="ml-1">({formatNumber(poCx, true)} sacos)</span>}
           </p>
           {lotes.length > 0 && (
-            <div className="border border-slate-200 rounded overflow-hidden">
+            <div className="border border-slate-200 dark:border-slate-700 rounded overflow-hidden">
               <table className="w-full text-xs">
-                <thead className="bg-slate-50">
+                <thead className="bg-slate-50 dark:bg-slate-800">
                   <tr>
                     <th className="px-2 py-1 text-left font-medium">PO</th>
                     <th className="px-2 py-1 text-left font-medium">Entrega</th>
@@ -2119,7 +2119,7 @@ function ClassificationCard({
 
 
   return (
-    <div className={`bg-white rounded-xl border-l-4 ${borderColor} border border-slate-100 shadow-sm transition-all duration-300`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-xl border-l-4 ${borderColor} border border-slate-100 dark:border-slate-700 shadow-sm transition-all duration-300`}>
       {/* Header - Clickable */}
       <button
         onClick={onToggle}
@@ -2805,7 +2805,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
   }, [handleSave]);
 
   return (
-    <div className="bg-white rounded-xl border-l-4 border-l-green-600 border border-slate-100 shadow-sm transition-all duration-300">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border-l-4 border-l-green-600 border border-slate-100 dark:border-slate-700 shadow-sm transition-all duration-300">
       <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEditItem(null); }} onConfirm={handlePasswordConfirm} title="Quem está editando?" />
       <StockHistoryModal open={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(undefined); }} card="madeira" codigoItem={historyItem?.codigo} descricaoItem={historyItem?.descricao} />
 
@@ -2816,9 +2816,9 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
               <TreePine className="w-5 h-5 md:w-6 md:h-6 text-green-700" />
             </div>
             <div>
-              <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                <h3 className="text-sm md:text-lg font-bold text-slate-800">Madeira - Produto Acabado</h3>
-                <span className="text-[10px] md:text-sm font-extrabold text-green-700 bg-green-100 border border-green-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full">{parentItems.length} itens</span>
+              <div className="flex items-center gap-2 md:gap-3">
+                <h3 className="text-xs md:text-lg font-bold text-slate-800"><span className="hidden md:inline">Madeira - </span>Prod. Acabado</h3>
+                <span className="text-[10px] md:text-sm font-extrabold text-green-700 bg-green-100 border border-green-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{parentItems.length} itens</span>
               </div>
               <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">{parentItems.length} produtos industrializados de madeira - estoque (somente aumento)</p>
             </div>
@@ -3558,7 +3558,7 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
   }, [handleSave]);
 
   return (
-    <div className="bg-white rounded-xl border-l-4 border-l-amber-600 border border-slate-100 shadow-sm transition-all duration-300">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border-l-4 border-l-amber-600 border border-slate-100 dark:border-slate-700 shadow-sm transition-all duration-300">
       <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEditItem(null); }} onConfirm={handlePasswordConfirm} title="Quem está editando?" />
       <StockHistoryModal open={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(undefined); }} card="semiPronto" codigoItem={historyItem?.codigo} descricaoItem={historyItem?.descricao} />
 
@@ -3569,8 +3569,8 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
               <Hammer className="w-5 h-5 md:w-6 md:h-6 text-amber-700" />
             </div>
             <div>
-              <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                <h3 className="text-sm md:text-lg font-bold text-slate-800">Madeira Semi Pronto</h3>
+              <div className="flex items-center gap-2 md:gap-3">
+                <h3 className="text-xs md:text-lg font-bold text-slate-800"><span className="hidden md:inline">Madeira </span>Semi Pronto</h3>
                 <span className="text-[10px] md:text-sm font-extrabold text-blue-700 bg-blue-100 border border-blue-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{parentItems.length} itens</span>
               </div>
               <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">{parentItems.length} produtos industrializados de madeira - estoque</p>
@@ -3800,7 +3800,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
   }, [handleSave]);
 
   return (
-    <div className="bg-white rounded-xl border-l-4 border-l-purple-600 border border-slate-100 shadow-sm transition-all duration-300">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border-l-4 border-l-purple-600 border border-slate-100 dark:border-slate-700 shadow-sm transition-all duration-300">
       <PasswordModal open={showPasswordModal} onClose={() => { setShowPasswordModal(false); setPendingEditItem(null); }} onConfirm={handlePasswordConfirm} title="Quem está editando?" />
       <StockHistoryModal open={showHistory} onClose={() => { setShowHistory(false); setHistoryItem(undefined); }} card="aguardandoEscolha" codigoItem={historyItem?.codigo} descricaoItem={historyItem?.descricao} />
 
@@ -3811,8 +3811,8 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
               <Clock className="w-5 h-5 md:w-6 md:h-6 text-purple-700" />
             </div>
             <div>
-              <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                <h3 className="text-sm md:text-lg font-bold text-slate-800">Madeira Aguardando Escolha</h3>
+              <div className="flex items-center gap-2 md:gap-3">
+                <h3 className="text-xs md:text-lg font-bold text-slate-800"><span className="hidden md:inline">Madeira </span>Aguard. Escolha</h3>
                 <span className="text-[10px] md:text-sm font-extrabold text-amber-700 bg-amber-100 border border-amber-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{parentItems.length} itens</span>
               </div>
               <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">{parentItems.length} produtos industrializados de madeira - aguardando escolha</p>

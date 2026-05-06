@@ -819,7 +819,7 @@ function OperatorManagementPanel() {
                         className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
                           (op as any)[col.key]
                             ? `${col.color} border-transparent text-white`
-                            : "border-slate-300 hover:border-slate-400 bg-white"
+                            : "border-slate-300 dark:border-slate-500 hover:border-slate-400 bg-white dark:bg-slate-700"
                         }`}
                       >
                         {(op as any)[col.key] && <Check className="w-3.5 h-3.5" />}
@@ -841,7 +841,7 @@ function OperatorManagementPanel() {
                 </tr>
                 {isExpanded && (
                   <tr key={`${op.id}-granular`}>
-                    <td colSpan={PERMISSION_COLS.length + 3} className="px-4 py-4 bg-slate-50/80">
+                    <td colSpan={PERMISSION_COLS.length + 3} className="px-4 py-4 bg-slate-50/80 dark:bg-slate-900/80">
                       <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
                         Permissões Detalhadas de {op.name}
                       </div>
@@ -849,7 +849,7 @@ function OperatorManagementPanel() {
                         {GRANULAR_GROUPS.map(group => {
                           const parentEnabled = hasAnyParentTab(group.parentTab);
                           return (
-                            <div key={group.parentTab} className={`rounded-lg border p-3 ${parentEnabled ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-50'}`}>
+                            <div key={group.parentTab} className={`rounded-lg border p-3 ${parentEnabled ? 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800' : 'border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 opacity-50'}`}>
                               <div className="flex items-center gap-2 mb-3">
                                 <div className={`w-3 h-3 rounded-full ${group.color}`} />
                                 <span className="text-xs font-bold text-slate-700 uppercase">{group.label}</span>
@@ -868,8 +868,8 @@ function OperatorManagementPanel() {
                                           enabled
                                             ? `${group.color} border-transparent text-white`
                                             : parentEnabled
-                                              ? "border-slate-300 hover:border-slate-400 bg-white"
-                                              : "border-slate-200 bg-slate-100 cursor-not-allowed"
+                                              ? "border-slate-300 dark:border-slate-500 hover:border-slate-400 bg-white dark:bg-slate-700"
+                                              : "border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
                                         }`}
                                       >
                                         {enabled && <Check className="w-3 h-3" />}

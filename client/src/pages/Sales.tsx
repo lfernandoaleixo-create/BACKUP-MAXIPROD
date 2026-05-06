@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo, useCallback, useRef } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import ConnectionStatusCard from "@/components/ConnectionStatusCard";
 import { ClientSearchCard } from "@/components/ClientSearchCard";
@@ -332,6 +333,8 @@ function DailyChart({ data, mode, period, comparison }: {
     bestMonthLabel?: string;
   } | null;
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const dataMap = useMemo(() => {
@@ -538,8 +541,8 @@ function DailyChart({ data, mode, period, comparison }: {
           {/* Grid lines + left axis (bars) */}
           {yTicks.map((tick, i) => (
             <g key={`grid-${i}`}>
-              <line x1={paddingLeft} y1={tick.y} x2={svgWidth - paddingRight} y2={tick.y} stroke="#f1f5f9" strokeWidth="1" />
-              <text x={paddingLeft - 8} y={tick.y + 4} textAnchor="end" fill="#94a3b8" fontSize="10">
+              <line x1={paddingLeft} y1={tick.y} x2={svgWidth - paddingRight} y2={tick.y} className="stroke-slate-100 dark:stroke-slate-700" strokeWidth="1" />
+              <text x={paddingLeft - 8} y={tick.y + 4} textAnchor="end" className="fill-slate-400 dark:fill-slate-300" fontSize="10">
                 {mode === "value" ? (tick.value >= 1000 ? `${(tick.value / 1000).toFixed(0)}k` : tick.value.toFixed(0)) : tick.value.toFixed(0)}
               </text>
             </g>
@@ -550,7 +553,7 @@ function DailyChart({ data, mode, period, comparison }: {
             const val = maxCumulative * pct;
             const yPos = paddingTop + plotH - pct * plotH;
             return (
-              <text key={`rtick-${i}`} x={svgWidth - paddingRight + 8} y={yPos + 4} fill="#94a3b8" fontSize="9" fontWeight="500">
+              <text key={`rtick-${i}`} x={svgWidth - paddingRight + 8} y={yPos + 4} className="fill-slate-400 dark:fill-slate-300" fontSize="9" fontWeight="500">
                 {val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)}
               </text>
             );
@@ -573,9 +576,9 @@ function DailyChart({ data, mode, period, comparison }: {
                   width={barWidth}
                   height={item.isFuture ? plotH : barH}
                   rx="2"
-                  fill={item.isFuture ? "#f8fafc" : val === 0 ? "#f1f5f9" : isWeekend ? "#cbd5e1" : "#14b8a6"}
+                  fill={item.isFuture ? (isDark ? "#1e293b" : "#f8fafc") : val === 0 ? (isDark ? "#334155" : "#f1f5f9") : isWeekend ? (isDark ? "#a08520" : "#cbd5e1") : "#d4a017"}
                   opacity={item.isFuture ? 0.5 : 0.85}
-                  stroke={item.isFuture ? "#e2e8f0" : "none"}
+                  stroke={item.isFuture ? (isDark ? "#475569" : "#e2e8f0") : "none"}
                   strokeWidth={item.isFuture ? 1 : 0}
                   strokeDasharray={item.isFuture ? "3 2" : "none"}
                   className={!item.isFuture && val > 0 ? "bar-animated" : undefined}
@@ -586,19 +589,18 @@ function DailyChart({ data, mode, period, comparison }: {
                     x={x + barWidth / 2}
                     y={y - 8}
                     textAnchor="middle"
-                    fill="#1e293b"
+                    className="fill-slate-800 dark:fill-amber-200 label-animated"
                     fontSize="13"
                     fontWeight="700"
-                    className="label-animated"
                     style={{ animationDelay: `${idx * 60 + 300}ms` }}
                   >
                     {mode === "value" ? (val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val.toFixed(0)) : val}
                   </text>
                 )}
-                <text x={x + barWidth / 2} y={paddingTop + plotH + 18} textAnchor="middle" fill={isWeekend ? "#f87171" : "#475569"} fontSize="13" fontWeight="600">
+                <text x={x + barWidth / 2} y={paddingTop + plotH + 18} textAnchor="middle" className={isWeekend ? "fill-red-400" : "fill-slate-600 dark:fill-slate-300"} fontSize="13" fontWeight="600">
                   {dayNum}
                 </text>
-                <text x={x + barWidth / 2} y={paddingTop + plotH + 34} textAnchor="middle" fill={isWeekend ? "#fca5a5" : "#94a3b8"} fontSize="11">
+                <text x={x + barWidth / 2} y={paddingTop + plotH + 34} textAnchor="middle" className={isWeekend ? "fill-red-300" : "fill-slate-400 dark:fill-slate-400"} fontSize="11">
                   {formatWeekday(item.day)}
                 </text>
                 {/* Invisible wider rect for hover */}
@@ -928,8 +930,8 @@ function CumulativeLineChart({ comparison }: {
           {/* Grid lines */}
           {yTicks.map((tick, i) => (
             <g key={i}>
-              <line x1={paddingLeft} y1={tick.y} x2={chartWidth - paddingRight} y2={tick.y} stroke="#e2e8f0" strokeWidth="1" />
-              <text x={paddingLeft - 8} y={tick.y + 4} textAnchor="end" className="text-[10px]" fill="#94a3b8">
+              <line x1={paddingLeft} y1={tick.y} x2={chartWidth - paddingRight} y2={tick.y} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth="1" />
+              <text x={paddingLeft - 8} y={tick.y + 4} textAnchor="end" className="text-[10px] fill-slate-400 dark:fill-slate-300">
                 {tick.value >= 1000 ? `${(tick.value / 1000).toFixed(0)}k` : tick.value.toFixed(0)}
               </text>
             </g>
@@ -1795,7 +1797,9 @@ function OrdersCard({ orders, title = "Pedidos", variant = "all" }: { orders: Or
             </div>
           </div>
 
-          {/* Table header */}
+          {/* Table header + Orders list - scrollable on mobile */}
+          <div className="overflow-x-auto">
+          <div className="min-w-[700px]">
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
             {/* Status */}
             <div className="w-28 flex-shrink-0">
@@ -1845,6 +1849,8 @@ function OrdersCard({ orders, title = "Pedidos", variant = "all" }: { orders: Or
               </div>
             )}
           </div>
+          </div>{/* close min-w-[700px] */}
+          </div>{/* close overflow-x-auto */}
         </div>
       )}
     </div>
@@ -2006,7 +2012,9 @@ function PreviousUnbilledCard({ months, orders }: { months: string[]; orders: Pr
             </div>
           </div>
 
-          {/* Table header */}
+          {/* Table header + Orders list - scrollable on mobile */}
+          <div className="overflow-x-auto">
+          <div className="min-w-[700px]">
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
             {/* Status */}
             <div className="w-28 flex-shrink-0">
@@ -2056,12 +2064,13 @@ function PreviousUnbilledCard({ months, orders }: { months: string[]; orders: Pr
               </div>
             )}
           </div>
+          </div>{/* close min-w-[700px] */}
+          </div>{/* close overflow-x-auto */}
         </div>
       )}
     </div>
   );
 }
-
 /* ---- Unified Unbilled Card (A Faturar Completo - 90 dias) ---- */
 type UnifiedOrderData = OrderData & { month: string; clienteTelefone?: string | null; clienteEmail?: string | null; observacoes?: string | null };
 
@@ -3336,7 +3345,7 @@ export default function Sales() {
             {/* KPI Principal - Valor Total + Faturado + A Faturar */}
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
               <div className="h-1.5 bg-gradient-to-r from-teal-400 to-teal-600" />
-              <div className="grid grid-cols-1 md:grid-cols-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
                 {/* Valor Total */}
                 <div className="p-5">
                   <div className="flex items-center gap-2 mb-2">

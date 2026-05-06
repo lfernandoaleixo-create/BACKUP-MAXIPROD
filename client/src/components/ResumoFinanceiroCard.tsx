@@ -535,7 +535,7 @@ export default function ResumoFinanceiroCard({ onPeriodChange }: { onPeriodChang
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden border-l-4 border-l-teal-500">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-slate-50/80 to-white">
+      <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700 bg-gradient-to-r from-slate-50/80 to-white dark:from-slate-800 dark:to-slate-800">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-teal-100 flex items-center justify-center">
