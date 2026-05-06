@@ -334,59 +334,59 @@ function drawWeekCard(
   doc.setLineWidth(0.2);
   doc.roundedRect(x, y, w, h, 1.5, 1.5, "S");
 
-  // Top accent bar
+  // Top accent bar (thicker like UI)
   doc.setFillColor(...colors.main);
-  doc.rect(x + 0.3, y, w - 0.6, 1, "F");
+  doc.rect(x + 0.3, y, w - 0.6, 1.2, "F");
 
-  // Row 1: SEMANA N + Dias X-Y
-  doc.setFontSize(5);
+  // Row 1: SEMANA N + Dias X-Y (y + 4.5)
+  doc.setFontSize(5.5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...colors.main);
-  doc.text(`SEMANA ${week.weekNum}`, x + 1.5, y + 4);
+  doc.text(`SEMANA ${week.weekNum}`, x + 2, y + 4.5);
 
   doc.setFontSize(4);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.slate400);
-  doc.text(`Dias ${week.startDay}\u2013${week.endDay}`, x + w - 1.5, y + 4, { align: "right" });
+  doc.text(`Dias ${week.startDay}\u2013${week.endDay}`, x + w - 2, y + 4.5, { align: "right" });
 
-  // Row 2: Big value
+  // Row 2: Big value (y + 10.5)
   if (week.total > 0) {
-    doc.setFontSize(8.5);
+    doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.dark);
-    doc.text(fmtCompactCurrency(week.total), x + 1.5, y + 9.5);
+    doc.text(fmtCompactCurrency(week.total), x + 2, y + 10.5);
   } else {
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C.slate400);
-    doc.text("\u2014", x + 1.5, y + 9.5);
+    doc.text("\u2014", x + 2, y + 10.5);
   }
 
-  // Row 3: média/dia
+  // Row 3: média/dia (y + 14.5)
   if (week.total > 0 && week.avg > 0) {
     doc.setFontSize(4);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...colors.main);
-    doc.text(`media ${fmtCurrency(week.avg)}/dia`, x + 1.5, y + 13);
+    doc.text(`media ${fmtCurrency(week.avg)}/dia`, x + 2, y + 14.5);
   }
 
-  // Row 3b: weekend sales (if any)
+  // Row 3b: weekend sales (y + 17.5)
   if (week.weekendSales > 0 && week.weekendDaysWithSales > 0) {
     doc.setFontSize(3.5);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...colors.main);
     const plural = week.weekendDaysWithSales > 1 ? "dias nao uteis" : "dia nao util";
-    doc.text(`+${fmtCompactCurrency(week.weekendSales)} em ${week.weekendDaysWithSales} ${plural}`, x + 1.5, y + 15.5);
+    doc.text(`+${fmtCompactCurrency(week.weekendSales)} em ${week.weekendDaysWithSales} ${plural}`, x + 2, y + 17.5);
   }
 
-  // Row 4: dias úteis
+  // Row 4: dias úteis (bottom)
   doc.setDrawColor(...C.slate200);
   doc.setLineWidth(0.1);
-  doc.line(x + 1.5, y + h - 4, x + w - 1.5, y + h - 4);
+  doc.line(x + 2, y + h - 5, x + w - 2, y + h - 5);
   doc.setFontSize(4);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.slate400);
-  doc.text(`${week.businessDays} dias uteis`, x + 1.5, y + h - 1.5);
+  doc.text(`${week.businessDays} dias uteis`, x + 2, y + h - 2);
 }
 
 // ─── Draw Bar+Line Chart (compact) ──────────────────────────────
@@ -1003,7 +1003,7 @@ export async function generateSalesPDF(
   // WEEKLY SUMMARY CARDS (below chart, aligned with weeks)
   // ══════════════════════════════════════════════════════════════
   if (weeks.length > 0) {
-    const weekCardH = 18;
+    const weekCardH = 22;
     const weekGap = weeks.length > 4 ? 1.5 : 2.5;
     const weekCardW = (kpiTotalW - weekGap * (weeks.length - 1)) / weeks.length;
 
