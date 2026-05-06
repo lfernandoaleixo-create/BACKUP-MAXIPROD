@@ -420,11 +420,15 @@ export default function Production() {
         return sectorTotal;
       }
       const dualUnit = isDualUnitSector(sector.ordem);
+      // Round each machine total individually to match the per-machine display
+      // (avoids discrepancy where 11.8+9.9+8.6=30.3→30 but display shows 12+10+9=31)
+      const shouldRoundPerMachine = !dualUnit && sector.unidadeMedida !== "m\u00b3";
       for (const machine of sector.machines) {
         const machineVariantOpts = getVariantOptions(sector.ordem, machine.ordem);
         // Include fibra options for Flow Pack per-machine as well
         const machineFibraOpts: typeof FLOWPACK_FIBRA_OPTIONS = isFlowPack(sector.ordem) ? FLOWPACK_FIBRA_OPTIONS : [];
         const allMachineOpts: typeof machineVariantOpts = [...machineVariantOpts, ...machineFibraOpts];
+        let machineTotal = 0;
         for (const opt of allMachineOpts as Array<{value: string; label: string}>) {
           if (dualUnit) {
             // Triple unit: saco direto + caixa pequena convertida + caixa grande convertida
@@ -464,21 +468,23 @@ export default function Production() {
               const entry = getEntryForVariant(sectorId, machine.id, `${opt.value}_cxg`);
               if (entry) cxgVal = Number(entry.quantidade);
             }
-            sectorTotal += sacoVal + convertCxpToSaco(opt.value, cxpVal) + convertCxgToSaco(opt.value, cxgVal);
+            machineTotal += sacoVal + convertCxpToSaco(opt.value, cxpVal) + convertCxgToSaco(opt.value, cxgVal);
           } else {
             // Single unit (Multilamina, Ponteira, etc.)
             const varKey = `${sectorId}-${machine.id}-${opt.value}`;
             if (variantEditValues[varKey] !== undefined) {
               if (variantEditValues[varKey] !== "") {
                 const num = parseFloat(variantEditValues[varKey].replace(",", "."));
-                if (!isNaN(num) && num >= 0) sectorTotal += num;
+                if (!isNaN(num) && num >= 0) machineTotal += num;
               }
             } else {
               const entry = getEntryForVariant(sectorId, machine.id, opt.value);
-              if (entry) sectorTotal += Number(entry.quantidade);
+              if (entry) machineTotal += Number(entry.quantidade);
             }
           }
         }
+        // Round per-machine to match displayed values (e.g. 11.8→12, 9.9→10)
+        sectorTotal += shouldRoundPerMachine ? Math.round(machineTotal) : machineTotal;
       }
       return sectorTotal;
     }
