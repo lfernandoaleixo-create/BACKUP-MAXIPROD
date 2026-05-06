@@ -1037,10 +1037,10 @@ export default function InadimplenciaTab() {
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 md:flex md:flex-wrap md:items-center gap-2">
           <button
             onClick={() => exportInadimplenciaPDF(filteredTitles, stats, protestConfigsMap)}
-            className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02] px-2 md:px-3"
+            className="flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02] px-3"
             title="Exportar lista de inadimplentes em PDF"
           >
             <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1049,7 +1049,7 @@ export default function InadimplenciaTab() {
           {canCobranca && (
             <button
               onClick={() => setShowImportDialog(true)}
-              className="flex items-center justify-center gap-1.5 min-w-[100px] md:min-w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-3 md:px-4"
+              className="flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-3"
               title="Importar planilha de cobrança (XLSX)"
             >
               <Upload className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1058,15 +1058,15 @@ export default function InadimplenciaTab() {
           )}
           <button
             onClick={() => setShowDecisionPdfHistory(true)}
-            className="flex items-center justify-center gap-1.5 min-w-[100px] md:min-w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-3 md:px-4"
+            className="flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-3"
             title="Ver histórico de PDFs de decisão gerados"
           >
             <Stamp className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-            <span className="text-center leading-tight">PDF de Decisão de Cobrança</span>
+            <span className="text-center leading-tight text-[10px] md:text-sm">PDF Decisão</span>
           </button>
           <button
             onClick={() => setShowMetricsPanel(true)}
-            className="flex items-center justify-center gap-1.5 w-[100px] md:w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02] px-2 md:px-3"
+            className="flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02] px-3"
             title="Ver métricas e analytics de cobrança"
           >
             <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1075,7 +1075,7 @@ export default function InadimplenciaTab() {
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
-              className="flex items-center justify-center gap-1.5 min-w-[100px] md:min-w-[150px] h-[44px] md:h-[52px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[11px] md:text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-3 md:px-4"
+              className="col-span-2 flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[11px] md:text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-3"
               title="Ver guia completo do processo de cobrança"
             >
               <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -2022,20 +2022,20 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
       {/* 7 Bolinhas Manuais — Card elegante abaixo da linha */}
       {canManualTick && (
         <div className="mx-3 mb-2 mt-0.5" onClick={e => e.stopPropagation()}>
-          <div className={`rounded-lg border shadow-sm px-4 py-2.5 ${hasRedTicks ? 'bg-gradient-to-r from-red-50 via-white to-red-50 border-red-200/80' : 'bg-gradient-to-r from-slate-50 via-white to-slate-50 border-slate-200/80'}`}>
-            <div className="flex items-center gap-4">
+          <div className={`rounded-lg border shadow-sm px-2 md:px-4 py-2 md:py-2.5 ${hasRedTicks ? 'bg-gradient-to-r from-red-50 via-white to-red-50 border-red-200/80' : 'bg-gradient-to-r from-slate-50 via-white to-slate-50 border-slate-200/80'}`}>
+            <div className="flex items-center gap-2 md:gap-4">
               {/* Label */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
                 <div className={`w-2 h-2 rounded-full ${hasRedTicks ? 'bg-red-500' : tickedCount === 7 ? 'bg-emerald-500' : tickedCount > 0 ? 'bg-amber-400' : 'bg-slate-300'}`} />
-                <span className={`text-[10px] font-semibold uppercase tracking-wider ${hasRedTicks ? 'text-red-600' : 'text-slate-500'}`}>Roteiro</span>
-                <span className={`text-[10px] font-medium ${hasRedTicks ? 'text-red-500' : 'text-slate-400'}`}>{tickedCount}/7</span>
+                <span className={`text-[9px] md:text-[10px] font-semibold uppercase tracking-wider ${hasRedTicks ? 'text-red-600' : 'text-slate-500'}`}>Roteiro</span>
+                <span className={`text-[9px] md:text-[10px] font-medium ${hasRedTicks ? 'text-red-500' : 'text-slate-400'}`}>{tickedCount}/7</span>
               </div>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-slate-200" />
+              <div className="w-px h-6 bg-slate-200 hidden md:block" />
 
               {/* Steps */}
-              <div className="flex items-center gap-0 flex-1">
+              <div className="flex items-center gap-0 flex-1 overflow-x-auto">
                 <TooltipProvider delayDuration={150}>
                   {[1,2,3,4,5,6,7].map((step, idx) => {
                     const tick = tickMap[step];
@@ -2094,7 +2094,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                               disabled={isToggling}
                               className="flex flex-col items-center gap-0.5 group"
                             >
-                              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
+                              <div className={`w-6 h-6 md:w-7 md:h-7 rounded-full border-2 flex items-center justify-center transition-all ${
                                 isPendingBlink
                                   ? 'bg-red-100 border-red-400 text-red-600 animate-pulse shadow-sm shadow-red-300 cursor-pointer'
                                   : isRed
@@ -2118,7 +2118,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                                   }`}>{step}</span>
                                 )}
                               </div>
-                              <span className={`text-[8px] leading-none font-medium whitespace-nowrap ${
+                              <span className={`text-[7px] md:text-[8px] leading-none font-medium whitespace-nowrap hidden md:block ${
                                 isPendingBlink ? 'text-red-600 animate-pulse font-bold' :
                                 isRed ? 'text-red-600' :
                                 isBlue ? 'text-blue-600' :
@@ -2196,9 +2196,9 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               </div>
 
               {/* Progress bar */}
-              <div className="w-px h-6 bg-slate-200" />
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+              <div className="w-px h-6 bg-slate-200 hidden md:block" />
+              <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+                <div className="w-10 md:w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
                   {greenCount > 0 && (
                     <div
                       className="h-full bg-emerald-500 transition-all duration-500"

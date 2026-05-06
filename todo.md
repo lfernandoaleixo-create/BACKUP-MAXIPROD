@@ -3467,3 +3467,7 @@
 - [x] Bug: Estoque Importação tabela mobile - colunas sobrepostas/encavaladas, precisa min-width e scroll horizontal
 - [x] Bug: Financeiro aba - cards ENTRADAS com texto sobreposto no mobile (Vendas/Reve + R$ valor encavalados)
 - [x] Vendas: Métricas - adicionar filtros de Estado Configurável (Bambu, Madeira, Fibra) e Segmento (Indústria, Lojas) no detalhe de cada vendedor no ranking
+- [x] Bug mobile: Inadimplência - botões PDF, Importar Planilha, PDF de Decisão, Métricas desalinhados/jogados na tela
+- [x] Bug mobile: Inadimplência - bolinhas do ROTEIRO (Ação, Intervalo, etc.) encavalando com números e labels
+- [x] Bug mobile: Recebíveis - card Resultado do Filtro (TOTAL, VENCIDO, A VENCER) com valores cortados/sobrepostos
+- [x] Bug mobile: Recebíveis - badges/pills de resumo precisam de melhor alinhamento

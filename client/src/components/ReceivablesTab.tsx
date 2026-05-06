@@ -737,88 +737,88 @@ function ContaFiltersAndTable({
 
             <div className="relative z-10">
               {/* Header */}
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                    <Filter className="w-4 h-4 text-white" />
+                  <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+                    <Filter className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
                   </div>
-                  <div>
-                    <h4 className="text-white font-bold text-sm">Resultado do Filtro</h4>
-                    <p className="text-indigo-300 text-[10px] font-medium">{filterDescription}</p>
+                  <div className="min-w-0">
+                    <h4 className="text-white font-bold text-xs md:text-sm">Resultado do Filtro</h4>
+                    <p className="text-indigo-300 text-[9px] md:text-[10px] font-medium truncate">{filterDescription}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 md:gap-2">
                   {/* Exportar PDF */}
                   <button
                     onClick={() => exportFilteredPDF(contaLabel, filterDescription, filteredItems, filteredTotals, empresaNome, mesLabel)}
-                    className="text-emerald-400 hover:text-white text-[10px] flex items-center gap-1 transition-colors bg-white/5 hover:bg-emerald-500/30 px-2.5 py-1.5 rounded-lg border border-emerald-400/30 hover:border-emerald-400/60"
+                    className="text-emerald-400 hover:text-white text-[9px] md:text-[10px] flex items-center gap-1 transition-colors bg-white/5 hover:bg-emerald-500/30 px-2 py-1.5 rounded-lg border border-emerald-400/30 hover:border-emerald-400/60"
                     title="Exportar PDF deste filtro"
                   >
-                    <FileText className="w-3.5 h-3.5" /> PDF
+                    <FileText className="w-3 h-3 md:w-3.5 md:h-3.5" /> PDF
                   </button>
                   {/* Verificar no Maxiprod */}
                   {canVerifyMaxiprod && (
                     <button
                       onClick={() => setShowVerifyModal(true)}
-                      className="text-amber-400 hover:text-white text-[10px] flex items-center gap-1.5 transition-colors bg-white/5 hover:bg-amber-500/30 px-2.5 py-1.5 rounded-lg border border-amber-400/30 hover:border-amber-400/60 shadow-[0_0_8px_rgba(251,191,36,0.15)] hover:shadow-[0_0_12px_rgba(251,191,36,0.3)]"
+                      className="text-amber-400 hover:text-white text-[9px] md:text-[10px] flex items-center gap-1 transition-colors bg-white/5 hover:bg-amber-500/30 px-2 py-1.5 rounded-lg border border-amber-400/30 hover:border-amber-400/60"
                       title="Verificar no Maxiprod"
                     >
-                      <Eye className="w-3.5 h-3.5" /> Maxiprod
+                      <Eye className="w-3 h-3 md:w-3.5 md:h-3.5" /> Maxiprod
                     </button>
                   )}
                   <button onClick={() => { setStatusFilter("TODOS"); setFormaFilter("TODOS"); }}
-                    className="text-indigo-400 hover:text-white text-[10px] flex items-center gap-1 transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded-lg border border-white/10">
+                    className="text-indigo-400 hover:text-white text-[9px] md:text-[10px] flex items-center gap-1 transition-colors bg-white/5 hover:bg-white/10 px-1.5 py-1 rounded-lg border border-white/10">
                     <X className="w-3 h-3" /> Limpar
                   </button>
                 </div>
               </div>
 
               {/* Valores */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {/* Total */}
-                <div className="relative group">
+                <div className="relative group min-w-0">
                   <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-lg blur-sm group-hover:blur-md transition-all" />
-                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-3 hover:border-cyan-400/30 transition-all">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.6)]" />
-                      <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider">Total</span>
+                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-2 md:p-3 hover:border-cyan-400/30 transition-all">
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.6)] shrink-0" />
+                      <span className="text-[9px] md:text-[10px] font-bold text-cyan-300 uppercase tracking-wider">Total</span>
                     </div>
-                    <div className="text-lg font-extrabold text-white tracking-tight" style={{ textShadow: "0 0 20px rgba(34,211,238,0.3)" }}>
+                    <div className="text-sm md:text-lg font-extrabold text-white tracking-tight truncate" style={{ textShadow: "0 0 20px rgba(34,211,238,0.3)" }}>
                       {formatCurrency(filteredTotals.total)}
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">{filteredTotals.count} {filteredTotals.count === 1 ? "título" : "títulos"}</div>
+                    <div className="text-[9px] md:text-[10px] text-slate-400 mt-0.5">{filteredTotals.count} {filteredTotals.count === 1 ? "título" : "títulos"}</div>
                   </div>
                 </div>
 
                 {/* Vencido */}
-                <div className="relative group">
+                <div className="relative group min-w-0">
                   <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-lg blur-sm group-hover:blur-md transition-all" />
-                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-3 hover:border-red-400/30 transition-all">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)]" />
-                      <span className="text-[10px] font-bold text-red-300 uppercase tracking-wider">Vencido</span>
+                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-2 md:p-3 hover:border-red-400/30 transition-all">
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)] shrink-0" />
+                      <span className="text-[9px] md:text-[10px] font-bold text-red-300 uppercase tracking-wider">Vencido</span>
                     </div>
-                    <div className="text-lg font-extrabold text-red-300 tracking-tight" style={{ textShadow: "0 0 20px rgba(248,113,113,0.3)" }}>
+                    <div className="text-sm md:text-lg font-extrabold text-red-300 tracking-tight truncate" style={{ textShadow: "0 0 20px rgba(248,113,113,0.3)" }}>
                       {formatCurrency(filteredTotals.vencido)}
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">
+                    <div className="text-[9px] md:text-[10px] text-slate-400 mt-0.5">
                       {filteredTotals.total > 0 ? `${((filteredTotals.vencido / filteredTotals.total) * 100).toFixed(1)}%` : "0%"}
                     </div>
                   </div>
                 </div>
 
                 {/* A Vencer */}
-                <div className="relative group">
+                <div className="relative group min-w-0">
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-green-500/20 rounded-lg blur-sm group-hover:blur-md transition-all" />
-                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-3 hover:border-emerald-400/30 transition-all">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-                      <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">A Vencer</span>
+                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 p-2 md:p-3 hover:border-emerald-400/30 transition-all">
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)] shrink-0" />
+                      <span className="text-[9px] md:text-[10px] font-bold text-emerald-300 uppercase tracking-wider">A Vencer</span>
                     </div>
-                    <div className="text-lg font-extrabold text-emerald-300 tracking-tight" style={{ textShadow: "0 0 20px rgba(52,211,153,0.3)" }}>
+                    <div className="text-sm md:text-lg font-extrabold text-emerald-300 tracking-tight truncate" style={{ textShadow: "0 0 20px rgba(52,211,153,0.3)" }}>
                       {formatCurrency(filteredTotals.aVencer)}
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">
+                    <div className="text-[9px] md:text-[10px] text-slate-400 mt-0.5">
                       {filteredTotals.total > 0 ? `${((filteredTotals.aVencer / filteredTotals.total) * 100).toFixed(1)}%` : "0%"}
                     </div>
                   </div>
@@ -1777,15 +1777,15 @@ export default function ReceivablesTab() {
             <TrendingUp className="w-5 h-5 text-blue-600" />
             Controle de Recebíveis
           </h2>
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="inline-flex items-center px-3 py-1.5 rounded-lg border-2 border-blue-300 bg-blue-50 text-base font-bold text-blue-700 shadow-[0_0_8px_rgba(59,130,246,0.35)]">
+          <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mt-2">
+            <span className="inline-flex items-center px-2 md:px-3 py-1 md:py-1.5 rounded-lg border-2 border-blue-300 bg-blue-50 text-xs md:text-base font-bold text-blue-700 shadow-[0_0_8px_rgba(59,130,246,0.35)]">
               {totals.count} títulos
             </span>
-            <span className="inline-flex items-center px-3 py-1.5 rounded-lg border-2 border-slate-300 bg-slate-50 text-base font-bold text-slate-800 shadow-[0_0_8px_rgba(100,116,139,0.3)]">
+            <span className="inline-flex items-center px-2 md:px-3 py-1 md:py-1.5 rounded-lg border-2 border-slate-300 bg-slate-50 text-xs md:text-base font-bold text-slate-800 shadow-[0_0_8px_rgba(100,116,139,0.3)]">
               Total: {formatCurrency(totals.total)}
             </span>
             {totals.vencido > 0 && (
-              <span className="inline-flex items-center px-3 py-1.5 rounded-lg border-2 border-red-300 bg-red-50 text-base font-bold text-red-600 shadow-[0_0_8px_rgba(239,68,68,0.35)]">
+              <span className="inline-flex items-center px-2 md:px-3 py-1 md:py-1.5 rounded-lg border-2 border-red-300 bg-red-50 text-xs md:text-base font-bold text-red-600 shadow-[0_0_8px_rgba(239,68,68,0.35)]">
                 Vencido: {formatCurrency(totals.vencido)}
               </span>
             )}
