@@ -3487,3 +3487,4 @@
 - [x] Dark mode: Texto preto no dark mode precisa ser claro (dourado brilhante, branco neon) para legibilidade
 - [x] Dark mode: Toggle deve mostrar texto "Ativar modo noturno" (lua) e "Ativar modo claro" (sol)
 - [x] Dark mode mobile: Corrigir cards com fundo claro (bg-amber-50/60, bg-emerald-50/80 etc.) usando CSS attribute selectors [class*="bg-*-50/100"] para forçar fundo escuro em todas as variantes de opacidade fracionária
+- [x] Dar permissão ao Marcos para ver as observações da equipe fiscal (Larissa/Brenda) na aba Faturamento
