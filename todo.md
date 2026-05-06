@@ -3537,3 +3537,5 @@
 - [x] Nav desktop: renomear "Config" para "Configuração" (manter abreviado no mobile)
 - [x] Madeira cards: centralizar texto (título + valor) dentro dos retângulos de Estoque/Pedidos/Disponível (como na Importação)
 - [x] Dashboard dark mode: substituir fundo preto do logo dourado pela cor de fundo do dashboard (cinza escuro/azulado)
+- [x] Madeira cards mobile: mostrar nomes completos sem abreviação (Madeira Produto Acabado, Madeira Semi Pronto, Madeira Aguardando Escolha)
+- [x] Madeira cards mobile: adicionar grid de métricas (Estoque/Pedidos/Disponível) visível no mobile

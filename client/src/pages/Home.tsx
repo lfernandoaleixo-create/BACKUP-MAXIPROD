@@ -2817,7 +2817,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             </div>
             <div>
               <div className="flex items-center gap-2 md:gap-3">
-                <h3 className="text-xs md:text-lg font-bold text-slate-800"><span className="hidden md:inline">Madeira - </span>Prod. Acabado</h3>
+                <h3 className="text-xs md:text-lg font-bold text-slate-800">Madeira <span className="hidden md:inline">- </span>Produto Acabado</h3>
                 <span className="text-[10px] md:text-sm font-extrabold text-green-700 bg-green-100 border border-green-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{parentItems.length} itens</span>
               </div>
               <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">{parentItems.length} produtos industrializados de madeira - estoque (somente aumento)</p>
@@ -2833,6 +2833,22 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
+        {/* Mobile metrics grid */}
+        <div className="grid grid-cols-3 gap-1.5 mt-3 sm:hidden">
+          <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-2 py-2.5 text-center">
+            <p className="text-[9px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
+            <p className="text-sm font-extrabold text-teal-700 mt-0.5">{formatNumber(paEstoqueCx, true)} <span className="text-[10px] font-semibold">cx</span></p>
+          </div>
+          <div className="bg-orange-50/80 dark:border dark:border-slate-600 rounded-lg px-2 py-2.5 text-center">
+            <p className="text-[9px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
+            <p className={`text-sm font-extrabold mt-0.5 ${paPedidosCx > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(paPedidosCx, true)} <span className="text-[10px] font-semibold">cx</span></p>
+          </div>
+          <div className={`rounded-lg px-2 py-2.5 text-center dark:border dark:border-slate-600 ${paDisponivelCx < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
+            <p className={`text-[9px] font-semibold uppercase tracking-wider ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
+            <p className={`text-sm font-extrabold mt-0.5 ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx, true)} <span className="text-[10px] font-semibold">cx</span></p>
+          </div>
+        </div>
+        {/* Desktop metrics grid */}
         <div className="hidden sm:grid gap-2 mt-4 ml-12" style={{ gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1.2fr 1.2fr 0.8fr' }}>
           <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5 text-center">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
@@ -3569,7 +3585,7 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
             </div>
             <div>
               <div className="flex items-center gap-2 md:gap-3">
-                <h3 className="text-xs md:text-lg font-bold text-slate-800"><span className="hidden md:inline">Madeira </span>Semi Pronto</h3>
+                <h3 className="text-xs md:text-lg font-bold text-slate-800">Madeira Semi Pronto</h3>
                 <span className="text-[10px] md:text-sm font-extrabold text-blue-700 bg-blue-100 border border-blue-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{parentItems.length} itens</span>
               </div>
               <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">{parentItems.length} produtos industrializados de madeira - estoque</p>
@@ -3585,6 +3601,22 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
+        {/* Mobile metrics grid - Semi Pronto */}
+        <div className="grid grid-cols-3 gap-1.5 mt-3 sm:hidden">
+          <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-2 py-2.5 text-center">
+            <p className="text-[9px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
+            <p className="text-sm font-extrabold text-teal-700 mt-0.5">{formatNumber(totalEstoque, true)} <span className="text-[10px] font-semibold">cx</span></p>
+          </div>
+          <div className="bg-orange-50/80 dark:border dark:border-slate-600 rounded-lg px-2 py-2.5 text-center">
+            <p className="text-[9px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
+            <p className={`text-sm font-extrabold mt-0.5 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-[10px] font-semibold">cx</span></p>
+          </div>
+          <div className={`rounded-lg px-2 py-2.5 text-center dark:border dark:border-slate-600 ${totalDisponivel < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
+            <p className={`text-[9px] font-semibold uppercase tracking-wider ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
+            <p className={`text-sm font-extrabold mt-0.5 ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-[10px] font-semibold">cx</span></p>
+          </div>
+        </div>
+        {/* Desktop metrics grid - Semi Pronto */}
 <div className="hidden sm:grid gap-2 mt-4 ml-12" style={{ gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1.2fr 1.2fr 0.8fr' }}>
           <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5 text-center">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
@@ -3811,7 +3843,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
             </div>
             <div>
               <div className="flex items-center gap-2 md:gap-3">
-                <h3 className="text-xs md:text-lg font-bold text-slate-800"><span className="hidden md:inline">Madeira </span>Aguard. Escolha</h3>
+                <h3 className="text-xs md:text-lg font-bold text-slate-800">Madeira Aguardando Escolha</h3>
                 <span className="text-[10px] md:text-sm font-extrabold text-amber-700 bg-amber-100 border border-amber-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{parentItems.length} itens</span>
               </div>
               <p className="text-[10px] md:text-xs text-slate-500 mt-0.5 hidden sm:block">{parentItems.length} produtos industrializados de madeira - aguardando escolha</p>
@@ -3827,6 +3859,22 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
+        {/* Mobile metrics grid - Aguardando Escolha */}
+        <div className="grid grid-cols-3 gap-1.5 mt-3 sm:hidden">
+          <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-2 py-2.5 text-center">
+            <p className="text-[9px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
+            <p className="text-sm font-extrabold text-teal-700 mt-0.5">{formatNumber(totalEstoque, true)} <span className="text-[10px] font-semibold">cx</span></p>
+          </div>
+          <div className="bg-orange-50/80 dark:border dark:border-slate-600 rounded-lg px-2 py-2.5 text-center">
+            <p className="text-[9px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
+            <p className={`text-sm font-extrabold mt-0.5 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-[10px] font-semibold">cx</span></p>
+          </div>
+          <div className={`rounded-lg px-2 py-2.5 text-center dark:border dark:border-slate-600 ${totalDisponivel < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
+            <p className={`text-[9px] font-semibold uppercase tracking-wider ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
+            <p className={`text-sm font-extrabold mt-0.5 ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-[10px] font-semibold">cx</span></p>
+          </div>
+        </div>
+        {/* Desktop metrics grid - Aguardando Escolha */}
         <div className="hidden sm:grid gap-2 mt-4 ml-12" style={{ gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1.2fr 1.2fr 0.8fr' }}>
           <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5 text-center">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
