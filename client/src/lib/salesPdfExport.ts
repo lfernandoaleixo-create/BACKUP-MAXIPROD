@@ -140,37 +140,57 @@ function fmtCompactCurrency(val: number): string {
 function computeWeeklySummaries(byDay: Array<{ day: string; value: number }>): WeekSummary[] {
   if (byDay.length === 0) return [];
 
+  // Build a map of day -> value for quick lookup
+  const dayValueMap = new Map<string, number>();
+  for (const d of byDay) {
+    dayValueMap.set(d.day, d.value);
+  }
+
+  // Determine the month from the first day in byDay
+  const firstDay = byDay[0].day;
+  const [year, month] = firstDay.split("-").map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const todayStr = new Date().toISOString().substring(0, 10);
+
+  // Generate all days of the month
+  const allDays: Array<{ day: string; value: number }> = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    allDays.push({ day: dayStr, value: dayValueMap.get(dayStr) || 0 });
+  }
+
+  // Group into calendar weeks (Mon-Sun) like the UI does
   const weeks: WeekSummary[] = [];
-  let currentWeekDays: Array<{ day: string; value: number }> = [];
+  let currentWeekAll: typeof allDays = [];
 
-  for (let i = 0; i < byDay.length; i++) {
-    const d = new Date(byDay[i].day + "T12:00:00");
+  for (let i = 0; i < allDays.length; i++) {
+    const d = new Date(allDays[i].day + "T12:00:00");
     const dow = d.getDay(); // 0=Sun, 1=Mon...6=Sat
-    const isBusinessDay = dow >= 1 && dow <= 5;
 
-    if (isBusinessDay) {
-      currentWeekDays.push(byDay[i]);
-    }
+    currentWeekAll.push(allDays[i]);
 
-    const isLastDay = i === byDay.length - 1;
-    const nextDow = i < byDay.length - 1 ? new Date(byDay[i + 1].day + "T12:00:00").getDay() : -1;
-    const isEndOfWeek = dow === 5 || (isBusinessDay && (nextDow === 0 || nextDow === 6 || isLastDay));
+    // End of week = Sunday (dow===0) or last day of month
+    const isLastDay = i === allDays.length - 1;
+    const isEndOfWeek = dow === 0 || isLastDay;
 
-    if (currentWeekDays.length > 0 && (isEndOfWeek || isLastDay)) {
-      const todayStr = new Date().toISOString().substring(0, 10);
-      const total = currentWeekDays.reduce((s, d) => s + (d.day > todayStr ? 0 : d.value), 0);
-      const activeDays = currentWeekDays.filter(d => d.day <= todayStr && d.value > 0).length;
-      const startDayNum = parseInt(currentWeekDays[0].day.split("-")[2]);
-      const endDayNum = parseInt(currentWeekDays[currentWeekDays.length - 1].day.split("-")[2]);
+    if (isEndOfWeek) {
+      const businessDays = currentWeekAll.filter(day => {
+        const dd = new Date(day.day + "T12:00:00").getDay();
+        return dd >= 1 && dd <= 5;
+      });
+      const total = businessDays.reduce((s, d) => s + (d.day > todayStr ? 0 : d.value), 0);
+      const activeDays = businessDays.filter(d => d.day <= todayStr && d.value > 0).length;
+      const startDayNum = parseInt(currentWeekAll[0].day.split("-")[2]);
+      const endDayNum = parseInt(currentWeekAll[currentWeekAll.length - 1].day.split("-")[2]);
       weeks.push({
         weekNum: weeks.length + 1,
         startDay: startDayNum,
         endDay: endDayNum,
         total,
-        businessDays: currentWeekDays.length,
+        businessDays: businessDays.length,
         avg: activeDays > 0 ? total / activeDays : 0,
       });
-      currentWeekDays = [];
+      currentWeekAll = [];
     }
   }
 
@@ -308,45 +328,45 @@ function drawWeekCard(
   doc.rect(x + 0.3, y, w - 0.6, 1, "F");
 
   // Row 1: SEMANA N + Dias X-Y
-  doc.setFontSize(5.5);
+  doc.setFontSize(5);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...colors.main);
-  doc.text(`SEMANA ${week.weekNum}`, x + 2.5, y + 4.5);
+  doc.text(`SEMANA ${week.weekNum}`, x + 1.5, y + 4);
 
-  doc.setFontSize(4.5);
+  doc.setFontSize(4);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.slate400);
-  doc.text(`Dias ${week.startDay}\u2013${week.endDay}`, x + w - 2.5, y + 4.5, { align: "right" });
+  doc.text(`Dias ${week.startDay}\u2013${week.endDay}`, x + w - 1.5, y + 4, { align: "right" });
 
   // Row 2: Big value
   if (week.total > 0) {
-    doc.setFontSize(10);
+    doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...colors.dark);
-    doc.text(fmtCompactCurrency(week.total), x + 2.5, y + 10.5);
+    doc.text(fmtCompactCurrency(week.total), x + 1.5, y + 9.5);
   } else {
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C.slate400);
-    doc.text("\u2014", x + 2.5, y + 10.5);
+    doc.text("\u2014", x + 1.5, y + 9.5);
   }
 
   // Row 3: média/dia
   if (week.total > 0 && week.avg > 0) {
-    doc.setFontSize(4.5);
+    doc.setFontSize(4);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...colors.main);
-    doc.text(`media ${fmtCurrency(week.avg)}/dia`, x + 2.5, y + 14);
+    doc.text(`media ${fmtCurrency(week.avg)}/dia`, x + 1.5, y + 13);
   }
 
   // Row 4: dias úteis
   doc.setDrawColor(...C.slate200);
   doc.setLineWidth(0.1);
-  doc.line(x + 2.5, y + h - 4.5, x + w - 2.5, y + h - 4.5);
-  doc.setFontSize(4.5);
+  doc.line(x + 1.5, y + h - 4, x + w - 1.5, y + h - 4);
+  doc.setFontSize(4);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.slate400);
-  doc.text(`${week.businessDays} dias uteis`, x + 2.5, y + h - 1.5);
+  doc.text(`${week.businessDays} dias uteis`, x + 1.5, y + h - 1.5);
 }
 
 // ─── Draw Bar+Line Chart (compact) ──────────────────────────────
@@ -964,7 +984,7 @@ export async function generateSalesPDF(
   // ══════════════════════════════════════════════════════════════
   if (weeks.length > 0) {
     const weekCardH = 18;
-    const weekGap = 2.5;
+    const weekGap = weeks.length > 4 ? 1.5 : 2.5;
     const weekCardW = (kpiTotalW - weekGap * (weeks.length - 1)) / weeks.length;
 
     for (let i = 0; i < weeks.length; i++) {

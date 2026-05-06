@@ -399,8 +399,11 @@ export default function Production() {
     if (hasExpandableFeatures(sector.ordem)) {
       if (!sector.machines || sector.machines.length === 0) return 0;
       const variantOpts = getVariantOptions(sector.ordem);
+      // Flow Pack also has fibra options that must be included in the total
+      const fibraOpts = isFlowPack(sector.ordem) ? FLOWPACK_FIBRA_OPTIONS : [];
+      const allVariantOpts = [...variantOpts, ...fibraOpts];
       let sectorTotal = 0;
-      if (variantOpts.length === 0) {
+      if (allVariantOpts.length === 0) {
         // Expandable but no variants: use simple edit values or DB entries
         for (const machine of sector.machines) {
           const key = `${sectorId}-${machine.id}`;
@@ -419,7 +422,10 @@ export default function Production() {
       const dualUnit = isDualUnitSector(sector.ordem);
       for (const machine of sector.machines) {
         const machineVariantOpts = getVariantOptions(sector.ordem, machine.ordem);
-        for (const opt of machineVariantOpts) {
+        // Include fibra options for Flow Pack per-machine as well
+        const machineFibraOpts: typeof FLOWPACK_FIBRA_OPTIONS = isFlowPack(sector.ordem) ? FLOWPACK_FIBRA_OPTIONS : [];
+        const allMachineOpts: typeof machineVariantOpts = [...machineVariantOpts, ...machineFibraOpts];
+        for (const opt of allMachineOpts as Array<{value: string; label: string}>) {
           if (dualUnit) {
             // Triple unit: saco direto + caixa pequena convertida + caixa grande convertida
             const sacoKey = `${sectorId}-${machine.id}-${opt.value}_saco`;

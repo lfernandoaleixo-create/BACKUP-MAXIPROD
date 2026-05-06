@@ -3447,3 +3447,6 @@
 - [x] Mobile: Financeiro - cards Recebimentos/Pagamentos lado a lado muito apertados (p-1.5 mobile)
 - [x] Mobile: Financeiro - bucket cards (Vencidas, Semanal) empilhados verticalmente no mobile (grid-cols-1 md:grid-cols-2)
 - [x] Mobile: VLR ESTOQUE card cortado na versão mobile (whitespace-nowrap, text-[11px], grid-cols-3 compacto, Custo Est. Regulador empilhado)
+- [x] Produção: colunas Tipo e Status cortadas com reticências - removido truncate, colWidths ajustadas, fonte 5.5
+- [x] Produção: soma do setor incorreta (ex: 12+10+9=31 mas mostra 20) - incluído FLOWPACK_FIBRA_OPTIONS no getSectorTotal
+- [x] PDF Vendas: cards semanais desconfigurados - reescrito computeWeeklySummaries para gerar todas as semanas do mês

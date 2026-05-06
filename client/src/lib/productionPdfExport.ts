@@ -502,7 +502,7 @@ function drawSectorCardsGrid(
 
     const colWidths = isWeeklyOrMonthly
       ? [cardW * 0.32, cardW * 0.24, cardW * 0.22, cardW * 0.22]
-      : [cardW * 0.28, cardW * 0.24, cardW * 0.2, cardW * 0.28];
+      : [cardW * 0.22, cardW * 0.28, cardW * 0.14, cardW * 0.36];
 
     let colX = x + 2;
     for (let c = 0; c < colHeaders.length; c++) {
@@ -517,7 +517,7 @@ function drawSectorCardsGrid(
 
     // Data rows
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.8);
+    doc.setFontSize(5.5);
     doc.setTextColor(...C.dark);
 
     for (let r = 0; r < displayRows.length; r++) {
@@ -567,8 +567,7 @@ function drawSectorCardsGrid(
 
         // Tipo/Medida
         doc.setTextColor(...C.medium);
-        const tName = rowData.tipo.length > 10 ? rowData.tipo.substring(0, 8) + "…" : rowData.tipo;
-        doc.text(tName, colX, rowY);
+        doc.text(rowData.tipo, colX, rowY);
         colX += colWidths[1];
 
         // Quantidade
@@ -579,7 +578,6 @@ function drawSectorCardsGrid(
 
         // Status
         doc.setFont("helvetica", "normal");
-        const statusText = rowData.status.length > 12 ? rowData.status.substring(0, 10) + "…" : rowData.status;
         if (rowData.status.includes("Falta") || rowData.status.includes("Sem")) {
           doc.setTextColor(...C.red);
         } else if (rowData.status.includes("Manutenção") || rowData.status.includes("Manut")) {
@@ -587,7 +585,7 @@ function drawSectorCardsGrid(
         } else {
           doc.setTextColor(...C.primary);
         }
-        doc.text(statusText, colX, rowY);
+        doc.text(rowData.status, colX, rowY);
       }
     }
 
