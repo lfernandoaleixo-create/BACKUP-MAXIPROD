@@ -3527,3 +3527,4 @@
 - [x] Inadimplência: botões de ação (PDF, Importar, Métricas, etc) lado a lado no desktop (não empilhados)
 - [x] Inadimplência: card roteiro/ações fundo branco no dark mode → fundo escuro
 - [x] Estoque: adicionar divisórias verticais entre colunas (Estoque, Pedidos, Disponível, PO, Projetado, Produtos) nos cards
+- [x] Dark mode: usar logo dourado/preto no header/sidebar (não o branco/verde)
