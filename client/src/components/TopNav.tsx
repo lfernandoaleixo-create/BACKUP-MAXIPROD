@@ -31,7 +31,7 @@ const navItems = [
   { href: "/faturamento", label: "Faturamento", icon: FileCheck, section: "faturamento" },
   { href: "/financeiro", label: "Financeiro", icon: DollarSign, section: "financeiro" },
   { href: "/producao", label: "Produção", icon: Factory, section: "producao" },
-  { href: "/configuracoes", label: "Config", icon: Settings, section: "configuracoes" },
+  { href: "/configuracoes", label: "Config", desktopLabel: "Configuração", icon: Settings, section: "configuracoes" },
 ];
 
 interface TopNavProps {
@@ -80,7 +80,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
               <Link href="/">
                 <div className="flex items-center cursor-pointer">
                   <img
-                    src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark_6da0c96d.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
+                    src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark-centered_19250187.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
                     alt="Grupo Fox"
                     className="h-9 w-auto object-contain"
                   />
@@ -186,7 +186,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
           <Link href="/">
             <div className="flex items-center cursor-pointer group">
               <img
-                src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark_6da0c96d.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
+                src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark-centered_19250187.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
                 alt="Grupo Fox"
                 className="h-12 w-auto object-contain group-hover:opacity-80 transition-opacity"
               />
@@ -228,7 +228,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                   `}
                 >
                   <Icon className={`w-4 h-4 ${active ? "text-teal-600" : !allowed ? "text-slate-300" : ""}`} />
-                  <span className="hidden sm:inline">{item.label}</span>
+                  <span className="hidden sm:inline">{'desktopLabel' in item && item.desktopLabel ? item.desktopLabel : item.label}</span>
                   {/* Discount alert indicator dot */}
                   {shouldBlink && (
                     <span className="absolute -top-0.5 right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.6)]" />

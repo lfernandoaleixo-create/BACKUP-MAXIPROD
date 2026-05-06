@@ -2152,7 +2152,7 @@ function ClassificationCard({
         </div>
 
         {/* Metrics row - Desktop: Quantidades */}
-        <div className="hidden sm:grid grid-cols-6 gap-0 mt-4 ml-16 divide-x divide-slate-200 dark:divide-slate-600 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+        <div className="hidden sm:grid grid-cols-6 gap-0 mt-4 ml-12 divide-x divide-slate-200 dark:divide-slate-600 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
           <div className="bg-teal-50/80 dark:bg-teal-950/30 px-3 py-3.5 text-center">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
             <p className="text-lg font-extrabold text-teal-700 dark:text-teal-400 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
@@ -2216,7 +2216,7 @@ function ClassificationCard({
         )}
 
         {/* Mobile summary */}
-        <div className="grid sm:hidden grid-cols-3 gap-0 mt-3 ml-16 divide-x divide-slate-200 dark:divide-slate-600 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+        <div className="grid sm:hidden grid-cols-3 gap-0 mt-3 ml-12 divide-x divide-slate-200 dark:divide-slate-600 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
           <div className="text-center bg-teal-50/60 dark:bg-teal-950/30 px-2 py-1.5">
             <p className="text-[9px] text-teal-600 font-semibold">Estoque</p>
             <p className="text-sm font-bold text-teal-700 dark:text-teal-400">{formatNumber(totalEstoque)}</p>
@@ -2833,7 +2833,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
+        <div className="hidden sm:grid gap-2 mt-4 ml-12" style={{ gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1.2fr 1.2fr 0.8fr' }}>
           <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
             <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(paEstoqueCx, true)} <span className="text-xs font-semibold">cx</span></p>
@@ -3586,7 +3586,7 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-<div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
+<div className="hidden sm:grid gap-2 mt-4 ml-12" style={{ gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1.2fr 1.2fr 0.8fr' }}>
           <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
             <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
@@ -3828,7 +3828,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
             {isOpen ? <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />}
           </div>
         </div>
-        <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
+        <div className="hidden sm:grid gap-2 mt-4 ml-12" style={{ gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1.2fr 1.2fr 0.8fr' }}>
           <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
             <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>

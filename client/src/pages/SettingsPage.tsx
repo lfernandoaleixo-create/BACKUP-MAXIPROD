@@ -528,7 +528,7 @@ const PERMISSION_COLS = [
   { key: "accessFaturamento" as const, label: "Faturamento", color: "bg-violet-500" },
   { key: "accessFinanceiro" as const, label: "Financeiro", color: "bg-emerald-500" },
   { key: "accessProducao" as const, label: "Produção", color: "bg-orange-500" },
-  { key: "accessConfiguracoes" as const, label: "Config.", color: "bg-red-500" },
+  { key: "accessConfiguracoes" as const, label: "Configuração", color: "bg-red-500" },
 ];
 
 // Definição de permissões granulares por aba
@@ -729,13 +729,13 @@ function OperatorManagementPanel() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full table-fixed" style={{ minWidth: "800px" }}>
+        <table className="w-full table-auto" style={{ minWidth: "900px" }}>
           <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200">
             <tr>
               <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" style={{ width: "120px" }}>Operador</th>
               <th className="px-2 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider" style={{ width: "130px" }}>Senha</th>
               {PERMISSION_COLS.map(col => (
-                <th key={col.key} className={`px-1 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider ${'sub' in col && col.sub ? 'text-[10px]' : ''}`} style={{ width: "80px" }}>
+                <th key={col.key} className={`px-0.5 py-3 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-normal whitespace-nowrap ${'sub' in col && col.sub ? 'text-[9px]' : ''}`} style={{ minWidth: "70px" }}>
                   <div className="flex flex-col items-center gap-1">
                     {'sub' in col && col.sub && <span className="text-[9px] text-slate-400 -mb-1">&#8627; sub</span>}
                     <div className={`w-3 h-3 rounded-full ${col.color}`} />

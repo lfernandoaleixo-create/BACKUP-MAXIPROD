@@ -3530,3 +3530,8 @@
 - [x] Dark mode: usar logo dourado/preto no header/sidebar (não o branco/verde)
 - [x] Dark mode: divisórias verticais nos cards Madeira (Estoque/Pedidos/Disponível) sumiram — restaurar para desktop e mobile
 - [x] Dark mode: cores dos quadradinhos de permissão na aba Configurações estão preto/branco — restaurar cores originais (teal, laranja, azul, roxo, verde, vermelho) para desktop e mobile
+- [ ] Dark mode dashboard: remover fundo preto do logo dourado no header (TopNav) — fundo deve ser transparente/mesma cor do header
+- [x] Madeira cards: títulos das colunas sobrepostos (ESTOQUE/PEDIDOS/DISPONÍVEL/ROJÃO/APITO/PRODUTOS) — corrigir espaçamento/layout para desktop e mobile, claro e escuro
+- [x] Dark mode dashboard: centralizar logo dourado no header (TopNav) — usar versão cropped/centered
+- [x] Configurações: títulos das colunas sobrepostos na tabela de permissões (FATURAMENTO/FINANCEIRO) — corrigir espaçamento
+- [x] Nav desktop: renomear "Config" para "Configuração" (manter abreviado no mobile)
