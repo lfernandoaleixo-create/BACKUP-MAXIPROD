@@ -558,38 +558,40 @@ export default function ProductionAcceptanceCard({
       {/* Header — same pattern as BillingCard */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-cyan-50/30 transition-colors"
+        className="w-full flex flex-col md:flex-row md:items-center md:justify-between px-4 md:px-5 py-3 md:py-4 hover:bg-cyan-50/30 transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <ClipboardCheck className={`${showValues ? 'w-5 h-5' : 'w-6 h-6'} text-cyan-600`} />
-          <h3 className={`font-semibold text-slate-700 uppercase tracking-wide ${showValues ? 'text-sm' : 'text-base'}`}>Aceite da Produção</h3>
-          <Badge variant="outline" className={`${showValues ? 'text-xs' : 'text-sm'}`}>{totalNormais} pedidos</Badge>
-          {totalAmostras > 0 && (
-            <Badge className="bg-yellow-100 text-yellow-700 text-xs border-0">
-              <FlaskConical className="w-3 h-3 mr-1" />
-              {totalAmostras} {totalAmostras === 1 ? "amostra" : "amostras"}
-            </Badge>
-          )}
-          {totalBonificacoes > 0 && (
-            <Badge className="bg-pink-100 text-pink-700 text-xs border-0">
-              <Gift className="w-3 h-3 mr-1" />
-              {totalBonificacoes} bonif.
-            </Badge>
-          )}
-          {totalModificados > 0 && (
-            <Badge className="bg-red-100 text-red-700 text-xs border-0 animate-pulse">
-              <AlertTriangle className="w-3 h-3 mr-1" />
-              {totalModificados} modificado{totalModificados > 1 ? 's' : ''}
-            </Badge>
-          )}
-          {totalNovos > 0 && (
-            <Badge className="bg-green-100 text-green-700 text-xs border-2 border-green-400 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block mr-1" />
-              {totalNovos} novo{totalNovos > 1 ? 's' : ''}
-            </Badge>
-          )}
+        <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+          <ClipboardCheck className={`${showValues ? 'w-5 h-5' : 'w-6 h-6'} text-cyan-600 flex-shrink-0`} />
+          <h3 className={`font-semibold text-slate-700 uppercase tracking-wide ${showValues ? 'text-xs md:text-sm' : 'text-sm md:text-base'}`}>Aceite da Produção</h3>
+          <Badge variant="outline" className={`${showValues ? 'text-[10px] md:text-xs' : 'text-xs md:text-sm'} flex-shrink-0`}>{totalNormais} pedidos</Badge>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {totalAmostras > 0 && (
+              <Badge className="bg-yellow-100 text-yellow-700 text-[10px] md:text-xs border-0 whitespace-nowrap">
+                <FlaskConical className="w-3 h-3 mr-0.5" />
+                {totalAmostras} {totalAmostras === 1 ? "amostra" : "amostras"}
+              </Badge>
+            )}
+            {totalBonificacoes > 0 && (
+              <Badge className="bg-pink-100 text-pink-700 text-[10px] md:text-xs border-0 whitespace-nowrap">
+                <Gift className="w-3 h-3 mr-0.5" />
+                {totalBonificacoes} bonif.
+              </Badge>
+            )}
+            {totalModificados > 0 && (
+              <Badge className="bg-red-100 text-red-700 text-[10px] md:text-xs border-0 animate-pulse whitespace-nowrap">
+                <AlertTriangle className="w-3 h-3 mr-0.5" />
+                {totalModificados} modificado{totalModificados > 1 ? 's' : ''}
+              </Badge>
+            )}
+            {totalNovos > 0 && (
+              <Badge className="bg-green-100 text-green-700 text-[10px] md:text-xs border-2 border-green-400 animate-pulse whitespace-nowrap">
+                <span className="w-2 h-2 rounded-full bg-green-500 inline-block mr-0.5" />
+                {totalNovos} novo{totalNovos > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 mt-1 md:mt-0 pl-7 md:pl-0">
           {showValues && (
             <span className="text-sm font-bold text-slate-800">
               R$ {totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}

@@ -3482,3 +3482,4 @@
 - [x] PDF: Botão compartilhar via WhatsApp (link de download do PDF)
 - [x] Vendas Métricas: Exportar PDF na view de Inadimplência por vendedor (detalhe dos clientes inadimplentes)
 - [x] Implementar modo claro/escuro (dark mode) com toggle no header, persistência no localStorage, mobile + desktop
+- [x] Bug mobile: Faturamento - valores cortados nos cards de resumo (PEDIDOS EM ABERTO, AUTORIZADO A FATURAR, FATURADOS) e texto/badge sobrepondo na tabela

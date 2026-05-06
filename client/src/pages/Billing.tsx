@@ -1595,33 +1595,35 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className={`w-full flex items-center justify-between px-5 py-4 ${hoverColor} transition-colors`}
+        className={`w-full flex flex-col md:flex-row md:items-center md:justify-between px-4 md:px-5 py-3 md:py-4 ${hoverColor} transition-colors`}
       >
-        <div className="flex items-center gap-3">
-          <Icon className={`${showValues ? 'w-5 h-5' : 'w-6 h-6'} ${iconColor}`} />
-          <h3 className={`font-semibold text-slate-700 uppercase tracking-wide ${showValues ? 'text-sm' : 'text-base'}`}>{title}</h3>
-          <Badge variant="outline" className={`${showValues ? 'text-xs' : 'text-sm'}`}>{orders.length} pedidos</Badge>
-          {showNf && nfCount > 0 && (
-            <Badge className="bg-teal-100 text-teal-700 text-xs border-0">
-              <FileText className="w-3 h-3 mr-1" />
-              {nfCount} com NF
-            </Badge>
-          )}
-          {orders.filter(o => o.tipoEspecial === "AMOSTRA").length > 0 && (
-            <Badge className="bg-yellow-100 text-yellow-700 text-xs border-0">
-              <FlaskConical className="w-3 h-3 mr-1" />
-              {orders.filter(o => o.tipoEspecial === "AMOSTRA").length} {orders.filter(o => o.tipoEspecial === "AMOSTRA").length === 1 ? "amostra" : "amostras"}
-            </Badge>
-          )}
-          {orders.filter(o => o.tipoEspecial === "BONIFICACAO").length > 0 && (
-            <Badge className="bg-pink-100 text-pink-700 text-xs border-0">
-              <Gift className="w-3 h-3 mr-1" />
-              {orders.filter(o => o.tipoEspecial === "BONIFICACAO").length} bonif.
-            </Badge>
-          )}
-          {badgeExtra}
+        <div className="flex items-center gap-2 md:gap-3">
+          <Icon className={`${showValues ? 'w-5 h-5' : 'w-6 h-6'} ${iconColor} flex-shrink-0`} />
+          <h3 className={`font-semibold text-slate-700 uppercase tracking-wide ${showValues ? 'text-xs md:text-sm' : 'text-sm md:text-base'}`}>{title}</h3>
+          <Badge variant="outline" className={`${showValues ? 'text-[10px] md:text-xs' : 'text-xs md:text-sm'} flex-shrink-0`}>{orders.length} pedidos</Badge>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {showNf && nfCount > 0 && (
+              <Badge className="bg-teal-100 text-teal-700 text-[10px] md:text-xs border-0 whitespace-nowrap">
+                <FileText className="w-3 h-3 mr-0.5" />
+                {nfCount} com NF
+              </Badge>
+            )}
+            {orders.filter(o => o.tipoEspecial === "AMOSTRA").length > 0 && (
+              <Badge className="bg-yellow-100 text-yellow-700 text-[10px] md:text-xs border-0 whitespace-nowrap">
+                <FlaskConical className="w-3 h-3 mr-0.5" />
+                {orders.filter(o => o.tipoEspecial === "AMOSTRA").length} {orders.filter(o => o.tipoEspecial === "AMOSTRA").length === 1 ? "amostra" : "amostras"}
+              </Badge>
+            )}
+            {orders.filter(o => o.tipoEspecial === "BONIFICACAO").length > 0 && (
+              <Badge className="bg-pink-100 text-pink-700 text-[10px] md:text-xs border-0 whitespace-nowrap">
+                <Gift className="w-3 h-3 mr-0.5" />
+                {orders.filter(o => o.tipoEspecial === "BONIFICACAO").length} bonif.
+              </Badge>
+            )}
+            {badgeExtra}
+          </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 mt-1 md:mt-0 pl-7 md:pl-0">
           {showValues && <span className="text-sm font-bold text-slate-800">{formatCurrencyFull(totalValue)}</span>}
           {expanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
         </div>
