@@ -93,10 +93,11 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 {toggleTheme && (
                   <button
                     onClick={toggleTheme}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                    title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-slate-500 dark:text-amber-300 hover:text-teal-600 dark:hover:text-amber-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-[11px] font-medium"
+                    title={theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
                   >
                     {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                    <span className="hidden sm:inline">{theme === "dark" ? "Modo claro" : "Modo noturno"}</span>
                   </button>
                 )}
                 {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (
@@ -251,10 +252,11 @@ export default function TopNav({ rightContent }: TopNavProps) {
             {toggleTheme && (
               <button
                 onClick={toggleTheme}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-amber-300 hover:text-teal-600 dark:hover:text-amber-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-xs font-medium"
+                title={theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
               >
                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                <span>{theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}</span>
               </button>
             )}
             {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (

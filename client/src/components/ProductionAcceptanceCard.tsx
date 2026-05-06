@@ -540,7 +540,7 @@ export default function ProductionAcceptanceCard({
   // Empty state: show card with 0 pedidos instead of hiding
   if (totalPending === 0) {
     return (
-      <div className="bg-white rounded-lg border border-cyan-300 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-cyan-300 dark:border-cyan-700 shadow-sm overflow-hidden">
         <div className="w-full flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">
             <ClipboardCheck className={`${showValues ? 'w-5 h-5' : 'w-6 h-6'} text-cyan-600`} />
@@ -554,7 +554,7 @@ export default function ProductionAcceptanceCard({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-cyan-300 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-cyan-300 dark:border-cyan-700 shadow-sm overflow-hidden">
       {/* Header — same pattern as BillingCard */}
       <button
         onClick={() => setExpanded(!expanded)}

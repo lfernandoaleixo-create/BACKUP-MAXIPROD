@@ -1591,7 +1591,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
   const filteredTotal = useMemo(() => filtered.reduce((sum, o) => sum + o.valorTotal, 0), [filtered]);
 
   return (
-    <div className={`bg-white rounded-lg border ${borderColor} shadow-sm overflow-hidden`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-lg border ${borderColor} shadow-sm overflow-hidden`}>
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -1639,7 +1639,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                 activeTab === "all"
                   ? `${activeFilterColor} text-white shadow-sm`
-                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                  : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600"
               }`}
             >
               Todos ({orders.length})

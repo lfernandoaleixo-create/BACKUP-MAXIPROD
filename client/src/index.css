@@ -134,6 +134,149 @@
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
   }
+
+  /* ===== DARK MODE GLOBAL OVERRIDES ===== */
+  .dark {
+    /* Force all bg-white to dark */
+    & .bg-white {
+      background-color: oklch(0.20 0.01 260) !important;
+    }
+    /* Force all bg-slate-50 to dark */
+    & .bg-slate-50 {
+      background-color: oklch(0.18 0.01 260) !important;
+    }
+    & .bg-slate-100 {
+      background-color: oklch(0.22 0.01 260) !important;
+    }
+    /* Force dark text colors to light */
+    & .text-slate-900 {
+      color: oklch(0.95 0.01 80) !important;
+    }
+    & .text-slate-800 {
+      color: oklch(0.92 0.01 80) !important;
+    }
+    & .text-slate-700 {
+      color: oklch(0.88 0.02 70) !important;
+    }
+    & .text-slate-600 {
+      color: oklch(0.80 0.02 70) !important;
+    }
+    & .text-slate-500 {
+      color: oklch(0.70 0.02 70) !important;
+    }
+    /* Force borders to dark */
+    & .border-slate-200 {
+      border-color: oklch(0.30 0.01 260) !important;
+    }
+    & .border-slate-100 {
+      border-color: oklch(0.28 0.01 260) !important;
+    }
+    & .border-slate-300 {
+      border-color: oklch(0.32 0.01 260) !important;
+    }
+    /* Hover states */
+    & .hover\:bg-slate-50:hover {
+      background-color: oklch(0.25 0.01 260) !important;
+    }
+    & .hover\:bg-slate-100:hover {
+      background-color: oklch(0.28 0.01 260) !important;
+    }
+    /* Inputs and selects */
+    & input, & select, & textarea {
+      background-color: oklch(0.22 0.01 260) !important;
+      color: oklch(0.93 0.005 80) !important;
+      border-color: oklch(0.32 0.01 260) !important;
+    }
+    & input::placeholder, & textarea::placeholder {
+      color: oklch(0.55 0.01 80) !important;
+    }
+    /* Light colored backgrounds → darker versions */
+    & .bg-teal-50 {
+      background-color: oklch(0.22 0.03 180) !important;
+    }
+    & .bg-cyan-50, & .bg-cyan-50\/30 {
+      background-color: oklch(0.22 0.03 200) !important;
+    }
+    & .bg-amber-50 {
+      background-color: oklch(0.24 0.04 80) !important;
+    }
+    & .bg-orange-50 {
+      background-color: oklch(0.24 0.04 60) !important;
+    }
+    & .bg-emerald-50 {
+      background-color: oklch(0.22 0.04 160) !important;
+    }
+    & .bg-red-50 {
+      background-color: oklch(0.24 0.05 25) !important;
+    }
+    & .bg-blue-50 {
+      background-color: oklch(0.22 0.04 260) !important;
+    }
+    & .bg-yellow-50 {
+      background-color: oklch(0.24 0.04 90) !important;
+    }
+    & .bg-pink-50 {
+      background-color: oklch(0.24 0.04 340) !important;
+    }
+    & .bg-indigo-50 {
+      background-color: oklch(0.22 0.04 280) !important;
+    }
+    & .bg-violet-50 {
+      background-color: oklch(0.22 0.04 300) !important;
+    }
+    & .bg-purple-50 {
+      background-color: oklch(0.22 0.04 310) !important;
+    }
+    & .bg-green-50 {
+      background-color: oklch(0.22 0.04 145) !important;
+    }
+    & .bg-rose-50 {
+      background-color: oklch(0.24 0.04 15) !important;
+    }
+    /* Dialog/modal surfaces */
+    & [role="dialog"], & [data-radix-popper-content-wrapper] {
+      & .bg-white {
+        background-color: oklch(0.22 0.01 260) !important;
+      }
+    }
+    /* Sticky table cells */
+    & .sticky {
+      background-color: oklch(0.20 0.01 260) !important;
+    }
+    /* More slate backgrounds */
+    & .bg-slate-200 {
+      background-color: oklch(0.26 0.01 260) !important;
+    }
+    & .bg-slate-300 {
+      background-color: oklch(0.30 0.01 260) !important;
+    }
+    /* Text colors that might be too dark */
+    & .text-gray-900, & .text-gray-800, & .text-gray-700 {
+      color: oklch(0.93 0.005 80) !important;
+    }
+    & .text-gray-600, & .text-gray-500 {
+      color: oklch(0.75 0.01 80) !important;
+    }
+    /* Specific component overrides */
+    & .text-teal-600 {
+      color: oklch(0.70 0.12 175) !important;
+    }
+    & .text-teal-700 {
+      color: oklch(0.65 0.12 175) !important;
+    }
+    /* Badge text visibility */
+    & .text-teal-800 {
+      color: oklch(0.75 0.10 175) !important;
+    }
+    /* Ensure all font-bold headings are bright */
+    & h1, & h2, & h3, & h4, & h5, & h6 {
+      color: oklch(0.95 0.005 80) !important;
+    }
+    /* Card shadows */
+    & .shadow-sm, & .shadow-md, & .shadow-lg {
+      --tw-shadow-color: oklch(0 0 0 / 0.3);
+    }
+  }
 }
 
 @layer utilities {

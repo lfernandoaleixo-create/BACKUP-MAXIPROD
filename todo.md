@@ -3483,3 +3483,6 @@
 - [x] Vendas Métricas: Exportar PDF na view de Inadimplência por vendedor (detalhe dos clientes inadimplentes)
 - [x] Implementar modo claro/escuro (dark mode) com toggle no header, persistência no localStorage, mobile + desktop
 - [x] Bug mobile: Faturamento - valores cortados nos cards de resumo (PEDIDOS EM ABERTO, AUTORIZADO A FATURAR, FATURADOS) e texto/badge sobrepondo na tabela
+- [x] Dark mode: Corrigir cards brancos que não ficaram escuros em todas as abas (Faturamento, etc)
+- [x] Dark mode: Texto preto no dark mode precisa ser claro (dourado brilhante, branco neon) para legibilidade
+- [x] Dark mode: Toggle deve mostrar texto "Ativar modo noturno" (lua) e "Ativar modo claro" (sol)
