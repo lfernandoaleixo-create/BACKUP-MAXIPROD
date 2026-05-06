@@ -3477,3 +3477,4 @@
 - [x] Cheques: Criar histórico de cheques descontados (quais saíram, de qual categoria, valor, cliente, data)
 - [x] Bug mobile: Card ENTRADAS - textos "Vendas..." e "Demais Re..." cortados, precisa mostrar completo
 - [x] Bug mobile: Financeiro Histórico - cards de resumo (Títulos Acrescentados, Retirados, Saldo Líquido) com valores cortados no mobile
+- [x] Vendas Métricas: Botão exportar PDF no detalhe do vendedor (com filtros aplicados, KPIs e lista de clientes)

@@ -580,3 +580,159 @@ export function exportInadimplenciaPdf(data: {
   drawFooter(doc, finalY, "Grupo Fox — Inadimplência por Vendedor");
   doc.save(`Inadimplencia_Vendedores_${new Date().toISOString().split("T")[0]}.pdf`);
 }
+
+// ===== DETALHE DO VENDEDOR (Métrica de Vendas) =====
+export function exportVendedorDetailPdf(data: {
+  vendedor: string;
+  periodLabel: string;
+  filterEstados: string[];
+  filterSegmentos: string[];
+  clientes: Array<{
+    cliente: string;
+    totalVendas: number;
+    qtdPedidos: number;
+    ultimoPedido: string;
+    estadosConfiguraveis?: string[];
+    segmentos?: string[];
+    vendedoresReais?: string[];
+  }>;
+  estadoBreakdown?: Array<{ estado: string; total: number; count: number }> | null;
+}) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  // Build subtitle with filters
+  const filterParts: string[] = [data.periodLabel];
+  if (data.filterEstados.length > 0) filterParts.push(`Estado: ${data.filterEstados.join(", ")}`);
+  if (data.filterSegmentos.length > 0) filterParts.push(`Segmento: ${data.filterSegmentos.join(", ")}`);
+  const subtitle = filterParts.join(" | ");
+
+  drawHeader(doc, `Vendas de ${data.vendedor}`, subtitle);
+
+  let y = 44;
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // KPI Summary boxes
+  const totalVendas = data.clientes.reduce((s, c) => s + c.totalVendas, 0);
+  const totalPedidos = data.clientes.reduce((s, c) => s + c.qtdPedidos, 0);
+  const totalClientes = data.clientes.length;
+  const ticketMedio = totalPedidos > 0 ? totalVendas / totalPedidos : 0;
+
+  // Box 1 - Total Vendas
+  doc.setFillColor(13, 148, 136); // teal-600
+  doc.roundedRect(14, y, 43, 18, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("TOTAL VENDAS", 17, y + 6);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(totalVendas), 17, y + 14);
+
+  // Box 2 - Pedidos
+  doc.setFillColor(71, 85, 105); // slate-600
+  doc.roundedRect(61, y, 43, 18, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("PEDIDOS", 64, y + 6);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(String(totalPedidos), 64, y + 14);
+
+  // Box 3 - Clientes
+  doc.setFillColor(59, 130, 246); // blue-500
+  doc.roundedRect(108, y, 43, 18, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("CLIENTES", 111, y + 6);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(String(totalClientes), 111, y + 14);
+
+  // Box 4 - Ticket Médio
+  doc.setFillColor(126, 34, 206); // purple-700
+  doc.roundedRect(155, y, 43, 18, 2, 2, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("TICKET MÉDIO", 158, y + 6);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(ticketMedio), 158, y + 14);
+
+  y += 24;
+
+  // Estado breakdown if available
+  if (data.estadoBreakdown && data.estadoBreakdown.length > 0) {
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("Detalhamento por Estado Configurável:", 14, y);
+    y += 4;
+
+    let boxX = 14;
+    const boxWidth = Math.min(45, (pageW - 28) / data.estadoBreakdown.length - 4);
+    data.estadoBreakdown.forEach(eb => {
+      doc.setFillColor(240, 253, 244); // green-50
+      doc.setDrawColor(167, 243, 208); // green-200
+      doc.roundedRect(boxX, y, boxWidth, 14, 1.5, 1.5, "FD");
+      doc.setTextColor(21, 128, 61);
+      doc.setFontSize(6.5);
+      doc.setFont("helvetica", "bold");
+      doc.text(eb.estado, boxX + 3, y + 5);
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(8);
+      doc.text(formatCurrency(eb.total), boxX + 3, y + 11);
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(6);
+      doc.text(`${eb.count} cli.`, boxX + boxWidth - 12, y + 11);
+      boxX += boxWidth + 4;
+    });
+    y += 20;
+  }
+
+  // Table with client details
+  const tableData = data.clientes.map((c, idx) => {
+    const tags: string[] = [];
+    if (c.estadosConfiguraveis) tags.push(...c.estadosConfiguraveis);
+    if (c.segmentos) tags.push(...c.segmentos);
+    return [
+      String(idx + 1),
+      c.cliente,
+      String(c.qtdPedidos),
+      formatDate(c.ultimoPedido),
+      tags.join(", ") || "-",
+      formatCurrency(c.totalVendas),
+    ];
+  });
+
+  autoTable(doc, {
+    startY: y,
+    head: [["#", "Cliente", "Ped.", "Último Pedido", "Estado / Segmento", "Total"]],
+    body: tableData,
+    theme: "grid",
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 7.5, fontStyle: "bold", cellPadding: 2.5 },
+    bodyStyles: { fontSize: 7, cellPadding: 2 },
+    columnStyles: {
+      0: { cellWidth: 8, halign: "center" },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 12, halign: "center" },
+      3: { cellWidth: 22, halign: "center" },
+      4: { cellWidth: 45 },
+      5: { cellWidth: 30, halign: "right", fontStyle: "bold" },
+    },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    didParseCell: (d: any) => {
+      if (d.section === "body" && d.column.index === 5) {
+        d.cell.styles.textColor = [13, 148, 136]; // teal
+      }
+    },
+  });
+
+  const finalY = (doc as any).lastAutoTable?.finalY || y + 20;
+  drawFooter(doc, finalY, `Grupo Fox — Vendas de ${data.vendedor}`);
+
+  const safeName = data.vendedor.replace(/[^a-zA-Z0-9]/g, "_");
+  doc.save(`Vendas_${safeName}_${data.periodLabel.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`);
+}

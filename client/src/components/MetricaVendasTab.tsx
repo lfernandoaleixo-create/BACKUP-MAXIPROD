@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon } from "lucide-react";
-import { exportRankingVendasPdf, exportInadimplenciaPdf } from "@/lib/tabsPdfExport";
+import { exportRankingVendasPdf, exportInadimplenciaPdf, exportVendedorDetailPdf } from "@/lib/tabsPdfExport";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -452,9 +452,44 @@ export default function MetricaVendasTab() {
                   <p className="text-sm text-slate-600">
                     <span className="font-semibold">{filteredDetail.length}</span> clientes{filteredDetail.length !== vendedorDetail.length ? ` (de ${vendedorDetail.length})` : " atendidos"}
                   </p>
-                  <p className="text-sm font-semibold text-teal-700">
-                    Total: {formatCurrency(filteredDetail.reduce((s, c) => s + c.totalVendas, 0))}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-teal-700">
+                      Total: {formatCurrency(filteredDetail.reduce((s, c) => s + c.totalVendas, 0))}
+                    </p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => {
+                            if (!filteredDetail.length) { toast.error("Nenhum dado para exportar."); return; }
+                            exportVendedorDetailPdf({
+                              vendedor: selectedVendedor,
+                              periodLabel,
+                              filterEstados,
+                              filterSegmentos,
+                              clientes: filteredDetail.map(c => ({
+                                cliente: c.cliente,
+                                totalVendas: c.totalVendas,
+                                qtdPedidos: c.qtdPedidos,
+                                ultimoPedido: c.ultimoPedido,
+                                estadosConfiguraveis: c.estadosConfiguraveis,
+                                segmentos: c.segmentos,
+                                vendedoresReais: c.vendedoresReais,
+                              })),
+                              estadoBreakdown: estadoBreakdown,
+                            });
+                            toast.success("PDF gerado com sucesso!");
+                          }}
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 h-7 px-2 border-slate-300 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 transition-all"
+                        >
+                          <FileDown className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline text-xs">PDF</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Exportar detalhes do vendedor em PDF</TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
               </div>
               <div className="divide-y divide-slate-50 max-h-[500px] overflow-y-auto">
