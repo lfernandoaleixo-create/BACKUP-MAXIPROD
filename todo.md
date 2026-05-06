@@ -3524,3 +3524,5 @@
 - [x] Dark mode/Mobile: Inadimplência aba cortada, filtros inacessíveis
 - [x] Dark mode: Inadimplência bolinha nº3 branca → fundo escuro + texto branco/dourado
 - [x] Dark mode: Login logo fundo escuro com letras e raposa dourados grandes e brilhantes
+- [x] Inadimplência: botões de ação (PDF, Importar, Métricas, etc) lado a lado no desktop (não empilhados)
+- [x] Inadimplência: card roteiro/ações fundo branco no dark mode → fundo escuro

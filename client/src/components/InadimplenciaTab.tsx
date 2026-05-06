@@ -1038,10 +1038,10 @@ export default function InadimplenciaTab() {
             )}
           </div>
         </div>
-        <div className="grid grid-cols-2 md:flex md:flex-wrap md:items-center gap-2 justify-items-center mx-auto max-w-[400px] md:max-w-none">
+        <div className="grid grid-cols-2 md:flex md:items-center gap-2 justify-items-center mx-auto max-w-[400px] md:max-w-none">
           <button
             onClick={() => exportInadimplenciaPDF(filteredTitles, stats, protestConfigsMap)}
-            className="w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02] px-3"
+            className="w-full md:w-auto flex items-center justify-center gap-1.5 h-[44px] md:h-9 rounded-xl md:rounded-lg bg-gradient-to-r from-red-700 to-red-600 text-white text-[11px] md:text-xs font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02] px-3 md:px-3"
             title="Exportar lista de inadimplentes em PDF"
           >
             <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1050,7 +1050,7 @@ export default function InadimplenciaTab() {
           {canCobranca && (
             <button
               onClick={() => setShowImportDialog(true)}
-              className="w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-3"
+              className="w-full md:w-auto flex items-center justify-center gap-1.5 h-[44px] md:h-9 rounded-xl md:rounded-lg bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-xs font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-3 md:px-3"
               title="Importar planilha de cobrança (XLSX)"
             >
               <Upload className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1059,7 +1059,7 @@ export default function InadimplenciaTab() {
           )}
           <button
             onClick={() => setShowDecisionPdfHistory(true)}
-            className="w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-3"
+            className="w-full md:w-auto flex items-center justify-center gap-1.5 h-[44px] md:h-9 rounded-xl md:rounded-lg bg-gradient-to-r from-blue-700 to-blue-600 text-white text-[11px] md:text-xs font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-3 md:px-3"
             title="Ver histórico de PDFs de decisão gerados"
           >
             <Stamp className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1067,7 +1067,7 @@ export default function InadimplenciaTab() {
           </button>
           <button
             onClick={() => setShowMetricsPanel(true)}
-            className="w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02] px-3"
+            className="w-full md:w-auto flex items-center justify-center gap-1.5 h-[44px] md:h-9 rounded-xl md:rounded-lg bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-[11px] md:text-xs font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02] px-3 md:px-3"
             title="Ver métricas e analytics de cobrança"
           >
             <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1076,18 +1076,18 @@ export default function InadimplenciaTab() {
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
-              className="col-span-2 w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[11px] md:text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-3"
+              className="col-span-2 w-full md:w-auto flex items-center justify-center gap-1.5 h-[44px] md:h-9 rounded-xl md:rounded-lg bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[11px] md:text-xs font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-3 md:px-3"
               title="Ver guia completo do processo de cobrança"
             >
               <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
               <span className="text-center leading-tight">Guia de Cobrança</span>
             </button>
           )}
-          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
             <button
               onClick={() => setViewMode("titulos")}
               className={`px-2 md:px-3 py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all flex items-center gap-1 md:gap-1.5 ${
-                viewMode === "titulos" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
+                viewMode === "titulos" ? "bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm" : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
               <FileText className="w-3 h-3 md:w-3.5 md:h-3.5" /> Título
@@ -1095,7 +1095,7 @@ export default function InadimplenciaTab() {
             <button
               onClick={() => setViewMode("clientes")}
               className={`px-2 md:px-3 py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all flex items-center gap-1 md:gap-1.5 ${
-                viewMode === "clientes" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-800"
+                viewMode === "clientes" ? "bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm" : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
               <Users className="w-3 h-3 md:w-3.5 md:h-3.5" /> Cliente
@@ -2036,7 +2036,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
       {/* 7 Bolinhas Manuais — Card elegante abaixo da linha */}
       {canManualTick && (
         <div className="mx-3 mb-2 mt-0.5" onClick={e => e.stopPropagation()}>
-          <div className={`rounded-lg border shadow-sm px-2 md:px-4 py-2 md:py-2.5 ${hasRedTicks ? 'bg-gradient-to-r from-red-50 via-white to-red-50 border-red-200/80' : 'bg-gradient-to-r from-slate-50 via-white to-slate-50 border-slate-200/80'}`}>
+          <div className={`rounded-lg border shadow-sm px-2 md:px-4 py-2 md:py-2.5 ${hasRedTicks ? 'bg-gradient-to-r from-red-50 via-white to-red-50 border-red-200/80 dark:from-red-950/40 dark:via-slate-800 dark:to-red-950/40 dark:border-red-800/60' : 'bg-gradient-to-r from-slate-50 via-white to-slate-50 border-slate-200/80 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 dark:border-slate-700/80'}`}>
             <div className="flex items-center gap-2 md:gap-4">
               {/* Label */}
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
@@ -2046,7 +2046,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               </div>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-slate-200 hidden md:block" />
+              <div className="w-px h-6 bg-slate-200 dark:bg-slate-600 hidden md:block" />
 
               {/* Steps */}
               <div className="flex items-center gap-0 flex-1 overflow-x-auto">
@@ -2210,9 +2210,9 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               </div>
 
               {/* Progress bar */}
-              <div className="w-px h-6 bg-slate-200 hidden md:block" />
+              <div className="w-px h-6 bg-slate-200 dark:bg-slate-600 hidden md:block" />
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-                <div className="w-10 md:w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+                <div className="w-10 md:w-16 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
                   {greenCount > 0 && (
                     <div
                       className="h-full bg-emerald-500 transition-all duration-500"
@@ -2427,7 +2427,7 @@ function TitleDetails({ title }: { title: Title }) {
   const lembreteVencido = title.cobranca?.lembreteData && title.cobranca.lembreteData <= new Date().toISOString().split("T")[0];
 
   return (
-    <div className="px-4 pb-4 space-y-3 bg-white/60">
+    <div className="px-4 pb-4 space-y-3 bg-white/60 dark:bg-slate-800/60">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <DetailItem label="Valor Original" value={formatCurrency(title.valorOriginal)} />
         <DetailItem label="Valor Pago" value={formatCurrency(title.valorPago)} />
