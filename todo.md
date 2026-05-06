@@ -3476,3 +3476,4 @@
 - [x] Vendas Métricas: Converter filtros Estado/Segmento para multi-select (chips) com cards separados por seleção + soma total
 - [x] Cheques: Criar histórico de cheques descontados (quais saíram, de qual categoria, valor, cliente, data)
 - [x] Bug mobile: Card ENTRADAS - textos "Vendas..." e "Demais Re..." cortados, precisa mostrar completo
+- [x] Bug mobile: Financeiro Histórico - cards de resumo (Títulos Acrescentados, Retirados, Saldo Líquido) com valores cortados no mobile
