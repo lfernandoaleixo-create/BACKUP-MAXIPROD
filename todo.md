@@ -3464,3 +3464,5 @@
 - [x] Bug: Mobile Madeira PA - nome do produto não aparece na linha (só Cod:), dados cortados
 - [x] Bug: Badge "95" da Inadimplência saindo do card de navegação, tabs selecionadas desproporcionais e desalinhadas
 - [x] Vendas: mostrar nome do vendedor ao lado de cada pedido/cliente quando expandir Grupo Fox no ranking
+- [x] Bug: Estoque Importação tabela mobile - colunas sobrepostas/encavaladas, precisa min-width e scroll horizontal
+- [x] Bug: Financeiro aba - cards ENTRADAS com texto sobreposto no mobile (Vendas/Reve + R$ valor encavalados)

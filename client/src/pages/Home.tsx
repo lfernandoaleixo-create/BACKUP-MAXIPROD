@@ -766,7 +766,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
       <div className="max-h-[60vh] overflow-auto relative scrollbar-hide">
-        <table className={`${showFinancial ? 'w-full min-w-[1100px]' : 'w-full min-w-[800px]'}`} style={!showFinancial ? { tableLayout: 'fixed', ...(showSalesColumns ? { width: 1500 } : {}) } : undefined}>
+        <table className={`${showFinancial ? 'w-full min-w-[1100px]' : 'w-full'}`} style={!showFinancial ? { minWidth: showSalesColumns ? 1500 : 800, tableLayout: showSalesColumns ? 'fixed' : undefined, ...(showSalesColumns ? { width: 1500 } : {}) } : undefined}>
           <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20 shadow-sm">
             <tr>
               {showFinancial ? (
@@ -1155,18 +1155,18 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
                   </td>
                   )}
                   {/* Disponivel - destaque para time comercial */}
-                  <td className={`bg-emerald-50/40 border-x border-emerald-100 ${showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}`}>
+                  <td className={`bg-emerald-50/40 border-x border-emerald-100 whitespace-nowrap ${showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}`}>
                     <span className={`font-bold ${showFinancial ? 'text-[10px]' : 'text-sm'} ${isNegative ? "text-red-600" : isZero ? "text-amber-600" : "text-emerald-700"}`}>
                       {item.disponivelCx !== null ? `${formatNumber(item.disponivelCx, true)}` : `${formatNumber(item.disponivelUn, true)}`}
                       {!showFinancial && <> {getUnit(item, item.disponivelCx !== null)}</>}
                     </span>
                   </td>
                   {/* PO */}
-                  <td className={showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}>
+                  <td className={`whitespace-nowrap ${showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}`}>
                     <POCell item={item} />
                   </td>
                   {/* Projetado */}
-                  <td className={showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}>
+                  <td className={`whitespace-nowrap ${showFinancial ? 'px-1 py-1.5 text-right' : 'px-2 py-2.5'}`}>
                     {(item.poCx ?? 0) > 0 || (item.disponivelCx ?? item.disponivelUn) !== 0 ? (
                       <Tooltip>
                         <TooltipTrigger asChild>

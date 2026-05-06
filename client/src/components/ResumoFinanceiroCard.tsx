@@ -746,19 +746,19 @@ function CompactSummary({
           </div>
           <p className="text-base sm:text-lg font-bold text-amber-700 leading-tight text-center">{formatCurrency(totalEntradas)}</p>
           <div className="mt-2 pt-2 border-t border-amber-200/60 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                <Banknote className="w-3 h-3 text-amber-500" />
-                Vendas/Revenda
+            <div className="flex items-center justify-between gap-1 min-w-0">
+              <span className="text-[11px] text-slate-500 flex items-center gap-1 min-w-0 shrink">
+                <Banknote className="w-3 h-3 text-amber-500 shrink-0" />
+                <span className="truncate">Vendas/Revenda</span>
               </span>
-              <span className="text-[11px] font-semibold text-amber-600">{formatCurrency(recebimentos)}</span>
+              <span className="text-[11px] font-semibold text-amber-600 whitespace-nowrap shrink-0">{formatCurrency(recebimentos)}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                <ArrowRightLeft className="w-3 h-3 text-slate-400" />
-                Demais Receitas
+            <div className="flex items-center justify-between gap-1 min-w-0">
+              <span className="text-[11px] text-slate-500 flex items-center gap-1 min-w-0 shrink">
+                <ArrowRightLeft className="w-3 h-3 text-slate-400 shrink-0" />
+                <span className="truncate">Demais Receitas</span>
               </span>
-              <span className="text-[11px] font-semibold text-slate-500">{formatCurrency(outrasEntradas)}</span>
+              <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap shrink-0">{formatCurrency(outrasEntradas)}</span>
             </div>
           </div>
           {canVerifyMaxiprod && (
@@ -766,7 +766,7 @@ function CompactSummary({
               {cpEntradasLoading ? (
                 <div className="flex items-center gap-1 justify-center"><Loader2 className="w-3 h-3 animate-spin text-amber-400" /><span className="text-[10px] text-amber-400">Maxiprod...</span></div>
               ) : cpEntradas ? (
-                <div className="text-center">
+                <div className="text-center break-words">
                   <span className="text-[10px] text-slate-400">Maxiprod: </span>
                   <span className={`text-[10px] font-bold ${divEntradas ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(cpEntradas.valorMaxiprod)}</span>
                   {divEntradas && <div className="flex items-center justify-center gap-1 mt-0.5"><AlertTriangle className="w-3 h-3 text-red-500" /><span className="text-[10px] font-bold text-red-600">Dif: {formatCurrency(divEntradas)}</span></div>}
