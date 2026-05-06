@@ -3488,3 +3488,9 @@
 - [x] Dark mode: Toggle deve mostrar texto "Ativar modo noturno" (lua) e "Ativar modo claro" (sol)
 - [x] Dark mode mobile: Corrigir cards com fundo claro (bg-amber-50/60, bg-emerald-50/80 etc.) usando CSS attribute selectors [class*="bg-*-50/100"] para forçar fundo escuro em todas as variantes de opacidade fracionária
 - [x] Dar permissão ao Marcos para ver as observações da equipe fiscal (Larissa/Brenda) na aba Faturamento
+- [x] Inadimplência Pagos/Resolvidos: adicionar filtro para ordenar do recebimento mais antigo ao mais atual
+- [x] Inadimplência Pagos/Resolvidos: resolver duplicações (ex: SK EMBALAGENS R$599 venc 03/04/2026)
+- [x] Inadimplência: manter histórico completo de recuperação desde o início (não resetar na virada do mês)
+- [x] Inadimplência: sistema de alertas (ícone telefone) deve respeitar datas editadas no cronograma, não a programação original
+- [x] Inadimplência: campo "valor prometido" no Gerenciar Cobrança deve exibir símbolo R$
+- [x] Dark mode login: logo Grupo Fox e frase do artista em dourado brilhante (profissional e sofisticado)

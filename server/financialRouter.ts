@@ -3800,6 +3800,20 @@ export const financialRouter = router({
         .from(accountsReceivable)
         .where(inArray(accountsReceivable.id, input.receivableIds));
 
+      // Buscar step overrides (datas editadas manualmente no cronograma)
+      const stepOverrides = await db
+        .select()
+        .from(collectionStepOverrides)
+        .where(inArray(collectionStepOverrides.receivableId, input.receivableIds));
+      // Mapa: receivableId -> step -> dataOverride
+      const overrideMap: Record<number, Record<number, string>> = {};
+      for (const ov of stepOverrides) {
+        if (ov.dataOverride) {
+          if (!overrideMap[ov.receivableId]) overrideMap[ov.receivableId] = {};
+          overrideMap[ov.receivableId][ov.step] = ov.dataOverride;
+        }
+      }
+
       // Buscar todas as ações manuais desses receivables
       const allActions = await db
         .select()
@@ -3847,18 +3861,33 @@ export const financialRouter = router({
         // Títulos com 0 dias úteis de atraso (vencimento em fds/feriado): não vibra
         if (businessDaysOverdue < 1) continue;
 
-        // Títulos com 2+ dias úteis de atraso: NUNCA vibra o telefone
-        // Regra absoluta: independente de já terem sido contatados ou não
-        if (businessDaysOverdue >= 2) continue;
+        // Títulos com 2+ dias úteis de atraso: só vibra se houver step override com data <= hoje
+        // (quando o responsável editou a data do cronograma para uma data futura, o alerta deve respeitar)
+        const recOverridesCheck = overrideMap[rec.id] || {};
+        const hasActiveOverrideToday = Object.values(recOverridesCheck).some(d => d === todayStr);
+        if (businessDaysOverdue >= 2 && !hasActiveOverrideToday) continue;
 
         const pendingDays: number[] = [];
         const actionDates = actionsByRecId[rec.id] || new Set();
+        const recOverrides = overrideMap[rec.id] || {};
 
         for (const day of COLLECTION_DAYS) {
-          // Usar dias úteis para verificar se o dia de cobrança já chegou
-          if (businessDaysOverdue >= day) {
-            // Calcular a data exata do dia de cobrança usando DIAS ÚTEIS
-            const collDateStr = addBusinessDaysStr(vencStr, day);
+          // Se há um override de data para este step, usar a data editada
+          const overrideDate = recOverrides[day];
+          let collDateStr: string;
+          let dayHasArrived: boolean;
+
+          if (overrideDate) {
+            // Data foi editada manualmente no cronograma
+            collDateStr = overrideDate;
+            dayHasArrived = todayStr >= overrideDate;
+          } else {
+            // Usar cálculo padrão por dias úteis
+            collDateStr = addBusinessDaysStr(vencStr, day);
+            dayHasArrived = businessDaysOverdue >= day;
+          }
+
+          if (dayHasArrived) {
             // Verificar se TODAS as ações obrigatórias do dia foram registradas
             const requiredActions = REQUIRED_ACTIONS_BY_DAY[day] || [];
             if (requiredActions.length > 0) {
@@ -4862,29 +4891,35 @@ ${acoesTexto}
    */
   getResolvedTitles: publicProcedure
     .input(z.object({
-      limit: z.number().default(50),
+      sortOrder: z.enum(['newest', 'oldest']).default('newest'),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return { titles: [], stats: { total: 0, count: 0, valorTotal: 0 } };
 
+      // Buscar TODOS os títulos resolvidos (sem limite) para manter histórico completo
       const rows = await db.select()
         .from(resolvedReceivables)
-        .orderBy(desc(resolvedReceivables.resolvedAt))
-        .limit(input?.limit || 50);
+        .orderBy(input?.sortOrder === 'oldest' ? asc(resolvedReceivables.resolvedAt) : desc(resolvedReceivables.resolvedAt));
 
       // Filtrar clientes de teste
       const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
       const filteredRows = rows.filter(row => !TEST_CLIENT_NAMES.includes((row.cliente || '').toUpperCase().trim()));
 
       // REGRA: Só considerar como "recuperado da inadimplência" se o título tinha 3+ dias úteis de atraso.
-      // Antes de 3 dias úteis, pode ser apenas falta de conciliação bancária (não era inadimplência real).
-      // Threshold configurável: Fernando pode pedir para mudar.
       const RECUPERACAO_THRESHOLD_DAYS = 3;
       const qualifiedRows = filteredRows.filter(row => (row.diasAtrasoNaResolucao || 0) >= RECUPERACAO_THRESHOLD_DAYS);
 
+      // DEDUPLICAÇÃO: remover duplicatas por receivableId (manter o mais antigo)
+      const seenReceivableIds = new Set<number>();
+      const dedupedRows = qualifiedRows.filter(row => {
+        if (seenReceivableIds.has(row.receivableId)) return false;
+        seenReceivableIds.add(row.receivableId);
+        return true;
+      });
+
       let valorTotal = 0;
-      const titles = qualifiedRows.map(row => {
+      const titles = dedupedRows.map(row => {
         const valor = Number(row.valorAReceber) || 0;
         valorTotal += valor;
         return {

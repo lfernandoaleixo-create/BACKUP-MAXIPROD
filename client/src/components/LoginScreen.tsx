@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
 
 const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_ai_transparent_7e0dd68e.png";
@@ -85,6 +86,8 @@ export default function LoginScreen() {
   const { login } = useOperator();
   const validateMutation = trpc.settings.validateOperator.useMutation();
   const [quote] = useState(() => getWeeklyQuote());
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,20 +114,29 @@ export default function LoginScreen() {
       {/* Frase motivacional */}
       <div className="text-center px-4 mb-2">
         <p
-          className="text-slate-600 dark:text-slate-300 italic max-w-xl mx-auto"
+          className="italic max-w-xl mx-auto"
           style={{
             fontFamily: "'Playfair Display', 'Georgia', serif",
             fontSize: "clamp(1rem, 2vw, 1.25rem)",
             lineHeight: 1.4,
+            ...(isDark ? {
+              background: "linear-gradient(90deg, #f6d365, #fef9c3, #f6d365)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            } : {
+              color: "#475569",
+            }),
           }}
         >
           &ldquo;{quote.text}&rdquo;
         </p>
         <p
-          className="mt-1 text-teal-600 dark:text-teal-400 font-medium tracking-wide"
+          className="mt-1 font-medium tracking-wide"
           style={{
             fontFamily: "'Inter', 'Helvetica Neue', sans-serif",
             fontSize: "0.8rem",
+            color: isDark ? "#fbbf24" : "#0d9488",
           }}
         >
           &mdash; {quote.author}
@@ -136,20 +148,17 @@ export default function LoginScreen() {
         <img
           src={LOGO_URL}
           alt="Grupo Fox"
-          className="h-auto block"
+          className="h-auto block login-logo"
           style={{
             width: "min(320px, 70vw)",
-            filter: "saturate(1.3) contrast(1.1) drop-shadow(0 10px 20px rgba(0,80,0,0.2)) drop-shadow(0 4px 8px rgba(0,0,0,0.1))",
             transform: "perspective(800px) rotateX(2deg) translateX(14px)",
             transition: "transform 0.3s ease, filter 0.3s ease",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "perspective(800px) rotateX(0deg) scale(1.04) translateX(14px)";
-            e.currentTarget.style.filter = "saturate(1.5) contrast(1.15) drop-shadow(0 14px 28px rgba(0,80,0,0.25)) drop-shadow(0 6px 12px rgba(0,0,0,0.12))";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "perspective(800px) rotateX(2deg) translateX(14px)";
-            e.currentTarget.style.filter = "saturate(1.3) contrast(1.1) drop-shadow(0 10px 20px rgba(0,80,0,0.2)) drop-shadow(0 4px 8px rgba(0,0,0,0.1))";
           }}
         />
       </div>

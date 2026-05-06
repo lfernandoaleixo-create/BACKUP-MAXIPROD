@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
-import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3 } from "lucide-react";
+import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown } from "lucide-react";
 import CollectionMetricsPanel from "@/components/CollectionMetricsPanel";
 import { generateDecisionPdf } from "../lib/decisionPdfExport";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -647,7 +647,8 @@ export default function InadimplenciaTab() {
   });
 
   // Buscar títulos resolvidos (pagos que tinham cobrança)
-  const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery();
+  const [resolvedSortOrder, setResolvedSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: resolvedSortOrder });
   const [showResolved, setShowResolved] = useState(false);
 
   const upsertAction = trpc.financial.upsertCollectionAction.useMutation({
@@ -1201,7 +1202,19 @@ export default function InadimplenciaTab() {
             {showResolved ? <ChevronUp className="w-5 h-5 text-emerald-600" /> : <ChevronDown className="w-5 h-5 text-emerald-600" />}
           </button>
           {showResolved && (
-            <div className="border-t border-emerald-200 divide-y divide-emerald-100">
+            <div className="border-t border-emerald-200">
+              {/* Filtro de ordenação */}
+              <div className="flex items-center justify-between px-4 py-2 bg-emerald-50/50 border-b border-emerald-200">
+                <span className="text-[10px] text-emerald-700 font-medium uppercase tracking-wider">Ordenar por recebimento</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setResolvedSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest'); }}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[11px] font-medium transition-colors"
+                >
+                  <ArrowUpDown className="w-3 h-3" />
+                  {resolvedSortOrder === 'newest' ? 'Mais recente primeiro' : 'Mais antigo primeiro'}
+                </button>
+              </div>
+              <div className="divide-y divide-emerald-100">
               {resolvedData.titles.map((t) => (
                 <div key={t.id} className="flex items-center justify-between px-4 py-3 hover:bg-emerald-50/80">
                   <div className="flex items-center gap-3 min-w-0">
@@ -1230,6 +1243,7 @@ export default function InadimplenciaTab() {
                   </div>
                 </div>
               ))}
+              </div>
             </div>
           )}
         </div>
@@ -3914,7 +3928,10 @@ function ActionDialog({ title, onClose, onSave, isSaving, protestConfig, onSetPr
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-500 uppercase">Valor Prometido</label>
-              <input type="number" step="0.01" value={promessaValor} onChange={e => setPromessaValor(e.target.value)} placeholder="R$ 0,00" className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+              <div className="relative mt-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500">R$</span>
+                <input type="number" step="0.01" value={promessaValor} onChange={e => setPromessaValor(e.target.value)} placeholder="0,00" className="w-full pl-10 pr-3 py-2 rounded-lg border border-slate-200 text-sm" />
+              </div>
             </div>
           </div>
 
