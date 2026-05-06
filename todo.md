@@ -3450,3 +3450,4 @@
 - [x] Produção: colunas Tipo e Status cortadas com reticências - removido truncate, colWidths ajustadas, fonte 5.5
 - [x] Produção: soma do setor incorreta (ex: 12+10+9=31 mas mostra 20) - incluído FLOWPACK_FIBRA_OPTIONS no getSectorTotal
 - [x] PDF Vendas: cards semanais desconfigurados - reescrito computeWeeklySummaries para gerar todas as semanas do mês
+- [x] PDF Vendas: Semana 1 vazia - corrigido: total agora inclui vendas de dias não úteis + exibe "+R$ 6K em 1 dia nao util"

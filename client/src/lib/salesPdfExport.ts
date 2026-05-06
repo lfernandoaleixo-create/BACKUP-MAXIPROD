@@ -65,6 +65,8 @@ interface WeekSummary {
   total: number;
   businessDays: number;
   avg: number;
+  weekendSales: number;
+  weekendDaysWithSales: number;
 }
 
 // ─── Color Palette ───────────────────────────────────────────────
@@ -178,7 +180,14 @@ function computeWeeklySummaries(byDay: Array<{ day: string; value: number }>): W
         const dd = new Date(day.day + "T12:00:00").getDay();
         return dd >= 1 && dd <= 5;
       });
-      const total = businessDays.reduce((s, d) => s + (d.day > todayStr ? 0 : d.value), 0);
+      const weekendDays = currentWeekAll.filter(day => {
+        const dd = new Date(day.day + "T12:00:00").getDay();
+        return dd === 0 || dd === 6;
+      });
+      // Total includes ALL days (business + weekend), matching the UI
+      const total = currentWeekAll.reduce((s, d) => s + (d.day > todayStr ? 0 : d.value), 0);
+      const weekendSales = weekendDays.reduce((s, d) => s + (d.day > todayStr ? 0 : d.value), 0);
+      const weekendDaysWithSales = weekendDays.filter(d => d.day <= todayStr && d.value > 0).length;
       const activeDays = businessDays.filter(d => d.day <= todayStr && d.value > 0).length;
       const startDayNum = parseInt(currentWeekAll[0].day.split("-")[2]);
       const endDayNum = parseInt(currentWeekAll[currentWeekAll.length - 1].day.split("-")[2]);
@@ -189,6 +198,8 @@ function computeWeeklySummaries(byDay: Array<{ day: string; value: number }>): W
         total,
         businessDays: businessDays.length,
         avg: activeDays > 0 ? total / activeDays : 0,
+        weekendSales,
+        weekendDaysWithSales,
       });
       currentWeekAll = [];
     }
@@ -357,6 +368,15 @@ function drawWeekCard(
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...colors.main);
     doc.text(`media ${fmtCurrency(week.avg)}/dia`, x + 1.5, y + 13);
+  }
+
+  // Row 3b: weekend sales (if any)
+  if (week.weekendSales > 0 && week.weekendDaysWithSales > 0) {
+    doc.setFontSize(3.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...colors.main);
+    const plural = week.weekendDaysWithSales > 1 ? "dias nao uteis" : "dia nao util";
+    doc.text(`+${fmtCompactCurrency(week.weekendSales)} em ${week.weekendDaysWithSales} ${plural}`, x + 1.5, y + 15.5);
   }
 
   // Row 4: dias úteis
