@@ -2152,30 +2152,30 @@ function ClassificationCard({
         </div>
 
         {/* Metrics row - Desktop: Quantidades */}
-        <div className="hidden sm:grid grid-cols-6 gap-3 mt-4 ml-16">
-          <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
+        <div className="hidden sm:grid grid-cols-6 gap-0 mt-4 ml-16 divide-x divide-slate-200 dark:divide-slate-600 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+          <div className="bg-teal-50/80 dark:bg-teal-950/30 px-3 py-3.5 text-center">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700 dark:text-teal-400 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-orange-50/80 dark:bg-orange-950/30 px-3 py-3.5 text-center">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-700 dark:text-orange-400' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className={`rounded-lg px-3 py-3.5 ${totalDisponivel < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
+          <div className={`px-3 py-3.5 text-center ${totalDisponivel < 0 ? 'bg-red-50/80 dark:bg-red-950/30' : 'bg-emerald-50/80 dark:bg-emerald-950/30'}`}>
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-blue-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-blue-50/80 dark:bg-blue-950/30 px-3 py-3.5 text-center">
             <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">PO (Compra)</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalPO > 0 ? 'text-blue-700' : 'text-slate-400'}`}>{formatNumber(totalPO, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPO > 0 ? 'text-blue-700 dark:text-blue-400' : 'text-slate-400'}`}>{formatNumber(totalPO, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-indigo-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-indigo-50/80 dark:bg-indigo-950/30 px-3 py-3.5 text-center">
             <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Projetado</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalProjetado < 0 ? 'text-red-700' : 'text-indigo-700'}`}>{formatNumber(totalProjetado, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalProjetado < 0 ? 'text-red-700 dark:text-red-400' : 'text-indigo-700 dark:text-indigo-400'}`}>{formatNumber(totalProjetado, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-slate-50/80 dark:bg-slate-800/50 px-3 py-3.5 text-center">
             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
-            <p className="text-lg font-extrabold text-slate-700 mt-1">{parentCount}</p>
+            <p className="text-lg font-extrabold text-slate-700 dark:text-slate-300 mt-1">{parentCount}</p>
           </div>
         </div>
 
@@ -2216,18 +2216,18 @@ function ClassificationCard({
         )}
 
         {/* Mobile summary */}
-        <div className="grid sm:hidden grid-cols-3 gap-2 mt-3 ml-16">
-          <div className="text-center bg-teal-50/60 rounded px-2 py-1">
+        <div className="grid sm:hidden grid-cols-3 gap-0 mt-3 ml-16 divide-x divide-slate-200 dark:divide-slate-600 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+          <div className="text-center bg-teal-50/60 dark:bg-teal-950/30 px-2 py-1.5">
             <p className="text-[9px] text-teal-600 font-semibold">Estoque</p>
-            <p className="text-sm font-bold text-teal-700">{formatNumber(totalEstoque)}</p>
+            <p className="text-sm font-bold text-teal-700 dark:text-teal-400">{formatNumber(totalEstoque)}</p>
           </div>
-          <div className="text-center bg-emerald-50/60 rounded px-2 py-1">
+          <div className="text-center bg-emerald-50/60 dark:bg-emerald-950/30 px-2 py-1.5">
             <p className="text-[9px] text-emerald-600 font-semibold">Dispon.</p>
-            <p className={`text-sm font-bold ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel)}</p>
+            <p className={`text-sm font-bold ${totalDisponivel < 0 ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatNumber(totalDisponivel)}</p>
           </div>
-          <div className="text-center bg-indigo-50/60 rounded px-2 py-1">
+          <div className="text-center bg-indigo-50/60 dark:bg-indigo-950/30 px-2 py-1.5">
             <p className="text-[9px] text-indigo-600 font-semibold">Projetado</p>
-            <p className="text-sm font-bold text-indigo-700">{formatNumber(totalProjetado)}</p>
+            <p className="text-sm font-bold text-indigo-700 dark:text-indigo-400">{formatNumber(totalProjetado)}</p>
           </div>
         </div>
 

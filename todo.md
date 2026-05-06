@@ -3526,3 +3526,4 @@
 - [x] Dark mode: Login logo fundo escuro com letras e raposa dourados grandes e brilhantes
 - [x] Inadimplência: botões de ação (PDF, Importar, Métricas, etc) lado a lado no desktop (não empilhados)
 - [x] Inadimplência: card roteiro/ações fundo branco no dark mode → fundo escuro
+- [x] Estoque: adicionar divisórias verticais entre colunas (Estoque, Pedidos, Disponível, PO, Projetado, Produtos) nos cards
