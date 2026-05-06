@@ -269,34 +269,36 @@
     }
 
     /* ---- Fractional opacity backgrounds (bg-*-50/60, bg-*-50/80, etc.) ---- */
-    & [class*="bg-amber-50"],
-    & [class*="bg-emerald-50"],
-    & [class*="bg-teal-50"],
-    & [class*="bg-green-50"],
-    & [class*="bg-cyan-50"],
-    & [class*="bg-red-50"],
-    & [class*="bg-rose-50"],
-    & [class*="bg-blue-50"],
-    & [class*="bg-orange-50"],
-    & [class*="bg-yellow-50"],
-    & [class*="bg-pink-50"],
-    & [class*="bg-indigo-50"],
-    & [class*="bg-violet-50"],
-    & [class*="bg-purple-50"],
-    & [class*="bg-slate-50"] {
+    /* NOTE: Using [class*="bg-X-50/"] and [class*="bg-X-50 "] patterns to avoid
+       matching bg-X-500 (substring issue). Also match end-of-string with specific classes. */
+    & .bg-amber-50, & [class*="bg-amber-50/"],
+    & .bg-emerald-50, & [class*="bg-emerald-50/"],
+    & .bg-teal-50, & [class*="bg-teal-50/"],
+    & .bg-green-50, & [class*="bg-green-50/"],
+    & .bg-cyan-50, & [class*="bg-cyan-50/"],
+    & .bg-red-50, & [class*="bg-red-50/"],
+    & .bg-rose-50, & [class*="bg-rose-50/"],
+    & .bg-blue-50, & [class*="bg-blue-50/"],
+    & .bg-orange-50, & [class*="bg-orange-50/"],
+    & .bg-yellow-50, & [class*="bg-yellow-50/"],
+    & .bg-pink-50, & [class*="bg-pink-50/"],
+    & .bg-indigo-50, & [class*="bg-indigo-50/"],
+    & .bg-violet-50, & [class*="bg-violet-50/"],
+    & .bg-purple-50, & [class*="bg-purple-50/"],
+    & .bg-slate-50, & [class*="bg-slate-50/"] {
       background-color: oklch(0.18 0.015 240) !important;
     }
-    & [class*="bg-amber-100"],
-    & [class*="bg-emerald-100"],
-    & [class*="bg-teal-100"],
-    & [class*="bg-green-100"],
-    & [class*="bg-cyan-100"],
-    & [class*="bg-red-100"],
-    & [class*="bg-rose-100"],
-    & [class*="bg-blue-100"],
-    & [class*="bg-orange-100"],
-    & [class*="bg-yellow-100"],
-    & [class*="bg-slate-100"] {
+    & .bg-amber-100, & [class*="bg-amber-100/"],
+    & .bg-emerald-100, & [class*="bg-emerald-100/"],
+    & .bg-teal-100, & [class*="bg-teal-100/"],
+    & .bg-green-100, & [class*="bg-green-100/"],
+    & .bg-cyan-100, & [class*="bg-cyan-100/"],
+    & .bg-red-100, & [class*="bg-red-100/"],
+    & .bg-rose-100, & [class*="bg-rose-100/"],
+    & .bg-blue-100, & [class*="bg-blue-100/"],
+    & .bg-orange-100, & [class*="bg-orange-100/"],
+    & .bg-yellow-100, & [class*="bg-yellow-100/"],
+    & .bg-slate-100, & [class*="bg-slate-100/"] {
       background-color: oklch(0.20 0.015 240) !important;
     }
 

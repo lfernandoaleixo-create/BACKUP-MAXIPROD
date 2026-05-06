@@ -3528,3 +3528,5 @@
 - [x] Inadimplência: card roteiro/ações fundo branco no dark mode → fundo escuro
 - [x] Estoque: adicionar divisórias verticais entre colunas (Estoque, Pedidos, Disponível, PO, Projetado, Produtos) nos cards
 - [x] Dark mode: usar logo dourado/preto no header/sidebar (não o branco/verde)
+- [x] Dark mode: divisórias verticais nos cards Madeira (Estoque/Pedidos/Disponível) sumiram — restaurar para desktop e mobile
+- [x] Dark mode: cores dos quadradinhos de permissão na aba Configurações estão preto/branco — restaurar cores originais (teal, laranja, azul, roxo, verde, vermelho) para desktop e mobile

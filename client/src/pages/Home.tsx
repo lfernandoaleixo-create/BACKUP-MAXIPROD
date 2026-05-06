@@ -2834,15 +2834,15 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
           </div>
         </div>
         <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
-          <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
             <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(paEstoqueCx, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-orange-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
             <p className={`text-lg font-extrabold mt-1 ${paPedidosCx > 0 ? 'text-orange-700' : 'text-slate-400'}`}>{formatNumber(paPedidosCx, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className={`rounded-lg px-3 py-3.5 ${paDisponivelCx < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
+          <div className={`rounded-lg px-3 py-3.5 dark:border dark:border-slate-600 ${paDisponivelCx < 0 ? 'bg-red-50/80' : 'bg-emerald-50/80'}`}>
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${paDisponivelCx < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
             <p className={`text-lg font-extrabold mt-1 ${paDisponivelCx < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(paDisponivelCx, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
@@ -2883,7 +2883,7 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             </div>
           </div>
           {/* PRODUTOS card */}
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center">
+          <div className="bg-slate-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center">
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
             <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
@@ -3587,15 +3587,15 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
           </div>
         </div>
 <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
-          <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
             <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-orange-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
             <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-emerald-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-emerald-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
             <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
@@ -3615,7 +3615,7 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
               </button>
             </div>
           )}
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '6 / 7' : '4 / 7' }}>
+          <div className="bg-slate-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '6 / 7' : '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
             <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
@@ -3829,15 +3829,15 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
           </div>
         </div>
         <div className="hidden sm:grid gap-3 mt-4 ml-16" style={{ gridTemplateColumns: '2fr 2fr 2fr 1.5fr 1.5fr 1fr' }}>
-          <div className="bg-teal-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
             <p className="text-lg font-extrabold text-teal-700 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-orange-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-orange-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
             <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
-          <div className="bg-emerald-50/80 rounded-lg px-3 py-3.5">
+          <div className="bg-emerald-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Disponível</p>
             <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
           </div>
@@ -3857,7 +3857,7 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
               </button>
             </div>
           )}
-          <div className="bg-slate-50/80 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '6 / 7' : '4 / 7' }}>
+          <div className="bg-slate-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5 flex flex-col items-end justify-center" style={{ gridColumn: operatorCtx?.hasGranularAccess("est.valorizacao") ? '6 / 7' : '4 / 7' }}>
             <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Produtos</p>
             <p className="text-lg font-extrabold text-slate-900 mt-1">{parentItems.length}</p>
           </div>
