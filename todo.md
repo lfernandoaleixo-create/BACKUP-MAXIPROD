@@ -3472,3 +3472,5 @@
 - [x] Bug mobile: Recebíveis - card Resultado do Filtro (TOTAL, VENCIDO, A VENCER) com valores cortados/sobrepostos
 - [x] Bug mobile: Recebíveis - badges/pills de resumo precisam de melhor alinhamento
 - [x] Bug mobile: Painel de notificações (sininho) cortado no mobile - texto sobrepõe conteúdo da página, precisa ser full-width
+- [x] Vendas Métricas: Adicionar período "Personalizado" com calendário para escolher qualquer mês
+- [x] Vendas Métricas: Converter filtros Estado/Segmento para multi-select (chips) com cards separados por seleção + soma total

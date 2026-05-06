@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award, FileDown } from "lucide-react";
+import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon } from "lucide-react";
 import { exportRankingVendasPdf, exportInadimplenciaPdf } from "@/lib/tabsPdfExport";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 
 type ViewMode = "ranking" | "detail" | "inadimplencia" | "inadimplenciaDetail";
@@ -11,10 +12,23 @@ type ViewMode = "ranking" | "detail" | "inadimplencia" | "inadimplenciaDetail";
 const PERIOD_OPTIONS = [
   { label: "Mês Atual", value: "current" },
   { label: "Mês Anterior", value: "previous" },
+  { label: "Personalizado", value: "custom" },
 ];
 
-function getDateRange(period: string) {
+const MONTHS_PT = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+function getDateRange(period: string, customMonth?: { year: number; month: number }) {
   const now = new Date();
+  if (period === "custom" && customMonth) {
+    const firstDay = new Date(customMonth.year, customMonth.month, 1);
+    const lastDay = new Date(customMonth.year, customMonth.month + 1, 0);
+    // If custom month is current month, use today as end
+    const isCurrentMonth = customMonth.year === now.getFullYear() && customMonth.month === now.getMonth();
+    return {
+      startDate: firstDay.toISOString().split("T")[0],
+      endDate: isCurrentMonth ? now.toISOString().split("T")[0] : lastDay.toISOString().split("T")[0],
+    };
+  }
   if (period === "previous") {
     const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -46,12 +60,17 @@ function formatDate(dateStr: string) {
 
 export default function MetricaVendasTab() {
   const [period, setPeriod] = useState("current");
+  const [customMonth, setCustomMonth] = useState<{ year: number; month: number }>(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [view, setView] = useState<ViewMode>("ranking");
   const [selectedVendedor, setSelectedVendedor] = useState("");
-  const [filterEstado, setFilterEstado] = useState<string>("all");
-  const [filterSegmento, setFilterSegmento] = useState<string>("all");
+  const [filterEstados, setFilterEstados] = useState<string[]>([]);
+  const [filterSegmentos, setFilterSegmentos] = useState<string[]>([]);
 
-  const { startDate, endDate } = useMemo(() => getDateRange(period), [period]);
+  const { startDate, endDate } = useMemo(() => getDateRange(period, customMonth), [period, customMonth]);
 
   const { data: ranking, isLoading: loadingRanking } = trpc.salesMetrics.getVendedorRanking.useQuery({ startDate, endDate });
   const { data: inadimplencia, isLoading: loadingInadimplencia } = trpc.salesMetrics.getInadimplenciaPorVendedor.useQuery();
@@ -65,10 +84,10 @@ export default function MetricaVendasTab() {
   const totalInadimplentes = inadimplencia?.reduce((sum, v) => sum + v.qtdClientesInadimplentes, 0) || 0;
   const totalDevido = inadimplencia?.reduce((sum, v) => sum + v.totalDevido, 0) || 0;
 
-  const periodLabel = period === "current" ? "Mês Atual" : "Mês Anterior";
+  const periodLabel = period === "current" ? "Mês Atual" : period === "previous" ? "Mês Anterior" : `${MONTHS_PT[customMonth.month].slice(0,3)}/${customMonth.year}`;
 
   const goBack = () => {
-    if (view === "detail") { setView("ranking"); setSelectedVendedor(""); setFilterEstado("all"); setFilterSegmento("all"); }
+    if (view === "detail") { setView("ranking"); setSelectedVendedor(""); setFilterEstados([]); setFilterSegmentos([]); }
     else if (view === "inadimplenciaDetail") { setView("inadimplencia"); setSelectedVendedor(""); }
   };
 
@@ -84,15 +103,26 @@ export default function MetricaVendasTab() {
     return { estados: Array.from(estadosSet).sort(), segmentos: Array.from(segmentosSet).sort() };
   }, [vendedorDetail]);
 
-  // Filter vendedorDetail based on selected filters
+  // Filter vendedorDetail based on selected filters (multi-select)
   const filteredDetail = useMemo(() => {
     if (!vendedorDetail) return [];
     return vendedorDetail.filter((c) => {
-      if (filterEstado !== "all" && c.estadosConfiguraveis && !c.estadosConfiguraveis.includes(filterEstado)) return false;
-      if (filterSegmento !== "all" && c.segmentos && !c.segmentos.includes(filterSegmento)) return false;
+      if (filterEstados.length > 0 && c.estadosConfiguraveis && !c.estadosConfiguraveis.some((e: string) => filterEstados.includes(e))) return false;
+      if (filterSegmentos.length > 0 && c.segmentos && !c.segmentos.some((s: string) => filterSegmentos.includes(s))) return false;
       return true;
     });
-  }, [vendedorDetail, filterEstado, filterSegmento]);
+  }, [vendedorDetail, filterEstados, filterSegmentos]);
+
+  // Breakdown by selected estados (for multi-select cards)
+  const estadoBreakdown = useMemo(() => {
+    if (filterEstados.length <= 1 || !vendedorDetail) return null;
+    return filterEstados.map(est => {
+      const items = vendedorDetail.filter(c => c.estadosConfiguraveis?.includes(est));
+      const total = items.reduce((s, c) => s + c.totalVendas, 0);
+      const count = items.length;
+      return { estado: est, total, count };
+    });
+  }, [filterEstados, vendedorDetail]);
 
   const getRankIcon = (index: number) => {
     if (index === 0) return <Trophy className="w-5 h-5 text-yellow-500" />;
@@ -118,20 +148,81 @@ export default function MetricaVendasTab() {
             {view === "inadimplenciaDetail" && `Inadimplência - ${selectedVendedor}`}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
-          {PERIOD_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setPeriod(opt.value)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                period === opt.value
-                  ? "bg-teal-600 text-white"
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
+          <button
+            onClick={() => setPeriod("current")}
+            className={`px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-lg transition-colors ${
+              period === "current" ? "bg-teal-600 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            Mês Atual
+          </button>
+          <button
+            onClick={() => setPeriod("previous")}
+            className={`px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-lg transition-colors ${
+              period === "previous" ? "bg-teal-600 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            Mês Anterior
+          </button>
+          <Popover open={showMonthPicker} onOpenChange={setShowMonthPicker}>
+            <PopoverTrigger asChild>
+              <button
+                className={`px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-lg transition-colors flex items-center gap-1 ${
+                  period === "custom" ? "bg-teal-600 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <CalendarIcon className="w-3 h-3" />
+                {period === "custom" ? `${MONTHS_PT[customMonth.month].slice(0,3)}/${customMonth.year}` : "Personalizado"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="end">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setCustomMonth(prev => {
+                      const newYear = prev.month === 0 ? prev.year - 1 : prev.year;
+                      const newMonth = prev.month === 0 ? 11 : prev.month - 1;
+                      return { year: newYear, month: newMonth };
+                    })}
+                    className="p-1 rounded hover:bg-slate-100"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-sm font-semibold">{customMonth.year}</span>
+                  <button
+                    onClick={() => setCustomMonth(prev => {
+                      const newYear = prev.month === 11 ? prev.year + 1 : prev.year;
+                      const newMonth = prev.month === 11 ? 0 : prev.month + 1;
+                      return { year: newYear, month: newMonth };
+                    })}
+                    className="p-1 rounded hover:bg-slate-100 rotate-180"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {MONTHS_PT.map((m, idx) => (
+                    <button
+                      key={m}
+                      onClick={() => {
+                        setCustomMonth(prev => ({ ...prev, month: idx }));
+                        setPeriod("custom");
+                        setShowMonthPicker(false);
+                      }}
+                      className={`px-2 py-1.5 text-xs rounded-md transition-colors ${
+                        customMonth.month === idx && period === "custom"
+                          ? "bg-teal-600 text-white"
+                          : "hover:bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      {m.slice(0, 3)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -277,36 +368,58 @@ export default function MetricaVendasTab() {
             <div className="p-8 text-center text-slate-400">Nenhuma venda encontrada para {selectedVendedor} no período</div>
           ) : (
             <>
-              {/* Filters */}
+              {/* Multi-select Filters */}
               {(detailFilterOptions.estados.length > 0 || detailFilterOptions.segmentos.length > 0) && (
-                <div className="p-3 border-b border-slate-100 bg-slate-50/30 flex flex-wrap gap-2">
+                <div className="p-3 border-b border-slate-100 bg-slate-50/30 space-y-2">
                   {detailFilterOptions.estados.length > 0 && (
-                    <select
-                      value={filterEstado}
-                      onChange={(e) => setFilterEstado(e.target.value)}
-                      className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-400"
-                    >
-                      <option value="all">Todos os Estados</option>
-                      {detailFilterOptions.estados.map((e) => (
-                        <option key={e} value={e}>{e}</option>
-                      ))}
-                    </select>
+                    <div>
+                      <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">Estado Configurável</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {detailFilterOptions.estados.map((e) => {
+                          const isSelected = filterEstados.includes(e);
+                          return (
+                            <button
+                              key={e}
+                              onClick={() => setFilterEstados(prev => isSelected ? prev.filter(x => x !== e) : [...prev, e])}
+                              className={`px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                                isSelected
+                                  ? "bg-teal-600 text-white border-teal-600"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-teal-300 hover:bg-teal-50"
+                              }`}
+                            >
+                              {e}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                   {detailFilterOptions.segmentos.length > 0 && (
-                    <select
-                      value={filterSegmento}
-                      onChange={(e) => setFilterSegmento(e.target.value)}
-                      className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-400"
-                    >
-                      <option value="all">Todos os Segmentos</option>
-                      {detailFilterOptions.segmentos.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
+                    <div>
+                      <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">Segmento</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {detailFilterOptions.segmentos.map((s) => {
+                          const isSelected = filterSegmentos.includes(s);
+                          return (
+                            <button
+                              key={s}
+                              onClick={() => setFilterSegmentos(prev => isSelected ? prev.filter(x => x !== s) : [...prev, s])}
+                              className={`px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                                isSelected
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:bg-blue-50"
+                              }`}
+                            >
+                              {s}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
-                  {(filterEstado !== "all" || filterSegmento !== "all") && (
+                  {(filterEstados.length > 0 || filterSegmentos.length > 0) && (
                     <button
-                      onClick={() => { setFilterEstado("all"); setFilterSegmento("all"); }}
+                      onClick={() => { setFilterEstados([]); setFilterSegmentos([]); }}
                       className="text-[10px] text-teal-600 hover:text-teal-800 underline"
                     >
                       Limpar filtros
@@ -314,6 +427,26 @@ export default function MetricaVendasTab() {
                   )}
                 </div>
               )}
+
+              {/* Breakdown cards when multiple estados selected */}
+              {estadoBreakdown && (
+                <div className="p-3 border-b border-slate-100 bg-teal-50/30">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
+                    {estadoBreakdown.map(eb => (
+                      <div key={eb.estado} className="bg-white rounded-lg border border-teal-100 p-2.5 text-center">
+                        <p className="text-[10px] font-medium text-teal-700 uppercase">{eb.estado}</p>
+                        <p className="text-sm font-bold text-slate-800">{formatCurrency(eb.total)}</p>
+                        <p className="text-[10px] text-slate-500">{eb.count} clientes</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-white rounded-lg border border-teal-200 p-2.5 text-center">
+                    <p className="text-[10px] font-medium text-slate-500">SOMA TOTAL</p>
+                    <p className="text-base font-bold text-teal-700">{formatCurrency(estadoBreakdown.reduce((s, e) => s + e.total, 0))}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="p-4 border-b border-slate-100 bg-slate-50/50">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-slate-600">
