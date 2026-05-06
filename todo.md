@@ -3474,3 +3474,5 @@
 - [x] Bug mobile: Painel de notificações (sininho) cortado no mobile - texto sobrepõe conteúdo da página, precisa ser full-width
 - [x] Vendas Métricas: Adicionar período "Personalizado" com calendário para escolher qualquer mês
 - [x] Vendas Métricas: Converter filtros Estado/Segmento para multi-select (chips) com cards separados por seleção + soma total
+- [x] Cheques: Criar histórico de cheques descontados (quais saíram, de qual categoria, valor, cliente, data)
+- [x] Bug mobile: Card ENTRADAS - textos "Vendas..." e "Demais Re..." cortados, precisa mostrar completo

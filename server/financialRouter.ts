@@ -6635,6 +6635,116 @@ ${acoesTexto}
     }),
 
   /**
+   * getChequeDescontados - Retorna cheques que foram descontados/compensados (estado RECEBIDO)
+   * Estes são cheques que saíram do controle ativo por terem sido pagos/compensados
+   */
+  getChequeDescontados: publicProcedure
+    .input(z.object({
+      empresaNome: z.string().optional(),
+      limit: z.number().default(50),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      const conditions = [
+        sql`${accountsReceivable.formaCobranca} LIKE 'Cheque%'`,
+        eq(accountsReceivable.estado, "RECEBIDO"),
+        inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+      ];
+
+      if (input?.empresaNome) {
+        conditions.push(eq(accountsReceivable.empresaNome, input.empresaNome));
+      }
+
+      const rows = await db.select({
+        id: accountsReceivable.id,
+        maxiprodId: accountsReceivable.maxiprodId,
+        vencimentoData: accountsReceivable.vencimentoData,
+        emissaoData: accountsReceivable.emissaoData,
+        liquidacaoData: accountsReceivable.liquidacaoData,
+        referenteA: accountsReceivable.referenteA,
+        cliente: accountsReceivable.cliente,
+        valorOriginal: accountsReceivable.valorOriginal,
+        valorLiquido: accountsReceivable.valorLiquido,
+        valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+        formaCobranca: accountsReceivable.formaCobranca,
+        empresaNome: accountsReceivable.empresaNome,
+        parcela: accountsReceivable.parcela,
+        parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
+        documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+      })
+        .from(accountsReceivable)
+        .where(and(...conditions))
+        .orderBy(desc(accountsReceivable.liquidacaoData))
+        .limit(input?.limit || 50);
+
+      // Reuse the same state parser
+      const stateMap: Record<string, string> = {
+        "CHEQUE DISPONIVEL": "DISPONIVEL",
+        "CHEQUE DISPONIVEL ": "DISPONIVEL",
+        "CHEQUE \u00c0 RECEBER DE CLIENTES": "A_RECEBER",
+        "CHEQUE A RECEBER DE CLIENTES": "A_RECEBER",
+        "CHEQUE EM COMPENSACAO": "COMPENSACAO",
+        "CHEQUE EM COMPENSA\u00c7\u00c3O": "COMPENSACAO",
+        "CHEQUE CUSTODIA SICOOB": "CUSTODIA_SICOOB",
+        "CHEQUE CUST\u00d3DIA SICOOB": "CUSTODIA_SICOOB",
+        "CHEQUE CUSTODIA SICREDI": "CUSTODIA_SICREDI",
+        "CHEQUE CUST\u00d3DIA SICREDI": "CUSTODIA_SICREDI",
+        "CHEQUE LINHA 11": "LINHA_11",
+        "CHEQUE LINHA 12": "LINHA_12",
+        "CHEQUE VOLTOU OUTROS MOTIVOS": "VOLTOU_OUTROS",
+        "CHEQUE EM FACTORING": "FACTORING",
+      };
+
+      function parseChequeState(formaCobranca: string | null): string {
+        if (!formaCobranca) return "OUTROS";
+        const afterCheque = formaCobranca.replace(/^Cheque\s*/i, "").trim().toUpperCase();
+        for (const [key, value] of Object.entries(stateMap)) {
+          if (afterCheque.startsWith(key)) return value;
+        }
+        if (afterCheque.includes("DISPONIVEL") || afterCheque.includes("DISPON\u00cdVEL")) return "DISPONIVEL";
+        if (afterCheque.includes("RECEBER")) return "A_RECEBER";
+        if (afterCheque.includes("COMPENSAC")) return "COMPENSACAO";
+        if (afterCheque.includes("SICOOB")) return "CUSTODIA_SICOOB";
+        if (afterCheque.includes("SICREDI")) return "CUSTODIA_SICREDI";
+        if (afterCheque.includes("LINHA 11")) return "LINHA_11";
+        if (afterCheque.includes("LINHA 12")) return "LINHA_12";
+        if (afterCheque.includes("VOLTOU")) return "VOLTOU_OUTROS";
+        if (afterCheque.includes("FACTORING")) return "FACTORING";
+        return "OUTROS";
+      }
+
+      const cheques = rows.map(row => {
+        const estadoOrigem = parseChequeState(row.formaCobranca);
+        const valor = parseFloat(row.valorLiquido || row.valorOriginal || "0");
+        return {
+          id: row.id,
+          maxiprodId: row.maxiprodId,
+          vencimentoData: row.vencimentoData,
+          emissaoData: row.emissaoData,
+          liquidacaoData: row.liquidacaoData,
+          descricao: row.referenteA || row.documentoVinculadoNumero || "",
+          cliente: row.cliente || "",
+          valor,
+          formaPagamento: row.formaCobranca || "",
+          estadoOrigem, // de onde o cheque saiu (a categoria original)
+          empresaNome: row.empresaNome || "",
+          parcela: row.parcela,
+          parcelasTotal: row.parcelasQuantidadeTotal,
+        };
+      });
+
+      const totalDescontado = cheques.reduce((sum, c) => sum + c.valor, 0);
+
+      return {
+        cheques,
+        total: totalDescontado,
+        count: cheques.length,
+      };
+    }),
+
+  /**
    * getCustodians - Retorna todos os responsáveis registrados para cheques
    */
   getCustodians: publicProcedure

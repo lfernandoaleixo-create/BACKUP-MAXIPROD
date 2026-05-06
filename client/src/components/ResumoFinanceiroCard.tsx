@@ -745,20 +745,20 @@ function CompactSummary({
             )}
           </div>
           <p className="text-base sm:text-lg font-bold text-amber-700 leading-tight text-center">{formatCurrency(totalEntradas)}</p>
-          <div className="mt-2 pt-2 border-t border-amber-200/60 space-y-1">
-            <div className="flex items-center justify-between gap-1 min-w-0">
-              <span className="text-[11px] text-slate-500 flex items-center gap-1 min-w-0 shrink">
+          <div className="mt-2 pt-2 border-t border-amber-200/60 space-y-1.5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0 sm:gap-1">
+              <span className="text-[11px] text-slate-500 flex items-center gap-1">
                 <Banknote className="w-3 h-3 text-amber-500 shrink-0" />
-                <span className="truncate">Vendas/Revenda</span>
+                <span>Vendas/Revenda</span>
               </span>
-              <span className="text-[11px] font-semibold text-amber-600 whitespace-nowrap shrink-0">{formatCurrency(recebimentos)}</span>
+              <span className="text-[11px] font-semibold text-amber-600 whitespace-nowrap pl-4 sm:pl-0">{formatCurrency(recebimentos)}</span>
             </div>
-            <div className="flex items-center justify-between gap-1 min-w-0">
-              <span className="text-[11px] text-slate-500 flex items-center gap-1 min-w-0 shrink">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0 sm:gap-1">
+              <span className="text-[11px] text-slate-500 flex items-center gap-1">
                 <ArrowRightLeft className="w-3 h-3 text-slate-400 shrink-0" />
-                <span className="truncate">Demais Receitas</span>
+                <span>Demais Receitas</span>
               </span>
-              <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap shrink-0">{formatCurrency(outrasEntradas)}</span>
+              <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap pl-4 sm:pl-0">{formatCurrency(outrasEntradas)}</span>
             </div>
           </div>
           {canVerifyMaxiprod && (

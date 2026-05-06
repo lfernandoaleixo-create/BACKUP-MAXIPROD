@@ -1012,13 +1012,13 @@ export default function InadimplenciaTab() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+      <div className="flex flex-col items-center sm:items-start gap-3">
+        <div className="w-full">
+          <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2 justify-center sm:justify-start">
             <AlertTriangle className="w-5 h-5 text-red-500" />
             Gestão de Inadimplência
           </h2>
-          <div className="flex flex-wrap items-center gap-2 mt-2">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-1.5 flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-red-500" />
               <span className="text-sm font-bold text-red-700">{stats.count}</span>
@@ -1037,10 +1037,10 @@ export default function InadimplenciaTab() {
             )}
           </div>
         </div>
-        <div className="grid grid-cols-2 md:flex md:flex-wrap md:items-center gap-2">
+        <div className="grid grid-cols-2 md:flex md:flex-wrap md:items-center gap-2 justify-items-center mx-auto max-w-[400px] md:max-w-none">
           <button
             onClick={() => exportInadimplenciaPDF(filteredTitles, stats, protestConfigsMap)}
-            className="flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02] px-3"
+            className="w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-red-700 to-red-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-red-800 hover:to-red-700 transition-all hover:scale-[1.02] px-3"
             title="Exportar lista de inadimplentes em PDF"
           >
             <FileDown className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1049,7 +1049,7 @@ export default function InadimplenciaTab() {
           {canCobranca && (
             <button
               onClick={() => setShowImportDialog(true)}
-              className="flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-3"
+              className="w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-3"
               title="Importar planilha de cobrança (XLSX)"
             >
               <Upload className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1058,7 +1058,7 @@ export default function InadimplenciaTab() {
           )}
           <button
             onClick={() => setShowDecisionPdfHistory(true)}
-            className="flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-3"
+            className="w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02] px-3"
             title="Ver histórico de PDFs de decisão gerados"
           >
             <Stamp className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1066,7 +1066,7 @@ export default function InadimplenciaTab() {
           </button>
           <button
             onClick={() => setShowMetricsPanel(true)}
-            className="flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02] px-3"
+            className="w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-[11px] md:text-sm font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02] px-3"
             title="Ver métricas e analytics de cobrança"
           >
             <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
@@ -1075,7 +1075,7 @@ export default function InadimplenciaTab() {
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}
-              className="col-span-2 flex items-center justify-center gap-1.5 h-[40px] md:h-[48px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[11px] md:text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-3"
+              className="col-span-2 w-full flex items-center justify-center gap-1.5 h-[44px] md:h-[48px] rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-[11px] md:text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30 px-3"
               title="Ver guia completo do processo de cobrança"
             >
               <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />

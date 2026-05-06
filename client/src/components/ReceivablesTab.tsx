@@ -1574,11 +1574,16 @@ export default function ReceivablesTab() {
   const [exchangeAuthenticated, setExchangeAuthenticated] = useState(false);
   const [exchangeProcessing, setExchangeProcessing] = useState(false);
   const [showExchangeHistory, setShowExchangeHistory] = useState(false);
+  const [showDescontados, setShowDescontados] = useState(false);
 
   const createExchangeMutation = trpc.financial.createExchange.useMutation();
   const exchangeHistoryQuery = trpc.financial.getExchangeHistory.useQuery(
     { empresaNome: chequesOpenEmpresa || undefined },
     { enabled: !!chequesOpenEmpresa && showExchangeHistory }
+  );
+  const descontadosQuery = trpc.financial.getChequeDescontados.useQuery(
+    { empresaNome: chequesOpenEmpresa || undefined, limit: 100 },
+    { enabled: !!chequesOpenEmpresa && showDescontados }
   );
 
   const handleExchangePasswordSubmit = (e?: React.FormEvent) => {
@@ -2253,6 +2258,14 @@ export default function ReceivablesTab() {
                                 >
                                   <History className="w-3 h-3" />
                                 </button>
+                                <button
+                                  onClick={() => setShowDescontados(true)}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 transition-colors"
+                                  title="Cheques descontados/compensados"
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Descontados
+                                </button>
                               </div>
                             </div>
                             <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
@@ -2576,6 +2589,109 @@ export default function ReceivablesTab() {
       </Dialog>
 
       {/* Exchange History Panel */}
+      {/* Dialog Cheques Descontados */}
+      <Dialog open={showDescontados} onOpenChange={setShowDescontados}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              Histórico de Cheques Descontados
+            </DialogTitle>
+            <DialogDescription>
+              Cheques que foram compensados/descontados e saíram do controle ativo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {descontadosQuery.isLoading ? (
+              <div className="text-center py-8 text-slate-400">
+                <Loader2 className="w-6 h-6 mx-auto animate-spin mb-2" />
+                Carregando histórico...
+              </div>
+            ) : !descontadosQuery.data || descontadosQuery.data.cheques.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                Nenhum cheque descontado encontrado.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Summary */}
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-bold text-green-800">{descontadosQuery.data.count} cheques descontados</div>
+                    <div className="text-xs text-green-600">Total compensado</div>
+                  </div>
+                  <div className="text-lg font-bold text-green-700">
+                    R$ {descontadosQuery.data.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50">
+                      <tr className="border-b border-slate-200">
+                        <th className="px-3 py-2 text-left font-semibold text-slate-600">Cliente</th>
+                        <th className="px-3 py-2 text-right font-semibold text-slate-600">Valor</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-600">Origem</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-600">Vencimento</th>
+                        <th className="px-3 py-2 text-center font-semibold text-slate-600">Liquidado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {descontadosQuery.data.cheques.map((cheque: any) => {
+                        const estadoLabels: Record<string, string> = {
+                          DISPONIVEL: "Disponível",
+                          A_RECEBER: "A Receber",
+                          COMPENSACAO: "Compensação",
+                          CUSTODIA_SICOOB: "Cust. Sicoob",
+                          CUSTODIA_SICREDI: "Cust. Sicredi",
+                          LINHA_11: "Linha 11",
+                          LINHA_12: "Linha 12",
+                          VOLTOU_OUTROS: "Voltou",
+                          FACTORING: "Factoring",
+                          OUTROS: "Outros",
+                        };
+                        const estadoColors: Record<string, string> = {
+                          DISPONIVEL: "bg-emerald-100 text-emerald-700",
+                          A_RECEBER: "bg-blue-100 text-blue-700",
+                          COMPENSACAO: "bg-cyan-100 text-cyan-700",
+                          CUSTODIA_SICOOB: "bg-violet-100 text-violet-700",
+                          CUSTODIA_SICREDI: "bg-purple-100 text-purple-700",
+                          LINHA_11: "bg-red-100 text-red-700",
+                          LINHA_12: "bg-rose-100 text-rose-700",
+                          VOLTOU_OUTROS: "bg-orange-100 text-orange-700",
+                          FACTORING: "bg-amber-100 text-amber-700",
+                          OUTROS: "bg-slate-100 text-slate-700",
+                        };
+                        const formatDateShort = (d: string | null) => {
+                          if (!d) return "—";
+                          const date = d.split("T")[0];
+                          const [y, m, day] = date.split("-");
+                          return `${day}/${m}/${y}`;
+                        };
+                        return (
+                          <tr key={cheque.id} className="border-b border-slate-100 hover:bg-slate-50">
+                            <td className="px-3 py-2 text-slate-700 font-medium max-w-[180px] truncate" title={cheque.cliente}>{cheque.cliente}</td>
+                            <td className="px-3 py-2 text-right font-bold text-slate-800 whitespace-nowrap">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                            <td className="px-3 py-2 text-center">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${estadoColors[cheque.estadoOrigem] || "bg-slate-100 text-slate-600"}`}>
+                                {estadoLabels[cheque.estadoOrigem] || cheque.estadoOrigem}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-center text-slate-500 whitespace-nowrap">{formatDateShort(cheque.vencimentoData)}</td>
+                            <td className="px-3 py-2 text-center text-green-600 font-medium whitespace-nowrap">{formatDateShort(cheque.liquidacaoData)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showExchangeHistory} onOpenChange={setShowExchangeHistory}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
