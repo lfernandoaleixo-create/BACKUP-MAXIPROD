@@ -3451,3 +3451,4 @@
 - [x] Produção: soma do setor incorreta (ex: 12+10+9=31 mas mostra 20) - incluído FLOWPACK_FIBRA_OPTIONS no getSectorTotal
 - [x] PDF Vendas: cards semanais desconfigurados - reescrito computeWeeklySummaries para gerar todas as semanas do mês
 - [x] PDF Vendas: Semana 1 vazia - corrigido: total agora inclui vendas de dias não úteis + exibe "+R$ 6K em 1 dia nao util"
+- [x] Flow Pack rounding: valores individuais ficam quebrados (como Maria lançou), somatório total usa Math.floor, relatório/histórico sempre mostra inteiros arredondados (sem decimais)

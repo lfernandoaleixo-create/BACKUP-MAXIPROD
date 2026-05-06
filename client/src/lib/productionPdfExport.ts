@@ -217,9 +217,12 @@ function groupByUnit(sectors: SectorData[], entries: EntryData[]): UnitGroup[] {
 
   for (const sector of sectors) {
     const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
-    const total = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
+    const rawTotal = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
     const u = displayUnit(sector);
-    const decimals = u === "m³" ? 3 : (u === "forma" ? 0 : 1);
+    // Report always shows integers (no decimals) except m³
+    const decimals = u === "m³" ? 3 : 0;
+    // Floor totals: fractional values (caixas quebradas) round down
+    const total = u === "m³" ? rawTotal : Math.floor(rawTotal);
 
     if (u === "saco") {
       result.push({ unit: "saco", label: `Sacos (${sector.nome})`, total, decimals });
@@ -317,8 +320,12 @@ function prepareSectorCards(sectors: SectorData[], entries: EntryData[]): Sector
   for (const sector of sectors) {
     const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
     const unit = displayUnit(sector);
-    const decimals = unit === "m³" ? 3 : 1;
-    const total = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
+    // Report always shows integers (no decimals) except m³ which uses 3 decimals
+    // Dual-unit sectors (sacos) also show integers
+    const decimals = unit === "m³" ? 3 : 0;
+    const rawTotal = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
+    // Floor the total: fractional values (caixas quebradas) round down
+    const total = unit === "m³" ? rawTotal : Math.floor(rawTotal);
 
     const rows: SectorCardData["rows"] = [];
     if (sectorEntries.length === 0) {
@@ -335,10 +342,12 @@ function prepareSectorCards(sectors: SectorData[], entries: EntryData[]): Sector
         const machineName = machine ? machine.nome : (entry.machineId ? `#${entry.machineId}` : "—");
         const obs = entry.observacoes && entry.observacoes !== "[REMOVIDO]" ? entry.observacoes : "";
         const qty = convertedQty(entry, sector);
+        // Report shows rounded integers (no decimals) - floor individual entries too
+        const displayQty = unit === "m³" ? qty : Math.floor(qty);
         rows.push({
           maquina: machineName,
           tipo: tipoLabel(entry.tipoMadeira),
-          qtd: fmtNum(qty, decimals),
+          qtd: fmtNum(displayQty, decimals),
           unidade: unit,
           status: statusLabel(entry.status || ""),
           obs: obs.length > 20 ? obs.substring(0, 18) + "…" : obs,
@@ -358,8 +367,11 @@ function prepareSectorCardsWeekly(sectors: SectorData[], entries: EntryData[], n
   for (const sector of sectors) {
     const sectorEntries = entries.filter(e => e.sectorId === sector.id && Number(e.quantidade) > 0);
     const unit = displayUnit(sector);
-    const decimals = unit === "m³" ? 3 : 1;
-    const total = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
+    // Report always shows integers (no decimals) except m³
+    const decimals = unit === "m³" ? 3 : 0;
+    const rawTotal = sectorEntries.reduce((sum, e) => sum + convertedQty(e, sector), 0);
+    // Floor the total: fractional values (caixas quebradas) round down
+    const total = unit === "m³" ? rawTotal : Math.floor(rawTotal);
     const daysWithEntries = new Set(sectorEntries.map(e => e.data)).size;
     const avg = daysWithEntries > 0 ? total / daysWithEntries : 0;
 
@@ -386,11 +398,12 @@ function prepareSectorCardsWeekly(sectors: SectorData[], entries: EntryData[], n
         return (machA?.ordem ?? 999) - (machB?.ordem ?? 999);
       });
       for (const [, m] of sortedMachines) {
-        const mAvg = m.days.size > 0 ? m.total / m.days.size : 0;
+        const mTotal = unit === "m³" ? m.total : Math.floor(m.total);
+        const mAvg = m.days.size > 0 ? mTotal / m.days.size : 0;
         rows.push({
           maquina: m.nome,
           tipo: fmtNum(mAvg, decimals) + "/dia",
-          qtd: fmtNum(m.total, decimals),
+          qtd: fmtNum(mTotal, decimals),
           unidade: unit,
           status: `${m.days.size}/${numDays} dias`,
           obs: "",

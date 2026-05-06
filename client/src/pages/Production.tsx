@@ -420,9 +420,6 @@ export default function Production() {
         return sectorTotal;
       }
       const dualUnit = isDualUnitSector(sector.ordem);
-      // Round each machine total individually to match the per-machine display
-      // (avoids discrepancy where 11.8+9.9+8.6=30.3→30 but display shows 12+10+9=31)
-      const shouldRoundPerMachine = !dualUnit && sector.unidadeMedida !== "m\u00b3";
       for (const machine of sector.machines) {
         const machineVariantOpts = getVariantOptions(sector.ordem, machine.ordem);
         // Include fibra options for Flow Pack per-machine as well
@@ -483,10 +480,11 @@ export default function Production() {
             }
           }
         }
-        // Round per-machine to match displayed values (e.g. 11.8→12, 9.9→10)
-        sectorTotal += shouldRoundPerMachine ? Math.round(machineTotal) : machineTotal;
+        sectorTotal += machineTotal;
       }
-      return sectorTotal;
+      // Maria can enter fractional values (caixas quebradas like 9.9, 11.8)
+      // Individual machine values stay as-entered, but sector total rounds DOWN
+      return Math.floor(sectorTotal);
     }
 
     // For simple sectors: use dailySummary from backend
@@ -1058,7 +1056,10 @@ export default function Production() {
                 const total = getSectorTotal(sector.id);
                 const Icon = getSectorIcon(sector.ordem);
                 const avgData = monthlyAverage?.find(a => a.sectorId === sector.id);
-                const decimals = sector.unidadeMedida === "m³" ? 3 : isDualUnitSector(sector.ordem) ? 1 : 0;
+                // Totals always show integers (0 decimals) except m³
+                const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
+                // Averages can show 1 decimal for dual-unit sectors
+                const avgDecimals = sector.unidadeMedida === "m³" ? 3 : isDualUnitSector(sector.ordem) ? 1 : 0;
                 return (
                   <div key={sector.id} className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => toggleSector(sector.id)}>
                     <div className="flex items-start gap-1.5 mb-1">
@@ -1073,7 +1074,7 @@ export default function Production() {
                       <div className="mt-1.5 pt-1.5 border-t border-slate-100">
                         <div className="text-[10px] text-slate-500 flex items-center gap-1">
                           <TrendingUp className="w-3 h-3 text-teal-500" />
-                          <span>média: <span className="font-bold text-teal-600">{fmtNum(avgData.mediaDiaria, decimals)}</span></span>
+                          <span>média: <span className="font-bold text-teal-600">{fmtNum(avgData.mediaDiaria, avgDecimals)}</span></span>
                         </div>
                       </div>
                     )}
@@ -1117,7 +1118,7 @@ export default function Production() {
                         </div>
                       </div>
                       <div className="text-right mr-3">
-                        <div className="text-lg font-bold tabular-nums" style={{ color: sector.cor || "#6b7280" }}>{fmtNum(total, isDualUnitSector(sector.ordem) ? 1 : decimals)}</div>
+                        <div className="text-lg font-bold tabular-nums" style={{ color: sector.cor || "#6b7280" }}>{fmtNum(total, decimals)}</div>
                         <div className="text-[10px] text-slate-400">{isDualUnitSector(sector.ordem) ? "saco" : sector.unidadeMedida}</div>
                       </div>
                       {isExpanded ? <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" /> : <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />}
@@ -1380,7 +1381,9 @@ function ExpandableMachineRow({
   const variantOptions = getVariantOptions(sector.ordem, machine.ordem);
   const variantLabel = getVariantLabel(sector.ordem);
   const VariantIcon = getVariantIcon(sector.ordem);
-  const decimals = sector.unidadeMedida === "m³" ? 3 : 0;
+  // Individual machine values stay fractional as entered (1 decimal)
+  // Only sector totals and history/report use integers
+  const decimals = sector.unidadeMedida === "m³" ? 3 : 1;
 
   // Build per-variant display for badges (only show variants with value > 0)
   const dualUnit = isDualUnitSector(sector.ordem);
@@ -2752,8 +2755,10 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
             {sectors.map(sector => {
               const Icon = getSectorIcon(sector.ordem);
               const isDual = isDualUnitSector(sector.ordem);
-              const decimals = sector.unidadeMedida === "m\u00b3" ? 3 : isDual ? 1 : 0;
-              const weekTotal = weekDays.reduce((sum, day) => sum + (matrix[sector.id]?.[day] || 0), 0);
+              // History always shows integers (no decimals) except m³
+              const decimals = sector.unidadeMedida === "m\u00b3" ? 3 : 0;
+              const rawWeekTotal = weekDays.reduce((sum, day) => sum + (matrix[sector.id]?.[day] || 0), 0);
+              const weekTotal = sector.unidadeMedida === "m\u00b3" ? rawWeekTotal : Math.floor(rawWeekTotal);
               return (
                 <tr key={sector.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                   <td className="px-4 py-2.5 border-r border-slate-200">
@@ -2775,7 +2780,7 @@ function HistoryView({ sectors, weekRange, weeklySummary, selectedDate }: Histor
                     return (
                       <td key={day} className={`text-center px-2 py-2.5 tabular-nums border-r border-slate-200 last:border-r-0 ${isSelected ? "bg-teal-50/50" : isWeekend ? "bg-slate-50/50" : ""}`}>
                         <span className={`text-xs font-medium ${val > 0 ? "text-slate-700" : "text-slate-300"}`}>
-                          {val > 0 ? fmtNum(val, decimals) : "—"}
+                          {val > 0 ? fmtNum(sector.unidadeMedida === "m\u00b3" ? val : Math.floor(val), decimals) : "—"}
                         </span>
                       </td>
                     );
