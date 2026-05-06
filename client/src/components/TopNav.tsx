@@ -82,7 +82,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                   <img
                     src="https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"
                     alt="Grupo Fox"
-                    className="h-9 w-auto object-contain"
+                    className="h-9 w-auto object-contain dark:brightness-150 dark:sepia dark:saturate-200 dark:hue-rotate-[10deg]"
                   />
                 </div>
               </Link>
@@ -93,11 +93,11 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 {toggleTheme && (
                   <button
                     onClick={toggleTheme}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-slate-500 dark:text-amber-300 hover:text-teal-600 dark:hover:text-amber-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-[11px] font-medium"
+                    className="flex items-center gap-1 px-1.5 py-1 rounded-md text-slate-500 dark:text-amber-400 hover:text-teal-600 dark:hover:text-amber-300 transition-colors text-[10px] font-medium whitespace-nowrap"
                     title={theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
                   >
-                    {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                    <span className="hidden sm:inline">{theme === "dark" ? "Modo claro" : "Modo noturno"}</span>
+                    {theme === "dark" ? <Sun className="w-3 h-3 shrink-0" /> : <Moon className="w-3 h-3 shrink-0" />}
+                    <span className="hidden sm:inline">{theme === "dark" ? "Claro" : "Noturno"}</span>
                   </button>
                 )}
                 {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (
@@ -188,7 +188,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
               <img
                 src="https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"
                 alt="Grupo Fox"
-                className="h-12 w-auto object-contain group-hover:opacity-80 transition-opacity"
+                className="h-12 w-auto object-contain group-hover:opacity-80 transition-opacity dark:brightness-150 dark:sepia dark:saturate-200 dark:hue-rotate-[10deg]"
               />
             </div>
           </Link>
@@ -252,11 +252,11 @@ export default function TopNav({ rightContent }: TopNavProps) {
             {toggleTheme && (
               <button
                 onClick={toggleTheme}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-amber-300 hover:text-teal-600 dark:hover:text-amber-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-xs font-medium"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-slate-500 dark:text-amber-400 hover:text-teal-600 dark:hover:text-amber-300 transition-colors text-[11px] font-medium whitespace-nowrap"
                 title={theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
               >
-                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                <span>{theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}</span>
+                {theme === "dark" ? <Sun className="w-3.5 h-3.5 shrink-0" /> : <Moon className="w-3.5 h-3.5 shrink-0" />}
+                <span>{theme === "dark" ? "Modo claro" : "Modo noturno"}</span>
               </button>
             )}
             {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (
