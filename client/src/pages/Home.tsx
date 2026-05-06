@@ -2911,8 +2911,8 @@ function MadeiraPACard({ items, isOpen, onToggle, pricingOverrides, monthlySales
             <p className="text-[10px] md:text-xs text-amber-700"><strong>Regra:</strong> Estoque de Madeira PA só pode ser <strong>aumentado</strong> manualmente. Reduções são bloqueadas e registradas.</p>
           </div>
           <div className="bg-white rounded-lg">
-            <div className="overflow-x-auto">
-              <table className="w-full text-[11px] md:text-[13px]">
+            <div className="overflow-x-auto scrollbar-hide">
+              <table className="w-full text-[11px] md:text-[13px]" style={{ minWidth: '700px' }}>
                 <thead className="bg-slate-50 border-b border-slate-200 sticky top-[40px] md:top-[48px] z-20 shadow-sm">
                   <tr>
                     <th className="px-2 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-teal-600 select-none whitespace-nowrap" style={{ minWidth: '220px', width: '25%' }} onClick={() => handleMadeiraSort('descricaoItem')}>
@@ -3666,8 +3666,8 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
               </span>
             )}
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto scrollbar-hide">
+            <table className="w-full text-sm" style={{ minWidth: '600px' }}>
               <thead>
                 <tr className="border-b border-slate-200">
                   <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Código</th>
@@ -3908,8 +3908,8 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
               </span>
             )}
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto scrollbar-hide">
+            <table className="w-full text-sm" style={{ minWidth: '600px' }}>
               <thead>
                 <tr className="border-b border-slate-200">
                   <th className="text-left py-2 px-2 text-xs font-semibold text-slate-500 uppercase">Código</th>
@@ -4744,8 +4744,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
             <AlertTriangle className="w-4 h-4 text-red-600" />
             <span className="text-sm font-bold text-red-700">Alertas de Produção - Estoque abaixo dos pedidos (últimos 30 dias)</span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto scrollbar-hide">
+            <table className="w-full text-sm" style={{ minWidth: '600px' }}>
               <thead>
                 <tr className="border-b border-red-200">
                   <th className="text-left py-1.5 px-2 text-red-700 font-semibold text-xs">Produto</th>
@@ -5238,7 +5238,7 @@ function EcommerceHistoryDialog({ open, onClose }: { open: boolean; onClose: () 
                     </div>
                   </div>
                   {/* Group table - scrollable on mobile */}
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto scrollbar-hide">
                   <table className="w-full min-w-[580px]">
                     <thead className="bg-slate-50/80">
                       <tr>
@@ -5595,7 +5595,7 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
                       <span className="text-xs font-extrabold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-lg">{formatNumber(group.totalCx)} cx</span>
                     </div>
                   </div>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto scrollbar-hide">
                   <table className="w-full min-w-[580px]">
                     <thead className="bg-slate-50/80">
                       <tr>

@@ -3457,3 +3457,6 @@
 - [x] Mobile: Financeiro cards (Faturado/Vendas/Contas Pagas) - "Ver itens" e contadores com quebra de texto
 - [x] Mobile: Financeiro cards comparação (Faturamento vs Pago / Vendas vs Pago) - valores cortados
 - [x] Mobile: Estoque tabela - colunas sobrepostas (DISPONÍVEL, ESTOQUE, P/VENDA, PROJETADO, etc.)
+- [x] Bug: Kit Amostra não aparece no card de Madeira Produto Acabado (já existe no sistema, mas está filtrado)
+- [x] Bug: Busca no card de Madeira corta o produto - nome e dados (Estoque, Pedidos, Disponível) ficam invisíveis/cortados
+- [x] Bug: Vareta Glade Reeds 00808 mostrando pedidos em 'kg' quando deveria ser 'cx' (comercial lançou em caixas)

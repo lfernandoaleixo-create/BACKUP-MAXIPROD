@@ -253,10 +253,10 @@ function extractMadeiraItemsFromOrders(openOrderData: any[], allSalesData: any[]
   // Combine open orders + all historical sales to find ALL madeira items
   const allData = [...openOrderData, ...allSalesData];
   
-  // Find all unique items from orders with estadoConfiguravel MADEIRA/SERRAGEM/ROJÃO
+  // Find all unique items from orders with estadoConfiguravel MADEIRA/SERRAGEM/ROJÃO/AMOSTRA
   const madeiraOrders = allData.filter(o => {
     const ec = (o.estadoConfiguravel || '').toUpperCase();
-    return ec.includes('MADEIRA') || ec.includes('SERRAGEM') || ec.includes('ROJ');
+    return ec.includes('MADEIRA') || ec.includes('SERRAGEM') || ec.includes('ROJ') || ec.includes('AMOSTRA');
   });
 
   // Deduplicate by codigoItem
@@ -1634,8 +1634,18 @@ export async function runGraphQLSync(): Promise<{
       { codigoItem: "00482", descricaoItem: "VARETA PARA ALGODÃO DOCE MADEIRA 4,0 X 350 MM C/ 300 UNID." },
       { codigoItem: "00483", descricaoItem: "VARETA PARA ALGODÃO DOCE MADEIRA 4,0 X 350 MM C/ 100 UNID." },
       { codigoItem: "00501", descricaoItem: "VARETA AROMATIZADOR 4,0 X 250 MM C/ 50 UNID." },
+      { codigoItem: "00354A", descricaoItem: "KIT DE AMOSTRA MADEIRA AROMATIZADOR" },
     ];
     const existingCodesAfterMadeira = new Set(stockData.map((s: any) => s.codigoItem));
+    // Update descriptions for existing items when manual list has a longer (more complete) name
+    for (const item of MANUAL_MADEIRA_ECOMMERCE) {
+      if (existingCodesAfterMadeira.has(item.codigoItem)) {
+        const existing = stockData.find((s: any) => s.codigoItem === item.codigoItem);
+        if (existing && item.descricaoItem.length > (existing.descricaoItem || '').length) {
+          existing.descricaoItem = item.descricaoItem;
+        }
+      }
+    }
     let manualMadeiraAdded = 0;
     for (const item of MANUAL_MADEIRA_ECOMMERCE) {
       if (!existingCodesAfterMadeira.has(item.codigoItem)) {

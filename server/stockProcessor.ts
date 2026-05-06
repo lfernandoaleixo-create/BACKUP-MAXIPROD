@@ -735,7 +735,8 @@ export async function processStockData(): Promise<void> {
       pedidosUnProprio: pedidosUn,
       pedidosPorClienteProprio: [...pedidosPorCliente],
       ecommerceBreakdown: null, // preenchido no pós-processamento
-      unidadeVenda: unidadeVendaByCode.get(item.codigoItem) || item.unidadeMedida || "",
+      // Produto 00808: forçar unidade de venda como CX (comercial lança em caixas, não kg)
+      unidadeVenda: item.codigoItem === '00808' ? 'CX' : (unidadeVendaByCode.get(item.codigoItem) || item.unidadeMedida || ""),
     });
     processedCodes.add(item.codigoItem);
   }
