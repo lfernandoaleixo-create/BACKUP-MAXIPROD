@@ -2148,32 +2148,36 @@ export default function Financial() {
         </div>
 
         {/* Sub-abas */}
-        <div className="flex items-center md:justify-center gap-1 bg-white rounded-lg border border-slate-200 shadow-sm p-1 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center justify-center gap-1.5 md:gap-2 bg-white rounded-xl border border-slate-200 shadow-sm p-1.5 md:p-2 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveTab("visao-geral")}
-            className={`flex items-center gap-1.5 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+            className={`flex items-center justify-center gap-1 md:gap-1.5 px-3 md:px-5 py-2 md:py-2.5 rounded-lg text-[11px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
               activeTab === "visao-geral"
-                ? "bg-teal-600 text-white shadow-sm"
+                ? "bg-teal-600 text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-100"
             }`}
           >
-            <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            Visão Geral
+            <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+            <span>Visão Geral</span>
           </button>
           <button
             onClick={() => setActiveTab("inadimplencia")}
-            className={`flex items-center gap-1.5 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+            className={`flex items-center justify-center gap-1 md:gap-1.5 px-3 md:px-5 py-2 md:py-2.5 rounded-lg text-[11px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
               activeTab === "inadimplencia"
-                ? "bg-red-600 text-white shadow-sm"
+                ? "bg-red-600 text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-100"
             }`}
           >
-            <AlertTriangle className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            Inadimplência
+            <AlertTriangle className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+            <span>Inadimplência</span>
             {summary && summary.receber.vencidas.count > 0 && (
-              <Badge className="bg-red-100 text-red-700 border-red-200 text-[10px] ml-1">
+              <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold leading-none ${
+                activeTab === "inadimplencia"
+                  ? "bg-white/25 text-white"
+                  : "bg-red-100 text-red-700 border border-red-200"
+              }`}>
                 {summary.receber.vencidas.count}
-              </Badge>
+              </span>
             )}
           </button>
           <button
@@ -2183,29 +2187,29 @@ export default function Financial() {
               }
               setActiveTab("recebiveis");
             }}
-            className={`flex items-center gap-1.5 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+            className={`flex items-center justify-center gap-1 md:gap-1.5 px-3 md:px-5 py-2 md:py-2.5 rounded-lg text-[11px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
               activeTab === "recebiveis"
-                ? "bg-blue-600 text-white shadow-sm"
+                ? "bg-blue-600 text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-100"
             } ${recebiveisBlinking ? "animate-discount-blink" : ""}`}
           >
-            <Landmark className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            Recebíveis
+            <Landmark className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+            <span>Recebíveis</span>
             {recebiveisBlinking && (
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.6)] shrink-0" />
             )}
           </button>
           {canSeeEcommerce && (
             <button
               onClick={() => setActiveTab("ecommerce")}
-              className={`flex items-center gap-1.5 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1 md:gap-1.5 px-3 md:px-5 py-2 md:py-2.5 rounded-lg text-[11px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "ecommerce"
-                  ? "bg-orange-600 text-white shadow-sm"
+                  ? "bg-orange-600 text-white shadow-md"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
-              <ShoppingCart className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              E-commerce
+              <ShoppingCart className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+              <span>E-commerce</span>
             </button>
           )}
         </div>
