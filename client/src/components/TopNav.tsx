@@ -89,10 +89,12 @@ export default function TopNav({ rightContent }: TopNavProps) {
               </Link>
 
               {/* Right: refresh + theme toggle + notification + operator + logout */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => {
-                    // Force update: unregister service worker, clear caches, then hard reload
+                  type="button"
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if ('serviceWorker' in navigator) {
                       navigator.serviceWorker.getRegistrations().then(regs => {
                         regs.forEach(r => r.unregister());
@@ -101,12 +103,22 @@ export default function TopNav({ rightContent }: TopNavProps) {
                     }
                     setTimeout(() => { window.location.reload(); }, 300);
                   }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-teal-600 dark:text-amber-400 hover:text-teal-700 dark:hover:text-amber-300 bg-teal-50 dark:bg-amber-900/30 hover:bg-teal-100 dark:hover:bg-amber-800/40 transition-colors border border-teal-200 dark:border-amber-600/40"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if ('serviceWorker' in navigator) {
+                      navigator.serviceWorker.getRegistrations().then(regs => {
+                        regs.forEach(r => r.unregister());
+                      });
+                      caches.keys().then(names => names.forEach(n => caches.delete(n)));
+                    }
+                    setTimeout(() => { window.location.reload(); }, 300);
+                  }}
+                  className="relative z-10 w-9 h-9 min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center text-teal-600 dark:text-amber-400 active:scale-90 bg-teal-50 dark:bg-amber-900/30 active:bg-teal-200 dark:active:bg-amber-700/50 transition-all border border-teal-200 dark:border-amber-600/40 touch-manipulation"
                   title="Atualizar versão"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-4.5 h-4.5" />
                 </button>
-                {rightContent}
                 {toggleTheme && (
                   <button
                     onClick={toggleTheme}

@@ -3567,3 +3567,4 @@
 - [x] Fix: popover das bolinhas de ação cortando o botão "Cumprido" (verde) - precisa mostrar as 3 opções completas
 - [x] Fix: Melhor Vendedor mobile layout - botão "Ver vendas" sobrepondo troféu, todas infos do desktop devem aparecer no mobile sem cortar
 - [x] Fix: PDF Melhor Vendedor - substituir emoji quebrado por SVG de troféu no card dourado
+- [x] Fix: botão atualizar mobile não está clicando/respondendo
