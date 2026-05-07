@@ -3579,5 +3579,6 @@
 - [x] Fix ranking vendedores showing literal "\u00ba" text instead of clean number
 - [x] Fix mobile: nome do melhor vendedor cortando (truncate) - mostrar completo
 - [x] Card "Melhor Vendedor" com visual dourado brilhante no tema escuro
+- [x] Botão "Melhor Vendedor" na nav tabs também dourado/brilhante no dark mode
 - [x] Fix mobile alert card: add percentage/urgency explanations for Cuidado/Atenção/Compra tabs like desktop version
 - [x] Fix mobile faturamento tab: add horizontal scroll so content is not cut off

@@ -378,7 +378,7 @@ export default function MetricaVendasTab() {
           </button>
           <button
             onClick={() => setView("bestSeller")}
-            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-gradient-to-r from-amber-500 to-yellow-400 text-white shadow-sm hover:from-amber-600 hover:to-yellow-500"
+            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-gradient-to-r from-amber-500 to-yellow-400 dark:from-yellow-500 dark:to-amber-400 text-white shadow-sm shadow-amber-200 dark:shadow-yellow-500/30 hover:from-amber-600 hover:to-yellow-500 dark:hover:from-yellow-400 dark:hover:to-amber-300 ring-1 ring-amber-300 dark:ring-yellow-500/50"
           >
             <Crown className="w-4 h-4 inline mr-1" /> Melhor Vendedor
           </button>
