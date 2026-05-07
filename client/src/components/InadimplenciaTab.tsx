@@ -2161,47 +2161,53 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                         </Tooltip>
                         {/* Popover de escolha verde/vermelho/azul */}
                         {tickChoiceStep?.recId === title.id && tickChoiceStep?.step === step && (
-                          <div className="absolute z-[100] mb-2 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 p-2 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-1" style={{ bottom: '100%', left: '50%', transform: 'translateX(-50%)', minWidth: '200px' }}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleTick?.(step, true, 'green');
-                                setTickChoiceStep(null);
-                              }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-semibold transition-colors"
-                            >
-                              <Check className="w-3.5 h-3.5" /> Cumprido
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleTick?.(step, true, 'red');
-                                setTickChoiceStep(null);
-                              }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-semibold transition-colors"
-                            >
-                              <XCircle className="w-3.5 h-3.5" /> Falha
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleTick?.(step, true, 'blue');
-                                setTickChoiceStep(null);
-                              }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-semibold transition-colors"
-                            >
-                              <Circle className="w-3.5 h-3.5 fill-blue-500" /> Neutro
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setTickChoiceStep(null);
-                              }}
-                              className="px-2 py-1.5 rounded-md hover:bg-slate-100 text-slate-400 text-xs transition-colors"
-                            >
-                              ×
-                            </button>
-                          </div>
+                          <>
+                            {/* Backdrop */}
+                            <div className="fixed inset-0 z-[9998] bg-black/20" onClick={(e) => { e.stopPropagation(); setTickChoiceStep(null); }} />
+                            {/* Choice popup */}
+                            <div className="fixed z-[9999] bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-600 p-4 flex flex-col gap-2.5 animate-in fade-in zoom-in-95" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', minWidth: '240px' }}>
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 text-center mb-1">{TICK_LABELS[step - 1]} — Marcar como:</p>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onToggleTick?.(step, true, 'green');
+                                  setTickChoiceStep(null);
+                                }}
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-sm font-semibold transition-colors dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
+                              >
+                                <Check className="w-4 h-4" /> Cumprido
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onToggleTick?.(step, true, 'red');
+                                  setTickChoiceStep(null);
+                                }}
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-sm font-semibold transition-colors dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/50"
+                              >
+                                <XCircle className="w-4 h-4" /> Falha
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onToggleTick?.(step, true, 'blue');
+                                  setTickChoiceStep(null);
+                                }}
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-sm font-semibold transition-colors dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                              >
+                                <Circle className="w-4 h-4 fill-blue-500" /> Neutro
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTickChoiceStep(null);
+                                }}
+                                className="px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 text-xs transition-colors text-center mt-1"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </>
                         )}
                       </div>
                     );

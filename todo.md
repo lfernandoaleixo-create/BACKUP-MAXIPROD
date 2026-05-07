@@ -3564,3 +3564,4 @@
 - [x] Melhor Vendedor: navegação de período (meses anteriores, anos anteriores, data personalizada)
 - [x] Melhor Vendedor: exportar PDF com todos os dados do melhor vendedor
 - [x] Melhor Vendedor: ver vendas detalhadas do vendedor (cliente, valor, estado configurável, segmento CRM) com filtros múltiplos simultâneos
+- [x] Fix: popover das bolinhas de ação cortando o botão "Cumprido" (verde) - precisa mostrar as 3 opções completas
