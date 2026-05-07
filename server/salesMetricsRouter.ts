@@ -579,4 +579,122 @@ export const salesMetricsRouter = router({
         }))
         .sort((a, b) => b.totalDevido - a.totalDevido);
     }),
+
+  /**
+   * Análise de Produtos - Monthly sales breakdown by Estado Configurável
+   * Returns monthly totals for each estado over the last N months
+   */
+  getMonthlyByEstado: publicProcedure
+    .input(z.object({
+      months: z.number().min(2).max(24).default(6), // How many months to look back
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { months: [], estados: [], data: [] };
+
+      // Calculate date range: from N months ago to today
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth() - input.months + 1, 1);
+      const startStr = startDate.toISOString().slice(0, 10);
+      const endStr = now.toISOString().slice(0, 10);
+
+      const allItems = await db.select({
+        pedido: salesOrders.pedido,
+        valorTotalPedido: salesOrders.valorTotalPedido,
+        valorTotal: salesOrders.valorTotal,
+        estadoNota: salesOrders.estadoNota,
+        estadoConfiguravel: salesOrders.estadoConfiguravel,
+        dataEmissao: salesOrders.dataEmissao,
+      }).from(salesOrders)
+        .where(and(
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startStr}`,
+          sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endStr}`,
+        ));
+
+      // Filter: exclude Digitação and Outros
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+      const isOutros = (estado: string | null) => {
+        if (!estado) return true;
+        const e = estado.toUpperCase();
+        if (e === 'BAMBU' || e === 'FIBRA') return false;
+        if (e === 'MADEIRA' || e === 'MADEIRA CONTABILIZADO') return false;
+        if (e === 'MADEIRA IMPORTAÇÃO' || e === 'MADEIRA IMPORTACAO' || e === 'MADEIRA IMPORTADA') return false;
+        if (e === 'FOGOS' || e === 'FOGO') return false;
+        return true;
+      };
+
+      const filtered = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+
+      // Normalize estado names
+      const normalizeEstado = (estado: string | null): string => {
+        if (!estado) return 'OUTROS';
+        const e = estado.toUpperCase();
+        if (e === 'MADEIRA CONTABILIZADO' || e === 'MADEIRA IMPORTAÇÃO' || e === 'MADEIRA IMPORTACAO' || e === 'MADEIRA IMPORTADA') return 'MADEIRA';
+        if (e === 'FOGO') return 'FOGOS';
+        return e;
+      };
+
+      // Group by pedido first (to use valorTotalPedido per pedido, not per item)
+      // Then distribute pedido value proportionally by estado based on item values
+      const pedidoMap = new Map<string, { items: typeof filtered }>();
+      for (const item of filtered) {
+        const pedido = item.pedido || `item-${Math.random()}`;
+        if (!pedidoMap.has(pedido)) {
+          pedidoMap.set(pedido, { items: [] });
+        }
+        pedidoMap.get(pedido)!.items.push(item);
+      }
+
+      // Aggregate: month -> estado -> value
+      const monthEstadoMap = new Map<string, Map<string, number>>();
+      const allEstados = new Set<string>();
+
+      for (const [, pedidoData] of Array.from(pedidoMap)) {
+        // Group items by month and estado within this pedido
+        for (const item of pedidoData.items) {
+          const date = (item.dataEmissao || '').substring(0, 7); // YYYY-MM
+          if (!date || date.length < 7) continue;
+          const estado = normalizeEstado(item.estadoConfiguravel);
+          allEstados.add(estado);
+
+          const itemValue = Number(item.valorTotal) || 0;
+
+          if (!monthEstadoMap.has(date)) {
+            monthEstadoMap.set(date, new Map());
+          }
+          const estadoMap = monthEstadoMap.get(date)!;
+          estadoMap.set(estado, (estadoMap.get(estado) || 0) + itemValue);
+        }
+      }
+
+      // Build sorted month list
+      const months: string[] = [];
+      for (let i = 0; i < input.months; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - input.months + 1 + i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        months.push(key);
+      }
+
+      const estados = Array.from(allEstados).sort();
+
+      // Build data array: { month, estado, value, variation }
+      const data: Array<{ month: string; estado: string; value: number; variation: number | null }> = [];
+      for (const estado of estados) {
+        let prevValue: number | null = null;
+        for (const month of months) {
+          const value = monthEstadoMap.get(month)?.get(estado) || 0;
+          const variation = prevValue !== null && prevValue > 0
+            ? ((value - prevValue) / prevValue) * 100
+            : null;
+          data.push({ month, estado, value: Math.round(value * 100) / 100, variation: variation !== null ? Math.round(variation * 10) / 10 : null });
+          prevValue = value;
+        }
+      }
+
+      return { months, estados, data };
+    }),
 });

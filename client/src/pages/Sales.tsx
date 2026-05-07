@@ -2821,6 +2821,205 @@ function SalesVerifyModal({ card, startDate, endDate, dashboardValue, onClose }:
   );
 }
 
+/* ---- Análise de Produtos View ---- */
+const MONTH_NAMES_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const ESTADO_COLORS: Record<string, string> = {
+  BAMBU: "#0d9488",
+  FIBRA: "#8b5cf6",
+  MADEIRA: "#d97706",
+  FOGOS: "#ef4444",
+};
+const FALLBACK_COLORS = ["#0ea5e9", "#f59e0b", "#10b981", "#ec4899", "#6366f1"];
+
+function getEstadoColor(estado: string, idx: number): string {
+  return ESTADO_COLORS[estado] || FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
+}
+
+function fmtMonth(monthStr: string): string {
+  const [y, m] = monthStr.split("-");
+  return `${MONTH_NAMES_PT[parseInt(m) - 1]}/${y.slice(2)}`;
+}
+
+function fmtK(n: number): string {
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(0)}k`;
+  return n.toFixed(0);
+}
+
+function AnaliseProdutosView() {
+  const [months, setMonths] = useState(6);
+  const [viewMode, setViewMode] = useState<"chart" | "table">("chart");
+  const { data, isLoading } = trpc.salesMetrics.getMonthlyByEstado.useQuery({ months });
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 flex items-center justify-center">
+        <Loader2 className="w-5 h-5 animate-spin text-teal-500" />
+        <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">Carregando...</span>
+      </div>
+    );
+  }
+
+  if (!data || data.estados.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center">
+        <Package className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+        <p className="text-sm text-slate-500 dark:text-slate-400">Sem dados para o período.</p>
+      </div>
+    );
+  }
+
+  const estadoTotals = data.estados.map(estado => {
+    const total = data.data.filter(d => d.estado === estado).reduce((sum, d) => sum + d.value, 0);
+    return { estado, total };
+  }).sort((a, b) => b.total - a.total);
+
+  const grandTotal = estadoTotals.reduce((sum, e) => sum + e.total, 0);
+  const maxMonthTotal = Math.max(...data.months.map(m => data.data.filter(d => d.month === m).reduce((s, d) => s + d.value, 0)), 1);
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-base font-bold text-slate-800 dark:text-white">Evolução por Produto</h2>
+        <div className="flex items-center gap-2">
+          <select
+            value={months}
+            onChange={(e) => setMonths(Number(e.target.value))}
+            className="h-8 px-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:ring-1 focus:ring-teal-500"
+          >
+            <option value={3}>3 meses</option>
+            <option value={6}>6 meses</option>
+            <option value={12}>12 meses</option>
+          </select>
+          <div className="flex h-8 rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden">
+            <button
+              onClick={() => setViewMode("chart")}
+              className={`px-3 text-xs font-medium transition-colors ${viewMode === "chart" ? "bg-teal-600 text-white" : "bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"}`}
+            >
+              Gráfico
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`px-3 text-xs font-medium transition-colors ${viewMode === "table" ? "bg-teal-600 text-white" : "bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"}`}
+            >
+              Tabela
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart View */}
+      {viewMode === "chart" && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5">
+          {/* Legend */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-5">
+            {estadoTotals.map((e, idx) => (
+              <div key={e.estado} className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: getEstadoColor(e.estado, idx) }} />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{e.estado}</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">({grandTotal > 0 ? ((e.total / grandTotal) * 100).toFixed(0) : 0}%)</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Bar Chart */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[320px] flex items-end gap-2 sm:gap-3 h-44 sm:h-52">
+              {data.months.map((month) => {
+                const monthData = data.data.filter(d => d.month === month);
+                const monthTotal = monthData.reduce((sum, d) => sum + d.value, 0);
+                const barH = Math.max((monthTotal / maxMonthTotal) * 100, 3);
+                return (
+                  <div key={month} className="flex-1 flex flex-col items-center">
+                    {/* Value label */}
+                    <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300 mb-1.5">{fmtK(monthTotal)}</span>
+                    {/* Stacked bar */}
+                    <div className="w-full max-w-[48px] flex flex-col-reverse rounded-t-lg overflow-hidden shadow-sm" style={{ height: `${barH}%` }}>
+                      {estadoTotals.map((e, idx) => {
+                        const val = monthData.find(d => d.estado === e.estado)?.value || 0;
+                        if (val === 0) return null;
+                        const pct = monthTotal > 0 ? (val / monthTotal) * 100 : 0;
+                        return (
+                          <div
+                            key={e.estado}
+                            style={{ height: `${pct}%`, backgroundColor: getEstadoColor(e.estado, idx) }}
+                            className="w-full hover:brightness-110 transition-all"
+                            title={`${e.estado}: R$ ${fmtK(val)}`}
+                          />
+                        );
+                      })}
+                    </div>
+                    {/* Month label */}
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-2">{fmtMonth(month)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Table View */}
+      {viewMode === "table" && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Produto</th>
+                  {data.months.map(m => (
+                    <th key={m} className="text-right px-3 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{fmtMonth(m)}</th>
+                  ))}
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {estadoTotals.map((e, idx) => (
+                  <tr key={e.estado} className="border-b border-slate-100 dark:border-slate-700/40 hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: getEstadoColor(e.estado, idx) }} />
+                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{e.estado}</span>
+                      </div>
+                    </td>
+                    {data.months.map(m => {
+                      const entry = data.data.find(d => d.month === m && d.estado === e.estado);
+                      const value = entry?.value || 0;
+                      const variation = entry?.variation;
+                      return (
+                        <td key={m} className="text-right px-3 py-2.5 whitespace-nowrap">
+                          <span className="text-xs font-medium text-slate-700 dark:text-slate-200">{formatCurrencyFull(value)}</span>
+                          {variation !== null && variation !== undefined && (
+                            <div className={`text-[10px] font-bold mt-0.5 ${variation > 0 ? "text-emerald-500" : variation < 0 ? "text-red-400" : "text-slate-400"}`}>
+                              {variation > 0 ? "+" : ""}{variation.toFixed(1)}%
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td className="text-right px-4 py-2.5 whitespace-nowrap">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white">{formatCurrencyFull(e.total)}</span>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-slate-50 dark:bg-slate-900/40">
+                  <td className="px-4 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-200">TOTAL</td>
+                  {data.months.map(m => {
+                    const monthTotal = data.data.filter(d => d.month === m).reduce((sum, d) => sum + d.value, 0);
+                    return <td key={m} className="text-right px-3 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200">{formatCurrencyFull(monthTotal)}</td>;
+                  })}
+                  <td className="text-right px-4 py-2.5 text-sm font-bold text-teal-700 dark:text-teal-400">{formatCurrencyFull(grandTotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---- Métrica de Vendas Sub-Tabs (Folder Selection) ---- */
 function MetricaVendasSubTabs() {
   const [activeFolder, setActiveFolder] = useState<"selection" | "ranking" | "produtos">("selection");
@@ -2850,11 +3049,7 @@ function MetricaVendasSubTabs() {
           <ChevronLeft className="w-4 h-4" />
           Voltar
         </button>
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
-          <Package className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">Análise de Produtos</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Em breve — esta seção será configurada em seguida.</p>
-        </div>
+        <AnaliseProdutosView />
       </div>
     );
   }

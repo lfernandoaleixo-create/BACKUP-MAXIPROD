@@ -3585,3 +3585,6 @@
 - [x] Fix faturamento order row layout: text overlapping/cut off on mobile and desktop - show all info without cuts
 - [x] Fix faturamento: remove truncate from client name, increase min-w to 900px so all text is readable
 - [x] Create intermediate screen for "Métrica de Vendas" with 2 folder options: Ranking de Vendedores and Análise de Produtos
+- [x] Análise de Produtos: backend procedure to aggregate monthly sales by estado configurável
+- [x] Análise de Produtos: frontend with table and chart showing monthly evolution per estado
+- [x] Análise de Produtos: clean/professional design for desktop, mobile, dark and light modes
