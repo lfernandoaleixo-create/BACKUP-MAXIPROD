@@ -701,6 +701,13 @@
       "when": 1777992916078,
       "tag": "0099_numerous_natasha_romanoff",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "5",
+      "when": 1778152247084,
+      "tag": "0100_mysterious_star_brand",
+      "breakpoints": true
     }
   ]
 }

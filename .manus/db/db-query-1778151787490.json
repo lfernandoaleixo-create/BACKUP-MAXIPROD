@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, empresaNome, operador, totalValor, totalCheques, createdAt, chequesJson FROM cheque_exchanges ORDER BY createdAt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresaNome, operador, totalValor, totalCheques, createdAt, chequesJson FROM cheque_exchanges ORDER BY createdAt DESC;",
+  "rows": [
+    {
+      "id": "1",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "operador": "Fernando",
+      "totalValor": "7541.19",
+      "totalCheques": "2",
+      "createdAt": "2026-05-04 14:08:49",
+      "chequesJson": "[{\"id\":4215480,\"cliente\":\"M D DA SILVA ARTEFATOS DE BAMBU\",\"valor\":3963.33,\"vencimentoData\":\"2026-04-24T12:00:00.000-03:00\",\"emissaoData\":\"2026-04-16T12:00:00.000-03:00\",\"formaPagamento\":\"Cheque CHEQUE LINHA 11\",\"descricao\":\"Parcelamento de s/nº (R$89.633,60).\",\"parcela\":5,\"parcelasTotal\":9},{\"id\":4215481,\"cliente\":\"M D DA SILVA ARTEFATOS DE BAMBU\",\"valor\":3577.86,\"vencimentoData\":\"2026-05-13T12:00:00.000-03:00\",\"emissaoData\":\"2026-04-16T12:00:00.000-03:00\",\"formaPagamento\":\"Cheque CHEQUE DISPONIVEL\",\"descricao\":\"Parcelamento de s/nº (R$89.633,60).\",\"parcela\":6,\"parcelasTotal\":9}]"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresaNome\toperador\ttotalValor\ttotalCheques\tcreatedAt\tchequesJson\n1\tPALITOS INDUSTRIA\tFernando\t7541.19\t2\t2026-05-04 14:08:49\t[{\"id\":4215480,\"cliente\":\"M D DA SILVA ARTEFATOS DE BAMBU\",\"valor\":3963.33,\"vencimentoData\":\"2026-04-24T12:00:00.000-03:00\",\"emissaoData\":\"2026-04-16T12:00:00.000-03:00\",\"formaPagamento\":\"Cheque CHEQUE LINHA 11\",\"descricao\":\"Parcelamento de s/nº (R$89.633,60).\",\"parcela\":5,\"parcelasTotal\":9},{\"id\":4215481,\"cliente\":\"M D DA SILVA ARTEFATOS DE BAMBU\",\"valor\":3577.86,\"vencimentoData\":\"2026-05-13T12:00:00.000-03:00\",\"emissaoData\":\"2026-04-16T12:00:00.000-03:00\",\"formaPagamento\":\"Cheque CHEQUE DISPONIVEL\",\"descricao\":\"Parcelamento de s/nº (R$89.633,60).\",\"parcela\":6,\"parcelasTotal\":9}]\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

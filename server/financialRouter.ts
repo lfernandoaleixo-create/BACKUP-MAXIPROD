@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
@@ -6939,15 +6939,24 @@ ${acoesTexto}
   getExchangeHistory: publicProcedure
     .input(z.object({
       empresaNome: z.string().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB indisponível");
-      const conditions = input?.empresaNome
-        ? eq(chequeExchanges.empresaNome, input.empresaNome)
-        : undefined;
-      const rows = conditions
-        ? await db.select().from(chequeExchanges).where(conditions).orderBy(desc(chequeExchanges.createdAt))
+      const conditions: any[] = [];
+      if (input?.empresaNome) {
+        conditions.push(eq(chequeExchanges.empresaNome, input.empresaNome));
+      }
+      if (input?.startDate) {
+        conditions.push(gte(chequeExchanges.createdAt, new Date(input.startDate + 'T00:00:00')));
+      }
+      if (input?.endDate) {
+        conditions.push(lte(chequeExchanges.createdAt, new Date(input.endDate + 'T23:59:59')));
+      }
+      const rows = conditions.length > 0
+        ? await db.select().from(chequeExchanges).where(and(...conditions)).orderBy(desc(chequeExchanges.createdAt))
         : await db.select().from(chequeExchanges).orderBy(desc(chequeExchanges.createdAt));
       return rows.map(r => ({
         ...r,
@@ -6991,5 +7000,76 @@ ${acoesTexto}
       }
 
       return { success: true, removed: false };
+    }),
+
+  /**
+   * getChequeSyncHistory - Retorna histórico de mudanças de cheques detectadas nas sincronizações
+   * Mostra quais cheques entraram e saíram a cada sync com o Maxiprod
+   */
+  getChequeSyncHistory: publicProcedure
+    .input(z.object({
+      startDate: z.string().optional(), // YYYY-MM-DD
+      endDate: z.string().optional(), // YYYY-MM-DD
+      changeType: z.enum(['entrada', 'saida', 'todos']).default('todos'),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      const conditions: any[] = [];
+      if (input?.startDate) {
+        conditions.push(gte(chequeSyncChanges.syncDate, input.startDate));
+      }
+      if (input?.endDate) {
+        conditions.push(lte(chequeSyncChanges.syncDate, input.endDate));
+      }
+      if (input?.changeType && input.changeType !== 'todos') {
+        conditions.push(eq(chequeSyncChanges.changeType, input.changeType));
+      }
+
+      const rows = conditions.length > 0
+        ? await db.select().from(chequeSyncChanges).where(and(...conditions)).orderBy(desc(chequeSyncChanges.createdAt)).limit(500)
+        : await db.select().from(chequeSyncChanges).orderBy(desc(chequeSyncChanges.createdAt)).limit(500);
+
+      // Agrupar por data
+      const byDate: Record<string, {
+        date: string;
+        entradas: typeof rows;
+        saidas: typeof rows;
+        totalEntradas: number;
+        totalSaidas: number;
+        valorEntradas: number;
+        valorSaidas: number;
+      }> = {};
+
+      for (const row of rows) {
+        if (!byDate[row.syncDate]) {
+          byDate[row.syncDate] = {
+            date: row.syncDate,
+            entradas: [],
+            saidas: [],
+            totalEntradas: 0,
+            totalSaidas: 0,
+            valorEntradas: 0,
+            valorSaidas: 0,
+          };
+        }
+        const valor = parseFloat(row.valor as string) || 0;
+        if (row.changeType === 'entrada') {
+          byDate[row.syncDate].entradas.push(row);
+          byDate[row.syncDate].totalEntradas++;
+          byDate[row.syncDate].valorEntradas += valor;
+        } else {
+          byDate[row.syncDate].saidas.push(row);
+          byDate[row.syncDate].totalSaidas++;
+          byDate[row.syncDate].valorSaidas += valor;
+        }
+      }
+
+      return {
+        changes: rows.map(r => ({ ...r, valor: parseFloat(r.valor as string) || 0 })),
+        byDate: Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date)),
+        totalCount: rows.length,
+      };
     }),
 });

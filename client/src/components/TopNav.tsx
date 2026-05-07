@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   Sun,
   Moon,
+  RefreshCw,
 } from "lucide-react";
 import { useOperator } from "@/contexts/OperatorContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -87,8 +88,15 @@ export default function TopNav({ rightContent }: TopNavProps) {
                 </div>
               </Link>
 
-              {/* Right: theme toggle + notification + operator + logout */}
+              {/* Right: refresh + theme toggle + notification + operator + logout */}
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { window.location.reload(); }}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-teal-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  title="Atualizar"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
                 {rightContent}
                 {toggleTheme && (
                   <button

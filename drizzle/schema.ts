@@ -1579,6 +1579,33 @@ export type ChequeExchange = typeof chequeExchanges.$inferSelect;
 export type InsertChequeExchange = typeof chequeExchanges.$inferInsert;
 
 /**
+ * Histórico de sincronização de cheques - registra quais cheques entraram/saíram a cada sync
+ * Tipo "entrada" = cheque novo apareceu na API (novo título ou mudança de forma de cobrança)
+ * Tipo "saida" = cheque desapareceu (foi compensado, trocou forma de cobrança, etc.)
+ */
+export const chequeSyncChanges = mysqlTable("cheque_sync_changes", {
+  id: int("id").autoincrement().primaryKey(),
+  syncDate: varchar("syncDate", { length: 10 }).notNull(), // YYYY-MM-DD
+  syncTime: varchar("syncTime", { length: 8 }).notNull(), // HH:MM:SS (horário Brasília)
+  changeType: varchar("changeType", { length: 10 }).notNull(), // "entrada" | "saida"
+  chequeId: int("chequeId").notNull(), // accounts_receivable.id
+  maxiprodId: bigint("maxiprodId", { mode: "number" }).notNull(),
+  cliente: varchar("cliente", { length: 300 }).notNull(),
+  valor: decimal("valor", { precision: 18, scale: 2 }).notNull(),
+  estadoCheque: varchar("estadoCheque", { length: 50 }).notNull(), // DISPONIVEL, A_RECEBER, etc.
+  estadoAnterior: varchar("estadoAnterior", { length: 50 }), // estado anterior (para saídas)
+  vencimentoData: varchar("vencimentoData", { length: 50 }),
+  emissaoData: varchar("emissaoData", { length: 50 }),
+  empresaNome: varchar("empresaNome", { length: 100 }),
+  formaCobranca: varchar("formaCobranca", { length: 500 }),
+  parcela: int("parcela"),
+  parcelasTotal: int("parcelasTotal"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ChequeSyncChange = typeof chequeSyncChanges.$inferSelect;
+export type InsertChequeSyncChange = typeof chequeSyncChanges.$inferInsert;
+
+/**
  * Fornecedores Brasileiros - possíveis clientes para prospecção
  * Dados extraídos do diretório de fornecedores
  */

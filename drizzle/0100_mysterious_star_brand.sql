@@ -1,0 +1,20 @@
+CREATE TABLE `cheque_sync_changes` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`syncDate` varchar(10) NOT NULL,
+	`syncTime` varchar(8) NOT NULL,
+	`changeType` varchar(10) NOT NULL,
+	`chequeId` int NOT NULL,
+	`maxiprodId` bigint NOT NULL,
+	`cliente` varchar(300) NOT NULL,
+	`valor` decimal(18,2) NOT NULL,
+	`estadoCheque` varchar(50) NOT NULL,
+	`estadoAnterior` varchar(50),
+	`vencimentoData` varchar(50),
+	`emissaoData` varchar(50),
+	`empresaNome` varchar(100),
+	`formaCobranca` varchar(500),
+	`parcela` int,
+	`parcelasTotal` int,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `cheque_sync_changes_id` PRIMARY KEY(`id`)
+);

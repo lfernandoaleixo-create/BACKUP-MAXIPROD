@@ -27,6 +27,7 @@ import {
   collectionActions,
   resolvedReceivables,
   orderCancellations,
+  chequeSyncChanges,
 } from "../drizzle/schema";
 import { eq, sql, inArray, and, ne } from "drizzle-orm";
 import { processStockData } from "./stockProcessor";
@@ -1448,6 +1449,90 @@ async function saveFinancialData(
       // 3. Deletar EMITIDO que não vieram mais da API (já marcados como RECEBIDO acima)
       // Não precisamos deletar nada — os disappeared já foram marcados como RECEBIDO
       // e os que vieram da API foram atualizados via upsert
+
+      // === CHEQUE SYNC HISTORY: detectar cheques que entraram/saíram ===
+      try {
+        const nowBrasilia = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        const syncDate = nowBrasilia.toISOString().split('T')[0];
+        const syncTime = nowBrasilia.toTimeString().slice(0, 8);
+
+        // Buscar cheques ANTES do sync (os que existiam como EMITIDO + Cheque%)
+        // Os existingEmitidoRec já foram buscados acima, mas precisamos dos dados completos dos cheques
+        const existingChequeIds = existingEmitidoRec.map(e => e.maxiprodId);
+        
+        // Cheques que existiam antes: buscar da lista de uniqueReceivable anterior
+        // Abordagem: cheques que SAÍRAM = disappearedRecIds que tinham formaCobranca Cheque%
+        // Cheques que ENTRARAM = newReceivableIds que não estavam em existingEmitidoRec e têm formaCobranca Cheque%
+        const existingRecSet = new Set(existingEmitidoRec.map(e => e.maxiprodId));
+
+        // SAÍDAS: cheques que desapareceram
+        if (disappearedRecIds.length > 0) {
+          for (let i = 0; i < disappearedRecIds.length; i += 200) {
+            const batch = disappearedRecIds.slice(i, i + 200);
+            const disappearedCheques = await tx.select()
+              .from(accountsReceivable)
+              .where(and(
+                inArray(accountsReceivable.maxiprodId, batch),
+                sql`${accountsReceivable.formaCobranca} LIKE 'Cheque%'`
+              ));
+            
+            if (disappearedCheques.length > 0) {
+              const syncChanges = disappearedCheques.map(ch => ({
+                syncDate,
+                syncTime,
+                changeType: 'saida' as const,
+                chequeId: ch.id,
+                maxiprodId: ch.maxiprodId,
+                cliente: ch.cliente || 'Sem nome',
+                valor: String(Number(ch.valorLiquido || ch.valorOriginal || 0) - Number(ch.valorRecebidoLiquido || 0)),
+                estadoCheque: ch.formaCobranca || 'OUTROS',
+                estadoAnterior: ch.formaCobranca || null,
+                vencimentoData: ch.vencimentoData || null,
+                emissaoData: ch.emissaoData || null,
+                empresaNome: ch.empresaNome || null,
+                formaCobranca: ch.formaCobranca || null,
+                parcela: ch.parcela || null,
+                parcelasTotal: ch.parcelasQuantidadeTotal || null,
+              }));
+              for (let j = 0; j < syncChanges.length; j += 50) {
+                await tx.insert(chequeSyncChanges).values(syncChanges.slice(j, j + 50));
+              }
+              console.log(`[Cheque Sync] ${disappearedCheques.length} cheques SAÍRAM`);
+            }
+          }
+        }
+
+        // ENTRADAS: cheques novos que não existiam antes
+        const newCheques = uniqueReceivable.filter(r => 
+          !existingRecSet.has(r.maxiprodId) && 
+          r.formaCobranca && r.formaCobranca.toLowerCase().startsWith('cheque')
+        );
+        if (newCheques.length > 0) {
+          const syncChanges = newCheques.map(ch => ({
+            syncDate,
+            syncTime,
+            changeType: 'entrada' as const,
+            chequeId: 0, // será atualizado depois do upsert se necessário
+            maxiprodId: ch.maxiprodId,
+            cliente: ch.cliente || 'Sem nome',
+            valor: String(Number(ch.valorLiquido || ch.valorOriginal || 0) - Number(ch.valorRecebidoLiquido || 0)),
+            estadoCheque: ch.formaCobranca || 'OUTROS',
+            estadoAnterior: null,
+            vencimentoData: ch.vencimentoData || null,
+            emissaoData: ch.emissaoData || null,
+            empresaNome: ch.empresaNome || null,
+            formaCobranca: ch.formaCobranca || null,
+            parcela: ch.parcela || null,
+            parcelasTotal: ch.parcelasQuantidadeTotal || null,
+          }));
+          for (let j = 0; j < syncChanges.length; j += 50) {
+            await tx.insert(chequeSyncChanges).values(syncChanges.slice(j, j + 50));
+          }
+          console.log(`[Cheque Sync] ${newCheques.length} cheques ENTRARAM`);
+        }
+      } catch (chequeSyncErr: any) {
+        console.error(`[Cheque Sync] Erro ao registrar mudanças de cheques: ${chequeSyncErr.message}`);
+      }
     }
   });
 

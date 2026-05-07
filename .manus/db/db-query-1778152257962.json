@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `cheque_sync_changes` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`syncDate` varchar(10) NOT NULL,\n\t`syncTime` varchar(8) NOT NULL,\n\t`changeType` varchar(10) NOT NULL,\n\t`chequeId` int NOT NULL,\n\t`maxiprodId` bigint NOT NULL,\n\t`cliente` varchar(300) NOT NULL,\n\t`valor` decimal(18,2) NOT NULL,\n\t`estadoCheque` varchar(50) NOT NULL,\n\t`estadoAnterior` varchar(50),\n\t`vencimentoData` varchar(50),\n\t`emissaoData` varchar(50),\n\t`empresaNome` varchar(100),\n\t`formaCobranca` varchar(500),\n\t`parcela` int,\n\t`parcelasTotal` int,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `cheque_sync_changes_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `cheque_sync_changes` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`syncDate` varchar(10) NOT NULL,\n\t`syncTime` varchar(8) NOT NULL,\n\t`changeType` varchar(10) NOT NULL,\n\t`chequeId` int NOT NULL,\n\t`maxiprodId` bigint NOT NULL,\n\t`cliente` varchar(300) NOT NULL,\n\t`valor` decimal(18,2) NOT NULL,\n\t`estadoCheque` varchar(50) NOT NULL,\n\t`estadoAnterior` varchar(50),\n\t`vencimentoData` varchar(50),\n\t`emissaoData` varchar(50),\n\t`empresaNome` varchar(100),\n\t`formaCobranca` varchar(500),\n\t`parcela` int,\n\t`parcelasTotal` int,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `cheque_sync_changes_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 151
+}

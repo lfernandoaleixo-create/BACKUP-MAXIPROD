@@ -1575,15 +1575,58 @@ export default function ReceivablesTab() {
   const [exchangeProcessing, setExchangeProcessing] = useState(false);
   const [showExchangeHistory, setShowExchangeHistory] = useState(false);
   const [showDescontados, setShowDescontados] = useState(false);
+  const [showSyncHistory, setShowSyncHistory] = useState(false);
+  const [syncHistoryPeriod, setSyncHistoryPeriod] = useState<'mes_atual' | 'mes_anterior' | 'custom'>('mes_atual');
+  const [syncHistoryCustomStart, setSyncHistoryCustomStart] = useState('');
+  const [syncHistoryCustomEnd, setSyncHistoryCustomEnd] = useState('');
+  const [exchangeHistoryPeriod, setExchangeHistoryPeriod] = useState<'mes_atual' | 'mes_anterior' | 'custom'>('mes_atual');
 
   const createExchangeMutation = trpc.financial.createExchange.useMutation();
+  // Exchange history date range calculation
+  const exchangeHistoryDates = useMemo(() => {
+    const now = new Date();
+    const brasiliaOffset = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    if (exchangeHistoryPeriod === 'mes_atual') {
+      const start = new Date(brasiliaOffset.getFullYear(), brasiliaOffset.getMonth(), 1);
+      const end = new Date(brasiliaOffset.getFullYear(), brasiliaOffset.getMonth() + 1, 0);
+      return { startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] };
+    } else if (exchangeHistoryPeriod === 'mes_anterior') {
+      const start = new Date(brasiliaOffset.getFullYear(), brasiliaOffset.getMonth() - 1, 1);
+      const end = new Date(brasiliaOffset.getFullYear(), brasiliaOffset.getMonth(), 0);
+      return { startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] };
+    }
+    return { startDate: undefined, endDate: undefined };
+  }, [exchangeHistoryPeriod]);
+
   const exchangeHistoryQuery = trpc.financial.getExchangeHistory.useQuery(
-    { empresaNome: chequesOpenEmpresa || undefined },
+    { empresaNome: chequesOpenEmpresa || undefined, startDate: exchangeHistoryDates.startDate, endDate: exchangeHistoryDates.endDate },
     { enabled: !!chequesOpenEmpresa && showExchangeHistory }
   );
   const descontadosQuery = trpc.financial.getChequeDescontados.useQuery(
     { empresaNome: chequesOpenEmpresa || undefined, limit: 100 },
     { enabled: !!chequesOpenEmpresa && showDescontados }
+  );
+
+  // Sync history date range calculation
+  const syncHistoryDates = useMemo(() => {
+    const now = new Date();
+    const brasiliaOffset = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    if (syncHistoryPeriod === 'mes_atual') {
+      const start = new Date(brasiliaOffset.getFullYear(), brasiliaOffset.getMonth(), 1);
+      const end = new Date(brasiliaOffset.getFullYear(), brasiliaOffset.getMonth() + 1, 0);
+      return { startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] };
+    } else if (syncHistoryPeriod === 'mes_anterior') {
+      const start = new Date(brasiliaOffset.getFullYear(), brasiliaOffset.getMonth() - 1, 1);
+      const end = new Date(brasiliaOffset.getFullYear(), brasiliaOffset.getMonth(), 0);
+      return { startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] };
+    } else {
+      return { startDate: syncHistoryCustomStart || undefined, endDate: syncHistoryCustomEnd || undefined };
+    }
+  }, [syncHistoryPeriod, syncHistoryCustomStart, syncHistoryCustomEnd]);
+
+  const syncHistoryQuery = trpc.financial.getChequeSyncHistory.useQuery(
+    { startDate: syncHistoryDates.startDate, endDate: syncHistoryDates.endDate, changeType: 'todos' },
+    { enabled: showSyncHistory }
   );
 
   const handleExchangePasswordSubmit = (e?: React.FormEvent) => {
@@ -2259,6 +2302,14 @@ export default function ReceivablesTab() {
                                   <History className="w-3 h-3" />
                                 </button>
                                 <button
+                                  onClick={() => setShowSyncHistory(true)}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 transition-colors dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
+                                  title="Histórico de sincronização (entradas/saídas)"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                  Sync
+                                </button>
+                                <button
                                   onClick={() => setShowDescontados(true)}
                                   className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 transition-colors"
                                   title="Cheques descontados/compensados"
@@ -2703,6 +2754,41 @@ export default function ReceivablesTab() {
               Registro de todas as trocas realizadas com PDFs salvos.
             </DialogDescription>
           </DialogHeader>
+
+          {/* Period filters for exchange history */}
+          <div className="flex flex-wrap items-center gap-2 py-2 border-b border-slate-200 dark:border-slate-700">
+            <button
+              onClick={() => setExchangeHistoryPeriod('mes_atual')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                exchangeHistoryPeriod === 'mes_atual'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              Mês Atual
+            </button>
+            <button
+              onClick={() => setExchangeHistoryPeriod('mes_anterior')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                exchangeHistoryPeriod === 'mes_anterior'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              Mês Anterior
+            </button>
+            <button
+              onClick={() => setExchangeHistoryPeriod('custom')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                exchangeHistoryPeriod === 'custom'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              Todos
+            </button>
+          </div>
+
           <div className="py-4 space-y-3">
             {exchangeHistoryQuery.isLoading ? (
               <div className="text-center py-8 text-slate-400">
@@ -2758,6 +2844,156 @@ export default function ReceivablesTab() {
                         {exchange.cheques.length > 5 && (
                           <div className="text-[10px] text-slate-400 italic">... e mais {exchange.cheques.length - 5} cheque(s)</div>
                         )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Histórico de Sincronização de Cheques */}
+      <Dialog open={showSyncHistory} onOpenChange={setShowSyncHistory}>
+        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-blue-600" />
+              Histórico de Sincronização de Cheques
+            </DialogTitle>
+            <DialogDescription>
+              Cheques que entraram ou saíram a cada sincronização com o Maxiprod.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Period filters */}
+          <div className="flex flex-wrap items-center gap-2 py-2 border-b border-slate-200 dark:border-slate-700">
+            <button
+              onClick={() => setSyncHistoryPeriod('mes_atual')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                syncHistoryPeriod === 'mes_atual'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              Mês Atual
+            </button>
+            <button
+              onClick={() => setSyncHistoryPeriod('mes_anterior')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                syncHistoryPeriod === 'mes_anterior'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              Mês Anterior
+            </button>
+            <button
+              onClick={() => setSyncHistoryPeriod('custom')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                syncHistoryPeriod === 'custom'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              Personalizado
+            </button>
+            {syncHistoryPeriod === 'custom' && (
+              <div className="flex items-center gap-2 ml-2">
+                <input
+                  type="date"
+                  value={syncHistoryCustomStart}
+                  onChange={(e) => setSyncHistoryCustomStart(e.target.value)}
+                  className="px-2 py-1 text-xs border border-slate-300 rounded-lg dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"
+                />
+                <span className="text-xs text-slate-400">até</span>
+                <input
+                  type="date"
+                  value={syncHistoryCustomEnd}
+                  onChange={(e) => setSyncHistoryCustomEnd(e.target.value)}
+                  className="px-2 py-1 text-xs border border-slate-300 rounded-lg dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="py-4 space-y-4">
+            {syncHistoryQuery.isLoading ? (
+              <div className="text-center py-8 text-slate-400">
+                <Loader2 className="w-6 h-6 mx-auto animate-spin mb-2" />
+                Carregando histórico de sincronização...
+              </div>
+            ) : !syncHistoryQuery.data || syncHistoryQuery.data.byDate.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <RotateCcw className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                Nenhuma mudança de cheques registrada neste período.
+                <p className="text-[10px] mt-1 text-slate-300">As mudanças são detectadas automaticamente a cada sincronização com o Maxiprod.</p>
+              </div>
+            ) : (
+              syncHistoryQuery.data.byDate.map((dayGroup: any) => (
+                <div key={dayGroup.date} className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                        {new Date(dayGroup.date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px]">
+                      {dayGroup.totalEntradas > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-bold dark:bg-green-900/30 dark:text-green-400">
+                          +{dayGroup.totalEntradas} entrada{dayGroup.totalEntradas !== 1 ? 's' : ''} (R$ {dayGroup.valorEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                        </span>
+                      )}
+                      {dayGroup.totalSaidas > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold dark:bg-red-900/30 dark:text-red-400">
+                          -{dayGroup.totalSaidas} saída{dayGroup.totalSaidas !== 1 ? 's' : ''} (R$ {dayGroup.valorSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Entradas */}
+                  {dayGroup.entradas.length > 0 && (
+                    <div className="mb-2">
+                      <div className="text-[10px] font-bold text-green-600 dark:text-green-400 mb-1 uppercase tracking-wider">Entraram</div>
+                      <div className="space-y-0.5">
+                        {dayGroup.entradas.map((ch: any) => (
+                          <div key={ch.id} className="flex items-center justify-between text-[11px] py-1 px-2 rounded bg-green-50/50 dark:bg-green-900/10">
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="w-3 h-3 text-green-500" />
+                              <span className="text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{ch.cliente}</span>
+                              {ch.empresaNome && <span className="text-[9px] text-slate-400">({ch.empresaNome})</span>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {ch.vencimentoData && <span className="text-[9px] text-slate-400">Venc: {formatDate(ch.vencimentoData)}</span>}
+                              <span className="font-bold text-green-700 dark:text-green-400">R$ {ch.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Saídas */}
+                  {dayGroup.saidas.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-bold text-red-600 dark:text-red-400 mb-1 uppercase tracking-wider">Saíram</div>
+                      <div className="space-y-0.5">
+                        {dayGroup.saidas.map((ch: any) => (
+                          <div key={ch.id} className="flex items-center justify-between text-[11px] py-1 px-2 rounded bg-red-50/50 dark:bg-red-900/10">
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="w-3 h-3 text-red-500 rotate-180" />
+                              <span className="text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{ch.cliente}</span>
+                              {ch.empresaNome && <span className="text-[9px] text-slate-400">({ch.empresaNome})</span>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {ch.vencimentoData && <span className="text-[9px] text-slate-400">Venc: {formatDate(ch.vencimentoData)}</span>}
+                              <span className="font-bold text-red-700 dark:text-red-400">R$ {ch.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

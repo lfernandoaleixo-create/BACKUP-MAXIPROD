@@ -3549,3 +3549,8 @@
 - [x] Vendas modo claro: barras do gráfico devem ser teal/azul esverdeado (não azul escuro) — tanto no dashboard quanto no PDF
 - [x] PDF Vendas modo escuro: barras devem ficar DOURADAS (não azuis), números/valores dourados devem ficar PRETOS
 - [x] Financeiro: tabela de cheques no mobile desconfigurada — dados saindo do retângulo, colunas cortadas (Cliente, Valor)
+- [x] Deletar registro de troca teste (M D DA SILVA) do banco
+- [x] Criar histórico de sincronização de cheques (quais entraram/saíram a cada sync com Maxiprod)
+- [x] Manter histórico de trocas manuais (autorizadas pelo Fernando)
+- [x] Filtros de período nos dois históricos: mês atual, mês anterior, personalizado (dia/mês/ano)
+- [x] Botão de atualização (refresh) na versão mobile para forçar reload após nova publicação
