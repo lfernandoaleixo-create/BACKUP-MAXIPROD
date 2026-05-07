@@ -3588,3 +3588,7 @@
 - [x] Análise de Produtos: backend procedure to aggregate monthly sales by estado configurável
 - [x] Análise de Produtos: frontend with table and chart showing monthly evolution per estado
 - [x] Análise de Produtos: clean/professional design for desktop, mobile, dark and light modes
+- [x] Análise de Produtos: fix chart to show proper stacked/grouped bars (not just colored divs)
+- [x] Análise de Produtos: make tables larger, more self-explanatory and clearer to read
+- [x] Análise de Produtos: add individual segment filter (e.g. see only Bambu with product detail)
+- [x] Análise de Produtos: add PDF export of the analysis
