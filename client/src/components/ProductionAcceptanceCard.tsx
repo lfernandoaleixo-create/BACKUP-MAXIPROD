@@ -658,7 +658,8 @@ export default function ProductionAcceptanceCard({
           </div>
 
           {/* Column headers — same pattern as BillingCard */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+          <div className="overflow-x-auto">
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold min-w-[700px]">
             <div className="flex-shrink-0 mr-1" style={{ width: '110px' }}>
               <span className="text-[10px]">Ação</span>
             </div>
@@ -702,7 +703,7 @@ export default function ProductionAcceptanceCard({
 
           {/* Order list */}
           {filteredOrders.length > 0 ? (
-            <div>
+            <div className="min-w-[700px]">
               {filteredOrders.map(order => (
                 <OrderRow
                   key={order.pedido}
@@ -723,6 +724,7 @@ export default function ProductionAcceptanceCard({
               <p className="text-sm">Nenhum pedido encontrado</p>
             </div>
           )}
+          </div>
         </div>
       )}
     </div>

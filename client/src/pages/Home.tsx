@@ -4443,12 +4443,12 @@ function DashboardContent({ items }: { items: StockItem[] }) {
               >
                 <span className="inline-flex items-center gap-1 md:gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  Compra ({alertDetails.compra.length}) <span className="hidden md:inline text-[10px] font-normal text-red-500 ml-0.5">(Abaixo do Est. Regulador)</span>
+                  Compra ({alertDetails.compra.length}) <span className="text-[9px] md:text-[10px] font-normal text-red-500 ml-0.5">(Abaixo do Est. Regulador)</span>
                 </span>
               </button>
               <button
                 onClick={() => setAlertTab("cuidado")}
-                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition-all flex-shrink-0 ${
                   alertTab === "cuidado"
                     ? "bg-pink-100 text-pink-700 ring-1 ring-pink-200"
                     : "bg-slate-50 text-slate-500 hover:bg-slate-100"
@@ -4456,12 +4456,12 @@ function DashboardContent({ items }: { items: StockItem[] }) {
               >
                 <span className="inline-flex items-center gap-1 md:gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-pink-500" />
-                  Cuidado ({alertDetails.cuidado.length}) <span className="hidden md:inline text-[10px] font-normal text-pink-500 ml-0.5">(20% acima do Est. Regulador)</span>
+                  Cuidado ({alertDetails.cuidado.length}) <span className="text-[9px] md:text-[10px] font-normal text-pink-500 ml-0.5">(Até 20% acima)</span>
                 </span>
               </button>
               <button
                 onClick={() => setAlertTab("atencao")}
-                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition-all flex-shrink-0 ${
                   alertTab === "atencao"
                     ? "bg-orange-100 text-orange-700 ring-1 ring-orange-200"
                     : "bg-slate-50 text-slate-500 hover:bg-slate-100"
@@ -4469,7 +4469,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
               >
                 <span className="inline-flex items-center gap-1 md:gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-orange-500" />
-                  Atenção ({alertDetails.atencao.length}) <span className="hidden md:inline text-[10px] font-normal text-orange-500 ml-0.5">(40% acima do Est. Regulador)</span>
+                  Atenção ({alertDetails.atencao.length}) <span className="text-[9px] md:text-[10px] font-normal text-orange-500 ml-0.5">(Até 40% acima)</span>
                 </span>
               </button>
             </div>
