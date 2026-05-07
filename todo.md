@@ -3554,3 +3554,4 @@
 - [x] Manter histórico de trocas manuais (autorizadas pelo Fernando)
 - [x] Filtros de período nos dois históricos: mês atual, mês anterior, personalizado (dia/mês/ano)
 - [x] Botão de atualização (refresh) na versão mobile para forçar reload após nova publicação
+- [x] Unificar botões Sync, Descontados e Histórico de Trocas em um único botão "Histórico" com abas (Sincronização, Trocas, Descontados) e filtro de período
