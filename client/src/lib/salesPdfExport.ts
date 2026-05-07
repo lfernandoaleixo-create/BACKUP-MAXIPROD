@@ -221,7 +221,7 @@ async function svgToImage(svgElement: SVGSVGElement, isDark?: boolean): Promise<
 
     // Dark-to-light color mapping for PDF export (white background)
     const darkToLight: Record<string, string> = {
-      "#d4a017": "#2563eb",    // gold bars -> blue bars
+      "#d4a017": "#14b8a6",    // gold bars -> teal bars
       "#a08520": "#cbd5e1",    // dark weekend bars -> light gray
       "#1e293b": "#f8fafc",    // dark future bars -> light
       "#334155": "#f1f5f9",    // dark zero bars -> light
@@ -523,7 +523,7 @@ function drawChartInPdf(
     const by = plotY + plotH - barH;
     const weekend = isWeekend(d.day);
 
-    doc.setFillColor(...(weekend ? C.weekendBar : C.blue));
+    doc.setFillColor(...(weekend ? C.weekendBar : C.tealBar));
     doc.rect(bx, by, barWidth, barH, "F");
 
     // Only show value labels if there's enough space (skip if too many bars)

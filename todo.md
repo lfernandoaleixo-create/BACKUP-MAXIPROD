@@ -3546,3 +3546,4 @@
 - [x] PDF Vendas: corrigir tanto na versão desktop quanto mobile
 - [x] Nav desktop: ícones dos itens de navegação devem ser grandes (mesmo tamanho no modo claro e escuro)
 - [x] Bambu cards mobile (Estoque + Sob Encomenda): mostrar TODAS as 6 colunas iguais ao desktop (Estoque, Pedidos, Disponível, PO Compra, Projetado, Produtos) sem abreviar nem omitir
+- [x] Vendas modo claro: barras do gráfico devem ser teal/azul esverdeado (não azul escuro) — tanto no dashboard quanto no PDF

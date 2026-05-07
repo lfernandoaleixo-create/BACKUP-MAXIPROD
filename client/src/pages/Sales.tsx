@@ -576,7 +576,7 @@ function DailyChart({ data, mode, period, comparison }: {
                   width={barWidth}
                   height={item.isFuture ? plotH : barH}
                   rx="2"
-                  fill={item.isFuture ? (isDark ? "#1e293b" : "#f8fafc") : val === 0 ? (isDark ? "#334155" : "#f1f5f9") : isWeekend ? (isDark ? "#a08520" : "#cbd5e1") : isDark ? "#d4a017" : "#2563eb"}
+                  fill={item.isFuture ? (isDark ? "#1e293b" : "#f8fafc") : val === 0 ? (isDark ? "#334155" : "#f1f5f9") : isWeekend ? (isDark ? "#a08520" : "#cbd5e1") : isDark ? "#d4a017" : "#14b8a6"}
                   opacity={item.isFuture ? 0.5 : 0.85}
                   stroke={item.isFuture ? (isDark ? "#475569" : "#e2e8f0") : "none"}
                   strokeWidth={item.isFuture ? 1 : 0}
