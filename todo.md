@@ -3565,3 +3565,5 @@
 - [x] Melhor Vendedor: exportar PDF com todos os dados do melhor vendedor
 - [x] Melhor Vendedor: ver vendas detalhadas do vendedor (cliente, valor, estado configurável, segmento CRM) com filtros múltiplos simultâneos
 - [x] Fix: popover das bolinhas de ação cortando o botão "Cumprido" (verde) - precisa mostrar as 3 opções completas
+- [x] Fix: Melhor Vendedor mobile layout - botão "Ver vendas" sobrepondo troféu, todas infos do desktop devem aparecer no mobile sem cortar
+- [x] Fix: PDF Melhor Vendedor - substituir emoji quebrado por SVG de troféu no card dourado

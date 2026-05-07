@@ -956,9 +956,28 @@ export async function exportBestSellerPdf(data: {
   doc.setFont("helvetica", "bold");
   doc.setTextColor(15, 23, 42);
   doc.text(w.name, 20, y + 16);
-  // Trophy icon placeholder
-  doc.setFontSize(16);
-  doc.text("\u{1F3C6}", pageW - 30, y + 14);
+  // Trophy icon drawn with jsPDF shapes
+  const tx = pageW - 32;
+  const ty = y + 4;
+  // Cup body
+  doc.setFillColor(251, 191, 36); // gold
+  doc.setDrawColor(180, 83, 9);
+  doc.roundedRect(tx, ty, 14, 10, 1.5, 1.5, "FD");
+  // Cup stem
+  doc.setFillColor(180, 83, 9);
+  doc.rect(tx + 5.5, ty + 10, 3, 3, "F");
+  // Cup base
+  doc.setFillColor(180, 83, 9);
+  doc.roundedRect(tx + 3, ty + 13, 8, 2, 0.5, 0.5, "F");
+  // Handles (left and right arcs as small rects)
+  doc.setFillColor(251, 191, 36);
+  doc.rect(tx - 2, ty + 2, 2.5, 5, "FD");
+  doc.rect(tx + 13.5, ty + 2, 2.5, 5, "FD");
+  // Star in center
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(180, 83, 9);
+  doc.text("*", tx + 5.5, ty + 7);
   y += 28;
 
   // KPI boxes

@@ -863,10 +863,10 @@ export default function MetricaVendasTab() {
             /* Detail view for a specific seller */
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <button onClick={() => { setBsDetailSeller(null); setBsFilterEstados([]); setBsFilterSegmentos([]); setBsFilterUFs([]); setBsFilterClientes([]); }} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                <button onClick={() => { setBsDetailSeller(null); setBsFilterEstados([]); setBsFilterSegmentos([]); setBsFilterUFs([]); setBsFilterClientes([]); }} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0">
                   <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 </button>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Vendas de {bsDetailSeller}</h3>
+                <h3 className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100 truncate">Vendas de {bsDetailSeller}</h3>
               </div>
 
               {/* Multi-select filters */}
@@ -975,23 +975,25 @@ export default function MetricaVendasTab() {
             <>
               {/* Winner Card */}
               {bestSellers.sellers[0] && (
-                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-amber-200 dark:border-amber-700 shadow-lg p-6 relative overflow-hidden">
-                  <div className="absolute top-2 right-3 text-6xl opacity-10">🏆</div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md">
-                      <Crown className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide">
-                        Melhor Vendedor {bestSellerPeriod === "day" ? "do Dia" : bestSellerPeriod === "week" ? "da Semana" : bestSellerPeriod === "month" ? "do Mês" : "do Ano"}
-                      </p>
-                      <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{bestSellers.sellers[0].name}</h3>
+                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-amber-200 dark:border-amber-700 shadow-lg p-4 md:p-6 relative">
+                  <div className="absolute top-2 right-3 text-5xl md:text-6xl opacity-10 pointer-events-none">🏆</div>
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-4">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md flex-shrink-0">
+                        <Crown className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] md:text-xs text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide">
+                          Melhor Vendedor {bestSellerPeriod === "day" ? "do Dia" : bestSellerPeriod === "week" ? "da Semana" : bestSellerPeriod === "month" ? "do Mês" : "do Ano"}
+                        </p>
+                        <h3 className="text-lg md:text-2xl font-bold text-slate-800 dark:text-slate-100 truncate">{bestSellers.sellers[0].name}</h3>
+                      </div>
                     </div>
                     <button
                       onClick={() => setBsDetailSeller(bestSellers.sellers[0].name)}
-                      className="px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow transition-colors flex items-center gap-1"
+                      className="w-full md:w-auto px-4 py-2 md:px-3 md:py-1.5 text-sm md:text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow transition-colors flex items-center justify-center gap-1.5 relative z-10"
                     >
-                      <Eye className="w-3.5 h-3.5" /> Ver vendas
+                      <Eye className="w-4 h-4 md:w-3.5 md:h-3.5" /> Ver vendas
                     </button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
