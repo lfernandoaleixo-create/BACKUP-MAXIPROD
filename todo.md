@@ -3576,3 +3576,4 @@
 - [x] Improve date readability in cheque history (use dd/mm format, clear labels)
 - [x] Add date range filtering to getChequeDescontados backend procedure
 - [x] Enable all data queries when Resumo tab is active (sync + descontados + trocas combined)
+- [x] Fix ranking vendedores showing literal "\u00ba" text instead of clean number

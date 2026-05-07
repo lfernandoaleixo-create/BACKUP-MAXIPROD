@@ -1133,7 +1133,7 @@ export default function MetricaVendasTab() {
                             {idx === 0 ? <Trophy className="w-5 h-5 text-yellow-500 mx-auto" /> :
                              idx === 1 ? <Medal className="w-5 h-5 text-slate-400 mx-auto" /> :
                              idx === 2 ? <Award className="w-5 h-5 text-amber-600 mx-auto" /> :
-                             <span className="text-xs font-bold text-slate-400">{idx + 1}\u00ba</span>}
+                             <span className="text-xs font-bold text-slate-400">{idx + 1}</span>}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
