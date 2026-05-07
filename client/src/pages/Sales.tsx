@@ -576,7 +576,7 @@ function DailyChart({ data, mode, period, comparison }: {
                   width={barWidth}
                   height={item.isFuture ? plotH : barH}
                   rx="2"
-                  fill={item.isFuture ? (isDark ? "#1e293b" : "#f8fafc") : val === 0 ? (isDark ? "#334155" : "#f1f5f9") : isWeekend ? (isDark ? "#a08520" : "#cbd5e1") : "#d4a017"}
+                  fill={item.isFuture ? (isDark ? "#1e293b" : "#f8fafc") : val === 0 ? (isDark ? "#334155" : "#f1f5f9") : isWeekend ? (isDark ? "#a08520" : "#cbd5e1") : isDark ? "#d4a017" : "#2563eb"}
                   opacity={item.isFuture ? 0.5 : 0.85}
                   stroke={item.isFuture ? (isDark ? "#475569" : "#e2e8f0") : "none"}
                   strokeWidth={item.isFuture ? 1 : 0}
@@ -2823,6 +2823,8 @@ function SalesVerifyModal({ card, startDate, endDate, dashboardValue, onClose }:
 /* ---- Main Sales Page ---- */
 export default function Sales() {
   const { operator } = useOperator();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const FORNECEDORES_OPERATORS = ["Guilherme", "Fernando"];
   const canSeeFornecedores = operator && FORNECEDORES_OPERATORS.includes(operator.name);
@@ -2981,6 +2983,7 @@ export default function Sales() {
         "sales-daily-chart",
         comparison,
         period,
+        isDark,
       );
       // Restore chart state if it was collapsed
       if (!wasExpanded) {
@@ -2991,7 +2994,7 @@ export default function Sales() {
     } finally {
       setPdfExporting(false);
     }
-  }, [analytics, pdfExporting, chartExpanded, label, grupo, crmSegmento, comparison, period]);
+  }, [analytics, pdfExporting, chartExpanded, label, grupo, crmSegmento, comparison, period, isDark]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">

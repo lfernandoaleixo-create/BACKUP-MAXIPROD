@@ -209,7 +209,7 @@ function computeWeeklySummaries(byDay: Array<{ day: string; value: number }>): W
 }
 
 // ─── SVG to Image ────────────────────────────────────────────────
-async function svgToImage(svgElement: SVGSVGElement): Promise<string | null> {
+async function svgToImage(svgElement: SVGSVGElement, isDark?: boolean): Promise<string | null> {
   try {
     const clone = svgElement.cloneNode(true) as SVGSVGElement;
     const viewBox = svgElement.getAttribute("viewBox");
@@ -218,6 +218,18 @@ async function svgToImage(svgElement: SVGSVGElement): Promise<string | null> {
     clone.setAttribute("width", String(width));
     clone.setAttribute("height", String(height));
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+    // Dark-to-light color mapping for PDF export (white background)
+    const darkToLight: Record<string, string> = {
+      "#d4a017": "#2563eb",    // gold bars -> blue bars
+      "#a08520": "#cbd5e1",    // dark weekend bars -> light gray
+      "#1e293b": "#f8fafc",    // dark future bars -> light
+      "#334155": "#f1f5f9",    // dark zero bars -> light
+      "#475569": "#e2e8f0",    // dark stroke -> light
+    };
+    // Dark text colors that should become dark for white PDF background
+    const darkTextToBlack: string[] = ["#fbbf24", "#f59e0b", "#d97706", "#fde68a", "#fcd34d"];
+
     const allElements = clone.querySelectorAll("*");
     const originalElements = svgElement.querySelectorAll("*");
     allElements.forEach((el, i) => {
@@ -225,8 +237,27 @@ async function svgToImage(svgElement: SVGSVGElement): Promise<string | null> {
         const computed = window.getComputedStyle(originalElements[i]);
         const important = ["fill", "stroke", "stroke-width", "font-size", "font-family", "font-weight", "text-anchor", "opacity", "stroke-dasharray", "stroke-linecap", "stroke-linejoin"];
         important.forEach(prop => {
-          const val = computed.getPropertyValue(prop);
-          if (val) (el as HTMLElement).style.setProperty(prop, val);
+          let val = computed.getPropertyValue(prop);
+          if (val) {
+            // If in dark mode, remap colors for white-background PDF
+            if (isDark && (prop === "fill" || prop === "stroke")) {
+              const hex = rgbToHex(val);
+              if (hex && darkToLight[hex]) {
+                val = darkToLight[hex];
+              } else if (hex && darkTextToBlack.includes(hex)) {
+                val = "#1e293b"; // dark slate for readability
+              } else if (hex && isVeryDark(hex)) {
+                // Very dark backgrounds (slate-700, slate-800, slate-900, slate-950) -> transparent/white
+                val = prop === "fill" ? "#ffffff" : "#e2e8f0";
+              } else if (hex && isVeryLight(hex)) {
+                // Light text in dark mode (slate-200, slate-300) -> dark for PDF
+                if (prop === "fill" && el.tagName === "text") {
+                  val = "#334155";
+                }
+              }
+            }
+            (el as HTMLElement).style.setProperty(prop, val);
+          }
         });
       }
     });
@@ -253,6 +284,31 @@ async function svgToImage(svgElement: SVGSVGElement): Promise<string | null> {
       img.src = url;
     });
   } catch { return null; }
+}
+
+// Helper: convert rgb(r,g,b) or hex string to lowercase hex
+function rgbToHex(color: string): string | null {
+  if (color.startsWith("#")) return color.toLowerCase();
+  const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!match) return null;
+  const r = parseInt(match[1]), g = parseInt(match[2]), b = parseInt(match[3]);
+  return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+
+// Helper: check if a hex color is very dark (for backgrounds that should become white)
+function isVeryDark(hex: string): boolean {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (r + g + b) / 3 < 60; // average brightness < 60 = very dark
+}
+
+// Helper: check if a hex color is very light (text that needs to become dark for PDF)
+function isVeryLight(hex: string): boolean {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (r + g + b) / 3 > 180; // average brightness > 180 = very light
 }
 
 // ─── Rounded Rect Helper ─────────────────────────────────────────
@@ -467,7 +523,7 @@ function drawChartInPdf(
     const by = plotY + plotH - barH;
     const weekend = isWeekend(d.day);
 
-    doc.setFillColor(...(weekend ? C.weekendBar : C.tealBar));
+    doc.setFillColor(...(weekend ? C.weekendBar : C.blue));
     doc.rect(bx, by, barWidth, barH, "F");
 
     // Only show value labels if there's enough space (skip if too many bars)
@@ -651,6 +707,7 @@ export async function generateSalesPDF(
   chartElementId: string,
   comparison?: ComparisonData | null,
   period?: string,
+  isDark?: boolean,
 ): Promise<void> {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();  // 297mm
@@ -975,7 +1032,7 @@ export async function generateSalesPDF(
   if (chartContainer) {
     const svgEl = chartContainer.querySelector("svg");
     if (svgEl) {
-      const imgData = await svgToImage(svgEl);
+      const imgData = await svgToImage(svgEl, isDark);
       if (imgData) {
         const imgW = pageW - margin * 2;
         const viewBox = svgEl.getAttribute("viewBox");

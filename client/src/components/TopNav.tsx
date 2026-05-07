@@ -227,7 +227,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                     ${shouldBlink ? "animate-discount-blink" : ""}
                   `}
                 >
-                  <Icon className={`w-4 h-4 ${active ? "text-teal-600" : !allowed ? "text-slate-300" : ""}`} />
+                  <Icon className={`w-5 h-5 ${active ? "text-teal-600" : !allowed ? "text-slate-300" : ""}`} />
                   <span className="hidden sm:inline">{'desktopLabel' in item && item.desktopLabel ? item.desktopLabel : item.label}</span>
                   {/* Discount alert indicator dot */}
                   {shouldBlink && (

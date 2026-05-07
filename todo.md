@@ -3539,3 +3539,10 @@
 - [x] Dashboard dark mode: substituir fundo preto do logo dourado pela cor de fundo do dashboard (cinza escuro/azulado)
 - [x] Madeira cards mobile: mostrar nomes completos sem abreviação (Madeira Produto Acabado, Madeira Semi Pronto, Madeira Aguardando Escolha)
 - [x] Madeira cards mobile: adicionar grid de métricas (Estoque/Pedidos/Disponível) visível no mobile
+- [x] Habilitar zoom no mobile e desktop (viewport meta tag: user-scalable=yes, maximum-scale=5)
+- [x] Botão "Valorização do Estoque" visível no mobile para os 3 cards Madeira (PA, Semi Pronto, Aguardando Escolha)
+- [x] Vendas: barras do gráfico AZUIS no modo claro (dashboard + PDF), DOURADAS apenas no modo noturno
+- [x] PDF Vendas (modo escuro): cabeçalhos dourados, valores em PRETO, remover barras pretas laterais do SVG capture
+- [x] PDF Vendas: corrigir tanto na versão desktop quanto mobile
+- [x] Nav desktop: ícones dos itens de navegação devem ser grandes (mesmo tamanho no modo claro e escuro)
+- [x] Bambu cards mobile (Estoque + Sob Encomenda): mostrar TODAS as 6 colunas iguais ao desktop (Estoque, Pedidos, Disponível, PO Compra, Projetado, Produtos) sem abreviar nem omitir

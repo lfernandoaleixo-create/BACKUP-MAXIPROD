@@ -2215,19 +2215,31 @@ function ClassificationCard({
           </div>
         )}
 
-        {/* Mobile summary */}
-        <div className="grid sm:hidden grid-cols-3 gap-0 mt-3 ml-12 divide-x divide-slate-200 dark:divide-slate-600 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-          <div className="text-center bg-teal-50/60 dark:bg-teal-950/30 px-2 py-1.5">
-            <p className="text-[9px] text-teal-600 font-semibold">Estoque</p>
-            <p className="text-sm font-bold text-teal-700 dark:text-teal-400">{formatNumber(totalEstoque)}</p>
+        {/* Mobile summary - all 6 columns like desktop */}
+        <div className="grid sm:hidden grid-cols-6 gap-0 mt-3 ml-0 divide-x divide-slate-200 dark:divide-slate-600 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+          <div className="text-center bg-teal-50/60 dark:bg-teal-950/30 px-1 py-1.5">
+            <p className="text-[8px] text-teal-600 font-semibold uppercase">Estoque</p>
+            <p className="text-[11px] font-extrabold text-teal-700 dark:text-teal-400 mt-0.5">{formatNumber(totalEstoque)}</p>
           </div>
-          <div className="text-center bg-emerald-50/60 dark:bg-emerald-950/30 px-2 py-1.5">
-            <p className="text-[9px] text-emerald-600 font-semibold">Dispon.</p>
-            <p className={`text-sm font-bold ${totalDisponivel < 0 ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatNumber(totalDisponivel)}</p>
+          <div className="text-center bg-orange-50/60 dark:bg-orange-950/30 px-1 py-1.5">
+            <p className="text-[8px] text-orange-600 font-semibold uppercase">Pedidos</p>
+            <p className={`text-[11px] font-extrabold mt-0.5 ${totalPedidos > 0 ? 'text-orange-700 dark:text-orange-400' : 'text-slate-400'}`}>{formatNumber(totalPedidos)}</p>
           </div>
-          <div className="text-center bg-indigo-50/60 dark:bg-indigo-950/30 px-2 py-1.5">
-            <p className="text-[9px] text-indigo-600 font-semibold">Projetado</p>
-            <p className="text-sm font-bold text-indigo-700 dark:text-indigo-400">{formatNumber(totalProjetado)}</p>
+          <div className={`text-center px-1 py-1.5 ${totalDisponivel < 0 ? 'bg-red-50/60 dark:bg-red-950/30' : 'bg-emerald-50/60 dark:bg-emerald-950/30'}`}>
+            <p className={`text-[8px] font-semibold uppercase ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
+            <p className={`text-[11px] font-extrabold mt-0.5 ${totalDisponivel < 0 ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatNumber(totalDisponivel)}</p>
+          </div>
+          <div className="text-center bg-blue-50/60 dark:bg-blue-950/30 px-1 py-1.5">
+            <p className="text-[8px] text-blue-600 font-semibold uppercase">PO (Compra)</p>
+            <p className={`text-[11px] font-extrabold mt-0.5 ${totalPO > 0 ? 'text-blue-700 dark:text-blue-400' : 'text-slate-400'}`}>{formatNumber(totalPO)}</p>
+          </div>
+          <div className="text-center bg-indigo-50/60 dark:bg-indigo-950/30 px-1 py-1.5">
+            <p className="text-[8px] text-indigo-600 font-semibold uppercase">Projetado</p>
+            <p className={`text-[11px] font-extrabold mt-0.5 ${totalProjetado < 0 ? 'text-red-700 dark:text-red-400' : 'text-indigo-700 dark:text-indigo-400'}`}>{formatNumber(totalProjetado)}</p>
+          </div>
+          <div className="text-center bg-slate-50/60 dark:bg-slate-800/50 px-1 py-1.5">
+            <p className="text-[8px] text-slate-500 font-semibold uppercase">Produtos</p>
+            <p className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mt-0.5">{parentCount}</p>
           </div>
         </div>
 
@@ -3616,6 +3628,23 @@ function SemiProntoCard({ items, isOpen, onToggle, madeiraVisData, operatorCtx }
             <p className={`text-sm font-extrabold mt-0.5 ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-[10px] font-semibold">cx</span></p>
           </div>
         </div>
+        {/* Mobile Valorização button - Semi Pronto */}
+        {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+          <div className="flex justify-center mt-2 sm:hidden">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowValorizacao(!showValorizacao); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                showValorizacao
+                  ? 'bg-amber-600 text-white shadow-md'
+                  : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-600 shadow-sm'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5" />
+              {showValorizacao ? 'Ocultar Valorização' : 'Valorização do Estoque'}
+              {showValorizacao ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        )}
         {/* Desktop metrics grid - Semi Pronto */}
 <div className="hidden sm:grid gap-2 mt-4 ml-12" style={{ gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1.2fr 1.2fr 0.8fr' }}>
           <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5 text-center">
@@ -3874,6 +3903,23 @@ function AguardandoEscolhaCard({ items, isOpen, onToggle, madeiraVisData, operat
             <p className={`text-sm font-extrabold mt-0.5 ${totalDisponivel < 0 ? 'text-red-700' : 'text-emerald-700'}`}>{formatNumber(totalDisponivel, true)} <span className="text-[10px] font-semibold">cx</span></p>
           </div>
         </div>
+        {/* Mobile Valorização button - Aguardando Escolha */}
+        {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+          <div className="flex justify-center mt-2 sm:hidden">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowValorizacao(!showValorizacao); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                showValorizacao
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-600 shadow-sm'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5" />
+              {showValorizacao ? 'Ocultar Valorização' : 'Valorização do Estoque'}
+              {showValorizacao ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        )}
         {/* Desktop metrics grid - Aguardando Escolha */}
         <div className="hidden sm:grid gap-2 mt-4 ml-12" style={{ gridTemplateColumns: '1.5fr 1.5fr 1.5fr 1.2fr 1.2fr 0.8fr' }}>
           <div className="bg-teal-50/80 dark:border dark:border-slate-600 rounded-lg px-3 py-3.5 text-center">
