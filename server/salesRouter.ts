@@ -2126,4 +2126,200 @@ export const salesRouter = router({
       data,
     };
   }),
+
+  /**
+   * Get best sellers (top vendedores) for a given period
+   * Returns ranking of sellers with their total value, orders, clients, and segment breakdown
+   */
+  getBestSellers: publicProcedure
+    .input(z.object({
+      period: z.enum(["day", "week", "month", "year"]),
+      grupo: z.enum(["all", "importacao_revenda", "industrializacao", "importacao_mp"]).optional().default("all"),
+      subgrupo: z.string().optional().default("all"),
+      crmSegmento: z.string().optional().default("all"),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { sellers: [], period: input.period, startDate: "", endDate: "" };
+
+      // Calculate date range based on period
+      const now = new Date();
+      // Use Sao Paulo timezone
+      const spNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      const year = spNow.getFullYear();
+      const month = spNow.getMonth();
+      const day = spNow.getDate();
+      const dayOfWeek = spNow.getDay(); // 0=Sun
+
+      let startDate: string;
+      let endDate: string;
+
+      switch (input.period) {
+        case "day":
+          startDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          endDate = startDate;
+          break;
+        case "week": {
+          // Monday to Sunday
+          const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+          const monday = new Date(spNow);
+          monday.setDate(day + mondayOffset);
+          startDate = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+          endDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          break;
+        }
+        case "month":
+          startDate = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+          endDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          break;
+        case "year":
+          startDate = `${year}-01-01`;
+          endDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          break;
+      }
+
+      // Fetch all items in the date range
+      const allItems = await db
+        .select()
+        .from(salesOrders)
+        .where(
+          and(
+            sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDate}`,
+            sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDate}`,
+          )
+        );
+
+      // Apply same filters as getAnalytics
+      const estadoToGrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        return "outros";
+      };
+      const estadoToSubgrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU") return "bambu";
+        if (e === "FIBRA") return "fibra";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "madeira";
+        if (e === "MADEIRA IMPORTAÇÃO" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "madeira_importada";
+        return "outros";
+      };
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === "DIGITAÇÃO" || n === "DIGITACAO";
+      };
+      const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
+
+      let items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+      if (input.grupo !== "all") {
+        items = items.filter(item => estadoToGrupo(item.estadoConfiguravel) === input.grupo);
+      }
+      if (input.subgrupo !== "all") {
+        items = items.filter(item => estadoToSubgrupo(item.estadoConfiguravel) === input.subgrupo);
+      }
+      if (input.crmSegmento !== "all") {
+        items = items.filter(item => (item.crmSegmento || "").toUpperCase() === input.crmSegmento.toUpperCase());
+      }
+
+      // Group by representante (vendedor)
+      const sellerMap = new Map<string, {
+        name: string;
+        totalValue: number;
+        orders: Set<string>;
+        clients: Set<string>;
+        items: number;
+        faturado: number;
+        aFaturar: number;
+        bySegmento: Record<string, number>;
+        byCrmSegmento: Record<string, number>;
+        byUF: Record<string, number>;
+        topClients: Map<string, number>;
+        topProducts: Map<string, number>;
+      }>();
+
+      for (const item of items) {
+        const seller = item.representante || "Sem vendedor";
+        if (!sellerMap.has(seller)) {
+          sellerMap.set(seller, {
+            name: seller,
+            totalValue: 0,
+            orders: new Set(),
+            clients: new Set(),
+            items: 0,
+            faturado: 0,
+            aFaturar: 0,
+            bySegmento: {},
+            byCrmSegmento: {},
+            byUF: {},
+            topClients: new Map(),
+            topProducts: new Map(),
+          });
+        }
+        const s = sellerMap.get(seller)!;
+        const val = Number(item.valorTotal || 0);
+        s.totalValue += val;
+        s.items++;
+        if (item.pedido) s.orders.add(item.pedido);
+        if (item.cliente) s.clients.add(item.cliente);
+        if (item.estadoItem === "Faturado") s.faturado += val;
+        if (item.estadoItem === "A faturar") s.aFaturar += val;
+
+        // By segment (estadoConfiguravel)
+        const seg = item.estadoConfiguravel || "Outros";
+        s.bySegmento[seg] = (s.bySegmento[seg] || 0) + val;
+
+        // By CRM segment
+        const crm = item.crmSegmento || "Sem segmento";
+        s.byCrmSegmento[crm] = (s.byCrmSegmento[crm] || 0) + val;
+
+        // By UF
+        const uf = item.uf || "N/A";
+        s.byUF[uf] = (s.byUF[uf] || 0) + val;
+
+        // Top clients
+        const clientName = item.clienteApelido || item.cliente || "—";
+        s.topClients.set(clientName, (s.topClients.get(clientName) || 0) + val);
+
+        // Top products
+        const prodName = item.descricao || item.descricaoItem || "—";
+        s.topProducts.set(prodName, (s.topProducts.get(prodName) || 0) + val);
+      }
+
+      // Convert to sorted array
+      const sellers = Array.from(sellerMap.values())
+        .map(s => ({
+          name: s.name,
+          totalValue: Math.round(s.totalValue * 100) / 100,
+          orders: s.orders.size,
+          clients: s.clients.size,
+          items: s.items,
+          faturado: Math.round(s.faturado * 100) / 100,
+          aFaturar: Math.round(s.aFaturar * 100) / 100,
+          bySegmento: Object.entries(s.bySegmento)
+            .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
+            .sort((a, b) => b.value - a.value),
+          byCrmSegmento: Object.entries(s.byCrmSegmento)
+            .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
+            .sort((a, b) => b.value - a.value),
+          byUF: Object.entries(s.byUF)
+            .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
+            .sort((a, b) => b.value - a.value),
+          topClients: Array.from(s.topClients.entries())
+            .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 10),
+          topProducts: Array.from(s.topProducts.entries())
+            .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 10),
+        }))
+        .filter(s => s.name !== "Sem vendedor")
+        .sort((a, b) => b.totalValue - a.totalValue);
+
+      return { sellers, period: input.period, startDate, endDate };
+    }),
 });

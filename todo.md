@@ -3559,3 +3559,4 @@
 - [x] Alertas mobile: abas (Compra, Cuidado, Atenção) cortando na tela - permitir scroll horizontal ou reduzir tamanho
 - [x] Dark mode autorização de contas: amarelo neon quando não selecionou tudo, verde neon quando selecionou tudo (sem prejudicar leitura)
 - [x] Mobile: botão de atualizar (refresh/reload) visível na versão mobile para forçar atualização
+- [x] Vendas: botão "Melhor Vendedor" com períodos (dia, semana, mês, ano), mostrando nome, vendas detalhadas e filtros/segmentos

@@ -1,13 +1,22 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon, Share2 } from "lucide-react";
+import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon, Share2, Crown, Star, MapPin, Tag, ShoppingCart, Package } from "lucide-react";
 import { exportRankingVendasPdf, exportInadimplenciaPdf, exportVendedorDetailPdf, exportInadimplenciaDetailPdf } from "@/lib/tabsPdfExport";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 
-type ViewMode = "ranking" | "detail" | "inadimplencia" | "inadimplenciaDetail";
+type ViewMode = "ranking" | "detail" | "inadimplencia" | "inadimplenciaDetail" | "bestSeller";
+
+type BestSellerPeriod = "day" | "week" | "month" | "year";
+
+const BEST_SELLER_PERIODS: { label: string; value: BestSellerPeriod }[] = [
+  { label: "Dia", value: "day" },
+  { label: "Semana", value: "week" },
+  { label: "Mês", value: "month" },
+  { label: "Ano", value: "year" },
+];
 
 const PERIOD_OPTIONS = [
   { label: "Mês Atual", value: "current" },
@@ -86,9 +95,16 @@ export default function MetricaVendasTab() {
 
   const periodLabel = period === "current" ? "Mês Atual" : period === "previous" ? "Mês Anterior" : `${MONTHS_PT[customMonth.month].slice(0,3)}/${customMonth.year}`;
 
+  const [bestSellerPeriod, setBestSellerPeriod] = useState<BestSellerPeriod>("month");
+  const { data: bestSellers, isLoading: loadingBestSellers } = trpc.sales.getBestSellers.useQuery(
+    { period: bestSellerPeriod },
+    { enabled: view === "bestSeller", refetchInterval: 60000 }
+  );
+
   const goBack = () => {
     if (view === "detail") { setView("ranking"); setSelectedVendedor(""); setFilterEstados([]); setFilterSegmentos([]); }
     else if (view === "inadimplenciaDetail") { setView("inadimplencia"); setSelectedVendedor(""); }
+    else if (view === "bestSeller") { setView("ranking"); }
   };
 
   // Compute available filter options from vendedorDetail data
@@ -141,11 +157,12 @@ export default function MetricaVendasTab() {
               <ChevronLeft className="w-5 h-5 text-slate-600" />
             </button>
           )}
-          <h2 className="text-lg font-semibold text-slate-800">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
             {view === "ranking" && "Ranking de Vendedores"}
             {view === "detail" && `Vendas de ${selectedVendedor}`}
             {view === "inadimplencia" && "Inadimplência por Vendedor"}
             {view === "inadimplenciaDetail" && `Inadimplência - ${selectedVendedor}`}
+            {view === "bestSeller" && "🏆 Melhor Vendedor"}
           </h2>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
@@ -269,7 +286,7 @@ export default function MetricaVendasTab() {
 
       {/* Navigation tabs */}
       {(view === "ranking" || view === "inadimplencia") && (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -309,6 +326,12 @@ export default function MetricaVendasTab() {
             }`}
           >
             <AlertTriangle className="w-4 h-4 inline mr-1" /> Inadimplência
+          </button>
+          <button
+            onClick={() => setView("bestSeller")}
+            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-gradient-to-r from-amber-500 to-yellow-400 text-white shadow-sm hover:from-amber-600 hover:to-yellow-500"
+          >
+            <Crown className="w-4 h-4 inline mr-1" /> Melhor Vendedor
           </button>
         </div>
       )}
@@ -675,6 +698,226 @@ export default function MetricaVendasTab() {
               </>
             );
           })()}
+        </div>
+      )}
+
+      {/* Best Seller View */}
+      {view === "bestSeller" && (
+        <div className="space-y-4">
+          {/* Period selector */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={goBack} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+              <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </button>
+            {BEST_SELLER_PERIODS.map((p) => (
+              <button
+                key={p.value}
+                onClick={() => setBestSellerPeriod(p.value)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  bestSellerPeriod === p.value
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+            {bestSellers && (
+              <span className="text-xs text-slate-400 ml-auto">
+                {bestSellers.startDate && bestSellers.endDate
+                  ? `${bestSellers.startDate.split("-").reverse().join("/")} a ${bestSellers.endDate.split("-").reverse().join("/")}`
+                  : ""}
+              </span>
+            )}
+          </div>
+
+          {loadingBestSellers ? (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-8 text-center text-slate-400">
+              Carregando melhor vendedor...
+            </div>
+          ) : !bestSellers || bestSellers.sellers.length === 0 ? (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-8 text-center text-slate-400">
+              Nenhuma venda encontrada no período
+            </div>
+          ) : (
+            <>
+              {/* Winner Card */}
+              {bestSellers.sellers[0] && (
+                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-amber-200 dark:border-amber-700 shadow-lg p-6 relative overflow-hidden">
+                  <div className="absolute top-2 right-3 text-6xl opacity-10">🏆</div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md">
+                      <Crown className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide">
+                        Melhor Vendedor {bestSellerPeriod === "day" ? "do Dia" : bestSellerPeriod === "week" ? "da Semana" : bestSellerPeriod === "month" ? "do Mês" : "do Ano"}
+                      </p>
+                      <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{bestSellers.sellers[0].name}</h3>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-white/70 dark:bg-slate-800/70 rounded-xl p-3 text-center">
+                      <DollarSign className="w-4 h-4 text-teal-600 mx-auto mb-1" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Total Vendas</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{formatCurrency(bestSellers.sellers[0].totalValue)}</p>
+                    </div>
+                    <div className="bg-white/70 dark:bg-slate-800/70 rounded-xl p-3 text-center">
+                      <ShoppingCart className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Pedidos</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{bestSellers.sellers[0].orders}</p>
+                    </div>
+                    <div className="bg-white/70 dark:bg-slate-800/70 rounded-xl p-3 text-center">
+                      <Users className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Clientes</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{bestSellers.sellers[0].clients}</p>
+                    </div>
+                    <div className="bg-white/70 dark:bg-slate-800/70 rounded-xl p-3 text-center">
+                      <Package className="w-4 h-4 text-orange-600 mx-auto mb-1" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Itens</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{bestSellers.sellers[0].items}</p>
+                    </div>
+                  </div>
+
+                  {/* Faturado vs A Faturar */}
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="bg-emerald-50/70 dark:bg-emerald-900/20 rounded-lg p-2.5 text-center border border-emerald-100 dark:border-emerald-800">
+                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Faturado</p>
+                      <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(bestSellers.sellers[0].faturado)}</p>
+                    </div>
+                    <div className="bg-blue-50/70 dark:bg-blue-900/20 rounded-lg p-2.5 text-center border border-blue-100 dark:border-blue-800">
+                      <p className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">A Faturar</p>
+                      <p className="text-sm font-bold text-blue-700 dark:text-blue-300">{formatCurrency(bestSellers.sellers[0].aFaturar)}</p>
+                    </div>
+                  </div>
+
+                  {/* Segments breakdown */}
+                  {bestSellers.sellers[0].bySegmento.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1">
+                        <Tag className="w-3 h-3" /> Por Segmento (Estado Configurável)
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {bestSellers.sellers[0].bySegmento.map((seg) => (
+                          <span key={seg.name} className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300">
+                            {seg.name}: <span className="font-semibold">{formatCurrency(seg.value)}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CRM Segments */}
+                  {bestSellers.sellers[0].byCrmSegmento.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1">
+                        <Star className="w-3 h-3" /> Por Segmento CRM
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {bestSellers.sellers[0].byCrmSegmento.map((seg) => (
+                          <span key={seg.name} className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300">
+                            {seg.name}: <span className="font-semibold">{formatCurrency(seg.value)}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* UF breakdown */}
+                  {bestSellers.sellers[0].byUF.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> Por UF
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {bestSellers.sellers[0].byUF.map((uf) => (
+                          <span key={uf.name} className="text-[11px] px-2 py-1 rounded-full bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300">
+                            {uf.name}: <span className="font-semibold">{formatCurrency(uf.value)}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top Clients */}
+                  {bestSellers.sellers[0].topClients.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Top 10 Clientes</p>
+                      <div className="space-y-1">
+                        {bestSellers.sellers[0].topClients.map((c, i) => (
+                          <div key={c.name} className="flex items-center justify-between bg-white/60 dark:bg-slate-800/60 rounded-lg px-3 py-1.5">
+                            <span className="text-xs text-slate-700 dark:text-slate-300 truncate flex-1 mr-2">
+                              <span className="text-slate-400 mr-1">{i + 1}.</span> {c.name}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex-shrink-0">{formatCurrency(c.value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top Products */}
+                  {bestSellers.sellers[0].topProducts.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Top 10 Produtos</p>
+                      <div className="space-y-1">
+                        {bestSellers.sellers[0].topProducts.map((p, i) => (
+                          <div key={p.name} className="flex items-center justify-between bg-white/60 dark:bg-slate-800/60 rounded-lg px-3 py-1.5">
+                            <span className="text-xs text-slate-700 dark:text-slate-300 truncate flex-1 mr-2">
+                              <span className="text-slate-400 mr-1">{i + 1}.</span> {p.name}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex-shrink-0">{formatCurrency(p.value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Other sellers ranking */}
+              {bestSellers.sellers.length > 1 && (
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+                  <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/30">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Ranking Completo ({bestSellers.sellers.length} vendedores)</p>
+                  </div>
+                  <div className="divide-y divide-slate-50 dark:divide-slate-700 max-h-[400px] overflow-y-auto">
+                    {bestSellers.sellers.map((seller, idx) => {
+                      const totalAll = bestSellers.sellers.reduce((s, x) => s + x.totalValue, 0);
+                      const pct = totalAll > 0 ? (seller.totalValue / totalAll) * 100 : 0;
+                      return (
+                        <div key={seller.name} className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                          <div className="flex-shrink-0 w-7 text-center">
+                            {idx === 0 ? <Trophy className="w-5 h-5 text-yellow-500 mx-auto" /> :
+                             idx === 1 ? <Medal className="w-5 h-5 text-slate-400 mx-auto" /> :
+                             idx === 2 ? <Award className="w-5 h-5 text-amber-600 mx-auto" /> :
+                             <span className="text-xs font-bold text-slate-400">{idx + 1}\u00ba</span>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{seller.name}</p>
+                              <p className="text-sm font-bold text-teal-700 dark:text-teal-400 flex-shrink-0 ml-2">{formatCurrency(seller.totalValue)}</p>
+                            </div>
+                            <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                              <span>{seller.orders} ped.</span>
+                              <span>{seller.clients} cli.</span>
+                              <span>{pct.toFixed(1)}%</span>
+                            </div>
+                            <div className="mt-1.5 h-1 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${idx === 0 ? "bg-amber-400" : idx === 1 ? "bg-slate-400" : idx === 2 ? "bg-amber-600" : "bg-teal-400"}`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
