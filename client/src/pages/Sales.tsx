@@ -44,6 +44,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronRight,
+  ChevronLeft,
   Package,
   ClipboardList,
   Calendar,
@@ -2820,6 +2821,82 @@ function SalesVerifyModal({ card, startDate, endDate, dashboardValue, onClose }:
   );
 }
 
+/* ---- Métrica de Vendas Sub-Tabs (Folder Selection) ---- */
+function MetricaVendasSubTabs() {
+  const [activeFolder, setActiveFolder] = useState<"selection" | "ranking" | "produtos">("selection");
+
+  if (activeFolder === "ranking") {
+    return (
+      <div className="space-y-3">
+        <button
+          onClick={() => setActiveFolder("selection")}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Voltar
+        </button>
+        <MetricaVendasTab />
+      </div>
+    );
+  }
+
+  if (activeFolder === "produtos") {
+    return (
+      <div className="space-y-3">
+        <button
+          onClick={() => setActiveFolder("selection")}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Voltar
+        </button>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
+          <Package className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">An\u00e1lise de Produtos</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Em breve \u2014 esta se\u00e7\u00e3o ser\u00e1 configurada em seguida.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Folder selection screen
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">M\u00e9tricas de Vendas</h2>
+      <p className="text-sm text-slate-500 dark:text-slate-400">Selecione uma categoria para an\u00e1lise:</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Folder 1: Ranking de Vendedores */}
+        <button
+          onClick={() => setActiveFolder("ranking")}
+          className="group flex flex-col items-center gap-3 p-6 bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-500 hover:shadow-lg hover:shadow-teal-100 dark:hover:shadow-teal-900/20 transition-all cursor-pointer"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-100 to-emerald-100 dark:from-teal-900/40 dark:to-emerald-900/40 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Users className="w-8 h-8 text-teal-600 dark:text-teal-400" />
+          </div>
+          <div className="text-center">
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">Ranking de Vendedores</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Ranking, inadimpl\u00eancia, melhor vendedor</p>
+          </div>
+        </button>
+
+        {/* Folder 2: An\u00e1lise de Produtos */}
+        <button
+          onClick={() => setActiveFolder("produtos")}
+          className="group flex flex-col items-center gap-3 p-6 bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-lg hover:shadow-violet-100 dark:hover:shadow-violet-900/20 transition-all cursor-pointer"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Package className="w-8 h-8 text-violet-600 dark:text-violet-400" />
+          </div>
+          <div className="text-center">
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">An\u00e1lise de Produtos</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">An\u00e1lise detalhada por produto</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ---- Main Sales Page ---- */
 export default function Sales() {
   const { operator } = useOperator();
@@ -3166,7 +3243,7 @@ export default function Sales() {
 
         {/* Tab: Métrica de Vendas */}
         {salesTab === "metricas" && canSeeFornecedores && (
-          <MetricaVendasTab />
+          <MetricaVendasSubTabs />
         )}
 
         {/* Tab: Vendas (conteúdo original) */}
