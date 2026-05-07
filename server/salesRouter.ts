@@ -2134,6 +2134,8 @@ export const salesRouter = router({
   getBestSellers: publicProcedure
     .input(z.object({
       period: z.enum(["day", "week", "month", "year"]),
+      offset: z.number().optional().default(0),
+      customDate: z.string().optional(),
       grupo: z.enum(["all", "importacao_revenda", "industrializacao", "importacao_mp"]).optional().default("all"),
       subgrupo: z.string().optional().default("all"),
       crmSegmento: z.string().optional().default("all"),
@@ -2142,40 +2144,66 @@ export const salesRouter = router({
       const db = await getDb();
       if (!db) return { sellers: [], period: input.period, startDate: "", endDate: "" };
 
-      // Calculate date range based on period
+      // Calculate date range based on period + offset
       const now = new Date();
-      // Use Sao Paulo timezone
       const spNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-      const year = spNow.getFullYear();
-      const month = spNow.getMonth();
-      const day = spNow.getDate();
-      const dayOfWeek = spNow.getDay(); // 0=Sun
+      const offset = input.offset || 0;
 
       let startDate: string;
       let endDate: string;
 
-      switch (input.period) {
-        case "day":
-          startDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          endDate = startDate;
-          break;
-        case "week": {
-          // Monday to Sunday
-          const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-          const monday = new Date(spNow);
-          monday.setDate(day + mondayOffset);
-          startDate = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
-          endDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          break;
+      if (input.customDate) {
+        // Custom date mode: show a single specific day
+        startDate = input.customDate;
+        endDate = input.customDate;
+      } else {
+        const refDate = new Date(spNow);
+        switch (input.period) {
+          case "day":
+            refDate.setDate(refDate.getDate() + offset);
+            startDate = `${refDate.getFullYear()}-${String(refDate.getMonth() + 1).padStart(2, "0")}-${String(refDate.getDate()).padStart(2, "0")}`;
+            endDate = startDate;
+            break;
+          case "week": {
+            refDate.setDate(refDate.getDate() + (offset * 7));
+            const dow = refDate.getDay();
+            const mondayOff = dow === 0 ? -6 : 1 - dow;
+            const monday = new Date(refDate);
+            monday.setDate(refDate.getDate() + mondayOff);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            startDate = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+            if (offset === 0) {
+              endDate = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-${String(spNow.getDate()).padStart(2, "0")}`;
+            } else {
+              endDate = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, "0")}-${String(sunday.getDate()).padStart(2, "0")}`;
+            }
+            break;
+          }
+          case "month": {
+            refDate.setMonth(refDate.getMonth() + offset);
+            const y = refDate.getFullYear();
+            const m = refDate.getMonth();
+            startDate = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+            if (offset === 0) {
+              endDate = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-${String(spNow.getDate()).padStart(2, "0")}`;
+            } else {
+              const lastDay = new Date(y, m + 1, 0).getDate();
+              endDate = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+            }
+            break;
+          }
+          case "year": {
+            const targetYear = spNow.getFullYear() + offset;
+            startDate = `${targetYear}-01-01`;
+            if (offset === 0) {
+              endDate = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-${String(spNow.getDate()).padStart(2, "0")}`;
+            } else {
+              endDate = `${targetYear}-12-31`;
+            }
+            break;
+          }
         }
-        case "month":
-          startDate = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-          endDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          break;
-        case "year":
-          startDate = `${year}-01-01`;
-          endDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          break;
       }
 
       // Fetch all items in the date range

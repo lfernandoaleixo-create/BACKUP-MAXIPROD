@@ -3561,3 +3561,4 @@
 - [x] Mobile: botão de atualizar (refresh/reload) visível na versão mobile para forçar atualização
 - [x] Vendas: botão "Melhor Vendedor" com períodos (dia, semana, mês, ano), mostrando nome, vendas detalhadas e filtros/segmentos
 - [x] Fornecedores: restaurar menu de 3 opções (Confirmar verde, Falha vermelho, Neutro azul) ao clicar na bolinha de ação - SEM alterar status existentes
+- [x] Melhor Vendedor: navegação de período (meses anteriores, anos anteriores, data personalizada)

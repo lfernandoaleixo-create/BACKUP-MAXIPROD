@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon, Share2, Crown, Star, MapPin, Tag, ShoppingCart, Package } from "lucide-react";
+import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, ChevronRight, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon, Share2, Crown, Star, MapPin, Tag, ShoppingCart, Package } from "lucide-react";
 import { exportRankingVendasPdf, exportInadimplenciaPdf, exportVendedorDetailPdf, exportInadimplenciaDetailPdf } from "@/lib/tabsPdfExport";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -96,8 +96,11 @@ export default function MetricaVendasTab() {
   const periodLabel = period === "current" ? "Mês Atual" : period === "previous" ? "Mês Anterior" : `${MONTHS_PT[customMonth.month].slice(0,3)}/${customMonth.year}`;
 
   const [bestSellerPeriod, setBestSellerPeriod] = useState<BestSellerPeriod>("month");
+  const [bsOffset, setBsOffset] = useState(0);
+  const [bsCustomDate, setBsCustomDate] = useState<string | undefined>(undefined);
+  const [bsShowDatePicker, setBsShowDatePicker] = useState(false);
   const { data: bestSellers, isLoading: loadingBestSellers } = trpc.sales.getBestSellers.useQuery(
-    { period: bestSellerPeriod },
+    { period: bestSellerPeriod, offset: bsOffset, customDate: bsCustomDate },
     { enabled: view === "bestSeller", refetchInterval: 60000 }
   );
 
@@ -712,9 +715,9 @@ export default function MetricaVendasTab() {
             {BEST_SELLER_PERIODS.map((p) => (
               <button
                 key={p.value}
-                onClick={() => setBestSellerPeriod(p.value)}
+                onClick={() => { setBestSellerPeriod(p.value); setBsOffset(0); setBsCustomDate(undefined); setBsShowDatePicker(false); }}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                  bestSellerPeriod === p.value
+                  bestSellerPeriod === p.value && !bsCustomDate
                     ? "bg-amber-500 text-white shadow-sm"
                     : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                 }`}
@@ -722,10 +725,81 @@ export default function MetricaVendasTab() {
                 {p.label}
               </button>
             ))}
+            {/* Custom date button */}
+            <button
+              onClick={() => { setBsShowDatePicker(!bsShowDatePicker); }}
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                bsCustomDate
+                  ? "bg-amber-500 text-white shadow-sm"
+                  : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+              }`}
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              {bsCustomDate ? bsCustomDate.split("-").reverse().join("/") : "Personalizado"}
+            </button>
+          </div>
+
+          {/* Custom date picker */}
+          {bsShowDatePicker && (
+            <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Data:</label>
+              <input
+                type="date"
+                className="px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                value={bsCustomDate || ""}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setBsCustomDate(e.target.value);
+                    setBsOffset(0);
+                  }
+                }}
+              />
+              {bsCustomDate && (
+                <button
+                  onClick={() => { setBsCustomDate(undefined); setBsShowDatePicker(false); setBsOffset(0); }}
+                  className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Navigation arrows + date range display */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => { if (bsCustomDate) { const d = new Date(bsCustomDate + 'T12:00:00'); d.setDate(d.getDate() - 1); setBsCustomDate(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`); } else { setBsOffset(bsOffset - 1); } }}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-600"
+                title="Período anterior"
+              >
+                <ChevronLeft className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              </button>
+              <button
+                onClick={() => { setBsOffset(0); setBsCustomDate(undefined); }}
+                className={`px-2 py-1 text-[10px] font-medium rounded-lg transition-colors ${
+                  bsOffset === 0 && !bsCustomDate
+                    ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+                    : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
+                }`}
+              >
+                Hoje
+              </button>
+              <button
+                onClick={() => { if (bsCustomDate) { const d = new Date(bsCustomDate + 'T12:00:00'); d.setDate(d.getDate() + 1); setBsCustomDate(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`); } else { setBsOffset(bsOffset + 1); } }}
+                disabled={bsOffset >= 0 && !bsCustomDate}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Próximo período"
+              >
+                <ChevronRight className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              </button>
+            </div>
             {bestSellers && (
-              <span className="text-xs text-slate-400 ml-auto">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 {bestSellers.startDate && bestSellers.endDate
-                  ? `${bestSellers.startDate.split("-").reverse().join("/")} a ${bestSellers.endDate.split("-").reverse().join("/")}`
+                  ? bestSellers.startDate === bestSellers.endDate
+                    ? bestSellers.startDate.split("-").reverse().join("/")
+                    : `${bestSellers.startDate.split("-").reverse().join("/")} a ${bestSellers.endDate.split("-").reverse().join("/")}`
                   : ""}
               </span>
             )}
