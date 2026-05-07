@@ -1422,7 +1422,7 @@ export default function InadimplenciaTab() {
 
       {/* Vista por Título */}
       {viewMode === "titulos" && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-visible shadow-sm">
           <div className="hidden md:grid grid-cols-[1fr_110px_90px_140px_100px_90px_60px_110px_130px] bg-slate-50 dark:bg-slate-800/50 border-b border-slate-300 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
             <button onClick={() => toggleSort("cliente")} className="flex items-center justify-start gap-1 hover:text-slate-700 px-3 py-2.5 border-r border-slate-300">
               Cliente {sortBy === "cliente" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : <ChevronDown className="w-3 h-3 opacity-30" />}
@@ -2035,8 +2035,8 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
 
       {/* 7 Bolinhas Manuais — Card elegante abaixo da linha */}
       {canManualTick && (
-        <div className="mx-3 mb-2 mt-0.5" onClick={e => e.stopPropagation()}>
-          <div className={`rounded-lg border shadow-sm px-2 md:px-4 py-2 md:py-2.5 ${hasRedTicks ? 'bg-gradient-to-r from-red-50 via-white to-red-50 border-red-200/80 dark:from-red-950/40 dark:via-slate-800 dark:to-red-950/40 dark:border-red-800/60' : 'bg-gradient-to-r from-slate-50 via-white to-slate-50 border-slate-200/80 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 dark:border-slate-700/80'}`}>
+        <div className="mx-3 mb-2 mt-0.5" onClick={e => e.stopPropagation()} style={{ overflow: tickChoiceStep ? 'visible' : undefined }}>
+          <div className={`rounded-lg border shadow-sm px-2 md:px-4 py-2 md:py-2.5 ${hasRedTicks ? 'bg-gradient-to-r from-red-50 via-white to-red-50 border-red-200/80 dark:from-red-950/40 dark:via-slate-800 dark:to-red-950/40 dark:border-red-800/60' : 'bg-gradient-to-r from-slate-50 via-white to-slate-50 border-slate-200/80 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 dark:border-slate-700/80'}`} style={{ overflow: tickChoiceStep ? 'visible' : undefined }}>
             <div className="flex items-center gap-2 md:gap-4">
               {/* Label */}
               <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
@@ -2049,7 +2049,7 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
               <div className="w-px h-6 bg-slate-200 dark:bg-slate-600 hidden md:block" />
 
               {/* Steps */}
-              <div className="flex items-center gap-0 flex-1 overflow-x-auto">
+              <div className="flex items-center gap-0 flex-1 overflow-x-auto" style={{ overflow: tickChoiceStep ? 'visible' : undefined }}>
                 <TooltipProvider delayDuration={150}>
                   {[1,2,3,4,5,6,7].map((step, idx) => {
                     const tick = tickMap[step];
@@ -2159,9 +2159,9 @@ function TitleRow({ title, isExpanded, onToggle, onOpenAction, onOpenContato, on
                             {!isTicked && !canTickStep && <p className="text-slate-400 mt-0.5">Complete o passo anterior</p>}
                           </TooltipContent>
                         </Tooltip>
-                        {/* Popover de escolha verde/vermelho */}
+                        {/* Popover de escolha verde/vermelho/azul */}
                         {tickChoiceStep?.recId === title.id && tickChoiceStep?.step === step && (
-                          <div className="absolute z-50 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 p-2 flex gap-2 animate-in fade-in slide-in-from-top-1" style={{ top: '100%', left: '50%', transform: 'translateX(-50%)' }}>
+                          <div className="absolute z-[100] mb-2 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 p-2 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-1" style={{ bottom: '100%', left: '50%', transform: 'translateX(-50%)', minWidth: '200px' }}>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
