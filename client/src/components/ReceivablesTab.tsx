@@ -1623,11 +1623,11 @@ export default function ReceivablesTab() {
 
   const exchangeHistoryQuery = trpc.financial.getExchangeHistory.useQuery(
     { empresaNome: chequesOpenEmpresa || undefined, startDate: unifiedHistoryDates.startDate, endDate: unifiedHistoryDates.endDate },
-    { enabled: !!chequesOpenEmpresa && (showExchangeHistory || (showUnifiedHistory && unifiedHistoryTab === 'trocas')) }
+    { enabled: !!chequesOpenEmpresa && (showExchangeHistory || (showUnifiedHistory && (unifiedHistoryTab === 'trocas' || unifiedHistoryTab === 'sync'))) }
   );
   const descontadosQuery = trpc.financial.getChequeDescontados.useQuery(
-    { empresaNome: chequesOpenEmpresa || undefined, limit: 100 },
-    { enabled: !!chequesOpenEmpresa && (showDescontados || (showUnifiedHistory && unifiedHistoryTab === 'descontados')) }
+    { empresaNome: chequesOpenEmpresa || undefined, limit: 200, startDate: unifiedHistoryDates.startDate, endDate: unifiedHistoryDates.endDate },
+    { enabled: !!chequesOpenEmpresa && (showDescontados || (showUnifiedHistory && (unifiedHistoryTab === 'descontados' || unifiedHistoryTab === 'sync'))) }
   );
 
   // Sync history date range calculation
@@ -2862,50 +2862,50 @@ export default function ReceivablesTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Histórico Unificado de Cheques */}
+      {/* Dialog: Histórico Unificado de Cheques - REDESIGNED */}
       <Dialog open={showUnifiedHistory} onOpenChange={setShowUnifiedHistory}>
-        <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <History className="w-5 h-5 text-indigo-600" />
-              Histórico de Cheques
+              <History className="w-5 h-5 text-amber-600" />
+              Movimentação de Cheques
             </DialogTitle>
             <DialogDescription>
-              Acompanhe sincronizações, trocas autorizadas e cheques descontados.
+              Resumo mensal e diário: entradas, descontos e trocas de cheques.
             </DialogDescription>
           </DialogHeader>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-700 pb-2">
+          <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-700 pb-2">
             <button
               onClick={() => setUnifiedHistoryTab('sync')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
                 unifiedHistoryTab === 'sync'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-amber-500 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
               }`}
             >
-              <span className="flex items-center gap-1"><RotateCcw className="w-3 h-3" /> Sincronização</span>
-            </button>
-            <button
-              onClick={() => setUnifiedHistoryTab('trocas')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                unifiedHistoryTab === 'trocas'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
-              }`}
-            >
-              <span className="flex items-center gap-1"><FileDown className="w-3 h-3" /> Trocas</span>
+              <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Resumo</span>
             </button>
             <button
               onClick={() => setUnifiedHistoryTab('descontados')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
                 unifiedHistoryTab === 'descontados'
                   ? 'bg-green-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
               }`}
             >
               <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Descontados</span>
+            </button>
+            <button
+              onClick={() => setUnifiedHistoryTab('trocas')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${
+                unifiedHistoryTab === 'trocas'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              <span className="flex items-center gap-1"><Scissors className="w-3 h-3" /> Trocas</span>
             </button>
           </div>
 
@@ -2915,7 +2915,7 @@ export default function ReceivablesTab() {
               onClick={() => setUnifiedHistoryPeriod('mes_atual')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                 unifiedHistoryPeriod === 'mes_atual'
-                  ? 'bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-800'
+                  ? 'bg-amber-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
               }`}
             >
@@ -2925,7 +2925,7 @@ export default function ReceivablesTab() {
               onClick={() => setUnifiedHistoryPeriod('mes_anterior')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                 unifiedHistoryPeriod === 'mes_anterior'
-                  ? 'bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-800'
+                  ? 'bg-amber-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
               }`}
             >
@@ -2935,7 +2935,7 @@ export default function ReceivablesTab() {
               onClick={() => setUnifiedHistoryPeriod('custom')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                 unifiedHistoryPeriod === 'custom'
-                  ? 'bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-800'
+                  ? 'bg-amber-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
               }`}
             >
@@ -2960,86 +2960,204 @@ export default function ReceivablesTab() {
             )}
           </div>
 
-          {/* Tab Content: Sincronização */}
+          {/* Tab Content: Resumo (entradas + saídas por dia) */}
           {unifiedHistoryTab === 'sync' && (
             <div className="py-4 space-y-4">
               {syncHistoryQuery.isLoading ? (
                 <div className="text-center py-8 text-slate-400">
                   <Loader2 className="w-6 h-6 mx-auto animate-spin mb-2" />
-                  Carregando histórico de sincronização...
+                  Carregando movimentação...
                 </div>
-              ) : !syncHistoryQuery.data || syncHistoryQuery.data.byDate.length === 0 ? (
-                <div className="text-center py-8 text-slate-400">
-                  <RotateCcw className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  Nenhuma mudança de cheques registrada neste período.
-                  <p className="text-[10px] mt-1 text-slate-300">As mudanças são detectadas automaticamente a cada sincronização com o Maxiprod.</p>
-                </div>
-              ) : (
-                syncHistoryQuery.data.byDate.map((dayGroup: any) => (
-                  <div key={dayGroup.date} className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                          {new Date(dayGroup.date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                        </span>
+              ) : (() => {
+                const syncData = syncHistoryQuery.data;
+                const byDate = syncData?.byDate || [];
+                // Also include descontados grouped by liquidacaoData
+                const descontados = descontadosQuery.data?.cheques || [];
+                const trocas = exchangeHistoryQuery.data || [];
+
+                // Build combined daily summary
+                const dailySummary: Record<string, {
+                  date: string;
+                  entradas: number;
+                  valorEntradas: number;
+                  descontados: number;
+                  valorDescontados: number;
+                  trocas: number;
+                  valorTrocas: number;
+                  detailEntradas: any[];
+                  detailDescontados: any[];
+                  detailTrocas: any[];
+                }> = {};
+
+                // Add sync entradas/saidas
+                for (const day of byDate) {
+                  if (!dailySummary[day.date]) {
+                    dailySummary[day.date] = { date: day.date, entradas: 0, valorEntradas: 0, descontados: 0, valorDescontados: 0, trocas: 0, valorTrocas: 0, detailEntradas: [], detailDescontados: [], detailTrocas: [] };
+                  }
+                  dailySummary[day.date].entradas += day.totalEntradas;
+                  dailySummary[day.date].valorEntradas += day.valorEntradas;
+                  dailySummary[day.date].descontados += day.totalSaidas;
+                  dailySummary[day.date].valorDescontados += day.valorSaidas;
+                  dailySummary[day.date].detailEntradas = day.entradas;
+                  dailySummary[day.date].detailDescontados = day.saidas;
+                }
+
+                // Add descontados by liquidacaoData
+                for (const ch of descontados) {
+                  const dateStr = ch.liquidacaoData ? ch.liquidacaoData.split('T')[0] : null;
+                  if (!dateStr) continue;
+                  if (!dailySummary[dateStr]) {
+                    dailySummary[dateStr] = { date: dateStr, entradas: 0, valorEntradas: 0, descontados: 0, valorDescontados: 0, trocas: 0, valorTrocas: 0, detailEntradas: [], detailDescontados: [], detailTrocas: [] };
+                  }
+                  // Only add if not already counted from sync saidas
+                  if (!dailySummary[dateStr].detailDescontados.some((d: any) => d.maxiprodId === ch.maxiprodId)) {
+                    dailySummary[dateStr].descontados++;
+                    dailySummary[dateStr].valorDescontados += ch.valor;
+                    dailySummary[dateStr].detailDescontados.push(ch);
+                  }
+                }
+
+                // Add trocas by createdAt date
+                for (const t of trocas) {
+                  const dateStr = t.createdAt ? new Date(t.createdAt).toISOString().split('T')[0] : null;
+                  if (!dateStr) continue;
+                  if (!dailySummary[dateStr]) {
+                    dailySummary[dateStr] = { date: dateStr, entradas: 0, valorEntradas: 0, descontados: 0, valorDescontados: 0, trocas: 0, valorTrocas: 0, detailEntradas: [], detailDescontados: [], detailTrocas: [] };
+                  }
+                  dailySummary[dateStr].trocas += t.totalCheques;
+                  dailySummary[dateStr].valorTrocas += t.totalValor;
+                  dailySummary[dateStr].detailTrocas.push(t);
+                }
+
+                const sortedDays = Object.values(dailySummary).sort((a, b) => b.date.localeCompare(a.date));
+
+                // Monthly totals
+                const monthlyTotals = {
+                  entradas: sortedDays.reduce((s, d) => s + d.entradas, 0),
+                  valorEntradas: sortedDays.reduce((s, d) => s + d.valorEntradas, 0),
+                  descontados: sortedDays.reduce((s, d) => s + d.descontados, 0),
+                  valorDescontados: sortedDays.reduce((s, d) => s + d.valorDescontados, 0),
+                  trocas: sortedDays.reduce((s, d) => s + d.trocas, 0),
+                  valorTrocas: sortedDays.reduce((s, d) => s + d.valorTrocas, 0),
+                };
+
+                if (sortedDays.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-slate-400">
+                      <Receipt className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      <p>Nenhuma movimentação de cheques neste período.</p>
+                      <p className="text-[10px] mt-1">As movimentações são detectadas automaticamente a cada sincronização com o Maxiprod.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    {/* Monthly Summary Cards */}
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl p-3 text-center">
+                        <div className="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase">Entraram</div>
+                        <div className="text-lg font-extrabold text-green-700 dark:text-green-300">{monthlyTotals.entradas}</div>
+                        <div className="text-xs font-bold text-green-600 dark:text-green-400">R$ {monthlyTotals.valorEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                       </div>
-                      <div className="flex items-center gap-3 text-[10px]">
-                        {dayGroup.totalEntradas > 0 && (
-                          <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-bold dark:bg-green-900/30 dark:text-green-400">
-                            +{dayGroup.totalEntradas} entrada{dayGroup.totalEntradas !== 1 ? 's' : ''} (R$ {dayGroup.valorEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
-                          </span>
-                        )}
-                        {dayGroup.totalSaidas > 0 && (
-                          <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold dark:bg-red-900/30 dark:text-red-400">
-                            -{dayGroup.totalSaidas} saída{dayGroup.totalSaidas !== 1 ? 's' : ''} (R$ {dayGroup.valorSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
-                          </span>
-                        )}
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl p-3 text-center">
+                        <div className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase">Descontados</div>
+                        <div className="text-lg font-extrabold text-red-700 dark:text-red-300">{monthlyTotals.descontados}</div>
+                        <div className="text-xs font-bold text-red-600 dark:text-red-400">R$ {monthlyTotals.valorDescontados.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                      </div>
+                      <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-xl p-3 text-center">
+                        <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase">Trocas</div>
+                        <div className="text-lg font-extrabold text-indigo-700 dark:text-indigo-300">{monthlyTotals.trocas}</div>
+                        <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400">R$ {monthlyTotals.valorTrocas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                       </div>
                     </div>
-                    {dayGroup.entradas.length > 0 && (
-                      <div className="mb-2">
-                        <div className="text-[10px] font-bold text-green-600 dark:text-green-400 mb-1 uppercase tracking-wider">Entraram</div>
-                        <div className="space-y-0.5">
-                          {dayGroup.entradas.map((ch: any) => (
-                            <div key={ch.id} className="flex items-center justify-between text-[11px] py-1 px-2 rounded bg-green-50/50 dark:bg-green-900/10">
+
+                    {/* Daily Breakdown */}
+                    <div className="space-y-2">
+                      {sortedDays.map((day) => {
+                        const fmtDayDate = new Date(day.date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                        const hasActivity = day.entradas > 0 || day.descontados > 0 || day.trocas > 0;
+                        if (!hasActivity) return null;
+                        return (
+                          <details key={day.date} className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden group">
+                            <summary className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                               <div className="flex items-center gap-2">
-                                <TrendingUp className="w-3 h-3 text-green-500" />
-                                <span className="text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{ch.cliente}</span>
-                                {ch.empresaNome && <span className="text-[9px] text-slate-400">({ch.empresaNome})</span>}
+                                <Calendar className="w-4 h-4 text-amber-500" />
+                                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{fmtDayDate}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                {ch.vencimentoData && <span className="text-[9px] text-slate-400">Venc: {formatDate(ch.vencimentoData)}</span>}
-                                <span className="font-bold text-green-700 dark:text-green-400">R$ {ch.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                              <div className="flex items-center gap-2 text-[10px]">
+                                {day.entradas > 0 && (
+                                  <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-bold dark:bg-green-900/30 dark:text-green-400">
+                                    +{day.entradas} (R$ {day.valorEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 0 })})
+                                  </span>
+                                )}
+                                {day.descontados > 0 && (
+                                  <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold dark:bg-red-900/30 dark:text-red-400">
+                                    -{day.descontados} (R$ {day.valorDescontados.toLocaleString('pt-BR', { minimumFractionDigits: 0 })})
+                                  </span>
+                                )}
+                                {day.trocas > 0 && (
+                                  <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-bold dark:bg-indigo-900/30 dark:text-indigo-400">
+                                    ⇄{day.trocas} (R$ {day.valorTrocas.toLocaleString('pt-BR', { minimumFractionDigits: 0 })})
+                                  </span>
+                                )}
+                                <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-open:rotate-180 transition-transform" />
                               </div>
+                            </summary>
+                            <div className="px-4 pb-3 space-y-2 border-t border-slate-100 dark:border-slate-700 pt-2">
+                              {day.detailEntradas.length > 0 && (
+                                <div>
+                                  <div className="text-[10px] font-bold text-green-600 dark:text-green-400 mb-1 uppercase">Cheques que Entraram</div>
+                                  <div className="space-y-0.5">
+                                    {day.detailEntradas.map((ch: any, i: number) => (
+                                      <div key={ch.id || i} className="flex items-center justify-between text-[11px] py-1 px-2 rounded bg-green-50/50 dark:bg-green-900/10">
+                                        <span className="text-slate-700 dark:text-slate-300 truncate max-w-[220px]">{ch.cliente}</span>
+                                        <div className="flex items-center gap-2">
+                                          {ch.vencimentoData && <span className="text-[9px] text-slate-400">{new Date(ch.vencimentoData + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>}
+                                          <span className="font-bold text-green-700 dark:text-green-400 whitespace-nowrap">R$ {(ch.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {day.detailDescontados.length > 0 && (
+                                <div>
+                                  <div className="text-[10px] font-bold text-red-600 dark:text-red-400 mb-1 uppercase">Cheques Descontados / Saíram</div>
+                                  <div className="space-y-0.5">
+                                    {day.detailDescontados.map((ch: any, i: number) => (
+                                      <div key={ch.id || i} className="flex items-center justify-between text-[11px] py-1 px-2 rounded bg-red-50/50 dark:bg-red-900/10">
+                                        <span className="text-slate-700 dark:text-slate-300 truncate max-w-[220px]">{ch.cliente}</span>
+                                        <div className="flex items-center gap-2">
+                                          {(ch.vencimentoData || ch.liquidacaoData) && <span className="text-[9px] text-slate-400">{new Date((ch.liquidacaoData || ch.vencimentoData) + (ch.liquidacaoData?.includes('T') ? '' : 'T12:00:00')).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>}
+                                          <span className="font-bold text-red-700 dark:text-red-400 whitespace-nowrap">R$ {(ch.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {day.detailTrocas.length > 0 && (
+                                <div>
+                                  <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 mb-1 uppercase">Trocas Realizadas</div>
+                                  <div className="space-y-0.5">
+                                    {day.detailTrocas.map((t: any, i: number) => (
+                                      <div key={t.id || i} className="flex items-center justify-between text-[11px] py-1 px-2 rounded bg-indigo-50/50 dark:bg-indigo-900/10">
+                                        <span className="text-slate-700 dark:text-slate-300">{t.totalCheques} cheque{t.totalCheques !== 1 ? 's' : ''} — {t.empresaNome}</span>
+                                        <span className="font-bold text-indigo-700 dark:text-indigo-400 whitespace-nowrap">R$ {(t.totalValor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {dayGroup.saidas.length > 0 && (
-                      <div>
-                        <div className="text-[10px] font-bold text-red-600 dark:text-red-400 mb-1 uppercase tracking-wider">Saíram</div>
-                        <div className="space-y-0.5">
-                          {dayGroup.saidas.map((ch: any) => (
-                            <div key={ch.id} className="flex items-center justify-between text-[11px] py-1 px-2 rounded bg-red-50/50 dark:bg-red-900/10">
-                              <div className="flex items-center gap-2">
-                                <TrendingUp className="w-3 h-3 text-red-500 rotate-180" />
-                                <span className="text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{ch.cliente}</span>
-                                {ch.empresaNome && <span className="text-[9px] text-slate-400">({ch.empresaNome})</span>}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {ch.vencimentoData && <span className="text-[9px] text-slate-400">Venc: {formatDate(ch.vencimentoData)}</span>}
-                                <span className="font-bold text-red-700 dark:text-red-400">R$ {ch.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
+                          </details>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
 

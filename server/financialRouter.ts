@@ -6691,7 +6691,9 @@ ${acoesTexto}
   getChequeDescontados: publicProcedure
     .input(z.object({
       empresaNome: z.string().optional(),
-      limit: z.number().default(50),
+      limit: z.number().default(200),
+      startDate: z.string().optional(), // YYYY-MM-DD filter by liquidacaoData
+      endDate: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -6705,6 +6707,14 @@ ${acoesTexto}
 
       if (input?.empresaNome) {
         conditions.push(eq(accountsReceivable.empresaNome, input.empresaNome));
+      }
+
+      // Filter by liquidação date range
+      if (input?.startDate) {
+        conditions.push(sql`${accountsReceivable.liquidacaoData} >= ${input.startDate}`);
+      }
+      if (input?.endDate) {
+        conditions.push(sql`${accountsReceivable.liquidacaoData} <= ${input.endDate + 'T23:59:59'}`);
       }
 
       const rows = await db.select({
@@ -6727,7 +6737,7 @@ ${acoesTexto}
         .from(accountsReceivable)
         .where(and(...conditions))
         .orderBy(desc(accountsReceivable.liquidacaoData))
-        .limit(input?.limit || 50);
+        .limit(input?.limit || 200);
 
       // Reuse the same state parser
       const stateMap: Record<string, string> = {

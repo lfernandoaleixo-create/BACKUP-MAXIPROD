@@ -8,6 +8,30 @@ import autoTable from "jspdf-autotable";
 const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png";
 const LOGO_RATIO = 2.11; // width/height
 
+// Trophy image for Best Seller PDF
+const TROPHY_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/download_88c919e4.png";
+
+let trophyBase64Cache: string | null = null;
+
+async function getTrophyBase64(): Promise<string | null> {
+  if (trophyBase64Cache) return trophyBase64Cache;
+  try {
+    const response = await fetch(TROPHY_URL);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        trophyBase64Cache = reader.result as string;
+        resolve(trophyBase64Cache);
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 let logoBase64Cache: string | null = null;
 
 async function getLogoBase64(): Promise<string | null> {
@@ -29,8 +53,9 @@ async function getLogoBase64(): Promise<string | null> {
   }
 }
 
-// Pre-load logo on module init
+// Pre-load logo and trophy on module init
 getLogoBase64();
+getTrophyBase64();
 
 function formatCurrency(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -956,28 +981,12 @@ export async function exportBestSellerPdf(data: {
   doc.setFont("helvetica", "bold");
   doc.setTextColor(15, 23, 42);
   doc.text(w.name, 20, y + 16);
-  // Trophy icon drawn with jsPDF shapes
-  const tx = pageW - 32;
-  const ty = y + 4;
-  // Cup body
-  doc.setFillColor(251, 191, 36); // gold
-  doc.setDrawColor(180, 83, 9);
-  doc.roundedRect(tx, ty, 14, 10, 1.5, 1.5, "FD");
-  // Cup stem
-  doc.setFillColor(180, 83, 9);
-  doc.rect(tx + 5.5, ty + 10, 3, 3, "F");
-  // Cup base
-  doc.setFillColor(180, 83, 9);
-  doc.roundedRect(tx + 3, ty + 13, 8, 2, 0.5, 0.5, "F");
-  // Handles (left and right arcs as small rects)
-  doc.setFillColor(251, 191, 36);
-  doc.rect(tx - 2, ty + 2, 2.5, 5, "FD");
-  doc.rect(tx + 13.5, ty + 2, 2.5, 5, "FD");
-  // Star in center
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(180, 83, 9);
-  doc.text("*", tx + 5.5, ty + 7);
+  // Trophy image
+  const trophyImg = await getTrophyBase64();
+  if (trophyImg) {
+    const trophySize = 18;
+    doc.addImage(trophyImg, "PNG", pageW - 34, y + 2, trophySize, trophySize);
+  }
   y += 28;
 
   // KPI boxes

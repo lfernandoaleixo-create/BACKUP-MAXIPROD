@@ -3569,3 +3569,10 @@
 - [x] Fix: PDF Melhor Vendedor - substituir emoji quebrado por SVG de troféu no card dourado
 - [x] Fix: botão atualizar mobile não está clicando/respondendo
 - [x] Financeiro Inadimplência: filtros de ordenação nos Recuperados (dias de atraso, data de devolução, valor) com setinhas
+- [x] Fix "Ver vendas" button overlapping trophy icon - move to side
+- [x] Replace hand-drawn trophy in PDF export with proper trophy image
+- [x] Redesign cheque history dialog: monthly/daily breakdown with entradas, descontos, trocas
+- [x] Fix date filter not working in cheque history (descontados now filtered by liquidacaoData)
+- [x] Improve date readability in cheque history (use dd/mm format, clear labels)
+- [x] Add date range filtering to getChequeDescontados backend procedure
+- [x] Enable all data queries when Resumo tab is active (sync + descontados + trocas combined)

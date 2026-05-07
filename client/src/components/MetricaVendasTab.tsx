@@ -975,26 +975,28 @@ export default function MetricaVendasTab() {
             <>
               {/* Winner Card */}
               {bestSellers.sellers[0] && (
-                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-amber-200 dark:border-amber-700 shadow-lg p-4 md:p-6 relative">
-                  <div className="absolute top-2 right-3 text-5xl md:text-6xl opacity-10 pointer-events-none">🏆</div>
-                  <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-4">
-                    <div className="flex items-center gap-3 flex-1">
+                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-amber-200 dark:border-amber-700 shadow-lg p-4 md:p-6 relative overflow-hidden">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md flex-shrink-0">
                         <Crown className="w-5 h-5 md:w-6 md:h-6 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] md:text-xs text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide">
-                          Melhor Vendedor {bestSellerPeriod === "day" ? "do Dia" : bestSellerPeriod === "week" ? "da Semana" : bestSellerPeriod === "month" ? "do Mês" : "do Ano"}
+                          Melhor Vendedor {bestSellerPeriod === "day" ? "do Dia" : bestSellerPeriod === "week" ? "da Semana" : bestSellerPeriod === "month" ? "do M\u00eas" : "do Ano"}
                         </p>
                         <h3 className="text-lg md:text-2xl font-bold text-slate-800 dark:text-slate-100 truncate">{bestSellers.sellers[0].name}</h3>
                       </div>
                     </div>
                     <button
                       onClick={() => setBsDetailSeller(bestSellers.sellers[0].name)}
-                      className="w-full md:w-auto px-4 py-2 md:px-3 md:py-1.5 text-sm md:text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow transition-colors flex items-center justify-center gap-1.5 relative z-10"
+                      className="flex-shrink-0 px-3 py-1.5 md:px-3 md:py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow transition-colors flex items-center gap-1.5"
                     >
-                      <Eye className="w-4 h-4 md:w-3.5 md:h-3.5" /> Ver vendas
+                      <Eye className="w-3.5 h-3.5" /> Ver vendas
                     </button>
+                    <div className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 opacity-30">
+                      <Trophy className="w-full h-full text-amber-400" />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-white/70 dark:bg-slate-800/70 rounded-xl p-3 text-center">
