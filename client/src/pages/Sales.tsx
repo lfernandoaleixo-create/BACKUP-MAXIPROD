@@ -2852,8 +2852,8 @@ function MetricaVendasSubTabs() {
         </button>
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
           <Package className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">An\u00e1lise de Produtos</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Em breve \u2014 esta se\u00e7\u00e3o ser\u00e1 configurada em seguida.</p>
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">Análise de Produtos</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Em breve — esta seção será configurada em seguida.</p>
         </div>
       </div>
     );
@@ -2862,8 +2862,8 @@ function MetricaVendasSubTabs() {
   // Folder selection screen
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">M\u00e9tricas de Vendas</h2>
-      <p className="text-sm text-slate-500 dark:text-slate-400">Selecione uma categoria para an\u00e1lise:</p>
+      <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Métricas de Vendas</h2>
+      <p className="text-sm text-slate-500 dark:text-slate-400">Selecione uma categoria para análise:</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Folder 1: Ranking de Vendedores */}
         <button
@@ -2875,11 +2875,11 @@ function MetricaVendasSubTabs() {
           </div>
           <div className="text-center">
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">Ranking de Vendedores</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Ranking, inadimpl\u00eancia, melhor vendedor</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Ranking, inadimplência, melhor vendedor</p>
           </div>
         </button>
 
-        {/* Folder 2: An\u00e1lise de Produtos */}
+        {/* Folder 2: Análise de Produtos */}
         <button
           onClick={() => setActiveFolder("produtos")}
           className="group flex flex-col items-center gap-3 p-6 bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-lg hover:shadow-violet-100 dark:hover:shadow-violet-900/20 transition-all cursor-pointer"
@@ -2888,8 +2888,8 @@ function MetricaVendasSubTabs() {
             <Package className="w-8 h-8 text-violet-600 dark:text-violet-400" />
           </div>
           <div className="text-center">
-            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">An\u00e1lise de Produtos</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">An\u00e1lise detalhada por produto</p>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">Análise de Produtos</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Análise detalhada por produto</p>
           </div>
         </button>
       </div>
