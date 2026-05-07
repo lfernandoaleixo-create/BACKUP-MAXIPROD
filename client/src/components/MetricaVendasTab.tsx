@@ -975,17 +975,17 @@ export default function MetricaVendasTab() {
             <>
               {/* Winner Card */}
               {bestSellers.sellers[0] && (
-                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-amber-200 dark:border-amber-700 shadow-lg p-4 md:p-6 relative overflow-hidden">
+                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:via-amber-800/25 dark:to-orange-900/30 rounded-2xl border-2 border-amber-200 dark:border-yellow-500/60 shadow-lg dark:shadow-yellow-500/20 dark:shadow-xl p-4 md:p-6 relative overflow-hidden">
                   <div className="flex items-start gap-3 mb-4">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md flex-shrink-0">
+                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 dark:from-yellow-500 dark:to-amber-400 flex items-center justify-center shadow-md dark:shadow-yellow-500/40 flex-shrink-0">
                         <Crown className="w-5 h-5 md:w-6 md:h-6 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] md:text-xs text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide">
+                        <p className="text-[10px] md:text-xs text-amber-600 dark:text-yellow-400 font-medium uppercase tracking-wide">
                           Melhor Vendedor {bestSellerPeriod === "day" ? "do Dia" : bestSellerPeriod === "week" ? "da Semana" : bestSellerPeriod === "month" ? "do M\u00eas" : "do Ano"}
                         </p>
-                        <h3 className="text-lg md:text-2xl font-bold text-slate-800 dark:text-slate-100 truncate">{bestSellers.sellers[0].name}</h3>
+                        <h3 className="text-lg md:text-2xl font-bold text-slate-800 dark:text-amber-50 break-words">{bestSellers.sellers[0].name}</h3>
                       </div>
                     </div>
                     <button
@@ -995,7 +995,7 @@ export default function MetricaVendasTab() {
                       <Eye className="w-3.5 h-3.5" /> Ver vendas
                     </button>
                     <div className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 opacity-30">
-                      <Trophy className="w-full h-full text-amber-400" />
+                      <Trophy className="w-full h-full text-amber-400 dark:text-yellow-400" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

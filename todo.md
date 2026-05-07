@@ -3577,3 +3577,5 @@
 - [x] Add date range filtering to getChequeDescontados backend procedure
 - [x] Enable all data queries when Resumo tab is active (sync + descontados + trocas combined)
 - [x] Fix ranking vendedores showing literal "\u00ba" text instead of clean number
+- [x] Fix mobile: nome do melhor vendedor cortando (truncate) - mostrar completo
+- [x] Card "Melhor Vendedor" com visual dourado brilhante no tema escuro
