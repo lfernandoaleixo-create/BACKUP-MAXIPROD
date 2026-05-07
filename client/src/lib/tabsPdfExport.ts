@@ -910,3 +910,233 @@ export async function exportInadimplenciaDetailPdf(data: {
   const safeName = data.vendedor.replace(/[^a-zA-Z0-9]/g, "_");
   doc.save(`Inadimplencia_${safeName}_${new Date().toISOString().split("T")[0]}.pdf`);
 }
+
+// ===== MELHOR VENDEDOR PDF EXPORT =====
+export async function exportBestSellerPdf(data: {
+  period: string;
+  periodLabel: string;
+  dateRange: string;
+  winner: {
+    name: string;
+    totalValue: number;
+    orders: number;
+    clients: number;
+    items: number;
+    faturado: number;
+    aFaturar: number;
+    bySegmento: Array<{ name: string; value: number }>;
+    byCrmSegmento: Array<{ name: string; value: number }>;
+    byUF: Array<{ name: string; value: number }>;
+    topClients: Array<{ name: string; value: number }>;
+    topProducts: Array<{ name: string; value: number }>;
+  };
+  allSellers: Array<{
+    name: string;
+    totalValue: number;
+    orders: number;
+    clients: number;
+  }>;
+}) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  await drawHeader(doc, `Melhor Vendedor — ${data.periodLabel}`, data.dateRange);
+
+  let y = 44;
+  const pageW = doc.internal.pageSize.getWidth();
+  const w = data.winner;
+
+  // Winner highlight
+  doc.setFillColor(255, 251, 235); // amber-50
+  doc.setDrawColor(251, 191, 36); // amber-400
+  doc.roundedRect(14, y, pageW - 28, 22, 3, 3, "FD");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(180, 83, 9); // amber-700
+  doc.text("MELHOR VENDEDOR", 20, y + 7);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(15, 23, 42);
+  doc.text(w.name, 20, y + 16);
+  // Trophy icon placeholder
+  doc.setFontSize(16);
+  doc.text("\u{1F3C6}", pageW - 30, y + 14);
+  y += 28;
+
+  // KPI boxes
+  const boxW = (pageW - 28 - 12) / 4;
+  const kpis = [
+    { label: "TOTAL VENDAS", value: formatCurrency(w.totalValue), color: [13, 148, 136] },
+    { label: "PEDIDOS", value: String(w.orders), color: [71, 85, 105] },
+    { label: "CLIENTES", value: String(w.clients), color: [59, 130, 246] },
+    { label: "ITENS", value: String(w.items), color: [234, 88, 12] },
+  ];
+  kpis.forEach((kpi, i) => {
+    const x = 14 + i * (boxW + 4);
+    doc.setFillColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.roundedRect(x, y, boxW, 16, 2, 2, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
+    doc.text(kpi.label, x + 3, y + 5.5);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text(kpi.value, x + 3, y + 12.5);
+  });
+  y += 22;
+
+  // Faturado vs A Faturar
+  const halfW = (pageW - 28 - 4) / 2;
+  doc.setFillColor(236, 253, 245); // emerald-50
+  doc.setDrawColor(167, 243, 208);
+  doc.roundedRect(14, y, halfW, 12, 1.5, 1.5, "FD");
+  doc.setTextColor(21, 128, 61);
+  doc.setFontSize(6);
+  doc.setFont("helvetica", "normal");
+  doc.text("Faturado", 17, y + 4.5);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(w.faturado), 17, y + 9.5);
+
+  doc.setFillColor(239, 246, 255); // blue-50
+  doc.setDrawColor(191, 219, 254);
+  doc.roundedRect(14 + halfW + 4, y, halfW, 12, 1.5, 1.5, "FD");
+  doc.setTextColor(29, 78, 216);
+  doc.setFontSize(6);
+  doc.setFont("helvetica", "normal");
+  doc.text("A Faturar", 17 + halfW + 4, y + 4.5);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.text(formatCurrency(w.aFaturar), 17 + halfW + 4, y + 9.5);
+  y += 17;
+
+  // Segmentos breakdown
+  if (w.bySegmento.length > 0) {
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("Por Segmento (Estado Configurável):", 14, y);
+    y += 4;
+    const segData = w.bySegmento.map(s => [s.name, formatCurrency(s.value)]);
+    autoTable(doc, {
+      startY: y,
+      head: [["Segmento", "Valor"]],
+      body: segData,
+      theme: "grid",
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 7, cellPadding: 1.5 },
+      bodyStyles: { fontSize: 7, cellPadding: 1.5 },
+      columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 50, halign: "right", fontStyle: "bold" } },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable?.finalY + 5 || y + 20;
+  }
+
+  // CRM Segments
+  if (w.byCrmSegmento.length > 0) {
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("Por Segmento CRM:", 14, y);
+    y += 4;
+    const crmData = w.byCrmSegmento.map(s => [s.name, formatCurrency(s.value)]);
+    autoTable(doc, {
+      startY: y,
+      head: [["Segmento CRM", "Valor"]],
+      body: crmData,
+      theme: "grid",
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 7, cellPadding: 1.5 },
+      bodyStyles: { fontSize: 7, cellPadding: 1.5 },
+      columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 50, halign: "right", fontStyle: "bold" } },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable?.finalY + 5 || y + 20;
+  }
+
+  // Top Clients
+  if (w.topClients.length > 0) {
+    if (y > 230) { doc.addPage(); y = 20; }
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("Top 10 Clientes:", 14, y);
+    y += 4;
+    const clientData = w.topClients.map((c, i) => [String(i + 1), c.name, formatCurrency(c.value)]);
+    autoTable(doc, {
+      startY: y,
+      head: [["#", "Cliente", "Valor"]],
+      body: clientData,
+      theme: "grid",
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 7, cellPadding: 1.5 },
+      bodyStyles: { fontSize: 7, cellPadding: 1.5 },
+      columnStyles: { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 100 }, 2: { cellWidth: 40, halign: "right", fontStyle: "bold" } },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable?.finalY + 5 || y + 20;
+  }
+
+  // Top Products
+  if (w.topProducts.length > 0) {
+    if (y > 230) { doc.addPage(); y = 20; }
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("Top 10 Produtos:", 14, y);
+    y += 4;
+    const prodData = w.topProducts.map((p, i) => [String(i + 1), p.name, formatCurrency(p.value)]);
+    autoTable(doc, {
+      startY: y,
+      head: [["#", "Produto", "Valor"]],
+      body: prodData,
+      theme: "grid",
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 7, cellPadding: 1.5 },
+      bodyStyles: { fontSize: 7, cellPadding: 1.5 },
+      columnStyles: { 0: { cellWidth: 8, halign: "center" }, 1: { cellWidth: 100 }, 2: { cellWidth: 40, halign: "right", fontStyle: "bold" } },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable?.finalY + 5 || y + 20;
+  }
+
+  // Full ranking table
+  if (data.allSellers.length > 1) {
+    if (y > 200) { doc.addPage(); y = 20; }
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Ranking Completo (${data.allSellers.length} vendedores):`, 14, y);
+    y += 4;
+    const totalAll = data.allSellers.reduce((s, x) => s + x.totalValue, 0);
+    const rankData = data.allSellers.map((s, i) => {
+      const pct = totalAll > 0 ? ((s.totalValue / totalAll) * 100).toFixed(1) + "%" : "0%";
+      return [String(i + 1), s.name, String(s.orders), String(s.clients), pct, formatCurrency(s.totalValue)];
+    });
+    autoTable(doc, {
+      startY: y,
+      head: [["#", "Vendedor", "Ped.", "Cli.", "%", "Total"]],
+      body: rankData,
+      theme: "grid",
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 7, cellPadding: 2 },
+      bodyStyles: { fontSize: 7, cellPadding: 1.5 },
+      columnStyles: {
+        0: { cellWidth: 8, halign: "center" },
+        1: { cellWidth: 55 },
+        2: { cellWidth: 14, halign: "center" },
+        3: { cellWidth: 14, halign: "center" },
+        4: { cellWidth: 16, halign: "center" },
+        5: { cellWidth: 35, halign: "right", fontStyle: "bold" },
+      },
+      margin: { left: 14, right: 14 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      didParseCell: (d: any) => {
+        if (d.section === "body" && d.column.index === 5) {
+          d.cell.styles.textColor = [13, 148, 136];
+        }
+        if (d.section === "body" && d.row.index === 0) {
+          d.cell.styles.fillColor = [255, 251, 235];
+          d.cell.styles.fontStyle = "bold";
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable?.finalY || y + 20;
+  }
+
+  drawFooter(doc, y, `Grupo Fox — Melhor Vendedor ${data.periodLabel}`);
+  doc.save(`Melhor_Vendedor_${data.periodLabel.replace(/\s+/g, "_")}_${data.dateRange.replace(/\s+/g, "_")}.pdf`);
+}

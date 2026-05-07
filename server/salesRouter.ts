@@ -2350,4 +2350,161 @@ export const salesRouter = router({
 
       return { sellers, period: input.period, startDate, endDate };
     }),
+
+  /**
+   * Get individual orders/items for a specific seller in a given period
+   * Returns all sales with client, value, estado configuravel, segmento CRM, UF, etc.
+   */
+  getBestSellerOrders: publicProcedure
+    .input(z.object({
+      sellerName: z.string(),
+      period: z.enum(["day", "week", "month", "year"]),
+      offset: z.number().optional().default(0),
+      customDate: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { orders: [], startDate: "", endDate: "" };
+
+      // Calculate date range (same logic as getBestSellers)
+      const now = new Date();
+      const spNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      const offset = input.offset || 0;
+      let startDate: string;
+      let endDate: string;
+
+      if (input.customDate) {
+        startDate = input.customDate;
+        endDate = input.customDate;
+      } else {
+        const refDate = new Date(spNow);
+        switch (input.period) {
+          case "day":
+            refDate.setDate(refDate.getDate() + offset);
+            startDate = `${refDate.getFullYear()}-${String(refDate.getMonth() + 1).padStart(2, "0")}-${String(refDate.getDate()).padStart(2, "0")}`;
+            endDate = startDate;
+            break;
+          case "week": {
+            refDate.setDate(refDate.getDate() + (offset * 7));
+            const dow = refDate.getDay();
+            const mondayOff = dow === 0 ? -6 : 1 - dow;
+            const monday = new Date(refDate);
+            monday.setDate(refDate.getDate() + mondayOff);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            startDate = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+            if (offset === 0) {
+              endDate = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-${String(spNow.getDate()).padStart(2, "0")}`;
+            } else {
+              endDate = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, "0")}-${String(sunday.getDate()).padStart(2, "0")}`;
+            }
+            break;
+          }
+          case "month": {
+            refDate.setMonth(refDate.getMonth() + offset);
+            const y = refDate.getFullYear();
+            const m = refDate.getMonth();
+            startDate = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+            if (offset === 0) {
+              endDate = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-${String(spNow.getDate()).padStart(2, "0")}`;
+            } else {
+              const lastDay = new Date(y, m + 1, 0).getDate();
+              endDate = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+            }
+            break;
+          }
+          case "year": {
+            const targetYear = spNow.getFullYear() + offset;
+            startDate = `${targetYear}-01-01`;
+            if (offset === 0) {
+              endDate = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-${String(spNow.getDate()).padStart(2, "0")}`;
+            } else {
+              endDate = `${targetYear}-12-31`;
+            }
+            break;
+          }
+        }
+      }
+
+      // Fetch items for this seller in the date range
+      const allItems = await db
+        .select()
+        .from(salesOrders)
+        .where(
+          and(
+            sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDate}`,
+            sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDate}`,
+            sql`${salesOrders.representante} = ${input.sellerName}`,
+          )
+        );
+
+      // Filter out Digitacao and Outros
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === "DIGITA\u00C7\u00C3O" || n === "DIGITACAO";
+      };
+      const estadoToGrupo = (estado: string | null): string => {
+        if (!estado) return "outros";
+        const e = estado.toUpperCase();
+        if (e === "BAMBU" || e === "FIBRA") return "importacao_revenda";
+        if (e === "MADEIRA" || e === "MADEIRA CONTABILIZADO") return "industrializacao";
+        if (e === "MADEIRA IMPORTA\u00C7\u00C3O" || e === "MADEIRA IMPORTACAO" || e === "MADEIRA IMPORTADA") return "importacao_mp";
+        return "outros";
+      };
+      const isOutros = (estado: string | null) => estadoToGrupo(estado) === "outros";
+      const items = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+
+      // Group by pedido for a cleaner view
+      const pedidoMap = new Map<string, {
+        pedido: string;
+        cliente: string;
+        clienteApelido: string;
+        dataEmissao: string;
+        uf: string;
+        estadoConfiguravel: string;
+        crmSegmento: string;
+        estadoItem: string;
+        valorTotal: number;
+        itens: number;
+        produtos: string[];
+      }>();
+
+      for (const item of items) {
+        const key = item.pedido || `item-${item.id}`;
+        if (!pedidoMap.has(key)) {
+          pedidoMap.set(key, {
+            pedido: item.pedido || "-",
+            cliente: item.cliente || "-",
+            clienteApelido: item.clienteApelido || item.cliente || "-",
+            dataEmissao: item.dataEmissao ? item.dataEmissao.substring(0, 10) : "-",
+            uf: item.uf || "-",
+            estadoConfiguravel: item.estadoConfiguravel || "-",
+            crmSegmento: item.crmSegmento || "-",
+            estadoItem: item.estadoItem || "-",
+            valorTotal: 0,
+            itens: 0,
+            produtos: [],
+          });
+        }
+        const p = pedidoMap.get(key)!;
+        p.valorTotal += Number(item.valorTotal || 0);
+        p.itens++;
+        const prod = item.descricao || item.descricaoItem || "";
+        if (prod && !p.produtos.includes(prod)) p.produtos.push(prod);
+        // Merge estadoConfiguravel if different items have different ones
+        if (item.estadoConfiguravel && p.estadoConfiguravel === "-") {
+          p.estadoConfiguravel = item.estadoConfiguravel;
+        }
+        if (item.crmSegmento && p.crmSegmento === "-") {
+          p.crmSegmento = item.crmSegmento;
+        }
+      }
+
+      const orders = Array.from(pedidoMap.values())
+        .map(o => ({ ...o, valorTotal: Math.round(o.valorTotal * 100) / 100 }))
+        .sort((a, b) => b.valorTotal - a.valorTotal);
+
+      return { orders, startDate, endDate };
+    }),
 });

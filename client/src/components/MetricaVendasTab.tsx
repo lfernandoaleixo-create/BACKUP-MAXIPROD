@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, ChevronRight, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon, Share2, Crown, Star, MapPin, Tag, ShoppingCart, Package } from "lucide-react";
-import { exportRankingVendasPdf, exportInadimplenciaPdf, exportVendedorDetailPdf, exportInadimplenciaDetailPdf } from "@/lib/tabsPdfExport";
+import { TrendingUp, Users, DollarSign, AlertTriangle, ChevronLeft, ChevronRight, Trophy, Medal, Award, FileDown, Calendar as CalendarIcon, Share2, Crown, Star, MapPin, Tag, ShoppingCart, Package, Eye } from "lucide-react";
+import { exportRankingVendasPdf, exportInadimplenciaPdf, exportVendedorDetailPdf, exportInadimplenciaDetailPdf, exportBestSellerPdf } from "@/lib/tabsPdfExport";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -99,14 +99,44 @@ export default function MetricaVendasTab() {
   const [bsOffset, setBsOffset] = useState(0);
   const [bsCustomDate, setBsCustomDate] = useState<string | undefined>(undefined);
   const [bsShowDatePicker, setBsShowDatePicker] = useState(false);
+  const [bsDetailSeller, setBsDetailSeller] = useState<string | null>(null);
+  const [bsFilterEstados, setBsFilterEstados] = useState<string[]>([]);
+  const [bsFilterSegmentos, setBsFilterSegmentos] = useState<string[]>([]);
+  const [bsFilterUFs, setBsFilterUFs] = useState<string[]>([]);
+  const [bsFilterClientes, setBsFilterClientes] = useState<string[]>([]);
   const { data: bestSellers, isLoading: loadingBestSellers } = trpc.sales.getBestSellers.useQuery(
     { period: bestSellerPeriod, offset: bsOffset, customDate: bsCustomDate },
     { enabled: view === "bestSeller", refetchInterval: 60000 }
   );
+  const { data: bsOrders, isLoading: loadingBsOrders } = trpc.sales.getBestSellerOrders.useQuery(
+    { sellerName: bsDetailSeller || "", period: bestSellerPeriod, offset: bsOffset, customDate: bsCustomDate },
+    { enabled: !!bsDetailSeller }
+  );
+  // Compute unique filter values from orders
+  const bsFilterOptions = useMemo(() => {
+    if (!bsOrders?.orders) return { estados: [] as string[], segmentos: [] as string[], ufs: [] as string[], clientes: [] as string[] };
+    const estados = Array.from(new Set(bsOrders.orders.map(o => o.estadoConfiguravel).filter(v => v !== "-")));
+    const segmentos = Array.from(new Set(bsOrders.orders.map(o => o.crmSegmento).filter(v => v !== "-")));
+    const ufs = Array.from(new Set(bsOrders.orders.map(o => o.uf).filter(v => v !== "-")));
+    const clientes = Array.from(new Set(bsOrders.orders.map(o => o.clienteApelido).filter(v => v !== "-")));
+    return { estados: estados.sort(), segmentos: segmentos.sort(), ufs: ufs.sort(), clientes: clientes.sort() };
+  }, [bsOrders]);
+  // Filtered orders
+  const bsFilteredOrders = useMemo(() => {
+    if (!bsOrders?.orders) return [];
+    return bsOrders.orders.filter(o => {
+      if (bsFilterEstados.length > 0 && !bsFilterEstados.includes(o.estadoConfiguravel)) return false;
+      if (bsFilterSegmentos.length > 0 && !bsFilterSegmentos.includes(o.crmSegmento)) return false;
+      if (bsFilterUFs.length > 0 && !bsFilterUFs.includes(o.uf)) return false;
+      if (bsFilterClientes.length > 0 && !bsFilterClientes.includes(o.clienteApelido)) return false;
+      return true;
+    });
+  }, [bsOrders, bsFilterEstados, bsFilterSegmentos, bsFilterUFs, bsFilterClientes]);
 
   const goBack = () => {
     if (view === "detail") { setView("ranking"); setSelectedVendedor(""); setFilterEstados([]); setFilterSegmentos([]); }
     else if (view === "inadimplenciaDetail") { setView("inadimplencia"); setSelectedVendedor(""); }
+    else if (view === "bestSeller" && bsDetailSeller) { setBsDetailSeller(null); setBsFilterEstados([]); setBsFilterSegmentos([]); setBsFilterUFs([]); setBsFilterClientes([]); }
     else if (view === "bestSeller") { setView("ranking"); }
   };
 
@@ -288,7 +318,7 @@ export default function MetricaVendasTab() {
       </div>
 
       {/* Navigation tabs */}
-      {(view === "ranking" || view === "inadimplencia") && (
+      {(view === "ranking" || view === "inadimplencia" || view === "bestSeller") && (
         <div className="flex gap-2 flex-wrap">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -298,10 +328,26 @@ export default function MetricaVendasTab() {
                     if (!ranking?.length) { toast.error("Nenhum dado para exportar."); return; }
                     await exportRankingVendasPdf({ ranking: ranking.map(v => ({ vendedor: v.vendedor, totalVendas: v.totalVendas, qtdPedidos: v.qtdPedidos, qtdClientes: v.qtdClientes })), periodLabel });
                     toast.success("PDF de Ranking gerado!");
+                  } else if (view === "bestSeller") {
+                    if (!bestSellers?.sellers?.length) { toast.error("Nenhum dado para exportar."); return; }
+                    const periodLabelBs = bestSellerPeriod === "day" ? "Dia" : bestSellerPeriod === "week" ? "Semana" : bestSellerPeriod === "month" ? "M\u00eas" : "Ano";
+                    const dateRange = bestSellers.startDate && bestSellers.endDate
+                      ? bestSellers.startDate === bestSellers.endDate
+                        ? bestSellers.startDate.split("-").reverse().join("/")
+                        : `${bestSellers.startDate.split("-").reverse().join("/")} a ${bestSellers.endDate.split("-").reverse().join("/")}`
+                      : "";
+                    await exportBestSellerPdf({
+                      period: bestSellerPeriod,
+                      periodLabel: periodLabelBs,
+                      dateRange,
+                      winner: bestSellers.sellers[0],
+                      allSellers: bestSellers.sellers.map(s => ({ name: s.name, totalValue: s.totalValue, orders: s.orders, clients: s.clients })),
+                    });
+                    toast.success("PDF do Melhor Vendedor gerado!");
                   } else {
                     if (!inadimplencia?.length) { toast.error("Nenhum dado para exportar."); return; }
                     await exportInadimplenciaPdf({ inadimplencia: inadimplencia as any });
-                    toast.success("PDF de Inadimplência gerado!");
+                    toast.success("PDF de Inadimpl\u00eancia gerado!");
                   }
                 }}
                 size="sm"
@@ -813,6 +859,118 @@ export default function MetricaVendasTab() {
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-8 text-center text-slate-400">
               Nenhuma venda encontrada no período
             </div>
+          ) : bsDetailSeller ? (
+            /* Detail view for a specific seller */
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setBsDetailSeller(null); setBsFilterEstados([]); setBsFilterSegmentos([]); setBsFilterUFs([]); setBsFilterClientes([]); }} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                  <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                </button>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Vendas de {bsDetailSeller}</h3>
+              </div>
+
+              {/* Multi-select filters */}
+              <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                {bsFilterOptions.estados.length > 0 && (
+                  <div className="flex flex-wrap gap-1 items-center">
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mr-1">Estado:</span>
+                    {bsFilterOptions.estados.map(e => (
+                      <button key={e} onClick={() => setBsFilterEstados(prev => prev.includes(e) ? prev.filter(x => x !== e) : [...prev, e])}
+                        className={`px-2 py-0.5 text-[10px] rounded-full transition-colors ${bsFilterEstados.includes(e) ? "bg-teal-500 text-white" : "bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600"}`}>{e}</button>
+                    ))}
+                  </div>
+                )}
+                {bsFilterOptions.segmentos.length > 0 && (
+                  <div className="flex flex-wrap gap-1 items-center">
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mr-1">Segmento:</span>
+                    {bsFilterOptions.segmentos.map(s => (
+                      <button key={s} onClick={() => setBsFilterSegmentos(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
+                        className={`px-2 py-0.5 text-[10px] rounded-full transition-colors ${bsFilterSegmentos.includes(s) ? "bg-purple-500 text-white" : "bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600"}`}>{s}</button>
+                    ))}
+                  </div>
+                )}
+                {bsFilterOptions.ufs.length > 0 && (
+                  <div className="flex flex-wrap gap-1 items-center">
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mr-1">UF:</span>
+                    {bsFilterOptions.ufs.map(u => (
+                      <button key={u} onClick={() => setBsFilterUFs(prev => prev.includes(u) ? prev.filter(x => x !== u) : [...prev, u])}
+                        className={`px-2 py-0.5 text-[10px] rounded-full transition-colors ${bsFilterUFs.includes(u) ? "bg-blue-500 text-white" : "bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600"}`}>{u}</button>
+                    ))}
+                  </div>
+                )}
+                {bsFilterOptions.clientes.length > 1 && (
+                  <div className="flex flex-wrap gap-1 items-center">
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mr-1">Cliente:</span>
+                    {bsFilterOptions.clientes.map(c => (
+                      <button key={c} onClick={() => setBsFilterClientes(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])}
+                        className={`px-2 py-0.5 text-[10px] rounded-full transition-colors ${bsFilterClientes.includes(c) ? "bg-amber-500 text-white" : "bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600"}`}>{c.length > 20 ? c.substring(0, 20) + "..." : c}</button>
+                    ))}
+                  </div>
+                )}
+                {(bsFilterEstados.length > 0 || bsFilterSegmentos.length > 0 || bsFilterUFs.length > 0 || bsFilterClientes.length > 0) && (
+                  <button onClick={() => { setBsFilterEstados([]); setBsFilterSegmentos([]); setBsFilterUFs([]); setBsFilterClientes([]); }}
+                    className="px-2 py-0.5 text-[10px] rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">Limpar filtros</button>
+                )}
+              </div>
+
+              {/* Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="bg-white dark:bg-slate-800 rounded-lg p-2.5 text-center border border-slate-100 dark:border-slate-700">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Pedidos</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{bsFilteredOrders.length}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-lg p-2.5 text-center border border-slate-100 dark:border-slate-700">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Total</p>
+                  <p className="text-sm font-bold text-teal-700 dark:text-teal-400">{formatCurrency(bsFilteredOrders.reduce((s, o) => s + o.valorTotal, 0))}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-lg p-2.5 text-center border border-slate-100 dark:border-slate-700">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Clientes</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{new Set(bsFilteredOrders.map(o => o.cliente)).size}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-lg p-2.5 text-center border border-slate-100 dark:border-slate-700">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Itens</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{bsFilteredOrders.reduce((s, o) => s + o.itens, 0)}</p>
+                </div>
+              </div>
+
+              {/* Orders table */}
+              {loadingBsOrders ? (
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-6 text-center text-slate-400">Carregando vendas...</div>
+              ) : (
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-slate-50 dark:bg-slate-700/50 sticky top-0">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-300">Pedido</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-300">Cliente</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-300">Data</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-300">Estado Conf.</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-300">Segmento</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-300">UF</th>
+                          <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-300">Status</th>
+                          <th className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-300">Valor</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
+                        {bsFilteredOrders.map((order, idx) => (
+                          <tr key={`${order.pedido}-${idx}`} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                            <td className="px-3 py-2 text-slate-700 dark:text-slate-300 font-medium">{order.pedido}</td>
+                            <td className="px-3 py-2 text-slate-700 dark:text-slate-300 max-w-[150px] truncate" title={order.clienteApelido}>{order.clienteApelido}</td>
+                            <td className="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">{order.dataEmissao !== "-" ? order.dataEmissao.split("-").reverse().join("/") : "-"}</td>
+                            <td className="px-3 py-2"><span className="px-1.5 py-0.5 rounded-full text-[10px] bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700">{order.estadoConfiguravel}</span></td>
+                            <td className="px-3 py-2"><span className="px-1.5 py-0.5 rounded-full text-[10px] bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700">{order.crmSegmento}</span></td>
+                            <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{order.uf}</td>
+                            <td className="px-3 py-2"><span className={`px-1.5 py-0.5 rounded-full text-[10px] ${order.estadoItem === "Faturado" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" : "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"}`}>{order.estadoItem}</span></td>
+                            <td className="px-3 py-2 text-right font-semibold text-slate-800 dark:text-slate-200">{formatCurrency(order.valorTotal)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               {/* Winner Card */}
@@ -823,12 +981,18 @@ export default function MetricaVendasTab() {
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md">
                       <Crown className="w-6 h-6 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="text-xs text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide">
                         Melhor Vendedor {bestSellerPeriod === "day" ? "do Dia" : bestSellerPeriod === "week" ? "da Semana" : bestSellerPeriod === "month" ? "do Mês" : "do Ano"}
                       </p>
                       <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{bestSellers.sellers[0].name}</h3>
                     </div>
+                    <button
+                      onClick={() => setBsDetailSeller(bestSellers.sellers[0].name)}
+                      className="px-3 py-1.5 text-xs font-medium bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow transition-colors flex items-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Ver vendas
+                    </button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-white/70 dark:bg-slate-800/70 rounded-xl p-3 text-center">
@@ -960,7 +1124,7 @@ export default function MetricaVendasTab() {
                       const totalAll = bestSellers.sellers.reduce((s, x) => s + x.totalValue, 0);
                       const pct = totalAll > 0 ? (seller.totalValue / totalAll) * 100 : 0;
                       return (
-                        <div key={seller.name} className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <div key={seller.name} onClick={() => setBsDetailSeller(seller.name)} className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer">
                           <div className="flex-shrink-0 w-7 text-center">
                             {idx === 0 ? <Trophy className="w-5 h-5 text-yellow-500 mx-auto" /> :
                              idx === 1 ? <Medal className="w-5 h-5 text-slate-400 mx-auto" /> :
