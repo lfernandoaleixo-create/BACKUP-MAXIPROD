@@ -220,15 +220,16 @@ async function svgToImage(svgElement: SVGSVGElement, isDark?: boolean): Promise<
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
 
     // Dark-to-light color mapping for PDF export (white background)
+    // Dark mode: keep gold bars as gold, but gold TEXT becomes black for readability on white PDF
+    const darkBarKeep: string[] = ["#d4a017"]; // gold bars stay gold
     const darkToLight: Record<string, string> = {
-      "#d4a017": "#14b8a6",    // gold bars -> teal bars
       "#a08520": "#cbd5e1",    // dark weekend bars -> light gray
       "#1e293b": "#f8fafc",    // dark future bars -> light
       "#334155": "#f1f5f9",    // dark zero bars -> light
       "#475569": "#e2e8f0",    // dark stroke -> light
     };
-    // Dark text colors that should become dark for white PDF background
-    const darkTextToBlack: string[] = ["#fbbf24", "#f59e0b", "#d97706", "#fde68a", "#fcd34d"];
+    // Gold/amber text colors that should become BLACK for white PDF background
+    const darkTextToBlack: string[] = ["#d4a017", "#fbbf24", "#f59e0b", "#d97706", "#fde68a", "#fcd34d"];
 
     const allElements = clone.querySelectorAll("*");
     const originalElements = svgElement.querySelectorAll("*");
@@ -242,16 +243,22 @@ async function svgToImage(svgElement: SVGSVGElement, isDark?: boolean): Promise<
             // If in dark mode, remap colors for white-background PDF
             if (isDark && (prop === "fill" || prop === "stroke")) {
               const hex = rgbToHex(val);
-              if (hex && darkToLight[hex]) {
+              const isTextEl = el.tagName === "text" || el.tagName === "tspan";
+              if (hex && isTextEl && darkTextToBlack.includes(hex)) {
+                // Gold/amber TEXT -> black for readability
+                val = "#111111";
+              } else if (hex && !isTextEl && darkBarKeep.includes(hex)) {
+                // Gold BARS stay gold (no change)
+              } else if (hex && darkToLight[hex]) {
                 val = darkToLight[hex];
-              } else if (hex && darkTextToBlack.includes(hex)) {
-                val = "#1e293b"; // dark slate for readability
+              } else if (hex && darkTextToBlack.includes(hex) && !darkBarKeep.includes(hex)) {
+                val = "#111111";
               } else if (hex && isVeryDark(hex)) {
                 // Very dark backgrounds (slate-700, slate-800, slate-900, slate-950) -> transparent/white
                 val = prop === "fill" ? "#ffffff" : "#e2e8f0";
               } else if (hex && isVeryLight(hex)) {
                 // Light text in dark mode (slate-200, slate-300) -> dark for PDF
-                if (prop === "fill" && el.tagName === "text") {
+                if (prop === "fill" && isTextEl) {
                   val = "#334155";
                 }
               }
@@ -452,6 +459,7 @@ function drawChartInPdf(
   comparison: ComparisonData | null | undefined,
   startX: number, startY: number,
   chartW: number, chartH: number,
+  isDark?: boolean,
 ): number {
   if (data.length === 0) return startY;
 
@@ -523,7 +531,7 @@ function drawChartInPdf(
     const by = plotY + plotH - barH;
     const weekend = isWeekend(d.day);
 
-    doc.setFillColor(...(weekend ? C.weekendBar : C.tealBar));
+    doc.setFillColor(...(weekend ? C.weekendBar : isDark ? [212, 160, 23] as [number, number, number] : C.tealBar));
     doc.rect(bx, by, barWidth, barH, "F");
 
     // Only show value labels if there's enough space (skip if too many bars)
@@ -1052,7 +1060,7 @@ export async function generateSalesPDF(
   // Fallback: draw chart in PDF
   if (!chartCaptured && analytics.byDay.length > 0) {
     const chartH = Math.max(availableChartH, 40);
-    y = drawChartInPdf(doc, analytics.byDay, comparison, margin, y, pageW - margin * 2, chartH);
+    y = drawChartInPdf(doc, analytics.byDay, comparison, margin, y, pageW - margin * 2, chartH, isDark);
     y += 1;
   }
 
