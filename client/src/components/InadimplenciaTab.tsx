@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
-import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown } from "lucide-react";
+import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import CollectionMetricsPanel from "@/components/CollectionMetricsPanel";
 import { generateDecisionPdf } from "../lib/decisionPdfExport";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -648,7 +648,9 @@ export default function InadimplenciaTab() {
 
   // Buscar títulos resolvidos (pagos que tinham cobrança)
   const [resolvedSortOrder, setResolvedSortOrder] = useState<'newest' | 'oldest'>('newest');
-  const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: resolvedSortOrder });
+  const [resolvedSortBy, setResolvedSortBy] = useState<'resolvedAt' | 'diasAtraso' | 'valor'>('resolvedAt');
+  const [resolvedSortDir, setResolvedSortDir] = useState<'asc' | 'desc'>('desc');
+  const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: resolvedSortOrder, sortBy: resolvedSortBy, sortDir: resolvedSortDir });
   const [showResolved, setShowResolved] = useState(false);
 
   const upsertAction = trpc.financial.upsertCollectionAction.useMutation({
@@ -1203,15 +1205,56 @@ export default function InadimplenciaTab() {
           </button>
           {showResolved && (
             <div className="border-t border-emerald-200">
-              {/* Filtro de ordenação */}
-              <div className="flex items-center justify-between px-4 py-2 bg-emerald-50/50 border-b border-emerald-200">
-                <span className="text-[10px] text-emerald-700 font-medium uppercase tracking-wider">Ordenar por recebimento</span>
+              {/* Filtros de ordenação */}
+              <div className="flex flex-wrap items-center gap-2 px-4 py-2 bg-emerald-50/50 border-b border-emerald-200">
+                <span className="text-[10px] text-emerald-700 font-medium uppercase tracking-wider mr-1">Ordenar:</span>
+                {/* Data de devolução */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); setResolvedSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest'); }}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-[11px] font-medium transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (resolvedSortBy === 'resolvedAt') {
+                      setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setResolvedSortBy('resolvedAt');
+                      setResolvedSortDir('desc');
+                    }
+                  }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'resolvedAt' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
                 >
-                  <ArrowUpDown className="w-3 h-3" />
-                  {resolvedSortOrder === 'newest' ? 'Mais recente primeiro' : 'Mais antigo primeiro'}
+                  {resolvedSortBy === 'resolvedAt' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
+                  Data
+                </button>
+                {/* Dias de atraso */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (resolvedSortBy === 'diasAtraso') {
+                      setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setResolvedSortBy('diasAtraso');
+                      setResolvedSortDir('desc');
+                    }
+                  }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'diasAtraso' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                >
+                  {resolvedSortBy === 'diasAtraso' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
+                  Dias Atraso
+                </button>
+                {/* Valor */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (resolvedSortBy === 'valor') {
+                      setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setResolvedSortBy('valor');
+                      setResolvedSortDir('desc');
+                    }
+                  }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'valor' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                >
+                  {resolvedSortBy === 'valor' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
+                  Valor
                 </button>
               </div>
               <div className="divide-y divide-emerald-100">

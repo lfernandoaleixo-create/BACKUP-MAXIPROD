@@ -3568,3 +3568,4 @@
 - [x] Fix: Melhor Vendedor mobile layout - botão "Ver vendas" sobrepondo troféu, todas infos do desktop devem aparecer no mobile sem cortar
 - [x] Fix: PDF Melhor Vendedor - substituir emoji quebrado por SVG de troféu no card dourado
 - [x] Fix: botão atualizar mobile não está clicando/respondendo
+- [x] Financeiro Inadimplência: filtros de ordenação nos Recuperados (dias de atraso, data de devolução, valor) com setinhas

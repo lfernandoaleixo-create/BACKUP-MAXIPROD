@@ -4892,15 +4892,30 @@ ${acoesTexto}
   getResolvedTitles: publicProcedure
     .input(z.object({
       sortOrder: z.enum(['newest', 'oldest']).default('newest'),
+      sortBy: z.enum(['resolvedAt', 'diasAtraso', 'valor']).default('resolvedAt'),
+      sortDir: z.enum(['asc', 'desc']).default('desc'),
     }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return { titles: [], stats: { total: 0, count: 0, valorTotal: 0 } };
 
+      const sortBy = input?.sortBy || 'resolvedAt';
+      const sortDir = input?.sortDir || 'desc';
+      
+      // Determine order column
+      let orderCol: any;
+      if (sortBy === 'diasAtraso') {
+        orderCol = sortDir === 'asc' ? asc(resolvedReceivables.diasAtrasoNaResolucao) : desc(resolvedReceivables.diasAtrasoNaResolucao);
+      } else if (sortBy === 'valor') {
+        orderCol = sortDir === 'asc' ? asc(resolvedReceivables.valorAReceber) : desc(resolvedReceivables.valorAReceber);
+      } else {
+        orderCol = sortDir === 'asc' ? asc(resolvedReceivables.resolvedAt) : desc(resolvedReceivables.resolvedAt);
+      }
+
       // Buscar TODOS os títulos resolvidos (sem limite) para manter histórico completo
       const rows = await db.select()
         .from(resolvedReceivables)
-        .orderBy(input?.sortOrder === 'oldest' ? asc(resolvedReceivables.resolvedAt) : desc(resolvedReceivables.resolvedAt));
+        .orderBy(orderCol);
 
       // Filtrar clientes de teste
       const TEST_CLIENT_NAMES = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
