@@ -3583,3 +3583,4 @@
 - [x] Fix mobile alert card: add percentage/urgency explanations for Cuidado/Atenção/Compra tabs like desktop version
 - [x] Fix mobile faturamento tab: add horizontal scroll so content is not cut off
 - [x] Fix faturamento order row layout: text overlapping/cut off on mobile and desktop - show all info without cuts
+- [x] Fix faturamento: remove truncate from client name, increase min-w to 900px so all text is readable
