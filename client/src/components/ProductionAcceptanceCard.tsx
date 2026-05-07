@@ -155,7 +155,7 @@ function OrderRow({
       {/* Collapsed row — same layout as BillingOrderRow */}
       <div
         onClick={onToggle}
-        className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors text-left cursor-pointer ${
+        className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors text-left cursor-pointer min-w-[700px] ${
           isExpanded
             ? "bg-gradient-to-r from-teal-100/80 via-teal-50 to-white border-b-2 border-teal-400 py-3.5 rounded-t-xl"
             : "hover:bg-slate-50"

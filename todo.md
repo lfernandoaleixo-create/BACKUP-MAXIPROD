@@ -3582,3 +3582,4 @@
 - [x] Botão "Melhor Vendedor" na nav tabs também dourado/brilhante no dark mode
 - [x] Fix mobile alert card: add percentage/urgency explanations for Cuidado/Atenção/Compra tabs like desktop version
 - [x] Fix mobile faturamento tab: add horizontal scroll so content is not cut off
+- [x] Fix faturamento order row layout: text overlapping/cut off on mobile and desktop - show all info without cuts
