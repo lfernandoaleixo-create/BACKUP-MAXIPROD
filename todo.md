@@ -3555,3 +3555,7 @@
 - [x] Filtros de período nos dois históricos: mês atual, mês anterior, personalizado (dia/mês/ano)
 - [x] Botão de atualização (refresh) na versão mobile para forçar reload após nova publicação
 - [x] Unificar botões Sync, Descontados e Histórico de Trocas em um único botão "Histórico" com abas (Sincronização, Trocas, Descontados) e filtro de período
+- [x] Valorização do Estoque mobile: valores monetários (VLR ESTOQUE, VLR PROJETADO) saindo dos retângulos - reduzir fonte ou ajustar padding
+- [x] Alertas mobile: abas (Compra, Cuidado, Atenção) cortando na tela - permitir scroll horizontal ou reduzir tamanho
+- [x] Dark mode autorização de contas: amarelo neon quando não selecionou tudo, verde neon quando selecionou tudo (sem prejudicar leitura)
+- [x] Mobile: botão de atualizar (refresh/reload) visível na versão mobile para forçar atualização

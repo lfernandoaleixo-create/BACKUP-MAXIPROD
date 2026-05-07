@@ -91,11 +91,20 @@ export default function TopNav({ rightContent }: TopNavProps) {
               {/* Right: refresh + theme toggle + notification + operator + logout */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => { window.location.reload(); }}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-300 hover:text-teal-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  title="Atualizar"
+                  onClick={() => {
+                    // Force update: unregister service worker, clear caches, then hard reload
+                    if ('serviceWorker' in navigator) {
+                      navigator.serviceWorker.getRegistrations().then(regs => {
+                        regs.forEach(r => r.unregister());
+                      });
+                      caches.keys().then(names => names.forEach(n => caches.delete(n)));
+                    }
+                    setTimeout(() => { window.location.reload(); }, 300);
+                  }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-teal-600 dark:text-amber-400 hover:text-teal-700 dark:hover:text-amber-300 bg-teal-50 dark:bg-amber-900/30 hover:bg-teal-100 dark:hover:bg-amber-800/40 transition-colors border border-teal-200 dark:border-amber-600/40"
+                  title="Atualizar versão"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <RefreshCw className="w-4 h-4" />
                 </button>
                 {rightContent}
                 {toggleTheme && (

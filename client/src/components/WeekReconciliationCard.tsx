@@ -124,10 +124,10 @@ function PayableRow({
 
   return (
     <div
-      className={`flex items-start gap-2 px-3 py-2.5 border-b border-slate-100 last:border-b-0 transition-colors ${
+      className={`flex items-start gap-2 px-3 py-2.5 border-b border-slate-100 dark:border-slate-700 last:border-b-0 transition-colors ${
         item.authorized
-          ? "bg-emerald-100 hover:bg-emerald-200/80"
-          : "hover:bg-slate-50/50"
+          ? "bg-emerald-100 hover:bg-emerald-200/80 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30"
+          : "hover:bg-slate-50/50 dark:hover:bg-slate-800/50"
       }`}
     >
       <div className="flex-shrink-0 pt-0.5">
@@ -153,7 +153,7 @@ function PayableRow({
           )}
           <span
             className={`text-sm font-semibold ${
-              item.authorized ? "text-emerald-900" : "text-slate-800"
+              item.authorized ? "text-emerald-900 dark:text-emerald-300" : "text-slate-800 dark:text-slate-200"
             }`}
             style={{ wordBreak: "break-word" }}
           >
@@ -197,7 +197,7 @@ function PayableRow({
         {descricao && (
           <p
             className={`text-xs mt-0.5 whitespace-normal break-words font-medium ${
-              item.authorized ? "text-emerald-700/80" : "text-indigo-700"
+              item.authorized ? "text-emerald-700/80 dark:text-emerald-400/80" : "text-indigo-700 dark:text-indigo-400"
             }`}
             style={{ wordBreak: "break-word" }}
           >
@@ -238,14 +238,14 @@ function PayableRow({
         <div className="min-w-[80px] md:min-w-[120px] text-right">
           <span
             className={`text-sm md:text-base font-bold tabular-nums ${
-              item.authorized ? "text-emerald-700" : "text-red-600"
+              item.authorized ? "text-emerald-700 dark:text-emerald-300" : "text-red-600 dark:text-red-400"
             }`}
           >
             {formatCurrency(item.valor)}
           </span>
           <div
             className={`text-[10px] md:text-sm ${
-              item.authorized ? "text-emerald-400" : "text-slate-500"
+              item.authorized ? "text-emerald-400 dark:text-emerald-500" : "text-slate-500 dark:text-slate-400"
             }`}
           >
             Venc. {item.vencimento.split("-").reverse().join("/")}
@@ -513,14 +513,19 @@ function DayCard({
   };
 
   let borderColor = "border-slate-200";
+  let neonClass = "";
   if (isVencidas) {
     borderColor = "border-red-200";
   } else if (isToday) {
     borderColor = "border-blue-300";
   } else if (allAuthorized && day.count > 0) {
     borderColor = "border-emerald-200";
+    neonClass = "dark:border-emerald-400/60 dark:shadow-[0_0_12px_rgba(52,211,153,0.25),inset_0_0_8px_rgba(52,211,153,0.08)]";
   } else if (isPast && day.count > 0) {
     borderColor = "border-amber-200";
+    neonClass = "dark:border-amber-400/60 dark:shadow-[0_0_12px_rgba(251,191,36,0.25),inset_0_0_8px_rgba(251,191,36,0.08)]";
+  } else if (day.count > 0) {
+    neonClass = "dark:border-amber-400/60 dark:shadow-[0_0_12px_rgba(251,191,36,0.25),inset_0_0_8px_rgba(251,191,36,0.08)]";
   }
 
   if (day.count === 0) return null;
@@ -531,20 +536,20 @@ function DayCard({
   const allIds = day.items.map((i) => i.maxiprodId);
 
   return (
-    <div className={`rounded-lg border ${borderColor} overflow-hidden`}>
+    <div className={`rounded-lg border ${borderColor} ${neonClass} overflow-hidden transition-shadow`}>
       {/* Header - Clickable to expand/collapse */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full cursor-pointer hover:brightness-95 transition-all"
       >
         {/* Top bar: Saldo (verde) | Autorizado (vermelho) | Total do dia (azul) */}
-        <div className="flex flex-wrap md:flex-nowrap items-center justify-between px-2 md:px-4 py-2 md:py-3 bg-white border-b border-slate-100 gap-1 md:gap-0">
+        <div className="flex flex-wrap md:flex-nowrap items-center justify-between px-2 md:px-4 py-2 md:py-3 bg-white dark:bg-transparent border-b border-slate-100 dark:border-slate-700 gap-1 md:gap-0">
           {/* Saldo Bancário - VERDE */}
           <div className="flex items-center gap-1.5 md:gap-2">
-            <Landmark className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 flex-shrink-0" />
+            <Landmark className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             <div>
-              <span className="text-[8px] md:text-[10px] text-emerald-500 font-medium block leading-tight">Saldo s/ Cx Din.</span>
-              <span className="text-sm md:text-lg font-extrabold tabular-nums text-emerald-600">
+              <span className="text-[8px] md:text-[10px] text-emerald-500 dark:text-emerald-400 font-medium block leading-tight">Saldo s/ Cx Din.</span>
+              <span className="text-sm md:text-lg font-extrabold tabular-nums text-emerald-600 dark:text-emerald-300">
                 {formatCurrency(saldoBancario)}
               </span>
             </div>
@@ -554,10 +559,10 @@ function DayCard({
           <div className="flex items-center gap-1.5 md:gap-3">
             {day.authorizedTotal > 0 && (
               <>
-                <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-red-500 flex-shrink-0" />
+                <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
                 <div>
-                  <span className="text-[8px] md:text-[10px] text-red-400 font-medium block leading-tight">Autorizado</span>
-                  <span className="text-sm md:text-lg font-extrabold tabular-nums text-red-600">
+                  <span className="text-[8px] md:text-[10px] text-red-400 dark:text-red-300 font-medium block leading-tight">Autorizado</span>
+                  <span className="text-sm md:text-lg font-extrabold tabular-nums text-red-600 dark:text-red-400">
                     {formatCurrency(day.authorizedTotal)}
                   </span>
                 </div>
@@ -581,8 +586,8 @@ function DayCard({
           {/* Total do dia - AZUL (direita) */}
           <div className="flex items-center gap-1.5 md:gap-2">
             <div className="text-right">
-              <span className="text-[8px] md:text-[10px] text-blue-400 font-medium block leading-tight">Total</span>
-              <span className="text-sm md:text-lg font-extrabold tabular-nums text-blue-600">
+              <span className="text-[8px] md:text-[10px] text-blue-400 dark:text-blue-300 font-medium block leading-tight">Total</span>
+              <span className="text-sm md:text-lg font-extrabold tabular-nums text-blue-600 dark:text-blue-300">
                 {formatCurrency(day.total)}
               </span>
             </div>
@@ -605,10 +610,10 @@ function DayCard({
             {isVencidas ? (
               <AlertTriangle className="w-4 h-4 text-red-500" />
             ) : allAuthorized ? (
-              <CheckCheck className="w-4 h-4 text-emerald-500" />
+              <CheckCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
             ) : (
               <CheckCircle2
-                className={`w-4 h-4 ${isToday ? "text-blue-500" : "text-slate-400"}`}
+                className={`w-4 h-4 ${isToday ? "text-blue-500" : "text-slate-400 dark:text-amber-400"}`}
               />
             )}
             <span
@@ -618,8 +623,8 @@ function DayCard({
                   : isToday
                     ? "text-blue-700"
                     : allAuthorized
-                      ? "text-emerald-700"
-                      : "text-slate-700"
+                      ? "text-emerald-700 dark:text-emerald-300"
+                      : "text-slate-700 dark:text-amber-300"
               }`}
             >
               {day.dayLabel}
@@ -657,7 +662,7 @@ function DayCard({
                     handleProtectedToggleAll(pendingIds, true);
                   }
                 }}
-                className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer transition-colors"
+                className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 cursor-pointer transition-colors"
               >
                 {allAuthorized ? "Desmarcar todos" : "Autorizar todos"}
               </button>
@@ -680,8 +685,8 @@ function DayCard({
                     <div
                       className={`border-b border-t transition-colors ${
                         groupAllAuthorized
-                          ? "bg-emerald-50 border-emerald-200 border-t-emerald-100"
-                          : "bg-amber-50 border-amber-200 border-t-amber-100"
+                          ? "bg-emerald-50 border-emerald-200 border-t-emerald-100 dark:border-emerald-400/40 dark:shadow-[0_0_8px_rgba(52,211,153,0.15)]"
+                          : "bg-amber-50 border-amber-200 border-t-amber-100 dark:border-amber-400/40 dark:shadow-[0_0_8px_rgba(251,191,36,0.15)]"
                       }`}
                     >
                       <div className="flex flex-col md:grid py-1.5 px-2 md:px-3 gap-1 md:gap-0" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
@@ -692,16 +697,16 @@ function DayCard({
                             className="flex items-center gap-1 md:gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
                           >
                             {isGroupCollapsed ? (
-                              <ChevronRight className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`} />
+                              <ChevronRight className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`} />
                             ) : (
-                              <ChevronDown className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`} />
+                              <ChevronDown className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`} />
                             )}
                             <span className={`text-[10px] md:text-xs font-bold uppercase tracking-wide ${
-                              groupAllAuthorized ? "text-emerald-900" : "text-amber-900"
+                              groupAllAuthorized ? "text-emerald-900 dark:text-emerald-300" : "text-amber-900 dark:text-amber-300"
                             }`}>
                               {group.fornecedor}
                             </span>
-                            <span className={`text-[8px] md:text-[9px] ${groupAllAuthorized ? "text-emerald-600" : "text-amber-600"}`}>({group.items.length})</span>
+                            <span className={`text-[8px] md:text-[9px] ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>({group.items.length})</span>
                           </button>
                           {/* Selecionar Tudo - inline on mobile */}
                           <label
@@ -720,11 +725,11 @@ function DayCard({
                               className={`w-3.5 h-3.5 ${
                                 groupAllAuthorized
                                   ? "border-emerald-600 bg-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                                  : "border-amber-400 bg-white"
+                                  : "border-amber-400 dark:border-amber-500 bg-white dark:bg-transparent"
                               }`}
                             />
                             <span className={`text-[9px] font-semibold whitespace-nowrap ${
-                              groupAllAuthorized ? "text-emerald-700" : "text-amber-700"
+                              groupAllAuthorized ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"
                             }`}>
                               Sel. tudo
                             </span>
@@ -748,11 +753,11 @@ function DayCard({
                             className={`w-4 h-4 ${
                               groupAllAuthorized
                                 ? "border-emerald-600 bg-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                                : "border-amber-400 bg-white"
+                                : "border-amber-400 dark:border-amber-500 bg-white dark:bg-transparent"
                             }`}
                           />
                           <span className={`text-[10px] font-semibold whitespace-nowrap ${
-                            groupAllAuthorized ? "text-emerald-700" : "text-amber-700"
+                            groupAllAuthorized ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"
                           }`}>
                             Selecionar tudo
                           </span>
@@ -770,10 +775,10 @@ function DayCard({
                           {/* Valor Total */}
                           <div className="flex flex-col items-start md:min-w-[120px]">
                             <span className={`text-[8px] md:text-[9px] font-medium leading-none ${
-                              groupAllAuthorized ? "text-emerald-500" : "text-amber-500"
+                              groupAllAuthorized ? "text-emerald-500 dark:text-emerald-400" : "text-amber-500 dark:text-amber-400"
                             }`}>Total</span>
                             <span className={`text-[10px] md:text-xs font-bold tabular-nums ${
-                              groupAllAuthorized ? "text-emerald-800" : "text-amber-800"
+                              groupAllAuthorized ? "text-emerald-800 dark:text-emerald-300" : "text-amber-800 dark:text-amber-300"
                             }`}>
                               {formatCurrency(groupTotal)}
                             </span>
@@ -802,11 +807,11 @@ function DayCard({
           </div>
 
           {/* Footer summary */}
-          <div className="px-3 py-2 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between">
-            <span className="text-[11px] text-slate-500 font-medium">
+          <div className="px-3 py-2 border-t border-slate-200 dark:border-slate-600 bg-slate-50/50 flex items-center justify-between">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
               {day.count} conta{day.count > 1 ? "s" : ""}
             </span>
-            <span className="text-sm font-bold text-blue-600 tabular-nums">
+            <span className="text-sm font-bold text-blue-600 dark:text-blue-400 tabular-nums">
               {formatCurrency(day.total)}
             </span>
           </div>
