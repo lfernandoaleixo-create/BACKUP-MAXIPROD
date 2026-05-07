@@ -3548,3 +3548,4 @@
 - [x] Bambu cards mobile (Estoque + Sob Encomenda): mostrar TODAS as 6 colunas iguais ao desktop (Estoque, Pedidos, Disponível, PO Compra, Projetado, Produtos) sem abreviar nem omitir
 - [x] Vendas modo claro: barras do gráfico devem ser teal/azul esverdeado (não azul escuro) — tanto no dashboard quanto no PDF
 - [x] PDF Vendas modo escuro: barras devem ficar DOURADAS (não azuis), números/valores dourados devem ficar PRETOS
+- [x] Financeiro: tabela de cheques no mobile desconfigurada — dados saindo do retângulo, colunas cortadas (Cliente, Valor)

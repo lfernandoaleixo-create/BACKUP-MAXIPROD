@@ -2198,7 +2198,7 @@ export default function ReceivablesTab() {
                         }
                         return (
                           <div className="border border-slate-200 rounded-xl overflow-hidden">
-                            <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 flex items-center justify-between">
+                            <div className="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
                               <div className="flex items-center gap-3">
                                 <span className="text-xs font-semibold text-slate-600">
                                   {displayCheques.length} cheque{displayCheques.length !== 1 ? "s" : ""}
@@ -2211,7 +2211,7 @@ export default function ReceivablesTab() {
                                   </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-xs font-bold text-amber-600">
                                   Total: R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                                 </span>
@@ -2269,8 +2269,8 @@ export default function ReceivablesTab() {
                               </div>
                             </div>
                             <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-                              <table className="w-full text-xs">
-                                <thead className="bg-slate-50 sticky top-0 z-10">
+                              <table className="w-full text-xs min-w-[700px]">
+                                <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 z-10">
                                   <tr className="border-b border-slate-200">
                                     {exchangeMode && (
                                       <th className="px-2 py-2 text-center w-8">
@@ -2289,12 +2289,12 @@ export default function ReceivablesTab() {
                                         />
                                       </th>
                                     )}
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Vencimento</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Emissão</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Cliente</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Valor</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Forma de Pagamento</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 whitespace-nowrap">Descrição</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Vencimento</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Emissão</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Cliente</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Valor</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Forma de Pagamento</th>
+                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Descrição</th>
                                     {(chequeSelectedFilter === "DISPONIVEL" || displayCheques.some((c: any) => c.estadoCheque === "DISPONIVEL")) && (
                                       <th className="px-3 py-2 text-center font-semibold text-emerald-700 whitespace-nowrap bg-emerald-50">Responsável</th>
                                     )}
@@ -2321,7 +2321,7 @@ export default function ReceivablesTab() {
                                     };
                                     const badgeColor = estadoColors[cheque.estadoCheque] || "bg-slate-100 text-slate-700";
                                     return (
-                                      <tr key={cheque.id || idx} className={`border-b border-slate-100 dark:border-slate-700 hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/30"} ${exchangeMode && exchangeSelectedIds.has(cheque.id) ? "!bg-indigo-50 ring-1 ring-inset ring-indigo-200" : ""}`}>
+                                      <tr key={cheque.id || idx} className={`border-b border-slate-100 dark:border-slate-700 hover:bg-amber-50/30 dark:hover:bg-slate-700/30 transition-colors ${idx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-slate-50/30 dark:bg-slate-800/30"} ${exchangeMode && exchangeSelectedIds.has(cheque.id) ? "!bg-indigo-50 ring-1 ring-inset ring-indigo-200" : ""}`}>
                                         {exchangeMode && (
                                           <td className="px-2 py-2 text-center">
                                             <input
@@ -2332,16 +2332,16 @@ export default function ReceivablesTab() {
                                             />
                                           </td>
                                         )}
-                                        <td className={`px-3 py-2 text-center whitespace-nowrap font-medium ${isVencido ? "text-red-600" : "text-slate-700"}`}>{venc}</td>
-                                        <td className="px-3 py-2 text-center whitespace-nowrap text-slate-500">{emis}</td>
-                                        <td className="px-3 py-2 text-center text-slate-700">{cheque.cliente}</td>
-                                        <td className="px-3 py-2 text-center font-semibold text-slate-800 whitespace-nowrap">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                        <td className={`px-3 py-2 text-center whitespace-nowrap font-medium ${isVencido ? "text-red-600" : "text-slate-700 dark:text-slate-300"}`}>{venc}</td>
+                                        <td className="px-3 py-2 text-center whitespace-nowrap text-slate-500 dark:text-slate-400">{emis}</td>
+                                        <td className="px-3 py-2 text-center text-slate-700 dark:text-slate-300">{cheque.cliente}</td>
+                                        <td className="px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                                         <td className="px-3 py-2 text-center">
                                           <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${badgeColor}`}>
                                             {formaShort}
                                           </span>
                                         </td>
-                                        <td className="px-3 py-2 text-center text-slate-500">
+                                        <td className="px-3 py-2 text-center text-slate-500 dark:text-slate-400">
                                           {cheque.descricao}{cheque.parcela ? ` (${cheque.parcela}/${cheque.parcelasTotal || "?"})` : ""}
                                         </td>
                                         {(chequeSelectedFilter === "DISPONIVEL" || displayCheques.some((c: any) => c.estadoCheque === "DISPONIVEL")) && (
@@ -2627,7 +2627,7 @@ export default function ReceivablesTab() {
 
                 {/* Table */}
                 <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                  <table className="w-full text-xs">
+                  <table className="w-full text-xs min-w-[700px]">
                     <thead className="bg-slate-50">
                       <tr className="border-b border-slate-200">
                         <th className="px-3 py-2 text-left font-semibold text-slate-600">Cliente</th>
