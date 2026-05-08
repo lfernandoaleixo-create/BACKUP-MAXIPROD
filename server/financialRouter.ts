@@ -6472,6 +6472,21 @@ ${acoesTexto}
       return { success: true };
     }),
 
+  /**
+   * Marcar PDFs de decisão como "cliente pagou após geração do PDF".
+   */
+  markDecisionPdfsPaid: publicProcedure
+    .input(z.object({ ids: z.array(z.number()) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+      if (input.ids.length === 0) return { success: true };
+      await db.update(decisionPdfHistory)
+        .set({ paidAfterPdf: true, paidAt: Date.now() })
+        .where(inArray(decisionPdfHistory.id, input.ids));
+      return { success: true };
+    }),
+
   // ═══════════════════════════════════════════════════════
   // Prioridade de Pagamento — Bolinhas vermelhas (Flávio)
   // ═══════════════════════════════════════════════════════

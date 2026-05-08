@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `decision_pdf_history` ADD `paid_after_pdf` boolean DEFAULT false;\nALTER TABLE `decision_pdf_history` ADD `paid_at` bigint;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute ALTER TABLE `decision_pdf_history` ADD `paid_after_pdf` boolean DEFAULT false;\nALTER TABLE `decision_pdf_history` ADD `paid_at` bigint;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 557
+}

@@ -4756,8 +4756,10 @@ function DecisionPdfDialog({ title, operatorName, onClose }: {
 function DecisionPdfHistoryDialog({ onClose }: { onClose: () => void }) {
   const { data, isLoading } = trpc.financial.listAllDecisionPdfs.useQuery();
   const deletePdf = trpc.financial.deleteDecisionPdf.useMutation();
+  const markPaid = trpc.financial.markDecisionPdfsPaid.useMutation();
   const utils = trpc.useUtils();
   const [filterMonth, setFilterMonth] = useState("");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const pdfs = data?.pdfs || [];
   const filteredPdfs = filterMonth
@@ -4778,6 +4780,21 @@ function DecisionPdfHistoryDialog({ onClose }: { onClose: () => void }) {
     });
   }
 
+  function toggleSelect(id: number) {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  function handleMarkPaid() {
+    if (selectedIds.length === 0) return;
+    markPaid.mutate({ ids: selectedIds }, {
+      onSuccess: () => {
+        utils.financial.listAllDecisionPdfs.invalidate();
+        setSelectedIds([]);
+        toast.success("Clientes marcados como pagos com sucesso!");
+      },
+    });
+  }
+
   return (
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -4789,17 +4806,30 @@ function DecisionPdfHistoryDialog({ onClose }: { onClose: () => void }) {
         </DialogHeader>
 
         <div className="space-y-3">
-          {/* Filter */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-500 font-medium">Filtrar por mês:</label>
-            <input
-              type="month"
-              value={filterMonth}
-              onChange={e => setFilterMonth(e.target.value)}
-              className="text-xs border rounded-md px-2 py-1"
-            />
-            {filterMonth && (
-              <button onClick={() => setFilterMonth("")} className="text-xs text-blue-600 hover:underline">Limpar</button>
+          {/* Filter + OK button */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-slate-500 font-medium">Filtrar por mês:</label>
+              <input
+                type="month"
+                value={filterMonth}
+                onChange={e => setFilterMonth(e.target.value)}
+                className="text-xs border rounded-md px-2 py-1"
+              />
+              {filterMonth && (
+                <button onClick={() => setFilterMonth("")} className="text-xs text-blue-600 hover:underline">Limpar</button>
+              )}
+            </div>
+            {selectedIds.length > 0 && (
+              <Button
+                size="sm"
+                onClick={handleMarkPaid}
+                disabled={markPaid.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white text-xs gap-1"
+              >
+                {markPaid.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                OK ({selectedIds.length})
+              </Button>
             )}
           </div>
 
@@ -4817,51 +4847,86 @@ function DecisionPdfHistoryDialog({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {filteredPdfs.map(pdf => (
-            <div key={pdf.id} className="border rounded-lg p-3 hover:bg-slate-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-slate-800 truncate">{pdf.cliente}</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
-                      pdf.decisao?.toUpperCase().includes("COM PROTESTO")
-                        ? "bg-orange-100 text-orange-700 border-orange-300"
-                        : "bg-blue-100 text-blue-700 border-blue-300"
-                    }`}>
-                      {pdf.decisao || "SEM PROTESTO"}
-                    </span>
+          {filteredPdfs.map(pdf => {
+            const isPaid = pdf.paidAfterPdf;
+            const isSelected = selectedIds.includes(pdf.id);
+            return (
+              <div key={pdf.id} className={`border rounded-lg p-3 transition-colors ${
+                isPaid ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800" : "hover:bg-slate-50 dark:hover:bg-slate-800"
+              }`}>
+                <div className="flex items-start gap-2">
+                  {/* Checkbox - only show for items NOT already marked as paid */}
+                  {!isPaid && (
+                    <button
+                      onClick={() => toggleSelect(pdf.id)}
+                      className={`mt-1 shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                        isSelected
+                          ? "bg-green-600 border-green-600 text-white"
+                          : "border-slate-300 dark:border-slate-600 hover:border-green-400"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3" />}
+                    </button>
+                  )}
+                  {isPaid && (
+                    <div className="mt-1 shrink-0 w-5 h-5 rounded bg-green-600 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm text-slate-800 dark:text-slate-200 truncate">{pdf.cliente}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                            pdf.decisao?.toUpperCase().includes("COM PROTESTO")
+                              ? "bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-700"
+                              : "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700"
+                          }`}>
+                            {pdf.decisao || "SEM PROTESTO"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+                          <span>Protocolo: <span className="font-mono font-medium">{pdf.protocolo}</span></span>
+                          <span>{pdf.valorAberto}</span>
+                          {pdf.vendedor && <span>Vendedor: {pdf.vendedor}</span>}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
+                          <span>Gerado em {new Date(pdf.generatedAt).toLocaleDateString("pt-BR")} às {new Date(pdf.generatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                          <span>por {pdf.generatedBy}</span>
+                        </div>
+                        {/* Paid message */}
+                        {isPaid && (
+                          <div className="mt-1.5 px-2 py-1 bg-green-100 dark:bg-green-900/40 rounded text-xs font-semibold text-green-700 dark:text-green-400">
+                            O PDF DE DECISÃO FOI GERADO, E O CLIENTE REALIZOU O PAGAMENTO
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        <a
+                          href={pdf.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 transition-colors"
+                          title="Baixar PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </a>
+                        <button
+                          onClick={() => handleDelete(pdf.id)}
+                          className="p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-colors"
+                          title="Excluir"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                    <span>Protocolo: <span className="font-mono font-medium">{pdf.protocolo}</span></span>
-                    <span>{pdf.valorAberto}</span>
-                    {pdf.vendedor && <span>Vendedor: {pdf.vendedor}</span>}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
-                    <span>Gerado em {new Date(pdf.generatedAt).toLocaleDateString("pt-BR")} às {new Date(pdf.generatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
-                    <span>por {pdf.generatedBy}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0 ml-2">
-                  <a
-                    href={pdf.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 rounded-md hover:bg-blue-100 text-blue-600 transition-colors"
-                    title="Baixar PDF"
-                  >
-                    <Download className="w-4 h-4" />
-                  </a>
-                  <button
-                    onClick={() => handleDelete(pdf.id)}
-                    className="p-1.5 rounded-md hover:bg-red-100 text-red-500 transition-colors"
-                    title="Excluir"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </DialogContent>
     </Dialog>

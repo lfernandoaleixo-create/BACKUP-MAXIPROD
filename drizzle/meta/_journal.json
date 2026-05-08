@@ -708,6 +708,13 @@
       "when": 1778152247084,
       "tag": "0100_mysterious_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "5",
+      "when": 1778265714468,
+      "tag": "0101_past_whistler",
+      "breakpoints": true
     }
   ]
 }

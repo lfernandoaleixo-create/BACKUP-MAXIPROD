@@ -1389,6 +1389,8 @@ export const decisionPdfHistory = mysqlTable("decision_pdf_history", {
   fileUrl: varchar("file_url", { length: 1000 }).notNull(),
   generatedBy: varchar("generated_by", { length: 100 }).notNull(),
   generatedAt: bigint("generated_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  paidAfterPdf: boolean("paid_after_pdf").default(false),
+  paidAt: bigint("paid_at", { mode: "number" }),
 });
 export type DecisionPdfHistory = typeof decisionPdfHistory.$inferSelect;
 export type InsertDecisionPdfHistory = typeof decisionPdfHistory.$inferInsert;
