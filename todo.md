@@ -3592,3 +3592,5 @@
 - [x] Análise de Produtos: make tables larger, more self-explanatory and clearer to read
 - [x] Análise de Produtos: add individual segment filter (e.g. see only Bambu with product detail)
 - [x] Análise de Produtos: add PDF export of the analysis
+- [x] PDF export dark mode: bar value numbers should be black (not golden) while bars stay golden
+- [x] PDF export filename: "Relatório de Vendas Grupo FOX" + date of export

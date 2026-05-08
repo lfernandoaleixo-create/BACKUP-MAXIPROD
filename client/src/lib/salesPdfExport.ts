@@ -1095,6 +1095,7 @@ export async function generateSalesPDF(
   doc.text("Pagina 1 de 1", pageW - margin, pageH - 3, { align: "right" });
 
   // Save
-  const fileName = `vendas_grupo_fox_${now.toISOString().substring(0, 10).replace(/-/g, "")}.pdf`;
+  const dateForFile = now.toLocaleDateString("pt-BR").replace(/\//g, "-");
+  const fileName = `Relatorio de Vendas Grupo FOX ${dateForFile}.pdf`;
   doc.save(fileName);
 }
