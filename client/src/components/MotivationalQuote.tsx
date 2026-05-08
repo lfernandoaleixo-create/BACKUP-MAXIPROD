@@ -57,25 +57,18 @@ const QUOTES = [
   { text: "O sucesso é a soma de pequenos esforços repetidos dia após dia.", author: "Robert Collier" },
 ];
 
-function getMondayWeekNumber(): number {
+function getDayOfYear(): number {
   const now = new Date();
   const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const dayOfWeek = startOfYear.getDay();
-  const daysToFirstMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
-  const firstMonday = new Date(now.getFullYear(), 0, 1 + daysToFirstMonday);
-  
-  if (now < firstMonday) return 0;
-  
-  const diffMs = now.getTime() - firstMonday.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  return Math.floor(diffDays / 7);
+  const diffMs = now.getTime() - startOfYear.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
 
 export default function MotivationalQuote() {
   const quote = useMemo(() => {
-    const weekNum = getMondayWeekNumber();
+    const dayOfYear = getDayOfYear();
     const year = new Date().getFullYear();
-    const index = (year * 53 + weekNum) % QUOTES.length;
+    const index = (year * 365 + dayOfYear) % QUOTES.length;
     return QUOTES[index];
   }, []);
 

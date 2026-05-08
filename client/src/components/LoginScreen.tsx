@@ -66,18 +66,11 @@ const QUOTES = [
   { text: "Não tenha medo de crescer lentamente. Tenha medo apenas de ficar parado.", author: "Provérbio Chinês" },
 ];
 
-function getWeeklyQuote() {
+function getDailyQuote() {
   const now = new Date();
   const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const dayOfWeek = startOfYear.getDay();
-  const daysToFirstMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
-  const firstMonday = new Date(now.getFullYear(), 0, 1 + daysToFirstMonday);
-  let weekNum = 0;
-  if (now >= firstMonday) {
-    const diffDays = Math.floor((now.getTime() - firstMonday.getTime()) / (1000 * 60 * 60 * 24));
-    weekNum = Math.floor(diffDays / 7);
-  }
-  const index = (now.getFullYear() * 53 + weekNum) % QUOTES.length;
+  const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+  const index = (now.getFullYear() * 365 + dayOfYear) % QUOTES.length;
   return QUOTES[index];
 }
 
@@ -114,7 +107,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useOperator();
   const validateMutation = trpc.settings.validateOperator.useMutation();
-  const [quote] = useState(() => getWeeklyQuote());
+  const [quote] = useState(() => getDailyQuote());
   const { theme } = useTheme();
   const isDark = theme === "dark";
 

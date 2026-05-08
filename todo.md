@@ -3594,3 +3594,4 @@
 - [x] Análise de Produtos: add PDF export of the analysis
 - [x] PDF export dark mode: bar value numbers should be black (not golden) while bars stay golden
 - [x] PDF export filename: "Relatório de Vendas Grupo FOX" + date of export
+- [x] Fix motivational phrases to change DAILY instead of weekly (both LoginScreen and MotivationalQuote components)
