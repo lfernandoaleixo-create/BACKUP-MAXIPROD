@@ -52,11 +52,11 @@ const ACTION_TYPE_LABELS: Record<string, string> = {
 
 // Dias úteis de atraso (exclui fds e feriados)
 const AGING_RANGES = [
-  { key: "1-10", label: "1-10 dias úteis", min: 1, max: 10, color: "bg-amber-50 border-amber-200 text-amber-700" },
-  { key: "11-20", label: "11-20 dias úteis", min: 11, max: 20, color: "bg-orange-50 border-orange-200 text-orange-700" },
-  { key: "21-40", label: "21-40 dias úteis", min: 21, max: 40, color: "bg-red-50 border-red-200 text-red-600" },
-  { key: "41-60", label: "41-60 dias úteis", min: 41, max: 60, color: "bg-red-100 border-red-300 text-red-700" },
-  { key: "60+", label: "60+ dias úteis", min: 61, max: 99999, color: "bg-red-200 border-red-400 text-red-800" },
+  { key: "1-10", label: "1-10 dias úteis", min: 1, max: 10, color: "bg-amber-50 border-amber-200 text-amber-700 dark:bg-slate-800 dark:border-amber-700 dark:text-amber-400" },
+  { key: "11-20", label: "11-20 dias úteis", min: 11, max: 20, color: "bg-orange-50 border-orange-200 text-orange-700 dark:bg-slate-800 dark:border-orange-700 dark:text-orange-400" },
+  { key: "21-40", label: "21-40 dias úteis", min: 21, max: 40, color: "bg-red-50 border-red-200 text-red-600 dark:bg-slate-800 dark:border-red-700 dark:text-red-400" },
+  { key: "41-60", label: "41-60 dias úteis", min: 41, max: 60, color: "bg-red-100 border-red-300 text-red-700 dark:bg-slate-800 dark:border-red-600 dark:text-red-400" },
+  { key: "60+", label: "60+ dias úteis", min: 61, max: 99999, color: "bg-red-200 border-red-400 text-red-800 dark:bg-slate-800 dark:border-red-500 dark:text-red-400" },
 ];
 
 function formatCurrency(v: number) {
