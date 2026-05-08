@@ -257,9 +257,9 @@ async function svgToImage(svgElement: SVGSVGElement, isDark?: boolean): Promise<
                 // Very dark backgrounds (slate-700, slate-800, slate-900, slate-950) -> transparent/white
                 val = prop === "fill" ? "#ffffff" : "#e2e8f0";
               } else if (hex && isVeryLight(hex)) {
-                // Light text in dark mode (slate-200, slate-300) -> dark for PDF
+                // Light text in dark mode (slate-200, slate-300) -> very dark for PDF
                 if (prop === "fill" && isTextEl) {
-                  val = "#334155";
+                  val = "#1e293b";
                 }
               }
             }
