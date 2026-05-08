@@ -360,6 +360,53 @@
     & .shadow-sm, & .shadow-md, & .shadow-lg, & .shadow-xl {
       --tw-shadow-color: oklch(0 0 0 / 0.4);
     }
+
+    /* ---- NEON CARD BACKGROUNDS: Full colored tint in dark mode ---- */
+    /* Amber neon (not all selected) - entire card gets amber-tinted dark bg */
+    & .neon-card-amber.neon-card-amber {
+      background-color: oklch(0.28 0.12 80) !important;
+    }
+    & .neon-card-amber .neon-card-inner {
+      background-color: oklch(0.25 0.10 80) !important;
+    }
+    & .neon-card-amber .neon-card-toolbar {
+      background-color: oklch(0.27 0.11 80) !important;
+    }
+    & .neon-card-amber .neon-card-footer {
+      background-color: oklch(0.27 0.11 80) !important;
+    }
+    & .neon-card-amber .neon-card-header {
+      background-color: oklch(0.26 0.10 80) !important;
+    }
+    & .neon-card-amber .neon-row-auth {
+      background-color: oklch(0.30 0.12 80) !important;
+    }
+    /* Green neon (all selected) - entire card gets green-tinted dark bg */
+    & .neon-card-green.neon-card-green {
+      background-color: oklch(0.28 0.10 155) !important;
+    }
+    & .neon-card-green .neon-card-inner {
+      background-color: oklch(0.25 0.08 155) !important;
+    }
+    & .neon-card-green .neon-card-toolbar {
+      background-color: oklch(0.27 0.09 155) !important;
+    }
+    & .neon-card-green .neon-card-footer {
+      background-color: oklch(0.27 0.09 155) !important;
+    }
+    & .neon-card-green .neon-card-header {
+      background-color: oklch(0.26 0.08 155) !important;
+    }
+    & .neon-card-green .neon-row-auth {
+      background-color: oklch(0.30 0.11 155) !important;
+    }
+    /* Supplier group headers inside neon cards */
+    & .neon-group-amber.neon-group-amber {
+      background-color: oklch(0.32 0.14 80) !important;
+    }
+    & .neon-group-green.neon-group-green {
+      background-color: oklch(0.32 0.12 155) !important;
+    }
   }
 }
 

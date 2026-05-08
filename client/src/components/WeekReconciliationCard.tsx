@@ -126,7 +126,7 @@ function PayableRow({
     <div
       className={`flex items-start gap-2 px-3 py-2.5 border-b border-slate-100 dark:border-slate-700 last:border-b-0 transition-colors ${
         item.authorized
-          ? "bg-emerald-100 hover:bg-emerald-200/80 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30"
+          ? "neon-row-auth bg-emerald-100 hover:bg-emerald-200/80 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30"
           : "hover:bg-slate-50/50 dark:hover:bg-slate-800/50"
       }`}
     >
@@ -518,14 +518,20 @@ function DayCard({
     borderColor = "border-red-200";
   } else if (isToday) {
     borderColor = "border-blue-300";
+    // Today also gets neon coloring based on authorization status
+    if (allAuthorized && day.count > 0) {
+      neonClass = "dark:border-emerald-400/70 dark:shadow-[0_0_18px_rgba(52,211,153,0.35),inset_0_0_12px_rgba(52,211,153,0.12)] neon-card-green";
+    } else if (day.count > 0) {
+      neonClass = "dark:border-amber-400/70 dark:shadow-[0_0_18px_rgba(251,191,36,0.35),inset_0_0_12px_rgba(251,191,36,0.12)] neon-card-amber";
+    }
   } else if (allAuthorized && day.count > 0) {
     borderColor = "border-emerald-200";
-    neonClass = "dark:border-emerald-400/60 dark:shadow-[0_0_12px_rgba(52,211,153,0.25),inset_0_0_8px_rgba(52,211,153,0.08)]";
+    neonClass = "dark:border-emerald-400/70 dark:shadow-[0_0_18px_rgba(52,211,153,0.35),inset_0_0_12px_rgba(52,211,153,0.12)] neon-card-green";
   } else if (isPast && day.count > 0) {
     borderColor = "border-amber-200";
-    neonClass = "dark:border-amber-400/60 dark:shadow-[0_0_12px_rgba(251,191,36,0.25),inset_0_0_8px_rgba(251,191,36,0.08)]";
+    neonClass = "dark:border-amber-400/70 dark:shadow-[0_0_18px_rgba(251,191,36,0.35),inset_0_0_12px_rgba(251,191,36,0.12)] neon-card-amber";
   } else if (day.count > 0) {
-    neonClass = "dark:border-amber-400/60 dark:shadow-[0_0_12px_rgba(251,191,36,0.25),inset_0_0_8px_rgba(251,191,36,0.08)]";
+    neonClass = "dark:border-amber-400/70 dark:shadow-[0_0_18px_rgba(251,191,36,0.35),inset_0_0_12px_rgba(251,191,36,0.12)] neon-card-amber";
   }
 
   if (day.count === 0) return null;
@@ -543,7 +549,7 @@ function DayCard({
         className="w-full cursor-pointer hover:brightness-95 transition-all"
       >
         {/* Top bar: Saldo (verde) | Autorizado (vermelho) | Total do dia (azul) */}
-        <div className="flex flex-wrap md:flex-nowrap items-center justify-between px-2 md:px-4 py-2 md:py-3 bg-white dark:bg-transparent border-b border-slate-100 dark:border-slate-700 gap-1 md:gap-0">
+        <div className="neon-card-header flex flex-wrap md:flex-nowrap items-center justify-between px-2 md:px-4 py-2 md:py-3 bg-white dark:bg-transparent border-b border-slate-100 dark:border-slate-700 gap-1 md:gap-0">
           {/* Saldo Bancário - VERDE */}
           <div className="flex items-center gap-1.5 md:gap-2">
             <Landmark className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
@@ -596,7 +602,7 @@ function DayCard({
 
         {/* Day label row */}
         <div
-          className={`px-3 py-2 flex items-center justify-between ${
+          className={`neon-card-toolbar px-3 py-2 flex items-center justify-between ${
             isVencidas
               ? "bg-red-50"
               : isToday
@@ -650,10 +656,10 @@ function DayCard({
 
       {/* Content */}
       {expanded && (
-        <div className="bg-white">
+        <div className="neon-card-inner bg-white">
           {/* Authorize all / none toggle + Sort buttons */}
           {day.count > 1 && (
-            <div className="px-3 py-1.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="neon-card-toolbar px-3 py-1.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <button
                 onClick={() => {
                   if (allAuthorized) {
@@ -685,8 +691,8 @@ function DayCard({
                     <div
                       className={`border-b border-t transition-colors ${
                         groupAllAuthorized
-                          ? "bg-emerald-50 border-emerald-200 border-t-emerald-100 dark:border-emerald-400/40 dark:shadow-[0_0_8px_rgba(52,211,153,0.15)]"
-                          : "bg-amber-50 border-amber-200 border-t-amber-100 dark:border-amber-400/40 dark:shadow-[0_0_8px_rgba(251,191,36,0.15)]"
+                          ? "bg-emerald-50 border-emerald-200 border-t-emerald-100 dark:border-emerald-400/40 dark:shadow-[0_0_8px_rgba(52,211,153,0.15)] neon-group-green"
+                          : "bg-amber-50 border-amber-200 border-t-amber-100 dark:border-amber-400/40 dark:shadow-[0_0_8px_rgba(251,191,36,0.15)] neon-group-amber"
                       }`}
                     >
                       <div className="flex flex-col md:grid py-1.5 px-2 md:px-3 gap-1 md:gap-0" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
@@ -807,7 +813,7 @@ function DayCard({
           </div>
 
           {/* Footer summary */}
-          <div className="px-3 py-2 border-t border-slate-200 dark:border-slate-600 bg-slate-50/50 flex items-center justify-between">
+          <div className="neon-card-footer px-3 py-2 border-t border-slate-200 dark:border-slate-600 bg-slate-50/50 flex items-center justify-between">
             <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
               {day.count} conta{day.count > 1 ? "s" : ""}
             </span>
