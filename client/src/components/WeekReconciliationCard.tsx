@@ -710,8 +710,9 @@ function DayCard({
                             <span className={`text-[10px] md:text-xs font-bold uppercase tracking-wide min-w-0 ${
                               groupAllAuthorized ? "text-emerald-900 dark:text-emerald-300" : "text-amber-900 dark:text-amber-300"
                             }`} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
-                              {group.fornecedor} <span className={`text-[8px] md:text-[9px] ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>({group.items.length})</span>
+                              {group.fornecedor}
                             </span>
+                            <span className={`text-[8px] md:text-[9px] flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>({group.items.length})</span>
                           </button>
                           {/* Selecionar Tudo - inline on mobile */}
                           <label
