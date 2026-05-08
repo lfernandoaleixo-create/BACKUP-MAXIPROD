@@ -244,23 +244,19 @@ async function svgToImage(svgElement: SVGSVGElement, isDark?: boolean): Promise<
             if (isDark && (prop === "fill" || prop === "stroke")) {
               const hex = rgbToHex(val);
               const isTextEl = el.tagName === "text" || el.tagName === "tspan";
-              if (hex && isTextEl && darkTextToBlack.includes(hex)) {
-                // Gold/amber TEXT -> black for readability
-                val = "#111111";
+              if (isTextEl && prop === "fill") {
+                // ALL text in dark mode PDF becomes pure black for maximum readability
+                val = "#000000";
               } else if (hex && !isTextEl && darkBarKeep.includes(hex)) {
                 // Gold BARS stay gold (no change)
               } else if (hex && darkToLight[hex]) {
                 val = darkToLight[hex];
-              } else if (hex && darkTextToBlack.includes(hex) && !darkBarKeep.includes(hex)) {
-                val = "#111111";
               } else if (hex && isVeryDark(hex)) {
                 // Very dark backgrounds (slate-700, slate-800, slate-900, slate-950) -> transparent/white
                 val = prop === "fill" ? "#ffffff" : "#e2e8f0";
-              } else if (hex && isVeryLight(hex)) {
-                // Light text in dark mode (slate-200, slate-300) -> very dark for PDF
-                if (prop === "fill" && isTextEl) {
-                  val = "#1e293b";
-                }
+              } else if (hex && isVeryLight(hex) && !isTextEl) {
+                // Light non-text elements -> keep as is or lighten
+                val = prop === "stroke" ? "#e2e8f0" : val;
               }
             }
             (el as HTMLElement).style.setProperty(prop, val);
