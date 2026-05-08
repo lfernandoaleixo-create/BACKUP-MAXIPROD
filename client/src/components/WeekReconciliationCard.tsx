@@ -697,26 +697,26 @@ function DayCard({
                     >
                       <div className="flex flex-col md:grid py-1.5 px-2 md:px-3 gap-1 md:gap-0" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
                         {/* Linha 1 mobile / Lado esquerdo desktop: seta + nome + contagem */}
-                        <div className="flex items-center justify-between md:justify-start">
+                        <div className="flex items-center justify-between md:justify-start gap-2 min-w-0 overflow-hidden">
                           <button
                             onClick={() => toggleGroupCollapse(group.fornecedor)}
-                            className="flex items-center gap-1 md:gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                            className="flex items-start gap-1 md:gap-1.5 cursor-pointer hover:opacity-80 transition-opacity min-w-0 flex-1"
                           >
                             {isGroupCollapsed ? (
-                              <ChevronRight className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`} />
+                              <ChevronRight className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 mt-0.5 ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`} />
                             ) : (
-                              <ChevronDown className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`} />
+                              <ChevronDown className={`w-3 h-3 md:w-3.5 md:h-3.5 flex-shrink-0 mt-0.5 ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`} />
                             )}
-                            <span className={`text-[10px] md:text-xs font-bold uppercase tracking-wide ${
+                            <span className={`text-[10px] md:text-xs font-bold uppercase tracking-wide min-w-0 ${
                               groupAllAuthorized ? "text-emerald-900 dark:text-emerald-300" : "text-amber-900 dark:text-amber-300"
-                            }`}>
+                            }`} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
                               {group.fornecedor}
                             </span>
-                            <span className={`text-[8px] md:text-[9px] ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>({group.items.length})</span>
+                            <span className={`text-[8px] md:text-[9px] flex-shrink-0 ${groupAllAuthorized ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>({group.items.length})</span>
                           </button>
                           {/* Selecionar Tudo - inline on mobile */}
                           <label
-                            className="flex items-center gap-1 md:gap-1.5 cursor-pointer select-none md:hidden"
+                            className="flex items-center gap-1 md:gap-1.5 cursor-pointer select-none md:hidden flex-shrink-0"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Checkbox
