@@ -3597,3 +3597,4 @@
 - [x] Fix motivational phrases to change DAILY instead of weekly (both LoginScreen and MotivationalQuote components)
 - [x] Fix supplier group header layout: long names overlapping item count and Selecionar tudo
 - [ ] PDF Decisão: add checkbox to mark clients who paid after PDF generation, with OK button and confirmation message
+- [x] Give Pedro access only to E-commerce sub-tab in Financeiro (block Visão Geral, Inadimplência, Recebíveis)
