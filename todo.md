@@ -3603,3 +3603,5 @@
 - [x] Create backend procedures for seller admission date CRUD
 - [x] Create UI for filling in seller admission dates
 - [x] Structure initial client metrics (new clients opened, reactivated clients, recompra interval)
+- [x] Fix tab bar overlap on mobile in Vendas page (4 tabs overlapping text)
+- [x] Ensure MetricaClientesTab is fully responsive for mobile and desktop

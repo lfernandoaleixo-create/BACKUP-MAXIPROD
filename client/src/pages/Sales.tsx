@@ -3555,50 +3555,50 @@ export default function Sales() {
 
         {/* Sub-abas Vendas */}
         {canSeeFornecedores && (
-          <div className="flex items-center md:justify-center gap-0.5 md:gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-1 overflow-x-auto scrollbar-hide">
+          <div className="grid grid-cols-2 md:flex md:items-center md:justify-center gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-1">
             <button
               onClick={() => setSalesTab("vendas")}
-              className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
                 salesTab === "vendas"
                   ? "bg-teal-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
-              <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 hidden md:block" />
-              Vendas
+              <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+              <span className="truncate">Vendas</span>
             </button>
             <button
               onClick={() => setSalesTab("fornecedores")}
-              className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
                 salesTab === "fornecedores"
                   ? "bg-teal-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
-              <Truck className="w-3.5 h-3.5 md:w-4 md:h-4 hidden md:block" />
-              Fornecedores Brasileiros
+              <Truck className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+              <span className="truncate"><span className="md:hidden">Fornecedores</span><span className="hidden md:inline">Fornecedores Brasileiros</span></span>
             </button>
             <button
               onClick={() => setSalesTab("metricas")}
-              className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
                 salesTab === "metricas"
                   ? "bg-teal-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
-              <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 hidden md:block" />
-              Métricas de Vendas
+              <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+              <span className="truncate"><span className="md:hidden">Mét. Vendas</span><span className="hidden md:inline">Métricas de Vendas</span></span>
             </button>
             <button
               onClick={() => setSalesTab("clientes")}
-              className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
                 salesTab === "clientes"
                   ? "bg-teal-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
               }`}
             >
-              <Users className="w-3.5 h-3.5 md:w-4 md:h-4 hidden md:block" />
-              Métrica de Clientes
+              <Users className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+              <span className="truncate"><span className="md:hidden">Mét. Clientes</span><span className="hidden md:inline">Métrica de Clientes</span></span>
             </button>
           </div>
         )}
