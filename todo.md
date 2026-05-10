@@ -3596,5 +3596,10 @@
 - [x] PDF export filename: "Relatório de Vendas Grupo FOX" + date of export
 - [x] Fix motivational phrases to change DAILY instead of weekly (both LoginScreen and MotivationalQuote components)
 - [x] Fix supplier group header layout: long names overlapping item count and Selecionar tudo
-- [ ] PDF Decisão: add checkbox to mark clients who paid after PDF generation, with OK button and confirmation message
+- [x] PDF Decisão: add checkbox to mark clients who paid after PDF generation, with OK button and confirmation message
 - [x] Give Pedro access only to E-commerce sub-tab in Financeiro (block Visão Geral, Inadimplência, Recebíveis)
+- [x] Create "Métrica de Clientes" sub-tab in Vendas page (next to Métrica de Vendas)
+- [x] Create database table for seller admission dates (Jordão, Juvenal, Paula, Gilson, Pedro)
+- [x] Create backend procedures for seller admission date CRUD
+- [x] Create UI for filling in seller admission dates
+- [x] Structure initial client metrics (new clients opened, reactivated clients, recompra interval)

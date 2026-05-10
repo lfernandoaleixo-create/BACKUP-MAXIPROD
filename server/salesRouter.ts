@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -2506,5 +2506,122 @@ export const salesRouter = router({
         .sort((a, b) => b.valorTotal - a.valorTotal);
 
       return { orders, startDate, endDate };
+    }),
+
+  // ===== SELLER ADMISSIONS (Métrica de Clientes) =====
+
+  /** List all seller admissions */
+  listSellerAdmissions: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+    const rows = await db.select().from(sellerAdmissions).orderBy(sellerAdmissions.sellerName);
+    return rows;
+  }),
+
+  /** Upsert seller admission date */
+  upsertSellerAdmission: publicProcedure
+    .input(z.object({
+      sellerName: z.string().min(1),
+      admissionDate: z.string(), // ISO date string
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const dateVal = new Date(input.admissionDate);
+      // Try update first
+      const existing = await db.select().from(sellerAdmissions).where(eq(sellerAdmissions.sellerName, input.sellerName));
+      if (existing.length > 0) {
+        await db.update(sellerAdmissions)
+          .set({ admissionDate: dateVal })
+          .where(eq(sellerAdmissions.sellerName, input.sellerName));
+      } else {
+        await db.insert(sellerAdmissions).values({
+          sellerName: input.sellerName,
+          admissionDate: dateVal,
+        });
+      }
+      return { success: true };
+    }),
+
+  /** Get client metrics for a seller based on admission date */
+  getClientMetrics: publicProcedure
+    .input(z.object({
+      sellerName: z.string().min(1),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      // Get seller admission date
+      const [admission] = await db.select().from(sellerAdmissions)
+        .where(eq(sellerAdmissions.sellerName, input.sellerName));
+      if (!admission) return null;
+
+      const admDate = admission.admissionDate;
+      // 6 months before admission = threshold for "new client"
+      const sixMonthsBefore = new Date(admDate);
+      sixMonthsBefore.setMonth(sixMonthsBefore.getMonth() - 6);
+
+      // Get all orders for this seller since admission
+      const sellerOrders = await db.select({
+        cliente: salesOrders.cliente,
+        dataEmissao: salesOrders.dataEmissao,
+        valorTotal: salesOrders.valorTotal,
+      }).from(salesOrders)
+        .where(and(
+          sql`${salesOrders.representante} = ${input.sellerName}`,
+          gte(salesOrders.dataEmissao, admDate.toISOString().slice(0, 10)),
+        ));
+
+      // Get all orders BEFORE admission to identify inherited clients
+      const priorOrders = await db.select({
+        cliente: salesOrders.cliente,
+        dataEmissao: salesOrders.dataEmissao,
+      }).from(salesOrders)
+        .where(and(
+          lte(salesOrders.dataEmissao, admDate.toISOString().slice(0, 10)),
+        ));
+
+      // Build map of last purchase date per client before admission
+      const lastPurchaseBefore = new Map<string, Date>();
+      for (const o of priorOrders) {
+        if (!o.cliente || !o.dataEmissao) continue;
+        const d = new Date(o.dataEmissao);
+        const prev = lastPurchaseBefore.get(o.cliente);
+        if (!prev || d > prev) lastPurchaseBefore.set(o.cliente, d);
+      }
+
+      // Classify clients
+      const clientesNovos: string[] = [];
+      const clientesReativados: string[] = [];
+      const clientesHerdados: string[] = [];
+      const clientesSeen = new Set<string>();
+
+      for (const o of sellerOrders) {
+        if (!o.cliente || clientesSeen.has(o.cliente)) continue;
+        clientesSeen.add(o.cliente);
+
+        const lastBefore = lastPurchaseBefore.get(o.cliente);
+        if (!lastBefore) {
+          // Never bought before = truly new
+          clientesNovos.push(o.cliente);
+        } else if (lastBefore < sixMonthsBefore) {
+          // Last purchase was 6+ months before admission = reactivated
+          clientesReativados.push(o.cliente);
+        } else {
+          // Bought within 6 months before admission = inherited
+          clientesHerdados.push(o.cliente);
+        }
+      }
+
+      return {
+        admissionDate: admDate.toISOString(),
+        totalClientes: clientesSeen.size,
+        clientesNovos: clientesNovos.length,
+        clientesReativados: clientesReativados.length,
+        clientesHerdados: clientesHerdados.length,
+        listaClientesNovos: clientesNovos.slice(0, 50),
+        listaClientesReativados: clientesReativados.slice(0, 50),
+        listaClientesHerdados: clientesHerdados.slice(0, 50),
+      };
     }),
 });

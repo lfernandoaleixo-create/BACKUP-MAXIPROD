@@ -1645,3 +1645,17 @@ export const supplierContacts = mysqlTable("supplier_contacts", {
 });
 export type SupplierContact = typeof supplierContacts.$inferSelect;
 export type InsertSupplierContact = typeof supplierContacts.$inferInsert;
+
+/**
+ * Data de admissão dos vendedores - usado para métricas de clientes
+ * Permite calcular clientes novos abertos desde a admissão de cada vendedor
+ */
+export const sellerAdmissions = mysqlTable("seller_admissions", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerName: varchar("sellerName", { length: 100 }).notNull().unique(),
+  admissionDate: timestamp("admissionDate").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SellerAdmission = typeof sellerAdmissions.$inferSelect;
+export type InsertSellerAdmission = typeof sellerAdmissions.$inferInsert;

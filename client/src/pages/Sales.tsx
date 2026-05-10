@@ -77,6 +77,7 @@ import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import type { VerifySection } from "@/components/MaxiprodAutoVerifier";
 import FornecedoresBrasileirosTab from "@/components/FornecedoresBrasileirosTab";
 import MetricaVendasTab from "@/components/MetricaVendasTab";
+import MetricaClientesTab from "@/components/MetricaClientesTab";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
@@ -3260,7 +3261,7 @@ export default function Sales() {
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const FORNECEDORES_OPERATORS = ["Guilherme", "Fernando"];
   const canSeeFornecedores = operator && FORNECEDORES_OPERATORS.includes(operator.name);
-  const [salesTab, setSalesTab] = useState<"vendas" | "fornecedores" | "metricas">("vendas");
+  const [salesTab, setSalesTab] = useState<"vendas" | "fornecedores" | "metricas" | "clientes">("vendas");
   const [verifyingCard, setVerifyingCard] = useState<{ card: string; startDate: string; endDate: string; dashboardValue: number } | null>(null);
   const [simulatorCard, setSimulatorCard] = useState<{ section: string; title: string; subtitle: string; value: number } | null>(null);
   const [showCanceledDialog, setShowCanceledDialog] = useState(false);
@@ -3588,6 +3589,17 @@ export default function Sales() {
               <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 hidden md:block" />
               Métricas de Vendas
             </button>
+            <button
+              onClick={() => setSalesTab("clientes")}
+              className={`flex items-center gap-1 md:gap-2 px-2.5 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                salesTab === "clientes"
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 md:w-4 md:h-4 hidden md:block" />
+              Métrica de Clientes
+            </button>
           </div>
         )}
 
@@ -3599,6 +3611,11 @@ export default function Sales() {
         {/* Tab: Métrica de Vendas */}
         {salesTab === "metricas" && canSeeFornecedores && (
           <MetricaVendasSubTabs />
+        )}
+
+        {/* Tab: Métrica de Clientes */}
+        {salesTab === "clientes" && canSeeFornecedores && (
+          <MetricaClientesTab />
         )}
 
         {/* Tab: Vendas (conteúdo original) */}
