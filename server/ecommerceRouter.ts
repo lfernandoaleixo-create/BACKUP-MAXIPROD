@@ -88,6 +88,48 @@ export const ecommerceRouter = router({
     }),
 
   /**
+   * Update an existing e-commerce expense
+   */
+  updateExpense: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+      descricao: z.string().min(1).max(500),
+      dataCompra: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      formaPagamento: z.enum(["pix", "boleto", "cartao_credito"]),
+      parcelas: z.number().int().min(1).max(48).default(1),
+      valorTotal: z.number().min(0.01),
+      observacao: z.string().max(1000).optional(),
+      recorrente: z.boolean().default(false),
+      cartaoId: z.number().int().nullable().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      const [expense] = await db.select().from(ecommerceExpenses).where(eq(ecommerceExpenses.id, input.id));
+      if (!expense) return { success: false, error: "Despesa não encontrada" };
+      if (expense.registradoPor !== input.operatorName && input.operatorName !== "Guilherme") {
+        return { success: false, error: "Apenas quem registrou ou o admin pode editar" };
+      }
+      await db.update(ecommerceExpenses)
+        .set({
+          descricao: input.descricao.trim(),
+          dataCompra: input.dataCompra,
+          formaPagamento: input.formaPagamento,
+          parcelas: input.parcelas,
+          valorTotal: String(input.valorTotal),
+          observacao: input.observacao?.trim() || null,
+          recorrente: input.recorrente ? 1 : 0,
+          cartaoId: input.formaPagamento === "cartao_credito" ? (input.cartaoId || null) : null,
+        })
+        .where(eq(ecommerceExpenses.id, input.id));
+      return { success: true };
+    }),
+
+  /**
    * Get summary totals for e-commerce expenses
    */
   getSummary: publicProcedure

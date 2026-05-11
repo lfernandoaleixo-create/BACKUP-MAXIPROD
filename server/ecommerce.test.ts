@@ -134,6 +134,11 @@ describe("E-commerce Router - Procedures Structure", () => {
     expect(ecommerceRouter._def.procedures.deleteExpense).toBeDefined();
   });
 
+  it("updateExpense requires operatorName, id and all fields", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    expect(ecommerceRouter._def.procedures.updateExpense).toBeDefined();
+  });
+
   it("getSummary requires operatorName", async () => {
     const { ecommerceRouter } = await import("./ecommerceRouter");
     expect(ecommerceRouter._def.procedures.getSummary).toBeDefined();

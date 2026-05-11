@@ -264,6 +264,7 @@ export default function EcommerceTab() {
   const [valorTotal, setValorTotal] = useState("");
   const [observacao, setObservacao] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [recorrente, setRecorrente] = useState(false);
   const [cartaoId, setCartaoId] = useState<number | null>(null);
   const [showCardManager, setShowCardManager] = useState(false);
@@ -304,13 +305,7 @@ export default function EcommerceTab() {
   const addMutation = trpc.ecommerce.addExpense.useMutation({
     onSuccess: (data) => {
       if (data.success) {
-        setShowForm(false);
-        setDescricao("");
-        setValorTotal("");
-        setObservacao("");
-        setParcelas(1);
-        setRecorrente(false);
-        setCartaoId(null);
+        resetExpenseForm();
         refetch();
       }
     },
@@ -333,6 +328,15 @@ export default function EcommerceTab() {
     onSuccess: (data) => { if (data.success) refetchCards(); },
   });
 
+  const updateMutation = trpc.ecommerce.updateExpense.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        resetExpenseForm();
+        refetch();
+      }
+    },
+  });
+
   const deleteMutation = trpc.ecommerce.deleteExpense.useMutation({
     onSuccess: (data) => {
       if (data.success) {
@@ -342,11 +346,35 @@ export default function EcommerceTab() {
     },
   });
 
+  const resetExpenseForm = () => {
+    setShowForm(false);
+    setDescricao("");
+    setValorTotal("");
+    setObservacao("");
+    setParcelas(1);
+    setRecorrente(false);
+    setCartaoId(null);
+    setEditingId(null);
+  };
+
+  const startEditExpense = (exp: any) => {
+    setEditingId(exp.id);
+    setDescricao(exp.descricao);
+    setDataCompra(exp.dataCompra);
+    setFormaPagamento(exp.formaPagamento);
+    setParcelas(exp.parcelas || 1);
+    setValorTotal(String(Number(exp.valorTotal)));
+    setObservacao(exp.observacao || "");
+    setRecorrente(exp.recorrente === 1);
+    setCartaoId(exp.cartaoId || null);
+    setShowForm(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const valor = parseFloat(valorTotal.replace(",", "."));
     if (!descricao.trim() || isNaN(valor) || valor <= 0) return;
-    addMutation.mutate({
+    const payload = {
       operatorName,
       descricao: descricao.trim(),
       dataCompra,
@@ -356,7 +384,12 @@ export default function EcommerceTab() {
       observacao: observacao.trim() || undefined,
       recorrente,
       cartaoId: formaPagamento === "cartao_credito" ? cartaoId : null,
-    });
+    };
+    if (editingId) {
+      updateMutation.mutate({ ...payload, id: editingId });
+    } else {
+      addMutation.mutate(payload);
+    }
   };
 
   const allExpenses = listData?.expenses || [];
@@ -590,6 +623,14 @@ export default function EcommerceTab() {
       {/* Form */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-orange-50/50 border border-orange-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-orange-800">{editingId ? "Editar Despesa" : "Nova Despesa"}</span>
+            {editingId && (
+              <Button type="button" variant="outline" size="sm" onClick={resetExpenseForm} className="text-xs">
+                <X className="w-3 h-3 mr-1" /> Cancelar edição
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="text-xs font-semibold text-slate-600 mb-1 block">Descrição do gasto *</label>
@@ -710,16 +751,27 @@ export default function EcommerceTab() {
               />
             </div>
           </div>
-          <div className="flex justify-end">
-            <Button type="submit" className="bg-orange-600 hover:bg-orange-700" disabled={addMutation.isPending}>
-              {addMutation.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
-              Registrar Despesa
+          <div className="flex justify-end gap-2">
+            {editingId && (
+              <Button type="button" variant="outline" onClick={resetExpenseForm}>
+                Cancelar
+              </Button>
+            )}
+            <Button type="submit" className="bg-orange-600 hover:bg-orange-700" disabled={addMutation.isPending || updateMutation.isPending}>
+              {(addMutation.isPending || updateMutation.isPending) ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : editingId ? <Check className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+              {editingId ? "Salvar Alterações" : "Registrar Despesa"}
             </Button>
           </div>
           {addMutation.data && !addMutation.data.success && (
             <p className="text-xs text-red-600 flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5" />
               {addMutation.data.error}
+            </p>
+          )}
+          {updateMutation.data && !updateMutation.data.success && (
+            <p className="text-xs text-red-600 flex items-center gap-1">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {updateMutation.data.error}
             </p>
           )}
         </form>
@@ -763,12 +815,19 @@ export default function EcommerceTab() {
           )}
         </Button>
         <Button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            if (showForm) {
+              resetExpenseForm();
+            } else {
+              setEditingId(null);
+              setShowForm(true);
+            }
+          }}
           size="sm"
-          className={showForm ? "bg-slate-500 hover:bg-slate-600" : "bg-orange-600 hover:bg-orange-700"}
+          className={showForm && !editingId ? "bg-slate-500 hover:bg-slate-600" : "bg-orange-600 hover:bg-orange-700"}
         >
-          {showForm ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
-          {showForm ? "Cancelar" : "Nova Despesa"}
+          {showForm && !editingId ? <X className="w-4 h-4 mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+          {showForm && !editingId ? "Cancelar" : "Nova Despesa"}
         </Button>
       </div>
 
@@ -811,6 +870,7 @@ export default function EcommerceTab() {
               {filteredExpenses.map((exp: any) => {
                 const info = FORMA_PAGAMENTO_LABELS[exp.formaPagamento] || { label: exp.formaPagamento, icon: null, color: "" };
                 const canDelete = operator?.name === exp.registradoPor || operator?.name === "Guilherme";
+                const canEdit = operator?.name === exp.registradoPor || operator?.name === "Guilherme";
                 return (
                   <tr key={exp.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-xs font-medium">
@@ -862,36 +922,51 @@ export default function EcommerceTab() {
                       <span className="text-xs text-slate-500">{exp.registradoPor}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {canDelete && (
-                        deleteConfirm === exp.id ? (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => deleteMutation.mutate({ operatorName, id: exp.id })}
-                              className="text-red-600 hover:text-red-800 text-[10px] font-bold cursor-pointer"
-                            >
-                              Sim
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm(null)}
-                              className="text-slate-400 hover:text-slate-600 text-[10px] cursor-pointer"
-                            >
-                              Não
-                            </button>
-                          </div>
-                        ) : (
+                      <div className="flex items-center justify-center gap-1.5">
+                        {canEdit && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <button
-                                onClick={() => setDeleteConfirm(exp.id)}
-                                className="text-slate-300 hover:text-red-500 transition-colors cursor-pointer"
+                                onClick={() => startEditExpense(exp)}
+                                className="text-slate-300 hover:text-orange-500 transition-colors cursor-pointer"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Pencil className="w-3.5 h-3.5" />
                               </button>
                             </TooltipTrigger>
-                            <TooltipContent>Excluir despesa</TooltipContent>
+                            <TooltipContent>Editar despesa</TooltipContent>
                           </Tooltip>
-                        )
-                      )}
+                        )}
+                        {canDelete && (
+                          deleteConfirm === exp.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => deleteMutation.mutate({ operatorName, id: exp.id })}
+                                className="text-red-600 hover:text-red-800 text-[10px] font-bold cursor-pointer"
+                              >
+                                Sim
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="text-slate-400 hover:text-slate-600 text-[10px] cursor-pointer"
+                              >
+                                Não
+                              </button>
+                            </div>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => setDeleteConfirm(exp.id)}
+                                  className="text-slate-300 hover:text-red-500 transition-colors cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Excluir despesa</TooltipContent>
+                            </Tooltip>
+                          )
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

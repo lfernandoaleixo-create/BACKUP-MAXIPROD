@@ -3659,3 +3659,8 @@
 
 ## Permissões de inadimplência
 - [x] Esconder bolinhas (ticks manuais) na inadimplência para a senha "Fernando" — só Thiago pode ver/interagir
+
+## Despesas E-commerce - Melhorias
+- [x] Cartões de crédito salvos: ao selecionar "Cartão de Crédito", mostrar lista de cartões já cadastrados (nome + número) (já existia)
+- [x] Permitir cadastrar novo cartão (nome + número) que fica salvo para próximas despesas (já existia)
+- [x] Editar registro de despesa existente (novo endpoint updateExpense + botão de lápis na tabela)
