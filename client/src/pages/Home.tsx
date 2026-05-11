@@ -87,6 +87,7 @@ import TopNav from "@/components/TopNav";
 interface POLote {
   numeroPedido: string;
   referenciaPO: string; // Número da PO do fornecedor (ex: PO62, PO65)
+  tipoPO: "COMERCIAL" | "PROFORMA" | ""; // COMERCIAL = confirmado, PROFORMA = sujeito a alterações
   quantidade: number;
   quantidadeUn: number;
   dataEntrega: string;
@@ -591,7 +592,11 @@ function POCell({ item }: { item: StockItem }) {
                   {lotes.map((lote, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                       <td className="px-2 py-1 font-semibold text-blue-700">
-                        {lote.referenciaPO || lote.numeroPedido || "?"}
+                        <span className="flex items-center gap-1">
+                          {lote.referenciaPO || lote.numeroPedido || "?"}
+                          {lote.tipoPO === "PROFORMA" && <span className="inline-block w-2 h-2 rounded-full bg-orange-400" title="Proforma - sujeito a alterações" />}
+                          {lote.tipoPO === "COMERCIAL" && <span className="inline-block w-2 h-2 rounded-full bg-green-500" title="Comercial - confirmado" />}
+                        </span>
                       </td>
                       <td className="px-2 py-1 font-medium text-blue-600">
                         <div className="flex items-center gap-1">
@@ -1580,6 +1585,7 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
 /* --- PO Overview Card --- */
 interface POSummary {
   referenciaPO: string;
+  tipoPO: "COMERCIAL" | "PROFORMA" | "";
   fornecedor: string;
   dataEntrega: string;
   totalCx: number;
@@ -1601,6 +1607,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
         const key = lote.referenciaPO || lote.numeroPedido || "?";
         const existing = poMap.get(key) || {
           referenciaPO: key,
+          tipoPO: lote.tipoPO || "",
           fornecedor: lote.fornecedor || "",
           dataEntrega: lote.dataEntrega || "",
           totalCx: 0,
@@ -1715,6 +1722,8 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
                       <span className="font-bold text-slate-800 text-xs md:text-sm">{po.referenciaPO}</span>
+                      {po.tipoPO === "COMERCIAL" && <Badge className="bg-green-100 text-green-700 text-[9px] md:text-[10px] border-0 px-1 md:px-1.5 py-0">Comercial</Badge>}
+                      {po.tipoPO === "PROFORMA" && <Badge className="bg-orange-100 text-orange-700 text-[9px] md:text-[10px] border-0 px-1 md:px-1.5 py-0">Proforma</Badge>}
                       {isPast && <Badge className="bg-red-100 text-red-700 text-[9px] md:text-[10px] border-0 px-1 md:px-1.5 py-0">Atrasada</Badge>}
                       {isUrgent && !isPast && <Badge className="bg-amber-100 text-amber-700 text-[9px] md:text-[10px] border-0 px-1 md:px-1.5 py-0">Esta semana</Badge>}
                     </div>

@@ -1,0 +1,16 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'purchase_order_items' AND COLUMN_NAME LIKE '%ref%' OR (TABLE_NAME = 'purchase_order_items' AND COLUMN_NAME IN ('referencia', 'codigoItem', 'observacao'));",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'purchase_order_items' AND COLUMN_NAME LIKE '%ref%' OR (TABLE_NAME = 'purchase_order_items' AND COLUMN_NAME IN ('referencia', 'codigoItem', 'observacao'));",
+  "rows": [
+    {
+      "COLUMN_NAME": "referencia"
+    },
+    {
+      "COLUMN_NAME": "codigoItem"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nreferencia\ncodigoItem\n",
+  "stderr": "",
+  "execution_time_ms": 322
+}

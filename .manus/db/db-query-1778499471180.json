@@ -1,0 +1,19 @@
+{
+  "query": "SELECT DISTINCT referencia FROM purchase_order_items WHERE estadoItem = 'A_RECEBER';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT referencia FROM purchase_order_items WHERE estadoItem = 'A_RECEBER';",
+  "rows": [
+    {
+      "referencia": "MADEIRA - COMERCIAL"
+    },
+    {
+      "referencia": "PO62 - COMERCIAL"
+    },
+    {
+      "referencia": "PO01 - PROFORMA PEDIDO"
+    }
+  ],
+  "messages": [],
+  "stdout": "referencia\nMADEIRA - COMERCIAL\nPO62 - COMERCIAL\nPO01 - PROFORMA PEDIDO\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

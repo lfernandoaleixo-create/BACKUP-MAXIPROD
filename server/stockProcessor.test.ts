@@ -431,6 +431,12 @@ describe("stockProcessor - Espelho Fiel do Maxiprod", () => {
     const pedidos = item.poLotes.map((l: any) => l.numeroPedido).sort();
     expect(pedidos).toContain("13");
     expect(pedidos).toContain("16");
+    
+    // tipoPO should be extracted from referencia (COMERCIAL vs PROFORMA)
+    const po65Lote = item.poLotes.find((l: any) => l.referenciaPO === "PO65");
+    const po62Lote = item.poLotes.find((l: any) => l.referenciaPO === "PO62");
+    expect(po65Lote.tipoPO).toBe("COMERCIAL");
+    expect(po62Lote.tipoPO).toBe("PROFORMA");
   });
 
   it("should handle MADEIRA reference without PO prefix", async () => {

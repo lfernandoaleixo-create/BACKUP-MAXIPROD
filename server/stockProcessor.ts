@@ -32,6 +32,7 @@ import { stockItems, orderItems, dashboardData, purchaseOrderItems, productVaria
 interface POLote {
   numeroPedido: string;
   referenciaPO: string; // Número da PO do fornecedor (ex: PO62, PO65)
+  tipoPO: "COMERCIAL" | "PROFORMA" | ""; // COMERCIAL = confirmado, PROFORMA = sujeito a alterações
   quantidade: number;
   quantidadeUn: number;
   dataEntrega: string;
@@ -388,10 +389,14 @@ function processPOItem(
   // Extrair número da PO do campo referencia (ex: "PO62 - PROFORMA PEDIDO" -> "PO62")
   const refRaw = po.referencia || "";
   const referenciaPO = refRaw.split(" - ")[0].trim() || po.numeroPedido || "";
+  // Extrair tipo: COMERCIAL (confirmado) ou PROFORMA (sujeito a alterações)
+  const tipoPO: POLote["tipoPO"] = refRaw.toUpperCase().includes("COMERCIAL") ? "COMERCIAL" 
+    : refRaw.toUpperCase().includes("PROFORMA") ? "PROFORMA" : "";
   
   existing.lotes.push({
     numeroPedido: po.numeroPedido || "",
     referenciaPO,
+    tipoPO,
     quantidade: qtyCx,
     quantidadeUn: qtyUn,
     dataEntrega,
