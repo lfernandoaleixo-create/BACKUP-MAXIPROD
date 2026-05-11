@@ -3623,3 +3623,13 @@
 - [x] Pedro-only add/edit/delete controls (Fernando/Bruno/Guilherme view-only)
 - [x] PDF export using jsPDF + jspdf-autotable with Grupo Fox branding
 - [x] 10 vitest tests for ecommerce router including daily sales procedures
+
+## Reformulação Métrica de Clientes (foco no grupo, não por vendedor)
+- [x] Reformular MetricaClientesTab: foco na carteira de clientes do grupo (não por vendedor individual)
+- [x] Métrica 1: Clientes novos por mês (primeira compra + reativados após 6 meses sem comprar)
+- [x] Métrica 2: Ranking de frequência de compra (últimos 12 meses - quantas vezes cada cliente comprou)
+- [x] Métrica 3: Alerta de clientes com intervalo vencido (comprou 2+ vezes, intervalo médio passou e não recomprou)
+- [x] Filtro por segmento (Bambu, Madeira, etc.)
+- [x] Backend: procedures tRPC para métricas de clientes do grupo
+- [x] Frontend: nova interface sem referência a vendedor individual
+- [x] Manter aba existente no ar (reformulada, não removida)

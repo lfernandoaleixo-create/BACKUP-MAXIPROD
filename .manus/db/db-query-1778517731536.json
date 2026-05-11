@@ -1,0 +1,70 @@
+{
+  "query": "SELECT cliente, COUNT(DISTINCT pedido) as num_pedidos, MIN(dataEmissao) as primeira_compra, MAX(dataEmissao) as ultima_compra FROM sales_orders WHERE cliente IS NOT NULL AND cliente != '' GROUP BY cliente HAVING COUNT(DISTINCT pedido) > 1 ORDER BY num_pedidos DESC LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cliente, COUNT(DISTINCT pedido) as num_pedidos, MIN(dataEmissao) as primeira_compra, MAX(dataEmissao) as ultima_compra FROM sales_orders WHERE cliente IS NOT NULL AND cliente != '' GROUP BY cliente HAVING COUNT(DISTINCT pedido) > 1 ORDER BY num_pedidos DESC LIMIT 10",
+  "rows": [
+    {
+      "cliente": "SOCIEDADE FABIANA LEOPOLDINO CORREA DE OLIVEIRA LTDA",
+      "num_pedidos": "17",
+      "primeira_compra": "2025-11-25T12:00:00.000-03:00",
+      "ultima_compra": "2026-05-11T12:00:00.000-03:00"
+    },
+    {
+      "cliente": "CLASSE A COMERCIAL LTDA",
+      "num_pedidos": "16",
+      "primeira_compra": "2025-11-25T12:00:00.000-03:00",
+      "ultima_compra": "2026-04-27T12:00:00.000-03:00"
+    },
+    {
+      "cliente": "MC COMERCIO DE ALIMENTOS 703 LTDA",
+      "num_pedidos": "9",
+      "primeira_compra": "2025-12-01T12:00:00.000-03:00",
+      "ultima_compra": "2026-05-06T12:00:00.000-03:00"
+    },
+    {
+      "cliente": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "num_pedidos": "9",
+      "primeira_compra": "2025-12-09T12:00:00.000-03:00",
+      "ultima_compra": "2026-05-07T12:00:00.000-03:00"
+    },
+    {
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "num_pedidos": "9",
+      "primeira_compra": "2026-01-05T12:00:00.000-03:00",
+      "ultima_compra": "2026-03-03T12:00:00.000-03:00"
+    },
+    {
+      "cliente": "EFRAS ESPETINHOS E DISTRIBUICAO LTDA",
+      "num_pedidos": "9",
+      "primeira_compra": "2025-11-18T12:00:00.000-03:00",
+      "ultima_compra": "2026-03-17T12:00:00.000-03:00"
+    },
+    {
+      "cliente": "KEURE QUIMICA LTDA",
+      "num_pedidos": "9",
+      "primeira_compra": "2025-12-02T12:00:00.000-03:00",
+      "ultima_compra": "2026-01-30T12:00:00.000-03:00"
+    },
+    {
+      "cliente": "PAULO ROBERTO TEIXEIRA",
+      "num_pedidos": "9",
+      "primeira_compra": "2025-11-24T12:00:00.000-03:00",
+      "ultima_compra": "2026-05-08T12:00:00.000-03:00"
+    },
+    {
+      "cliente": "LATICINIOS G.F IND. & COM. LTDA",
+      "num_pedidos": "8",
+      "primeira_compra": "2025-11-24T12:00:00.000-03:00",
+      "ultima_compra": "2026-05-05T12:00:00.000-03:00"
+    },
+    {
+      "cliente": "MATRIZ COMERCIO DE ESSENCIAS E EMBALAGENS LTDA",
+      "num_pedidos": "8",
+      "primeira_compra": "2025-11-18T12:00:00.000-03:00",
+      "ultima_compra": "2026-03-26T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\tnum_pedidos\tprimeira_compra\tultima_compra\nSOCIEDADE FABIANA LEOPOLDINO CORREA DE OLIVEIRA LTDA\t17\t2025-11-25T12:00:00.000-03:00\t2026-05-11T12:00:00.000-03:00\nCLASSE A COMERCIAL LTDA\t16\t2025-11-25T12:00:00.000-03:00\t2026-04-27T12:00:00.000-03:00\nMC COMERCIO DE ALIMENTOS 703 LTDA\t9\t2025-12-01T12:00:00.000-03:00\t2026-05-06T12:00:00.000-03:00\nPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\t9\t2025-12-09T12:00:00.000-03:00\t2026-05-07T12:00:00.000-03:00\nM D DA SILVA ARTEFATOS DE BAMBU\t9\t2026-01-05T12:00:00.000-03:00\t2026-03-03T12:00:00.000-03:00\nEFRAS ESPETINHOS E DISTRIBUICAO LTDA\t9\t2025-11-18T12:00:00.000-03:00\t2026-03-17T12:00:00.000-03:00\nKEURE QUIMICA LTDA\t9\t2025-12-02T12:00:00.000-03:00\t2026-01-30T12:00:00.000-03:00\nPAULO ROBERTO TEIXEIRA\t9\t2025-11-24T12:00:00.000-03:00\t2026-05-08T12:00:00.000-03:00\nLATICINIOS G.F IND. & COM. LTDA\t8\t2025-11-24T12:00:00.000-03:00\t2026-05-05T12:00:00.000-03:00\nMATRIZ COMERCIO DE ESSENCIAS E EMBALAGENS LTDA\t8\t2025-11-18T12:00:00.000-03:00\t2026-03-26T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 278
+}

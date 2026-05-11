@@ -2624,4 +2624,259 @@ export const salesRouter = router({
         listaClientesHerdados: clientesHerdados.slice(0, 50),
       };
     }),
+
+  // ==================== Métricas de Clientes do Grupo ====================
+
+  /**
+   * Get group-level client metrics: new clients per month, frequency ranking, overdue alerts
+   * No individual seller focus - analyzes the entire client portfolio
+   */
+  getGroupClientMetrics: publicProcedure
+    .input(z.object({
+      segmentoProduto: z.string().optional(), // BAMBU, MADEIRA, etc.
+      segmentoCliente: z.string().optional(), // DISTRIBUIDORA, LOJA, etc.
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Fetch all orders
+      const allOrders = await db.select({
+        pedido: salesOrders.pedido,
+        cliente: salesOrders.cliente,
+        dataEmissao: salesOrders.dataEmissao,
+        valorTotal: salesOrders.valorTotal,
+        estadoConfiguravel: salesOrders.estadoConfiguravel,
+        segmento: salesOrders.segmento,
+        crmSegmento: salesOrders.crmSegmento,
+        uf: salesOrders.uf,
+      }).from(salesOrders)
+        .where(sql`${salesOrders.cliente} IS NOT NULL AND ${salesOrders.cliente} != ''`);
+
+      // Apply segment filters
+      let filtered = allOrders;
+      if (input.segmentoProduto && input.segmentoProduto !== "all") {
+        filtered = filtered.filter(o => o.estadoConfiguravel === input.segmentoProduto);
+      }
+      if (input.segmentoCliente && input.segmentoCliente !== "all") {
+        const seg = input.segmentoCliente;
+        filtered = filtered.filter(o => (o.segmento === seg || o.crmSegmento === seg));
+      }
+
+      // Build per-client order history (using distinct pedido dates)
+      const clientOrders = new Map<string, { dates: Date[]; totalValue: number; uf: string; segmento: string; crmSegmento: string }>();
+      const pedidoSeen = new Map<string, Set<string>>(); // client -> set of pedido numbers
+
+      for (const o of filtered) {
+        if (!o.cliente || !o.dataEmissao) continue;
+        const key = o.cliente;
+        if (!clientOrders.has(key)) {
+          clientOrders.set(key, { dates: [], totalValue: 0, uf: o.uf || "", segmento: o.segmento || "", crmSegmento: o.crmSegmento || "" });
+          pedidoSeen.set(key, new Set());
+        }
+        const entry = clientOrders.get(key)!;
+        const pedidoSet = pedidoSeen.get(key)!;
+        const pedidoKey = o.pedido || o.dataEmissao;
+        if (!pedidoSet.has(pedidoKey)) {
+          pedidoSet.add(pedidoKey);
+          entry.dates.push(new Date(o.dataEmissao));
+        }
+        entry.totalValue += Number(o.valorTotal || 0);
+      }
+
+      // Sort each client's dates
+      Array.from(clientOrders.entries()).forEach(([, v]) => {
+        v.dates.sort((a: Date, b: Date) => a.getTime() - b.getTime());
+      });
+
+      // === 1. Clientes Novos por Mês ===
+      // A client is "new" in the month of their first-ever order
+      // A client is "reactivated" if their previous order was 6+ months before
+      const monthlyNew: Record<string, { novos: string[]; reativados: string[] }> = {};
+
+      // Build global first-purchase map (across ALL orders, not just filtered)
+      const globalFirstPurchase = new Map<string, Date>();
+      for (const o of allOrders) {
+        if (!o.cliente || !o.dataEmissao) continue;
+        const d = new Date(o.dataEmissao);
+        const prev = globalFirstPurchase.get(o.cliente);
+        if (!prev || d < prev) globalFirstPurchase.set(o.cliente, d);
+      }
+
+      Array.from(clientOrders.entries()).forEach(([cliente, data]) => {
+        if (data.dates.length === 0) return;
+        const firstDate = data.dates[0];
+        const monthKey = `${firstDate.getFullYear()}-${String(firstDate.getMonth() + 1).padStart(2, "0")}`;
+
+        if (!monthlyNew[monthKey]) monthlyNew[monthKey] = { novos: [], reativados: [] };
+
+        const globalFirst = globalFirstPurchase.get(cliente);
+        if (globalFirst && globalFirst.getTime() === firstDate.getTime()) {
+          // Truly new client (first purchase ever)
+          monthlyNew[monthKey].novos.push(cliente);
+        } else {
+          // Check if previous purchase was 6+ months before
+          const allClientOrderDates = allOrders
+            .filter(o => o.cliente === cliente && o.dataEmissao)
+            .map(o => new Date(o.dataEmissao!))
+            .sort((a: Date, b: Date) => a.getTime() - b.getTime());
+          
+          const prevOrders = allClientOrderDates.filter((d: Date) => d < firstDate);
+          if (prevOrders.length > 0) {
+            const lastPrev = prevOrders[prevOrders.length - 1];
+            const diffMs = firstDate.getTime() - lastPrev.getTime();
+            const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30);
+            if (diffMonths >= 6) {
+              monthlyNew[monthKey].reativados.push(cliente);
+            }
+          }
+        }
+      });
+
+      // Sort months
+      const sortedMonths = Object.keys(monthlyNew).sort();
+      const clientesNovosPorMes = sortedMonths.map(m => ({
+        month: m,
+        novos: monthlyNew[m].novos.length,
+        reativados: monthlyNew[m].reativados.length,
+        total: monthlyNew[m].novos.length + monthlyNew[m].reativados.length,
+        listaNovos: monthlyNew[m].novos.slice(0, 30),
+        listaReativados: monthlyNew[m].reativados.slice(0, 30),
+      }));
+
+      // === 2. Ranking de Frequência (últimos 12 meses) ===
+      const now = new Date();
+      const twelveMonthsAgo = new Date(now);
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+      const frequencyRanking: Array<{
+        cliente: string;
+        numPedidos: number;
+        primeiraCompra: string;
+        ultimaCompra: string;
+        intervaloMedioDias: number;
+        valorTotal: number;
+        uf: string;
+        segmento: string;
+      }> = [];
+
+      Array.from(clientOrders.entries()).forEach(([cliente, data]) => {
+        const recentDates = data.dates.filter((d: Date) => d >= twelveMonthsAgo);
+        if (recentDates.length === 0) return;
+
+        // Calculate average interval
+        let avgInterval = 0;
+        if (recentDates.length > 1) {
+          let totalInterval = 0;
+          for (let i = 1; i < recentDates.length; i++) {
+            totalInterval += (recentDates[i].getTime() - recentDates[i - 1].getTime()) / (1000 * 60 * 60 * 24);
+          }
+          avgInterval = Math.round(totalInterval / (recentDates.length - 1));
+        }
+
+        frequencyRanking.push({
+          cliente,
+          numPedidos: recentDates.length,
+          primeiraCompra: data.dates[0].toISOString().slice(0, 10),
+          ultimaCompra: data.dates[data.dates.length - 1].toISOString().slice(0, 10),
+          intervaloMedioDias: avgInterval,
+          valorTotal: Math.round(data.totalValue * 100) / 100,
+          uf: data.uf,
+          segmento: data.segmento || data.crmSegmento || "",
+        });
+      });
+
+      // Sort by number of orders descending
+      frequencyRanking.sort((a, b) => b.numPedidos - a.numPedidos || b.valorTotal - a.valorTotal);
+
+      // === 3. Alerta de Intervalo Vencido ===
+      // Clients with 2+ orders whose expected reorder date has passed
+      const overdueClients: Array<{
+        cliente: string;
+        numPedidos: number;
+        intervaloMedioDias: number;
+        ultimaCompra: string;
+        diasDesdeUltimaCompra: number;
+        diasAtrasado: number;
+        valorTotal: number;
+        uf: string;
+      }> = [];
+
+      Array.from(clientOrders.entries()).forEach(([cliente, data]) => {
+        if (data.dates.length < 2) return;
+
+        // Calculate average interval between orders
+        let totalInterval = 0;
+        for (let i = 1; i < data.dates.length; i++) {
+          totalInterval += (data.dates[i].getTime() - data.dates[i - 1].getTime()) / (1000 * 60 * 60 * 24);
+        }
+        const avgInterval = totalInterval / (data.dates.length - 1);
+
+        const lastOrder = data.dates[data.dates.length - 1];
+        const daysSinceLast = Math.round((now.getTime() - lastOrder.getTime()) / (1000 * 60 * 60 * 24));
+
+        // If days since last order > avg interval * 1.3, consider overdue
+        if (daysSinceLast > avgInterval * 1.3 && daysSinceLast > 14) {
+          overdueClients.push({
+            cliente,
+            numPedidos: data.dates.length,
+            intervaloMedioDias: Math.round(avgInterval),
+            ultimaCompra: lastOrder.toISOString().slice(0, 10),
+            diasDesdeUltimaCompra: daysSinceLast,
+            diasAtrasado: Math.round(daysSinceLast - avgInterval),
+            valorTotal: Math.round(data.totalValue * 100) / 100,
+            uf: data.uf,
+          });
+        }
+      });
+
+      // Sort by days overdue descending
+      overdueClients.sort((a, b) => b.diasAtrasado - a.diasAtrasado);
+
+      // === 4. Summary KPIs ===
+      const totalClientes = clientOrders.size;
+      const clientesCom1Pedido = Array.from(clientOrders.values()).filter(v => v.dates.length === 1).length;
+      const clientesRecorrentes = totalClientes - clientesCom1Pedido;
+      const totalNovosUltimos3Meses = sortedMonths.slice(-3).reduce((sum, m) => sum + (monthlyNew[m]?.novos.length || 0), 0);
+      const totalReativadosUltimos3Meses = sortedMonths.slice(-3).reduce((sum, m) => sum + (monthlyNew[m]?.reativados.length || 0), 0);
+
+      return {
+        summary: {
+          totalClientes,
+          clientesCom1Pedido,
+          clientesRecorrentes,
+          clientesInadimplentes: overdueClients.length,
+          totalNovosUltimos3Meses,
+          totalReativadosUltimos3Meses,
+        },
+        clientesNovosPorMes,
+        frequencyRanking: frequencyRanking.slice(0, 200),
+        overdueClients: overdueClients.slice(0, 200),
+      };
+    }),
+
+  /**
+   * Get available segments for filters
+   */
+  getClientSegmentOptions: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+
+    const prodSegments = await db.select({
+      seg: salesOrders.estadoConfiguravel,
+    }).from(salesOrders)
+      .where(sql`${salesOrders.estadoConfiguravel} IS NOT NULL AND ${salesOrders.estadoConfiguravel} != '' AND ${salesOrders.estadoConfiguravel} != 'NULL'`)
+      .groupBy(salesOrders.estadoConfiguravel);
+
+    const clientSegments = await db.select({
+      seg: salesOrders.segmento,
+    }).from(salesOrders)
+      .where(sql`${salesOrders.segmento} IS NOT NULL AND ${salesOrders.segmento} != ''`)
+      .groupBy(salesOrders.segmento);
+
+    return {
+      produtoSegmentos: prodSegments.map(s => s.seg).filter(Boolean) as string[],
+      clienteSegmentos: clientSegments.map(s => s.seg).filter(Boolean) as string[],
+    };
+  }),
 });

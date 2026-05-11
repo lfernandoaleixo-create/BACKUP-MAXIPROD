@@ -1,0 +1,50 @@
+{
+  "query": "SELECT DISTINCT estadoConfiguravel, COUNT(*) as cnt FROM sales_orders GROUP BY estadoConfiguravel ORDER BY cnt DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT estadoConfiguravel, COUNT(*) as cnt FROM sales_orders GROUP BY estadoConfiguravel ORDER BY cnt DESC",
+  "rows": [
+    {
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "1077"
+    },
+    {
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "537"
+    },
+    {
+      "estadoConfiguravel": "AMOSTRA",
+      "cnt": "71"
+    },
+    {
+      "estadoConfiguravel": "E-COMMERCE",
+      "cnt": "29"
+    },
+    {
+      "estadoConfiguravel": "BONIFICAÇÃO",
+      "cnt": "19"
+    },
+    {
+      "estadoConfiguravel": "FIBRA",
+      "cnt": "11"
+    },
+    {
+      "estadoConfiguravel": "MADEIRA IMPORTADA",
+      "cnt": "8"
+    },
+    {
+      "estadoConfiguravel": "CANCELADO",
+      "cnt": "4"
+    },
+    {
+      "estadoConfiguravel": "NULL",
+      "cnt": "2"
+    },
+    {
+      "estadoConfiguravel": "GILSON",
+      "cnt": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "estadoConfiguravel\tcnt\nBAMBU\t1077\nMADEIRA\t537\nAMOSTRA\t71\nE-COMMERCE\t29\nBONIFICAÇÃO\t19\nFIBRA\t11\nMADEIRA IMPORTADA\t8\nCANCELADO\t4\nNULL\t2\nGILSON\t1\n",
+  "stderr": "",
+  "execution_time_ms": 276
+}

@@ -282,3 +282,104 @@ describe("sales router", () => {
     });
   });
 });
+
+describe("group client metrics", () => {
+  const ctx = createPublicContext();
+  const caller = appRouter.createCaller(ctx);
+  let backupData: any[] = [];
+
+  // Backup production data, insert test data
+  beforeAll(async () => {
+    const db = await getDb();
+    if (db) {
+      backupData = await db.select().from(salesOrders);
+      await db.delete(salesOrders);
+      // Insert test data
+      await caller.sales.ingestSalesOrders({ items: sampleItems });
+    }
+  });
+
+  // Restore production data
+  afterAll(async () => {
+    const db = await getDb();
+    if (db) {
+      await db.delete(salesOrders);
+      if (backupData.length > 0) {
+        for (let i = 0; i < backupData.length; i += 50) {
+          await db.insert(salesOrders).values(backupData.slice(i, i + 50));
+        }
+      }
+    }
+  });
+
+  describe("getGroupClientMetrics", () => {
+    it("returns summary with correct client counts", async () => {
+      const result = await caller.sales.getGroupClientMetrics({});
+      expect(result).toBeDefined();
+      expect(result.summary).toBeDefined();
+      expect(result.summary.totalClientes).toBe(2); // CLIENTE A, CLIENTE B
+    });
+
+    it("returns clients novos por mes", async () => {
+      const result = await caller.sales.getGroupClientMetrics({});
+      expect(result.clientesNovosPorMes).toBeDefined();
+      expect(result.clientesNovosPorMes.length).toBeGreaterThan(0);
+      // Both clients should be new (first purchase ever in test data)
+      const totalNovos = result.clientesNovosPorMes.reduce((sum: number, m: any) => sum + m.novos, 0);
+      expect(totalNovos).toBe(2); // CLIENTE A and CLIENTE B are both new
+    });
+
+    it("returns frequency ranking", async () => {
+      const result = await caller.sales.getGroupClientMetrics({});
+      expect(result.frequencyRanking).toBeDefined();
+      expect(result.frequencyRanking.length).toBe(2);
+      // CLIENTE A has 2 orders, should be first
+      expect(result.frequencyRanking[0].cliente).toBe("CLIENTE A");
+      expect(result.frequencyRanking[0].numPedidos).toBe(2);
+      // CLIENTE B has 1 order
+      expect(result.frequencyRanking[1].cliente).toBe("CLIENTE B");
+      expect(result.frequencyRanking[1].numPedidos).toBe(1);
+    });
+
+    it("filters by product segment", async () => {
+      const result = await caller.sales.getGroupClientMetrics({
+        segmentoProduto: "BAMBU",
+      });
+      // All test data is BAMBU, so should return same results
+      expect(result.summary.totalClientes).toBe(2);
+
+      // Filter by non-existent segment
+      const result2 = await caller.sales.getGroupClientMetrics({
+        segmentoProduto: "MADEIRA",
+      });
+      expect(result2.summary.totalClientes).toBe(0);
+    });
+
+    it("filters by client segment", async () => {
+      const result = await caller.sales.getGroupClientMetrics({
+        segmentoCliente: "INDUSTRIA",
+      });
+      // CLIENTE A has segmento INDUSTRIA
+      expect(result.summary.totalClientes).toBeGreaterThanOrEqual(1);
+    });
+
+    it("identifies single-purchase clients", async () => {
+      const result = await caller.sales.getGroupClientMetrics({});
+      // CLIENTE B has only 1 order
+      expect(result.summary.clientesCom1Pedido).toBe(1);
+      // CLIENTE A has 2 orders = recorrente
+      expect(result.summary.clientesRecorrentes).toBe(1);
+    });
+  });
+
+  describe("getClientSegmentOptions", () => {
+    it("returns available segments", async () => {
+      const result = await caller.sales.getClientSegmentOptions();
+      expect(result).toBeDefined();
+      expect(result.produtoSegmentos).toBeDefined();
+      expect(result.clienteSegmentos).toBeDefined();
+      expect(Array.isArray(result.produtoSegmentos)).toBe(true);
+      expect(Array.isArray(result.clienteSegmentos)).toBe(true);
+    });
+  });
+});

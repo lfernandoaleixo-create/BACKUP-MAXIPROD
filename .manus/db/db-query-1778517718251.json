@@ -1,0 +1,42 @@
+{
+  "query": "SELECT DISTINCT segmento, COUNT(*) as cnt FROM sales_orders GROUP BY segmento ORDER BY cnt DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT segmento, COUNT(*) as cnt FROM sales_orders GROUP BY segmento ORDER BY cnt DESC",
+  "rows": [
+    {
+      "segmento": "DISTRIBUIDORA",
+      "cnt": "608"
+    },
+    {
+      "segmento": "LOJA",
+      "cnt": "350"
+    },
+    {
+      "segmento": "INDUSTRIA",
+      "cnt": "299"
+    },
+    {
+      "segmento": "",
+      "cnt": "290"
+    },
+    {
+      "segmento": "LATICÍNIO",
+      "cnt": "116"
+    },
+    {
+      "segmento": "FOGOS",
+      "cnt": "60"
+    },
+    {
+      "segmento": "SERRAGEM",
+      "cnt": "26"
+    },
+    {
+      "segmento": "EXPORTAÇÃO",
+      "cnt": "10"
+    }
+  ],
+  "messages": [],
+  "stdout": "segmento\tcnt\nDISTRIBUIDORA\t608\nLOJA\t350\nINDUSTRIA\t299\n\t290\nLATICÍNIO\t116\nFOGOS\t60\nSERRAGEM\t26\nEXPORTAÇÃO\t10\n",
+  "stderr": "",
+  "execution_time_ms": 274
+}

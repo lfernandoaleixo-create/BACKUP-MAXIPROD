@@ -1,0 +1,30 @@
+{
+  "query": "SELECT CASE WHEN num_pedidos = 1 THEN '1 pedido' WHEN num_pedidos BETWEEN 2 AND 3 THEN '2-3 pedidos' WHEN num_pedidos BETWEEN 4 AND 6 THEN '4-6 pedidos' WHEN num_pedidos BETWEEN 7 AND 12 THEN '7-12 pedidos' ELSE '12+ pedidos' END as faixa, COUNT(*) as clientes FROM (SELECT cliente, COUNT(DISTINCT pedido) as num_pedidos FROM sales_orders WHERE cliente IS NOT NULL AND cliente != '' GROUP BY cliente) sub GROUP BY faixa ORDER BY MIN(num_pedidos)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT CASE WHEN num_pedidos = 1 THEN '1 pedido' WHEN num_pedidos BETWEEN 2 AND 3 THEN '2-3 pedidos' WHEN num_pedidos BETWEEN 4 AND 6 THEN '4-6 pedidos' WHEN num_pedidos BETWEEN 7 AND 12 THEN '7-12 pedidos' ELSE '12+ pedidos' END as faixa, COUNT(*) as clientes FROM (SELECT cliente, COUNT(DISTINCT pedido) as num_pedidos FROM sales_orders WHERE cliente IS NOT NULL AND cliente != '' GROUP BY cliente) sub GROUP BY faixa ORDER BY MIN(num_pedidos)",
+  "rows": [
+    {
+      "faixa": "1 pedido",
+      "clientes": "242"
+    },
+    {
+      "faixa": "2-3 pedidos",
+      "clientes": "137"
+    },
+    {
+      "faixa": "4-6 pedidos",
+      "clientes": "57"
+    },
+    {
+      "faixa": "7-12 pedidos",
+      "clientes": "19"
+    },
+    {
+      "faixa": "12+ pedidos",
+      "clientes": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "faixa\tclientes\n1 pedido\t242\n2-3 pedidos\t137\n4-6 pedidos\t57\n7-12 pedidos\t19\n12+ pedidos\t2\n",
+  "stderr": "",
+  "execution_time_ms": 291
+}

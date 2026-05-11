@@ -1,0 +1,17 @@
+{
+  "query": "SELECT COUNT(*) as total, COUNT(DISTINCT cliente) as clientes, MIN(dataEmissao) as min_date, MAX(dataEmissao) as max_date, COUNT(DISTINCT segmento) as segmentos FROM sales_orders",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total, COUNT(DISTINCT cliente) as clientes, MIN(dataEmissao) as min_date, MAX(dataEmissao) as max_date, COUNT(DISTINCT segmento) as segmentos FROM sales_orders",
+  "rows": [
+    {
+      "total": "1759",
+      "clientes": "458",
+      "min_date": "2025-06-13T12:00:00.000-03:00",
+      "max_date": "2026-05-11T12:00:00.000-03:00",
+      "segmentos": "8"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tclientes\tmin_date\tmax_date\tsegmentos\n1759\t458\t2025-06-13T12:00:00.000-03:00\t2026-05-11T12:00:00.000-03:00\t8\n",
+  "stderr": "",
+  "execution_time_ms": 318
+}
