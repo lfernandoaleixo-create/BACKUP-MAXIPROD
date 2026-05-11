@@ -1,0 +1,37 @@
+{
+  "query": "SELECT COUNT(*) as total_actions FROM collection_actions; SELECT COUNT(DISTINCT receivableId) as distinct_receivables FROM collection_actions; SELECT ca.receivableId, ca.status, ar.id as ar_id FROM collection_actions ca LEFT JOIN accounts_receivable ar ON ca.receivableId = ar.id LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_actions FROM collection_actions; SELECT COUNT(DISTINCT receivableId) as distinct_receivables FROM collection_actions; SELECT ca.receivableId, ca.status, ar.id as ar_id FROM collection_actions ca LEFT JOIN accounts_receivable ar ON ca.receivableId = ar.id LIMIT 5;",
+  "rows": [
+    {
+      "total_actions": "168"
+    },
+    {
+      "total_actions": "distinct_receivables"
+    },
+    {
+      "total_actions": "168"
+    },
+    {
+      "total_actions": "receivableId\tstatus\tar_id"
+    },
+    {
+      "total_actions": "3768473\tcontatado\tNULL"
+    },
+    {
+      "total_actions": "3768524\tpromessa\tNULL"
+    },
+    {
+      "total_actions": "3768594\tpromessa\tNULL"
+    },
+    {
+      "total_actions": "3768499\tcontatado\tNULL"
+    },
+    {
+      "total_actions": "3768542\tcontatado\tNULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_actions\n168\ndistinct_receivables\n168\nreceivableId\tstatus\tar_id\n3768473\tcontatado\tNULL\n3768524\tpromessa\tNULL\n3768594\tpromessa\tNULL\n3768499\tcontatado\tNULL\n3768542\tcontatado\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 297
+}

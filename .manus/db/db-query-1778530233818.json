@@ -1,0 +1,74 @@
+{
+  "query": "DESCRIBE collection_manual_ticks;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute DESCRIBE collection_manual_ticks;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "receivable_id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "step",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ticked",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "ticked_by",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ticked_at",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "created_at",
+      "Type": "bigint",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "tick_status",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "green",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nreceivable_id\tint\tNO\t\tNULL\t\nstep\tint\tNO\t\tNULL\t\nticked\ttinyint(1)\tNO\t\t0\t\nticked_by\tvarchar(100)\tYES\t\tNULL\t\nticked_at\tbigint\tYES\t\tNULL\t\ncreated_at\tbigint\tNO\t\tNULL\t\ntick_status\tvarchar(20)\tYES\t\tgreen\t\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

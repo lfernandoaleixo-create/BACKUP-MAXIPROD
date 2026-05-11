@@ -1,0 +1,13 @@
+{
+  "query": "SELECT id FROM accounts_receivable WHERE cliente LIKE '%RAINHA%' AND estado = 'EMITIDO' AND vencimentoData < '2026-05-11T00:00:00';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id FROM accounts_receivable WHERE cliente LIKE '%RAINHA%' AND estado = 'EMITIDO' AND vencimentoData < '2026-05-11T00:00:00';",
+  "rows": [
+    {
+      "id": "5473802"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\n5473802\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

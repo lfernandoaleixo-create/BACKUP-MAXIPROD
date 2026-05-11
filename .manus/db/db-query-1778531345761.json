@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(DISTINCT ca.receivableId) as com_acao, COUNT(DISTINCT cmt.receivable_id) as com_ticks FROM collection_actions ca INNER JOIN accounts_receivable ar ON ar.id = ca.receivableId LEFT JOIN collection_manual_ticks cmt ON cmt.receivable_id = ca.receivableId WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(DISTINCT ca.receivableId) as com_acao, COUNT(DISTINCT cmt.receivable_id) as com_ticks FROM collection_actions ca INNER JOIN accounts_receivable ar ON ar.id = ca.receivableId LEFT JOIN collection_manual_ticks cmt ON cmt.receivable_id = ca.receivableId WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00';",
+  "rows": [
+    {
+      "com_acao": "81",
+      "com_ticks": "63"
+    }
+  ],
+  "messages": [],
+  "stdout": "com_acao\tcom_ticks\n81\t63\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

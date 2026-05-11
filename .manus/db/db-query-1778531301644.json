@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as matches FROM accounts_receivable WHERE id IN (2639263+1705313, 2639339+1705313, 2641088+1705313, 2641097+1705313, 2641099+1705313, 2641102+1705313, 2641121+1705313, 2641123+1705313, 2641133+1705313, 2641135+1705313);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as matches FROM accounts_receivable WHERE id IN (2639263+1705313, 2639339+1705313, 2641088+1705313, 2641097+1705313, 2641099+1705313, 2641102+1705313, 2641121+1705313, 2641123+1705313, 2641133+1705313, 2641135+1705313);",
+  "rows": [
+    {
+      "matches": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "matches\n0\n",
+  "stderr": "",
+  "execution_time_ms": 284
+}

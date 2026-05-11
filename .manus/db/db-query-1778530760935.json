@@ -1,0 +1,58 @@
+{
+  "query": "SELECT cmt.receivable_id, cmt.step, cmt.ticked, cmt.ticked_by FROM collection_manual_ticks cmt WHERE cmt.receivable_id IN (4158596, 4244503, 4502224, 4882347, 5016841, 5021056, 5021057) ORDER BY cmt.receivable_id LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cmt.receivable_id, cmt.step, cmt.ticked, cmt.ticked_by FROM collection_manual_ticks cmt WHERE cmt.receivable_id IN (4158596, 4244503, 4502224, 4882347, 5016841, 5021056, 5021057) ORDER BY cmt.receivable_id LIMIT 15;",
+  "rows": [
+    {
+      "receivable_id": "4158596",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Thiago"
+    },
+    {
+      "receivable_id": "4244503",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Thiago"
+    },
+    {
+      "receivable_id": "4502224",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Thiago"
+    },
+    {
+      "receivable_id": "4882347",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Thiago"
+    },
+    {
+      "receivable_id": "5016841",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Thiago"
+    },
+    {
+      "receivable_id": "5016841",
+      "step": "2",
+      "ticked": "1",
+      "ticked_by": "Thiago"
+    },
+    {
+      "receivable_id": "5021056",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Thiago"
+    },
+    {
+      "receivable_id": "5021057",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Thiago"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivable_id\tstep\tticked\tticked_by\n4158596\t1\t1\tThiago\n4244503\t1\t1\tThiago\n4502224\t1\t1\tThiago\n4882347\t1\t1\tThiago\n5016841\t1\t1\tThiago\n5016841\t2\t1\tThiago\n5021056\t1\t1\tThiago\n5021057\t1\t1\tThiago\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

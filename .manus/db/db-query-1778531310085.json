@@ -1,0 +1,43 @@
+{
+  "query": "SELECT id FROM accounts_receivable WHERE id BETWEEN 2639263+2800000 AND 2639263+2900000 LIMIT 5; SELECT id FROM accounts_receivable WHERE id BETWEEN 2639263+2830000 AND 2639263+2840000 LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id FROM accounts_receivable WHERE id BETWEEN 2639263+2800000 AND 2639263+2900000 LIMIT 5; SELECT id FROM accounts_receivable WHERE id BETWEEN 2639263+2830000 AND 2639263+2840000 LIMIT 5;",
+  "rows": [
+    {
+      "id": "5473700"
+    },
+    {
+      "id": "5473709"
+    },
+    {
+      "id": "5473710"
+    },
+    {
+      "id": "5473711"
+    },
+    {
+      "id": "5473712"
+    },
+    {
+      "id": "id"
+    },
+    {
+      "id": "5473700"
+    },
+    {
+      "id": "5473709"
+    },
+    {
+      "id": "5473710"
+    },
+    {
+      "id": "5473711"
+    },
+    {
+      "id": "5473712"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\n5473700\n5473709\n5473710\n5473711\n5473712\nid\n5473700\n5473709\n5473710\n5473711\n5473712\n",
+  "stderr": "",
+  "execution_time_ms": 269
+}

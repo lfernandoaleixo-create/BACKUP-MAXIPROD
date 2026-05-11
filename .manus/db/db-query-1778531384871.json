@@ -1,0 +1,9 @@
+{
+  "query": "SELECT DISTINCT cmt.receivable_id as old_id, cmt.ticked, cmt.ticked_by, cmt.step FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL AND cmt.receivable_id BETWEEN 3768000 AND 3769000 ORDER BY cmt.receivable_id LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT cmt.receivable_id as old_id, cmt.ticked, cmt.ticked_by, cmt.step FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL AND cmt.receivable_id BETWEEN 3768000 AND 3769000 ORDER BY cmt.receivable_id LIMIT 20;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 259
+}

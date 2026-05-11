@@ -1,0 +1,17 @@
+{
+  "query": "SELECT MIN(id) as min_id, MAX(id) as max_id, MIN(maxiprodId) as min_mx, MAX(maxiprodId) as max_mx, COUNT(*) as total FROM accounts_receivable;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT MIN(id) as min_id, MAX(id) as max_id, MIN(maxiprodId) as min_mx, MAX(maxiprodId) as max_mx, COUNT(*) as total FROM accounts_receivable;",
+  "rows": [
+    {
+      "min_id": "5473700",
+      "max_id": "5480008",
+      "min_mx": "99001",
+      "max_mx": "409300081106410",
+      "total": "570"
+    }
+  ],
+  "messages": [],
+  "stdout": "min_id\tmax_id\tmin_mx\tmax_mx\ttotal\n5473700\t5480008\t99001\t409300081106410\t570\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

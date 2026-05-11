@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(DISTINCT cmt.receivable_id) as receivables_com_ticks, SUM(cmt.ticked) as total_ticked FROM collection_manual_ticks cmt INNER JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(DISTINCT cmt.receivable_id) as receivables_com_ticks, SUM(cmt.ticked) as total_ticked FROM collection_manual_ticks cmt INNER JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00';",
+  "rows": [
+    {
+      "receivables_com_ticks": "70",
+      "total_ticked": "270"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivables_com_ticks\ttotal_ticked\n70\t270\n",
+  "stderr": "",
+  "execution_time_ms": 279
+}

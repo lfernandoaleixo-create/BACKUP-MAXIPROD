@@ -1,0 +1,210 @@
+{
+  "query": "SELECT ca.receivableId, ca.status, ca.promessaData, ca.promessaValor, ca.cobrancaStartedAt, ca.phoneMutedBy, ca.phoneMutedAt, SUBSTRING(ca.observacoes, 1, 200) as obs FROM collection_actions ca ORDER BY ca.receivableId LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ca.receivableId, ca.status, ca.promessaData, ca.promessaValor, ca.cobrancaStartedAt, ca.phoneMutedBy, ca.phoneMutedAt, SUBSTRING(ca.observacoes, 1, 200) as obs FROM collection_actions ca ORDER BY ca.receivableId LIMIT 20;",
+  "rows": [
+    {
+      "receivableId": "1",
+      "status": "contatado",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "2026-04-29",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768387",
+      "status": "promessa",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "2026-04-30",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768388",
+      "status": "em_negociacao",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "2026-04-28",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768389",
+      "status": "em_negociacao",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "2026-04-28",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768390",
+      "status": "em_negociacao",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "2026-04-28",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768391",
+      "status": "em_negociacao",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "2026-04-28",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768392",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768393",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768394",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768395",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768396",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768397",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768398",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768399",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768400",
+      "status": "pendente",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768402",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768403",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768404",
+      "status": "especial_sem_cobranca",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "NULL",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768406",
+      "status": "contatado",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "2026-04-29",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    },
+    {
+      "receivableId": "3768407",
+      "status": "promessa",
+      "promessaData": "NULL",
+      "promessaValor": "NULL",
+      "cobrancaStartedAt": "2026-04-28",
+      "phoneMutedBy": "NULL",
+      "phoneMutedAt": "NULL",
+      "obs": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivableId\tstatus\tpromessaData\tpromessaValor\tcobrancaStartedAt\tphoneMutedBy\tphoneMutedAt\tobs\n1\tcontatado\tNULL\tNULL\t2026-04-29\tNULL\tNULL\tNULL\n3768387\tpromessa\tNULL\tNULL\t2026-04-30\tNULL\tNULL\tNULL\n3768388\tem_negociacao\tNULL\tNULL\t2026-04-28\tNULL\tNULL\tNULL\n3768389\tem_negociacao\tNULL\tNULL\t2026-04-28\tNULL\tNULL\tNULL\n3768390\tem_negociacao\tNULL\tNULL\t2026-04-28\tNULL\tNULL\tNULL\n3768391\tem_negociacao\tNULL\tNULL\t2026-04-28\tNULL\tNULL\tNULL\n3768392\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768393\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768394\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768395\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768396\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768397\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768398\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768399\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768400\tpendente\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768402\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768403\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768404\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n3768406\tcontatado\tNULL\tNULL\t2026-04-29\tNULL\tNULL\tNULL\n3768407\tpromessa\tNULL\tNULL\t2026-04-28\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 277
+}

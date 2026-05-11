@@ -3656,3 +3656,6 @@
 
 ## Bug: Cards de semana cortados no mobile
 - [x] Corrigir layout dos cards de semana (dias 18-24 e 25-31 cortados) na versão mobile
+
+## Permissões de inadimplência
+- [x] Esconder bolinhas (ticks manuais) na inadimplência para a senha "Fernando" — só Thiago pode ver/interagir

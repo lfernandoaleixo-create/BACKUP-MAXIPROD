@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO collection_actions (receivableId, status, observacoes) VALUES (5473838, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança'), (5473796, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança'), (5473847, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança'), (5473899, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança'), (5473937, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança'), (5473940, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute INSERT INTO collection_actions (receivableId, status, observacoes) VALUES (5473838, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança'), (5473796, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança'), (5473847, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança'), (5473899, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança'), (5473937, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança'), (5473940, 'especial_sem_cobranca', '1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 273
+}

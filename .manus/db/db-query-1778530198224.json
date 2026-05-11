@@ -1,0 +1,60 @@
+{
+  "query": "SELECT ca.receivableId as old_id, ca.status, ca.observacoes FROM collection_actions ca ORDER BY ca.receivableId LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ca.receivableId as old_id, ca.status, ca.observacoes FROM collection_actions ca ORDER BY ca.receivableId LIMIT 10;",
+  "rows": [
+    {
+      "old_id": "1",
+      "status": "contatado",
+      "observacoes": "NULL"
+    },
+    {
+      "old_id": "3768387",
+      "status": "promessa",
+      "observacoes": "NULL"
+    },
+    {
+      "old_id": "3768388",
+      "status": "em_negociacao",
+      "observacoes": "NULL"
+    },
+    {
+      "old_id": "3768389",
+      "status": "em_negociacao",
+      "observacoes": "NULL"
+    },
+    {
+      "old_id": "3768390",
+      "status": "em_negociacao",
+      "observacoes": "NULL"
+    },
+    {
+      "old_id": "3768391",
+      "status": "em_negociacao",
+      "observacoes": "NULL"
+    },
+    {
+      "old_id": "3768392",
+      "status": "especial_sem_cobranca",
+      "observacoes": "NULL"
+    },
+    {
+      "old_id": "3768393",
+      "status": "especial_sem_cobranca",
+      "observacoes": "NULL"
+    },
+    {
+      "old_id": "3768394",
+      "status": "especial_sem_cobranca",
+      "observacoes": "NULL"
+    },
+    {
+      "old_id": "3768395",
+      "status": "especial_sem_cobranca",
+      "observacoes": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "old_id\tstatus\tobservacoes\n1\tcontatado\tNULL\n3768387\tpromessa\tNULL\n3768388\tem_negociacao\tNULL\n3768389\tem_negociacao\tNULL\n3768390\tem_negociacao\tNULL\n3768391\tem_negociacao\tNULL\n3768392\tespecial_sem_cobranca\tNULL\n3768393\tespecial_sem_cobranca\tNULL\n3768394\tespecial_sem_cobranca\tNULL\n3768395\tespecial_sem_cobranca\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

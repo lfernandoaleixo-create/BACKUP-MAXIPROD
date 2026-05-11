@@ -1,0 +1,35 @@
+{
+  "query": "SELECT ca.receivableId, ar_id.id as ar_by_id, ar_mx.id as ar_by_maxiprodId FROM collection_actions ca LEFT JOIN accounts_receivable ar_id ON ar_id.id = ca.receivableId LEFT JOIN accounts_receivable ar_mx ON ar_mx.maxiprodId = ca.receivableId LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ca.receivableId, ar_id.id as ar_by_id, ar_mx.id as ar_by_maxiprodId FROM collection_actions ca LEFT JOIN accounts_receivable ar_id ON ar_id.id = ca.receivableId LEFT JOIN accounts_receivable ar_mx ON ar_mx.maxiprodId = ca.receivableId LIMIT 5;",
+  "rows": [
+    {
+      "receivableId": "3768473",
+      "ar_by_id": "NULL",
+      "ar_by_maxiprodId": "NULL"
+    },
+    {
+      "receivableId": "3768524",
+      "ar_by_id": "NULL",
+      "ar_by_maxiprodId": "NULL"
+    },
+    {
+      "receivableId": "3768594",
+      "ar_by_id": "NULL",
+      "ar_by_maxiprodId": "NULL"
+    },
+    {
+      "receivableId": "3768499",
+      "ar_by_id": "NULL",
+      "ar_by_maxiprodId": "NULL"
+    },
+    {
+      "receivableId": "3768542",
+      "ar_by_id": "NULL",
+      "ar_by_maxiprodId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivableId\tar_by_id\tar_by_maxiprodId\n3768473\tNULL\tNULL\n3768524\tNULL\tNULL\n3768594\tNULL\tNULL\n3768499\tNULL\tNULL\n3768542\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 282
+}

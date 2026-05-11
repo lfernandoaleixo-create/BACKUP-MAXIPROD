@@ -1,0 +1,45 @@
+{
+  "query": "SELECT ca.receivableId, ca.status, ca.contatoHistorico, ca.observacoes, ca.cobrancaStartedAt FROM collection_actions ca WHERE ca.status = 'especial_sem_cobranca' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ca.receivableId, ca.status, ca.contatoHistorico, ca.observacoes, ca.cobrancaStartedAt FROM collection_actions ca WHERE ca.status = 'especial_sem_cobranca' LIMIT 5;",
+  "rows": [
+    {
+      "receivableId": "3768568",
+      "status": "especial_sem_cobranca",
+      "contatoHistorico": "[{\"data\": \"2026-04-24\", \"resumo\": \"1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança\", \"tipo\": \"outro\", \"usuario\": \"Thiago\"}]",
+      "observacoes": "1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança",
+      "cobrancaStartedAt": "2026-04-24"
+    },
+    {
+      "receivableId": "3768693",
+      "status": "especial_sem_cobranca",
+      "contatoHistorico": "[{\"data\": \"2026-04-24\", \"resumo\": \"1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança\", \"tipo\": \"outro\", \"usuario\": \"Thiago\"}]",
+      "observacoes": "1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança",
+      "cobrancaStartedAt": "2026-04-24"
+    },
+    {
+      "receivableId": "3768585",
+      "status": "especial_sem_cobranca",
+      "contatoHistorico": "[{\"data\": \"2026-04-24\", \"resumo\": \"1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança\", \"tipo\": \"outro\", \"usuario\": \"Thiago\"}]",
+      "observacoes": "1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança",
+      "cobrancaStartedAt": "2026-04-24"
+    },
+    {
+      "receivableId": "3768758",
+      "status": "especial_sem_cobranca",
+      "contatoHistorico": "[{\"data\": \"2026-04-27\", \"resumo\": \"1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança\", \"tipo\": \"outro\", \"usuario\": \"Thiago\"}]",
+      "observacoes": "1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança",
+      "cobrancaStartedAt": "2026-04-27"
+    },
+    {
+      "receivableId": "3768392",
+      "status": "especial_sem_cobranca",
+      "contatoHistorico": "NULL",
+      "observacoes": "NULL",
+      "cobrancaStartedAt": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivableId\tstatus\tcontatoHistorico\tobservacoes\tcobrancaStartedAt\n3768568\tespecial_sem_cobranca\t[{\"data\": \"2026-04-24\", \"resumo\": \"1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança\", \"tipo\": \"outro\", \"usuario\": \"Thiago\"}]\t1ª dia de cobrança: Cliente Fogos, Gilson está conduzindo cobrança\t2026-04-24\n3768693\tespecial_sem_cobranca\t[{\"data\": \"2026-04-24\", \"resumo\": \"1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança\", \"tipo\": \"outro\", \"usuario\": \"Thiago\"}]\t1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança\t2026-04-24\n3768585\tespecial_sem_cobranca\t[{\"data\": \"2026-04-24\", \"resumo\": \"1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança\", \"tipo\": \"outro\", \"usuario\": \"Thiago\"}]\t1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança\t2026-04-24\n3768758\tespecial_sem_cobranca\t[{\"data\": \"2026-04-27\", \"resumo\": \"1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança\", \"tipo\": \"outro\", \"usuario\": \"Thiago\"}]\t1ª dia de cobrança: Cliente Serragem, Gilson está conduzindo cobrança\t2026-04-27\n3768392\tespecial_sem_cobranca\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 269
+}

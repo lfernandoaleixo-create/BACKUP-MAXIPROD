@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, cliente, valorLiquido, vencimentoData FROM accounts_receivable WHERE id BETWEEN 5473700 AND 5473710 ORDER BY id LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, valorLiquido, vencimentoData FROM accounts_receivable WHERE id BETWEEN 5473700 AND 5473710 ORDER BY id LIMIT 10;",
+  "rows": [
+    {
+      "id": "5473700",
+      "cliente": "CLIENTE TESTE COBRANCA",
+      "valorLiquido": "1000.00",
+      "vencimentoData": "2026-03-01T00:00:00"
+    },
+    {
+      "id": "5473709",
+      "cliente": "TSM_CLI_A",
+      "valorLiquido": "1000.00",
+      "vencimentoData": "2025-01-15T00:00:00"
+    },
+    {
+      "id": "5473710",
+      "cliente": "TSM_CLI_A",
+      "valorLiquido": "500.00",
+      "vencimentoData": "2025-01-15T00:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvencimentoData\n5473700\tCLIENTE TESTE COBRANCA\t1000.00\t2026-03-01T00:00:00\n5473709\tTSM_CLI_A\t1000.00\t2025-01-15T00:00:00\n5473710\tTSM_CLI_A\t500.00\t2025-01-15T00:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}

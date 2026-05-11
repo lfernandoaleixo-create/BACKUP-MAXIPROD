@@ -1,0 +1,17 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.formaCobranca FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' AND ca.id IS NULL AND ar.formaCobranca LIKE '%Cheque%' ORDER BY ar.cliente;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.formaCobranca FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' AND ca.id IS NULL AND ar.formaCobranca LIKE '%Cheque%' ORDER BY ar.cliente;",
+  "rows": [
+    {
+      "id": "5473929",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "valorLiquido": "3963.33",
+      "vencimentoData": "2026-04-24T12:00:00.000-03:00",
+      "formaCobranca": "Cheque CHEQUE LINHA 11"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvencimentoData\tformaCobranca\n5473929\tM D DA SILVA ARTEFATOS DE BAMBU\t3963.33\t2026-04-24T12:00:00.000-03:00\tCheque CHEQUE LINHA 11\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

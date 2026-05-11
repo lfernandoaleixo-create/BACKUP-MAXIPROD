@@ -1,0 +1,76 @@
+{
+  "query": "SELECT DISTINCT ar.cliente FROM accounts_receivable ar INNER JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ca.status = 'especial_sem_cobranca' ORDER BY ar.cliente;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT ar.cliente FROM accounts_receivable ar INNER JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ca.status = 'especial_sem_cobranca' ORDER BY ar.cliente;",
+  "rows": [
+    {
+      "cliente": "60.012.877 ELIANA KELLY COSTA SOZINHO"
+    },
+    {
+      "cliente": "BOUTIQUE DO CONSTRUTOR SLU LTDA"
+    },
+    {
+      "cliente": "BR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA"
+    },
+    {
+      "cliente": "CARREON CARNES ESPECIAIS LTDA"
+    },
+    {
+      "cliente": "CLIENTE TESTE COBRANCA"
+    },
+    {
+      "cliente": "COMPAPEL DISTRIBUIDORA DE PAPEIS E UTILIDADES LTDA"
+    },
+    {
+      "cliente": "EDSON LUIZ FERNANDES"
+    },
+    {
+      "cliente": "ESPETINHOS COROMANDEL LTDA"
+    },
+    {
+      "cliente": "IVALDA NEVES MARTINS"
+    },
+    {
+      "cliente": "J LEAL DISTRIBUIDORA LTDA"
+    },
+    {
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA"
+    },
+    {
+      "cliente": "JOSE RODRIGUES DE OLIVEIRA FILHO"
+    },
+    {
+      "cliente": "KEURE QUIMICA LTDA"
+    },
+    {
+      "cliente": "L C CAVALCANTE LTDA"
+    },
+    {
+      "cliente": "LATICINIO SABOROSO LTDA"
+    },
+    {
+      "cliente": "MARIZA ART ARTESANATOS LTDA"
+    },
+    {
+      "cliente": "RAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA"
+    },
+    {
+      "cliente": "SUPER MIX DISTRIBUIDORA LTDA"
+    },
+    {
+      "cliente": "TSM_CLI_A"
+    },
+    {
+      "cliente": "TSM_CLI_B"
+    },
+    {
+      "cliente": "VALE DA PEDRA FOODS LTDA."
+    },
+    {
+      "cliente": "VALVES INDUSTRIA E COMERCIO DE ARTIGOS DESCARTAVEIS LTDA."
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\n60.012.877 ELIANA KELLY COSTA SOZINHO\nBOUTIQUE DO CONSTRUTOR SLU LTDA\nBR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA\nCARREON CARNES ESPECIAIS LTDA\nCLIENTE TESTE COBRANCA\nCOMPAPEL DISTRIBUIDORA DE PAPEIS E UTILIDADES LTDA\nEDSON LUIZ FERNANDES\nESPETINHOS COROMANDEL LTDA\nIVALDA NEVES MARTINS\nJ LEAL DISTRIBUIDORA LTDA\nJK COMERCIO E REPRESENTACOES LTDA\nJOSE RODRIGUES DE OLIVEIRA FILHO\nKEURE QUIMICA LTDA\nL C CAVALCANTE LTDA\nLATICINIO SABOROSO LTDA\nMARIZA ART ARTESANATOS LTDA\nRAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA\nSUPER MIX DISTRIBUIDORA LTDA\nTSM_CLI_A\nTSM_CLI_B\nVALE DA PEDRA FOODS LTDA.\nVALVES INDUSTRIA E COMERCIO DE ARTIGOS DESCARTAVEIS LTDA.\n",
+  "stderr": "",
+  "execution_time_ms": 269
+}

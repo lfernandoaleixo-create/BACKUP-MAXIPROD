@@ -1,0 +1,101 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.formaCobranca FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' AND ca.id IS NULL ORDER BY ar.cliente LIMIT 20 OFFSET 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.formaCobranca FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' AND ca.id IS NULL ORDER BY ar.cliente LIMIT 20 OFFSET 20;",
+  "rows": [
+    {
+      "id": "5474157",
+      "cliente": "LATICINIOS VIMILK LTDA",
+      "valorLiquido": "4723.20",
+      "vencimentoData": "2026-05-07T12:00:00.000-03:00",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95"
+    },
+    {
+      "id": "5474156",
+      "cliente": "LUIZ EDUARDO SILVA DE ABREU",
+      "valorLiquido": "3686.40",
+      "vencimentoData": "2026-05-07T12:00:00.000-03:00",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95"
+    },
+    {
+      "id": "5473829",
+      "cliente": "MAISA CRISTINA DIAS 34250917860",
+      "valorLiquido": "2500.00",
+      "vencimentoData": "2026-04-24T12:00:00.000-03:00",
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 50051 carteira 1"
+    },
+    {
+      "id": "5473877",
+      "cliente": "MARIZA ART ARTESANATOS LTDA",
+      "valorLiquido": "1375.00",
+      "vencimentoData": "2026-05-05T12:00:00.000-03:00",
+      "formaCobranca": "NULL"
+    },
+    {
+      "id": "5473893",
+      "cliente": "OURO NEGRO FERTILIZANTES LTDA",
+      "valorLiquido": "1116.00",
+      "vencimentoData": "2026-04-02T12:00:00.000-03:00",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95"
+    },
+    {
+      "id": "5474038",
+      "cliente": "PEDRO PAULO",
+      "valorLiquido": "4500.00",
+      "vencimentoData": "2026-04-28T12:00:00.000-03:00",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95"
+    },
+    {
+      "id": "5473873",
+      "cliente": "PHILIPPE COMERCIO ATACADISTA LTDA",
+      "valorLiquido": "575.00",
+      "vencimentoData": "2026-05-10T12:00:00.000-03:00",
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 50051 carteira 1"
+    },
+    {
+      "id": "5473865",
+      "cliente": "RAIANE PEREIRA DA SILVA - ALIMENTOS",
+      "valorLiquido": "933.00",
+      "vencimentoData": "2026-05-01T12:00:00.000-03:00",
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 52061 carteira 1"
+    },
+    {
+      "id": "5473951",
+      "cliente": "RAIANE PEREIRA DA SILVA - ALIMENTOS",
+      "valorLiquido": "1333.00",
+      "vencimentoData": "2026-05-07T12:00:00.000-03:00",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1"
+    },
+    {
+      "id": "5474035",
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "valorLiquido": "2250.00",
+      "vencimentoData": "2026-04-28T12:00:00.000-03:00",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95"
+    },
+    {
+      "id": "5473836",
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "valorLiquido": "2250.00",
+      "vencimentoData": "2026-03-24T12:00:00.000-03:00",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95"
+    },
+    {
+      "id": "5473843",
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "valorLiquido": "2250.00",
+      "vencimentoData": "2026-03-24T12:00:00.000-03:00",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95"
+    },
+    {
+      "id": "5473901",
+      "cliente": "UNIQUE COM. DE COSMETICOS LTDA",
+      "valorLiquido": "1300.00",
+      "vencimentoData": "2026-04-15T12:00:00.000-03:00",
+      "formaCobranca": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvencimentoData\tformaCobranca\n5474157\tLATICINIOS VIMILK LTDA\t4723.20\t2026-05-07T12:00:00.000-03:00\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\n5474156\tLUIZ EDUARDO SILVA DE ABREU\t3686.40\t2026-05-07T12:00:00.000-03:00\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\n5473829\tMAISA CRISTINA DIAS 34250917860\t2500.00\t2026-04-24T12:00:00.000-03:00\tBoleto Sicredi ag 0155 conta 50051 carteira 1\n5473877\tMARIZA ART ARTESANATOS LTDA\t1375.00\t2026-05-05T12:00:00.000-03:00\tNULL\n5473893\tOURO NEGRO FERTILIZANTES LTDA\t1116.00\t2026-04-02T12:00:00.000-03:00\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\n5474038\tPEDRO PAULO\t4500.00\t2026-04-28T12:00:00.000-03:00\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\n5473873\tPHILIPPE COMERCIO ATACADISTA LTDA\t575.00\t2026-05-10T12:00:00.000-03:00\tBoleto Sicredi ag 0155 conta 50051 carteira 1\n5473865\tRAIANE PEREIRA DA SILVA - ALIMENTOS\t933.00\t2026-05-01T12:00:00.000-03:00\tBoleto Sicredi ag 0155 conta 52061 carteira 1\n5473951\tRAIANE PEREIRA DA SILVA - ALIMENTOS\t1333.00\t2026-05-07T12:00:00.000-03:00\tBoleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1\n5474035\tRONALDO ANTONIO DE MOURA\t2250.00\t2026-04-28T12:00:00.000-03:00\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\n5473836\tRONALDO ANTONIO DE MOURA\t2250.00\t2026-03-24T12:00:00.000-03:00\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\n5473843\tRONALDO ANTONIO DE MOURA\t2250.00\t2026-03-24T12:00:00.000-03:00\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\n5473901\tUNIQUE COM. DE COSMETICOS LTDA\t1300.00\t2026-04-15T12:00:00.000-03:00\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

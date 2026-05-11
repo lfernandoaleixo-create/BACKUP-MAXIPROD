@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as orphaned_3m FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL AND cmt.receivable_id BETWEEN 3000000 AND 4000000;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as orphaned_3m FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL AND cmt.receivable_id BETWEEN 3000000 AND 4000000;",
+  "rows": [
+    {
+      "orphaned_3m": "15"
+    }
+  ],
+  "messages": [],
+  "stdout": "orphaned_3m\n15\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

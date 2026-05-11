@@ -18,7 +18,7 @@ import { generateDecisionPdf } from "../lib/decisionPdfExport";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson", "Thalita"];
-const MANUAL_TICK_OPERATORS = ["Thiago", "Guilherme", "Flavio", "Fernando", "Bruno", "Gilson", "Thalita"];
+const MANUAL_TICK_OPERATORS = ["Thiago", "Guilherme", "Flavio", "Bruno", "Gilson", "Thalita"];
 const TICK_LABELS = ["Ação 1", "Intervalo", "Ação 2", "Intervalo", "Ação 3", "Intervalo", "Decisão"];
 
 const STATUS_OPTIONS = [

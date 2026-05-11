@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, maxiprodId, cliente, valorLiquido, vencimentoData FROM accounts_receivable WHERE estado = 'EMITIDO' ORDER BY id LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, maxiprodId, cliente, valorLiquido, vencimentoData FROM accounts_receivable WHERE estado = 'EMITIDO' ORDER BY id LIMIT 5;",
+  "rows": [
+    {
+      "id": "5473724",
+      "maxiprodId": "409300068715164",
+      "cliente": "SUPER MIX DISTRIBUIDORA LTDA",
+      "valorLiquido": "2323.00",
+      "vencimentoData": "2025-11-18T12:00:00.000-03:00"
+    },
+    {
+      "id": "5473725",
+      "maxiprodId": "409300068724033",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "valorLiquido": "4350.00",
+      "vencimentoData": "2026-02-01T12:00:00.000-03:00"
+    },
+    {
+      "id": "5473726",
+      "maxiprodId": "409300068724034",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "valorLiquido": "4350.00",
+      "vencimentoData": "2026-02-16T12:00:00.000-03:00"
+    },
+    {
+      "id": "5473727",
+      "maxiprodId": "409300068724035",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "valorLiquido": "4350.00",
+      "vencimentoData": "2026-03-03T12:00:00.000-03:00"
+    },
+    {
+      "id": "5473728",
+      "maxiprodId": "409300068724036",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "valorLiquido": "4350.00",
+      "vencimentoData": "2026-03-18T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tmaxiprodId\tcliente\tvalorLiquido\tvencimentoData\n5473724\t409300068715164\tSUPER MIX DISTRIBUIDORA LTDA\t2323.00\t2025-11-18T12:00:00.000-03:00\n5473725\t409300068724033\tJK COMERCIO E REPRESENTACOES LTDA\t4350.00\t2026-02-01T12:00:00.000-03:00\n5473726\t409300068724034\tJK COMERCIO E REPRESENTACOES LTDA\t4350.00\t2026-02-16T12:00:00.000-03:00\n5473727\t409300068724035\tJK COMERCIO E REPRESENTACOES LTDA\t4350.00\t2026-03-03T12:00:00.000-03:00\n5473728\t409300068724036\tJK COMERCIO E REPRESENTACOES LTDA\t4350.00\t2026-03-18T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

@@ -1,0 +1,100 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ca.status FROM collection_actions ca INNER JOIN accounts_receivable ar ON ar.id = ca.receivableId LEFT JOIN collection_manual_ticks cmt ON cmt.receivable_id = ca.receivableId WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' AND cmt.id IS NULL ORDER BY ar.cliente LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ca.status FROM collection_actions ca INNER JOIN accounts_receivable ar ON ar.id = ca.receivableId LEFT JOIN collection_manual_ticks cmt ON cmt.receivable_id = ca.receivableId WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' AND cmt.id IS NULL ORDER BY ar.cliente LIMIT 20;",
+  "rows": [
+    {
+      "id": "5473904",
+      "cliente": "CARREON CARNES ESPECIAIS LTDA",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473899",
+      "cliente": "FAZENDA SANTA CRUZ",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473838",
+      "cliente": "FOGOS BEIJA FLOR",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473796",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473847",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473765",
+      "cliente": "J LEAL DISTRIBUIDORA LTDA",
+      "status": "pendente"
+    },
+    {
+      "id": "5473729",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473754",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473732",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473789",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "pendente"
+    },
+    {
+      "id": "5473733",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473734",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473794",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473929",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "status": "cheque_compensacao"
+    },
+    {
+      "id": "5473940",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473937",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473877",
+      "cliente": "MARIZA ART ARTESANATOS LTDA",
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "id": "5473750",
+      "cliente": "WGO COMERCIO E SERVICOS LTDA",
+      "status": "pendente"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tstatus\n5473904\tCARREON CARNES ESPECIAIS LTDA\tespecial_sem_cobranca\n5473899\tFAZENDA SANTA CRUZ\tespecial_sem_cobranca\n5473838\tFOGOS BEIJA FLOR\tespecial_sem_cobranca\n5473796\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\tespecial_sem_cobranca\n5473847\tINDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.\tespecial_sem_cobranca\n5473765\tJ LEAL DISTRIBUIDORA LTDA\tpendente\n5473729\tKEURE QUIMICA LTDA\tespecial_sem_cobranca\n5473754\tKEURE QUIMICA LTDA\tespecial_sem_cobranca\n5473732\tKEURE QUIMICA LTDA\tespecial_sem_cobranca\n5473789\tKEURE QUIMICA LTDA\tpendente\n5473733\tKEURE QUIMICA LTDA\tespecial_sem_cobranca\n5473734\tKEURE QUIMICA LTDA\tespecial_sem_cobranca\n5473794\tKEURE QUIMICA LTDA\tespecial_sem_cobranca\n5473929\tM D DA SILVA ARTEFATOS DE BAMBU\tcheque_compensacao\n5473940\tM D DA SILVA ARTEFATOS DE BAMBU\tespecial_sem_cobranca\n5473937\tM D DA SILVA ARTEFATOS DE BAMBU\tespecial_sem_cobranca\n5473877\tMARIZA ART ARTESANATOS LTDA\tespecial_sem_cobranca\n5473750\tWGO COMERCIO E SERVICOS LTDA\tpendente\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

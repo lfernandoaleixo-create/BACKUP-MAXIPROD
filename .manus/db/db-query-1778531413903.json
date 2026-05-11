@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE collection_manual_ticks cmt SET cmt.receivable_id = cmt.receivable_id + 2349798 WHERE cmt.receivable_id BETWEEN 3000000 AND 4000000 AND NOT EXISTS (SELECT 1 FROM accounts_receivable ar WHERE ar.id = cmt.receivable_id) AND EXISTS (SELECT 1 FROM accounts_receivable ar2 WHERE ar2.id = cmt.receivable_id + 2349798);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute UPDATE collection_manual_ticks cmt SET cmt.receivable_id = cmt.receivable_id + 2349798 WHERE cmt.receivable_id BETWEEN 3000000 AND 4000000 AND NOT EXISTS (SELECT 1 FROM accounts_receivable ar WHERE ar.id = cmt.receivable_id) AND EXISTS (SELECT 1 FROM accounts_receivable ar2 WHERE ar2.id = cmt.receivable_id + 2349798);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 269
+}

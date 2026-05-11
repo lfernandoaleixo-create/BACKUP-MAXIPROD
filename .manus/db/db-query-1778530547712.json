@@ -1,0 +1,30 @@
+{
+  "query": "SELECT ca.status, COUNT(*) as cnt FROM accounts_receivable ar INNER JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' GROUP BY ca.status ORDER BY cnt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ca.status, COUNT(*) as cnt FROM accounts_receivable ar INNER JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' GROUP BY ca.status ORDER BY cnt DESC;",
+  "rows": [
+    {
+      "status": "contatado",
+      "cnt": "40"
+    },
+    {
+      "status": "especial_sem_cobranca",
+      "cnt": "22"
+    },
+    {
+      "status": "promessa",
+      "cnt": "9"
+    },
+    {
+      "status": "pendente",
+      "cnt": "3"
+    },
+    {
+      "status": "em_negociacao",
+      "cnt": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\tcnt\ncontatado\t40\nespecial_sem_cobranca\t22\npromessa\t9\npendente\t3\nem_negociacao\t1\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

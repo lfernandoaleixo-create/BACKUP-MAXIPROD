@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as matches FROM accounts_receivable WHERE id IN (3123902+2349798, 3123907+2349798, 3123908+2349798, 3123909+2349798, 3123910+2349798, 3123915+2349798, 3123976+2349798, 3123977+2349798, 3123983+2349798, 3123984+2349798);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as matches FROM accounts_receivable WHERE id IN (3123902+2349798, 3123907+2349798, 3123908+2349798, 3123909+2349798, 3123910+2349798, 3123915+2349798, 3123976+2349798, 3123977+2349798, 3123983+2349798, 3123984+2349798);",
+  "rows": [
+    {
+      "matches": "6"
+    }
+  ],
+  "messages": [],
+  "stdout": "matches\n6\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

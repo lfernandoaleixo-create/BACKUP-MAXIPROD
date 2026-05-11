@@ -1,0 +1,23 @@
+{
+  "query": "SELECT * FROM collection_manual_ticks WHERE receivable_id = 5473802; SELECT * FROM collection_actions WHERE receivableId = 5473802;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT * FROM collection_manual_ticks WHERE receivable_id = 5473802; SELECT * FROM collection_actions WHERE receivableId = 5473802;",
+  "rows": [
+    {
+      "id": "390035",
+      "receivable_id": "5473802",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Thiago",
+      "ticked_at": "1777576977532",
+      "created_at": "1777576977532",
+      "tick_status": "blue"
+    }
+  ],
+  "messages": [
+    "id\treceivableId\tstatus\tpromessaData\tpromessaValor\tlembreteData\tobservacoes\tcontatoHistorico\tupdatedBy\tcreatedAt\tupdatedAt\tcobrancaStartedAt\tphoneMutedBy\tphoneMutedAt",
+    "660025\t5473802\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\t[]\tNULL\t2026-04-30 19:23:01\t2026-05-11 20:14:54\t2026-04-30\tNULL\tNULL"
+  ],
+  "stdout": "id\treceivable_id\tstep\tticked\tticked_by\tticked_at\tcreated_at\ttick_status\n390035\t5473802\t1\t1\tThiago\t1777576977532\t1777576977532\tblue\nid\treceivableId\tstatus\tpromessaData\tpromessaValor\tlembreteData\tobservacoes\tcontatoHistorico\tupdatedBy\tcreatedAt\tupdatedAt\tcobrancaStartedAt\tphoneMutedBy\tphoneMutedAt\n660025\t5473802\tespecial_sem_cobranca\tNULL\tNULL\tNULL\tNULL\t[]\tNULL\t2026-04-30 19:23:01\t2026-05-11 20:14:54\t2026-04-30\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

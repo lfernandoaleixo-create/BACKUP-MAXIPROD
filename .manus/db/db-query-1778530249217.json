@@ -1,0 +1,19 @@
+{
+  "query": "SELECT MIN(id) as min_new_id FROM accounts_receivable; SELECT MIN(receivableId) as min_old_id, MAX(receivableId) as max_old_id FROM collection_actions WHERE receivableId > 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT MIN(id) as min_new_id FROM accounts_receivable; SELECT MIN(receivableId) as min_old_id, MAX(receivableId) as max_old_id FROM collection_actions WHERE receivableId > 1;",
+  "rows": [
+    {
+      "min_new_id": "5473700"
+    },
+    {
+      "min_new_id": "min_old_id\tmax_old_id"
+    },
+    {
+      "min_new_id": "3768387\t5021057"
+    }
+  ],
+  "messages": [],
+  "stdout": "min_new_id\n5473700\nmin_old_id\tmax_old_id\n3768387\t5021057\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

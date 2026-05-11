@@ -1,0 +1,25 @@
+{
+  "query": "SELECT FLOOR(cmt.receivable_id / 1000000) as range_m, COUNT(*) as cnt, SUM(cmt.ticked) as ticked_cnt FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL GROUP BY range_m ORDER BY range_m;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT FLOOR(cmt.receivable_id / 1000000) as range_m, COUNT(*) as cnt, SUM(cmt.ticked) as ticked_cnt FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL GROUP BY range_m ORDER BY range_m;",
+  "rows": [
+    {
+      "range_m": "2",
+      "cnt": "56",
+      "ticked_cnt": "56"
+    },
+    {
+      "range_m": "3",
+      "cnt": "90",
+      "ticked_cnt": "87"
+    },
+    {
+      "range_m": "4",
+      "cnt": "4",
+      "ticked_cnt": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "range_m\tcnt\tticked_cnt\n2\t56\t56\n3\t90\t87\n4\t4\t4\n",
+  "stderr": "",
+  "execution_time_ms": 283
+}

@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as total_recebiveis FROM accounts_receivable WHERE estado = 'EMITIDO'; SELECT COUNT(DISTINCT ar.id) as com_acao FROM accounts_receivable ar INNER JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_recebiveis FROM accounts_receivable WHERE estado = 'EMITIDO'; SELECT COUNT(DISTINCT ar.id) as com_acao FROM accounts_receivable ar INNER JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO';",
+  "rows": [
+    {
+      "total_recebiveis": "556"
+    },
+    {
+      "total_recebiveis": "com_acao"
+    },
+    {
+      "total_recebiveis": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_recebiveis\n556\ncom_acao\n0\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

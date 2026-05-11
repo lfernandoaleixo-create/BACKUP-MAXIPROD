@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as in_range FROM collection_actions WHERE receivableId >= 5473700; SELECT COUNT(*) as out_of_range FROM collection_actions WHERE receivableId < 5473700; SELECT receivableId, status FROM collection_actions WHERE receivableId >= 5473700 LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as in_range FROM collection_actions WHERE receivableId >= 5473700; SELECT COUNT(*) as out_of_range FROM collection_actions WHERE receivableId < 5473700; SELECT receivableId, status FROM collection_actions WHERE receivableId >= 5473700 LIMIT 5;",
+  "rows": [
+    {
+      "in_range": "0"
+    },
+    {
+      "in_range": "out_of_range"
+    },
+    {
+      "in_range": "168"
+    }
+  ],
+  "messages": [],
+  "stdout": "in_range\n0\nout_of_range\n168\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as total_emitido_vencido FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData < '2026-05-11T00:00:00'; SELECT COUNT(*) as com_acao FROM accounts_receivable ar INNER JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_emitido_vencido FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData < '2026-05-11T00:00:00'; SELECT COUNT(*) as com_acao FROM accounts_receivable ar INNER JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00';",
+  "rows": [
+    {
+      "total_emitido_vencido": "112"
+    },
+    {
+      "total_emitido_vencido": "com_acao"
+    },
+    {
+      "total_emitido_vencido": "75"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_emitido_vencido\n112\ncom_acao\n75\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

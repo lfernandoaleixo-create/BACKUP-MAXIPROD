@@ -1,0 +1,66 @@
+{
+  "query": "SELECT ca.receivableId, ca.status, ca.observacoes, ca.contatoHistorico, ca.cobrancaStartedAt FROM collection_actions ca LEFT JOIN accounts_receivable ar ON ar.id = ca.receivableId WHERE ar.id IS NULL ORDER BY ca.receivableId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ca.receivableId, ca.status, ca.observacoes, ca.contatoHistorico, ca.cobrancaStartedAt FROM collection_actions ca LEFT JOIN accounts_receivable ar ON ar.id = ca.receivableId WHERE ar.id IS NULL ORDER BY ca.receivableId;",
+  "rows": [
+    {
+      "receivableId": "1",
+      "status": "contatado",
+      "observacoes": "NULL",
+      "contatoHistorico": "NULL",
+      "cobrancaStartedAt": "2026-04-29"
+    },
+    {
+      "receivableId": "4158596",
+      "status": "cheque_compensacao",
+      "observacoes": "NULL",
+      "contatoHistorico": "[]",
+      "cobrancaStartedAt": "2026-04-30"
+    },
+    {
+      "receivableId": "4244503",
+      "status": "cheque_compensacao",
+      "observacoes": "NULL",
+      "contatoHistorico": "[]",
+      "cobrancaStartedAt": "2026-05-06"
+    },
+    {
+      "receivableId": "4502224",
+      "status": "contatado",
+      "observacoes": "NULL",
+      "contatoHistorico": "NULL",
+      "cobrancaStartedAt": "2026-05-05"
+    },
+    {
+      "receivableId": "4882347",
+      "status": "contatado",
+      "observacoes": "NULL",
+      "contatoHistorico": "NULL",
+      "cobrancaStartedAt": "2026-05-06"
+    },
+    {
+      "receivableId": "5016841",
+      "status": "contatado",
+      "observacoes": "NULL",
+      "contatoHistorico": "NULL",
+      "cobrancaStartedAt": "2026-05-07"
+    },
+    {
+      "receivableId": "5021056",
+      "status": "especial_sem_cobranca",
+      "observacoes": "NULL",
+      "contatoHistorico": "[]",
+      "cobrancaStartedAt": "2026-05-08"
+    },
+    {
+      "receivableId": "5021057",
+      "status": "especial_sem_cobranca",
+      "observacoes": "NULL",
+      "contatoHistorico": "[]",
+      "cobrancaStartedAt": "2026-05-08"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivableId\tstatus\tobservacoes\tcontatoHistorico\tcobrancaStartedAt\n1\tcontatado\tNULL\tNULL\t2026-04-29\n4158596\tcheque_compensacao\tNULL\t[]\t2026-04-30\n4244503\tcheque_compensacao\tNULL\t[]\t2026-05-06\n4502224\tcontatado\tNULL\tNULL\t2026-05-05\n4882347\tcontatado\tNULL\tNULL\t2026-05-06\n5016841\tcontatado\tNULL\tNULL\t2026-05-07\n5021056\tespecial_sem_cobranca\tNULL\t[]\t2026-05-08\n5021057\tespecial_sem_cobranca\tNULL\t[]\t2026-05-08\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}

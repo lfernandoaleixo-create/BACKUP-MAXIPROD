@@ -1,0 +1,60 @@
+{
+  "query": "SELECT ca.receivableId, ca.status, SUBSTRING(ca.observacoes, 1, 100) as obs FROM collection_actions ca WHERE ca.status != 'especial_sem_cobranca' AND ca.observacoes IS NOT NULL LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ca.receivableId, ca.status, SUBSTRING(ca.observacoes, 1, 100) as obs FROM collection_actions ca WHERE ca.status != 'especial_sem_cobranca' AND ca.observacoes IS NOT NULL LIMIT 10;",
+  "rows": [
+    {
+      "receivableId": "3768473",
+      "status": "contatado",
+      "obs": "1ª dia de cobrança:  Mensagem enviada no email financeiro@bomdafazenda.com e compras@bomdafazenda.co"
+    },
+    {
+      "receivableId": "3768524",
+      "status": "promessa",
+      "obs": "1º dia de cobrança:  Mensagem de cobrança enviada no email jarouche.vendas@gmail.com e whatsapp 11 9"
+    },
+    {
+      "receivableId": "3768594",
+      "status": "promessa",
+      "obs": "1º dia de cobrança: Mensagem de cobrança enviada no email comprobala@gmail.com e whatsapp 37 99962-4"
+    },
+    {
+      "receivableId": "3768499",
+      "status": "contatado",
+      "obs": "1º dia de cobrança: Mensagem de cobrança enviada no whatsapp número 11 99631-1105. Empresa sem email"
+    },
+    {
+      "receivableId": "3768542",
+      "status": "contatado",
+      "obs": "1º dia de cobrança: Mensagem de cobrança enviada no email lavidasaboresdocampo@icloud.com e whatsapp"
+    },
+    {
+      "receivableId": "3768418",
+      "status": "promessa",
+      "obs": "1º dia de cobrança: mensagem de cobrança enviada no email ecopalitosnature@gmail.com e whatsapp núme"
+    },
+    {
+      "receivableId": "3768574",
+      "status": "contatado",
+      "obs": "1ª dia de cobrança: Mensagem de cobrança enviada no email facadeouro@gmail.com e whatsapp número 11 "
+    },
+    {
+      "receivableId": "3768486",
+      "status": "promessa",
+      "obs": "1ª dia de cobrança: Mensagem de cobrança enviada no email ingridbernardesg15@icloid.com e whatsapp n"
+    },
+    {
+      "receivableId": "3768545",
+      "status": "contatado",
+      "obs": "1ª dia de cobrança:  Mensagem de cobrança enviada no email dealizesuprimentos@hotmail.com e whatsapp"
+    },
+    {
+      "receivableId": "3768544",
+      "status": "contatado",
+      "obs": "1ª dia de cobrança:  Mensagem de cobrança enviada no email dealizesuprimentos@hotmail.com e whatsapp"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivableId\tstatus\tobs\n3768473\tcontatado\t1ª dia de cobrança:  Mensagem enviada no email financeiro@bomdafazenda.com e compras@bomdafazenda.co\n3768524\tpromessa\t1º dia de cobrança:  Mensagem de cobrança enviada no email jarouche.vendas@gmail.com e whatsapp 11 9\n3768594\tpromessa\t1º dia de cobrança: Mensagem de cobrança enviada no email comprobala@gmail.com e whatsapp 37 99962-4\n3768499\tcontatado\t1º dia de cobrança: Mensagem de cobrança enviada no whatsapp número 11 99631-1105. Empresa sem email\n3768542\tcontatado\t1º dia de cobrança: Mensagem de cobrança enviada no email lavidasaboresdocampo@icloud.com e whatsapp\n3768418\tpromessa\t1º dia de cobrança: mensagem de cobrança enviada no email ecopalitosnature@gmail.com e whatsapp núme\n3768574\tcontatado\t1ª dia de cobrança: Mensagem de cobrança enviada no email facadeouro@gmail.com e whatsapp número 11 \n3768486\tpromessa\t1ª dia de cobrança: Mensagem de cobrança enviada no email ingridbernardesg15@icloid.com e whatsapp n\n3768545\tcontatado\t1ª dia de cobrança:  Mensagem de cobrança enviada no email dealizesuprimentos@hotmail.com e whatsapp\n3768544\tcontatado\t1ª dia de cobrança:  Mensagem de cobrança enviada no email dealizesuprimentos@hotmail.com e whatsapp\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

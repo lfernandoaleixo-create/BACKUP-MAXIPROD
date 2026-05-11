@@ -1,0 +1,52 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.valorLiquido, ar.formaCobranca FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' AND ca.id IS NULL AND (ar.cliente LIKE '%KEURE%' OR ar.formaCobranca LIKE '%Cheque%') ORDER BY ar.cliente;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.valorLiquido, ar.formaCobranca FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-11T00:00:00' AND ca.id IS NULL AND (ar.cliente LIKE '%KEURE%' OR ar.formaCobranca LIKE '%Cheque%') ORDER BY ar.cliente;",
+  "rows": [
+    {
+      "id": "5473729",
+      "cliente": "KEURE QUIMICA LTDA",
+      "valorLiquido": "9250.00",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1"
+    },
+    {
+      "id": "5473732",
+      "cliente": "KEURE QUIMICA LTDA",
+      "valorLiquido": "9250.00",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1"
+    },
+    {
+      "id": "5473733",
+      "cliente": "KEURE QUIMICA LTDA",
+      "valorLiquido": "1225.00",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1"
+    },
+    {
+      "id": "5473734",
+      "cliente": "KEURE QUIMICA LTDA",
+      "valorLiquido": "8750.00",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1"
+    },
+    {
+      "id": "5473754",
+      "cliente": "KEURE QUIMICA LTDA",
+      "valorLiquido": "8750.00",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1"
+    },
+    {
+      "id": "5473794",
+      "cliente": "KEURE QUIMICA LTDA",
+      "valorLiquido": "8750.00",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1"
+    },
+    {
+      "id": "5473929",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "valorLiquido": "3963.33",
+      "formaCobranca": "Cheque CHEQUE LINHA 11"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tformaCobranca\n5473729\tKEURE QUIMICA LTDA\t9250.00\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\n5473732\tKEURE QUIMICA LTDA\t9250.00\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\n5473733\tKEURE QUIMICA LTDA\t1225.00\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\n5473734\tKEURE QUIMICA LTDA\t8750.00\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\n5473754\tKEURE QUIMICA LTDA\t8750.00\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\n5473794\tKEURE QUIMICA LTDA\t8750.00\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\n5473929\tM D DA SILVA ARTEFATOS DE BAMBU\t3963.33\tCheque CHEQUE LINHA 11\n",
+  "stderr": "",
+  "execution_time_ms": 277
+}

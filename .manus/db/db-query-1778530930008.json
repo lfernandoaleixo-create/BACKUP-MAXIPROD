@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO collection_actions (receivableId, status) VALUES (5473729, 'especial_sem_cobranca'), (5473732, 'especial_sem_cobranca'), (5473733, 'especial_sem_cobranca'), (5473734, 'especial_sem_cobranca'), (5473754, 'especial_sem_cobranca'), (5473794, 'especial_sem_cobranca'), (5473929, 'cheque_compensacao');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute INSERT INTO collection_actions (receivableId, status) VALUES (5473729, 'especial_sem_cobranca'), (5473732, 'especial_sem_cobranca'), (5473733, 'especial_sem_cobranca'), (5473734, 'especial_sem_cobranca'), (5473754, 'especial_sem_cobranca'), (5473794, 'especial_sem_cobranca'), (5473929, 'cheque_compensacao');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 266
+}

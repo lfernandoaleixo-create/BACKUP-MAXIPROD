@@ -1,0 +1,65 @@
+{
+  "query": "SELECT FLOOR(cmt.receivable_id / 100000) as range_100k, COUNT(*) as cnt, SUM(cmt.ticked) as ticked FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL GROUP BY range_100k ORDER BY range_100k;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT FLOOR(cmt.receivable_id / 100000) as range_100k, COUNT(*) as cnt, SUM(cmt.ticked) as ticked FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL GROUP BY range_100k ORDER BY range_100k;",
+  "rows": [
+    {
+      "range_100k": "26",
+      "cnt": "18",
+      "ticked": "18"
+    },
+    {
+      "range_100k": "27",
+      "cnt": "2",
+      "ticked": "2"
+    },
+    {
+      "range_100k": "28",
+      "cnt": "2",
+      "ticked": "2"
+    },
+    {
+      "range_100k": "29",
+      "cnt": "31",
+      "ticked": "31"
+    },
+    {
+      "range_100k": "31",
+      "cnt": "11",
+      "ticked": "10"
+    },
+    {
+      "range_100k": "33",
+      "cnt": "2",
+      "ticked": "2"
+    },
+    {
+      "range_100k": "34",
+      "cnt": "2",
+      "ticked": "2"
+    },
+    {
+      "range_100k": "41",
+      "cnt": "1",
+      "ticked": "1"
+    },
+    {
+      "range_100k": "42",
+      "cnt": "1",
+      "ticked": "1"
+    },
+    {
+      "range_100k": "45",
+      "cnt": "1",
+      "ticked": "1"
+    },
+    {
+      "range_100k": "48",
+      "cnt": "1",
+      "ticked": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "range_100k\tcnt\tticked\n26\t18\t18\n27\t2\t2\n28\t2\t2\n29\t31\t31\n31\t11\t10\n33\t2\t2\n34\t2\t2\n41\t1\t1\n42\t1\t1\n45\t1\t1\n48\t1\t1\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

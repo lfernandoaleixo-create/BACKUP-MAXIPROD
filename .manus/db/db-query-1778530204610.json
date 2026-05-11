@@ -1,0 +1,9 @@
+{
+  "query": "SELECT id, maxiprodId FROM accounts_receivable WHERE maxiprodId IN (3768387, 3768388, 3768389, 3768390, 3768391, 3768392, 3768393, 3768394, 3768395) LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, maxiprodId FROM accounts_receivable WHERE maxiprodId IN (3768387, 3768388, 3768389, 3768390, 3768391, 3768392, 3768393, 3768394, 3768395) LIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 260
+}

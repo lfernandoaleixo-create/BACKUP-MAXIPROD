@@ -1,0 +1,80 @@
+{
+  "query": "SELECT cda.receivableId, cda.actionType, cda.operatorName, cda.notes, cda.actionDate FROM collection_daily_actions cda ORDER BY cda.receivableId LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cda.receivableId, cda.actionType, cda.operatorName, cda.notes, cda.actionDate FROM collection_daily_actions cda ORDER BY cda.receivableId LIMIT 10;",
+  "rows": [
+    {
+      "receivableId": "1",
+      "actionType": "ligacao",
+      "operatorName": "Guilherme",
+      "notes": "Teste com um tipo apenas",
+      "actionDate": "2026-05-04"
+    },
+    {
+      "receivableId": "1",
+      "actionType": "email",
+      "operatorName": "Thiago",
+      "notes": "Teste de múltiplas ações simultâneas",
+      "actionDate": "2026-05-04"
+    },
+    {
+      "receivableId": "1",
+      "actionType": "ligacao",
+      "operatorName": "Guilherme",
+      "notes": "Teste com um tipo apenas",
+      "actionDate": "2026-05-04"
+    },
+    {
+      "receivableId": "1",
+      "actionType": "whatsapp",
+      "operatorName": "Thiago",
+      "notes": "Teste de múltiplas ações simultâneas",
+      "actionDate": "2026-05-04"
+    },
+    {
+      "receivableId": "1",
+      "actionType": "whatsapp",
+      "operatorName": "Thiago",
+      "notes": "Teste de múltiplas ações simultâneas",
+      "actionDate": "2026-05-04"
+    },
+    {
+      "receivableId": "1",
+      "actionType": "email",
+      "operatorName": "Thiago",
+      "notes": "Teste de múltiplas ações simultâneas",
+      "actionDate": "2026-05-04"
+    },
+    {
+      "receivableId": "1",
+      "actionType": "ligacao",
+      "operatorName": "Guilherme",
+      "notes": "Teste com um tipo apenas",
+      "actionDate": "2026-05-04"
+    },
+    {
+      "receivableId": "1",
+      "actionType": "whatsapp",
+      "operatorName": "Thiago",
+      "notes": "Teste de múltiplas ações simultâneas",
+      "actionDate": "2026-05-04"
+    },
+    {
+      "receivableId": "1",
+      "actionType": "email",
+      "operatorName": "Thiago",
+      "notes": "Teste de múltiplas ações simultâneas",
+      "actionDate": "2026-05-04"
+    },
+    {
+      "receivableId": "1",
+      "actionType": "whatsapp",
+      "operatorName": "Thiago",
+      "notes": "Teste de múltiplas ações simultâneas",
+      "actionDate": "2026-05-04"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivableId\tactionType\toperatorName\tnotes\tactionDate\n1\tligacao\tGuilherme\tTeste com um tipo apenas\t2026-05-04\n1\temail\tThiago\tTeste de múltiplas ações simultâneas\t2026-05-04\n1\tligacao\tGuilherme\tTeste com um tipo apenas\t2026-05-04\n1\twhatsapp\tThiago\tTeste de múltiplas ações simultâneas\t2026-05-04\n1\twhatsapp\tThiago\tTeste de múltiplas ações simultâneas\t2026-05-04\n1\temail\tThiago\tTeste de múltiplas ações simultâneas\t2026-05-04\n1\tligacao\tGuilherme\tTeste com um tipo apenas\t2026-05-04\n1\twhatsapp\tThiago\tTeste de múltiplas ações simultâneas\t2026-05-04\n1\temail\tThiago\tTeste de múltiplas ações simultâneas\t2026-05-04\n1\twhatsapp\tThiago\tTeste de múltiplas ações simultâneas\t2026-05-04\n",
+  "stderr": "",
+  "execution_time_ms": 255
+}

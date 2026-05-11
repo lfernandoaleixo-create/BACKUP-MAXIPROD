@@ -1,0 +1,70 @@
+{
+  "query": "SELECT DISTINCT cmt.receivable_id as old_id FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL AND cmt.receivable_id BETWEEN 3000000 AND 4000000 ORDER BY cmt.receivable_id LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT cmt.receivable_id as old_id FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL AND cmt.receivable_id BETWEEN 3000000 AND 4000000 ORDER BY cmt.receivable_id LIMIT 20;",
+  "rows": [
+    {
+      "old_id": "3123902"
+    },
+    {
+      "old_id": "3123907"
+    },
+    {
+      "old_id": "3123908"
+    },
+    {
+      "old_id": "3123909"
+    },
+    {
+      "old_id": "3123910"
+    },
+    {
+      "old_id": "3123915"
+    },
+    {
+      "old_id": "3123976"
+    },
+    {
+      "old_id": "3123977"
+    },
+    {
+      "old_id": "3123983"
+    },
+    {
+      "old_id": "3123984"
+    },
+    {
+      "old_id": "3123985"
+    },
+    {
+      "old_id": "3123993"
+    },
+    {
+      "old_id": "3123994"
+    },
+    {
+      "old_id": "3123995"
+    },
+    {
+      "old_id": "3124001"
+    },
+    {
+      "old_id": "3124002"
+    },
+    {
+      "old_id": "3124003"
+    },
+    {
+      "old_id": "3124004"
+    },
+    {
+      "old_id": "3124005"
+    },
+    {
+      "old_id": "3124013"
+    }
+  ],
+  "messages": [],
+  "stdout": "old_id\n3123902\n3123907\n3123908\n3123909\n3123910\n3123915\n3123976\n3123977\n3123983\n3123984\n3123985\n3123993\n3123994\n3123995\n3124001\n3124002\n3124003\n3124004\n3124005\n3124013\n",
+  "stderr": "",
+  "execution_time_ms": 256
+}

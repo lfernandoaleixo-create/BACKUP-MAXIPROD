@@ -1,0 +1,25 @@
+{
+  "query": "SELECT COUNT(*) as total_ticks FROM collection_manual_ticks; SELECT COUNT(*) as orphaned_ticks FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL; SELECT COUNT(*) as linked_ticks FROM collection_manual_ticks cmt INNER JOIN accounts_receivable ar ON ar.id = cmt.receivable_id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_ticks FROM collection_manual_ticks; SELECT COUNT(*) as orphaned_ticks FROM collection_manual_ticks cmt LEFT JOIN accounts_receivable ar ON ar.id = cmt.receivable_id WHERE ar.id IS NULL; SELECT COUNT(*) as linked_ticks FROM collection_manual_ticks cmt INNER JOIN accounts_receivable ar ON ar.id = cmt.receivable_id;",
+  "rows": [
+    {
+      "total_ticks": "573"
+    },
+    {
+      "total_ticks": "orphaned_ticks"
+    },
+    {
+      "total_ticks": "167"
+    },
+    {
+      "total_ticks": "linked_ticks"
+    },
+    {
+      "total_ticks": "406"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_ticks\n573\norphaned_ticks\n167\nlinked_ticks\n406\n",
+  "stderr": "",
+  "execution_time_ms": 276
+}
