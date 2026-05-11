@@ -3636,3 +3636,6 @@
 
 ## Filtro de Segmentos de Produto
 - [x] Filtrar dropdown de segmentos de produto para mostrar apenas: MADEIRA, BAMBU, FIBRA, MADEIRA IMPORTADA
+
+## Legendas nos KPI Cards da Métrica de Clientes
+- [x] Adicionar legendas explicativas em cada KPI card da Métrica de Clientes

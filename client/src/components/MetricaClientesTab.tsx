@@ -115,36 +115,42 @@ export default function MetricaClientesTab() {
               label="Total Clientes"
               value={metrics.summary.totalClientes}
               color="blue"
+              subtitle="Clientes distintos com pelo menos 1 pedido no histórico"
             />
             <KPICard
               icon={<UserPlus className="w-4 h-4" />}
               label="Novos (3 meses)"
               value={metrics.summary.totalNovosUltimos3Meses}
               color="emerald"
+              subtitle="Primeira compra nos últimos 3 meses (nunca compraram antes)"
             />
             <KPICard
               icon={<RefreshCw className="w-4 h-4" />}
               label="Reativados (3m)"
               value={metrics.summary.totalReativadosUltimos3Meses}
               color="amber"
+              subtitle="Inativos há 6+ meses que voltaram a comprar nos últimos 3 meses"
             />
             <KPICard
               icon={<TrendingUp className="w-4 h-4" />}
               label="Recorrentes"
               value={metrics.summary.clientesRecorrentes}
               color="purple"
+              subtitle="Clientes com 2 ou mais pedidos no histórico (já recompraram)"
             />
             <KPICard
               icon={<Clock className="w-4 h-4" />}
               label="Só 1 Compra"
               value={metrics.summary.clientesCom1Pedido}
               color="slate"
+              subtitle="Clientes que fizeram apenas 1 pedido e nunca mais voltaram"
             />
             <KPICard
               icon={<AlertTriangle className="w-4 h-4" />}
               label="Atrasados"
               value={metrics.summary.clientesInadimplentes}
               color="red"
+              subtitle="Clientes recorrentes que já passaram do intervalo médio de recompra"
             />
           </div>
 
@@ -205,7 +211,7 @@ export default function MetricaClientesTab() {
 
 // ==================== Sub-components ====================
 
-function KPICard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+function KPICard({ icon, label, value, color, subtitle }: { icon: React.ReactNode; label: string; value: number; color: string; subtitle: string }) {
   const colorClasses: Record<string, string> = {
     blue: "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300",
     emerald: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300",
@@ -222,6 +228,7 @@ function KPICard({ icon, label, value, color }: { icon: React.ReactNode; label: 
         <span className="text-[9px] md:text-[10px] font-medium uppercase truncate">{label}</span>
       </div>
       <p className="text-lg md:text-xl font-bold">{value}</p>
+      <p className="text-[8px] md:text-[9px] mt-1 opacity-70 leading-tight">{subtitle}</p>
     </div>
   );
 }
