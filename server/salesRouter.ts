@@ -2874,8 +2874,9 @@ export const salesRouter = router({
       .where(sql`${salesOrders.segmento} IS NOT NULL AND ${salesOrders.segmento} != ''`)
       .groupBy(salesOrders.segmento);
 
+    const allowedProdutoSegmentos = ["MADEIRA", "BAMBU", "FIBRA", "MADEIRA IMPORTADA"];
     return {
-      produtoSegmentos: prodSegments.map(s => s.seg).filter(Boolean) as string[],
+      produtoSegmentos: prodSegments.map(s => s.seg).filter((s): s is string => typeof s === "string" && allowedProdutoSegmentos.includes(s)),
       clienteSegmentos: clientSegments.map(s => s.seg).filter(Boolean) as string[],
     };
   }),

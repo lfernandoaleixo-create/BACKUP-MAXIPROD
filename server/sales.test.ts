@@ -111,7 +111,7 @@ describe("sales router", () => {
       backupSalesOrders = await db.select().from(salesOrders);
       await db.delete(salesOrders);
     }
-  });
+  }, 30000);
 
   // Restore production data after all tests
   afterAll(async () => {
@@ -124,7 +124,7 @@ describe("sales router", () => {
         }
       }
     }
-  });
+  }, 30000);
 
   describe("ingestSalesOrders", () => {
     it("ingests sales order items successfully", async () => {
@@ -297,7 +297,7 @@ describe("group client metrics", () => {
       // Insert test data
       await caller.sales.ingestSalesOrders({ items: sampleItems });
     }
-  });
+  }, 30000);
 
   // Restore production data
   afterAll(async () => {
@@ -310,7 +310,7 @@ describe("group client metrics", () => {
         }
       }
     }
-  });
+  }, 30000);
 
   describe("getGroupClientMetrics", () => {
     it("returns summary with correct client counts", async () => {

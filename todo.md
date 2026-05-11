@@ -3633,3 +3633,6 @@
 - [x] Backend: procedures tRPC para métricas de clientes do grupo
 - [x] Frontend: nova interface sem referência a vendedor individual
 - [x] Manter aba existente no ar (reformulada, não removida)
+
+## Filtro de Segmentos de Produto
+- [x] Filtrar dropdown de segmentos de produto para mostrar apenas: MADEIRA, BAMBU, FIBRA, MADEIRA IMPORTADA
