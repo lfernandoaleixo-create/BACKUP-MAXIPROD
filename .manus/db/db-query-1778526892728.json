@@ -1,0 +1,15 @@
+{
+  "query": "SELECT contaNumero, estado, COUNT(*) as cnt FROM accounts_receivable WHERE contaNumero IN ('19287', '19342', '19344') GROUP BY contaNumero, estado;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT contaNumero, estado, COUNT(*) as cnt FROM accounts_receivable WHERE contaNumero IN ('19287', '19342', '19344') GROUP BY contaNumero, estado;",
+  "rows": [
+    {
+      "contaNumero": "19287",
+      "estado": "RECEBIDO",
+      "cnt": "5"
+    }
+  ],
+  "messages": [],
+  "stdout": "contaNumero\testado\tcnt\n19287\tRECEBIDO\t5\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

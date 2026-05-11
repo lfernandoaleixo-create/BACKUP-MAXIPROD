@@ -1,0 +1,480 @@
+{
+  "query": "SELECT pv.*, si_parent.descricaoItem as parentDesc, si_child.descricaoItem as childDesc FROM product_variants pv LEFT JOIN stock_items si_parent ON si_parent.codigoItem = pv.parentCode LEFT JOIN stock_items si_child ON si_child.codigoItem = pv.childCode;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pv.*, si_parent.descricaoItem as parentDesc, si_child.descricaoItem as childDesc FROM product_variants pv LEFT JOIN stock_items si_parent ON si_parent.codigoItem = pv.parentCode LEFT JOIN stock_items si_child ON si_child.codigoItem = pv.childCode;",
+  "rows": [
+    {
+      "id": "30002",
+      "parentCode": "00013",
+      "childCode": "00013R",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 22:25:08",
+      "updatedAt": "2026-03-19 22:25:08",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO"
+    },
+    {
+      "id": "30011",
+      "parentCode": "00036",
+      "childCode": "00034",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52",
+      "parentDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125MM C/ 10.000 UNID.",
+      "childDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 100 X 100 UNID.  (EMB. TRANSPARENTE)"
+    },
+    {
+      "id": "30019",
+      "parentCode": "00033",
+      "childCode": "00213",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-20 00:03:19",
+      "updatedAt": "2026-03-20 00:03:19",
+      "parentDesc": "PALITO DE DENTE BAMBU EMBALADO INDIVIDUALMENTE C/ 50 X 1.000 UNID.",
+      "childDesc": "PALITO DE DENTE BAMBU EMBALADO INDIVIDUALMENTE (50.000 POR CAIXA)"
+    },
+    {
+      "id": "30007",
+      "parentCode": "00017",
+      "childCode": "00250",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 22:32:23",
+      "updatedAt": "2026-03-19 22:32:23",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 300 MM C/ 50 X 100 UNID."
+    },
+    {
+      "id": "30006",
+      "parentCode": "00017",
+      "childCode": "00241",
+      "conversionFactor": "0.30000",
+      "createdAt": "2026-03-19 22:32:23",
+      "updatedAt": "2026-03-19 22:32:23",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 300 MM C/ 30 X 50 UNID."
+    },
+    {
+      "id": "2",
+      "parentCode": "00001",
+      "childCode": "00242",
+      "conversionFactor": "0.15000",
+      "createdAt": "2026-03-19 17:00:23",
+      "updatedAt": "2026-03-19 17:00:23",
+      "parentDesc": "ESPETO DE BAMBU 3,5 X 180 MM C/ 10 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 3,5 X 180 MM C/ 30 X 50 UNID."
+    },
+    {
+      "id": "30014",
+      "parentCode": "00040",
+      "childCode": "00041",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52",
+      "parentDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 10.000 UNID.",
+      "childDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 200 X 50 UNID."
+    },
+    {
+      "id": "30012",
+      "parentCode": "00037",
+      "childCode": "00038",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52",
+      "parentDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 10.000 UNID.",
+      "childDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 100 X 100 UNID. (EMB. TRANSPARENTE)"
+    },
+    {
+      "id": "30016",
+      "parentCode": "00046",
+      "childCode": "00047",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52",
+      "parentDesc": "PALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 10.000 UNID.",
+      "childDesc": "PALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 100 X 100 UNID. (EMB. TRANSPARENTE)"
+    },
+    {
+      "id": "5",
+      "parentCode": "00009",
+      "childCode": "00007",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 17:37:07",
+      "updatedAt": "2026-03-19 17:37:07",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 250 MM C/ 100 X 50 UNID."
+    },
+    {
+      "id": "30018",
+      "parentCode": "00051",
+      "childCode": "00252",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52",
+      "parentDesc": "PALITO DE MANICURE PONTA/CHANFRO BAMBU 5,0 X 140 MM C/ 10.000 UNID.",
+      "childDesc": "PALITO DE MANICURE PONTA/CHANFRO BAMBU 5,0 X 140 MM C/ 200 X 50 UNID."
+    },
+    {
+      "id": "30015",
+      "parentCode": "00045",
+      "childCode": "00044",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52",
+      "parentDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 180 MM C/ 5.000 UNID.",
+      "childDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 180 MM C/ 100 X 50 UNID. (EMB. TRANSPARENTE)"
+    },
+    {
+      "id": "30025",
+      "parentCode": "00065",
+      "childCode": "00066",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-20 00:45:28",
+      "updatedAt": "2026-03-20 00:45:28",
+      "parentDesc": "VARETA PARA ALGODÃO DOCE BAMBU 4,0 X 350 MM C/ 10.000 UNID.",
+      "childDesc": "VARETA PARA ALGODÃO DOCE BAMBU 4,0 X 350 MM C/ 100 X 50 UNID."
+    },
+    {
+      "id": "30013",
+      "parentCode": "00037",
+      "childCode": "00253",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52",
+      "parentDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 10.000 UNID.",
+      "childDesc": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 200 X 50 UNID."
+    },
+    {
+      "id": "30001",
+      "parentCode": "00013",
+      "childCode": "00012",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 22:25:08",
+      "updatedAt": "2026-03-19 22:25:08",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 280 MM C/ 100 X 50 UNID."
+    },
+    {
+      "id": "30004",
+      "parentCode": "00017",
+      "childCode": "00015",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 22:32:23",
+      "updatedAt": "2026-03-19 22:32:23",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 300 MM C/ 100 X 50 UNID."
+    },
+    {
+      "id": "30020",
+      "parentCode": "00148",
+      "childCode": "00139",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-20 00:03:19",
+      "updatedAt": "2026-03-20 00:03:19",
+      "parentDesc": "PALITO PARA PETISCO BAMBU 3,5 X 120 MM C/ 10.000 UNID.",
+      "childDesc": "PALITO PARA PETISCO BAMBU 3,5 X 120 MM C/ 100 X 100 UNID."
+    },
+    {
+      "id": "1",
+      "parentCode": "00001",
+      "childCode": "00002",
+      "conversionFactor": "0.50000",
+      "createdAt": "2026-03-19 17:00:23",
+      "updatedAt": "2026-03-19 17:00:23",
+      "parentDesc": "ESPETO DE BAMBU 3,5 X 180 MM C/ 10 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 3,5 X 180 MM C/ 100 X 50 UNID."
+    },
+    {
+      "id": "4",
+      "parentCode": "00009",
+      "childCode": "00273Z",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 17:37:07",
+      "updatedAt": "2026-03-19 17:37:07",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 250 MM C/ 125 X 40 UNID"
+    },
+    {
+      "id": "3",
+      "parentCode": "00009",
+      "childCode": "00008",
+      "conversionFactor": "1.60000",
+      "createdAt": "2026-03-19 17:37:07",
+      "updatedAt": "2026-03-19 17:37:07",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 250 MM C/ 20 X 10 X 40 UNID."
+    },
+    {
+      "id": "30005",
+      "parentCode": "00017",
+      "childCode": "00016",
+      "conversionFactor": "1.04000",
+      "createdAt": "2026-03-19 22:32:23",
+      "updatedAt": "2026-03-19 22:32:23",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 300 MM C/ 13 X 10 X 40 UNID."
+    },
+    {
+      "id": "30009",
+      "parentCode": "00021",
+      "childCode": "00022",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 22:38:36",
+      "updatedAt": "2026-03-19 22:38:36",
+      "parentDesc": "ESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,5 X 280 MM C/ 50 X 100 UNID."
+    },
+    {
+      "id": "30008",
+      "parentCode": "00021",
+      "childCode": "00145",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 22:38:36",
+      "updatedAt": "2026-03-19 22:38:36",
+      "parentDesc": "ESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,5 X 280 MM C/ 100 X 50 UNID."
+    },
+    {
+      "id": "30021",
+      "parentCode": "00024",
+      "childCode": "00025",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-20 00:10:53",
+      "updatedAt": "2026-03-20 00:10:53",
+      "parentDesc": "ESPETO DE BAMBU 4,5 X 300 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,5 X 300 MM C/ 50 X 100 UNID."
+    },
+    {
+      "id": "30023",
+      "parentCode": "00024",
+      "childCode": "00023",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-20 00:23:32",
+      "updatedAt": "2026-03-20 00:23:32",
+      "parentDesc": "ESPETO DE BAMBU 4,5 X 300 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,5 X 300 MM C/ 100 X 50 UNID."
+    },
+    {
+      "id": "30022",
+      "parentCode": "00018",
+      "childCode": "00131",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-20 00:20:31",
+      "updatedAt": "2026-03-20 00:20:31",
+      "parentDesc": "ESPETO DE BAMBU 4,5 X 250 MM  C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,5 X 250 MM  C/ 100 X 50 UNID."
+    },
+    {
+      "id": "30017",
+      "parentCode": "00046",
+      "childCode": "00050",
+      "conversionFactor": "2.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52",
+      "parentDesc": "PALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 10.000 UNID.",
+      "childDesc": "PALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 200 X100 UNID. (EMB. TRANSPARENTE)"
+    },
+    {
+      "id": "30003",
+      "parentCode": "00013",
+      "childCode": "00014",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 22:25:08",
+      "updatedAt": "2026-03-19 22:25:08",
+      "parentDesc": "ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 4,0 X 280 MM C/ 50 X 100 UNID."
+    },
+    {
+      "id": "30024",
+      "parentCode": "00029",
+      "childCode": "00136",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-20 00:31:20",
+      "updatedAt": "2026-03-20 00:31:20",
+      "parentDesc": "ESPETO DE BAMBU 5,0 X 300 MM C/ 5 X 1.000 UNID.",
+      "childDesc": "ESPETO DE BAMBU 5,0 X 300 MM C/ 100 x 50 UNID."
+    },
+    {
+      "id": "60004",
+      "parentCode": "00110",
+      "childCode": "00420",
+      "conversionFactor": "0.25000",
+      "createdAt": "2026-04-10 13:43:14",
+      "updatedAt": "2026-04-10 13:43:14",
+      "parentDesc": "VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA",
+      "childDesc": "VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 5.000 UNID. PRETA 50 X 100"
+    },
+    {
+      "id": "60003",
+      "parentCode": "00110",
+      "childCode": "00160",
+      "conversionFactor": "0.50000",
+      "createdAt": "2026-04-10 13:43:14",
+      "updatedAt": "2026-04-10 13:43:14",
+      "parentDesc": "VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA",
+      "childDesc": "VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 10.000 UNID. PRETA"
+    },
+    {
+      "id": "60005",
+      "parentCode": "00110",
+      "childCode": "00431",
+      "conversionFactor": "0.25000",
+      "createdAt": "2026-04-10 13:43:14",
+      "updatedAt": "2026-04-10 13:43:14",
+      "parentDesc": "VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA",
+      "childDesc": "VARETA AROMATIZADOR FIBRA 3,0 X 200 MM-FLOW-PACK 500 x 10 UNID."
+    },
+    {
+      "id": "90010",
+      "parentCode": "00095",
+      "childCode": "00084",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 3,5 X 200 MM 10.000",
+      "childDesc": "VARETA AROMATIZADOR 4,0 X 200 MM 10.000"
+    },
+    {
+      "id": "90011",
+      "parentCode": "00415",
+      "childCode": "00085",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 3,5 X 200 MM 100 x 100",
+      "childDesc": "VARETA AROMATIZADOR 4,0 X 200 MM 100 x 100"
+    },
+    {
+      "id": "90012",
+      "parentCode": "00086",
+      "childCode": "00087",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 4,0 X 218 MM 10.000",
+      "childDesc": "VARETA AROMATIZADOR 4,0 X 220 MM 10.000"
+    },
+    {
+      "id": "90006",
+      "parentCode": "00103",
+      "childCode": "00286",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "ESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000",
+      "childDesc": "ESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000 PIROGRAFADO"
+    },
+    {
+      "id": "90016",
+      "parentCode": "00083",
+      "childCode": "00108",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 4,0 X 180 MM 100 x 100",
+      "childDesc": "VARETA AROMATIZADOR 4,0 X 180 MM 100 x 100 S/ PONTA"
+    },
+    {
+      "id": "90017",
+      "parentCode": "00090",
+      "childCode": "00109",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 4,0 X 250 MM 100 x 100",
+      "childDesc": "VARETA AROMATIZADOR 4,0 X 250 MM 100 x 100 S/ PONTA"
+    },
+    {
+      "id": "90008",
+      "parentCode": "00103",
+      "childCode": "00102",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "ESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000",
+      "childDesc": "ESPETO P/ QUEIJO COALHO 3,9 X 200 MM 10.000"
+    },
+    {
+      "id": "90018",
+      "parentCode": "00096",
+      "childCode": "00130",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 3,5 X 200 MM-FLOW-PACK 10.002",
+      "childDesc": "VARETA AROMATIZADOR 4,0 X 200 MM-FLOW-PACK 10.002"
+    },
+    {
+      "id": "90005",
+      "parentCode": "00079",
+      "childCode": "00076",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 4,0 X 125 MM 200 x 100",
+      "childDesc": "VARETA AROMATIZADOR 4,0 X 120 MM 200 x 100"
+    },
+    {
+      "id": "90015",
+      "parentCode": "00077",
+      "childCode": "00074",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 4,0 X 125 MM 10.000",
+      "childDesc": "VARETA AROMATIZADOR 4,0 X 120 MM 10.000"
+    },
+    {
+      "id": "90007",
+      "parentCode": "00103",
+      "childCode": "00228",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "ESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000",
+      "childDesc": "ESPETO P/ QUEIJO COALHO 3,9 X 200 MM PIROGRAFADO"
+    },
+    {
+      "id": "90009",
+      "parentCode": "00103",
+      "childCode": "00285",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "ESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000",
+      "childDesc": "ESPETO P/ QUEIJO COALHO 3,5 X 200 MM 10.000"
+    },
+    {
+      "id": "90003",
+      "parentCode": "00079",
+      "childCode": "00418",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 4,0 X 125 MM 200 x 100",
+      "childDesc": "ESPETO DE MADEIRA 4,0 X 110 MM 200 x 100"
+    },
+    {
+      "id": "90014",
+      "parentCode": "00089",
+      "childCode": "00089m",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 4,0 X 250 MM 10.000",
+      "childDesc": "NULL"
+    },
+    {
+      "id": "90013",
+      "parentCode": "00089",
+      "childCode": "000155",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-04-16 17:14:22",
+      "updatedAt": "2026-04-16 17:14:22",
+      "parentDesc": "VARETA AROMATIZADOR 4,0 X 250 MM 10.000",
+      "childDesc": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tparentCode\tchildCode\tconversionFactor\tcreatedAt\tupdatedAt\tparentDesc\tchildDesc\n30002\t00013\t00013R\t1.00000\t2026-03-19 22:25:08\t2026-03-19 22:25:08\tESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO\n30011\t00036\t00034\t1.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\tPALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125MM C/ 10.000 UNID.\tPALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 100 X 100 UNID.  (EMB. TRANSPARENTE)\n30019\t00033\t00213\t1.00000\t2026-03-20 00:03:19\t2026-03-20 00:03:19\tPALITO DE DENTE BAMBU EMBALADO INDIVIDUALMENTE C/ 50 X 1.000 UNID.\tPALITO DE DENTE BAMBU EMBALADO INDIVIDUALMENTE (50.000 POR CAIXA)\n30007\t00017\t00250\t1.00000\t2026-03-19 22:32:23\t2026-03-19 22:32:23\tESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 300 MM C/ 50 X 100 UNID.\n30006\t00017\t00241\t0.30000\t2026-03-19 22:32:23\t2026-03-19 22:32:23\tESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 300 MM C/ 30 X 50 UNID.\n2\t00001\t00242\t0.15000\t2026-03-19 17:00:23\t2026-03-19 17:00:23\tESPETO DE BAMBU 3,5 X 180 MM C/ 10 X 1.000 UNID.\tESPETO DE BAMBU 3,5 X 180 MM C/ 30 X 50 UNID.\n30014\t00040\t00041\t1.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 10.000 UNID.\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 200 X 50 UNID.\n30012\t00037\t00038\t1.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 10.000 UNID.\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 100 X 100 UNID. (EMB. TRANSPARENTE)\n30016\t00046\t00047\t1.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\tPALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 10.000 UNID.\tPALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 100 X 100 UNID. (EMB. TRANSPARENTE)\n5\t00009\t00007\t1.00000\t2026-03-19 17:37:07\t2026-03-19 17:37:07\tESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 250 MM C/ 100 X 50 UNID.\n30018\t00051\t00252\t1.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\tPALITO DE MANICURE PONTA/CHANFRO BAMBU 5,0 X 140 MM C/ 10.000 UNID.\tPALITO DE MANICURE PONTA/CHANFRO BAMBU 5,0 X 140 MM C/ 200 X 50 UNID.\n30015\t00045\t00044\t1.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 180 MM C/ 5.000 UNID.\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 180 MM C/ 100 X 50 UNID. (EMB. TRANSPARENTE)\n30025\t00065\t00066\t1.00000\t2026-03-20 00:45:28\t2026-03-20 00:45:28\tVARETA PARA ALGODÃO DOCE BAMBU 4,0 X 350 MM C/ 10.000 UNID.\tVARETA PARA ALGODÃO DOCE BAMBU 4,0 X 350 MM C/ 100 X 50 UNID.\n30013\t00037\t00253\t1.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 10.000 UNID.\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 200 X 50 UNID.\n30001\t00013\t00012\t1.00000\t2026-03-19 22:25:08\t2026-03-19 22:25:08\tESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 280 MM C/ 100 X 50 UNID.\n30004\t00017\t00015\t1.00000\t2026-03-19 22:32:23\t2026-03-19 22:32:23\tESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 300 MM C/ 100 X 50 UNID.\n30020\t00148\t00139\t1.00000\t2026-03-20 00:03:19\t2026-03-20 00:03:19\tPALITO PARA PETISCO BAMBU 3,5 X 120 MM C/ 10.000 UNID.\tPALITO PARA PETISCO BAMBU 3,5 X 120 MM C/ 100 X 100 UNID.\n1\t00001\t00002\t0.50000\t2026-03-19 17:00:23\t2026-03-19 17:00:23\tESPETO DE BAMBU 3,5 X 180 MM C/ 10 X 1.000 UNID.\tESPETO DE BAMBU 3,5 X 180 MM C/ 100 X 50 UNID.\n4\t00009\t00273Z\t1.00000\t2026-03-19 17:37:07\t2026-03-19 17:37:07\tESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 250 MM C/ 125 X 40 UNID\n3\t00009\t00008\t1.60000\t2026-03-19 17:37:07\t2026-03-19 17:37:07\tESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 250 MM C/ 20 X 10 X 40 UNID.\n30005\t00017\t00016\t1.04000\t2026-03-19 22:32:23\t2026-03-19 22:32:23\tESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 300 MM C/ 13 X 10 X 40 UNID.\n30009\t00021\t00022\t1.00000\t2026-03-19 22:38:36\t2026-03-19 22:38:36\tESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,5 X 280 MM C/ 50 X 100 UNID.\n30008\t00021\t00145\t1.00000\t2026-03-19 22:38:36\t2026-03-19 22:38:36\tESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,5 X 280 MM C/ 100 X 50 UNID.\n30021\t00024\t00025\t1.00000\t2026-03-20 00:10:53\t2026-03-20 00:10:53\tESPETO DE BAMBU 4,5 X 300 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,5 X 300 MM C/ 50 X 100 UNID.\n30023\t00024\t00023\t1.00000\t2026-03-20 00:23:32\t2026-03-20 00:23:32\tESPETO DE BAMBU 4,5 X 300 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,5 X 300 MM C/ 100 X 50 UNID.\n30022\t00018\t00131\t1.00000\t2026-03-20 00:20:31\t2026-03-20 00:20:31\tESPETO DE BAMBU 4,5 X 250 MM  C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,5 X 250 MM  C/ 100 X 50 UNID.\n30017\t00046\t00050\t2.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\tPALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 10.000 UNID.\tPALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 200 X100 UNID. (EMB. TRANSPARENTE)\n30003\t00013\t00014\t1.00000\t2026-03-19 22:25:08\t2026-03-19 22:25:08\tESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 4,0 X 280 MM C/ 50 X 100 UNID.\n30024\t00029\t00136\t1.00000\t2026-03-20 00:31:20\t2026-03-20 00:31:20\tESPETO DE BAMBU 5,0 X 300 MM C/ 5 X 1.000 UNID.\tESPETO DE BAMBU 5,0 X 300 MM C/ 100 x 50 UNID.\n60004\t00110\t00420\t0.25000\t2026-04-10 13:43:14\t2026-04-10 13:43:14\tVARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA\tVARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 5.000 UNID. PRETA 50 X 100\n60003\t00110\t00160\t0.50000\t2026-04-10 13:43:14\t2026-04-10 13:43:14\tVARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA\tVARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 10.000 UNID. PRETA\n60005\t00110\t00431\t0.25000\t2026-04-10 13:43:14\t2026-04-10 13:43:14\tVARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA\tVARETA AROMATIZADOR FIBRA 3,0 X 200 MM-FLOW-PACK 500 x 10 UNID.\n90010\t00095\t00084\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 3,5 X 200 MM 10.000\tVARETA AROMATIZADOR 4,0 X 200 MM 10.000\n90011\t00415\t00085\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 3,5 X 200 MM 100 x 100\tVARETA AROMATIZADOR 4,0 X 200 MM 100 x 100\n90012\t00086\t00087\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 4,0 X 218 MM 10.000\tVARETA AROMATIZADOR 4,0 X 220 MM 10.000\n90006\t00103\t00286\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000\tESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000 PIROGRAFADO\n90016\t00083\t00108\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 4,0 X 180 MM 100 x 100\tVARETA AROMATIZADOR 4,0 X 180 MM 100 x 100 S/ PONTA\n90017\t00090\t00109\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 4,0 X 250 MM 100 x 100\tVARETA AROMATIZADOR 4,0 X 250 MM 100 x 100 S/ PONTA\n90008\t00103\t00102\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000\tESPETO P/ QUEIJO COALHO 3,9 X 200 MM 10.000\n90018\t00096\t00130\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 3,5 X 200 MM-FLOW-PACK 10.002\tVARETA AROMATIZADOR 4,0 X 200 MM-FLOW-PACK 10.002\n90005\t00079\t00076\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 4,0 X 125 MM 200 x 100\tVARETA AROMATIZADOR 4,0 X 120 MM 200 x 100\n90015\t00077\t00074\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 4,0 X 125 MM 10.000\tVARETA AROMATIZADOR 4,0 X 120 MM 10.000\n90007\t00103\t00228\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000\tESPETO P/ QUEIJO COALHO 3,9 X 200 MM PIROGRAFADO\n90009\t00103\t00285\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tESPETO P/ QUEIJO COALHO 4,0 X 200 MM 10.000\tESPETO P/ QUEIJO COALHO 3,5 X 200 MM 10.000\n90003\t00079\t00418\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 4,0 X 125 MM 200 x 100\tESPETO DE MADEIRA 4,0 X 110 MM 200 x 100\n90014\t00089\t00089m\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 4,0 X 250 MM 10.000\tNULL\n90013\t00089\t000155\t1.00000\t2026-04-16 17:14:22\t2026-04-16 17:14:22\tVARETA AROMATIZADOR 4,0 X 250 MM 10.000\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 273
+}

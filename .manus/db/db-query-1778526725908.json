@@ -1,0 +1,66 @@
+{
+  "query": "SELECT DISTINCT contaNumero, agencia, empresaNome, COUNT(*) as cnt, SUM(CAST(valorLiquido AS DECIMAL(18,2))) as total FROM accounts_receivable WHERE estado = 'EMITIDO' GROUP BY contaNumero, agencia, empresaNome ORDER BY cnt DESC LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT contaNumero, agencia, empresaNome, COUNT(*) as cnt, SUM(CAST(valorLiquido AS DECIMAL(18,2))) as total FROM accounts_receivable WHERE estado = 'EMITIDO' GROUP BY contaNumero, agencia, empresaNome ORDER BY cnt DESC LIMIT 30;",
+  "rows": [
+    {
+      "contaNumero": "80247",
+      "agencia": "3140",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "193",
+      "total": "1455188.23"
+    },
+    {
+      "contaNumero": "NULL",
+      "agencia": "NULL",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "177",
+      "total": "958256.00"
+    },
+    {
+      "contaNumero": "50051",
+      "agencia": "0155",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "61",
+      "total": "188665.49"
+    },
+    {
+      "contaNumero": "52061",
+      "agencia": "NULL",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "60",
+      "total": "312760.00"
+    },
+    {
+      "contaNumero": "90244",
+      "agencia": "3140",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "33",
+      "total": "121091.06"
+    },
+    {
+      "contaNumero": "50051",
+      "agencia": "NULL",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "15",
+      "total": "82446.00"
+    },
+    {
+      "contaNumero": "52061",
+      "agencia": "0155",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "13",
+      "total": "35002.00"
+    },
+    {
+      "contaNumero": "80246",
+      "agencia": "3140",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "3",
+      "total": "5491.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "contaNumero\tagencia\tempresaNome\tcnt\ttotal\n80247\t3140\tPALITOS INDUSTRIA\t193\t1455188.23\nNULL\tNULL\tPALITOS INDUSTRIA\t177\t958256.00\n50051\t0155\tPALITOS INDUSTRIA\t61\t188665.49\n52061\tNULL\tPALITOS INDUSTRIA\t60\t312760.00\n90244\t3140\tPALITOS INDUSTRIA\t33\t121091.06\n50051\tNULL\tPALITOS INDUSTRIA\t15\t82446.00\n52061\t0155\tPALITOS INDUSTRIA\t13\t35002.00\n80246\t3140\tPALITOS INDUSTRIA\t3\t5491.00\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

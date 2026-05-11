@@ -1,0 +1,52 @@
+{
+  "query": "SELECT contaNumero, bancoNome, formaCobranca, COUNT(*) as cnt, SUM(CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(18,2))) as totalPendente FROM accounts_receivable WHERE estado = 'EMITIDO' AND (contaNumero IS NULL OR contaNumero = 'NULL' OR contaNumero = '') GROUP BY contaNumero, bancoNome, formaCobranca ORDER BY cnt DESC LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT contaNumero, bancoNome, formaCobranca, COUNT(*) as cnt, SUM(CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(18,2))) as totalPendente FROM accounts_receivable WHERE estado = 'EMITIDO' AND (contaNumero IS NULL OR contaNumero = 'NULL' OR contaNumero = '') GROUP BY contaNumero, bancoNome, formaCobranca ORDER BY cnt DESC LIMIT 30;",
+  "rows": [
+    {
+      "contaNumero": "NULL",
+      "bancoNome": "NULL",
+      "formaCobranca": "NULL",
+      "cnt": "115",
+      "totalPendente": "587687.72"
+    },
+    {
+      "contaNumero": "NULL",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "cnt": "53",
+      "totalPendente": "308830.29"
+    },
+    {
+      "contaNumero": "NULL",
+      "bancoNome": "CHEQUE À RECEBER DE CLIENTES",
+      "formaCobranca": "Cheque CHEQUE À RECEBER DE CLIENTES",
+      "cnt": "5",
+      "totalPendente": "14538.00"
+    },
+    {
+      "contaNumero": "NULL",
+      "bancoNome": "CHEQUE EM FACTORING",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "cnt": "2",
+      "totalPendente": "20900.00"
+    },
+    {
+      "contaNumero": "NULL",
+      "bancoNome": "CHEQUE LINHA 11",
+      "formaCobranca": "Cheque CHEQUE LINHA 11",
+      "cnt": "1",
+      "totalPendente": "3963.33"
+    },
+    {
+      "contaNumero": "NULL",
+      "bancoNome": "CHEQUE VOLTOU OUTROS MOTIVOS",
+      "formaCobranca": "Cheque CHEQUE VOLTOU OUTROS MOTIVOS",
+      "cnt": "1",
+      "totalPendente": "22336.66"
+    }
+  ],
+  "messages": [],
+  "stdout": "contaNumero\tbancoNome\tformaCobranca\tcnt\ttotalPendente\nNULL\tNULL\tNULL\t115\t587687.72\nNULL\tCHEQUE DISPONIVEL\tCheque CHEQUE DISPONIVEL\t53\t308830.29\nNULL\tCHEQUE À RECEBER DE CLIENTES\tCheque CHEQUE À RECEBER DE CLIENTES\t5\t14538.00\nNULL\tCHEQUE EM FACTORING\tCheque CHEQUE EM FACTORING\t2\t20900.00\nNULL\tCHEQUE LINHA 11\tCheque CHEQUE LINHA 11\t1\t3963.33\nNULL\tCHEQUE VOLTOU OUTROS MOTIVOS\tCheque CHEQUE VOLTOU OUTROS MOTIVOS\t1\t22336.66\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

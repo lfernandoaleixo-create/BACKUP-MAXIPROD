@@ -1,0 +1,66 @@
+{
+  "query": "SELECT contaNumero, bancoNome, formaCobranca, COUNT(*) as cnt, SUM(CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(18,2))) as totalPendente FROM accounts_receivable WHERE estado = 'EMITIDO' AND contaNumero IS NOT NULL AND contaNumero != 'NULL' AND contaNumero != '' GROUP BY contaNumero, bancoNome, formaCobranca ORDER BY bancoNome, contaNumero;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT contaNumero, bancoNome, formaCobranca, COUNT(*) as cnt, SUM(CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(18,2))) as totalPendente FROM accounts_receivable WHERE estado = 'EMITIDO' AND contaNumero IS NOT NULL AND contaNumero != 'NULL' AND contaNumero != '' GROUP BY contaNumero, bancoNome, formaCobranca ORDER BY bancoNome, contaNumero;",
+  "rows": [
+    {
+      "contaNumero": "50051",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 50051 carteira 1",
+      "cnt": "61",
+      "totalPendente": "188665.49"
+    },
+    {
+      "contaNumero": "50051",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "formaCobranca": "PIX Sicredi conta 50051 chave 36562762000129",
+      "cnt": "15",
+      "totalPendente": "82446.00"
+    },
+    {
+      "contaNumero": "52061",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 52061 carteira 1",
+      "cnt": "13",
+      "totalPendente": "35002.00"
+    },
+    {
+      "contaNumero": "52061",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95",
+      "cnt": "60",
+      "totalPendente": "249955.22"
+    },
+    {
+      "contaNumero": "80246",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1",
+      "cnt": "3",
+      "totalPendente": "5491.00"
+    },
+    {
+      "contaNumero": "80247",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "formaCobranca": "Depósito S.A. - BANCOOB ag 3140 conta 80247",
+      "cnt": "2",
+      "totalPendente": "596210.18"
+    },
+    {
+      "contaNumero": "80247",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1",
+      "cnt": "191",
+      "totalPendente": "858978.05"
+    },
+    {
+      "contaNumero": "90244",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1",
+      "cnt": "33",
+      "totalPendente": "121091.06"
+    }
+  ],
+  "messages": [],
+  "stdout": "contaNumero\tbancoNome\tformaCobranca\tcnt\ttotalPendente\n50051\tBanco Cooperativo Sicredi S.A.\tBoleto Sicredi ag 0155 conta 50051 carteira 1\t61\t188665.49\n50051\tBanco Cooperativo Sicredi S.A.\tPIX Sicredi conta 50051 chave 36562762000129\t15\t82446.00\n52061\tBanco Cooperativo Sicredi S.A.\tBoleto Sicredi ag 0155 conta 52061 carteira 1\t13\t35002.00\n52061\tBanco Cooperativo Sicredi S.A.\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\t60\t249955.22\n80246\tBanco Cooperativo do Brasil S.A. - BANCOOB\tBoleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1\t3\t5491.00\n80247\tBanco Cooperativo do Brasil S.A. - BANCOOB\tDepósito S.A. - BANCOOB ag 3140 conta 80247\t2\t596210.18\n80247\tBanco Cooperativo do Brasil S.A. - BANCOOB\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\t191\t858978.05\n90244\tBanco Cooperativo do Brasil S.A. - BANCOOB\tBoleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1\t33\t121091.06\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}
