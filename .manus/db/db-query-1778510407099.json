@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `depot_inventory` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`productName` text NOT NULL,\n\t`quantityCx` int NOT NULL,\n\t`sortOrder` int NOT NULL DEFAULT 0,\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `depot_inventory_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `depot_inventory` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`productName` text NOT NULL,\n\t`quantityCx` int NOT NULL,\n\t`sortOrder` int NOT NULL DEFAULT 0,\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `depot_inventory_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 411
+}

@@ -1659,3 +1659,17 @@ export const sellerAdmissions = mysqlTable("seller_admissions", {
 });
 export type SellerAdmission = typeof sellerAdmissions.$inferSelect;
 export type InsertSellerAdmission = typeof sellerAdmissions.$inferInsert;
+
+/**
+ * Depósito da Matriz - Perdões: physical inventory count
+ */
+export const depotInventory = mysqlTable("depot_inventory", {
+  id: int("id").autoincrement().primaryKey(),
+  productName: text("productName").notNull(),
+  quantityCx: int("quantityCx").notNull(),
+  sortOrder: int("sortOrder").notNull().default(0),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DepotInventory = typeof depotInventory.$inferSelect;
+export type InsertDepotInventory = typeof depotInventory.$inferInsert;

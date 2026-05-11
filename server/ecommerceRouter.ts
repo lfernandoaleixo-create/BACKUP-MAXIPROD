@@ -5,8 +5,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { ecommerceExpenses, ecommerceRefunds } from "../drizzle/schema";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { ecommerceExpenses, ecommerceRefunds, depotInventory } from "../drizzle/schema";
+import { eq, desc, sql, and, asc } from "drizzle-orm";
 
 const ECOMMERCE_ALLOWED_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
 
@@ -310,5 +310,40 @@ export const ecommerceRouter = router({
           creditado: { total: Number(creditado?.total || 0), count: Number(creditado?.count || 0) },
         },
       };
+    }),
+
+  /**
+   * Get depot inventory - restricted to Guilherme only
+   */
+  getDepotInventory: publicProcedure
+    .input(z.object({ operatorName: z.string() }))
+    .query(async ({ input }) => {
+      if (input.operatorName !== "Guilherme") {
+        return { success: false, error: "Acesso restrito", items: [], total: 0 };
+      }
+      const db = await getDb();
+      const items = await db!.select().from(depotInventory).orderBy(asc(depotInventory.sortOrder));
+      const total = items.reduce((sum, i) => sum + i.quantityCx, 0);
+      return { success: true, items, total };
+    }),
+
+  /**
+   * Update depot inventory item quantity - restricted to Guilherme only
+   */
+  updateDepotItem: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+      quantityCx: z.number().min(0),
+    }))
+    .mutation(async ({ input }) => {
+      if (input.operatorName !== "Guilherme") {
+        return { success: false, error: "Acesso restrito" };
+      }
+      const db = await getDb();
+      await db!.update(depotInventory)
+        .set({ quantityCx: input.quantityCx })
+        .where(eq(depotInventory.id, input.id));
+      return { success: true };
     }),
 });

@@ -33,6 +33,9 @@ import {
   SlidersHorizontal,
   User,
   FileDown,
+  Warehouse,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -783,6 +786,89 @@ export default function EcommerceTab() {
 
       {/* Refunds Section */}
       <RefundsSection />
+
+      {/* Separator before Depósito */}
+      {operatorName === "Guilherme" && (
+        <>
+          <div className="my-10">
+            <div className="h-[2px] bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+          </div>
+          <DepotSection operatorName={operatorName} />
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ─── Depósito da Matriz - Perdões ─── */
+function DepotSection({ operatorName }: { operatorName: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const { data, isLoading, refetch } = trpc.ecommerce.getDepotInventory.useQuery(
+    { operatorName },
+    { enabled: !!operatorName && operatorName === "Guilherme" }
+  );
+
+  const items = data?.items || [];
+  const total = data?.total || 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Button */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl px-5 py-4 shadow-md transition-all duration-200"
+      >
+        <div className="flex items-center gap-3">
+          <Warehouse className="w-6 h-6" />
+          <div className="text-left">
+            <p className="font-bold text-base">Depósito da Matriz - Perdões</p>
+            <p className="text-emerald-100 text-xs">{items.length} produtos · Total: {total.toLocaleString("pt-BR")} caixas</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-bold">{total.toLocaleString("pt-BR")}</span>
+          <span className="text-xs text-emerald-200">cx</span>
+          {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {expanded && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-emerald-50 border-b border-emerald-100">
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">#</th>
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Produto</th>
+                    <th className="text-right px-4 py-3 text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Qtd (cx)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item: any, idx: number) => (
+                    <tr key={item.id} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                      <td className="px-4 py-2.5 text-slate-400 text-xs font-mono">{idx + 1}</td>
+                      <td className="px-4 py-2.5 text-slate-700 font-medium">{item.productName}</td>
+                      <td className="px-4 py-2.5 text-right font-bold text-slate-800">{item.quantityCx.toLocaleString("pt-BR")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-emerald-50 border-t-2 border-emerald-200">
+                    <td colSpan={2} className="px-4 py-3 font-bold text-emerald-800 text-sm">TOTAL</td>
+                    <td className="px-4 py-3 text-right font-extrabold text-emerald-800 text-lg">{total.toLocaleString("pt-BR")} cx</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

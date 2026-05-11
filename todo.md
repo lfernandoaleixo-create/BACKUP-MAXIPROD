@@ -3608,3 +3608,7 @@
 - [x] Fix PO quantity divergence: 4.852 cx is correct (350 cx cancelado confirmado), fixed card PO(Compra) 9.231→4.852 using poLotes.quantidade em caixas
 - [x] Show COMERCIAL vs PROFORMA PEDIDO classification on PO lotes in dashboard (badge/indicator)
 - [x] Fix missing vendedor/representante name in inadimplência table (added cadastro empresas as primary source, 711→876 mappings)
+- [x] Create "Depósito da Matriz - Perdões" button in E-commerce tab
+- [x] Store 26 products with physical count quantities in database
+- [x] Restrict access to Guilherme's password only
+- [x] Show product list with quantities and total sum

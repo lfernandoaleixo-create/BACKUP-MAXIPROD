@@ -722,6 +722,13 @@
       "when": 1778371896880,
       "tag": "0102_tough_tempest",
       "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "5",
+      "when": 1778510387557,
+      "tag": "0103_glossy_black_knight",
+      "breakpoints": true
     }
   ]
 }
