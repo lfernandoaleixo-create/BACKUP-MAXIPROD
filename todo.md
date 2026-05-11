@@ -3607,3 +3607,4 @@
 - [x] Ensure MetricaClientesTab is fully responsive for mobile and desktop
 - [x] Fix PO quantity divergence: 4.852 cx is correct (350 cx cancelado confirmado), fixed card PO(Compra) 9.231→4.852 using poLotes.quantidade em caixas
 - [x] Show COMERCIAL vs PROFORMA PEDIDO classification on PO lotes in dashboard (badge/indicator)
+- [x] Fix missing vendedor/representante name in inadimplência table (added cadastro empresas as primary source, 711→876 mappings)

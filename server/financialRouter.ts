@@ -172,6 +172,49 @@ async function fetchVendedorMapFromGraphQL(): Promise<Record<string, string>> {
   try {
     const map: Record<string, string> = {};
     const productMap: Record<string, { madeira: boolean; bambu: boolean }> = {};
+
+    // === STEP 0: Buscar representante do CADASTRO de empresas (fonte primária) ===
+    // O campo representanteOuVendedor1Preferencial é o vendedor fixo do cliente
+    {
+      const EMP_PAGE_SIZE = 200;
+      let empSkip = 0;
+      let empTotal = 0;
+      do {
+        const empQuery = `{
+          empresas(skip: ${empSkip}, take: ${EMP_PAGE_SIZE}, where: { cliente: { eq: true } }) {
+            totalCount
+            items {
+              nomeFantasia
+              razaoSocial
+              apelido
+              representanteOuVendedor1Preferencial { nomeFantasia razaoSocial }
+            }
+          }
+        }`;
+        const empResp = await fetch("https://api.maxiprod.com.br/graphql/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Basic ${token}` },
+          body: JSON.stringify({ query: empQuery }),
+        });
+        const empData = await empResp.json();
+        if (empData.errors || !empData.data?.empresas) break;
+        empTotal = empData.data.empresas.totalCount;
+        for (const emp of empData.data.empresas.items) {
+          const rep = emp.representanteOuVendedor1Preferencial;
+          if (!rep) continue;
+          const vendedorName = rep.nomeFantasia || rep.razaoSocial || "";
+          if (!vendedorName) continue;
+          const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
+          for (const name of names) {
+            if (!map[name]) map[name] = vendedorName;
+          }
+        }
+        empSkip += EMP_PAGE_SIZE;
+      } while (empSkip < empTotal);
+      console.log(`[Vendedor Cache] Cadastro empresas: ${Object.keys(map).length} mappings from ${empTotal} clientes`);
+    }
+
+    // === STEP 1: Buscar vendedor dos pedidos de venda (fallback para quem não tem no cadastro) ===
     const PAGE_SIZE = 500;
     let skip = 0;
     let totalCount = 0;
