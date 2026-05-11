@@ -732,7 +732,7 @@ function DailyChart({ data, mode, period, comparison }: {
         };
 
         return (
-          <div className="grid gap-2.5 mt-4 overflow-x-auto" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(140px, 1fr))` }}>
+          <div className="grid gap-2.5 mt-4 overflow-x-auto pb-2" style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(130px, 1fr))` }}>
             {weeks.map((week, idx) => {
               const colors = weekColors[idx % weekColors.length];
               const hasValue = week.total > 0;
@@ -746,11 +746,11 @@ function DailyChart({ data, mode, period, comparison }: {
                   {/* Top gradient accent */}
                   <div className={`h-1.5 bg-gradient-to-r ${colors.from} ${colors.to}`} />
 
-                  <div className="px-4 pt-3 pb-3 flex flex-col gap-2">
+                  <div className="px-3 pt-3 pb-3 flex flex-col gap-2">
                     {/* Row 1: Semana + Dias - all on one line, no wrap */}
-                    <div className="flex items-baseline justify-between gap-2" style={{ whiteSpace: 'nowrap' }}>
-                      <span className={`text-xs font-extrabold uppercase tracking-wide ${colors.accent}`}>Semana {week.weekNum}</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Dias {week.startDay}–{week.endDay}</span>
+                    <div className="flex items-baseline justify-between gap-1 flex-wrap">
+                      <span className={`text-[11px] font-extrabold uppercase tracking-wide ${colors.accent}`}>Semana {week.weekNum}</span>
+                      <span className="text-[10px] text-slate-400 font-semibold whitespace-nowrap">Dias {week.startDay}–{week.endDay}</span>
                     </div>
 
                     {/* Row 2: Big value */}

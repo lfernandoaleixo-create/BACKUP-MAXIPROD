@@ -3653,3 +3653,6 @@
 
 ## Exportar PDF Despesas - Incluir Cartão e Recorrência
 - [x] Atualizar generateExpensesPdf para incluir colunas Cartão e Recorrente
+
+## Bug: Cards de semana cortados no mobile
+- [x] Corrigir layout dos cards de semana (dias 18-24 e 25-31 cortados) na versão mobile
