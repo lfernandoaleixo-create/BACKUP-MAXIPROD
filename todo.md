@@ -3650,3 +3650,6 @@
 - [x] Frontend: campo "recorrente" no formulário de despesas
 - [x] Frontend: seleção de cartão no formulário de despesas
 - [x] Frontend: exibir cartão e recorrência na listagem de despesas
+
+## Exportar PDF Despesas - Incluir Cartão e Recorrência
+- [x] Atualizar generateExpensesPdf para incluir colunas Cartão e Recorrente

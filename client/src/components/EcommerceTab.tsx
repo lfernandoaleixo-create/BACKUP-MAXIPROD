@@ -72,6 +72,7 @@ function generateExpensesPdf(
   expenses: any[],
   filters: { descricao: string; formaPagamento: string; dataInicio: string; dataFim: string; registradoPor: string },
   total: number,
+  creditCards: any[] = [],
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -164,48 +165,65 @@ function generateExpensesPdf(
   y += boxH + 8;
 
   // Table
+  const getCardName = (cardId: number | null) => {
+    if (!cardId) return "—";
+    const card = creditCards.find((c: any) => c.id === cardId);
+    return card ? `${card.nome} (${card.bandeira} ••${card.ultimos4})` : "—";
+  };
+
   const tableData = expenses.map((exp: any) => [
     formatDate(exp.dataCompra),
     exp.descricao,
     FORMA_PAGAMENTO_PDF_LABELS[exp.formaPagamento] || exp.formaPagamento,
     exp.formaPagamento === "cartao_credito" && exp.parcelas > 1 ? `${exp.parcelas}x` : "1x",
     formatCurrency(Number(exp.valorTotal)),
+    exp.formaPagamento === "cartao_credito" ? getCardName(exp.cartaoId) : "—",
+    exp.recorrente === 1 ? "Sim" : "Não",
     exp.registradoPor,
   ]);
 
   autoTable(doc, {
     startY: y,
-    head: [["Data", "Descrição", "Pagamento", "Parcelas", "Valor", "Registrado por"]],
+    head: [["Data", "Descrição", "Pagamento", "Parc.", "Valor", "Cartão", "Recor.", "Por"]],
     body: tableData,
     theme: "grid",
     headStyles: {
       fillColor: [15, 23, 42],
       textColor: [255, 255, 255],
-      fontSize: 8,
+      fontSize: 7,
       fontStyle: "bold",
-      cellPadding: 3,
+      cellPadding: 2.5,
     },
-    bodyStyles: { fontSize: 7.5, cellPadding: 2.5 },
+    bodyStyles: { fontSize: 6.5, cellPadding: 2 },
     columnStyles: {
-      0: { cellWidth: 22 },
-      1: { cellWidth: 62 },
-      2: { cellWidth: 30, halign: "center" },
-      3: { cellWidth: 18, halign: "center" },
-      4: { cellWidth: 28, halign: "right", fontStyle: "bold" },
-      5: { cellWidth: 22, halign: "center" },
+      0: { cellWidth: 18 },
+      1: { cellWidth: 42 },
+      2: { cellWidth: 22, halign: "center" },
+      3: { cellWidth: 12, halign: "center" },
+      4: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+      5: { cellWidth: 32 },
+      6: { cellWidth: 14, halign: "center" },
+      7: { cellWidth: 18, halign: "center" },
     },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     didParseCell: (data: any) => {
       if (data.section === "body" && data.column.index === 2) {
         const val = data.cell.raw;
         if (val === "PIX") {
-          data.cell.styles.textColor = [21, 128, 61]; // green-700
+          data.cell.styles.textColor = [21, 128, 61];
           data.cell.styles.fontStyle = "bold";
         } else if (val === "Boleto") {
-          data.cell.styles.textColor = [29, 78, 216]; // blue-700
+          data.cell.styles.textColor = [29, 78, 216];
           data.cell.styles.fontStyle = "bold";
         } else if (val === "Cartão de Crédito") {
-          data.cell.styles.textColor = [126, 34, 206]; // purple-700
+          data.cell.styles.textColor = [126, 34, 206];
+          data.cell.styles.fontStyle = "bold";
+        }
+      }
+      // Highlight recorrente
+      if (data.section === "body" && data.column.index === 6) {
+        if (data.cell.raw === "Sim") {
+          data.cell.styles.textColor = [161, 98, 7]; // amber-700
           data.cell.styles.fontStyle = "bold";
         }
       }
@@ -393,6 +411,7 @@ export default function EcommerceTab() {
         registradoPor: filterRegistradoPor,
       },
       filteredTotal,
+      creditCards,
     );
   };
 
