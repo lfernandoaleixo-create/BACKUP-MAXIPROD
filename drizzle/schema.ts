@@ -1673,3 +1673,19 @@ export const depotInventory = mysqlTable("depot_inventory", {
 
 export type DepotInventory = typeof depotInventory.$inferSelect;
 export type InsertDepotInventory = typeof depotInventory.$inferInsert;
+
+/**
+ * Relatório de Vendas do E-commerce: daily sales entries
+ */
+export const ecommerceDailySales = mysqlTable("ecommerce_daily_sales", {
+  id: int("id").autoincrement().primaryKey(),
+  saleDate: timestamp("saleDate").notNull(),
+  numberOfSales: int("numberOfSales").notNull(),
+  totalValue: decimal("totalValue", { precision: 12, scale: 2 }).notNull(),
+  notes: text("notes"),
+  createdBy: varchar("createdBy", { length: 100 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EcommerceDailySale = typeof ecommerceDailySales.$inferSelect;
+export type InsertEcommerceDailySale = typeof ecommerceDailySales.$inferInsert;

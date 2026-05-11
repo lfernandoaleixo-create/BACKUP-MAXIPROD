@@ -5,10 +5,11 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { ecommerceExpenses, ecommerceRefunds, depotInventory } from "../drizzle/schema";
+import { ecommerceExpenses, ecommerceRefunds, depotInventory, ecommerceDailySales } from "../drizzle/schema";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 
 const ECOMMERCE_ALLOWED_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
+const SALES_REPORT_ALLOWED = ["Pedro", "Fernando", "Bruno", "Guilherme"];
 
 export const ecommerceRouter = router({
   /**
@@ -344,6 +345,131 @@ export const ecommerceRouter = router({
       await db!.update(depotInventory)
         .set({ quantityCx: input.quantityCx })
         .where(eq(depotInventory.id, input.id));
+      return { success: true };
+    }),
+
+  // ==================== Relatório de Vendas E-commerce ====================
+
+  /**
+   * List daily sales entries (sorted by date desc)
+   */
+  listDailySales: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      month: z.number().int().min(1).max(12).optional(),
+      year: z.number().int().min(2020).max(2030).optional(),
+    }))
+    .query(async ({ input }) => {
+      if (!SALES_REPORT_ALLOWED.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", entries: [], summary: null };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", entries: [], summary: null };
+
+      let rows;
+      if (input.month && input.year) {
+        const startDate = new Date(Date.UTC(input.year, input.month - 1, 1));
+        const endDate = new Date(Date.UTC(input.year, input.month, 0, 23, 59, 59));
+        rows = await db.select().from(ecommerceDailySales)
+          .where(and(
+            sql`${ecommerceDailySales.saleDate} >= ${startDate}`,
+            sql`${ecommerceDailySales.saleDate} <= ${endDate}`
+          ))
+          .orderBy(desc(ecommerceDailySales.saleDate));
+      } else {
+        rows = await db.select().from(ecommerceDailySales)
+          .orderBy(desc(ecommerceDailySales.saleDate));
+      }
+
+      const totalSales = rows.reduce((s, r) => s + r.numberOfSales, 0);
+      const totalValue = rows.reduce((s, r) => s + Number(r.totalValue), 0);
+      const avgDaily = rows.length > 0 ? totalValue / rows.length : 0;
+      const avgSalesPerDay = rows.length > 0 ? totalSales / rows.length : 0;
+
+      return {
+        success: true,
+        entries: rows,
+        summary: {
+          totalEntries: rows.length,
+          totalSales,
+          totalValue,
+          avgDailyValue: avgDaily,
+          avgSalesPerDay,
+        },
+      };
+    }),
+
+  /**
+   * Add a daily sales entry
+   */
+  addDailySale: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      saleDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      numberOfSales: z.number().int().min(0),
+      totalValue: z.number().min(0),
+      notes: z.string().max(500).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!SALES_REPORT_ALLOWED.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+
+      const dateObj = new Date(input.saleDate + "T12:00:00Z");
+      await db.insert(ecommerceDailySales).values({
+        saleDate: dateObj,
+        numberOfSales: input.numberOfSales,
+        totalValue: input.totalValue.toFixed(2),
+        notes: input.notes || null,
+        createdBy: input.operatorName,
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Update a daily sales entry
+   */
+  updateDailySale: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+      numberOfSales: z.number().int().min(0),
+      totalValue: z.number().min(0),
+      notes: z.string().max(500).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!SALES_REPORT_ALLOWED.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      await db.update(ecommerceDailySales)
+        .set({
+          numberOfSales: input.numberOfSales,
+          totalValue: input.totalValue.toFixed(2),
+          notes: input.notes || null,
+        })
+        .where(eq(ecommerceDailySales.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Delete a daily sales entry
+   */
+  deleteDailySale: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!SALES_REPORT_ALLOWED.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      await db.delete(ecommerceDailySales).where(eq(ecommerceDailySales.id, input.id));
       return { success: true };
     }),
 });

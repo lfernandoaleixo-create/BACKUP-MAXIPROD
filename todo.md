@@ -3612,3 +3612,14 @@
 - [x] Store 26 products with physical count quantities in database
 - [x] Restrict access to Guilherme's password only
 - [x] Show product list with quantities and total sum
+- [x] Create "Relatório de Vendas do E-commerce" section in E-commerce tab (above Despesas)
+- [x] Daily sales entry form (date, number of sales, total value)
+- [x] KPIs: total do mês, média diária, total geral
+- [x] Access restricted to Pedro, Fernando, Bruno, Guilherme
+- [x] PDF export of the sales report with all data
+- [x] Backend tRPC procedures: listDailySales, addDailySale, updateDailySale, deleteDailySale
+- [x] Database table ecommerce_daily_sales with migration applied
+- [x] SalesReportSection component with month/year filter, KPI cards, table, form
+- [x] Pedro-only add/edit/delete controls (Fernando/Bruno/Guilherme view-only)
+- [x] PDF export using jsPDF + jspdf-autotable with Grupo Fox branding
+- [x] 10 vitest tests for ecommerce router including daily sales procedures

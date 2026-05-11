@@ -2,8 +2,9 @@
  * E-commerce Tab - Despesas e Estornos da operação e-commerce (contas a pagar filial)
  * Acesso restrito: Pedro, Flavio, Guilherme
  */
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import RefundsSection from "@/components/RefundsSection";
+import { generateSalesReportPdf } from "@/lib/ecommerceSalesReportPdf";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,8 @@ import {
   Warehouse,
   ChevronDown,
   ChevronUp,
+  BarChart3,
+  Pencil,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -361,8 +364,23 @@ export default function EcommerceTab() {
     );
   }
 
+  const salesReportAllowed = ["Pedro", "Fernando", "Bruno", "Guilherme"];
+  const showSalesReport = salesReportAllowed.includes(operatorName);
+
   return (
     <div className="space-y-5 mt-4">
+      {/* Sales Report Section */}
+      {showSalesReport && (
+        <SalesReportSection operatorName={operatorName} />
+      )}
+
+      {/* Separator between Sales Report and Despesas */}
+      {showSalesReport && (
+        <div className="my-10">
+          <div className="h-[2px] bg-gradient-to-r from-transparent via-blue-400/60 to-transparent" />
+        </div>
+      )}
+
       {/* Title */}
       <div className="flex items-center gap-2">
         <ShoppingCart className="w-5 h-5 text-orange-600" />
@@ -867,6 +885,420 @@ function DepotSection({ operatorName }: { operatorName: string }) {
               </table>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Relatório de Vendas do E-commerce ─── */
+const SALES_MONTHS = [
+  { value: "all", label: "Todos" },
+  { value: "1", label: "Janeiro" },
+  { value: "2", label: "Fevereiro" },
+  { value: "3", label: "Março" },
+  { value: "4", label: "Abril" },
+  { value: "5", label: "Maio" },
+  { value: "6", label: "Junho" },
+  { value: "7", label: "Julho" },
+  { value: "8", label: "Agosto" },
+  { value: "9", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
+];
+
+function SalesReportSection({ operatorName }: { operatorName: string }) {
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<string>(String(now.getMonth() + 1));
+  const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  // Form state
+  const [formDate, setFormDate] = useState(() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+  });
+  const [formSales, setFormSales] = useState("");
+  const [formValue, setFormValue] = useState("");
+  const [formNotes, setFormNotes] = useState("");
+
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+
+  const isPedro = operatorName === "Pedro";
+
+  const queryMonth = selectedMonth === "all" ? undefined : Number(selectedMonth);
+  const queryYear = selectedMonth === "all" ? undefined : selectedYear;
+
+  const { data, isLoading, refetch } = trpc.ecommerce.listDailySales.useQuery(
+    { operatorName, month: queryMonth, year: queryYear },
+    { enabled: !!operatorName, refetchInterval: 30000 }
+  );
+
+  const addMutation = trpc.ecommerce.addDailySale.useMutation({
+    onSuccess: () => { resetForm(); refetch(); },
+  });
+  const updateMutation = trpc.ecommerce.updateDailySale.useMutation({
+    onSuccess: () => { resetForm(); refetch(); },
+  });
+  const deleteMutation = trpc.ecommerce.deleteDailySale.useMutation({
+    onSuccess: () => { setDeleteConfirm(null); refetch(); },
+  });
+
+  const entries = data?.entries || [];
+  const summary = data?.summary || { totalEntries: 0, totalSales: 0, totalValue: 0, avgDailyValue: 0, avgSalesPerDay: 0 };
+
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setFormDate(() => {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+    });
+    setFormSales("");
+    setFormValue("");
+    setFormNotes("");
+  };
+
+  const handleSubmit = () => {
+    const salesNum = parseInt(formSales, 10);
+    const valueNum = parseFloat(formValue.replace(",", "."));
+    if (isNaN(salesNum) || isNaN(valueNum) || salesNum < 0 || valueNum < 0) return;
+    if (!formDate) return;
+
+    if (editingId) {
+      updateMutation.mutate({
+        operatorName,
+        id: editingId,
+        numberOfSales: salesNum,
+        totalValue: valueNum,
+        notes: formNotes.trim() || undefined,
+      });
+    } else {
+      addMutation.mutate({
+        operatorName,
+        saleDate: formDate,
+        numberOfSales: salesNum,
+        totalValue: valueNum,
+        notes: formNotes.trim() || undefined,
+      });
+    }
+  };
+
+  const startEdit = (entry: any) => {
+    setEditingId(entry.id);
+    // saleDate can be a Date object or string
+    const d = entry.saleDate instanceof Date ? entry.saleDate : new Date(entry.saleDate);
+    setFormDate(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`);
+    setFormSales(String(entry.numberOfSales));
+    setFormValue(String(Number(entry.totalValue)));
+    setFormNotes(entry.notes || "");
+    setShowForm(true);
+  };
+
+  const formatEntryDate = (d: any) => {
+    const date = d instanceof Date ? d : new Date(d);
+    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+  };
+
+  const formatEntryWeekday = (d: any) => {
+    const date = d instanceof Date ? d : new Date(d);
+    return date.toLocaleDateString("pt-BR", { weekday: "short", timeZone: "UTC" });
+  };
+
+  const fmtCurrency = (v: number | string) => {
+    const n = typeof v === "string" ? parseFloat(v) : v;
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  };
+
+  const periodLabel = useMemo(() => {
+    if (selectedMonth === "all") return "Todos";
+    const m = SALES_MONTHS.find(m => m.value === selectedMonth);
+    return `${m?.label || ""} ${selectedYear}`;
+  }, [selectedMonth, selectedYear]);
+
+  const handleExportPdf = async () => {
+    await generateSalesReportPdf(
+      entries.map((e: any) => ({
+        id: e.id,
+        saleDate: e.saleDate,
+        numberOfSales: e.numberOfSales,
+        totalValue: e.totalValue,
+        notes: e.notes,
+        createdBy: e.createdBy,
+      })),
+      summary,
+      periodLabel,
+    );
+  };
+
+  // Year options: 2024 to current year + 1
+  const yearOptions = useMemo(() => {
+    const years: number[] = [];
+    for (let y = 2024; y <= now.getFullYear() + 1; y++) years.push(y);
+    return years;
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-slate-800">Relatório de Vendas do E-commerce</h3>
+          <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[10px]">
+            {summary.totalEntries} registros
+          </Badge>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Month filter */}
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            {SALES_MONTHS.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+
+          {/* Year filter */}
+          {selectedMonth !== "all" && (
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Export PDF */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={entries.length === 0}
+            className="h-8 text-xs gap-1.5"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            PDF
+          </Button>
+
+          {/* Add button - Pedro only */}
+          {isPedro && (
+            <Button
+              size="sm"
+              onClick={() => { resetForm(); setShowForm(true); }}
+              className="h-8 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Adicionar
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Dias Registrados</p>
+          <p className="text-xl font-bold text-slate-800 mt-1">{summary.totalEntries}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Total Vendas</p>
+          <p className="text-xl font-bold text-blue-700 mt-1">{summary.totalSales.toLocaleString("pt-BR")}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Faturamento Total</p>
+          <p className="text-xl font-bold text-emerald-700 mt-1">{fmtCurrency(summary.totalValue)}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm">
+          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Média Diária (R$)</p>
+          <p className="text-xl font-bold text-slate-700 mt-1">{fmtCurrency(summary.avgDailyValue)}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm col-span-2 md:col-span-1">
+          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Média Vendas/Dia</p>
+          <p className="text-xl font-bold text-slate-700 mt-1">{summary.avgSalesPerDay.toFixed(1)}</p>
+        </div>
+      </div>
+
+      {/* Add/Edit Form - Pedro only */}
+      {showForm && isPedro && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-blue-800">
+              {editingId ? "Editar Registro" : "Novo Registro de Vendas"}
+            </h4>
+            <button onClick={resetForm} className="text-blue-400 hover:text-blue-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label className="text-[11px] font-medium text-blue-700 mb-1 block">Data</label>
+              <Input
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+                className="h-9 text-sm bg-white"
+                disabled={!!editingId}
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-blue-700 mb-1 block">Nº de Vendas</label>
+              <Input
+                type="number"
+                min={0}
+                placeholder="0"
+                value={formSales}
+                onChange={(e) => setFormSales(e.target.value)}
+                className="h-9 text-sm bg-white"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-blue-700 mb-1 block">Valor Total (R$)</label>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="0,00"
+                value={formValue}
+                onChange={(e) => setFormValue(e.target.value)}
+                className="h-9 text-sm bg-white"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-blue-700 mb-1 block">Observações</label>
+              <Input
+                type="text"
+                placeholder="(opcional)"
+                value={formNotes}
+                onChange={(e) => setFormNotes(e.target.value)}
+                className="h-9 text-sm bg-white"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={resetForm} className="text-xs">
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={addMutation.isPending || updateMutation.isPending || !formDate || !formSales || !formValue}
+              className="text-xs bg-blue-600 hover:bg-blue-700 gap-1.5"
+            >
+              {(addMutation.isPending || updateMutation.isPending) && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              {editingId ? "Salvar" : "Adicionar"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-500 mb-2" />
+          <p className="text-xs text-slate-400">Carregando registros...</p>
+        </div>
+      ) : entries.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+          <BarChart3 className="w-10 h-10 mb-2 opacity-40" />
+          <p className="text-sm">Nenhum registro de vendas encontrado</p>
+          <p className="text-xs mt-1">
+            {isPedro ? "Clique em \"Adicionar\" para registrar vendas do dia." : "Aguardando registros."}
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-blue-50 border-b border-blue-100">
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-blue-700 uppercase tracking-wider">Data</th>
+                  <th className="text-center px-4 py-3 text-[11px] font-semibold text-blue-700 uppercase tracking-wider">Nº Vendas</th>
+                  <th className="text-right px-4 py-3 text-[11px] font-semibold text-blue-700 uppercase tracking-wider">Valor Total</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-blue-700 uppercase tracking-wider hidden md:table-cell">Obs.</th>
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-blue-700 uppercase tracking-wider hidden md:table-cell">Registrado por</th>
+                  {isPedro && (
+                    <th className="text-center px-3 py-3 text-[11px] font-semibold text-blue-700 uppercase tracking-wider w-20">Ações</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((entry: any, idx: number) => (
+                  <tr key={entry.id} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                    <td className="px-4 py-2.5">
+                      <span className="font-medium text-slate-700">{formatEntryDate(entry.saleDate)}</span>
+                      <span className="text-[10px] text-slate-400 ml-1.5 capitalize">{formatEntryWeekday(entry.saleDate)}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-center font-bold text-blue-700">{entry.numberOfSales.toLocaleString("pt-BR")}</td>
+                    <td className="px-4 py-2.5 text-right font-bold text-emerald-700">{fmtCurrency(entry.totalValue)}</td>
+                    <td className="px-4 py-2.5 text-slate-500 text-xs hidden md:table-cell max-w-[200px] truncate">{entry.notes || "—"}</td>
+                    <td className="px-4 py-2.5 text-slate-500 text-xs hidden md:table-cell">{entry.createdBy}</td>
+                    {isPedro && (
+                      <td className="px-3 py-2.5 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => startEdit(entry)}
+                                className="p-1.5 rounded-md hover:bg-blue-100 text-blue-500 transition-colors"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar</TooltipContent>
+                          </Tooltip>
+                          {deleteConfirm === entry.id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => deleteMutation.mutate({ operatorName, id: entry.id })}
+                                className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 transition-colors"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => setDeleteConfirm(entry.id)}
+                                  className="p-1.5 rounded-md hover:bg-red-100 text-slate-400 hover:text-red-500 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Excluir</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-blue-50 border-t-2 border-blue-200">
+                  <td className="px-4 py-3 font-bold text-blue-800 text-sm">TOTAL</td>
+                  <td className="px-4 py-3 text-center font-extrabold text-blue-800">{summary.totalSales.toLocaleString("pt-BR")}</td>
+                  <td className="px-4 py-3 text-right font-extrabold text-emerald-800">{fmtCurrency(summary.totalValue)}</td>
+                  <td className="hidden md:table-cell" colSpan={isPedro ? 3 : 2}></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       )}
     </div>

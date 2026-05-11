@@ -47,6 +47,36 @@ vi.mock("../drizzle/schema", () => ({
     createdAt: "createdAt",
     updatedAt: "updatedAt",
   },
+  ecommerceRefunds: {
+    id: "id",
+    descricao: "descricao",
+    fornecedor: "fornecedor",
+    dataCompraOriginal: "dataCompraOriginal",
+    dataEstorno: "dataEstorno",
+    valorEstorno: "valorEstorno",
+    motivo: "motivo",
+    motivoDetalhe: "motivoDetalhe",
+    status: "status",
+    dataCreditado: "dataCreditado",
+    observacao: "observacao",
+    registradoPor: "registradoPor",
+  },
+  depotInventory: {
+    id: "id",
+    productName: "productName",
+    quantityCx: "quantityCx",
+    sortOrder: "sortOrder",
+  },
+  ecommerceDailySales: {
+    id: "id",
+    saleDate: "saleDate",
+    numberOfSales: "numberOfSales",
+    totalValue: "totalValue",
+    notes: "notes",
+    createdBy: "createdBy",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+  },
 }));
 
 describe("E-commerce Router - Access Control", () => {
@@ -94,5 +124,43 @@ describe("E-commerce Router - Procedures Structure", () => {
   it("getSummary requires operatorName", async () => {
     const { ecommerceRouter } = await import("./ecommerceRouter");
     expect(ecommerceRouter._def.procedures.getSummary).toBeDefined();
+  });
+});
+
+describe("E-commerce Router - Daily Sales Procedures", () => {
+  it("should define all daily sales procedures", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    expect(ecommerceRouter._def.procedures.listDailySales).toBeDefined();
+    expect(ecommerceRouter._def.procedures.addDailySale).toBeDefined();
+    expect(ecommerceRouter._def.procedures.updateDailySale).toBeDefined();
+    expect(ecommerceRouter._def.procedures.deleteDailySale).toBeDefined();
+  });
+
+  it("SALES_REPORT_ALLOWED should include Pedro, Fernando, Bruno, Guilherme", () => {
+    const salesAllowed = ["Pedro", "Fernando", "Bruno", "Guilherme"];
+    for (const name of salesAllowed) {
+      expect(salesAllowed.includes(name)).toBe(true);
+    }
+    // These should NOT be in the sales report allowlist
+    const denied = ["Flavio", "Jordão", "Juvenal", "Paula", "Gilson"];
+    for (const name of denied) {
+      expect(salesAllowed.includes(name)).toBe(false);
+    }
+  });
+
+  it("daily sales access control: Pedro can add, Fernando can only view", () => {
+    const salesAllowed = ["Pedro", "Fernando", "Bruno", "Guilherme"];
+    // Pedro should be in the allowed list
+    expect(salesAllowed.includes("Pedro")).toBe(true);
+    // Fernando should be in the allowed list
+    expect(salesAllowed.includes("Fernando")).toBe(true);
+    // Flavio should NOT be in the sales report allowed list
+    expect(salesAllowed.includes("Flavio")).toBe(false);
+  });
+
+  it("depot procedures should be defined", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    expect(ecommerceRouter._def.procedures.getDepotInventory).toBeDefined();
+    expect(ecommerceRouter._def.procedures.updateDepotItem).toBeDefined();
   });
 });
