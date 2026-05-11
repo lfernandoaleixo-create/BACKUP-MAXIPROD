@@ -1,8 +1,0 @@
-{
-  "query": "SELECT so.codigoItem, so.descricaoItem, DATE_FORMAT(SUBSTRING(so.dataEmissao, 1, 10), '%Y-%m') as yearMonth, SUM(so.quantidade) as totalQty, pv.parentCode, pv.conversionFactor FROM sales_orders so INNER JOIN product_variants pv ON so.codigoItem = pv.childCode WHERE so.estadoItem IN ('Faturado', 'Faturado parcial', 'Faturado c/ entrega futura') AND SUBSTRING(so.dataEmissao, 1, 10) >= '2025-02-01' GROUP BY so.codigoItem, yearMonth, pv.parentCode, pv.conversionFactor ORDER BY yearMonth DESC, totalQty DESC LIMIT 20;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT so.codigoItem, so.descricaoItem, DATE_FORMAT(SUBSTRING(so.dataEmissao, 1, 10), '%Y-%m') as yearMonth, SUM(so.quantidade) as totalQty, pv.parentCode, pv.conversionFactor FROM sales_orders so INNER JOIN product_variants pv ON so.codigoItem = pv.childCode WHERE so.estadoItem IN ('Faturado', 'Faturado parcial', 'Faturado c/ entrega futura') AND SUBSTRING(so.dataEmissao, 1, 10) >= '2025-02-01' GROUP BY so.codigoItem, yearMonth, pv.parentCode, pv.conversionFactor ORDER BY yearMonth DESC, totalQty DESC LIMIT 20;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1055 (42000) at line 1: Expression #2 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'TMh5HqmzfeBw9KakgJtjjo.so.descricaoItem' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by"
-  ]
-}

@@ -1,8 +1,0 @@
-{
-  "query": "SELECT DISTINCT contaNumero, agencia, empresaNome, COUNT(*) as cnt, SUM(CAST(valorAReceber AS DECIMAL(18,2))) as total FROM accounts_receivable WHERE estado = 'EMITIDO' GROUP BY contaNumero, agencia, empresaNome ORDER BY cnt DESC LIMIT 30;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT contaNumero, agencia, empresaNome, COUNT(*) as cnt, SUM(CAST(valorAReceber AS DECIMAL(18,2))) as total FROM accounts_receivable WHERE estado = 'EMITIDO' GROUP BY contaNumero, agencia, empresaNome ORDER BY cnt DESC LIMIT 30;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 1: Unknown column 'valorareceber' in 'where clause'"
-  ]
-}

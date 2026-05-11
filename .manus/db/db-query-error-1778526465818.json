@@ -1,8 +1,0 @@
-{
-  "query": "SELECT DISTINCT forma_cobranca, COUNT(*) as cnt FROM accounts_receivable WHERE forma_cobranca IS NOT NULL AND forma_cobranca != '' GROUP BY forma_cobranca ORDER BY cnt DESC LIMIT 50;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT forma_cobranca, COUNT(*) as cnt FROM accounts_receivable WHERE forma_cobranca IS NOT NULL AND forma_cobranca != '' GROUP BY forma_cobranca ORDER BY cnt DESC LIMIT 50;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1054 (42S22) at line 1: Unknown column 'forma_cobranca' in 'group statement'"
-  ]
-}

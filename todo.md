@@ -3656,15 +3656,3 @@
 
 ## Bug: Cards de semana cortados no mobile
 - [x] Corrigir layout dos cards de semana (dias 18-24 e 25-31 cortados) na versão mobile
-
-## Bug: Formas de cobrança faltando nos Recebíveis
-- [ ] Adicionar Banco Bradesco nas contas de Recebíveis (já existe no Maxiprod mas não aparece no dashboard)
-
-## Adicionar Banco Bradesco nos Recebíveis
-- [ ] Adicionar Banco Bradesco nas contas de Recebíveis com valores e filtros completos
-
-## Corrigir Média de Vendas - Incluir Variações
-- [x] Backend: getMonthlySalesByProduct agora soma vendas das variações ao produto mãe com fator de conversão (productVariants table)
-- [x] Lógica de estoque: se variação tem estoque, abate da variação; se não tem, converte e abate do mãe (já implementado no stockProcessor)
-- [x] Não duplicar: se abateu da variação, não abate novamente do mãe (já implementado no stockProcessor)
-- [x] Estoque disponível já considera variações corretamente (regras ZECA, Madeira Acabado, e outros)

@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -2104,62 +2104,21 @@ export const salesRouter = router({
     if (endM === 12) { endM = 1; endY += 1; } else { endM += 1; }
     const endDate = `${endY}-${String(endM).padStart(2, '0')}-01`;
 
-    // Fetch product variant mappings (child → parent with conversion factor)
-    const variantRows = await db.select({
-      parentCode: productVariants.parentCode,
-      childCode: productVariants.childCode,
-      conversionFactor: productVariants.conversionFactor,
-    }).from(productVariants);
-
-    // Build child→parent map: { childCode: { parentCode, factor } }
-    const childToParent: Record<string, { parentCode: string; factor: number }> = {};
-    const parentChildren: Record<string, string[]> = {};
-    for (const v of variantRows) {
-      childToParent[v.childCode] = {
-        parentCode: v.parentCode,
-        factor: parseFloat(String(v.conversionFactor)) || 1,
-      };
-      if (!parentChildren[v.parentCode]) parentChildren[v.parentCode] = [];
-      parentChildren[v.parentCode].push(v.childCode);
-    }
-
-    // Use raw SQL to get all sales by codigoItem and month for faturado items
+    // Use raw SQL to avoid Drizzle ORM issues with DATE_FORMAT and SUBSTRING
     const rawRows = await db.execute(
       sql`SELECT codigoItem, DATE_FORMAT(SUBSTRING(dataEmissao, 1, 10), '%Y-%m') as yearMonth, COALESCE(SUM(quantidade), 0) as totalQty FROM sales_orders WHERE codigoItem IS NOT NULL AND codigoItem != '' AND estadoItem IN ('Faturado', 'Faturado parcial', 'Faturado c/ entrega futura') AND SUBSTRING(dataEmissao, 1, 10) >= ${startDate} AND SUBSTRING(dataEmissao, 1, 10) < ${endDate} GROUP BY codigoItem, DATE_FORMAT(SUBSTRING(dataEmissao, 1, 10), '%Y-%m')`
     );
 
-    // Build raw result map: { codigoItem: { 'YYYY-MM': qty, ... } }
-    const rawData: Record<string, Record<string, number>> = {};
+    // Build result map: { codigoItem: { 'YYYY-MM': qty, ... } }
+    const data: Record<string, Record<string, number>> = {};
     const rows = (rawRows as any)[0] || rawRows;
     for (const row of (Array.isArray(rows) ? rows : [])) {
       const code = (row as any).codigoItem;
       const ym = (row as any).yearMonth;
       const qty = parseFloat(String((row as any).totalQty)) || 0;
       if (!code || !ym) continue;
-      if (!rawData[code]) rawData[code] = {};
-      rawData[code][ym] = qty;
-    }
-
-    // Now aggregate: for each child code, convert and add to parent
-    const data: Record<string, Record<string, number>> = {};
-
-    // First, copy all raw data
-    for (const [code, months] of Object.entries(rawData)) {
       if (!data[code]) data[code] = {};
-      for (const [ym, qty] of Object.entries(months)) {
-        data[code][ym] = (data[code][ym] || 0) + qty;
-      }
-    }
-
-    // Then, for each child code that has a parent, add converted qty to parent
-    for (const [childCode, months] of Object.entries(rawData)) {
-      const mapping = childToParent[childCode];
-      if (!mapping) continue;
-      const { parentCode, factor } = mapping;
-      if (!data[parentCode]) data[parentCode] = {};
-      for (const [ym, qty] of Object.entries(months)) {
-        data[parentCode][ym] = (data[parentCode][ym] || 0) + (qty * factor);
-      }
+      data[code][ym] = qty;
     }
 
     return {
