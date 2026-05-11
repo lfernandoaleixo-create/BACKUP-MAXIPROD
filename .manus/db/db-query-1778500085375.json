@@ -1,0 +1,13 @@
+{
+  "query": "SELECT SUBSTRING(JSON_EXTRACT(dataJson, '$.items[5].poLotes'), 1, 500) as lotes FROM dashboard_data LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT SUBSTRING(JSON_EXTRACT(dataJson, '$.items[5].poLotes'), 1, 500) as lotes FROM dashboard_data LIMIT 1;",
+  "rows": [
+    {
+      "lotes": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "lotes\nNULL\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

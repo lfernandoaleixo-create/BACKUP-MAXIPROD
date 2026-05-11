@@ -1,0 +1,14 @@
+{
+  "query": "SELECT JSON_KEYS(dataJson) as topKeys, computedAt FROM dashboard_data LIMIT 2;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT JSON_KEYS(dataJson) as topKeys, computedAt FROM dashboard_data LIMIT 2;",
+  "rows": [
+    {
+      "topKeys": "NULL",
+      "computedAt": "2026-05-11 11:46:19"
+    }
+  ],
+  "messages": [],
+  "stdout": "topKeys\tcomputedAt\nNULL\t2026-05-11 11:46:19\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

@@ -1,0 +1,13 @@
+{
+  "query": "SELECT SUBSTRING(dataJson, 1, 300) as jsonStart FROM dashboard_data LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT SUBSTRING(dataJson, 1, 300) as jsonStart FROM dashboard_data LIMIT 1;",
+  "rows": [
+    {
+      "jsonStart": "\"[{\\\"codigoItem\\\":\\\"00013R\\\",\\\"descricaoItem\\\":\\\"ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO\\\",\\\"unidadeMedida\\\":\\\"un\\\",\\\"grupoCodigo\\\":\\\"20\\\",\\\"superGrupoCodigo\\\":\\\"12\\\",\\\"descricaoGrupo\\\":\\\"ESPETO\\\",\\\"empresaDona\\\":\\\"PALITOS INDUSTRIA\\\",\\\"estoqueUn\\\":0,\\\"estoqueCx\\\":0,\\\"unidadesPorCaixa"
+    }
+  ],
+  "messages": [],
+  "stdout": "jsonStart\n\"[{\\\"codigoItem\\\":\\\"00013R\\\",\\\"descricaoItem\\\":\\\"ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO\\\",\\\"unidadeMedida\\\":\\\"un\\\",\\\"grupoCodigo\\\":\\\"20\\\",\\\"superGrupoCodigo\\\":\\\"12\\\",\\\"descricaoGrupo\\\":\\\"ESPETO\\\",\\\"empresaDona\\\":\\\"PALITOS INDUSTRIA\\\",\\\"estoqueUn\\\":0,\\\"estoqueCx\\\":0,\\\"unidadesPorCaixa\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

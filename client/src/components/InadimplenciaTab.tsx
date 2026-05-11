@@ -4899,7 +4899,7 @@ function DecisionPdfHistoryDialog({ onClose }: { onClose: () => void }) {
                         {/* Paid message */}
                         {isPaid && (
                           <div className="mt-1.5 px-2 py-1 bg-green-100 dark:bg-green-900/40 rounded text-xs font-semibold text-green-700 dark:text-green-400">
-                            O PDF DE DECISÃO FOI GERADO, E O CLIENTE REALIZOU O PAGAMENTO
+                            O PDF DE DECISÃO FOI GERADO, MAS O CLIENTE REALIZOU O PAGAMENTO E SAIU DA INADIMPLÊNCIA
                           </div>
                         )}
                       </div>
