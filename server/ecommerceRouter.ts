@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { ecommerceExpenses, ecommerceRefunds, depotInventory, ecommerceDailySales } from "../drizzle/schema";
+import { ecommerceExpenses, ecommerceRefunds, depotInventory, ecommerceDailySales, ecommerceCreditCards } from "../drizzle/schema";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 
 const ECOMMERCE_ALLOWED_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
@@ -41,6 +41,8 @@ export const ecommerceRouter = router({
       parcelas: z.number().int().min(1).max(48).default(1),
       valorTotal: z.number().min(0.01),
       observacao: z.string().max(1000).optional(),
+      recorrente: z.boolean().default(false),
+      cartaoId: z.number().int().nullable().optional(),
     }))
     .mutation(async ({ input }) => {
       if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
@@ -55,6 +57,8 @@ export const ecommerceRouter = router({
         parcelas: input.parcelas,
         valorTotal: String(input.valorTotal),
         observacao: input.observacao?.trim() || null,
+        recorrente: input.recorrente ? 1 : 0,
+        cartaoId: input.cartaoId || null,
         registradoPor: input.operatorName,
       });
       return { success: true };
@@ -470,6 +474,106 @@ export const ecommerceRouter = router({
       const db = await getDb();
       if (!db) return { success: false, error: "DB indisponível" };
       await db.delete(ecommerceDailySales).where(eq(ecommerceDailySales.id, input.id));
+      return { success: true };
+    }),
+
+  // ─── Cartões de Crédito ───
+
+  /**
+   * List all credit cards
+   */
+  listCreditCards: publicProcedure
+    .input(z.object({ operatorName: z.string() }))
+    .query(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", cards: [] };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", cards: [] };
+      const rows = await db.select().from(ecommerceCreditCards).orderBy(asc(ecommerceCreditCards.nome));
+      return { success: true, cards: rows };
+    }),
+
+  /**
+   * Add a new credit card
+   */
+  addCreditCard: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      nome: z.string().min(1).max(200),
+      bandeira: z.string().min(1).max(50),
+      ultimos4: z.string().regex(/^\d{4}$/),
+      titular: z.string().min(1).max(200),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      await db.insert(ecommerceCreditCards).values({
+        nome: input.nome.trim(),
+        bandeira: input.bandeira.trim(),
+        ultimos4: input.ultimos4,
+        titular: input.titular.trim(),
+        registradoPor: input.operatorName,
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Update a credit card
+   */
+  updateCreditCard: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+      nome: z.string().min(1).max(200),
+      bandeira: z.string().min(1).max(50),
+      ultimos4: z.string().regex(/^\d{4}$/),
+      titular: z.string().min(1).max(200),
+      ativo: z.boolean(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      await db.update(ecommerceCreditCards)
+        .set({
+          nome: input.nome.trim(),
+          bandeira: input.bandeira.trim(),
+          ultimos4: input.ultimos4,
+          titular: input.titular.trim(),
+          ativo: input.ativo ? 1 : 0,
+        })
+        .where(eq(ecommerceCreditCards.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Delete a credit card (only if no expenses reference it)
+   */
+  deleteCreditCard: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      // Check if any expense references this card
+      const [usage] = await db.select({ count: sql<number>`COUNT(*)` })
+        .from(ecommerceExpenses)
+        .where(eq(ecommerceExpenses.cartaoId, input.id));
+      if (usage && usage.count > 0) {
+        return { success: false, error: `Cartão em uso por ${usage.count} despesa(s). Desative-o em vez de excluir.` };
+      }
+      await db.delete(ecommerceCreditCards).where(eq(ecommerceCreditCards.id, input.id));
       return { success: true };
     }),
 });

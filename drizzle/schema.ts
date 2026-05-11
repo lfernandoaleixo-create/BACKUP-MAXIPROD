@@ -1,4 +1,4 @@
-import { bigint, int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, json } from "drizzle-orm/mysql-core";
+import { bigint, int, tinyint, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, json } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -1327,12 +1327,32 @@ export const ecommerceExpenses = mysqlTable("ecommerce_expenses", {
   parcelas: int("parcelas").notNull().default(1), // 1 = à vista
   valorTotal: decimal("valorTotal", { precision: 12, scale: 2 }).notNull(),
   observacao: text("observacao"),
+  recorrente: tinyint("recorrente").notNull().default(0), // 0 = não, 1 = sim
+  cartaoId: int("cartao_id"), // FK para ecommerce_credit_cards (nullable = sem cartão)
   registradoPor: varchar("registradoPor", { length: 100 }).notNull(), // nome do operador
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 export type EcommerceExpense = typeof ecommerceExpenses.$inferSelect;
 export type InsertEcommerceExpense = typeof ecommerceExpenses.$inferInsert;
+
+/**
+ * Cartões de crédito cadastrados para o e-commerce.
+ * Pedro registra os cartões, que depois podem ser selecionados ao lançar despesas.
+ */
+export const ecommerceCreditCards = mysqlTable("ecommerce_credit_cards", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 200 }).notNull(), // ex: "Nubank PJ", "Itaú Empresarial"
+  bandeira: varchar("bandeira", { length: 50 }).notNull(), // ex: "Visa", "Mastercard", "Elo"
+  ultimos4: varchar("ultimos4", { length: 4 }).notNull(), // últimos 4 dígitos
+  titular: varchar("titular", { length: 200 }).notNull(), // nome do titular
+  ativo: tinyint("ativo").notNull().default(1), // 1 = ativo, 0 = inativo
+  registradoPor: varchar("registrado_por", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type EcommerceCreditCard = typeof ecommerceCreditCards.$inferSelect;
+export type InsertEcommerceCreditCard = typeof ecommerceCreditCards.$inferInsert;
 
 
 /**

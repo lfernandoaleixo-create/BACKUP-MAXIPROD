@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `ecommerce_credit_cards` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`nome` varchar(200) NOT NULL,\n\t`bandeira` varchar(50) NOT NULL,\n\t`ultimos4` varchar(4) NOT NULL,\n\t`titular` varchar(200) NOT NULL,\n\t`ativo` tinyint NOT NULL DEFAULT 1,\n\t`registrado_por` varchar(100) NOT NULL,\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\t`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `ecommerce_credit_cards_id` PRIMARY KEY(`id`)\n);\n\nALTER TABLE `ecommerce_expenses` ADD `recorrente` tinyint DEFAULT 0 NOT NULL;\n\nALTER TABLE `ecommerce_expenses` ADD `cartao_id` int;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `ecommerce_credit_cards` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`nome` varchar(200) NOT NULL,\n\t`bandeira` varchar(50) NOT NULL,\n\t`ultimos4` varchar(4) NOT NULL,\n\t`titular` varchar(200) NOT NULL,\n\t`ativo` tinyint NOT NULL DEFAULT 1,\n\t`registrado_por` varchar(100) NOT NULL,\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\t`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `ecommerce_credit_cards_id` PRIMARY KEY(`id`)\n);\n\nALTER TABLE `ecommerce_expenses` ADD `recorrente` tinyint DEFAULT 0 NOT NULL;\n\nALTER TABLE `ecommerce_expenses` ADD `cartao_id` int;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 763
+}

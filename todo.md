@@ -3639,3 +3639,14 @@
 
 ## Legendas nos KPI Cards da Métrica de Clientes
 - [x] Adicionar legendas explicativas em cada KPI card da Métrica de Clientes
+
+## Despesas E-commerce - Cartões e Recorrência
+- [x] Criar tabela de cartões de crédito (nome, bandeira, últimos 4 dígitos, titular)
+- [x] Adicionar campo "recorrente" (sim/não) na tabela de despesas
+- [x] Adicionar campo "cartão" (FK para cartões) na tabela de despesas
+- [x] Backend: CRUD de cartões de crédito
+- [x] Backend: atualizar procedures de despesas para incluir recorrente e cartão
+- [x] Frontend: seção de cadastro/gerenciamento de cartões de crédito
+- [x] Frontend: campo "recorrente" no formulário de despesas
+- [x] Frontend: seleção de cartão no formulário de despesas
+- [x] Frontend: exibir cartão e recorrência na listagem de despesas

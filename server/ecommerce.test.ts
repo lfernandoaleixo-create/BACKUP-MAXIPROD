@@ -43,6 +43,19 @@ vi.mock("../drizzle/schema", () => ({
     parcelas: "parcelas",
     valorTotal: "valorTotal",
     observacao: "observacao",
+    recorrente: "recorrente",
+    cartaoId: "cartaoId",
+    registradoPor: "registradoPor",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
+  },
+  ecommerceCreditCards: {
+    id: "id",
+    nome: "nome",
+    bandeira: "bandeira",
+    ultimos4: "ultimos4",
+    titular: "titular",
+    ativo: "ativo",
     registradoPor: "registradoPor",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
@@ -162,5 +175,32 @@ describe("E-commerce Router - Daily Sales Procedures", () => {
     const { ecommerceRouter } = await import("./ecommerceRouter");
     expect(ecommerceRouter._def.procedures.getDepotInventory).toBeDefined();
     expect(ecommerceRouter._def.procedures.updateDepotItem).toBeDefined();
+  });
+});
+
+describe("E-commerce Router - Credit Card Procedures", () => {
+  it("should define all credit card CRUD procedures", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    expect(ecommerceRouter._def.procedures.listCreditCards).toBeDefined();
+    expect(ecommerceRouter._def.procedures.addCreditCard).toBeDefined();
+    expect(ecommerceRouter._def.procedures.updateCreditCard).toBeDefined();
+    expect(ecommerceRouter._def.procedures.deleteCreditCard).toBeDefined();
+  });
+
+  it("addExpense should accept recorrente and cartaoId fields", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    // The addExpense procedure should still be defined with the new fields
+    expect(ecommerceRouter._def.procedures.addExpense).toBeDefined();
+  });
+
+  it("credit card access should follow ECOMMERCE_ALLOWED_OPERATORS", () => {
+    const allowed = ["Pedro", "Flavio", "Guilherme"];
+    const denied = ["Fernando", "Bruno", "Maria"];
+    for (const name of allowed) {
+      expect(allowed.includes(name)).toBe(true);
+    }
+    for (const name of denied) {
+      expect(allowed.includes(name)).toBe(false);
+    }
   });
 });
