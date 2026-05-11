@@ -1,0 +1,15 @@
+{
+  "query": "SELECT lastSyncAt, lastSyncStatus, lastError FROM scraper_status LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT lastSyncAt, lastSyncStatus, lastError FROM scraper_status LIMIT 1;",
+  "rows": [
+    {
+      "lastSyncAt": "2026-05-11 10:35:59",
+      "lastSyncStatus": "GraphQL OK: 186est 112ped 14po 1753vnd 2162pg 555r",
+      "lastError": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "lastSyncAt\tlastSyncStatus\tlastError\n2026-05-11 10:35:59\tGraphQL OK: 186est 112ped 14po 1753vnd 2162pg 555r\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

@@ -3605,3 +3605,4 @@
 - [x] Structure initial client metrics (new clients opened, reactivated clients, recompra interval)
 - [x] Fix tab bar overlap on mobile in Vendas page (4 tabs overlapping text)
 - [x] Ensure MetricaClientesTab is fully responsive for mobile and desktop
+- [x] Fix PO quantity divergence: 4.852 cx is correct (350 cx cancelado confirmado), fixed card PO(Compra) 9.231→4.852 using poLotes.quantidade em caixas

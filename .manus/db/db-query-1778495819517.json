@@ -1,0 +1,136 @@
+{
+  "query": "SELECT codigoItem, descricao, quantidade, referencia, dataEntrega, fornecedor, empresaDona FROM purchase_order_items ORDER BY codigoItem;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricao, quantidade, referencia, dataEntrega, fornecedor, empresaDona FROM purchase_order_items ORDER BY codigoItem;",
+  "rows": [
+    {
+      "codigoItem": "00001",
+      "descricao": "ESPETO DE BAMBU 3,5 X 180 MM C/ 10 X 1.000 UNID.",
+      "quantidade": "100.00000",
+      "referencia": "PO01 - PROFORMA PEDIDO",
+      "dataEntrega": "2026-06-22T00:00:00.000-03:00",
+      "fornecedor": "",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00007B",
+      "descricao": "ESPETO DE BAMBU 4,0 X 250 MM C/ 125 X 40 UNID. - BAMBUSA",
+      "quantidade": "500.00000",
+      "referencia": "PO62 - COMERCIAL",
+      "dataEntrega": "2026-06-19T00:00:00.000-03:00",
+      "fornecedor": "GANZHOU JIDAXIANG BAMBOO",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00009",
+      "descricao": "ESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.",
+      "quantidade": "1000.00000",
+      "referencia": "PO01 - PROFORMA PEDIDO",
+      "dataEntrega": "2026-06-22T00:00:00.000-03:00",
+      "fornecedor": "",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00011",
+      "descricao": "ESPETO DE BAMBU 4,0 X 250 MM MEIA PONTA C/ 5 X 1.000 UNID.",
+      "quantidade": "500.00000",
+      "referencia": "PO01 - PROFORMA PEDIDO",
+      "dataEntrega": "2026-06-22T00:00:00.000-03:00",
+      "fornecedor": "",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00013",
+      "descricao": "ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.",
+      "quantidade": "400.00000",
+      "referencia": "PO01 - PROFORMA PEDIDO",
+      "dataEntrega": "2026-06-22T00:00:00.000-03:00",
+      "fornecedor": "",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00015B",
+      "descricao": "ESPETO DE BAMBU 4,0 X 300 MM C/ 125 X 40 UNID. - BAMBUSA",
+      "quantidade": "501.00000",
+      "referencia": "PO62 - COMERCIAL",
+      "dataEntrega": "2026-06-19T00:00:00.000-03:00",
+      "fornecedor": "GANZHOU JIDAXIANG BAMBOO",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00036",
+      "descricao": "PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125MM C/ 10.000 UNID.",
+      "quantidade": "75.00000",
+      "referencia": "PO62 - COMERCIAL",
+      "dataEntrega": "2026-06-19T00:00:00.000-03:00",
+      "fornecedor": "GANZHOU JIDAXIANG BAMBOO",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00046",
+      "descricao": "PALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 10.000 UNID.",
+      "quantidade": "491.00000",
+      "referencia": "PO62 - COMERCIAL",
+      "dataEntrega": "2026-06-19T00:00:00.000-03:00",
+      "fornecedor": "GANZHOU JIDAXIANG BAMBOO",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00057B",
+      "descricao": "PALITO PARA PETISCO DE BAMBU GOLF 15 CM C/ 100 X 50 UNID - BAMBUSA",
+      "quantidade": "50.00000",
+      "referencia": "PO62 - COMERCIAL",
+      "dataEntrega": "2026-06-19T00:00:00.000-03:00",
+      "fornecedor": "GANZHOU JIDAXIANG BAMBOO",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00058",
+      "descricao": "VARETA DE APITO BAMBU 3,0 X 350 MM PCT 20KG",
+      "quantidade": "51.00000",
+      "referencia": "PO62 - COMERCIAL",
+      "dataEntrega": "2026-06-19T00:00:00.000-03:00",
+      "fornecedor": "GANZHOU JIDAXIANG BAMBOO",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00058",
+      "descricao": "VARETA DE APITO BAMBU 3,0 X 350 MM PCT 20KG",
+      "quantidade": "100.00000",
+      "referencia": "PO01 - PROFORMA PEDIDO",
+      "dataEntrega": "2026-06-22T00:00:00.000-03:00",
+      "fornecedor": "",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00274B",
+      "descricao": "ESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - BAMBUSA",
+      "quantidade": "209.00000",
+      "referencia": "PO62 - COMERCIAL",
+      "dataEntrega": "2026-06-19T00:00:00.000-03:00",
+      "fornecedor": "GANZHOU JIDAXIANG BAMBOO",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00335",
+      "descricao": "ESPETO DE MADEIRA 3,8*200MM 10.000 POR PACOTE (POLIDOS, SEM PONTA, SEM SELEÇÃO)",
+      "quantidade": "825.00000",
+      "referencia": "MADEIRA - COMERCIAL",
+      "dataEntrega": "2026-06-26T00:00:00.000-03:00",
+      "fornecedor": "HARBIN ZHONGYI",
+      "empresaDona": "PALITOS INDUSTRIA"
+    },
+    {
+      "codigoItem": "00409",
+      "descricao": "PALITO PARA PETISCO DE BAMBU GOLF 09 CM C/ 100 X 50 UNID - BAMBUSA",
+      "quantidade": "50.00000",
+      "referencia": "PO62 - COMERCIAL",
+      "dataEntrega": "2026-06-19T00:00:00.000-03:00",
+      "fornecedor": "GANZHOU JIDAXIANG BAMBOO",
+      "empresaDona": "PALITOS INDUSTRIA"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tdescricao\tquantidade\treferencia\tdataEntrega\tfornecedor\tempresaDona\n00001\tESPETO DE BAMBU 3,5 X 180 MM C/ 10 X 1.000 UNID.\t100.00000\tPO01 - PROFORMA PEDIDO\t2026-06-22T00:00:00.000-03:00\t\tPALITOS INDUSTRIA\n00007B\tESPETO DE BAMBU 4,0 X 250 MM C/ 125 X 40 UNID. - BAMBUSA\t500.00000\tPO62 - COMERCIAL\t2026-06-19T00:00:00.000-03:00\tGANZHOU JIDAXIANG BAMBOO\tPALITOS INDUSTRIA\n00009\tESPETO DE BAMBU 4,0 X 250 MM C/ 5 X 1.000 UNID.\t1000.00000\tPO01 - PROFORMA PEDIDO\t2026-06-22T00:00:00.000-03:00\t\tPALITOS INDUSTRIA\n00011\tESPETO DE BAMBU 4,0 X 250 MM MEIA PONTA C/ 5 X 1.000 UNID.\t500.00000\tPO01 - PROFORMA PEDIDO\t2026-06-22T00:00:00.000-03:00\t\tPALITOS INDUSTRIA\n00013\tESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.\t400.00000\tPO01 - PROFORMA PEDIDO\t2026-06-22T00:00:00.000-03:00\t\tPALITOS INDUSTRIA\n00015B\tESPETO DE BAMBU 4,0 X 300 MM C/ 125 X 40 UNID. - BAMBUSA\t501.00000\tPO62 - COMERCIAL\t2026-06-19T00:00:00.000-03:00\tGANZHOU JIDAXIANG BAMBOO\tPALITOS INDUSTRIA\n00036\tPALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125MM C/ 10.000 UNID.\t75.00000\tPO62 - COMERCIAL\t2026-06-19T00:00:00.000-03:00\tGANZHOU JIDAXIANG BAMBOO\tPALITOS INDUSTRIA\n00046\tPALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 10.000 UNID.\t491.00000\tPO62 - COMERCIAL\t2026-06-19T00:00:00.000-03:00\tGANZHOU JIDAXIANG BAMBOO\tPALITOS INDUSTRIA\n00057B\tPALITO PARA PETISCO DE BAMBU GOLF 15 CM C/ 100 X 50 UNID - BAMBUSA\t50.00000\tPO62 - COMERCIAL\t2026-06-19T00:00:00.000-03:00\tGANZHOU JIDAXIANG BAMBOO\tPALITOS INDUSTRIA\n00058\tVARETA DE APITO BAMBU 3,0 X 350 MM PCT 20KG\t51.00000\tPO62 - COMERCIAL\t2026-06-19T00:00:00.000-03:00\tGANZHOU JIDAXIANG BAMBOO\tPALITOS INDUSTRIA\n00058\tVARETA DE APITO BAMBU 3,0 X 350 MM PCT 20KG\t100.00000\tPO01 - PROFORMA PEDIDO\t2026-06-22T00:00:00.000-03:00\t\tPALITOS INDUSTRIA\n00274B\tESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - BAMBUSA\t209.00000\tPO62 - COMERCIAL\t2026-06-19T00:00:00.000-03:00\tGANZHOU JIDAXIANG BAMBOO\tPALITOS INDUSTRIA\n00335\tESPETO DE MADEIRA 3,8*200MM 10.000 POR PACOTE (POLIDOS, SEM PONTA, SEM SELEÇÃO)\t825.00000\tMADEIRA - COMERCIAL\t2026-06-26T00:00:00.000-03:00\tHARBIN ZHONGYI\tPALITOS INDUSTRIA\n00409\tPALITO PARA PETISCO DE BAMBU GOLF 09 CM C/ 100 X 50 UNID - BAMBUSA\t50.00000\tPO62 - COMERCIAL\t2026-06-19T00:00:00.000-03:00\tGANZHOU JIDAXIANG BAMBOO\tPALITOS INDUSTRIA\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

@@ -2071,8 +2071,14 @@ function ClassificationCard({
   const totalEstoque = parentItems_.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
   const totalPedidos = parentItems_.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
   const totalDisponivel = parentItems_.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0);
-  const totalPO = parentItems_.reduce((sum, i) => sum + (i.poCx ?? 0), 0);
-  const totalProjetado = parentItems_.reduce((sum, i) => sum + (i.projetadoCx ?? 0), 0);
+  // PO total: usar poLotes.quantidade (sempre em caixas) para evitar inflar com kg products
+  const totalPO = parentItems_.reduce((sum, i) => {
+    if (i.poLotes && i.poLotes.length > 0) {
+      return sum + i.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0);
+    }
+    return sum + (i.poCx ?? 0);
+  }, 0);
+  const totalProjetado = totalDisponivel + totalPO;
   const negativos = items.filter(i => (i.disponivelCx ?? i.disponivelUn) < 0).length;
   const parentCount = useMemo(() => items.filter(i => !i.isChild).length, [items]);
 

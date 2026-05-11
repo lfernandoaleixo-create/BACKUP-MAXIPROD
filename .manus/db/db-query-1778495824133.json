@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) as total_items, SUM(CAST(quantidade AS DECIMAL(18,2))) as total_qty FROM purchase_order_items;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_items, SUM(CAST(quantidade AS DECIMAL(18,2))) as total_qty FROM purchase_order_items;",
+  "rows": [
+    {
+      "total_items": "14",
+      "total_qty": "4852.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_items\ttotal_qty\n14\t4852.00\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}

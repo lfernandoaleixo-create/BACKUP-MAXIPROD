@@ -1,0 +1,75 @@
+{
+  "query": "SELECT codigoItem, COUNT(*) as cnt, SUM(CAST(quantidade AS DECIMAL(18,2))) as total FROM purchase_order_items GROUP BY codigoItem ORDER BY codigoItem;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, COUNT(*) as cnt, SUM(CAST(quantidade AS DECIMAL(18,2))) as total FROM purchase_order_items GROUP BY codigoItem ORDER BY codigoItem;",
+  "rows": [
+    {
+      "codigoItem": "00001",
+      "cnt": "1",
+      "total": "100.00"
+    },
+    {
+      "codigoItem": "00007B",
+      "cnt": "1",
+      "total": "500.00"
+    },
+    {
+      "codigoItem": "00009",
+      "cnt": "1",
+      "total": "1000.00"
+    },
+    {
+      "codigoItem": "00011",
+      "cnt": "1",
+      "total": "500.00"
+    },
+    {
+      "codigoItem": "00013",
+      "cnt": "1",
+      "total": "400.00"
+    },
+    {
+      "codigoItem": "00015B",
+      "cnt": "1",
+      "total": "501.00"
+    },
+    {
+      "codigoItem": "00036",
+      "cnt": "1",
+      "total": "75.00"
+    },
+    {
+      "codigoItem": "00046",
+      "cnt": "1",
+      "total": "491.00"
+    },
+    {
+      "codigoItem": "00057B",
+      "cnt": "1",
+      "total": "50.00"
+    },
+    {
+      "codigoItem": "00058",
+      "cnt": "2",
+      "total": "151.00"
+    },
+    {
+      "codigoItem": "00274B",
+      "cnt": "1",
+      "total": "209.00"
+    },
+    {
+      "codigoItem": "00335",
+      "cnt": "1",
+      "total": "825.00"
+    },
+    {
+      "codigoItem": "00409",
+      "cnt": "1",
+      "total": "50.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tcnt\ttotal\n00001\t1\t100.00\n00007B\t1\t500.00\n00009\t1\t1000.00\n00011\t1\t500.00\n00013\t1\t400.00\n00015B\t1\t501.00\n00036\t1\t75.00\n00046\t1\t491.00\n00057B\t1\t50.00\n00058\t2\t151.00\n00274B\t1\t209.00\n00335\t1\t825.00\n00409\t1\t50.00\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}
