@@ -117,7 +117,8 @@ async function fetchContasPagar(
   countTotal: number;
   countSocios: number;
   sociosDetalhado: Array<{ nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }>;
-  items: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; isSocio: boolean }>;
+  contasPagasDetalhado: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; descricao: string; contaDestino: string; isSocio: boolean }>;
+  items: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; descricao: string; contaDestino: string; isSocio: boolean }>;
 }> {
   try {
     const codigoCentro = CENTRO_CUSTO_CODES[tipo];
@@ -150,6 +151,8 @@ async function fetchContasPagar(
             valorPagoLiquido
             liquidacaoData
             referenteA
+            descricao
+            conta { descricao }
             fornecedor { apelido razaoSocial }
           }
         }
@@ -164,7 +167,7 @@ async function fetchContasPagar(
     let totalContasPagas = 0;
     let totalRetiradaSocios = 0;
     let countSocios = 0;
-    const items: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; isSocio: boolean }> = [];
+    const items: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; descricao: string; contaDestino: string; isSocio: boolean }> = [];
     // Detalhamento por sócio: Gilson-458, Fernando-459, Bruno-460
     const sociosMap: Record<string, { nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }> = {
       GILSON: { nome: 'Gilson', conta: '458', total: 0, items: [] },
@@ -200,6 +203,8 @@ async function fetchContasPagar(
         valor: Math.round(valor * 100) / 100,
         fornecedor: item.fornecedor?.apelido || item.fornecedor?.razaoSocial || '-',
         referenteA: item.referenteA || '-',
+        descricao: item.descricao || '-',
+        contaDestino: item.conta?.descricao || '-',
         isSocio,
       });
     }
@@ -219,6 +224,9 @@ async function fetchContasPagar(
       total: Math.round(s.total * 100) / 100,
     }));
 
+    // Filtrar items não-sócios para detalhamento de Contas Pagas
+    const contasPagasDetalhado = items.filter(i => !i.isSocio);
+
     return {
       contasPagas,
       retiradaSocios,
@@ -226,11 +234,12 @@ async function fetchContasPagar(
       countTotal: allItems.length,
       countSocios,
       sociosDetalhado,
+      contasPagasDetalhado,
       items,
     };
   } catch (error: any) {
     console.error(`[Serragem/Rojão] Error fetching contas a pagar ${tipo}:`, error.message);
-    return { contasPagas: 0, retiradaSocios: 0, saidasTotal: 0, countTotal: 0, countSocios: 0, sociosDetalhado: [], items: [] };
+    return { contasPagas: 0, retiradaSocios: 0, saidasTotal: 0, countTotal: 0, countSocios: 0, sociosDetalhado: [], contasPagasDetalhado: [], items: [] };
   }
 }
 

@@ -29,7 +29,7 @@ interface FinancialData {
 }
 
 /* ---- Layout de Cards Financeiros ---- */
-function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading, sociosDetalhado }: {
+function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading, sociosDetalhado, contasPagasDetalhado }: {
   data: FinancialData;
   title: string;
   icon: React.ReactNode;
@@ -38,8 +38,10 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
   nfCount?: number;
   isLoading?: boolean;
   sociosDetalhado?: Array<{ nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }>;
+  contasPagasDetalhado?: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; descricao: string; contaDestino: string }>;
 }) {
   const [showSocios, setShowSocios] = useState(false);
+  const [showContas, setShowContas] = useState(false);
   return (
     <div className="space-y-4">
       {/* Header do card */}
@@ -87,9 +89,28 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
                 <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Recebido</p>
                 <p className="text-lg font-bold text-green-700 dark:text-green-400 mt-0.5">{formatCurrency(data.recebido)}</p>
               </div>
-              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 shadow-sm">
-                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contas Pagas</p>
+              <div
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 shadow-sm cursor-pointer hover:border-red-300 dark:hover:border-red-600 transition-colors"
+                onClick={() => setShowContas(!showContas)}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contas Pagas</p>
+                  <span className="text-[10px] text-red-600 dark:text-red-400">{showContas ? '▲ Fechar' : '▼ Detalhes'}</span>
+                </div>
                 <p className="text-lg font-bold text-red-600 dark:text-red-400 mt-0.5">{formatCurrency(data.contasPagas)}</p>
+                {showContas && contasPagasDetalhado && contasPagasDetalhado.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-600 space-y-1.5 max-h-64 overflow-y-auto">
+                    {contasPagasDetalhado.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-red-800 dark:text-red-300 truncate">{item.descricao !== '-' ? item.descricao : item.referenteA}</p>
+                          <p className="text-[10px] text-slate-400 truncate">{item.contaDestino} • {item.data}</p>
+                        </div>
+                        <span className="text-xs font-bold text-red-700 dark:text-red-400 ml-2 whitespace-nowrap">{formatCurrency(item.valor)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div
                 className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 shadow-sm cursor-pointer hover:border-amber-300 dark:hover:border-amber-600 transition-colors"
@@ -188,7 +209,7 @@ export default function SerragemRojaoTab() {
     saidasTotal: serragemSaidas,
     saldoDisponivelCaixa: serragemRecebido - serragemSaidas,
     totalParaDivisao: 0,
-    totalParaDivisaoDisponivel: 0,
+    totalParaDivisaoDisponivel: serragemRecebido - serragemSaidas,
     totalParaDivisaoAReceber: 0,
   };
   const rojaoRecebido = 0; // TODO: preencher quando integrar Recebido do Maxiprod
@@ -201,7 +222,7 @@ export default function SerragemRojaoTab() {
     saidasTotal: rojaoSaidas,
     saldoDisponivelCaixa: rojaoRecebido - rojaoSaidas,
     totalParaDivisao: 0,
-    totalParaDivisaoDisponivel: 0,
+    totalParaDivisaoDisponivel: rojaoRecebido - rojaoSaidas,
     totalParaDivisaoAReceber: 0,
   };
 
@@ -377,6 +398,7 @@ export default function SerragemRojaoTab() {
           nfCount={serragemVendasQuery.data?.count}
           isLoading={serragemVendasQuery.isLoading || serragemContasQuery.isLoading}
           sociosDetalhado={serragemContasQuery.data?.sociosDetalhado}
+          contasPagasDetalhado={serragemContasQuery.data?.contasPagasDetalhado}
         />
       )}
       {selectedView === "rojao" && (
@@ -389,6 +411,7 @@ export default function SerragemRojaoTab() {
           nfCount={rojaoVendasQuery.data?.count}
           isLoading={rojaoVendasQuery.isLoading || rojaoContasQuery.isLoading}
           sociosDetalhado={rojaoContasQuery.data?.sociosDetalhado}
+          contasPagasDetalhado={rojaoContasQuery.data?.contasPagasDetalhado}
         />
       )}
     </div>
