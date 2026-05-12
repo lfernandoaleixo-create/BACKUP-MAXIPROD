@@ -3685,3 +3685,4 @@
 - [x] Serragem - Vendas/Faturamento: somar saldo anterior (R$ 17.230,80) que existia antes do Maxiprod, com legenda explicativa
 - [x] Serragem/Rojão - Reorganizar: Contas Pagas e Retirada Sócios ficam dentro do card Saídas Total como seção expandível/recolhível
 - [x] Corrigir classificação de sócios: usar conta de destino (458/459/460) em vez de fornecedor+referência - total esperado R$ 43.620,00
+- [x] Rojão - Adicionar contas de destino 454 (Gilson), 455 (Fernando), 456 (Bruno) à classificação de sócios

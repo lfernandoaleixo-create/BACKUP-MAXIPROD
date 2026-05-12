@@ -100,10 +100,15 @@ const CENTRO_CUSTO_CODES: Record<string, string> = {
 };
 
 // Contas de destino dos sócios (Retirada)
+// Serragem: 458=Gilson, 459=Fernando, 460=Bruno
+// Rojão:    454=Gilson, 455=Fernando, 456=Bruno
 const SOCIOS_CONTAS: Record<string, { nome: string; conta: string }> = {
   "458": { nome: "Gilson", conta: "458" },
   "459": { nome: "Fernando", conta: "459" },
   "460": { nome: "Bruno", conta: "460" },
+  "454": { nome: "Gilson", conta: "454" },
+  "455": { nome: "Fernando", conta: "455" },
+  "456": { nome: "Bruno", conta: "456" },
 };
 
 /**
@@ -182,7 +187,7 @@ async function fetchContasPagar(
       const valor = item.valorPagoLiquido || 0;
       totalContasPagas += valor;
 
-      // Classificar como sócio pela conta de destino (458, 459, 460)
+      // Classificar como sócio pela conta de destino (454-460)
       const contaCodigo = item.contaDeDestino?.codigo || '';
       const isSocio = contaCodigo in SOCIOS_CONTAS;
 
