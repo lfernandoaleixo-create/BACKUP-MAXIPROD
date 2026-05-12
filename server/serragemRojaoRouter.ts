@@ -331,6 +331,87 @@ async function fetchRecebido(
   }
 }
 
+/**
+ * Fetch "Total para Divisão à Receber" - Contas a Receber pendentes
+ * Abordagem: cruzamento de NFs do estadoConfiguravel com Contas a Receber EMITIDO
+ * ReceberEstado enum: EMITIDO = "A receber" na UI do Maxiprod
+ * Sem filtro de data (todas as pendentes)
+ */
+async function fetchAReceber(
+  tipo: "SERRAGEM" | "ROJÃO"
+): Promise<{ total: number; count: number; items: Array<{ vencimento: string; valor: number; nfNumero: string; cliente: string }> }> {
+  try {
+    // Step 1: Get all NF numbers for this tipo
+    let nfNumbers = new Set<string>();
+    let skip = 0;
+    const take = 1000;
+
+    while (true) {
+      const data = await gql<any>(`{
+        notasFiscais(
+          skip: ${skip}, take: ${take},
+          where: {
+            estado: { eq: EMITIDA }
+            entradaOuSaida: { eq: SAIDA }
+            estadoConfiguravel: { descricao: { eq: "${tipo}" } }
+          }
+        ) {
+          totalCount
+          items { numero }
+        }
+      }`);
+      if (!data?.notasFiscais) break;
+      data.notasFiscais.items.forEach((i: any) => nfNumbers.add(String(i.numero)));
+      skip += take;
+      if (skip >= data.notasFiscais.totalCount) break;
+    }
+
+    // Step 2: Get all EMITIDO (A receber) contas
+    let allEmitido: any[] = [];
+    skip = 0;
+
+    while (true) {
+      const data = await gql<any>(`{
+        contaAReceber(
+          skip: ${skip}, take: ${take},
+          where: {
+            estado: { eq: EMITIDO }
+          }
+        ) {
+          totalCount
+          items {
+            valorLiquido
+            documentoVinculadoNumero
+            vencimentoData
+            cliente { nomeFantasia }
+          }
+        }
+      }`);
+      if (!data?.contaAReceber) break;
+      allEmitido.push(...data.contaAReceber.items);
+      skip += take;
+      if (skip >= data.contaAReceber.totalCount) break;
+    }
+
+    // Step 3: Cross-reference - only keep items whose documentoVinculadoNumero matches NFs
+    const matched = allEmitido.filter(r => nfNumbers.has(r.documentoVinculadoNumero));
+    const total = Math.round(matched.reduce((sum: number, i: any) => sum + (i.valorLiquido || 0), 0) * 100) / 100;
+    const items = matched.map((i: any) => ({
+      vencimento: i.vencimentoData?.split("T")[0] || "",
+      valor: i.valorLiquido || 0,
+      nfNumero: i.documentoVinculadoNumero || "",
+      cliente: i.cliente?.nomeFantasia || "",
+    }));
+
+    console.log(`[Serragem/Rojão] ${tipo} A Receber: R$ ${total.toFixed(2)} (${items.length} itens)`);
+
+    return { total, count: items.length, items };
+  } catch (error: any) {
+    console.error(`[Serragem/Rojão] Error fetching a receber ${tipo}:`, error.message);
+    return { total: 0, count: 0, items: [] };
+  }
+}
+
 export const serragemRojaoRouter = router({
   /**
    * Get Vendas/Faturamento for Serragem or Rojão
@@ -377,5 +458,18 @@ export const serragemRojaoRouter = router({
     .query(async ({ input }) => {
       const { tipo, startDate, endDate } = input;
       return fetchContasPagar(tipo, startDate, endDate);
+    }),
+
+  /**
+   * Get Total para Divisão à Receber
+   * Source: Maxiprod → Financeiro → Contas a Receber
+   * Filters: estado=A_RECEBER, estadoConfiguravel=SERRAGEM/ROJÃO, sem filtro de data
+   */
+  getAReceber: publicProcedure
+    .input(z.object({
+      tipo: z.enum(["SERRAGEM", "ROJÃO"]),
+    }))
+    .query(async ({ input }) => {
+      return fetchAReceber(input.tipo);
     }),
 });

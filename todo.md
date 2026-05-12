@@ -3687,3 +3687,4 @@
 - [x] Corrigir classificação de sócios: usar conta de destino (458/459/460) em vez de fornecedor+referência - total esperado R$ 43.620,00
 - [x] Rojão - Adicionar contas de destino 454 (Gilson), 455 (Fernando), 456 (Bruno) à classificação de sócios
 - [x] Total para Divisão = (Vendas/Faturamento - Recebido) + Saldo Disponível Caixa - esperado R$ 26.433,62
+- [x] Total para Divisão à Receber: consulta real Contas a Receber (estado A receber, estado configurável serragem/rojão, sem data) - esperado R$ 8.488,80 Serragem
