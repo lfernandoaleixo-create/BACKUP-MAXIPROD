@@ -169,3 +169,273 @@ describe("SerragemRojao Router", () => {
     });
   });
 });
+
+describe("SerragemRojao Router - getRecebido", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns total and count for Serragem by crossing NFs with Contas a Receber", async () => {
+    // First call: fetch NFs with estadoConfiguravel SERRAGEM
+    mockGql.mockResolvedValueOnce({
+      notasFiscais: {
+        totalCount: 3,
+        items: [
+          { numero: 1001 },
+          { numero: 1002 },
+          { numero: 1003 },
+        ],
+      },
+    });
+
+    // Second call: fetch Contas a Receber RECEBIDO
+    mockGql.mockResolvedValueOnce({
+      contaAReceber: {
+        totalCount: 4,
+        items: [
+          { valorRecebidoLiquido: 10000, documentoVinculadoNumero: "1001" },
+          { valorRecebidoLiquido: 15000, documentoVinculadoNumero: "1002" },
+          { valorRecebidoLiquido: 5000, documentoVinculadoNumero: "9999" }, // NF não pertence a SERRAGEM
+          { valorRecebidoLiquido: 23250.67, documentoVinculadoNumero: "1003" },
+        ],
+      },
+    });
+
+    const caller = serragemRojaoRouter.createCaller({ user: null, req: {} as any, res: {} as any });
+    const result = await caller.getRecebido({
+      tipo: "SERRAGEM",
+      startDate: null,
+      endDate: "2026-05-12",
+    });
+
+    // Should only match NFs 1001, 1002, 1003 (not 9999)
+    expect(result.total).toBeCloseTo(48250.67, 2);
+    expect(result.count).toBe(3);
+  });
+
+  it("returns zero when no NFs match Contas a Receber", async () => {
+    // NFs
+    mockGql.mockResolvedValueOnce({
+      notasFiscais: {
+        totalCount: 2,
+        items: [
+          { numero: 2001 },
+          { numero: 2002 },
+        ],
+      },
+    });
+
+    // Contas a Receber - none match the NFs
+    mockGql.mockResolvedValueOnce({
+      contaAReceber: {
+        totalCount: 2,
+        items: [
+          { valorRecebidoLiquido: 5000, documentoVinculadoNumero: "9998" },
+          { valorRecebidoLiquido: 3000, documentoVinculadoNumero: "9999" },
+        ],
+      },
+    });
+
+    const caller = serragemRojaoRouter.createCaller({ user: null, req: {} as any, res: {} as any });
+    const result = await caller.getRecebido({
+      tipo: "SERRAGEM",
+      startDate: null,
+      endDate: "2026-05-12",
+    });
+
+    expect(result.total).toBe(0);
+    expect(result.count).toBe(0);
+  });
+
+  it("uses default start date 2026-02-01 for Serragem when startDate is null", async () => {
+    mockGql.mockResolvedValueOnce({
+      notasFiscais: { totalCount: 0, items: [] },
+    });
+    mockGql.mockResolvedValueOnce({
+      contaAReceber: { totalCount: 0, items: [] },
+    });
+
+    const caller = serragemRojaoRouter.createCaller({ user: null, req: {} as any, res: {} as any });
+    await caller.getRecebido({
+      tipo: "SERRAGEM",
+      startDate: null,
+      endDate: "2026-05-12",
+    });
+
+    // Second call should have liquidacaoData with gte 2026-02-01
+    expect(mockGql).toHaveBeenCalledTimes(2);
+    const secondCallQuery = mockGql.mock.calls[1][0] as string;
+    expect(secondCallQuery).toContain("2026-02-01");
+    expect(secondCallQuery).toContain("RECEBIDO");
+  });
+
+  it("handles API errors gracefully returning zero", async () => {
+    mockGql.mockRejectedValueOnce(new Error("Network error"));
+
+    const caller = serragemRojaoRouter.createCaller({ user: null, req: {} as any, res: {} as any });
+    const result = await caller.getRecebido({
+      tipo: "SERRAGEM",
+      startDate: null,
+      endDate: "2026-05-12",
+    });
+
+    expect(result.total).toBe(0);
+    expect(result.count).toBe(0);
+  });
+
+  it("handles paginated NFs correctly", async () => {
+    // First page of NFs
+    mockGql.mockResolvedValueOnce({
+      notasFiscais: {
+        totalCount: 2,
+        items: [{ numero: 3001 }],
+      },
+    });
+    // Second page of NFs (simulating pagination with take=1000 but totalCount=2)
+    // Actually with take=1000 and totalCount=2, first page returns all 2
+    // Let's test with totalCount > items returned
+    mockGql.mockReset();
+    
+    // First call: NFs page 1 (totalCount=1500, returns 1000)
+    mockGql.mockResolvedValueOnce({
+      notasFiscais: {
+        totalCount: 1500,
+        items: Array.from({ length: 1000 }, (_, i) => ({ numero: i + 1 })),
+      },
+    });
+    // Second call: NFs page 2 (remaining 500)
+    mockGql.mockResolvedValueOnce({
+      notasFiscais: {
+        totalCount: 1500,
+        items: Array.from({ length: 500 }, (_, i) => ({ numero: i + 1001 })),
+      },
+    });
+    // Third call: Contas a Receber - matches NF 500
+    mockGql.mockResolvedValueOnce({
+      contaAReceber: {
+        totalCount: 1,
+        items: [
+          { valorRecebidoLiquido: 7500, documentoVinculadoNumero: "500" },
+        ],
+      },
+    });
+
+    const caller = serragemRojaoRouter.createCaller({ user: null, req: {} as any, res: {} as any });
+    const result = await caller.getRecebido({
+      tipo: "SERRAGEM",
+      startDate: "2026-02-01",
+      endDate: "2026-05-12",
+    });
+
+    expect(result.total).toBe(7500);
+    expect(result.count).toBe(1);
+  });
+});
+
+describe("SerragemRojao Router - getContasPagas", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("separates sócios from regular payments correctly", async () => {
+    mockGql.mockResolvedValueOnce({
+      contaAPagar: {
+        totalCount: 3,
+        items: [
+          {
+            valorPagoLiquido: 5000,
+            liquidacaoData: "2026-03-10T00:00:00",
+            referenteA: "RETIRADA MARÇO",
+            conta: { descricao: "Conta 458" },
+            fornecedor: { apelido: "GILSON ALEIXO", razaoSocial: "Gilson" },
+          },
+          {
+            valorPagoLiquido: 3000,
+            liquidacaoData: "2026-03-11T00:00:00",
+            referenteA: "LUCRO MARÇO",
+            conta: { descricao: "Conta 459" },
+            fornecedor: { apelido: "FERNANDO ALEIXO", razaoSocial: "Fernando" },
+          },
+          {
+            valorPagoLiquido: 2000,
+            liquidacaoData: "2026-03-12T00:00:00",
+            referenteA: "ENERGIA ELÉTRICA",
+            conta: { descricao: "Conta Energia" },
+            fornecedor: { apelido: "CPFL", razaoSocial: "CPFL Paulista" },
+          },
+        ],
+      },
+    });
+
+    const caller = serragemRojaoRouter.createCaller({ user: null, req: {} as any, res: {} as any });
+    const result = await caller.getContasPagas({
+      tipo: "SERRAGEM",
+      startDate: null,
+      endDate: "2026-05-12",
+    });
+
+    // Total bruto = 5000 + 3000 + 2000 = 10000
+    // Retirada sócios = 5000 + 3000 = 8000
+    // Contas Pagas = total bruto - retirada sócios = 10000 - 8000 = 2000
+    // Saídas Total = total bruto = 10000
+    expect(result.saidasTotal).toBe(10000);
+    expect(result.retiradaSocios).toBe(8000);
+    expect(result.contasPagas).toBe(2000);
+    expect(result.countSocios).toBe(2);
+    expect(result.contasPagasDetalhado).toHaveLength(1); // Only CPFL
+    expect(result.contasPagasDetalhado[0].fornecedor).toBe("CPFL");
+  });
+
+  it("identifies sócios by fornecedor name + referenteA keywords", async () => {
+    mockGql.mockResolvedValueOnce({
+      contaAPagar: {
+        totalCount: 2,
+        items: [
+          {
+            valorPagoLiquido: 4000,
+            liquidacaoData: "2026-04-01T00:00:00",
+            referenteA: "PAGAMENTO FORNECEDOR", // Not RETIRADA/LUCRO
+            conta: { descricao: "Conta" },
+            fornecedor: { apelido: "GILSON ALEIXO", razaoSocial: "Gilson" },
+          },
+          {
+            valorPagoLiquido: 6000,
+            liquidacaoData: "2026-04-02T00:00:00",
+            referenteA: "RETIRADA ABRIL",
+            conta: { descricao: "Conta 460" },
+            fornecedor: { apelido: "BRUNO ALEIXO", razaoSocial: "Bruno" },
+          },
+        ],
+      },
+    });
+
+    const caller = serragemRojaoRouter.createCaller({ user: null, req: {} as any, res: {} as any });
+    const result = await caller.getContasPagas({
+      tipo: "SERRAGEM",
+      startDate: null,
+      endDate: "2026-05-12",
+    });
+
+    // Gilson's payment doesn't have RETIRADA/LUCRO in referenteA, so it's NOT a sócio withdrawal
+    // Only Bruno's is a sócio withdrawal
+    expect(result.retiradaSocios).toBe(6000);
+    expect(result.contasPagas).toBe(4000); // 10000 - 6000
+    expect(result.saidasTotal).toBe(10000);
+    expect(result.countSocios).toBe(1);
+  });
+
+  it("handles API errors gracefully", async () => {
+    mockGql.mockRejectedValueOnce(new Error("API timeout"));
+
+    const caller = serragemRojaoRouter.createCaller({ user: null, req: {} as any, res: {} as any });
+    const result = await caller.getContasPagas({
+      tipo: "ROJÃO",
+      startDate: null,
+      endDate: "2026-05-12",
+    });
+
+    expect(result.contasPagas).toBe(0);
+    expect(result.retiradaSocios).toBe(0);
+    expect(result.saidasTotal).toBe(0);
+  });
+});

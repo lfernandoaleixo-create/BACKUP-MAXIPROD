@@ -242,6 +242,87 @@ async function fetchContasPagar(
   }
 }
 
+/**
+ * Fetch Contas a Receber RECEBIDO from Maxiprod for Serragem or Rojão
+ * Serragem: cruzamento por NFs de estadoConfiguravel SERRAGEM + liquidação >= 2026-02-01
+ * Rojão: será definido depois
+ */
+async function fetchRecebido(
+  tipo: "SERRAGEM" | "ROJÃO",
+  startDate: string | null,
+  endDate: string
+): Promise<{ total: number; count: number }> {
+  try {
+    const endISO = `${endDate}T23:59:59.999-03:00`;
+    // Data fixa de início para Serragem: 2026-02-01
+    const defaultStart = tipo === "SERRAGEM" ? "2026-02-01" : "2026-02-01";
+    const effectiveStart = startDate || defaultStart;
+    const startISO = `${effectiveStart}T00:00:00.000-03:00`;
+
+    // Step 1: Get all NF numbers for this tipo
+    let nfNumbers = new Set<string>();
+    let skip = 0;
+    const take = 1000;
+
+    while (true) {
+      const data = await gql<any>(`{
+        notasFiscais(
+          skip: ${skip}, take: ${take},
+          where: {
+            estado: { eq: EMITIDA }
+            entradaOuSaida: { eq: SAIDA }
+            estadoConfiguravel: { descricao: { eq: "${tipo}" } }
+          }
+        ) {
+          totalCount
+          items { numero }
+        }
+      }`);
+      if (!data?.notasFiscais) break;
+      data.notasFiscais.items.forEach((i: any) => nfNumbers.add(String(i.numero)));
+      skip += take;
+      if (skip >= data.notasFiscais.totalCount) break;
+    }
+
+    // Step 2: Get all recebidos within the date range
+    let allRecebidos: any[] = [];
+    skip = 0;
+
+    while (true) {
+      const data = await gql<any>(`{
+        contaAReceber(
+          skip: ${skip}, take: ${take},
+          where: {
+            estado: { eq: RECEBIDO },
+            liquidacaoData: { gte: "${startISO}", lte: "${endISO}" }
+          }
+        ) {
+          totalCount
+          items {
+            valorRecebidoLiquido
+            documentoVinculadoNumero
+          }
+        }
+      }`);
+      if (!data?.contaAReceber) break;
+      allRecebidos.push(...data.contaAReceber.items);
+      skip += take;
+      if (skip >= data.contaAReceber.totalCount) break;
+    }
+
+    // Step 3: Cross-reference - only keep items whose documentoVinculadoNumero matches NFs
+    const matched = allRecebidos.filter(r => nfNumbers.has(r.documentoVinculadoNumero));
+    const total = Math.round(matched.reduce((sum: number, i: any) => sum + (i.valorRecebidoLiquido || 0), 0) * 100) / 100;
+
+    console.log(`[Serragem/Rojão] ${tipo} Recebido: R$ ${total.toFixed(2)} (${matched.length} itens, período: ${effectiveStart} a ${endDate})`);
+
+    return { total, count: matched.length };
+  } catch (error: any) {
+    console.error(`[Serragem/Rojão] Error fetching recebido ${tipo}:`, error.message);
+    return { total: 0, count: 0 };
+  }
+}
+
 export const serragemRojaoRouter = router({
   /**
    * Get Vendas/Faturamento for Serragem or Rojão
@@ -255,6 +336,22 @@ export const serragemRojaoRouter = router({
     .query(async ({ input }) => {
       const { tipo, startDate, endDate } = input;
       return fetchSerragemRojaoVendas(tipo, startDate, endDate);
+    }),
+
+  /**
+   * Get Recebido for Serragem or Rojão
+   * Source: Maxiprod → Financeiro → Contas a Receber
+   * Filters: estado=RECEBIDO, liquidação >= 2026-02-01, cruzamento com NFs do estadoConfiguravel
+   */
+  getRecebido: publicProcedure
+    .input(z.object({
+      tipo: z.enum(["SERRAGEM", "ROJÃO"]),
+      startDate: z.string().nullable(),
+      endDate: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const { tipo, startDate, endDate } = input;
+      return fetchRecebido(tipo, startDate, endDate);
     }),
 
   /**

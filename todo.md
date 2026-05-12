@@ -3681,3 +3681,4 @@
 - [x] Retirada Sócios: ao clicar no card, expandir e mostrar valor individual de cada sócio (Gilson-458, Fernando-459, Bruno-460)
 - [x] Contas Pagas: card expansível ao clicar, mostrando lista detalhada de cada pagamento (excluindo sócios) com data, descrição, conta destino e valor
 - [x] Total para Divisão Disponível = mesmo valor do Saldo Disponível Caixa
+- [x] Serragem - Recebido: consultar Contas a Receber (liquidação até hoje, estado Recebidos, estado configurável Serragem) - valor esperado R$ 48.250,67
