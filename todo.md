@@ -3682,3 +3682,5 @@
 - [x] Contas Pagas: card expansível ao clicar, mostrando lista detalhada de cada pagamento (excluindo sócios) com data, descrição, conta destino e valor
 - [x] Total para Divisão Disponível = mesmo valor do Saldo Disponível Caixa
 - [x] Serragem - Recebido: consultar Contas a Receber (liquidação até hoje, estado Recebidos, estado configurável Serragem) - valor esperado R$ 48.250,67
+- [x] Serragem - Vendas/Faturamento: somar saldo anterior (R$ 17.230,80) que existia antes do Maxiprod, com legenda explicativa
+- [x] Serragem/Rojão - Reorganizar: Contas Pagas e Retirada Sócios ficam dentro do card Saídas Total como seção expandível/recolhível
