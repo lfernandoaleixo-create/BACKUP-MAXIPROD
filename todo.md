@@ -3668,3 +3668,4 @@
 ## Vendas Mensais - Variações de Bambu
 - [x] getMonthlySalesByProduct agora soma vendas das variações ao produto mãe com fator de conversão (reimplementado)
 - [x] Ocultar roteiro de bolinhas (manual ticks) para TODOS os operadores na inadimplência (temporário, reativar quando Fernando pedir)
+- [x] Ocultar botão Métricas na inadimplência para todos exceto Guilherme

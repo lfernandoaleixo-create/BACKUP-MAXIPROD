@@ -1,0 +1,40 @@
+{
+  "query": "SELECT codigoItem, DATE_FORMAT(SUBSTRING(dataEmissao, 1, 10), '%Y-%m') as yearMonth, COALESCE(SUM(quantidade), 0) as totalQty FROM sales_orders WHERE codigoItem IN ('00046', '00047', '00050') AND estadoItem IN ('Faturado', 'Faturado parcial', 'Faturado c/ entrega futura') AND SUBSTRING(dataEmissao, 1, 10) >= '2026-02-01' AND SUBSTRING(dataEmissao, 1, 10) < '2026-05-01' GROUP BY codigoItem, DATE_FORMAT(SUBSTRING(dataEmissao, 1, 10), '%Y-%m') ORDER BY yearMonth, codigoItem;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, DATE_FORMAT(SUBSTRING(dataEmissao, 1, 10), '%Y-%m') as yearMonth, COALESCE(SUM(quantidade), 0) as totalQty FROM sales_orders WHERE codigoItem IN ('00046', '00047', '00050') AND estadoItem IN ('Faturado', 'Faturado parcial', 'Faturado c/ entrega futura') AND SUBSTRING(dataEmissao, 1, 10) >= '2026-02-01' AND SUBSTRING(dataEmissao, 1, 10) < '2026-05-01' GROUP BY codigoItem, DATE_FORMAT(SUBSTRING(dataEmissao, 1, 10), '%Y-%m') ORDER BY yearMonth, codigoItem;",
+  "rows": [
+    {
+      "codigoItem": "00046",
+      "yearMonth": "2026-02",
+      "totalQty": "2.00000"
+    },
+    {
+      "codigoItem": "00047",
+      "yearMonth": "2026-02",
+      "totalQty": "2.00000"
+    },
+    {
+      "codigoItem": "00046",
+      "yearMonth": "2026-03",
+      "totalQty": "18.00000"
+    },
+    {
+      "codigoItem": "00047",
+      "yearMonth": "2026-03",
+      "totalQty": "178.00000"
+    },
+    {
+      "codigoItem": "00050",
+      "yearMonth": "2026-03",
+      "totalQty": "35.00000"
+    },
+    {
+      "codigoItem": "00047",
+      "yearMonth": "2026-04",
+      "totalQty": "8.00000"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tyearMonth\ttotalQty\n00046\t2026-02\t2.00000\n00047\t2026-02\t2.00000\n00046\t2026-03\t18.00000\n00047\t2026-03\t178.00000\n00050\t2026-03\t35.00000\n00047\t2026-04\t8.00000\n",
+  "stderr": "",
+  "execution_time_ms": 297
+}

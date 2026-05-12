@@ -1069,6 +1069,7 @@ export default function InadimplenciaTab() {
             <Stamp className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
             <span className="text-center leading-tight text-[10px] md:text-sm">PDF Decisão</span>
           </button>
+          {operator?.name === "Guilherme" && (
           <button
             onClick={() => setShowMetricsPanel(true)}
             className="w-full md:w-auto flex items-center justify-center gap-1.5 h-[44px] md:h-9 rounded-xl md:rounded-lg bg-gradient-to-r from-indigo-700 to-cyan-600 text-white text-[11px] md:text-xs font-semibold shadow-md hover:shadow-lg hover:from-indigo-800 hover:to-cyan-700 transition-all hover:scale-[1.02] px-3 md:px-3"
@@ -1077,6 +1078,7 @@ export default function InadimplenciaTab() {
             <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
             <span className="text-center leading-tight">Métricas</span>
           </button>
+          )}
           {canSeeCobrancaGuide && (
             <button
               onClick={() => setShowCobrancaGuide(true)}

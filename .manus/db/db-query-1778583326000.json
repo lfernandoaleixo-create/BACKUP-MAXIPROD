@@ -1,0 +1,26 @@
+{
+  "query": "SELECT * FROM product_variants WHERE parentCode IN ('00046', '00047', '00050') OR childCode IN ('00046', '00047', '00050');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT * FROM product_variants WHERE parentCode IN ('00046', '00047', '00050') OR childCode IN ('00046', '00047', '00050');",
+  "rows": [
+    {
+      "id": "30016",
+      "parentCode": "00046",
+      "childCode": "00047",
+      "conversionFactor": "1.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52"
+    },
+    {
+      "id": "30017",
+      "parentCode": "00046",
+      "childCode": "00050",
+      "conversionFactor": "2.00000",
+      "createdAt": "2026-03-19 23:46:52",
+      "updatedAt": "2026-03-19 23:46:52"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tparentCode\tchildCode\tconversionFactor\tcreatedAt\tupdatedAt\n30016\t00046\t00047\t1.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\n30017\t00046\t00050\t2.00000\t2026-03-19 23:46:52\t2026-03-19 23:46:52\n",
+  "stderr": "",
+  "execution_time_ms": 279
+}
