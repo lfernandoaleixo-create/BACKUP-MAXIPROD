@@ -137,33 +137,43 @@ export default function SerragemRojaoTab() {
   });
 
   // Buscar dados reais do Maxiprod via tRPC (sem limite inferior de data, até hoje)
-  const serragemQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
+  const serragemVendasQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
     { tipo: "SERRAGEM", startDate: null, endDate: today },
     { enabled: selectedView === "serragem" || selectedView === "menu" }
   );
-  const rojaoQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
+  const rojaoVendasQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
     { tipo: "ROJÃO", startDate: null, endDate: today },
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
-  // Montar dados financeiros (demais cards ainda zerados até serem configurados)
+  // Buscar Contas Pagas / Retirada Sócios / Saídas Total
+  const serragemContasQuery = trpc.serragemRojao.getContasPagas.useQuery(
+    { tipo: "SERRAGEM", startDate: null, endDate: today },
+    { enabled: selectedView === "serragem" || selectedView === "menu" }
+  );
+  const rojaoContasQuery = trpc.serragemRojao.getContasPagas.useQuery(
+    { tipo: "ROJÃO", startDate: null, endDate: today },
+    { enabled: selectedView === "rojao" || selectedView === "menu" }
+  );
+
+  // Montar dados financeiros
   const serragemData: FinancialData = {
-    vendasFaturamento: serragemQuery.data?.total ?? 0,
+    vendasFaturamento: serragemVendasQuery.data?.total ?? 0,
     recebido: 0,
-    contasPagas: 0,
-    retiradaSocios: 0,
-    saidasTotal: 0,
+    contasPagas: serragemContasQuery.data?.contasPagas ?? 0,
+    retiradaSocios: serragemContasQuery.data?.retiradaSocios ?? 0,
+    saidasTotal: serragemContasQuery.data?.saidasTotal ?? 0,
     saldoDisponivelCaixa: 0,
     totalParaDivisao: 0,
     totalParaDivisaoDisponivel: 0,
     totalParaDivisaoAReceber: 0,
   };
   const rojaoData: FinancialData = {
-    vendasFaturamento: rojaoQuery.data?.total ?? 0,
+    vendasFaturamento: rojaoVendasQuery.data?.total ?? 0,
     recebido: 0,
-    contasPagas: 0,
-    retiradaSocios: 0,
-    saidasTotal: 0,
+    contasPagas: rojaoContasQuery.data?.contasPagas ?? 0,
+    retiradaSocios: rojaoContasQuery.data?.retiradaSocios ?? 0,
+    saidasTotal: rojaoContasQuery.data?.saidasTotal ?? 0,
     saldoDisponivelCaixa: 0,
     totalParaDivisao: 0,
     totalParaDivisaoDisponivel: 0,
@@ -339,8 +349,8 @@ export default function SerragemRojaoTab() {
           icon={<TreePine className="w-6 h-6 text-green-600 dark:text-green-400" />}
           onExportPDF={() => handleExportPDF("serragem")}
           exporting={exporting}
-          nfCount={serragemQuery.data?.count}
-          isLoading={serragemQuery.isLoading}
+          nfCount={serragemVendasQuery.data?.count}
+          isLoading={serragemVendasQuery.isLoading || serragemContasQuery.isLoading}
         />
       )}
       {selectedView === "rojao" && (
@@ -350,8 +360,8 @@ export default function SerragemRojaoTab() {
           icon={<Flame className="w-6 h-6 text-orange-600 dark:text-orange-400" />}
           onExportPDF={() => handleExportPDF("rojao")}
           exporting={exporting}
-          nfCount={rojaoQuery.data?.count}
-          isLoading={rojaoQuery.isLoading}
+          nfCount={rojaoVendasQuery.data?.count}
+          isLoading={rojaoVendasQuery.isLoading || rojaoContasQuery.isLoading}
         />
       )}
     </div>
