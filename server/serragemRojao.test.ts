@@ -346,21 +346,21 @@ describe("SerragemRojao Router - getContasPagas", () => {
             valorPagoLiquido: 5000,
             liquidacaoData: "2026-03-10T00:00:00",
             referenteA: "RETIRADA MARÇO",
-            conta: { descricao: "Conta 458" },
+            contaDeDestino: { codigo: "458", descricao: "Gilson - Retirada" },
             fornecedor: { apelido: "GILSON ALEIXO", razaoSocial: "Gilson" },
           },
           {
             valorPagoLiquido: 3000,
             liquidacaoData: "2026-03-11T00:00:00",
             referenteA: "LUCRO MARÇO",
-            conta: { descricao: "Conta 459" },
+            contaDeDestino: { codigo: "459", descricao: "Fernando - Retirada" },
             fornecedor: { apelido: "FERNANDO ALEIXO", razaoSocial: "Fernando" },
           },
           {
             valorPagoLiquido: 2000,
             liquidacaoData: "2026-03-12T00:00:00",
             referenteA: "ENERGIA ELÉTRICA",
-            conta: { descricao: "Conta Energia" },
+            contaDeDestino: { codigo: "496", descricao: "Despesa - Serragem" },
             fornecedor: { apelido: "CPFL", razaoSocial: "CPFL Paulista" },
           },
         ],
@@ -386,24 +386,31 @@ describe("SerragemRojao Router - getContasPagas", () => {
     expect(result.contasPagasDetalhado[0].fornecedor).toBe("CPFL");
   });
 
-  it("identifies sócios by fornecedor name + referenteA keywords", async () => {
+  it("identifies sócios by conta de destino (458/459/460), not by fornecedor name", async () => {
     mockGql.mockResolvedValueOnce({
       contaAPagar: {
-        totalCount: 2,
+        totalCount: 3,
         items: [
           {
             valorPagoLiquido: 4000,
             liquidacaoData: "2026-04-01T00:00:00",
-            referenteA: "PAGAMENTO FORNECEDOR", // Not RETIRADA/LUCRO
-            conta: { descricao: "Conta" },
-            fornecedor: { apelido: "GILSON ALEIXO", razaoSocial: "Gilson" },
+            referenteA: "PIX PARA GENOVEVA", // Doesn't mention RETIRADA but goes to conta 458
+            contaDeDestino: { codigo: "458", descricao: "Gilson - Retirada" },
+            fornecedor: { apelido: "GENOVEVA ARAUJO", razaoSocial: "Genoveva" },
           },
           {
             valorPagoLiquido: 6000,
             liquidacaoData: "2026-04-02T00:00:00",
             referenteA: "RETIRADA ABRIL",
-            conta: { descricao: "Conta 460" },
+            contaDeDestino: { codigo: "460", descricao: "Bruno - Retirada" },
             fornecedor: { apelido: "BRUNO ALEIXO", razaoSocial: "Bruno" },
+          },
+          {
+            valorPagoLiquido: 1000,
+            liquidacaoData: "2026-04-03T00:00:00",
+            referenteA: "FOLHA PAGAMENTO",
+            contaDeDestino: { codigo: "496", descricao: "Despesa - Serragem" },
+            fornecedor: { apelido: "PALITOS INDUSTRIA", razaoSocial: "Palitos" },
           },
         ],
       },
@@ -416,12 +423,11 @@ describe("SerragemRojao Router - getContasPagas", () => {
       endDate: "2026-05-12",
     });
 
-    // Gilson's payment doesn't have RETIRADA/LUCRO in referenteA, so it's NOT a sócio withdrawal
-    // Only Bruno's is a sócio withdrawal
-    expect(result.retiradaSocios).toBe(6000);
-    expect(result.contasPagas).toBe(4000); // 10000 - 6000
-    expect(result.saidasTotal).toBe(10000);
-    expect(result.countSocios).toBe(1);
+    // Both Genoveva (conta 458) and Bruno (conta 460) are sócios by conta de destino
+    expect(result.retiradaSocios).toBe(10000); // 4000 + 6000
+    expect(result.contasPagas).toBe(1000); // 11000 - 10000
+    expect(result.saidasTotal).toBe(11000);
+    expect(result.countSocios).toBe(2);
   });
 
   it("handles API errors gracefully", async () => {

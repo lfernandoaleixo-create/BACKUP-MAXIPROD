@@ -3684,3 +3684,4 @@
 - [x] Serragem - Recebido: consultar Contas a Receber (liquidação até hoje, estado Recebidos, estado configurável Serragem) - valor esperado R$ 48.250,67
 - [x] Serragem - Vendas/Faturamento: somar saldo anterior (R$ 17.230,80) que existia antes do Maxiprod, com legenda explicativa
 - [x] Serragem/Rojão - Reorganizar: Contas Pagas e Retirada Sócios ficam dentro do card Saídas Total como seção expandível/recolhível
+- [x] Corrigir classificação de sócios: usar conta de destino (458/459/460) em vez de fornecedor+referência - total esperado R$ 43.620,00

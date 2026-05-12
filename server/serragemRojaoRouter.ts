@@ -99,8 +99,12 @@ const CENTRO_CUSTO_CODES: Record<string, string> = {
   "ROJÃO": "14",
 };
 
-// Sócios fornecedores (apelido)
-const SOCIOS_NOMES = ["BRUNO", "FERNANDO", "GILSON"];
+// Contas de destino dos sócios (Retirada)
+const SOCIOS_CONTAS: Record<string, { nome: string; conta: string }> = {
+  "458": { nome: "Gilson", conta: "458" },
+  "459": { nome: "Fernando", conta: "459" },
+  "460": { nome: "Bruno", conta: "460" },
+};
 
 /**
  * Fetch Contas a Pagar PAGO from Maxiprod for a given centro de custo
@@ -151,7 +155,7 @@ async function fetchContasPagar(
             valorPagoLiquido
             liquidacaoData
             referenteA
-            conta { descricao }
+            contaDeDestino { codigo descricao }
             fornecedor { apelido razaoSocial }
           }
         }
@@ -169,27 +173,26 @@ async function fetchContasPagar(
     const items: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; descricao: string; contaDestino: string; isSocio: boolean }> = [];
     // Detalhamento por sócio: Gilson-458, Fernando-459, Bruno-460
     const sociosMap: Record<string, { nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }> = {
-      GILSON: { nome: 'Gilson', conta: '458', total: 0, items: [] },
-      FERNANDO: { nome: 'Fernando', conta: '459', total: 0, items: [] },
-      BRUNO: { nome: 'Bruno', conta: '460', total: 0, items: [] },
+      "458": { nome: 'Gilson', conta: '458', total: 0, items: [] },
+      "459": { nome: 'Fernando', conta: '459', total: 0, items: [] },
+      "460": { nome: 'Bruno', conta: '460', total: 0, items: [] },
     };
 
     for (const item of allItems) {
       const valor = item.valorPagoLiquido || 0;
       totalContasPagas += valor;
 
-      const fornecedor = (item.fornecedor?.apelido || item.fornecedor?.razaoSocial || '').toUpperCase();
-      const ref = (item.referenteA || '').toUpperCase();
-      const isSocio = SOCIOS_NOMES.some(s => fornecedor.includes(s)) && (ref.includes('RETIRADA') || ref.includes('LUCRO'));
+      // Classificar como sócio pela conta de destino (458, 459, 460)
+      const contaCodigo = item.contaDeDestino?.codigo || '';
+      const isSocio = contaCodigo in SOCIOS_CONTAS;
 
       if (isSocio) {
         totalRetiradaSocios += valor;
         countSocios++;
-        // Identificar qual sócio
-        const socioKey = SOCIOS_NOMES.find(s => fornecedor.includes(s));
-        if (socioKey && sociosMap[socioKey]) {
-          sociosMap[socioKey].total += valor;
-          sociosMap[socioKey].items.push({
+        // Identificar qual sócio pela conta
+        if (sociosMap[contaCodigo]) {
+          sociosMap[contaCodigo].total += valor;
+          sociosMap[contaCodigo].items.push({
             data: item.liquidacaoData?.slice(0, 10) || '-',
             valor: Math.round(valor * 100) / 100,
             referenteA: item.referenteA || '-',
@@ -203,7 +206,7 @@ async function fetchContasPagar(
         fornecedor: item.fornecedor?.apelido || item.fornecedor?.razaoSocial || '-',
         referenteA: item.referenteA || '-',
         descricao: item.referenteA || '-',
-        contaDestino: item.conta?.descricao || '-',
+        contaDestino: item.contaDeDestino?.descricao || '-',
         isSocio,
       });
     }
