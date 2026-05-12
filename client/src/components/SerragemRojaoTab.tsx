@@ -246,29 +246,36 @@ export default function SerragemRojaoTab() {
   // Montar dados financeiros
   const serragemRecebido = serragemRecebidoQuery.data?.total ?? 0;
   const serragemSaidas = serragemContasQuery.data?.saidasTotal ?? 0;
+  const serragemVendasMaxiprod = serragemVendasQuery.data?.total ?? 0;
+  const serragemVendas = serragemVendasMaxiprod + SALDO_ANTERIOR_SERRAGEM;
+  const serragemSaldoCaixa = serragemRecebido - serragemSaidas;
+  const serragemTotalDivisao = (serragemVendas - serragemRecebido) + serragemSaldoCaixa;
   const serragemData: FinancialData = {
-    vendasFaturamento: serragemVendasQuery.data?.total ?? 0,
+    vendasFaturamento: serragemVendasMaxiprod,
     recebido: serragemRecebido,
     contasPagas: serragemContasQuery.data?.contasPagas ?? 0,
     retiradaSocios: serragemContasQuery.data?.retiradaSocios ?? 0,
     saidasTotal: serragemSaidas,
-    saldoDisponivelCaixa: serragemRecebido - serragemSaidas,
-    totalParaDivisao: 0,
-    totalParaDivisaoDisponivel: serragemRecebido - serragemSaidas,
-    totalParaDivisaoAReceber: 0,
+    saldoDisponivelCaixa: serragemSaldoCaixa,
+    totalParaDivisao: serragemTotalDivisao,
+    totalParaDivisaoDisponivel: serragemSaldoCaixa,
+    totalParaDivisaoAReceber: serragemTotalDivisao - serragemSaldoCaixa,
   };
   const rojaoRecebido = rojaoRecebidoQuery.data?.total ?? 0;
   const rojaoSaidas = rojaoContasQuery.data?.saidasTotal ?? 0;
+  const rojaoVendas = rojaoVendasQuery.data?.total ?? 0;
+  const rojaoSaldoCaixa = rojaoRecebido - rojaoSaidas;
+  const rojaoTotalDivisao = (rojaoVendas - rojaoRecebido) + rojaoSaldoCaixa;
   const rojaoData: FinancialData = {
-    vendasFaturamento: rojaoVendasQuery.data?.total ?? 0,
+    vendasFaturamento: rojaoVendas,
     recebido: rojaoRecebido,
     contasPagas: rojaoContasQuery.data?.contasPagas ?? 0,
     retiradaSocios: rojaoContasQuery.data?.retiradaSocios ?? 0,
     saidasTotal: rojaoSaidas,
-    saldoDisponivelCaixa: rojaoRecebido - rojaoSaidas,
-    totalParaDivisao: 0,
-    totalParaDivisaoDisponivel: rojaoRecebido - rojaoSaidas,
-    totalParaDivisaoAReceber: 0,
+    saldoDisponivelCaixa: rojaoSaldoCaixa,
+    totalParaDivisao: rojaoTotalDivisao,
+    totalParaDivisaoDisponivel: rojaoSaldoCaixa,
+    totalParaDivisaoAReceber: rojaoTotalDivisao - rojaoSaldoCaixa,
   };
 
   // Exportar PDF
