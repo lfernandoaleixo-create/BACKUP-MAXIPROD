@@ -204,10 +204,12 @@ async function fetchContasPagar(
       });
     }
 
-    const contasPagas = Math.round(totalContasPagas * 100) / 100;
+    const totalBruto = Math.round(totalContasPagas * 100) / 100;
     const retiradaSocios = Math.round(totalRetiradaSocios * 100) / 100;
-    // Saídas Total = Contas Pagas - Retirada Sócios
-    const saidasTotal = Math.round((contasPagas - retiradaSocios) * 100) / 100;
+    // Contas Pagas = total bruto - retirada sócios (o menor valor)
+    const contasPagas = Math.round((totalBruto - retiradaSocios) * 100) / 100;
+    // Saídas Total = total bruto completo (o maior valor)
+    const saidasTotal = totalBruto;
 
     console.log(`[Serragem/Rojão] ${tipo} Contas Pagas: R$ ${contasPagas.toFixed(2)} | Retirada Sócios: R$ ${retiradaSocios.toFixed(2)} | ${allItems.length} itens`);
 
