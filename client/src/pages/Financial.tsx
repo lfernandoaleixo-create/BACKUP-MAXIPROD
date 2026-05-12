@@ -2093,6 +2093,8 @@ export default function Financial() {
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const ECOMMERCE_TAB_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
   const canSeeEcommerce = operator && ECOMMERCE_TAB_OPERATORS.includes(operator.name);
+  const SERRAGEM_ROJAO_OPERATORS = ["Guilherme", "Flavio", "Fernando", "Thiago"];
+  const canSeeSerragemRojao = operator && SERRAGEM_ROJAO_OPERATORS.includes(operator.name);
   // Pedro só pode ver E-commerce, não tem acesso a Visão Geral, Inadimplência e Recebíveis
   const ECOMMERCE_ONLY_OPERATORS = ["Pedro"];
   const isEcommerceOnly = operator && ECOMMERCE_ONLY_OPERATORS.includes(operator.name);
@@ -2233,7 +2235,7 @@ export default function Financial() {
               <span>E-commerce</span>
             </button>
           )}
-          {!isEcommerceOnly && (
+          {canSeeSerragemRojao && (
             <button
               onClick={() => setActiveTab("serragem-rojao")}
               className={`flex items-center justify-center gap-1 md:gap-1.5 px-3 md:px-5 py-2 md:py-2.5 rounded-lg text-[11px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
@@ -2258,7 +2260,7 @@ export default function Financial() {
         {activeTab === "ecommerce" && canSeeEcommerce && <EcommerceTab />}
 
         {/* Tab: Análise Serragem/Rojão */}
-        {activeTab === "serragem-rojao" && !isEcommerceOnly && <SerragemRojaoTab />}
+        {activeTab === "serragem-rojao" && canSeeSerragemRojao && <SerragemRojaoTab />}
 
         {/* Tab: Visão Geral */}
         {activeTab === "visao-geral" && !isEcommerceOnly && (
