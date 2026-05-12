@@ -151,7 +151,6 @@ async function fetchContasPagar(
             valorPagoLiquido
             liquidacaoData
             referenteA
-            descricao
             conta { descricao }
             fornecedor { apelido razaoSocial }
           }
@@ -203,7 +202,7 @@ async function fetchContasPagar(
         valor: Math.round(valor * 100) / 100,
         fornecedor: item.fornecedor?.apelido || item.fornecedor?.razaoSocial || '-',
         referenteA: item.referenteA || '-',
-        descricao: item.descricao || '-',
+        descricao: item.referenteA || '-',
         contaDestino: item.conta?.descricao || '-',
         isSocio,
       });
