@@ -346,18 +346,6 @@ export default function SerragemRojaoTab() {
           <p className="text-xs md:text-sm text-slate-400 mt-1">Escolha entre Serragem ou Rojão</p>
         </div>
 
-        {/* Seletor de período */}
-        <div className="flex justify-center">
-          <PeriodSelector
-            period={period}
-            setPeriod={setPeriod}
-            customStart={customStart}
-            setCustomStart={setCustomStart}
-            customEnd={customEnd}
-            setCustomEnd={setCustomEnd}
-          />
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
           {/* Card Serragem */}
           <button

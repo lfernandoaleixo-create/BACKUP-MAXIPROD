@@ -3675,3 +3675,4 @@
 - [x] Análise Serragem/Rojão: adicionar seletor de período (Mês Atual, Mês Anterior, Personalizado)
 - [x] Análise Serragem/Rojão: botão exportar relatório em PDF
 - [x] Análise Serragem/Rojão: restringir acesso a Guilherme, Flávio, Fernando e Thiago
+- [x] Mover seletor de período para dentro de cada análise (Serragem/Rojão), removendo do menu de seleção principal
