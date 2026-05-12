@@ -3664,3 +3664,6 @@
 - [x] Cartões de crédito salvos: ao selecionar "Cartão de Crédito", mostrar lista de cartões já cadastrados (nome + número) (já existia)
 - [x] Permitir cadastrar novo cartão (nome + número) que fica salvo para próximas despesas (já existia)
 - [x] Editar registro de despesa existente (novo endpoint updateExpense + botão de lápis na tabela)
+
+## Vendas Mensais - Variações de Bambu
+- [x] getMonthlySalesByProduct agora soma vendas das variações ao produto mãe com fator de conversão (reimplementado)
