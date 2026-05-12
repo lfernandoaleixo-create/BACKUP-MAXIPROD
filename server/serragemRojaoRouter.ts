@@ -189,8 +189,8 @@ async function fetchContasPagar(
 
     const contasPagas = Math.round(totalContasPagas * 100) / 100;
     const retiradaSocios = Math.round(totalRetiradaSocios * 100) / 100;
-    // Saídas Total = Contas Pagas (inclui retirada sócios)
-    const saidasTotal = contasPagas;
+    // Saídas Total = Contas Pagas - Retirada Sócios
+    const saidasTotal = Math.round((contasPagas - retiradaSocios) * 100) / 100;
 
     console.log(`[Serragem/Rojão] ${tipo} Contas Pagas: R$ ${contasPagas.toFixed(2)} | Retirada Sócios: R$ ${retiradaSocios.toFixed(2)} | ${allItems.length} itens`);
 
