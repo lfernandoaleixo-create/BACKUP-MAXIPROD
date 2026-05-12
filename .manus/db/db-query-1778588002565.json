@@ -1,0 +1,19 @@
+{
+  "query": "SELECT pedido, cliente, dataEmissao, dataEntrega, estadoItem, estadoNotaPedido, quantidade FROM sales_orders WHERE pedido = '384' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pedido, cliente, dataEmissao, dataEntrega, estadoItem, estadoNotaPedido, quantidade FROM sales_orders WHERE pedido = '384' LIMIT 10;",
+  "rows": [
+    {
+      "pedido": "384",
+      "cliente": "GODIVA ALIMENTOS LTDA",
+      "dataEmissao": "2026-01-27T12:00:00.000-03:00",
+      "dataEntrega": "2026-05-11T00:00:00.000-03:00",
+      "estadoItem": "Faturado",
+      "estadoNotaPedido": "Faturado",
+      "quantidade": "60.00000"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\tcliente\tdataEmissao\tdataEntrega\testadoItem\testadoNotaPedido\tquantidade\n384\tGODIVA ALIMENTOS LTDA\t2026-01-27T12:00:00.000-03:00\t2026-05-11T00:00:00.000-03:00\tFaturado\tFaturado\t60.00000\n",
+  "stderr": "",
+  "execution_time_ms": 286
+}

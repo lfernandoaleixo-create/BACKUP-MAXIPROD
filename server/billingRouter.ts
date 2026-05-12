@@ -656,7 +656,7 @@ export const billingRouter = router({
         };
       });
       
-      // Filtrar: manter pedidos onde a data da NF OU data de emissão está dentro de 30 dias
+      // Filtrar: manter pedidos onde a data da NF OU data de entrega OU data de emissão está dentro de 30 dias
       const billedOrders = allBilledOrders.filter(o => {
         // Prioridade 1: usar data da NF
         const nfDateStr = nfDatesByPedido[o.pedido];
@@ -666,7 +666,18 @@ export const billingRouter = router({
             return nfDateObj >= thirtyDaysAgo;
           } catch { /* fallback */ }
         }
-        // Prioridade 2: usar data de emissão do pedido (formato DD/MM/YYYY)
+        // Prioridade 2: usar data de entrega do pedido (formato DD/MM/YYYY)
+        // Ex: pedido 384 emitido em jan mas entregue em mai deve aparecer nos últimos 30 dias
+        if (o.dataEntrega) {
+          try {
+            const parts = o.dataEntrega.split("/");
+            if (parts.length === 3) {
+              const entregaDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+              if (entregaDate >= thirtyDaysAgo) return true;
+            }
+          } catch { /* fallback */ }
+        }
+        // Prioridade 3: usar data de emissão do pedido (formato DD/MM/YYYY)
         try {
           const parts = o.dataEmissao.split("/");
           if (parts.length === 3) {
