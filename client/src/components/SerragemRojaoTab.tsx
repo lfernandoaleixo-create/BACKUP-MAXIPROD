@@ -29,7 +29,7 @@ interface FinancialData {
 }
 
 /* ---- Layout de Cards Financeiros ---- */
-function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading }: {
+function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading, sociosDetalhado }: {
   data: FinancialData;
   title: string;
   icon: React.ReactNode;
@@ -37,7 +37,9 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
   exporting: boolean;
   nfCount?: number;
   isLoading?: boolean;
+  sociosDetalhado?: Array<{ nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }>;
 }) {
+  const [showSocios, setShowSocios] = useState(false);
   return (
     <div className="space-y-4">
       {/* Header do card */}
@@ -89,9 +91,28 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
                 <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Contas Pagas</p>
                 <p className="text-lg font-bold text-red-600 dark:text-red-400 mt-0.5">{formatCurrency(data.contasPagas)}</p>
               </div>
-              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 shadow-sm">
-                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Retirada Sócios</p>
+              <div
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 shadow-sm cursor-pointer hover:border-amber-300 dark:hover:border-amber-600 transition-colors"
+                onClick={() => setShowSocios(!showSocios)}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Retirada Sócios</p>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400">{showSocios ? '▲ Fechar' : '▼ Detalhes'}</span>
+                </div>
                 <p className="text-lg font-bold text-amber-700 dark:text-amber-400 mt-0.5">{formatCurrency(data.retiradaSocios)}</p>
+                {showSocios && sociosDetalhado && sociosDetalhado.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-600 space-y-2">
+                    {sociosDetalhado.map((socio) => (
+                      <div key={socio.conta} className="flex items-center justify-between bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+                        <div>
+                          <span className="text-sm font-semibold text-amber-800 dark:text-amber-300">{socio.nome}</span>
+                          <span className="text-[10px] text-slate-400 ml-1.5">Conta {socio.conta}</span>
+                        </div>
+                        <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{formatCurrency(socio.total)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 shadow-sm">
                 <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Saídas Total</p>
@@ -351,6 +372,7 @@ export default function SerragemRojaoTab() {
           exporting={exporting}
           nfCount={serragemVendasQuery.data?.count}
           isLoading={serragemVendasQuery.isLoading || serragemContasQuery.isLoading}
+          sociosDetalhado={serragemContasQuery.data?.sociosDetalhado}
         />
       )}
       {selectedView === "rojao" && (
@@ -362,6 +384,7 @@ export default function SerragemRojaoTab() {
           exporting={exporting}
           nfCount={rojaoVendasQuery.data?.count}
           isLoading={rojaoVendasQuery.isLoading || rojaoContasQuery.isLoading}
+          sociosDetalhado={rojaoContasQuery.data?.sociosDetalhado}
         />
       )}
     </div>

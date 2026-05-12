@@ -116,6 +116,7 @@ async function fetchContasPagar(
   saidasTotal: number;
   countTotal: number;
   countSocios: number;
+  sociosDetalhado: Array<{ nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }>;
   items: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; isSocio: boolean }>;
 }> {
   try {
@@ -164,6 +165,12 @@ async function fetchContasPagar(
     let totalRetiradaSocios = 0;
     let countSocios = 0;
     const items: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; isSocio: boolean }> = [];
+    // Detalhamento por sócio: Gilson-458, Fernando-459, Bruno-460
+    const sociosMap: Record<string, { nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }> = {
+      GILSON: { nome: 'Gilson', conta: '458', total: 0, items: [] },
+      FERNANDO: { nome: 'Fernando', conta: '459', total: 0, items: [] },
+      BRUNO: { nome: 'Bruno', conta: '460', total: 0, items: [] },
+    };
 
     for (const item of allItems) {
       const valor = item.valorPagoLiquido || 0;
@@ -176,6 +183,16 @@ async function fetchContasPagar(
       if (isSocio) {
         totalRetiradaSocios += valor;
         countSocios++;
+        // Identificar qual sócio
+        const socioKey = SOCIOS_NOMES.find(s => fornecedor.includes(s));
+        if (socioKey && sociosMap[socioKey]) {
+          sociosMap[socioKey].total += valor;
+          sociosMap[socioKey].items.push({
+            data: item.liquidacaoData?.slice(0, 10) || '-',
+            valor: Math.round(valor * 100) / 100,
+            referenteA: item.referenteA || '-',
+          });
+        }
       }
 
       items.push({
@@ -194,17 +211,24 @@ async function fetchContasPagar(
 
     console.log(`[Serragem/Rojão] ${tipo} Contas Pagas: R$ ${contasPagas.toFixed(2)} | Retirada Sócios: R$ ${retiradaSocios.toFixed(2)} | ${allItems.length} itens`);
 
+    // Arredondar totais dos sócios
+    const sociosDetalhado = Object.values(sociosMap).map(s => ({
+      ...s,
+      total: Math.round(s.total * 100) / 100,
+    }));
+
     return {
       contasPagas,
       retiradaSocios,
       saidasTotal,
       countTotal: allItems.length,
       countSocios,
+      sociosDetalhado,
       items,
     };
   } catch (error: any) {
     console.error(`[Serragem/Rojão] Error fetching contas a pagar ${tipo}:`, error.message);
-    return { contasPagas: 0, retiradaSocios: 0, saidasTotal: 0, countTotal: 0, countSocios: 0, items: [] };
+    return { contasPagas: 0, retiradaSocios: 0, saidasTotal: 0, countTotal: 0, countSocios: 0, sociosDetalhado: [], items: [] };
   }
 }
 

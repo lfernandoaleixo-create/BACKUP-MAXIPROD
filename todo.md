@@ -3678,3 +3678,4 @@
 - [x] Mover seletor de período para dentro de cada análise (Serragem/Rojão), removendo do menu de seleção principal
 - [x] Serragem - Vendas/Faturamento: consultar NFs do Maxiprod (estado config=Serragem, estado=Emitida, situação=Autorizada+Não Enviada) e preencher card
 - [x] Serragem/Rojão - Contas Pagas + Retirada Sócios + Saídas Total: consultar Contas a Pagar (liquidação até hoje, estado PAGO, centro custo 13/14, sócios por fornecedor+referência)
+- [x] Retirada Sócios: ao clicar no card, expandir e mostrar valor individual de cada sócio (Gilson-458, Fernando-459, Bruno-460)
