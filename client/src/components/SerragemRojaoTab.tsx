@@ -178,24 +178,28 @@ export default function SerragemRojaoTab() {
   );
 
   // Montar dados financeiros
+  const serragemRecebido = 0; // TODO: preencher quando integrar Recebido do Maxiprod
+  const serragemSaidas = serragemContasQuery.data?.saidasTotal ?? 0;
   const serragemData: FinancialData = {
     vendasFaturamento: serragemVendasQuery.data?.total ?? 0,
-    recebido: 0,
+    recebido: serragemRecebido,
     contasPagas: serragemContasQuery.data?.contasPagas ?? 0,
     retiradaSocios: serragemContasQuery.data?.retiradaSocios ?? 0,
-    saidasTotal: serragemContasQuery.data?.saidasTotal ?? 0,
-    saldoDisponivelCaixa: 0,
+    saidasTotal: serragemSaidas,
+    saldoDisponivelCaixa: serragemRecebido - serragemSaidas,
     totalParaDivisao: 0,
     totalParaDivisaoDisponivel: 0,
     totalParaDivisaoAReceber: 0,
   };
+  const rojaoRecebido = 0; // TODO: preencher quando integrar Recebido do Maxiprod
+  const rojaoSaidas = rojaoContasQuery.data?.saidasTotal ?? 0;
   const rojaoData: FinancialData = {
     vendasFaturamento: rojaoVendasQuery.data?.total ?? 0,
-    recebido: 0,
+    recebido: rojaoRecebido,
     contasPagas: rojaoContasQuery.data?.contasPagas ?? 0,
     retiradaSocios: rojaoContasQuery.data?.retiradaSocios ?? 0,
-    saidasTotal: rojaoContasQuery.data?.saidasTotal ?? 0,
-    saldoDisponivelCaixa: 0,
+    saidasTotal: rojaoSaidas,
+    saldoDisponivelCaixa: rojaoRecebido - rojaoSaidas,
     totalParaDivisao: 0,
     totalParaDivisaoDisponivel: 0,
     totalParaDivisaoAReceber: 0,
