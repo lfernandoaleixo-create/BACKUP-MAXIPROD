@@ -3671,3 +3671,4 @@
 - [x] Ocultar botão Métricas na inadimplência para todos exceto Guilherme
 - [x] Corrigir filtro de faturados: usar dataEntrega (quando disponível) além de dataEmissao para que pedidos faturados recentemente (mas emitidos há meses) apareçam no período correto (ex: pedido 384)
 - [x] Corrigir filtro de faturados na aba Faturamento (ÚLT. 30 DIAS): usar dataEntrega além de dataEmissao para que pedido 384 apareça
+- [x] Criar card "Análise Serragem/Rojão" na aba Financeiro ao lado do E-commerce, com sub-cards Serragem e Rojão contendo layout financeiro (valores zerados)

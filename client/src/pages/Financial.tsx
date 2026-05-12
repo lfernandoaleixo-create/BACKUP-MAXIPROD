@@ -69,6 +69,7 @@ import ResumoFinanceiroCard from "@/components/ResumoFinanceiroCard";
 import InadimplenciaTab from "@/components/InadimplenciaTab";
 import ReceivablesTab from "@/components/ReceivablesTab";
 import EcommerceTab from "@/components/EcommerceTab";
+import SerragemRojaoTab from "@/components/SerragemRojaoTab";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -2095,7 +2096,7 @@ export default function Financial() {
   // Pedro só pode ver E-commerce, não tem acesso a Visão Geral, Inadimplência e Recebíveis
   const ECOMMERCE_ONLY_OPERATORS = ["Pedro"];
   const isEcommerceOnly = operator && ECOMMERCE_ONLY_OPERATORS.includes(operator.name);
-  const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce">(isEcommerceOnly ? "ecommerce" : "visao-geral");
+  const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce" | "serragem-rojao">(isEcommerceOnly ? "ecommerce" : "visao-geral");
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
   const recebiveisBlinking = discountAlerts?.isAlertOperator && discountAlerts.blinkLevel === "recebiveis-tab" && discountAlerts.unreadCount > 0;
@@ -2232,6 +2233,19 @@ export default function Financial() {
               <span>E-commerce</span>
             </button>
           )}
+          {!isEcommerceOnly && (
+            <button
+              onClick={() => setActiveTab("serragem-rojao")}
+              className={`flex items-center justify-center gap-1 md:gap-1.5 px-3 md:px-5 py-2 md:py-2.5 rounded-lg text-[11px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === "serragem-rojao"
+                  ? "bg-green-700 text-white shadow-md"
+                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+              <span>Análise Serragem/Rojão</span>
+            </button>
+          )}
         </div>
 
         {/* Tab: Inadimplência */}
@@ -2242,6 +2256,9 @@ export default function Financial() {
 
         {/* Tab: E-commerce */}
         {activeTab === "ecommerce" && canSeeEcommerce && <EcommerceTab />}
+
+        {/* Tab: Análise Serragem/Rojão */}
+        {activeTab === "serragem-rojao" && !isEcommerceOnly && <SerragemRojaoTab />}
 
         {/* Tab: Visão Geral */}
         {activeTab === "visao-geral" && !isEcommerceOnly && (
