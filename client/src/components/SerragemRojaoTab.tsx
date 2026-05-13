@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { ArrowLeft, Flame, TreePine, Download, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Flame, TreePine, Download, Loader2, ChevronDown, ChevronUp, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -218,46 +218,101 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
   );
 }
 
+/* ---- Helper: gerar lista de meses desde fev/2026 até o mês atual ---- */
+function generateMonthOptions(): Array<{ label: string; value: string; startDate: string; endDate: string }> {
+  const months: Array<{ label: string; value: string; startDate: string; endDate: string }> = [];
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-indexed
+  
+  // Começar em fev/2026 (mês 1 = fevereiro, 0-indexed)
+  let year = 2026;
+  let month = 1; // fevereiro
+  
+  const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  
+  while (year < currentYear || (year === currentYear && month <= currentMonth)) {
+    const m = String(month + 1).padStart(2, "0");
+    const startDate = `${year}-${m}-01`;
+    // Último dia do mês
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const endDate = `${year}-${m}-${String(lastDay).padStart(2, "0")}`;
+    
+    months.push({
+      label: `${monthNames[month]}/${year}`,
+      value: `${year}-${m}`,
+      startDate,
+      endDate,
+    });
+    
+    month++;
+    if (month > 11) {
+      month = 0;
+      year++;
+    }
+  }
+  
+  return months;
+}
+
 /* ---- Componente Principal ---- */
 export default function SerragemRojaoTab() {
   const { operator } = useOperator();
   const hideDivisionCards = operator ? HIDE_DIVISION_OPERATORS.includes(operator.name) : false;
   const [selectedView, setSelectedView] = useState<"menu" | "serragem" | "rojao">("menu");
   const [exporting, setExporting] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>("all"); // "all" ou "2026-02", "2026-03", etc.
 
-  // Data de hoje para o filtro (sem limite inferior = todas as NFs até hoje)
+  // Gerar opções de meses
+  const monthOptions = useMemo(() => generateMonthOptions(), []);
+
+  // Data de hoje para o filtro
   const [today] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   });
 
-  // Buscar dados reais do Maxiprod via tRPC (sem limite inferior de data, até hoje)
+  // Calcular startDate e endDate baseado no mês selecionado
+  const { filterStartDate, filterEndDate } = useMemo(() => {
+    if (selectedMonth === "all") {
+      return { filterStartDate: null, filterEndDate: today };
+    }
+    const monthOpt = monthOptions.find(m => m.value === selectedMonth);
+    if (monthOpt) {
+      // Se for o mês atual, usar hoje como endDate
+      const endDate = monthOpt.endDate > today ? today : monthOpt.endDate;
+      return { filterStartDate: monthOpt.startDate, filterEndDate: endDate };
+    }
+    return { filterStartDate: null, filterEndDate: today };
+  }, [selectedMonth, today, monthOptions]);
+
+  // Buscar dados reais do Maxiprod via tRPC
   const serragemVendasQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
-    { tipo: "SERRAGEM", startDate: null, endDate: today },
+    { tipo: "SERRAGEM", startDate: filterStartDate, endDate: filterEndDate },
     { enabled: selectedView === "serragem" || selectedView === "menu" }
   );
   const rojaoVendasQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
-    { tipo: "ROJÃO", startDate: null, endDate: today },
+    { tipo: "ROJÃO", startDate: filterStartDate, endDate: filterEndDate },
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
   // Buscar Contas Pagas / Retirada Sócios / Saídas Total
   const serragemContasQuery = trpc.serragemRojao.getContasPagas.useQuery(
-    { tipo: "SERRAGEM", startDate: null, endDate: today },
+    { tipo: "SERRAGEM", startDate: filterStartDate, endDate: filterEndDate },
     { enabled: selectedView === "serragem" || selectedView === "menu" }
   );
   const rojaoContasQuery = trpc.serragemRojao.getContasPagas.useQuery(
-    { tipo: "ROJÃO", startDate: null, endDate: today },
+    { tipo: "ROJÃO", startDate: filterStartDate, endDate: filterEndDate },
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
   // Buscar Recebido (Contas a Receber liquidadas)
   const serragemRecebidoQuery = trpc.serragemRojao.getRecebido.useQuery(
-    { tipo: "SERRAGEM", startDate: null, endDate: today },
+    { tipo: "SERRAGEM", startDate: filterStartDate, endDate: filterEndDate },
     { enabled: selectedView === "serragem" || selectedView === "menu" }
   );
   const rojaoRecebidoQuery = trpc.serragemRojao.getRecebido.useQuery(
-    { tipo: "ROJÃO", startDate: null, endDate: today },
+    { tipo: "ROJÃO", startDate: filterStartDate, endDate: filterEndDate },
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
@@ -272,11 +327,12 @@ export default function SerragemRojaoTab() {
   );
 
   // Montar dados financeiros
+  const saldoAnteriorAtivo = selectedMonth === "all" ? SALDO_ANTERIOR_SERRAGEM : 0;
   const serragemRecebido = serragemRecebidoQuery.data?.total ?? 0;
   const serragemSaidas = serragemContasQuery.data?.saidasTotal ?? 0;
   const serragemVendasMaxiprod = serragemVendasQuery.data?.total ?? 0;
-  const serragemVendas = serragemVendasMaxiprod + SALDO_ANTERIOR_SERRAGEM;
-  const serragemRecebidoComAnterior = serragemRecebido + SALDO_ANTERIOR_SERRAGEM;
+  const serragemVendas = serragemVendasMaxiprod + saldoAnteriorAtivo;
+  const serragemRecebidoComAnterior = serragemRecebido + saldoAnteriorAtivo;
   const serragemSaldoCaixa = serragemRecebidoComAnterior - serragemSaidas;
   const serragemTotalDivisao = (serragemVendas - serragemRecebidoComAnterior) + serragemSaldoCaixa;
   const serragemData: FinancialData = {
@@ -464,8 +520,8 @@ export default function SerragemRojaoTab() {
 
   return (
     <div className="space-y-4">
-      {/* Botão Voltar */}
-      <div className="flex items-center">
+      {/* Botão Voltar + Filtro de Mês */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <button
           onClick={() => setSelectedView("menu")}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
@@ -473,6 +529,21 @@ export default function SerragemRojaoTab() {
           <ArrowLeft className="w-4 h-4" />
           <span>Voltar</span>
         </button>
+
+        {/* Filtro de Mês */}
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+          >
+            <option value="all">Todos os meses</option>
+            {monthOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Conteúdo */}
@@ -487,7 +558,7 @@ export default function SerragemRojaoTab() {
           isLoading={serragemVendasQuery.isLoading || serragemContasQuery.isLoading}
           sociosDetalhado={serragemContasQuery.data?.sociosDetalhado}
           contasPagasDetalhado={serragemContasQuery.data?.contasPagasDetalhado}
-          saldoAnterior={SALDO_ANTERIOR_SERRAGEM}
+          saldoAnterior={selectedMonth === "all" ? SALDO_ANTERIOR_SERRAGEM : undefined}
           hideDivisionCards={hideDivisionCards}
         />
       )}

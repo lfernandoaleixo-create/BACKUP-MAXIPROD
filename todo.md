@@ -3693,3 +3693,4 @@
 - [x] Corrigir layout mobile da aba Financeiro: título muito grande e abas embolando no celular
 - [x] Omitir 3 cards (Total para Divisão, Total para Divisão Disponível, Total para Divisão à Receber) para Fernando/Bruno/Gilson e renomear Saldo Disponível Caixa para Saldo Disponível Para Divisão. Manter tudo para Flavio/Thiago/Guilherme. Aplicar Serragem e Rojão.
 - [x] Diminuir card Vendas (v2 - largura limitada)/Faturamento para Fernando/Bruno/Gilson (mesmo tamanho dos menores) e destacar info NFs + saldo anterior
+- [x] Filtro de mês na aba Serragem/Rojão afetando todos os cards (Vendas, Recebido, Saídas, Saldo)
