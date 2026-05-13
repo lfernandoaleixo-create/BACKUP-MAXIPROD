@@ -3697,3 +3697,4 @@
 - [x] Para Fernando/Bruno/Gilson: filtro de mês apenas no Vendas/Faturamento (outros cards sem filtro)
 - [x] Para Fernando/Bruno/Gilson: adicionar "Falta receber" em vermelho no card Recebido (Vendas - Recebido)
 - [x] Mover seletor de mês para dentro do card Vendas/Faturamento
+- [x] Corrigir Falta receber para não sumir quando filtro de mês é aplicado

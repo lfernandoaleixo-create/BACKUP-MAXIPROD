@@ -317,7 +317,7 @@ export default function SerragemRojaoTab() {
     return { filterStartDate: null, filterEndDate: today };
   }, [selectedMonth, today, monthOptions]);
 
-  // Buscar dados reais do Maxiprod via tRPC
+  // Buscar dados reais do Maxiprod via tRPC (filtrado por mês para exibição no card)
   const serragemVendasQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
     { tipo: "SERRAGEM", startDate: filterStartDate, endDate: filterEndDate },
     { enabled: selectedView === "serragem" || selectedView === "menu" }
@@ -325,6 +325,16 @@ export default function SerragemRojaoTab() {
   const rojaoVendasQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
     { tipo: "ROJÃO", startDate: filterStartDate, endDate: filterEndDate },
     { enabled: selectedView === "rojao" || selectedView === "menu" }
+  );
+
+  // Vendas TOTAIS (sem filtro de mês) - usado para calcular "Falta receber"
+  const serragemVendasTotalQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
+    { tipo: "SERRAGEM", startDate: null, endDate: today },
+    { enabled: (selectedView === "serragem" || selectedView === "menu") && selectedMonth !== "all" }
+  );
+  const rojaoVendasTotalQuery = trpc.serragemRojao.getVendasFaturamento.useQuery(
+    { tipo: "ROJÃO", startDate: null, endDate: today },
+    { enabled: (selectedView === "rojao" || selectedView === "menu") && selectedMonth !== "all" }
   );
 
   // Buscar Contas Pagas / Retirada Sócios / Saídas Total (sempre acumulado total, sem filtro de mês)
@@ -576,7 +586,7 @@ export default function SerragemRojaoTab() {
           contasPagasDetalhado={serragemContasQuery.data?.contasPagasDetalhado}
           saldoAnterior={SALDO_ANTERIOR_SERRAGEM}
           hideDivisionCards={hideDivisionCards}
-          faltaReceber={hideDivisionCards ? (serragemVendas - serragemRecebidoComAnterior) : undefined}
+          faltaReceber={hideDivisionCards ? ((selectedMonth !== "all" ? ((serragemVendasTotalQuery.data?.total ?? 0) + saldoAnteriorAtivo) : serragemVendas) - serragemRecebidoComAnterior) : undefined}
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
           monthOptions={monthOptions}
@@ -594,7 +604,7 @@ export default function SerragemRojaoTab() {
           sociosDetalhado={rojaoContasQuery.data?.sociosDetalhado}
           contasPagasDetalhado={rojaoContasQuery.data?.contasPagasDetalhado}
           hideDivisionCards={hideDivisionCards}
-          faltaReceber={hideDivisionCards ? (rojaoVendas - rojaoRecebido) : undefined}
+          faltaReceber={hideDivisionCards ? ((selectedMonth !== "all" ? (rojaoVendasTotalQuery.data?.total ?? 0) : rojaoVendas) - rojaoRecebido) : undefined}
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
           monthOptions={monthOptions}
