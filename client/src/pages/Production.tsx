@@ -1038,19 +1038,6 @@ export default function Production() {
           </div>
         )}
 
-        {/* Banner de alerta: data diferente de hoje (passada) */}
-        {!isToday && !isFutureDate && canEdit && viewMode === "lancamento" && (
-          <div className="flex items-center gap-2 mb-4 bg-orange-50 border-2 border-orange-300 rounded-xl px-4 py-3 animate-pulse">
-            <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />
-            <p className="text-sm text-orange-700">
-              <span className="font-bold">Atenção Maria!</span> Você está preenchendo produção para <span className="font-bold underline">{new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}</span>, que <span className="font-bold text-orange-800">NÃO é o dia de hoje</span>. Confira se é isso mesmo!
-            </p>
-            <button onClick={() => { setSelectedDate(getTodayBR()); resetEditState(); }} className="ml-auto shrink-0 px-3 py-1.5 bg-orange-600 text-white text-xs font-bold rounded-lg hover:bg-orange-700 transition-colors">
-              Ir para Hoje
-            </button>
-          </div>
-        )}
-
         {/* Banner somente leitura para operadores que não são Maria */}
         {!canEdit && !isFutureDate && viewMode === "lancamento" && (
           <div className="flex items-center gap-2 mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
@@ -1679,11 +1666,11 @@ function ExpandableMachineRow({
               </div>
             )}
 
-            {canEdit && (
+            {canEdit && changed && (
               <div className="flex justify-end mt-3">
-                <button onClick={onSave} disabled={isSaving || !changed}
-                  className={`px-4 py-2 text-white text-sm font-bold rounded-lg transition-colors shadow-sm ${changed ? 'bg-teal-600 hover:bg-teal-700' : 'bg-slate-300 cursor-not-allowed'} disabled:opacity-40 disabled:cursor-not-allowed`}>
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : changed ? 'OK' : 'Salvar'}
+                <button onClick={onSave} disabled={isSaving}
+                  className="px-4 py-2 bg-teal-600 text-white text-sm font-bold rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'OK'}
                 </button>
               </div>
             )}
@@ -1705,10 +1692,10 @@ function ExpandableMachineRow({
                 className={`flex-1 min-w-0 w-32 text-right text-sm font-medium border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 tabular-nums ${!canEdit ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'bg-white'}`}
               />
               <span className="text-xs text-slate-400 shrink-0">{sector.unidadeMedida}</span>
-              {canEdit && (
-                <button onClick={onSave} disabled={isSaving || !changed}
-                  className={`px-3 py-1.5 text-white text-xs font-bold rounded-lg transition-colors shadow-sm ${changed ? 'bg-teal-600 hover:bg-teal-700' : 'bg-slate-300 cursor-not-allowed'} disabled:opacity-40 disabled:cursor-not-allowed`}>
-                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : changed ? 'OK' : 'Salvar'}
+              {canEdit && changed && (
+                <button onClick={onSave} disabled={isSaving}
+                  className="px-3 py-1.5 bg-teal-600 text-white text-xs font-bold rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
+                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'OK'}
                 </button>
               )}
             </div>
