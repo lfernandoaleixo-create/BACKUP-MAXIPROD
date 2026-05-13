@@ -9,6 +9,12 @@ import React, { useState, useMemo } from "react";
 import { ArrowLeft, Flame, TreePine, Download, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
+import { useOperator } from "@/contexts/OperatorContext";
+
+/* Operadores que NÃO veem os 3 cards de divisão (Total para Divisão, Disponível, à Receber) */
+const HIDE_DIVISION_OPERATORS = ["Fernando", "Bruno", "Gilson"];
+/* Operadores que veem TODOS os cards */
+// const FULL_VIEW_OPERATORS = ["Flavio", "Thiago", "Guilherme"];
 
 /* ---- Helpers ---- */
 function formatCurrency(n: number): string {
@@ -33,7 +39,7 @@ interface FinancialData {
 }
 
 /* ---- Layout de Cards Financeiros ---- */
-function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading, sociosDetalhado, contasPagasDetalhado, saldoAnterior }: {
+function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading, sociosDetalhado, contasPagasDetalhado, saldoAnterior, hideDivisionCards }: {
   data: FinancialData;
   title: string;
   icon: React.ReactNode;
@@ -44,6 +50,7 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
   sociosDetalhado?: Array<{ nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }>;
   contasPagasDetalhado?: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; descricao: string; contaDestino: string }>;
   saldoAnterior?: number;
+  hideDivisionCards?: boolean;
 }) {
   const [showSaidas, setShowSaidas] = useState(false);
   const [showSocios, setShowSocios] = useState(false);
@@ -182,12 +189,13 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
               </div>
 
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-700 rounded-xl p-3.5 shadow-sm">
-                <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider">Saldo Disponível Caixa</p>
+                <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider">{hideDivisionCards ? "Saldo Disponível Para Divisão" : "Saldo Disponível Caixa"}</p>
                 <p className="text-lg font-bold text-blue-900 dark:text-blue-100 mt-0.5">{formatCurrency(data.saldoDisponivelCaixa)}</p>
               </div>
             </div>
 
-            {/* Coluna Direita */}
+            {/* Coluna Direita - oculta para Fernando/Bruno/Gilson */}
+            {!hideDivisionCards && (
             <div className="space-y-3">
               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 shadow-sm">
                 <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total para Divisão</p>
@@ -202,6 +210,7 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
                 <p className="text-lg font-bold text-purple-700 dark:text-purple-400 mt-0.5">{formatCurrency(data.totalParaDivisaoAReceber)}</p>
               </div>
             </div>
+            )}
           </div>
         </>
       )}
@@ -211,6 +220,8 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
 
 /* ---- Componente Principal ---- */
 export default function SerragemRojaoTab() {
+  const { operator } = useOperator();
+  const hideDivisionCards = operator ? HIDE_DIVISION_OPERATORS.includes(operator.name) : false;
   const [selectedView, setSelectedView] = useState<"menu" | "serragem" | "rojao">("menu");
   const [exporting, setExporting] = useState(false);
 
@@ -356,32 +367,32 @@ export default function SerragemRojaoTab() {
               <div class="value green">${formatCurrency(totalRecebido)}</div>
               ${saldoAnterior ? `<div class="detail" style="font-size:9px;color:#15803d;margin-top:2px">${formatCurrency(data.recebido)} (Maxiprod) + Saldo anterior: ${formatCurrency(saldoAnterior)}</div>` : ''}
             </div>
-            <div class="card">
+            ${!hideDivisionCards ? `<div class="card">
               <div class="label">Total para Divisão</div>
               <div class="value dark">${formatCurrency(data.totalParaDivisao)}</div>
-            </div>
+            </div>` : ''}
             <div class="card">
               <div class="label">Saídas Total</div>
               <div class="value red">${formatCurrency(data.saidasTotal)}</div>
             </div>
-            <div class="card">
+            ${!hideDivisionCards ? `<div class="card">
               <div class="label">Total para Divisão Disponível</div>
               <div class="value emerald">${formatCurrency(data.totalParaDivisaoDisponivel)}</div>
-            </div>
+            </div>` : ''}
             <div class="card">
               <div class="label">Contas Pagas (s/ sócios)</div>
               <div class="value red">${formatCurrency(data.contasPagas)}</div>
             </div>
-            <div class="card">
+            ${!hideDivisionCards ? `<div class="card">
               <div class="label">Total para Divisão à Receber</div>
               <div class="value purple">${formatCurrency(data.totalParaDivisaoAReceber)}</div>
-            </div>
+            </div>` : ''}
             <div class="card">
               <div class="label">Retirada Sócios</div>
               <div class="value amber">${formatCurrency(data.retiradaSocios)}</div>
             </div>
             <div class="card highlight">
-              <div class="label">Saldo Disponível Caixa</div>
+              <div class="label">${hideDivisionCards ? 'Saldo Disponível Para Divisão' : 'Saldo Disponível Caixa'}</div>
               <div class="value blue">${formatCurrency(saldoAnterior ? saldoCaixaComAnterior : data.saldoDisponivelCaixa)}</div>
             </div>
           </div>
@@ -477,6 +488,7 @@ export default function SerragemRojaoTab() {
           sociosDetalhado={serragemContasQuery.data?.sociosDetalhado}
           contasPagasDetalhado={serragemContasQuery.data?.contasPagasDetalhado}
           saldoAnterior={SALDO_ANTERIOR_SERRAGEM}
+          hideDivisionCards={hideDivisionCards}
         />
       )}
       {selectedView === "rojao" && (
@@ -490,6 +502,7 @@ export default function SerragemRojaoTab() {
           isLoading={rojaoVendasQuery.isLoading || rojaoContasQuery.isLoading}
           sociosDetalhado={rojaoContasQuery.data?.sociosDetalhado}
           contasPagasDetalhado={rojaoContasQuery.data?.contasPagasDetalhado}
+          hideDivisionCards={hideDivisionCards}
         />
       )}
     </div>
