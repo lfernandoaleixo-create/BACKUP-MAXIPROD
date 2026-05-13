@@ -3691,3 +3691,4 @@
 - [x] Adicionar Bruno e Gilson à lista de operadores com acesso à aba Análise Serragem/Rojão
 - [x] Somar saldo anterior pré-Maxiprod (R$ 17.230,80) ao card Recebido da Serragem com discriminação visual + recalcular Saldo Disponível Caixa
 - [x] Corrigir layout mobile da aba Financeiro: título muito grande e abas embolando no celular
+- [x] Encurtar nomes das abas no mobile para caber tudo sem scroll horizontal
