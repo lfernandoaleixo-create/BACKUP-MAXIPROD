@@ -3689,3 +3689,4 @@
 - [x] Total para Divisão = (Vendas/Faturamento - Recebido) + Saldo Disponível Caixa - esperado R$ 26.433,62
 - [x] Total para Divisão à Receber: consulta real Contas a Receber (estado A receber, estado configurável serragem/rojão, sem data) - esperado R$ 8.488,80 Serragem
 - [x] Adicionar Bruno e Gilson à lista de operadores com acesso à aba Análise Serragem/Rojão
+- [x] Somar saldo anterior pré-Maxiprod (R$ 17.230,80) ao card Recebido da Serragem com discriminação visual + recalcular Saldo Disponível Caixa

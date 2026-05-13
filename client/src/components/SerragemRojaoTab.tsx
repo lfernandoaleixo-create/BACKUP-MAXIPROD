@@ -50,6 +50,7 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
   const [showContas, setShowContas] = useState(false);
 
   const totalVendasComAnterior = saldoAnterior ? data.vendasFaturamento + saldoAnterior : data.vendasFaturamento;
+  const totalRecebidoComAnterior = saldoAnterior ? data.recebido + saldoAnterior : data.recebido;
 
   return (
     <div className="space-y-4">
@@ -101,7 +102,13 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
             <div className="space-y-3">
               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 shadow-sm">
                 <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Recebido</p>
-                <p className="text-lg font-bold text-green-700 dark:text-green-400 mt-0.5">{formatCurrency(data.recebido)}</p>
+                <p className="text-lg font-bold text-green-700 dark:text-green-400 mt-0.5">{formatCurrency(totalRecebidoComAnterior)}</p>
+                {saldoAnterior && (
+                  <div className="mt-1 space-y-0.5">
+                    <p className="text-[10px] text-green-600 dark:text-green-400">{formatCurrency(data.recebido)} (Maxiprod)</p>
+                    <p className="text-[10px] text-green-600 dark:text-green-400 italic">+ Saldo anterior (pré-Maxiprod): {formatCurrency(saldoAnterior)}</p>
+                  </div>
+                )}
               </div>
 
               {/* SAÍDAS TOTAL - card expandível contendo Contas Pagas e Retirada Sócios */}
@@ -258,8 +265,9 @@ export default function SerragemRojaoTab() {
   const serragemSaidas = serragemContasQuery.data?.saidasTotal ?? 0;
   const serragemVendasMaxiprod = serragemVendasQuery.data?.total ?? 0;
   const serragemVendas = serragemVendasMaxiprod + SALDO_ANTERIOR_SERRAGEM;
-  const serragemSaldoCaixa = serragemRecebido - serragemSaidas;
-  const serragemTotalDivisao = (serragemVendas - serragemRecebido) + serragemSaldoCaixa;
+  const serragemRecebidoComAnterior = serragemRecebido + SALDO_ANTERIOR_SERRAGEM;
+  const serragemSaldoCaixa = serragemRecebidoComAnterior - serragemSaidas;
+  const serragemTotalDivisao = (serragemVendas - serragemRecebidoComAnterior) + serragemSaldoCaixa;
   const serragemData: FinancialData = {
     vendasFaturamento: serragemVendasMaxiprod,
     recebido: serragemRecebido,
@@ -296,6 +304,8 @@ export default function SerragemRojaoTab() {
       const pdfTitle = type === "serragem" ? "Serragem" : "Rojão";
       const saldoAnterior = type === "serragem" ? SALDO_ANTERIOR_SERRAGEM : 0;
       const totalVendas = data.vendasFaturamento + saldoAnterior;
+      const totalRecebido = data.recebido + saldoAnterior;
+      const saldoCaixaComAnterior = totalRecebido - data.saidasTotal;
       
       const printContent = `
         <!DOCTYPE html>
@@ -343,7 +353,8 @@ export default function SerragemRojaoTab() {
           <div class="grid">
             <div class="card">
               <div class="label">Recebido</div>
-              <div class="value green">${formatCurrency(data.recebido)}</div>
+              <div class="value green">${formatCurrency(totalRecebido)}</div>
+              ${saldoAnterior ? `<div class="detail" style="font-size:9px;color:#15803d;margin-top:2px">${formatCurrency(data.recebido)} (Maxiprod) + Saldo anterior: ${formatCurrency(saldoAnterior)}</div>` : ''}
             </div>
             <div class="card">
               <div class="label">Total para Divisão</div>
@@ -371,7 +382,7 @@ export default function SerragemRojaoTab() {
             </div>
             <div class="card highlight">
               <div class="label">Saldo Disponível Caixa</div>
-              <div class="value blue">${formatCurrency(data.saldoDisponivelCaixa)}</div>
+              <div class="value blue">${formatCurrency(saldoAnterior ? saldoCaixaComAnterior : data.saldoDisponivelCaixa)}</div>
             </div>
           </div>
 
