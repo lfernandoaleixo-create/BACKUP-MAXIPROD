@@ -3698,3 +3698,4 @@
 - [x] Para Fernando/Bruno/Gilson: adicionar "Falta receber" em vermelho no card Recebido (Vendas - Recebido)
 - [x] Mover seletor de mês para dentro do card Vendas/Faturamento
 - [x] Corrigir Falta receber para não sumir quando filtro de mês é aplicado
+- [x] Implementar proteções robustas para dados da aba Inadimplência (backup automático, histórico, proteção contra rollback)

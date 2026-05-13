@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startScraper } from "../maxiprodScraper";
 import { startScheduler } from "../scheduler";
+import { inadimplenciaBackupCronHandler } from "../inadimplenciaBackupHandler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -37,6 +38,9 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // Scheduled endpoints (Heartbeat cron)
+  app.post("/api/scheduled/inadimplencia-backup", inadimplenciaBackupCronHandler);
+
   // tRPC API
   app.use(
     "/api/trpc",

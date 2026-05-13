@@ -1709,3 +1709,79 @@ export const ecommerceDailySales = mysqlTable("ecommerce_daily_sales", {
 });
 export type EcommerceDailySale = typeof ecommerceDailySales.$inferSelect;
 export type InsertEcommerceDailySale = typeof ecommerceDailySales.$inferInsert;
+
+
+/**
+ * Backup automático dos dados de inadimplência (collectionActions).
+ * Snapshots completos criados a cada 6 horas via Heartbeat.
+ * REGRA: NUNCA apagar registros desta tabela. Histórico permanente e imutável.
+ * 
+ * Em caso de perda de dados por rollback ou bug, os dados podem ser restaurados
+ * a partir do snapshot mais recente.
+ */
+export const inadimplenciaBackup = mysqlTable("inadimplencia_backup", {
+  id: int("id").autoincrement().primaryKey(),
+  snapshotDate: timestamp("snapshotDate").defaultNow().notNull(),
+  // JSON completo de todos os registros de collectionActions
+  collectionActionsJson: json("collectionActionsJson").$type<Array<{
+    id: number;
+    receivableId: number;
+    status: string;
+    promessaData: string | null;
+    promessaValor: string | null;
+    lembreteData: string | null;
+    observacoes: string | null;
+    contatoHistorico: Array<{ data: string; tipo: string; resumo: string; usuario?: string }>;
+    cobrancaStartedAt: string | null;
+    phoneMutedBy: string | null;
+    phoneMutedAt: number | null;
+    updatedBy: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>>().notNull(),
+  // JSON completo de collectionDailyActions
+  dailyActionsJson: json("dailyActionsJson").$type<Array<{
+    id: number;
+    receivableId: number;
+    actionDate: string;
+    actionType: string;
+    operatorName: string;
+    notes: string | null;
+    isAutomatic: boolean;
+    createdAt: string;
+  }>>().notNull(),
+  // JSON completo de receivableProtestConfig
+  protestConfigJson: json("protestConfigJson").$type<Array<{
+    id: number;
+    receivableId: number;
+    protestType: string;
+    actionPlan: string | null;
+    deadlineDate: string | null;
+    actionPlanBy: string | null;
+    updatedBy: string | null;
+  }>>().notNull(),
+  // JSON completo de resolvedReceivables
+  resolvedJson: json("resolvedJson").$type<Array<{
+    id: number;
+    receivableId: number;
+    maxiprodId: number;
+    cliente: string;
+    valorOriginal: string;
+    valorAReceber: string;
+    vencimentoData: string | null;
+    documento: string | null;
+    empresa: string | null;
+    vendedor: string | null;
+    diasAtrasoNaResolucao: number;
+    statusCobranca: string | null;
+    totalContatos: number;
+  }>>().notNull(),
+  // Metadados
+  totalCollectionActions: int("totalCollectionActions").notNull(),
+  totalDailyActions: int("totalDailyActions").notNull(),
+  totalProtestConfigs: int("totalProtestConfigs").notNull(),
+  totalResolved: int("totalResolved").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type InadimplenciaBackup = typeof inadimplenciaBackup.$inferSelect;
+export type InsertInadimplenciaBackup = typeof inadimplenciaBackup.$inferInsert;

@@ -743,6 +743,13 @@
       "when": 1778523576966,
       "tag": "0105_worried_lyja",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "5",
+      "when": 1778695604557,
+      "tag": "0106_jittery_titania",
+      "breakpoints": true
     }
   ]
 }
