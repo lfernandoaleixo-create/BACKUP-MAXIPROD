@@ -90,15 +90,15 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
       {!isLoading && (
         <>
           {/* Card principal: VENDAS/FATURAMENTO */}
-          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/30 dark:to-emerald-900/30 border border-teal-200 dark:border-teal-700 rounded-xl p-4 shadow-sm">
-            <p className="text-xs font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wider">Vendas/Faturamento</p>
-            <p className="text-2xl font-bold text-teal-900 dark:text-teal-100 mt-1">{formatCurrency(totalVendasComAnterior)}</p>
+          <div className={`${hideDivisionCards ? 'bg-white dark:bg-slate-800 border border-teal-200 dark:border-teal-700' : 'bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/30 dark:to-emerald-900/30 border border-teal-200 dark:border-teal-700'} rounded-xl ${hideDivisionCards ? 'p-3.5' : 'p-4'} shadow-sm`}>
+            <p className="text-[10px] font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wider">Vendas/Faturamento</p>
+            <p className={`${hideDivisionCards ? 'text-lg' : 'text-2xl'} font-bold text-teal-900 dark:text-teal-100 mt-0.5`}>{formatCurrency(totalVendasComAnterior)}</p>
             <div className="mt-1 space-y-0.5">
               {nfCount !== undefined && (
-                <p className="text-[10px] text-teal-600 dark:text-teal-400">{nfCount} NF{nfCount !== 1 ? 's' : ''} emitida{nfCount !== 1 ? 's' : ''} (Maxiprod): {formatCurrency(data.vendasFaturamento)}</p>
+                <p className={`${hideDivisionCards ? 'text-xs font-semibold text-teal-700 dark:text-teal-300' : 'text-[10px] text-teal-600 dark:text-teal-400'}`}>{nfCount} NF{nfCount !== 1 ? 's' : ''} emitida{nfCount !== 1 ? 's' : ''} (Maxiprod): {formatCurrency(data.vendasFaturamento)}</p>
               )}
               {saldoAnterior && (
-                <p className="text-[10px] text-teal-600 dark:text-teal-400 italic">+ Saldo anterior (pré-Maxiprod): {formatCurrency(saldoAnterior)}</p>
+                <p className={`${hideDivisionCards ? 'text-xs font-semibold text-teal-700 dark:text-teal-300' : 'text-[10px] text-teal-600 dark:text-teal-400 italic'}`}>+ Saldo anterior (pré-Maxiprod): {formatCurrency(saldoAnterior)}</p>
               )}
             </div>
           </div>

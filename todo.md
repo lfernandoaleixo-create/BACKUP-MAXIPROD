@@ -3692,3 +3692,4 @@
 - [x] Somar saldo anterior pré-Maxiprod (R$ 17.230,80) ao card Recebido da Serragem com discriminação visual + recalcular Saldo Disponível Caixa
 - [x] Corrigir layout mobile da aba Financeiro: título muito grande e abas embolando no celular
 - [x] Omitir 3 cards (Total para Divisão, Total para Divisão Disponível, Total para Divisão à Receber) para Fernando/Bruno/Gilson e renomear Saldo Disponível Caixa para Saldo Disponível Para Divisão. Manter tudo para Flavio/Thiago/Guilherme. Aplicar Serragem e Rojão.
+- [x] Diminuir card Vendas/Faturamento para Fernando/Bruno/Gilson (mesmo tamanho dos menores) e destacar info NFs + saldo anterior
