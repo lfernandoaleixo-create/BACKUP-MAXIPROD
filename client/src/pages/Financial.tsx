@@ -2093,7 +2093,7 @@ export default function Financial() {
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const ECOMMERCE_TAB_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
   const canSeeEcommerce = operator && ECOMMERCE_TAB_OPERATORS.includes(operator.name);
-  const SERRAGEM_ROJAO_OPERATORS = ["Guilherme", "Flavio", "Fernando", "Thiago"];
+  const SERRAGEM_ROJAO_OPERATORS = ["Guilherme", "Fernando", "Flavio", "Thiago", "Bruno", "Gilson"];
   const canSeeSerragemRojao = operator && SERRAGEM_ROJAO_OPERATORS.includes(operator.name);
   // Pedro só pode ver E-commerce, não tem acesso a Visão Geral, Inadimplência e Recebíveis
   const ECOMMERCE_ONLY_OPERATORS = ["Pedro"];

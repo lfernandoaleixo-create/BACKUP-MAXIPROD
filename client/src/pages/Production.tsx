@@ -1038,6 +1038,25 @@ export default function Production() {
           </div>
         )}
 
+        {/* Banner de alerta: data diferente de hoje (passada) */}
+        {!isToday && !isFutureDate && canEdit && viewMode === "lancamento" && (
+          <div className="flex items-center gap-2 mb-4 bg-orange-50 border-2 border-orange-300 rounded-xl px-4 py-3 animate-pulse">
+            <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-orange-800 font-bold">
+                Atenção Maria! Você está preenchendo produção para {new Date(selectedDate + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })}, que NÃO é o dia de hoje.
+              </p>
+              <p className="text-xs text-orange-600 mt-0.5">Confira se é isso mesmo!</p>
+            </div>
+            <button
+              onClick={() => { setSelectedDate(getTodayBR()); resetEditState(); }}
+              className="text-xs bg-orange-600 text-white px-3 py-1.5 rounded-lg hover:bg-orange-700 transition-colors font-medium whitespace-nowrap"
+            >
+              Ir para Hoje
+            </button>
+          </div>
+        )}
+
         {/* Banner somente leitura para operadores que não são Maria */}
         {!canEdit && !isFutureDate && viewMode === "lancamento" && (
           <div className="flex items-center gap-2 mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
@@ -1666,11 +1685,11 @@ function ExpandableMachineRow({
               </div>
             )}
 
-            {canEdit && changed && (
+            {canEdit && (
               <div className="flex justify-end mt-3">
-                <button onClick={onSave} disabled={isSaving}
-                  className="px-4 py-2 bg-teal-600 text-white text-sm font-bold rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'OK'}
+                <button onClick={onSave} disabled={isSaving || !changed}
+                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors shadow-sm ${changed ? 'bg-teal-600 text-white hover:bg-teal-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'} disabled:opacity-40 disabled:cursor-not-allowed`}>
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : changed ? 'OK' : 'Salvar'}
                 </button>
               </div>
             )}
