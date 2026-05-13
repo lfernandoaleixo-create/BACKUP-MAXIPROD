@@ -39,7 +39,7 @@ interface FinancialData {
 }
 
 /* ---- Layout de Cards Financeiros ---- */
-function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading, sociosDetalhado, contasPagasDetalhado, saldoAnterior, hideDivisionCards, faltaReceber }: {
+function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading, sociosDetalhado, contasPagasDetalhado, saldoAnterior, hideDivisionCards, faltaReceber, selectedMonth, onMonthChange, monthOptions }: {
   data: FinancialData;
   title: string;
   icon: React.ReactNode;
@@ -52,6 +52,9 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
   saldoAnterior?: number;
   hideDivisionCards?: boolean;
   faltaReceber?: number;
+  selectedMonth?: string;
+  onMonthChange?: (month: string) => void;
+  monthOptions?: Array<{ value: string; label: string; startDate: string; endDate: string }>;
 }) {
   const [showSaidas, setShowSaidas] = useState(false);
   const [showSocios, setShowSocios] = useState(false);
@@ -92,7 +95,24 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
         <>
           {/* Card principal: VENDAS/FATURAMENTO */}
           <div className={`bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/30 dark:to-emerald-900/30 border border-teal-200 dark:border-teal-700 rounded-xl p-4 shadow-sm ${hideDivisionCards ? 'md:max-w-[calc(50%-0.375rem)]' : ''}`}>
-            <p className="text-xs font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wider">Vendas/Faturamento</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-teal-700 dark:text-teal-300 uppercase tracking-wider">Vendas/Faturamento</p>
+              {selectedMonth !== undefined && onMonthChange && monthOptions && (
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-teal-500" />
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => onMonthChange(e.target.value)}
+                    className="text-xs border border-teal-200 dark:border-teal-600 rounded-lg px-2 py-1 bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                  >
+                    <option value="all">Todos</option>
+                    {monthOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
             <p className="text-2xl font-bold text-teal-900 dark:text-teal-100 mt-1">{formatCurrency(totalVendasComAnterior)}</p>
             <div className="mt-1 space-y-0.5">
               {nfCount !== undefined && (
@@ -531,8 +551,8 @@ export default function SerragemRojaoTab() {
 
   return (
     <div className="space-y-4">
-      {/* Botão Voltar + Filtro de Mês */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      {/* Botão Voltar */}
+      <div className="flex items-center">
         <button
           onClick={() => setSelectedView("menu")}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
@@ -540,21 +560,6 @@ export default function SerragemRojaoTab() {
           <ArrowLeft className="w-4 h-4" />
           <span>Voltar</span>
         </button>
-
-        {/* Filtro de Mês */}
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-slate-400" />
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
-          >
-            <option value="all">Todos os meses</option>
-            {monthOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
       {/* Conteúdo */}
@@ -572,6 +577,9 @@ export default function SerragemRojaoTab() {
           saldoAnterior={SALDO_ANTERIOR_SERRAGEM}
           hideDivisionCards={hideDivisionCards}
           faltaReceber={hideDivisionCards ? (serragemVendas - serragemRecebidoComAnterior) : undefined}
+          selectedMonth={selectedMonth}
+          onMonthChange={setSelectedMonth}
+          monthOptions={monthOptions}
         />
       )}
       {selectedView === "rojao" && (
@@ -587,6 +595,9 @@ export default function SerragemRojaoTab() {
           contasPagasDetalhado={rojaoContasQuery.data?.contasPagasDetalhado}
           hideDivisionCards={hideDivisionCards}
           faltaReceber={hideDivisionCards ? (rojaoVendas - rojaoRecebido) : undefined}
+          selectedMonth={selectedMonth}
+          onMonthChange={setSelectedMonth}
+          monthOptions={monthOptions}
         />
       )}
     </div>

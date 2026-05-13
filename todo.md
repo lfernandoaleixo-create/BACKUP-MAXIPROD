@@ -3696,3 +3696,4 @@
 - [x] Filtro de mês na aba Serragem/Rojão afetando todos os cards (Vendas, Recebido, Saídas, Saldo)
 - [x] Para Fernando/Bruno/Gilson: filtro de mês apenas no Vendas/Faturamento (outros cards sem filtro)
 - [x] Para Fernando/Bruno/Gilson: adicionar "Falta receber" em vermelho no card Recebido (Vendas - Recebido)
+- [x] Mover seletor de mês para dentro do card Vendas/Faturamento
