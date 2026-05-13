@@ -2165,33 +2165,33 @@ export default function Financial() {
         </div>
 
         {/* Sub-abas */}
-        <div className="flex items-center justify-between md:justify-center gap-0.5 md:gap-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1 md:p-2">
+        <div className="flex items-center gap-0.5 md:gap-2 md:justify-center bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-1 md:p-2 overflow-x-auto scrollbar-hide -mx-2 md:mx-0 px-1 md:px-0">
           {!isEcommerceOnly && (
             <button
               onClick={() => setActiveTab("visao-geral")}
-              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-1.5 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[9px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-2 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "visao-geral"
                   ? "bg-teal-600 text-white shadow-md"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               <BarChart3 className="hidden md:block w-4 h-4 shrink-0" />
-              <span className="md:hidden">Geral</span><span className="hidden md:inline">Visão Geral</span>
+              <span>Visão Geral</span>
             </button>
           )}
           {!isEcommerceOnly && (
             <button
               onClick={() => setActiveTab("inadimplencia")}
-              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-1.5 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[9px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-2 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "inadimplencia"
                   ? "bg-red-600 text-white shadow-md"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               <AlertTriangle className="hidden md:block w-4 h-4 shrink-0" />
-              <span className="md:hidden">Inadimp.</span><span className="hidden md:inline">Inadimplência</span>
+              <span>Inadimplência</span>
               {summary && summary.receber.vencidas.count > 0 && (
-                <span className={`hidden md:inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold leading-none ${
+                <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold leading-none ${
                   activeTab === "inadimplencia"
                     ? "bg-white/25 text-white"
                     : "bg-red-100 text-red-700 border border-red-200"
@@ -2209,14 +2209,14 @@ export default function Financial() {
                 }
                 setActiveTab("recebiveis");
               }}
-              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-1.5 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[9px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-2 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "recebiveis"
                   ? "bg-blue-600 text-white shadow-md"
                   : "text-slate-600 hover:bg-slate-100"
               } ${recebiveisBlinking ? "animate-discount-blink" : ""}`}
             >
               <Landmark className="hidden md:block w-4 h-4 shrink-0" />
-              <span className="md:hidden">Receb.</span><span className="hidden md:inline">Recebíveis</span>
+              <span>Recebíveis</span>
               {recebiveisBlinking && (
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.6)] shrink-0" />
               )}
@@ -2225,27 +2225,27 @@ export default function Financial() {
           {canSeeEcommerce && (
             <button
               onClick={() => setActiveTab("ecommerce")}
-              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-1.5 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[9px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-2 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "ecommerce"
                   ? "bg-orange-600 text-white shadow-md"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               <ShoppingCart className="hidden md:block w-4 h-4 shrink-0" />
-              <span className="md:hidden">E-com.</span><span className="hidden md:inline">E-commerce</span>
+              <span>E-commerce</span>
             </button>
           )}
           {canSeeSerragemRojao && (
             <button
               onClick={() => setActiveTab("serragem-rojao")}
-              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-1.5 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[9px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-2 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "serragem-rojao"
                   ? "bg-green-700 text-white shadow-md"
                   : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
               }`}
             >
               <SlidersHorizontal className="hidden md:block w-4 h-4 shrink-0" />
-              <span className="md:hidden">Serragem</span><span className="hidden md:inline">Análise Serragem/Rojão</span>
+              <span>Análise Serragem/Rojão</span>
             </button>
           )}
         </div>
