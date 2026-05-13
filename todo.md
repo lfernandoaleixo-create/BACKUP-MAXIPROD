@@ -3694,3 +3694,5 @@
 - [x] Omitir 3 cards (Total para Divisão, Total para Divisão Disponível, Total para Divisão à Receber) para Fernando/Bruno/Gilson e renomear Saldo Disponível Caixa para Saldo Disponível Para Divisão. Manter tudo para Flavio/Thiago/Guilherme. Aplicar Serragem e Rojão.
 - [x] Diminuir card Vendas (v2 - largura limitada)/Faturamento para Fernando/Bruno/Gilson (mesmo tamanho dos menores) e destacar info NFs + saldo anterior
 - [x] Filtro de mês na aba Serragem/Rojão afetando todos os cards (Vendas, Recebido, Saídas, Saldo)
+- [x] Para Fernando/Bruno/Gilson: filtro de mês apenas no Vendas/Faturamento (outros cards sem filtro)
+- [x] Para Fernando/Bruno/Gilson: adicionar "Falta receber" em vermelho no card Recebido (Vendas - Recebido)

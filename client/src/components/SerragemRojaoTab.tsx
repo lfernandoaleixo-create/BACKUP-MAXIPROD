@@ -39,7 +39,7 @@ interface FinancialData {
 }
 
 /* ---- Layout de Cards Financeiros ---- */
-function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading, sociosDetalhado, contasPagasDetalhado, saldoAnterior, hideDivisionCards }: {
+function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCount, isLoading, sociosDetalhado, contasPagasDetalhado, saldoAnterior, hideDivisionCards, faltaReceber }: {
   data: FinancialData;
   title: string;
   icon: React.ReactNode;
@@ -51,6 +51,7 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
   contasPagasDetalhado?: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; descricao: string; contaDestino: string }>;
   saldoAnterior?: number;
   hideDivisionCards?: boolean;
+  faltaReceber?: number;
 }) {
   const [showSaidas, setShowSaidas] = useState(false);
   const [showSocios, setShowSocios] = useState(false);
@@ -108,8 +109,18 @@ function FinancialCardsLayout({ data, title, icon, onExportPDF, exporting, nfCou
             {/* Coluna Esquerda */}
             <div className="space-y-3">
               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 shadow-sm">
-                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Recebido</p>
-                <p className="text-lg font-bold text-green-700 dark:text-green-400 mt-0.5">{formatCurrency(totalRecebidoComAnterior)}</p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Recebido</p>
+                    <p className="text-lg font-bold text-green-700 dark:text-green-400 mt-0.5">{formatCurrency(totalRecebidoComAnterior)}</p>
+                  </div>
+                  {faltaReceber !== undefined && faltaReceber > 0 && (
+                    <div className="text-right">
+                      <p className="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Falta receber</p>
+                      <p className="text-base font-bold text-red-600 dark:text-red-400 mt-0.5">{formatCurrency(faltaReceber)}</p>
+                    </div>
+                  )}
+                </div>
                 {saldoAnterior && (
                   <div className="mt-1 space-y-0.5">
                     <p className="text-[10px] text-green-600 dark:text-green-400">{formatCurrency(data.recebido)} (Maxiprod)</p>
@@ -296,23 +307,23 @@ export default function SerragemRojaoTab() {
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
-  // Buscar Contas Pagas / Retirada Sócios / Saídas Total
+  // Buscar Contas Pagas / Retirada Sócios / Saídas Total (sempre acumulado total, sem filtro de mês)
   const serragemContasQuery = trpc.serragemRojao.getContasPagas.useQuery(
-    { tipo: "SERRAGEM", startDate: filterStartDate, endDate: filterEndDate },
+    { tipo: "SERRAGEM", startDate: null, endDate: today },
     { enabled: selectedView === "serragem" || selectedView === "menu" }
   );
   const rojaoContasQuery = trpc.serragemRojao.getContasPagas.useQuery(
-    { tipo: "ROJÃO", startDate: filterStartDate, endDate: filterEndDate },
+    { tipo: "ROJÃO", startDate: null, endDate: today },
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
-  // Buscar Recebido (Contas a Receber liquidadas)
+  // Buscar Recebido (Contas a Receber liquidadas - sempre acumulado total, sem filtro de mês)
   const serragemRecebidoQuery = trpc.serragemRojao.getRecebido.useQuery(
-    { tipo: "SERRAGEM", startDate: filterStartDate, endDate: filterEndDate },
+    { tipo: "SERRAGEM", startDate: null, endDate: today },
     { enabled: selectedView === "serragem" || selectedView === "menu" }
   );
   const rojaoRecebidoQuery = trpc.serragemRojao.getRecebido.useQuery(
-    { tipo: "ROJÃO", startDate: filterStartDate, endDate: filterEndDate },
+    { tipo: "ROJÃO", startDate: null, endDate: today },
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
@@ -326,8 +337,8 @@ export default function SerragemRojaoTab() {
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
-  // Montar dados financeiros
-  const saldoAnteriorAtivo = selectedMonth === "all" ? SALDO_ANTERIOR_SERRAGEM : 0;
+  // Montar dados financeiros (Recebido/Saídas são sempre acumulado total, saldo anterior sempre incluso)
+  const saldoAnteriorAtivo = SALDO_ANTERIOR_SERRAGEM;
   const serragemRecebido = serragemRecebidoQuery.data?.total ?? 0;
   const serragemSaidas = serragemContasQuery.data?.saidasTotal ?? 0;
   const serragemVendasMaxiprod = serragemVendasQuery.data?.total ?? 0;
@@ -558,8 +569,9 @@ export default function SerragemRojaoTab() {
           isLoading={serragemVendasQuery.isLoading || serragemContasQuery.isLoading}
           sociosDetalhado={serragemContasQuery.data?.sociosDetalhado}
           contasPagasDetalhado={serragemContasQuery.data?.contasPagasDetalhado}
-          saldoAnterior={selectedMonth === "all" ? SALDO_ANTERIOR_SERRAGEM : undefined}
+          saldoAnterior={SALDO_ANTERIOR_SERRAGEM}
           hideDivisionCards={hideDivisionCards}
+          faltaReceber={hideDivisionCards ? (serragemVendas - serragemRecebidoComAnterior) : undefined}
         />
       )}
       {selectedView === "rojao" && (
@@ -574,6 +586,7 @@ export default function SerragemRojaoTab() {
           sociosDetalhado={rojaoContasQuery.data?.sociosDetalhado}
           contasPagasDetalhado={rojaoContasQuery.data?.contasPagasDetalhado}
           hideDivisionCards={hideDivisionCards}
+          faltaReceber={hideDivisionCards ? (rojaoVendas - rojaoRecebido) : undefined}
         />
       )}
     </div>
