@@ -3699,3 +3699,9 @@
 - [x] Mover seletor de mês para dentro do card Vendas/Faturamento
 - [x] Corrigir Falta receber para não sumir quando filtro de mês é aplicado
 - [x] Implementar proteções robustas para dados da aba Inadimplência (backup automático, histórico, proteção contra rollback)
+- [x] Criar tabela cobranca_planilha no banco de dados
+- [x] Criar router tRPC para CRUD da planilha de cobrança (getAll, getSummary, updateField, updateObservacao, updateCobranca, importBatch)
+- [x] Criar componente CobrancaPlanilhaView com visual profissional (cores por status, filtros, edição inline)
+- [x] Importar 88 títulos e 14 observações da planilha Excel INADIMPLÊNCIA.xlsx
+- [x] Integrar botão "Planilha de Cobrança" na aba Inadimplência para abrir a nova view
+- [x] Testes vitest para o router cobrancaPlanilha (8 testes passando)

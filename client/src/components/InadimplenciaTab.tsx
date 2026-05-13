@@ -14,6 +14,7 @@ import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import DecisaoCobrancaTutorial from "@/components/DecisaoCobrancaTutorial";
 import { Eye, Plus, PhoneOff, PhoneCall, Upload, Stamp, BarChart3, ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import CollectionMetricsPanel from "@/components/CollectionMetricsPanel";
+import CobrancaPlanilhaView from "@/components/CobrancaPlanilhaView";
 import { generateDecisionPdf } from "../lib/decisionPdfExport";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -572,6 +573,7 @@ export default function InadimplenciaTab() {
   const [phoneMenuSelected, setPhoneMenuSelected] = useState<'mute' | 'unmute' | 'register' | 'history' | null>(null);
   const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showCobrancaPlanilha, setShowCobrancaPlanilha] = useState(false);
   const [decisaoTutorialData, setDecisaoTutorialData] = useState<{clienteName: string; vendedorName: string} | null>(null);
   const [decisionPdfTitleId, setDecisionPdfTitleId] = useState<number | null>(null);
   const [showDecisionPdfHistory, setShowDecisionPdfHistory] = useState(false);
@@ -1014,6 +1016,11 @@ export default function InadimplenciaTab() {
     );
   }
 
+  // Show Planilha de Cobrança view
+  if (showCobrancaPlanilha) {
+    return <CobrancaPlanilhaView onClose={() => setShowCobrancaPlanilha(false)} />;
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -1053,9 +1060,9 @@ export default function InadimplenciaTab() {
           </button>
           {canCobranca && (
             <button
-              onClick={() => setShowImportDialog(true)}
+              onClick={() => setShowCobrancaPlanilha(true)}
               className="w-full md:w-auto flex items-center justify-center gap-1.5 h-[44px] md:h-9 rounded-xl md:rounded-lg bg-gradient-to-r from-emerald-700 to-emerald-600 text-white text-[11px] md:text-xs font-semibold shadow-md hover:shadow-lg hover:from-emerald-800 hover:to-emerald-700 transition-all hover:scale-[1.02] px-3 md:px-3"
-              title="Importar planilha de cobrança (XLSX)"
+              title="Abrir planilha de cobrança interativa"
             >
               <Upload className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
               <span className="text-center leading-tight">Planilha de Cobrança</span>

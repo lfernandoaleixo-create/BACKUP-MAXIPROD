@@ -1785,3 +1785,47 @@ export const inadimplenciaBackup = mysqlTable("inadimplencia_backup", {
 });
 export type InadimplenciaBackup = typeof inadimplenciaBackup.$inferSelect;
 export type InsertInadimplenciaBackup = typeof inadimplenciaBackup.$inferInsert;
+
+
+/**
+ * Planilha de Cobrança - dados importados da planilha Excel INADIMPLÊNCIA.xlsx
+ * Reproduz a aba "COBRANÇA" com visual interativo no dashboard.
+ * 
+ * REGRA: NUNCA apagar registros desta tabela. Dados manuais que não podem ser re-sincronizados.
+ * TABELA PROTEGIDA - incluída nas regras de backup da inadimplência.
+ * 
+ * Editável pelo Thiago e operadores com acesso financeiro.
+ * Status possíveis: Contatado, Em negociação, Promessa de Pgto, Pendente, Especial s/ cobrança, Protestado, Resolvido
+ */
+export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
+  id: int("id").autoincrement().primaryKey(),
+  empresa: varchar("empresa", { length: 500 }).notNull(),
+  descricao: text("descricao"),
+  cnpjCpf: varchar("cnpj_cpf", { length: 30 }),
+  municipio: varchar("municipio", { length: 200 }),
+  uf: varchar("uf", { length: 5 }),
+  pais: varchar("pais", { length: 50 }),
+  centroCustos: varchar("centro_custos", { length: 50 }), // BAMBU, ROJÃO, MADEIRA, SERRAGEM
+  valor: decimal("valor", { precision: 18, scale: 2 }),
+  vencimento: varchar("vencimento", { length: 10 }), // YYYY-MM-DD
+  diasVencidos: int("dias_vencidos"),
+  tipo: varchar("tipo", { length: 50 }), // Com protesto, Sem protesto
+  status: varchar("status", { length: 50 }).notNull().default("Pendente"),
+  // Campos de cobrança (datas ou texto como "cobrança pausada")
+  promessaPgto: text("promessa_pgto"),
+  primeiraCobranca: text("primeira_cobranca"),
+  semAcao1: text("sem_acao_1"),
+  segundaCobranca: text("segunda_cobranca"),
+  semAcao2: text("sem_acao_2"),
+  terceiraCobranca: text("terceira_cobranca"),
+  semAcao3: text("sem_acao_3"),
+  acaoFinal: text("acao_final"),
+  // Observações / comentários (importados dos triângulos vermelhos do Excel + edições manuais)
+  observacoes: text("observacoes"),
+  // Controle
+  updatedBy: varchar("updated_by", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CobrancaPlanilha = typeof cobrancaPlanilha.$inferSelect;
+export type InsertCobrancaPlanilha = typeof cobrancaPlanilha.$inferInsert;
