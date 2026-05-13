@@ -3671,20 +3671,5 @@
 - [x] Ocultar botão Métricas na inadimplência para todos exceto Guilherme
 - [x] Corrigir filtro de faturados: usar dataEntrega (quando disponível) além de dataEmissao para que pedidos faturados recentemente (mas emitidos há meses) apareçam no período correto (ex: pedido 384)
 - [x] Corrigir filtro de faturados na aba Faturamento (ÚLT. 30 DIAS): usar dataEntrega além de dataEmissao para que pedido 384 apareça
-- [x] Criar card "Análise Serragem/Rojão" na aba Financeiro ao lado do E-commerce, com sub-cards Serragem e Rojão contendo layout financeiro (valores zerados)
-- [x] Análise Serragem/Rojão: adicionar seletor de período (Mês Atual, Mês Anterior, Personalizado)
-- [x] Análise Serragem/Rojão: botão exportar relatório em PDF
-- [x] Análise Serragem/Rojão: restringir acesso a Guilherme, Flávio, Fernando e Thiago
-- [x] Mover seletor de período para dentro de cada análise (Serragem/Rojão), removendo do menu de seleção principal
-- [x] Serragem - Vendas/Faturamento: consultar NFs do Maxiprod (estado config=Serragem, estado=Emitida, situação=Autorizada+Não Enviada) e preencher card
-- [x] Serragem/Rojão - Contas Pagas + Retirada Sócios + Saídas Total: consultar Contas a Pagar (liquidação até hoje, estado PAGO, centro custo 13/14, sócios por fornecedor+referência)
-- [x] Retirada Sócios: ao clicar no card, expandir e mostrar valor individual de cada sócio (Gilson-458, Fernando-459, Bruno-460)
-- [x] Contas Pagas: card expansível ao clicar, mostrando lista detalhada de cada pagamento (excluindo sócios) com data, descrição, conta destino e valor
-- [x] Total para Divisão Disponível = mesmo valor do Saldo Disponível Caixa
-- [x] Serragem - Recebido: consultar Contas a Receber (liquidação até hoje, estado Recebidos, estado configurável Serragem) - valor esperado R$ 48.250,67
-- [x] Serragem - Vendas/Faturamento: somar saldo anterior (R$ 17.230,80) que existia antes do Maxiprod, com legenda explicativa
-- [x] Serragem/Rojão - Reorganizar: Contas Pagas e Retirada Sócios ficam dentro do card Saídas Total como seção expandível/recolhível
-- [x] Corrigir classificação de sócios: usar conta de destino (458/459/460) em vez de fornecedor+referência - total esperado R$ 43.620,00
-- [x] Rojão - Adicionar contas de destino 454 (Gilson), 455 (Fernando), 456 (Bruno) à classificação de sócios
-- [x] Total para Divisão = (Vendas/Faturamento - Recebido) + Saldo Disponível Caixa - esperado R$ 26.433,62
-- [x] Total para Divisão à Receber: consulta real Contas a Receber (estado A receber, estado configurável serragem/rojão, sem data) - esperado R$ 8.488,80 Serragem
+- [x] Bug: Aba Produção - botão de salvar máquinas falhando (Maria não consegue salvar algumas máquinas) - Corrigido: botão Salvar agora sempre visível quando máquina expandida
+- [x] Melhoria: Aba Produção - alerta visual quando a data selecionada não for o dia atual (chamar atenção da Maria)

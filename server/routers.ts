@@ -23,7 +23,6 @@ import { annotationRouter } from "./annotationRouter";
 import { collectionMetricsRouter } from "./collectionMetricsRouter";
 import { suppliersRouter } from "./suppliersRouter";
 import { salesMetricsRouter } from "./salesMetricsRouter";
-import { serragemRojaoRouter } from "./serragemRojaoRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -38,7 +37,6 @@ export const appRouter = router({
   annotations: annotationRouter,
   collectionMetrics: collectionMetricsRouter,
   salesMetrics: salesMetricsRouter,
-  serragemRojao: serragemRojaoRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
