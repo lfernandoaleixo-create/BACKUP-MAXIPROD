@@ -1058,7 +1058,7 @@ export default function InadimplenciaTab() {
               title="Importar planilha de cobrança (XLSX)"
             >
               <Upload className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-              <span className="text-center leading-tight">Importar Planilha</span>
+              <span className="text-center leading-tight">Planilha de Cobrança</span>
             </button>
           )}
           <button
