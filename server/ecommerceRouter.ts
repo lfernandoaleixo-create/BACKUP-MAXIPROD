@@ -9,7 +9,7 @@ import { ecommerceExpenses, ecommerceRefunds, depotInventory, ecommerceDailySale
 import { storagePut } from "./storage";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 
-const ECOMMERCE_ALLOWED_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
+const ECOMMERCE_ALLOWED_OPERATORS = ["Pedro", "Flavio", "Guilherme", "Thiago", "Thalita"];
 const SALES_REPORT_ALLOWED = ["Pedro", "Fernando", "Bruno", "Guilherme"];
 
 export const ecommerceRouter = router({

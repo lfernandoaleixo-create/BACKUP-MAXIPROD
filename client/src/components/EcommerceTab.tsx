@@ -84,6 +84,7 @@ function generateExpensesPdf(
   filters: { descricao: string; formaPagamento: string; dataInicio: string; dataFim: string; registradoPor: string },
   total: number,
   creditCards: any[] = [],
+  attachmentCounts: Record<number, number> = {},
 ) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -191,11 +192,12 @@ function generateExpensesPdf(
     exp.formaPagamento === "cartao_credito" ? getCardName(exp.cartaoId) : "—",
     exp.recorrente === 1 ? "Sim" : "Não",
     exp.registradoPor,
+    attachmentCounts[exp.id] ? `${attachmentCounts[exp.id]} doc(s)` : "—",
   ]);
 
   autoTable(doc, {
     startY: y,
-    head: [["Data", "Descrição", "Pagamento", "Parc.", "Valor", "Cartão", "Recor.", "Por"]],
+    head: [["Data", "Descrição", "Pagamento", "Parc.", "Valor", "Cartão", "Recor.", "Por", "Anexos"]],
     body: tableData,
     theme: "grid",
     headStyles: {
@@ -207,14 +209,15 @@ function generateExpensesPdf(
     },
     bodyStyles: { fontSize: 6.5, cellPadding: 2 },
     columnStyles: {
-      0: { cellWidth: 18 },
-      1: { cellWidth: 42 },
-      2: { cellWidth: 22, halign: "center" },
-      3: { cellWidth: 12, halign: "center" },
-      4: { cellWidth: 24, halign: "right", fontStyle: "bold" },
-      5: { cellWidth: 32 },
-      6: { cellWidth: 14, halign: "center" },
-      7: { cellWidth: 18, halign: "center" },
+      0: { cellWidth: 16 },
+      1: { cellWidth: 36 },
+      2: { cellWidth: 20, halign: "center" },
+      3: { cellWidth: 10, halign: "center" },
+      4: { cellWidth: 22, halign: "right", fontStyle: "bold" },
+      5: { cellWidth: 28 },
+      6: { cellWidth: 12, halign: "center" },
+      7: { cellWidth: 16, halign: "center" },
+      8: { cellWidth: 16, halign: "center" },
     },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     didParseCell: (data: any) => {
@@ -282,6 +285,7 @@ export default function EcommerceTab() {
   // Anexos (clips)
   const [attachmentExpenseId, setAttachmentExpenseId] = useState<number | null>(null);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cardNome, setCardNome] = useState("");
   const [cardBandeira, setCardBandeira] = useState("");
@@ -528,6 +532,7 @@ export default function EcommerceTab() {
       },
       filteredTotal,
       creditCards,
+      attachmentCounts,
     );
   };
 
@@ -960,7 +965,20 @@ export default function EcommerceTab() {
                       {formatDate(exp.dataCompra)}
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-slate-800 font-medium text-xs">{exp.descricao}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-slate-800 font-medium text-xs">{exp.descricao}</p>
+                        {attachmentCounts[exp.id] && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex items-center gap-0.5 text-[9px] text-orange-500 bg-orange-50 border border-orange-200 rounded px-1 py-0.5 cursor-default">
+                                <Paperclip className="w-2.5 h-2.5" />
+                                {attachmentCounts[exp.id]}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>{attachmentCounts[exp.id]} anexo(s)</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
                       {exp.observacao && (
                         <p className="text-[10px] text-slate-400 mt-0.5">{exp.observacao}</p>
                       )}
@@ -1324,29 +1342,83 @@ export default function EcommerceTab() {
               </p>
             )}
 
+            {/* Image preview */}
+            {previewImage && (
+              <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="absolute top-2 right-2 bg-white/90 rounded-full p-1 shadow-sm hover:bg-white transition-colors cursor-pointer z-10"
+                >
+                  <X className="w-4 h-4 text-slate-600" />
+                </button>
+                <img
+                  src={previewImage.url}
+                  alt={previewImage.name}
+                  className="w-full max-h-64 object-contain"
+                />
+                <p className="text-[10px] text-slate-500 text-center py-1 bg-white/80">{previewImage.name}</p>
+              </div>
+            )}
+
             {/* Attachment list */}
             {currentAttachments.length > 0 ? (
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {currentAttachments.map((att: any) => (
                   <div key={att.id} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                    {getFileIcon(att.mimeType)}
+                    {att.mimeType.startsWith("image/") ? (
+                      <button
+                        onClick={() => setPreviewImage({ url: att.fileUrl, name: att.fileName })}
+                        className="w-8 h-8 rounded overflow-hidden border border-slate-200 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-orange-300 transition-all"
+                      >
+                        <img src={att.fileUrl} alt={att.fileName} className="w-full h-full object-cover" />
+                      </button>
+                    ) : (
+                      getFileIcon(att.mimeType)
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-slate-700 truncate">{att.fileName}</p>
                       <p className="text-[10px] text-slate-400">{formatFileSize(att.fileSize)} • {att.uploadedBy}</p>
                     </div>
                     <div className="flex items-center gap-1">
+                      {att.mimeType.startsWith("image/") ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setPreviewImage({ url: att.fileUrl, name: att.fileName })}
+                              className="text-slate-400 hover:text-blue-500 transition-colors p-1 cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Visualizar</TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a
+                              href={att.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-slate-400 hover:text-blue-500 transition-colors p-1"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent>Baixar</TooltipContent>
+                        </Tooltip>
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <a
                             href={att.fileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-slate-400 hover:text-blue-500 transition-colors p-1"
+                            className="text-slate-400 hover:text-green-500 transition-colors p-1"
                           >
-                            {att.mimeType.startsWith("image/") ? <Eye className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+                            <Download className="w-3.5 h-3.5" />
                           </a>
                         </TooltipTrigger>
-                        <TooltipContent>{att.mimeType.startsWith("image/") ? "Visualizar" : "Baixar"}</TooltipContent>
+                        <TooltipContent>Baixar</TooltipContent>
                       </Tooltip>
                       {(operator?.name === att.uploadedBy || operator?.name === "Guilherme") && (
                         <Tooltip>

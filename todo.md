@@ -3718,3 +3718,7 @@
 - [x] Despesas: adicionar ícone de clips para anexar documentos (PDF, planilha, imagem) ao criar nova despesa
 - [x] Despesas: adicionar ícone de clips nas despesas já existentes para anexar documentos posteriormente
 - [x] Despesas: criar tabela de anexos no banco e endpoints de upload/listagem/download
+- [x] Liberar acesso de Thiago e Thalita à aba E-commerce
+- [x] Despesas: preview de imagens inline no modal de anexos
+- [x] Despesas: indicador visual na tabela quando despesa tem anexo
+- [x] Despesas: exportar PDF com lista de anexos

@@ -2091,7 +2091,7 @@ function CashFlowCard() {
 export default function Financial() {
   const { hasGranularAccess, operator } = useOperator();
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
-  const ECOMMERCE_TAB_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
+  const ECOMMERCE_TAB_OPERATORS = ["Pedro", "Flavio", "Guilherme", "Thiago", "Thalita"];
   const canSeeEcommerce = operator && ECOMMERCE_TAB_OPERATORS.includes(operator.name);
   const SERRAGEM_ROJAO_OPERATORS = ["Guilherme", "Fernando", "Flavio", "Thiago", "Bruno", "Gilson"];
   const canSeeSerragemRojao = operator && SERRAGEM_ROJAO_OPERATORS.includes(operator.name);
