@@ -1847,3 +1847,21 @@ export const cobrancaPlanilhaBackup = mysqlTable("cobranca_planilha_backup", {
 });
 export type CobrancaPlanilhaBackup = typeof cobrancaPlanilhaBackup.$inferSelect;
 export type InsertCobrancaPlanilhaBackup = typeof cobrancaPlanilhaBackup.$inferInsert;
+
+/**
+ * Anexos (clips) de despesas do e-commerce.
+ * Pedro pode anexar PDFs, planilhas e imagens às despesas.
+ */
+export const expenseAttachments = mysqlTable("expense_attachments", {
+  id: int("id").autoincrement().primaryKey(),
+  expenseId: int("expense_id").notNull(), // FK para ecommerce_expenses
+  fileName: varchar("file_name", { length: 500 }).notNull(),
+  fileUrl: text("file_url").notNull(), // URL pública no S3
+  fileKey: varchar("file_key", { length: 500 }).notNull(), // chave no S3
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  fileSize: int("file_size").notNull(), // em bytes
+  uploadedBy: varchar("uploaded_by", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type ExpenseAttachment = typeof expenseAttachments.$inferSelect;
+export type InsertExpenseAttachment = typeof expenseAttachments.$inferInsert;

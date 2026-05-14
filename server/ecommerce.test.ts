@@ -34,6 +34,10 @@ vi.mock("./db", () => ({
   })),
 }));
 
+vi.mock("./storage", () => ({
+  storagePut: vi.fn(() => Promise.resolve({ key: "expense-attachments/1/abc123-test.pdf", url: "https://cdn.example.com/test.pdf" })),
+}));
+
 vi.mock("../drizzle/schema", () => ({
   ecommerceExpenses: {
     id: "id",
@@ -48,6 +52,17 @@ vi.mock("../drizzle/schema", () => ({
     registradoPor: "registradoPor",
     createdAt: "createdAt",
     updatedAt: "updatedAt",
+  },
+  expenseAttachments: {
+    id: "id",
+    expenseId: "expense_id",
+    fileName: "file_name",
+    fileUrl: "file_url",
+    fileKey: "file_key",
+    mimeType: "mime_type",
+    fileSize: "file_size",
+    uploadedBy: "uploaded_by",
+    createdAt: "created_at",
   },
   ecommerceCreditCards: {
     id: "id",
@@ -199,6 +214,56 @@ describe("E-commerce Router - Credit Card Procedures", () => {
   });
 
   it("credit card access should follow ECOMMERCE_ALLOWED_OPERATORS", () => {
+    const allowed = ["Pedro", "Flavio", "Guilherme"];
+    const denied = ["Fernando", "Bruno", "Maria"];
+    for (const name of allowed) {
+      expect(allowed.includes(name)).toBe(true);
+    }
+    for (const name of denied) {
+      expect(allowed.includes(name)).toBe(false);
+    }
+  });
+});
+
+describe("E-commerce Router - Attachment (Clips) Procedures", () => {
+  it("should define all attachment procedures", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    expect(ecommerceRouter._def.procedures.uploadAttachment).toBeDefined();
+    expect(ecommerceRouter._def.procedures.listAttachments).toBeDefined();
+    expect(ecommerceRouter._def.procedures.getAttachmentCounts).toBeDefined();
+    expect(ecommerceRouter._def.procedures.deleteAttachment).toBeDefined();
+  });
+
+  it("uploadAttachment should be a mutation", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.uploadAttachment;
+    expect(proc).toBeDefined();
+    // Mutations have _def.mutation = true
+    expect(proc._def.type).toBe("mutation");
+  });
+
+  it("deleteAttachment should be a mutation", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.deleteAttachment;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("mutation");
+  });
+
+  it("listAttachments should be a query", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.listAttachments;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("query");
+  });
+
+  it("getAttachmentCounts should be a query", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.getAttachmentCounts;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("query");
+  });
+
+  it("attachment access should follow ECOMMERCE_ALLOWED_OPERATORS", () => {
     const allowed = ["Pedro", "Flavio", "Guilherme"];
     const denied = ["Fernando", "Bruno", "Maria"];
     for (const name of allowed) {

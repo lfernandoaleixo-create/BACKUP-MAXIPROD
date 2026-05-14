@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `expense_attachments` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`expense_id` int NOT NULL,\n\t`file_name` varchar(500) NOT NULL,\n\t`file_url` text NOT NULL,\n\t`file_key` varchar(500) NOT NULL,\n\t`mime_type` varchar(100) NOT NULL,\n\t`file_size` int NOT NULL,\n\t`uploaded_by` varchar(100) NOT NULL,\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `expense_attachments_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `expense_attachments` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`expense_id` int NOT NULL,\n\t`file_name` varchar(500) NOT NULL,\n\t`file_url` text NOT NULL,\n\t`file_key` varchar(500) NOT NULL,\n\t`mime_type` varchar(100) NOT NULL,\n\t`file_size` int NOT NULL,\n\t`uploaded_by` varchar(100) NOT NULL,\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `expense_attachments_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 360
+}

@@ -2,7 +2,7 @@
  * E-commerce Tab - Despesas e Estornos da operação e-commerce (contas a pagar filial)
  * Acesso restrito: Pedro, Flavio, Guilherme
  */
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import RefundsSection from "@/components/RefundsSection";
 import { generateSalesReportPdf } from "@/lib/ecommerceSalesReportPdf";
 import { trpc } from "@/lib/trpc";
@@ -42,7 +42,18 @@ import {
   RefreshCw,
   Settings,
   Check,
+  Paperclip,
+  FileText,
+  Image,
+  Download,
+  Eye,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -268,6 +279,10 @@ export default function EcommerceTab() {
   const [recorrente, setRecorrente] = useState(false);
   const [cartaoId, setCartaoId] = useState<number | null>(null);
   const [showCardManager, setShowCardManager] = useState(false);
+  // Anexos (clips)
+  const [attachmentExpenseId, setAttachmentExpenseId] = useState<number | null>(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [cardNome, setCardNome] = useState("");
   const [cardBandeira, setCardBandeira] = useState("");
   const [cardUltimos4, setCardUltimos4] = useState("");
@@ -345,6 +360,74 @@ export default function EcommerceTab() {
       }
     },
   });
+
+  // Attachment queries/mutations
+  const { data: attachmentCountsData, refetch: refetchAttachmentCounts } = trpc.ecommerce.getAttachmentCounts.useQuery(
+    { operatorName },
+    { enabled: !!operatorName }
+  );
+  const attachmentCounts: Record<number, number> = attachmentCountsData?.counts || {};
+
+  const { data: attachmentsData, refetch: refetchAttachments } = trpc.ecommerce.listAttachments.useQuery(
+    { operatorName, expenseId: attachmentExpenseId || 0 },
+    { enabled: !!operatorName && !!attachmentExpenseId }
+  );
+  const currentAttachments = attachmentsData?.attachments || [];
+
+  const uploadAttachmentMutation = trpc.ecommerce.uploadAttachment.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        refetchAttachments();
+        refetchAttachmentCounts();
+      }
+      setUploadingAttachment(false);
+    },
+    onError: () => setUploadingAttachment(false),
+  });
+
+  const deleteAttachmentMutation = trpc.ecommerce.deleteAttachment.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        refetchAttachments();
+        refetchAttachmentCounts();
+      }
+    },
+  });
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !attachmentExpenseId) return;
+    const file = files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Arquivo muito grande (máx. 10MB)");
+      return;
+    }
+    setUploadingAttachment(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      uploadAttachmentMutation.mutate({
+        operatorName,
+        expenseId: attachmentExpenseId,
+        fileName: file.name,
+        fileData: base64,
+        mimeType: file.type,
+        fileSize: file.size,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith("image/")) return <Image className="w-4 h-4 text-blue-500" />;
+    if (mimeType === "application/pdf") return <FileText className="w-4 h-4 text-red-500" />;
+    return <FileText className="w-4 h-4 text-green-500" />;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   const resetExpenseForm = () => {
     setShowForm(false);
@@ -923,6 +1006,29 @@ export default function EcommerceTab() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
+                        {/* Clips - Anexos */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => setAttachmentExpenseId(exp.id)}
+                              className={`transition-colors cursor-pointer relative ${
+                                attachmentCounts[exp.id] ? "text-orange-500 hover:text-orange-700" : "text-slate-300 hover:text-orange-500"
+                              }`}
+                            >
+                              <Paperclip className="w-3.5 h-3.5" />
+                              {attachmentCounts[exp.id] && (
+                                <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                                  {attachmentCounts[exp.id]}
+                                </span>
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {attachmentCounts[exp.id]
+                              ? `${attachmentCounts[exp.id]} anexo(s)`
+                              : "Anexar documento"}
+                          </TooltipContent>
+                        </Tooltip>
                         {canEdit && (
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -1171,6 +1277,104 @@ export default function EcommerceTab() {
           </div>
         )}
       </div>
+
+      {/* Modal de Anexos (Clips) */}
+      <Dialog open={!!attachmentExpenseId} onOpenChange={(open) => { if (!open) setAttachmentExpenseId(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Paperclip className="w-4 h-4 text-orange-500" />
+              Anexos da Despesa
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Upload area */}
+            <div
+              className="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center hover:border-orange-300 transition-colors cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleFileUpload(e.dataTransfer.files); }}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.xlsx,.xls,.csv,.docx,.jpg,.jpeg,.png,.webp,.gif"
+                onChange={(e) => handleFileUpload(e.target.files)}
+              />
+              {uploadingAttachment ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+                  <span className="text-sm text-slate-500">Enviando...</span>
+                </div>
+              ) : (
+                <>
+                  <Paperclip className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                  <p className="text-sm text-slate-500">Clique ou arraste um arquivo aqui</p>
+                  <p className="text-[10px] text-slate-400 mt-1">PDF, Excel, imagem (máx. 10MB)</p>
+                </>
+              )}
+            </div>
+
+            {/* Upload error */}
+            {uploadAttachmentMutation.data && !uploadAttachmentMutation.data.success && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                {uploadAttachmentMutation.data.error}
+              </p>
+            )}
+
+            {/* Attachment list */}
+            {currentAttachments.length > 0 ? (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {currentAttachments.map((att: any) => (
+                  <div key={att.id} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                    {getFileIcon(att.mimeType)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-slate-700 truncate">{att.fileName}</p>
+                      <p className="text-[10px] text-slate-400">{formatFileSize(att.fileSize)} • {att.uploadedBy}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a
+                            href={att.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-400 hover:text-blue-500 transition-colors p-1"
+                          >
+                            {att.mimeType.startsWith("image/") ? <Eye className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>{att.mimeType.startsWith("image/") ? "Visualizar" : "Baixar"}</TooltipContent>
+                      </Tooltip>
+                      {(operator?.name === att.uploadedBy || operator?.name === "Guilherme") && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => {
+                                if (confirm(`Excluir "${att.fileName}"?`)) {
+                                  deleteAttachmentMutation.mutate({ operatorName, id: att.id });
+                                }
+                              }}
+                              className="text-slate-400 hover:text-red-500 transition-colors p-1 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Excluir anexo</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 text-center py-3">Nenhum anexo nesta despesa</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Separator between Despesas and Estornos */}
       <div className="my-10">

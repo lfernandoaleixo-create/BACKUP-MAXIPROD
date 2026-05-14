@@ -5,7 +5,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { ecommerceExpenses, ecommerceRefunds, depotInventory, ecommerceDailySales, ecommerceCreditCards } from "../drizzle/schema";
+import { ecommerceExpenses, ecommerceRefunds, depotInventory, ecommerceDailySales, ecommerceCreditCards, expenseAttachments } from "../drizzle/schema";
+import { storagePut } from "./storage";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 
 const ECOMMERCE_ALLOWED_OPERATORS = ["Pedro", "Flavio", "Guilherme"];
@@ -616,6 +617,142 @@ export const ecommerceRouter = router({
         return { success: false, error: `Cartão em uso por ${usage.count} despesa(s). Desative-o em vez de excluir.` };
       }
       await db.delete(ecommerceCreditCards).where(eq(ecommerceCreditCards.id, input.id));
+      return { success: true };
+    }),
+
+  // ==================== ANEXOS (CLIPS) ====================
+
+  /**
+   * Upload an attachment to an expense
+   * Receives base64-encoded file data, uploads to S3, saves metadata
+   */
+  uploadAttachment: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      expenseId: z.number(),
+      fileName: z.string().min(1).max(500),
+      fileData: z.string(), // base64-encoded file content
+      mimeType: z.string(),
+      fileSize: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+
+      // Validate expense exists
+      const [expense] = await db.select().from(ecommerceExpenses).where(eq(ecommerceExpenses.id, input.expenseId));
+      if (!expense) return { success: false, error: "Despesa não encontrada" };
+
+      // Validate file size (max 10MB)
+      if (input.fileSize > 10 * 1024 * 1024) {
+        return { success: false, error: "Arquivo muito grande (máx. 10MB)" };
+      }
+
+      // Validate mime type
+      const allowedTypes = [
+        "application/pdf",
+        "image/jpeg", "image/png", "image/webp", "image/gif",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // xlsx
+        "application/vnd.ms-excel", // xls
+        "text/csv",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
+      ];
+      if (!allowedTypes.includes(input.mimeType)) {
+        return { success: false, error: "Tipo de arquivo não permitido. Use PDF, imagem, Excel ou CSV." };
+      }
+
+      try {
+        // Upload to S3
+        const buffer = Buffer.from(input.fileData, "base64");
+        const randomSuffix = Math.random().toString(36).substring(2, 10);
+        const sanitizedName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const fileKey = `expense-attachments/${input.expenseId}/${randomSuffix}-${sanitizedName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+
+        // Save metadata to DB
+        await db.insert(expenseAttachments).values({
+          expenseId: input.expenseId,
+          fileName: input.fileName,
+          fileUrl: url,
+          fileKey: fileKey,
+          mimeType: input.mimeType,
+          fileSize: input.fileSize,
+          uploadedBy: input.operatorName,
+        });
+
+        return { success: true, url };
+      } catch (err: any) {
+        return { success: false, error: `Erro ao fazer upload: ${err.message}` };
+      }
+    }),
+
+  /**
+   * List attachments for a specific expense
+   */
+  listAttachments: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      expenseId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", attachments: [] };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", attachments: [] };
+      const rows = await db.select().from(expenseAttachments)
+        .where(eq(expenseAttachments.expenseId, input.expenseId))
+        .orderBy(desc(expenseAttachments.createdAt));
+      return { success: true, attachments: rows };
+    }),
+
+  /**
+   * Get attachment counts for all expenses (for showing badge)
+   */
+  getAttachmentCounts: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+    }))
+    .query(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", counts: {} };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", counts: {} };
+      const rows = await db.select({
+        expenseId: expenseAttachments.expenseId,
+        count: sql<number>`COUNT(*)`,
+      }).from(expenseAttachments).groupBy(expenseAttachments.expenseId);
+      const counts: Record<number, number> = {};
+      for (const row of rows) {
+        counts[row.expenseId] = row.count;
+      }
+      return { success: true, counts };
+    }),
+
+  /**
+   * Delete an attachment (only the uploader or Guilherme can delete)
+   */
+  deleteAttachment: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      const [attachment] = await db.select().from(expenseAttachments).where(eq(expenseAttachments.id, input.id));
+      if (!attachment) return { success: false, error: "Anexo não encontrado" };
+      if (attachment.uploadedBy !== input.operatorName && input.operatorName !== "Guilherme") {
+        return { success: false, error: "Apenas quem enviou ou o admin pode excluir" };
+      }
+      await db.delete(expenseAttachments).where(eq(expenseAttachments.id, input.id));
       return { success: true };
     }),
 });
