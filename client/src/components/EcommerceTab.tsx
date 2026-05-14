@@ -288,6 +288,9 @@ export default function EcommerceTab() {
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Anexos pendentes (antes de salvar)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const pendingFileInputRef = useRef<HTMLInputElement>(null);
   const [cardNome, setCardNome] = useState("");
   const [cardBandeira, setCardBandeira] = useState("");
   const [cardUltimos4, setCardUltimos4] = useState("");
@@ -323,8 +326,23 @@ export default function EcommerceTab() {
   const activeCards = creditCards.filter((c: any) => c.ativo === 1);
 
   const addMutation = trpc.ecommerce.addExpense.useMutation({
-    onSuccess: (data) => {
-      if (data.success) {
+    onSuccess: async (data) => {
+      if (data.success && data.id) {
+        // Upload pending files after expense is created
+        if (pendingFiles.length > 0) {
+          for (const file of pendingFiles) {
+            const buffer = await file.arrayBuffer();
+            const base64 = btoa(Array.from(new Uint8Array(buffer), (b) => String.fromCharCode(b)).join(""));
+            uploadAttachmentMutation.mutate({
+              operatorName,
+              expenseId: data.id,
+              fileName: file.name,
+              fileData: base64,
+              mimeType: file.type,
+              fileSize: file.size,
+            });
+          }
+        }
         resetExpenseForm();
         refetch();
       }
@@ -443,6 +461,22 @@ export default function EcommerceTab() {
     setRecorrente(false);
     setCartaoId(null);
     setEditingId(null);
+    setPendingFiles([]);
+  };
+
+  const handleAddPendingFile = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Arquivo muito grande (máx. 10MB)");
+      return;
+    }
+    setPendingFiles((prev) => [...prev, file]);
+    if (pendingFileInputRef.current) pendingFileInputRef.current.value = "";
+  };
+
+  const removePendingFile = (index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const startEditExpense = (exp: any) => {
@@ -840,6 +874,49 @@ export default function EcommerceTab() {
               />
             </div>
           </div>
+          {/* Anexar documentos antes de salvar */}
+          {!editingId && (
+            <div className="border border-dashed border-orange-200 rounded-lg p-3 bg-white/50">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+                  <Paperclip className="w-3.5 h-3.5 text-orange-500" />
+                  Anexar documentos (opcional)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => pendingFileInputRef.current?.click()}
+                  className="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  Adicionar arquivo
+                </button>
+                <input
+                  ref={pendingFileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.xlsx,.xls,.csv,.docx,.jpg,.jpeg,.png,.webp,.gif"
+                  onChange={(e) => handleAddPendingFile(e.target.files)}
+                />
+              </div>
+              {pendingFiles.length > 0 ? (
+                <div className="space-y-1.5">
+                  {pendingFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-orange-50 rounded px-2.5 py-1.5 border border-orange-100">
+                      {file.type.startsWith("image/") ? <Image className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" /> : <FileText className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />}
+                      <span className="text-xs text-slate-700 truncate flex-1">{file.name}</span>
+                      <span className="text-[10px] text-slate-400">{file.size < 1024 * 1024 ? `${(file.size / 1024).toFixed(0)} KB` : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}</span>
+                      <button type="button" onClick={() => removePendingFile(idx)} className="text-slate-400 hover:text-red-500 cursor-pointer">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[10px] text-slate-400">PDF, Excel, imagem (máx. 10MB cada) — serão enviados ao salvar</p>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2">
             {editingId && (
               <Button type="button" variant="outline" onClick={resetExpenseForm}>

@@ -3726,3 +3726,5 @@
 - [x] E-commerce: criar tabela ecommerce_future_bills no banco
 - [x] E-commerce: criar endpoints tRPC para contas futuras (CRUD + anexos)
 - [x] E-commerce: criar componente frontend FutureBillsSection
+- [x] Despesas: permitir anexar documentos no formulário antes de salvar
+- [x] Contas Futuras: permitir anexar documentos no formulário antes de salvar

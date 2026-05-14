@@ -51,7 +51,7 @@ export const ecommerceRouter = router({
       }
       const db = await getDb();
       if (!db) return { success: false, error: "DB indisponível" };
-      await db.insert(ecommerceExpenses).values({
+      const [result] = await db.insert(ecommerceExpenses).values({
         descricao: input.descricao.trim(),
         dataCompra: input.dataCompra,
         formaPagamento: input.formaPagamento,
@@ -62,7 +62,7 @@ export const ecommerceRouter = router({
         cartaoId: input.cartaoId || null,
         registradoPor: input.operatorName,
       });
-      return { success: true };
+      return { success: true, id: Number(result.insertId) };
     }),
 
   /**
@@ -798,7 +798,7 @@ export const ecommerceRouter = router({
       }
       const db = await getDb();
       if (!db) return { success: false, error: "DB indisponível" };
-      await db.insert(ecommerceFutureBills).values({
+      const [result] = await db.insert(ecommerceFutureBills).values({
         descricao: input.descricao.trim(),
         dataVencimento: input.dataVencimento,
         formaPagamento: input.formaPagamento,
@@ -809,7 +809,7 @@ export const ecommerceRouter = router({
         cartaoId: input.cartaoId || null,
         registradoPor: input.operatorName,
       });
-      return { success: true };
+      return { success: true, id: Number(result.insertId) };
     }),
 
   /**

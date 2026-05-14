@@ -277,6 +277,9 @@ export default function FutureBillsSection() {
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Pending files (before save)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const pendingFileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries
   const { data: billsData, isLoading, refetch: refetchBills } = trpc.ecommerce.listFutureBills.useQuery({ operatorName });
@@ -289,7 +292,26 @@ export default function FutureBillsSection() {
   );
 
   // Mutations
-  const addBillMutation = trpc.ecommerce.addFutureBill.useMutation({ onSuccess: () => { refetchBills(); resetForm(); } });
+  const addBillMutation = trpc.ecommerce.addFutureBill.useMutation({
+    onSuccess: async (data: any) => {
+      if (data.success && data.id && pendingFiles.length > 0) {
+        for (const file of pendingFiles) {
+          const buffer = await file.arrayBuffer();
+          const base64 = btoa(Array.from(new Uint8Array(buffer), (b) => String.fromCharCode(b)).join(""));
+          uploadAttachmentMutation.mutate({
+            operatorName,
+            billId: data.id,
+            fileName: file.name,
+            fileData: base64,
+            mimeType: file.type,
+            fileSize: file.size,
+          });
+        }
+      }
+      refetchBills();
+      resetForm();
+    },
+  });
   const updateBillMutation = trpc.ecommerce.updateFutureBill.useMutation({ onSuccess: () => { refetchBills(); resetForm(); } });
   const deleteBillMutation = trpc.ecommerce.deleteFutureBill.useMutation({ onSuccess: () => refetchBills() });
   const uploadAttachmentMutation = trpc.ecommerce.uploadFutureBillAttachment.useMutation({ onSuccess: () => refetchAttachments() });
@@ -328,6 +350,22 @@ export default function FutureBillsSection() {
     setObservacao("");
     setRecorrente(false);
     setCartaoId(null);
+    setPendingFiles([]);
+  };
+
+  const handleAddPendingFile = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Arquivo muito grande (máx. 10MB)");
+      return;
+    }
+    setPendingFiles((prev) => [...prev, file]);
+    if (pendingFileInputRef.current) pendingFileInputRef.current.value = "";
+  };
+
+  const removePendingFile = (index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = () => {
@@ -653,6 +691,49 @@ export default function FutureBillsSection() {
               <Input value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Opcional" className="text-sm" />
             </div>
           </div>
+          {/* Anexar documentos antes de salvar */}
+          {!editingId && (
+            <div className="border border-dashed border-amber-200 rounded-lg p-3 bg-white/50 mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+                  <Paperclip className="w-3.5 h-3.5 text-amber-500" />
+                  Anexar documentos (opcional)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => pendingFileInputRef.current?.click()}
+                  className="text-xs text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  Adicionar arquivo
+                </button>
+                <input
+                  ref={pendingFileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.xlsx,.xls,.csv,.docx,.jpg,.jpeg,.png,.webp,.gif"
+                  onChange={(e) => handleAddPendingFile(e.target.files)}
+                />
+              </div>
+              {pendingFiles.length > 0 ? (
+                <div className="space-y-1.5">
+                  {pendingFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-amber-50 rounded px-2.5 py-1.5 border border-amber-100">
+                      {file.type.startsWith("image/") ? <Image className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" /> : <FileText className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />}
+                      <span className="text-xs text-slate-700 truncate flex-1">{file.name}</span>
+                      <span className="text-[10px] text-slate-400">{file.size < 1024 * 1024 ? `${(file.size / 1024).toFixed(0)} KB` : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}</span>
+                      <button type="button" onClick={() => removePendingFile(idx)} className="text-slate-400 hover:text-red-500 cursor-pointer">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[10px] text-slate-400">PDF, Excel, imagem (máx. 10MB cada) — serão enviados ao salvar</p>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end mt-4">
             <Button
               onClick={handleSubmit}
