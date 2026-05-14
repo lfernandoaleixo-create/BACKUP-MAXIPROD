@@ -4,7 +4,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 import {
   X, Search, Filter, ChevronDown, ChevronUp, Edit3, Save, MessageSquare,
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
-  CheckCircle2, Clock, Phone, Shield, Loader2, Eye
+  CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -109,6 +109,28 @@ function getRowBg(status: string) {
   return cfg.bg;
 }
 
+/** Extrair o nome-base do cliente (sem ref, NF, etc.) para agrupar */
+function getClientKey(empresa: string): string {
+  // Normaliza: remove espaços extras, uppercase
+  return (empresa || "").trim().toUpperCase();
+}
+
+/** Cor da barra lateral por status */
+function getStatusBarColor(status: string): string {
+  switch (status) {
+    case "Contatado": return "#3b82f6";
+    case "Em negociação": return "#f59e0b";
+    case "Promessa de Pgto": return "#10b981";
+    case "Não deu retorno": return "#a855f7";
+    case "Não atendeu": return "#ec4899";
+    case "Protestado": return "#f97316";
+    case "Jurídico": return "#ef4444";
+    case "Especial s/ cobrança": return "#06b6d4";
+    case "Cheque em compensação": return "#14b8a6";
+    default: return "#94a3b8";
+  }
+}
+
 interface CobrancaPlanilhaViewProps {
   onClose: () => void;
 }
@@ -125,6 +147,14 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     onSuccess: () => { refetch(); toast.success("Observação salva!"); },
     onError: (err) => toast.error(err.message),
   });
+  const createBackup = trpc.cobrancaPlanilha.createBackup.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Backup criado com sucesso! ${data.totalItems} títulos salvos.`);
+      refetchBackups();
+    },
+    onError: (err) => toast.error(`Erro ao criar backup: ${err.message}`),
+  });
+  const { data: backups, refetch: refetchBackups } = trpc.cobrancaPlanilha.listBackups.useQuery();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
@@ -135,6 +165,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [obsText, setObsText] = useState("");
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  const [showBackupInfo, setShowBackupInfo] = useState(false);
 
   // Permission: Thiago, Guilherme, Flavio can edit
   const canEdit = operator && ["Thiago", "Guilherme", "Flavio"].includes(operator.name);
@@ -214,6 +245,14 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     updateField.mutate({ id, field, value: value || null, updatedBy: operator!.name });
   }
 
+  function handleCreateBackup() {
+    if (!operator) {
+      toast.error("Operador não identificado");
+      return;
+    }
+    createBackup.mutate({ createdBy: operator.name });
+  }
+
   // Cobrança step display helper
   function renderCobrancaStep(label: string, value: string | null | undefined) {
     if (!value) return <span className="text-slate-300 text-[10px]">-</span>;
@@ -225,6 +264,20 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
       </span>
     );
   }
+
+  /** Determinar se um item é o primeiro de um novo grupo de cliente */
+  const clientBoundaries = useMemo(() => {
+    const boundaries = new Set<number>();
+    if (filteredItems.length === 0) return boundaries;
+    for (let i = 1; i < filteredItems.length; i++) {
+      const prevKey = getClientKey(filteredItems[i - 1].empresa);
+      const currKey = getClientKey(filteredItems[i].empresa);
+      if (prevKey !== currKey) {
+        boundaries.add(i);
+      }
+    }
+    return boundaries;
+  }, [filteredItems]);
 
   if (isLoading) {
     return (
@@ -257,7 +310,68 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             </p>
           </div>
         </div>
+        {/* Backup button */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowBackupInfo(!showBackupInfo)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 text-xs font-medium transition-colors"
+            title="Ver backups"
+          >
+            <Database className="w-3.5 h-3.5" />
+            {backups && backups.length > 0 ? `${backups.length} backup${backups.length !== 1 ? "s" : ""}` : "Backups"}
+          </button>
+          <button
+            onClick={handleCreateBackup}
+            disabled={createBackup.isPending}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+            title="Criar backup instantâneo de todos os dados da planilha"
+          >
+            {createBackup.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5" />
+            )}
+            Backup Instantâneo
+          </button>
+        </div>
       </div>
+
+      {/* Backup info panel */}
+      {showBackupInfo && backups && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5 text-blue-500" />
+              Histórico de Backups
+            </h3>
+            <button onClick={() => setShowBackupInfo(false)} className="text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          {backups.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">Nenhum backup criado ainda.</p>
+          ) : (
+            <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+              {backups.map((b) => (
+                <div key={b.id} className="flex items-center justify-between bg-white rounded-lg border border-slate-100 px-3 py-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <div>
+                      <span className="text-[11px] font-medium text-slate-700">
+                        {new Date(b.snapshotDate).toLocaleDateString("pt-BR")} às {new Date(b.snapshotDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      <span className="text-[10px] text-slate-400 ml-2">
+                        {b.totalItems} títulos
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-slate-400">por {b.createdBy || "Sistema"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Summary Cards */}
       {summary && (
@@ -377,8 +491,17 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                 const cfg = getStatusConfig(item.status);
                 const isExpanded = expandedRow === item.id;
                 const valor = item.valor ? parseFloat(String(item.valor)) : 0;
+                const isNewClient = clientBoundaries.has(idx);
                 return (
                   <React.Fragment key={item.id}>
+                    {/* Linha divisória entre clientes diferentes */}
+                    {isNewClient && (
+                      <tr>
+                        <td colSpan={12} className="p-0">
+                          <div className="h-[3px] bg-gradient-to-r from-slate-300 via-slate-400 to-slate-300" />
+                        </td>
+                      </tr>
+                    )}
                     <tr
                       className={`border-b border-slate-100 hover:bg-slate-50/50 transition-colors cursor-pointer ${idx % 2 === 0 ? "bg-white" : "bg-slate-25"}`}
                       onClick={() => setExpandedRow(isExpanded ? null : item.id)}
@@ -386,17 +509,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       {/* Empresa */}
                       <td className="px-3 py-2.5">
                         <div className="flex items-start gap-2">
-                          <div className={`w-1 h-8 rounded-full shrink-0 mt-0.5`} style={{
-                            backgroundColor: item.status === "Contatado" ? "#3b82f6" :
-                              item.status === "Em negociação" ? "#f59e0b" :
-                              item.status === "Promessa de Pgto" ? "#10b981" :
-                              item.status === "Não deu retorno" ? "#a855f7" :
-                              item.status === "Não atendeu" ? "#ec4899" :
-                              item.status === "Protestado" ? "#f97316" :
-                              item.status === "Jurídico" ? "#ef4444" :
-                              item.status === "Especial s/ cobrança" ? "#06b6d4" :
-                              item.status === "Cheque em compensação" ? "#14b8a6" :
-                              "#94a3b8"
+                          <div className="w-1 h-8 rounded-full shrink-0 mt-0.5" style={{
+                            backgroundColor: getStatusBarColor(item.status)
                           }} />
                           <div className="min-w-0">
                             <div className="font-semibold text-slate-800 text-[11px] leading-tight truncate max-w-[250px]" title={item.empresa}>

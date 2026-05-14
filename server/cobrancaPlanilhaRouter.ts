@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { cobrancaPlanilha } from "../drizzle/schema";
+import { cobrancaPlanilha, cobrancaPlanilhaBackup } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
 
 /**
@@ -245,5 +245,48 @@ export const cobrancaPlanilhaRouter = router({
     }
     
     return { total: all.length, byStatus, byCenter, totalValor };
+  }),
+
+  /**
+   * Criar backup instantâneo da planilha de cobrança
+   */
+  createBackup: publicProcedure
+    .input(z.object({
+      createdBy: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      // Buscar todos os registros atuais
+      const all = await db.select().from(cobrancaPlanilha);
+      
+      // Salvar snapshot
+      await db.insert(cobrancaPlanilhaBackup).values({
+        dataJson: all,
+        totalItems: all.length,
+        createdBy: input.createdBy,
+      });
+      
+      return { success: true, totalItems: all.length };
+    }),
+
+  /**
+   * Listar backups existentes (mais recentes primeiro)
+   */
+  listBackups: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db
+      .select({
+        id: cobrancaPlanilhaBackup.id,
+        snapshotDate: cobrancaPlanilhaBackup.snapshotDate,
+        totalItems: cobrancaPlanilhaBackup.totalItems,
+        createdBy: cobrancaPlanilhaBackup.createdBy,
+        createdAt: cobrancaPlanilhaBackup.createdAt,
+      })
+      .from(cobrancaPlanilhaBackup)
+      .orderBy(desc(cobrancaPlanilhaBackup.id))
+      .limit(20);
   }),
 });

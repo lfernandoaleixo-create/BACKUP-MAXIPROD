@@ -1829,3 +1829,19 @@ export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
 });
 export type CobrancaPlanilha = typeof cobrancaPlanilha.$inferSelect;
 export type InsertCobrancaPlanilha = typeof cobrancaPlanilha.$inferInsert;
+
+/**
+ * Backup instantâneo da Planilha de Cobrança.
+ * Salva snapshot JSON completo de todos os registros da cobranca_planilha.
+ * Permite restaurar dados em caso de perda ou erro.
+ */
+export const cobrancaPlanilhaBackup = mysqlTable("cobranca_planilha_backup", {
+  id: int("id").autoincrement().primaryKey(),
+  snapshotDate: timestamp("snapshotDate").defaultNow().notNull(),
+  dataJson: json("dataJson").notNull(),
+  totalItems: int("totalItems").notNull(),
+  createdBy: varchar("createdBy", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CobrancaPlanilhaBackup = typeof cobrancaPlanilhaBackup.$inferSelect;
+export type InsertCobrancaPlanilhaBackup = typeof cobrancaPlanilhaBackup.$inferInsert;

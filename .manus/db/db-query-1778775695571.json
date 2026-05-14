@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `cobranca_planilha_backup` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`snapshotDate` timestamp NOT NULL DEFAULT (now()),\n\t`dataJson` json NOT NULL,\n\t`totalItems` int NOT NULL,\n\t`createdBy` varchar(200),\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `cobranca_planilha_backup_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `cobranca_planilha_backup` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`snapshotDate` timestamp NOT NULL DEFAULT (now()),\n\t`dataJson` json NOT NULL,\n\t`totalItems` int NOT NULL,\n\t`createdBy` varchar(200),\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `cobranca_planilha_backup_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 370
+}

@@ -3710,3 +3710,5 @@
 - [x] Adicionar saldo anterior do Rojão (R$ 15.251,10) ao Vendas/Faturamento, somando com Maxiprod
 - [ ] REGRA DE NEGÓCIO: Variação de produtos madeira — quando pedido sai com código de variação (ex: 00087 = 4,0x220), abater do estoque do produto base (ex: 00086 = 4,0x218), pois fábrica produz só a medida base. Aplica-se a todos os produtos com variações dimensionais de madeira.
 - [x] Alterar unidade dos produtos 00193 (Vareta Velas Madeira 15cm) e 00142 (Vareta Velas Madeira 8cm) de 'cx' para 'Kg'
+- [x] Planilha de Cobrança: adicionar linhas divisórias entre clientes para facilitar visualização
+- [x] Planilha de Cobrança: criar botão de backup instantâneo
