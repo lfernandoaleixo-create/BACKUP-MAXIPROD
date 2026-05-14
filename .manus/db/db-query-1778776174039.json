@@ -1,0 +1,109 @@
+{
+  "query": "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "maxiprodId"
+    },
+    {
+      "COLUMN_NAME": "estado"
+    },
+    {
+      "COLUMN_NAME": "tipo"
+    },
+    {
+      "COLUMN_NAME": "valorOriginal"
+    },
+    {
+      "COLUMN_NAME": "valorLiquido"
+    },
+    {
+      "COLUMN_NAME": "valorRetido"
+    },
+    {
+      "COLUMN_NAME": "valorDeDesconto"
+    },
+    {
+      "COLUMN_NAME": "valorDeAcrescimo"
+    },
+    {
+      "COLUMN_NAME": "valorRecebidoLiquido"
+    },
+    {
+      "COLUMN_NAME": "emissaoData"
+    },
+    {
+      "COLUMN_NAME": "vencimentoData"
+    },
+    {
+      "COLUMN_NAME": "vencimentoOriginalData"
+    },
+    {
+      "COLUMN_NAME": "liquidacaoData"
+    },
+    {
+      "COLUMN_NAME": "referenteA"
+    },
+    {
+      "COLUMN_NAME": "parcela"
+    },
+    {
+      "COLUMN_NAME": "parcelasQuantidadeTotal"
+    },
+    {
+      "COLUMN_NAME": "observacoes"
+    },
+    {
+      "COLUMN_NAME": "documentoVinculadoNumero"
+    },
+    {
+      "COLUMN_NAME": "bloqueado"
+    },
+    {
+      "COLUMN_NAME": "cliente"
+    },
+    {
+      "COLUMN_NAME": "centroDeCustosId"
+    },
+    {
+      "COLUMN_NAME": "contaId"
+    },
+    {
+      "COLUMN_NAME": "empresaId"
+    },
+    {
+      "COLUMN_NAME": "empresaNome"
+    },
+    {
+      "COLUMN_NAME": "collectedAt"
+    },
+    {
+      "COLUMN_NAME": "bancoNome"
+    },
+    {
+      "COLUMN_NAME": "contaNumero"
+    },
+    {
+      "COLUMN_NAME": "agencia"
+    },
+    {
+      "COLUMN_NAME": "formaCobranca"
+    },
+    {
+      "COLUMN_NAME": "formaCobrancaId"
+    },
+    {
+      "COLUMN_NAME": "anotacoes"
+    },
+    {
+      "COLUMN_NAME": "decisaoCobranca"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nmaxiprodId\nestado\ntipo\nvalorOriginal\nvalorLiquido\nvalorRetido\nvalorDeDesconto\nvalorDeAcrescimo\nvalorRecebidoLiquido\nemissaoData\nvencimentoData\nvencimentoOriginalData\nliquidacaoData\nreferenteA\nparcela\nparcelasQuantidadeTotal\nobservacoes\ndocumentoVinculadoNumero\nbloqueado\ncliente\ncentroDeCustosId\ncontaId\nempresaId\nempresaNome\ncollectedAt\nbancoNome\ncontaNumero\nagencia\nformaCobranca\nformaCobrancaId\nanotacoes\ndecisaoCobranca\n",
+  "stderr": "",
+  "execution_time_ms": 251
+}

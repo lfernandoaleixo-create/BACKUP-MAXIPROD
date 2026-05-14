@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) as total_vencidos, SUM(CAST(valorOriginal AS DECIMAL(18,2))) as total_valor FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData < '2026-05-14';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_vencidos, SUM(CAST(valorOriginal AS DECIMAL(18,2))) as total_valor FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData < '2026-05-14';",
+  "rows": [
+    {
+      "total_vencidos": "117",
+      "total_valor": "655379.94"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_vencidos\ttotal_valor\n117\t655379.94\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

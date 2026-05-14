@@ -1,0 +1,43 @@
+{
+  "query": "SELECT id, empresa, descricao, centro_custos, valor, vencimento, dias_vencidos, tipo, status FROM cobranca_planilha LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, descricao, centro_custos, valor, vencimento, dias_vencidos, tipo, status FROM cobranca_planilha LIMIT 3;",
+  "rows": [
+    {
+      "id": "1",
+      "empresa": "ESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA",
+      "descricao": "ESPETINHOS XURRASCO ref. NF nº 2069 parc. 4/4",
+      "centro_custos": "BAMBU",
+      "valor": "1575.00",
+      "vencimento": "2026-05-12",
+      "dias_vencidos": "1",
+      "tipo": "Com protesto",
+      "status": "Contatado"
+    },
+    {
+      "id": "2",
+      "empresa": "FLAVIO JOSE DE OLIVEIRA",
+      "descricao": "FLAVIO JOSE ref. NF nº 287",
+      "centro_custos": "BAMBU",
+      "valor": "2090.00",
+      "vencimento": "2026-05-12",
+      "dias_vencidos": "1",
+      "tipo": "Com protesto",
+      "status": "Em negociação"
+    },
+    {
+      "id": "3",
+      "empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "descricao": "PANTANAL AROMAS ref. NF nº 2177 parc. 3/4",
+      "centro_custos": "MADEIRA",
+      "valor": "642.60",
+      "vencimento": "2026-05-12",
+      "dias_vencidos": "1",
+      "tipo": "Com protesto",
+      "status": "Contatado"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tdescricao\tcentro_custos\tvalor\tvencimento\tdias_vencidos\ttipo\tstatus\n1\tESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA\tESPETINHOS XURRASCO ref. NF nº 2069 parc. 4/4\tBAMBU\t1575.00\t2026-05-12\t1\tCom protesto\tContatado\n2\tFLAVIO JOSE DE OLIVEIRA\tFLAVIO JOSE ref. NF nº 287\tBAMBU\t2090.00\t2026-05-12\t1\tCom protesto\tEm negociação\n3\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\tPANTANAL AROMAS ref. NF nº 2177 parc. 3/4\tMADEIRA\t642.60\t2026-05-12\t1\tCom protesto\tContatado\n",
+  "stderr": "",
+  "execution_time_ms": 282
+}

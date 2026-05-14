@@ -1,0 +1,55 @@
+{
+  "query": "SELECT cp.empresa as planilha_empresa, cp.valor as planilha_valor, cp.vencimento as planilha_venc, cp.centro_custos, ar.cliente as inadimplencia_cliente, ar.valorLiquido as inad_valor, LEFT(ar.vencimentoData, 10) as inad_venc FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON UPPER(TRIM(ar.cliente)) LIKE CONCAT('%', UPPER(TRIM(SUBSTRING_INDEX(cp.empresa, ' ', 3))), '%') AND LEFT(ar.vencimentoData, 10) = cp.vencimento LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.empresa as planilha_empresa, cp.valor as planilha_valor, cp.vencimento as planilha_venc, cp.centro_custos, ar.cliente as inadimplencia_cliente, ar.valorLiquido as inad_valor, LEFT(ar.vencimentoData, 10) as inad_venc FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON UPPER(TRIM(ar.cliente)) LIKE CONCAT('%', UPPER(TRIM(SUBSTRING_INDEX(cp.empresa, ' ', 3))), '%') AND LEFT(ar.vencimentoData, 10) = cp.vencimento LIMIT 5;",
+  "rows": [
+    {
+      "planilha_empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "planilha_valor": "642.60",
+      "planilha_venc": "2026-05-12",
+      "centro_custos": "MADEIRA",
+      "inadimplencia_cliente": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "inad_valor": "642.60",
+      "inad_venc": "2026-05-12"
+    },
+    {
+      "planilha_empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "planilha_valor": "6740.00",
+      "planilha_venc": "2026-05-10",
+      "centro_custos": "BAMBU",
+      "inadimplencia_cliente": "WGO COMERCIO E SERVICOS LTDA",
+      "inad_valor": "6740.00",
+      "inad_venc": "2026-05-10"
+    },
+    {
+      "planilha_empresa": "ESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA",
+      "planilha_valor": "1575.00",
+      "planilha_venc": "2026-05-12",
+      "centro_custos": "BAMBU",
+      "inadimplencia_cliente": "ESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA",
+      "inad_valor": "1575.00",
+      "inad_venc": "2026-05-12"
+    },
+    {
+      "planilha_empresa": "AMERICAN PIROTECNIA LTDA",
+      "planilha_valor": "9000.00",
+      "planilha_venc": "2026-05-11",
+      "centro_custos": "ROJÃO",
+      "inadimplencia_cliente": "AMERICAN PIROTECNIA LTDA",
+      "inad_valor": "9000.00",
+      "inad_venc": "2026-05-11"
+    },
+    {
+      "planilha_empresa": "FLAVIO JOSE DE OLIVEIRA",
+      "planilha_valor": "2090.00",
+      "planilha_venc": "2026-05-12",
+      "centro_custos": "BAMBU",
+      "inadimplencia_cliente": "FLAVIO JOSE DE OLIVEIRA",
+      "inad_valor": "11290.00",
+      "inad_venc": "2026-05-12"
+    }
+  ],
+  "messages": [],
+  "stdout": "planilha_empresa\tplanilha_valor\tplanilha_venc\tcentro_custos\tinadimplencia_cliente\tinad_valor\tinad_venc\nPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\t642.60\t2026-05-12\tMADEIRA\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\t642.60\t2026-05-12\nWGO COMERCIO E SERVICOS LTDA\t6740.00\t2026-05-10\tBAMBU\tWGO COMERCIO E SERVICOS LTDA\t6740.00\t2026-05-10\nESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA\t1575.00\t2026-05-12\tBAMBU\tESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA\t1575.00\t2026-05-12\nAMERICAN PIROTECNIA LTDA\t9000.00\t2026-05-11\tROJÃO\tAMERICAN PIROTECNIA LTDA\t9000.00\t2026-05-11\nFLAVIO JOSE DE OLIVEIRA\t2090.00\t2026-05-12\tBAMBU\tFLAVIO JOSE DE OLIVEIRA\t11290.00\t2026-05-12\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

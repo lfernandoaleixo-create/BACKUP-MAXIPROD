@@ -1,0 +1,88 @@
+{
+  "query": "SELECT cp.id, cp.empresa, cp.valor, cp.vencimento FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON UPPER(TRIM(ar.cliente)) = UPPER(TRIM(cp.empresa)) AND LEFT(ar.vencimentoData, 10) = cp.vencimento AND CAST(ar.valorLiquido AS DECIMAL(18,2)) = cp.valor AND ar.estado = 'EMITIDO' WHERE ar.id IS NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.id, cp.empresa, cp.valor, cp.vencimento FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON UPPER(TRIM(ar.cliente)) = UPPER(TRIM(cp.empresa)) AND LEFT(ar.vencimentoData, 10) = cp.vencimento AND CAST(ar.valorLiquido AS DECIMAL(18,2)) = cp.valor AND ar.estado = 'EMITIDO' WHERE ar.id IS NULL;",
+  "rows": [
+    {
+      "id": "2",
+      "empresa": "FLAVIO JOSE DE OLIVEIRA",
+      "valor": "2090.00",
+      "vencimento": "2026-05-12"
+    },
+    {
+      "id": "5",
+      "empresa": "AMERICAN PIROTECNIA LTDA",
+      "valor": "9000.00",
+      "vencimento": "2026-05-11"
+    },
+    {
+      "id": "10",
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "valor": "550.00",
+      "vencimento": "2026-03-10"
+    },
+    {
+      "id": "21",
+      "empresa": "FAZENDA SANTA CRUZ",
+      "valor": "3686.40",
+      "vencimento": "2026-04-10"
+    },
+    {
+      "id": "22",
+      "empresa": "SUPER MIX DISTRIBUIDORA LTDA",
+      "valor": "700.00",
+      "vencimento": "2025-11-18"
+    },
+    {
+      "id": "25",
+      "empresa": "FOGOS BEIJA FLOR",
+      "valor": "4000.00",
+      "vencimento": "2026-04-23"
+    },
+    {
+      "id": "26",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valor": "1600.00",
+      "vencimento": "2026-05-11"
+    },
+    {
+      "id": "27",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valor": "3150.00",
+      "vencimento": "2026-05-11"
+    },
+    {
+      "id": "76",
+      "empresa": "CLAUDIO GRACIANO FREITAS",
+      "valor": "485.00",
+      "vencimento": "2025-04-16"
+    },
+    {
+      "id": "81",
+      "empresa": "MOISES MOREIRA DE AGUIAR",
+      "valor": "300.00",
+      "vencimento": "2025-04-02"
+    },
+    {
+      "id": "82",
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "valor": "862.50",
+      "vencimento": "2026-03-24"
+    },
+    {
+      "id": "84",
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "valor": "537.55",
+      "vencimento": "2026-03-24"
+    },
+    {
+      "id": "87",
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "valor": "238.00",
+      "vencimento": "2024-10-08"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tvalor\tvencimento\n2\tFLAVIO JOSE DE OLIVEIRA\t2090.00\t2026-05-12\n5\tAMERICAN PIROTECNIA LTDA\t9000.00\t2026-05-11\n10\t59.252.539 GLAUCIENE MATEUS GOMES GERTH\t550.00\t2026-03-10\n21\tFAZENDA SANTA CRUZ\t3686.40\t2026-04-10\n22\tSUPER MIX DISTRIBUIDORA LTDA\t700.00\t2025-11-18\n25\tFOGOS BEIJA FLOR\t4000.00\t2026-04-23\n26\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t1600.00\t2026-05-11\n27\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t3150.00\t2026-05-11\n76\tCLAUDIO GRACIANO FREITAS\t485.00\t2025-04-16\n81\tMOISES MOREIRA DE AGUIAR\t300.00\t2025-04-02\n82\tRONALDO ANTONIO DE MOURA\t862.50\t2026-03-24\n84\tRONALDO ANTONIO DE MOURA\t537.55\t2026-03-24\n87\t48.128.486 CARLOS HUMBERTO BUENO\t238.00\t2024-10-08\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

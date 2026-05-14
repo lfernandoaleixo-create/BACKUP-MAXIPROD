@@ -4,7 +4,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 import {
   X, Search, Filter, ChevronDown, ChevronUp, Edit3, Save, MessageSquare,
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
-  CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download
+  CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -166,6 +166,17 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [showBackupInfo, setShowBackupInfo] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ updated: number; added: number; notInInadimplencia: number } | null>(null);
+  const syncFromInadimplencia = trpc.cobrancaPlanilha.syncFromInadimplencia.useMutation({
+    onSuccess: (data) => {
+      const s = data.summary;
+      setSyncResult({ updated: s.updated, added: s.added, notInInadimplencia: s.notInInadimplencia });
+      toast.success(`Sincronizado! ${s.updated} atualizados, ${s.added} novos, ${s.notInInadimplencia} não encontrados na inadimplência.`);
+      refetch();
+      refetchBackups();
+    },
+    onError: (err) => toast.error(`Erro na sincronização: ${err.message}`),
+  });
 
   // Permission: Thiago, Guilherme, Flavio can edit
   const canEdit = operator && ["Thiago", "Guilherme", "Flavio"].includes(operator.name);
@@ -253,6 +264,15 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     createBackup.mutate({ createdBy: operator.name });
   }
 
+  function handleSyncFromInadimplencia() {
+    if (!operator) {
+      toast.error("Operador não identificado");
+      return;
+    }
+    setSyncResult(null);
+    syncFromInadimplencia.mutate({ updatedBy: operator.name });
+  }
+
   // Cobrança step display helper
   function renderCobrancaStep(label: string, value: string | null | undefined) {
     if (!value) return <span className="text-slate-300 text-[10px]">-</span>;
@@ -310,8 +330,21 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             </p>
           </div>
         </div>
-        {/* Backup button */}
+        {/* Sync + Backup buttons */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleSyncFromInadimplencia}
+            disabled={syncFromInadimplencia.isPending}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+            title="Sincronizar títulos, valores, status e dias vencidos com a inadimplência (preserva marcações manuais)"
+          >
+            {syncFromInadimplencia.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
+            {syncFromInadimplencia.isPending ? "Sincronizando..." : "Sincronizar c/ Inadimplência"}
+          </button>
           <button
             onClick={() => setShowBackupInfo(!showBackupInfo)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 text-xs font-medium transition-colors"
@@ -370,6 +403,21 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Sync result banner */}
+      {syncResult && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-blue-600" />
+            <span className="text-xs font-medium text-blue-800">
+              Sincronização concluída: {syncResult.updated} atualizados, {syncResult.added} novos adicionados{syncResult.notInInadimplencia > 0 ? `, ${syncResult.notInInadimplencia} não encontrados na inadimplência` : ""}
+            </span>
+          </div>
+          <button onClick={() => setSyncResult(null)} className="text-blue-400 hover:text-blue-600">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

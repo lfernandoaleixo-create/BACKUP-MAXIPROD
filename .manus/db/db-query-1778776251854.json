@@ -1,0 +1,38 @@
+{
+  "query": "SELECT DISTINCT status, COUNT(*) as cnt FROM collection_actions GROUP BY status;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT status, COUNT(*) as cnt FROM collection_actions GROUP BY status;",
+  "rows": [
+    {
+      "status": "pendente",
+      "cnt": "5"
+    },
+    {
+      "status": "promessa",
+      "cnt": "16"
+    },
+    {
+      "status": "protestado",
+      "cnt": "3"
+    },
+    {
+      "status": "em_negociacao",
+      "cnt": "23"
+    },
+    {
+      "status": "especial_sem_cobranca",
+      "cnt": "108"
+    },
+    {
+      "status": "contatado",
+      "cnt": "56"
+    },
+    {
+      "status": "cheque_compensacao",
+      "cnt": "9"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\tcnt\npendente\t5\npromessa\t16\nprotestado\t3\nem_negociacao\t23\nespecial_sem_cobranca\t108\ncontatado\t56\ncheque_compensacao\t9\n",
+  "stderr": "",
+  "execution_time_ms": 321
+}

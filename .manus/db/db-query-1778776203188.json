@@ -1,0 +1,70 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.empresaNome, ar.valorOriginal, ar.valorLiquido, ar.vencimentoData, ar.tipo, ar.formaCobranca, ar.centroDeCustosId, ca.status as cobrancaStatus FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ar.id = ca.receivableId WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-14' ORDER BY ar.vencimentoData ASC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.empresaNome, ar.valorOriginal, ar.valorLiquido, ar.vencimentoData, ar.tipo, ar.formaCobranca, ar.centroDeCustosId, ca.status as cobrancaStatus FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ar.id = ca.receivableId WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < '2026-05-14' ORDER BY ar.vencimentoData ASC LIMIT 5;",
+  "rows": [
+    {
+      "id": "5473802",
+      "cliente": "RAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "valorOriginal": "1500.00",
+      "valorLiquido": "1500.00",
+      "vencimentoData": "2024-02-23T12:00:00.000-03:00",
+      "tipo": "RECEITA",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95",
+      "centroDeCustosId": "409300000278378",
+      "cobrancaStatus": "protestado"
+    },
+    {
+      "id": "5473792",
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "valorOriginal": "462.00",
+      "valorLiquido": "462.00",
+      "vencimentoData": "2024-11-01T12:00:00.000-03:00",
+      "tipo": "RECEITA",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95",
+      "centroDeCustosId": "409300000278378",
+      "cobrancaStatus": "contatado"
+    },
+    {
+      "id": "5473787",
+      "cliente": "MOISES MOREIRA DE AGUIAR",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "valorOriginal": "450.00",
+      "valorLiquido": "450.00",
+      "vencimentoData": "2025-04-02T12:00:00.000-03:00",
+      "tipo": "RECEITA",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95",
+      "centroDeCustosId": "409300000278378",
+      "cobrancaStatus": "em_negociacao"
+    },
+    {
+      "id": "5473780",
+      "cliente": "ESPETOLIN PRODUTOS ALIMENTICIOS LTDA",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "valorOriginal": "4800.00",
+      "valorLiquido": "4800.00",
+      "vencimentoData": "2025-04-02T12:00:00.000-03:00",
+      "tipo": "RECEITA",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95",
+      "centroDeCustosId": "409300000278378",
+      "cobrancaStatus": "em_negociacao"
+    },
+    {
+      "id": "5473760",
+      "cliente": "FERREIRA E SILVA COMERCIO DE CARNES LTDA",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "valorOriginal": "1347.00",
+      "valorLiquido": "1347.00",
+      "vencimentoData": "2025-04-14T12:00:00.000-03:00",
+      "tipo": "RECEITA",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95",
+      "centroDeCustosId": "409300000278378",
+      "cobrancaStatus": "contatado"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tempresaNome\tvalorOriginal\tvalorLiquido\tvencimentoData\ttipo\tformaCobranca\tcentroDeCustosId\tcobrancaStatus\n5473802\tRAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA\tPALITOS INDUSTRIA\t1500.00\t1500.00\t2024-02-23T12:00:00.000-03:00\tRECEITA\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\t409300000278378\tprotestado\n5473792\t48.128.486 CARLOS HUMBERTO BUENO\tPALITOS INDUSTRIA\t462.00\t462.00\t2024-11-01T12:00:00.000-03:00\tRECEITA\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\t409300000278378\tcontatado\n5473787\tMOISES MOREIRA DE AGUIAR\tPALITOS INDUSTRIA\t450.00\t450.00\t2025-04-02T12:00:00.000-03:00\tRECEITA\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\t409300000278378\tem_negociacao\n5473780\tESPETOLIN PRODUTOS ALIMENTICIOS LTDA\tPALITOS INDUSTRIA\t4800.00\t4800.00\t2025-04-02T12:00:00.000-03:00\tRECEITA\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\t409300000278378\tem_negociacao\n5473760\tFERREIRA E SILVA COMERCIO DE CARNES LTDA\tPALITOS INDUSTRIA\t1347.00\t1347.00\t2025-04-14T12:00:00.000-03:00\tRECEITA\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\t409300000278378\tcontatado\n",
+  "stderr": "",
+  "execution_time_ms": 255
+}

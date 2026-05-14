@@ -117,4 +117,61 @@ describe("cobrancaPlanilha router", () => {
       updatedBy: "test",
     });
   });
+
+  it("syncFromInadimplencia returns correct summary structure", async () => {
+    const result = await caller.cobrancaPlanilha.syncFromInadimplencia({
+      updatedBy: "test-vitest",
+    });
+    expect(result.success).toBe(true);
+    expect(result.summary).toHaveProperty("totalBefore");
+    expect(result.summary).toHaveProperty("totalAfter");
+    expect(result.summary).toHaveProperty("updated");
+    expect(result.summary).toHaveProperty("added");
+    expect(result.summary).toHaveProperty("notInInadimplencia");
+    expect(result.summary).toHaveProperty("backupCreated");
+    expect(result.summary.backupCreated).toBe(true);
+    expect(typeof result.summary.updated).toBe("number");
+    expect(typeof result.summary.added).toBe("number");
+    expect(result.summary.totalAfter).toBeGreaterThanOrEqual(result.summary.totalBefore);
+  }, 30000);
+
+  it("syncFromInadimplencia preserves manual annotations", async () => {
+    // Set a custom observation on a title
+    const itemsBefore = await caller.cobrancaPlanilha.getAll();
+    if (itemsBefore.length === 0) return;
+    const testItem = itemsBefore[0];
+    const originalObs = testItem.observacoes;
+    
+    await caller.cobrancaPlanilha.updateObservacao({
+      id: testItem.id,
+      observacoes: "TESTE_SYNC_PRESERVA_OBS",
+      updatedBy: "test",
+    });
+    
+    // Run sync
+    await caller.cobrancaPlanilha.syncFromInadimplencia({
+      updatedBy: "test-vitest",
+    });
+    
+    // Verify observation was preserved
+    const itemsAfter = await caller.cobrancaPlanilha.getAll();
+    const afterItem = itemsAfter.find(i => i.id === testItem.id);
+    expect(afterItem?.observacoes).toBe("TESTE_SYNC_PRESERVA_OBS");
+    
+    // Restore
+    await caller.cobrancaPlanilha.updateObservacao({
+      id: testItem.id,
+      observacoes: originalObs || "",
+      updatedBy: "test",
+    });
+  }, 30000);
+
+  it("listBackups returns backups including auto-backup from sync", async () => {
+    const backups = await caller.cobrancaPlanilha.listBackups();
+    expect(Array.isArray(backups)).toBe(true);
+    expect(backups.length).toBeGreaterThan(0);
+    // Should have auto-backup from sync
+    const autoBackup = backups.find(b => (b.createdBy || "").includes("Auto-backup"));
+    expect(autoBackup).toBeDefined();
+  });
 });

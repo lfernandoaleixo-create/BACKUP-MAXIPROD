@@ -1,0 +1,25 @@
+{
+  "query": "SELECT DISTINCT centroDeCustosId, empresaNome, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData < '2026-05-14' GROUP BY centroDeCustosId, empresaNome;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT centroDeCustosId, empresaNome, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData < '2026-05-14' GROUP BY centroDeCustosId, empresaNome;",
+  "rows": [
+    {
+      "centroDeCustosId": "NULL",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "75"
+    },
+    {
+      "centroDeCustosId": "409300000278377",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "25"
+    },
+    {
+      "centroDeCustosId": "409300000278378",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "17"
+    }
+  ],
+  "messages": [],
+  "stdout": "centroDeCustosId\tempresaNome\tcnt\nNULL\tPALITOS INDUSTRIA\t75\n409300000278377\tPALITOS INDUSTRIA\t25\n409300000278378\tPALITOS INDUSTRIA\t17\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

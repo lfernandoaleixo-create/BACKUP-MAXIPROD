@@ -1,0 +1,22 @@
+{
+  "query": "SELECT DISTINCT estado, COUNT(*) as cnt FROM accounts_receivable GROUP BY estado;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT estado, COUNT(*) as cnt FROM accounts_receivable GROUP BY estado;",
+  "rows": [
+    {
+      "estado": "EMITIDO",
+      "cnt": "508"
+    },
+    {
+      "estado": "RECEBIDO",
+      "cnt": "159"
+    },
+    {
+      "estado": "CANCELADO",
+      "cnt": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "estado\tcnt\nEMITIDO\t508\nRECEBIDO\t159\nCANCELADO\t1\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}

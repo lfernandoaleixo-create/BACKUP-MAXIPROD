@@ -1,8 +1,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { cobrancaPlanilha, cobrancaPlanilhaBackup } from "../drizzle/schema";
-import { eq, desc, sql } from "drizzle-orm";
+import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions } from "../drizzle/schema";
+import { eq, desc, sql, and, inArray, lte, asc } from "drizzle-orm";
 
 /**
  * Router para a Planilha de Cobrança interativa.
@@ -11,6 +11,89 @@ import { eq, desc, sql } from "drizzle-orm";
  * REGRA: NUNCA apagar registros. Dados manuais que não podem ser re-sincronizados.
  * Editável pelo Thiago e operadores com acesso financeiro.
  */
+
+// Tipos válidos de contas a receber (mesmo filtro da inadimplência)
+const RECEIVABLE_VALID_TYPES = ["TITULO", "RECEITA", "ADIANTAMENTO"];
+
+// Mapeamento de status da inadimplência (collection_actions) → planilha de cobrança
+const STATUS_MAP: Record<string, string> = {
+  pendente: "Pendente",
+  contatado: "Contatado",
+  em_negociacao: "Em negociação",
+  promessa: "Promessa de Pgto",
+  especial_sem_cobranca: "Especial s/ cobrança",
+  protestado: "Protestado",
+  cheque_compensacao: "Cheque em compensação",
+  nao_retornou: "Não deu retorno",
+  nao_atendeu: "Não atendeu",
+  juridico: "Jurídico",
+};
+
+/** Retorna a data de hoje em Brasília como string YYYY-MM-DD */
+function getTodayBR(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
+/** Feriados nacionais fixos + variáveis (Páscoa, Carnaval, Corpus Christi) */
+function isHoliday(dateStr: string): boolean {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  // Feriados fixos
+  const fixos = [`${y}-01-01`, `${y}-04-21`, `${y}-05-01`, `${y}-09-07`, `${y}-10-12`, `${y}-11-02`, `${y}-11-15`, `${y}-12-25`];
+  if (fixos.includes(dateStr)) return true;
+  // Páscoa (algoritmo de Meeus)
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100;
+  const dd = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - dd - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const mm = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * mm + 114) / 31);
+  const day = ((h + l - 7 * mm + 114) % 31) + 1;
+  const easter = new Date(y, month - 1, day);
+  const fmt = (dt: Date) => dt.toISOString().split('T')[0];
+  // Carnaval: 47 dias antes da Páscoa
+  const carnaval = new Date(easter); carnaval.setDate(carnaval.getDate() - 47);
+  // Sexta-feira Santa: 2 dias antes da Páscoa
+  const sextaSanta = new Date(easter); sextaSanta.setDate(sextaSanta.getDate() - 2);
+  // Corpus Christi: 60 dias após a Páscoa
+  const corpusChristi = new Date(easter); corpusChristi.setDate(corpusChristi.getDate() + 60);
+  const variaveis = [fmt(carnaval), fmt(sextaSanta), fmt(easter), fmt(corpusChristi)];
+  return variaveis.includes(dateStr);
+}
+
+function addDaysStr(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + days);
+  return dt.toISOString().split('T')[0];
+}
+
+function isBusinessDay(dateStr: string): boolean {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dow = new Date(y, m - 1, d).getDay();
+  return dow !== 0 && dow !== 6 && !isHoliday(dateStr);
+}
+
+/** Conta quantos dias úteis passaram entre fromDate (exclusivo) e toDate (inclusivo) */
+function countBusinessDays(fromDateStr: string, toDateStr: string): number {
+  let count = 0;
+  let current = addDaysStr(fromDateStr, 1);
+  while (current <= toDateStr) {
+    if (isBusinessDay(current)) count++;
+    current = addDaysStr(current, 1);
+  }
+  return count;
+}
+
+/** Retorna o dia útil anterior a hoje */
+function getPreviousBusinessDay(): string {
+  const todayStr = getTodayBR();
+  let candidate = addDaysStr(todayStr, -1);
+  for (let i = 0; i < 10; i++) {
+    if (isBusinessDay(candidate)) return candidate;
+    candidate = addDaysStr(candidate, -1);
+  }
+  return candidate;
+}
+
 export const cobrancaPlanilhaRouter = router({
   /**
    * Listar todos os títulos da planilha de cobrança
@@ -289,4 +372,235 @@ export const cobrancaPlanilhaRouter = router({
       .orderBy(desc(cobrancaPlanilhaBackup.id))
       .limit(20);
   }),
+
+  /**
+   * SINCRONIZAR planilha de cobrança com dados da inadimplência.
+   * 
+   * Lógica:
+   * 1. Busca todos os títulos vencidos da inadimplência (accounts_receivable + collection_actions)
+   * 2. Cruza com a planilha existente por empresa (nome) + vencimento + valor
+   * 3. Atualiza: status, dias vencidos, tipo (protesto) — SEM apagar marcações manuais
+   * 4. Adiciona novos títulos que apareceram na inadimplência
+   * 5. Marca títulos pagos/removidos (que não estão mais vencidos)
+   * 
+   * PRESERVA: observacoes, promessaPgto, primeiraCobranca, semAcao1, segundaCobranca,
+   *           semAcao2, terceiraCobranca, semAcao3, acaoFinal, centroCustos
+   */
+  syncFromInadimplencia: publicProcedure
+    .input(z.object({
+      updatedBy: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // 1. Fazer backup automático antes de sincronizar
+      const allBefore = await db.select().from(cobrancaPlanilha);
+      await db.insert(cobrancaPlanilhaBackup).values({
+        dataJson: allBefore,
+        totalItems: allBefore.length,
+        createdBy: `Auto-backup (sync por ${input.updatedBy})`,
+      });
+
+      // 2. Buscar títulos vencidos da inadimplência
+      const cutoffCobranca = getPreviousBusinessDay();
+      const todayStr = getTodayBR();
+
+      const rows = await db
+        .select({
+          id: accountsReceivable.id,
+          cliente: accountsReceivable.cliente,
+          valorLiquido: accountsReceivable.valorLiquido,
+          valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+          vencimentoData: accountsReceivable.vencimentoData,
+          referenteA: accountsReceivable.referenteA,
+          tipo: accountsReceivable.tipo,
+          formaCobranca: accountsReceivable.formaCobranca,
+          decisaoCobranca: accountsReceivable.decisaoCobranca,
+          empresaNome: accountsReceivable.empresaNome,
+        })
+        .from(accountsReceivable)
+        .where(
+          and(
+            eq(accountsReceivable.estado, "EMITIDO"),
+            inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+            lte(accountsReceivable.vencimentoData, cutoffCobranca + "T23:59:59")
+          )
+        )
+        .orderBy(asc(accountsReceivable.vencimentoData));
+
+      // 3. Buscar ações de cobrança
+      const allActions = await db.select().from(collectionActions);
+      const actionsMap: Record<number, typeof allActions[0]> = {};
+      for (const a of allActions) {
+        actionsMap[a.receivableId] = a;
+      }
+
+      // 4. Montar lista de títulos da inadimplência com valor a receber > 0
+      const inadTitles = rows
+        .map(row => {
+          const valorOriginal = Number(row.valorLiquido) || 0;
+          const valorPago = Number(row.valorRecebidoLiquido) || 0;
+          const valorAReceber = valorOriginal - valorPago;
+          const vencDate = (row.vencimentoData || "").split("T")[0];
+          const diasAtrasoRaw = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
+          const businessDaysOverdue = diasAtrasoRaw > 0 ? countBusinessDays(vencDate, todayStr) : 0;
+          const action = actionsMap[row.id];
+          const statusInad = action?.status || "pendente";
+          const statusPlanilha = STATUS_MAP[statusInad] || "Pendente";
+          
+          // Tipo: protesto
+          const decisao = (row.decisaoCobranca || "").toUpperCase();
+          let tipoPlanilha = "S/ Prot.";
+          if (decisao.includes("COM PROTESTO") || decisao === "COM PROTESTO") {
+            tipoPlanilha = "Protesto";
+          } else if (decisao.includes("SEM PROTESTO") || decisao === "SEM PROTESTO") {
+            tipoPlanilha = "S/ Prot.";
+          }
+
+          return {
+            arId: row.id,
+            empresa: (row.cliente || "").trim(),
+            descricao: row.referenteA || "",
+            vencimento: vencDate,
+            valorOriginal,
+            valorAReceber,
+            diasVencidos: businessDaysOverdue,
+            tipo: tipoPlanilha,
+            status: statusPlanilha,
+          };
+        })
+        .filter(t => t.valorAReceber > 0);
+
+      // 5. Buscar planilha atual
+      const planilhaAtual = await db.select().from(cobrancaPlanilha);
+
+      // 6. Criar índice da planilha para cruzamento
+      // Chave: UPPER(empresa) + vencimento + valor (com tolerância de R$1)
+      type PlanilhaItem = typeof planilhaAtual[0];
+      const planilhaIndex = new Map<string, PlanilhaItem>();
+      const planilhaMatchedIds = new Set<number>();
+
+      for (const item of planilhaAtual) {
+        const key = `${(item.empresa || "").toUpperCase().trim()}|${item.vencimento || ""}|${parseFloat(String(item.valor || 0)).toFixed(2)}`;
+        planilhaIndex.set(key, item);
+      }
+
+      let updated = 0;
+      let added = 0;
+      let removed = 0;
+
+      // 7. Para cada título da inadimplência, tentar cruzar com a planilha
+      for (const inad of inadTitles) {
+        const empresaUpper = inad.empresa.toUpperCase().trim();
+        
+        // Tentar match exato: empresa + vencimento + valorOriginal
+        let key = `${empresaUpper}|${inad.vencimento}|${inad.valorOriginal.toFixed(2)}`;
+        let match = planilhaIndex.get(key);
+        
+        // Tentar match por valorAReceber (pagamento parcial)
+        if (!match) {
+          key = `${empresaUpper}|${inad.vencimento}|${inad.valorAReceber.toFixed(2)}`;
+          match = planilhaIndex.get(key);
+        }
+
+        if (match) {
+          // ATUALIZAR título existente — preservar marcações manuais
+          planilhaMatchedIds.add(match.id);
+          
+          // Atualizar: status, dias vencidos, tipo, valor (se mudou por pagamento parcial)
+          await db.update(cobrancaPlanilha)
+            .set({
+              status: inad.status,
+              diasVencidos: inad.diasVencidos,
+              tipo: inad.tipo,
+              valor: String(inad.valorAReceber),
+              updatedBy: `Sync: ${input.updatedBy}`,
+            })
+            .where(eq(cobrancaPlanilha.id, match.id));
+          updated++;
+        } else {
+          // NOVO título — adicionar à planilha
+          // Verificar se não é duplicata por empresa + vencimento (sem valor)
+          const existsByEmpVenc = planilhaAtual.find(p => 
+            (p.empresa || "").toUpperCase().trim() === empresaUpper &&
+            p.vencimento === inad.vencimento
+          );
+          
+          if (!existsByEmpVenc) {
+            await db.insert(cobrancaPlanilha).values({
+              empresa: inad.empresa,
+              descricao: inad.descricao || null,
+              cnpjCpf: null,
+              municipio: null,
+              uf: null,
+              pais: null,
+              centroCustos: null, // Será preenchido manualmente
+              valor: String(inad.valorAReceber),
+              vencimento: inad.vencimento,
+              diasVencidos: inad.diasVencidos,
+              tipo: inad.tipo,
+              status: inad.status,
+              updatedBy: `Sync: ${input.updatedBy}`,
+            });
+            added++;
+          } else {
+            // Existe com mesmo empresa+vencimento mas valor diferente → atualizar
+            planilhaMatchedIds.add(existsByEmpVenc.id);
+            await db.update(cobrancaPlanilha)
+              .set({
+                status: inad.status,
+                diasVencidos: inad.diasVencidos,
+                tipo: inad.tipo,
+                valor: String(inad.valorAReceber),
+                updatedBy: `Sync: ${input.updatedBy}`,
+              })
+              .where(eq(cobrancaPlanilha.id, existsByEmpVenc.id));
+            updated++;
+          }
+        }
+      }
+
+      // 8. Marcar títulos que não estão mais na inadimplência (pagos/resolvidos)
+      // NÃO deletar — apenas marcar como "Pago/Resolvido" se não tinha match
+      for (const item of planilhaAtual) {
+        if (!planilhaMatchedIds.has(item.id)) {
+          // Verificar se o título ainda existe na inadimplência (pode ter sido pago)
+          const empresaUpper = (item.empresa || "").toUpperCase().trim();
+          const stillExists = inadTitles.some(t => 
+            t.empresa.toUpperCase().trim() === empresaUpper &&
+            t.vencimento === item.vencimento
+          );
+          
+          if (!stillExists) {
+            // Título não está mais vencido — pode ter sido pago
+            // NÃO alterar automaticamente para não perder dados manuais
+            // Apenas atualizar dias vencidos
+            if (item.vencimento) {
+              const diasAtrasoRaw = Math.floor((new Date(todayStr).getTime() - new Date(item.vencimento).getTime()) / 86400000);
+              const businessDays = diasAtrasoRaw > 0 ? countBusinessDays(item.vencimento, todayStr) : 0;
+              await db.update(cobrancaPlanilha)
+                .set({ diasVencidos: businessDays })
+                .where(eq(cobrancaPlanilha.id, item.id));
+            }
+            removed++;
+          }
+        }
+      }
+
+      // 9. Buscar planilha atualizada para retornar contagem
+      const planilhaFinal = await db.select().from(cobrancaPlanilha);
+
+      return {
+        success: true,
+        summary: {
+          totalBefore: planilhaAtual.length,
+          totalAfter: planilhaFinal.length,
+          updated,
+          added,
+          notInInadimplencia: removed,
+          backupCreated: true,
+        },
+      };
+    }),
 });

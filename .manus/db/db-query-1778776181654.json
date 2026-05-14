@@ -1,0 +1,49 @@
+{
+  "query": "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' ORDER BY ORDINAL_POSITION LIMIT 20 OFFSET 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' ORDER BY ORDINAL_POSITION LIMIT 20 OFFSET 20;",
+  "rows": [
+    {
+      "COLUMN_NAME": "cliente"
+    },
+    {
+      "COLUMN_NAME": "centroDeCustosId"
+    },
+    {
+      "COLUMN_NAME": "contaId"
+    },
+    {
+      "COLUMN_NAME": "empresaId"
+    },
+    {
+      "COLUMN_NAME": "empresaNome"
+    },
+    {
+      "COLUMN_NAME": "collectedAt"
+    },
+    {
+      "COLUMN_NAME": "bancoNome"
+    },
+    {
+      "COLUMN_NAME": "contaNumero"
+    },
+    {
+      "COLUMN_NAME": "agencia"
+    },
+    {
+      "COLUMN_NAME": "formaCobranca"
+    },
+    {
+      "COLUMN_NAME": "formaCobrancaId"
+    },
+    {
+      "COLUMN_NAME": "anotacoes"
+    },
+    {
+      "COLUMN_NAME": "decisaoCobranca"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\ncliente\ncentroDeCustosId\ncontaId\nempresaId\nempresaNome\ncollectedAt\nbancoNome\ncontaNumero\nagencia\nformaCobranca\nformaCobrancaId\nanotacoes\ndecisaoCobranca\n",
+  "stderr": "",
+  "execution_time_ms": 273
+}

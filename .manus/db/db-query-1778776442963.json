@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as matched FROM cobranca_planilha cp INNER JOIN accounts_receivable ar ON UPPER(TRIM(ar.cliente)) = UPPER(TRIM(cp.empresa)) AND LEFT(ar.vencimentoData, 10) = cp.vencimento AND CAST(ar.valorLiquido AS DECIMAL(18,2)) = cp.valor WHERE ar.estado = 'EMITIDO';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as matched FROM cobranca_planilha cp INNER JOIN accounts_receivable ar ON UPPER(TRIM(ar.cliente)) = UPPER(TRIM(cp.empresa)) AND LEFT(ar.vencimentoData, 10) = cp.vencimento AND CAST(ar.valorLiquido AS DECIMAL(18,2)) = cp.valor WHERE ar.estado = 'EMITIDO';",
+  "rows": [
+    {
+      "matched": "87"
+    }
+  ],
+  "messages": [],
+  "stdout": "matched\n87\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

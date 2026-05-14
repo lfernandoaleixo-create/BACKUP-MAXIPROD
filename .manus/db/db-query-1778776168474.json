@@ -1,0 +1,18 @@
+{
+  "query": "SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' AND COLUMN_NAME IN ('cliente', 'clienteNome', 'empresaNome', 'empresa', 'vendedor', 'centroCustos', 'valorAReceber', 'cnpjCpf', 'municipio', 'uf', 'pais', 'diasAtraso');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' AND COLUMN_NAME IN ('cliente', 'clienteNome', 'empresaNome', 'empresa', 'vendedor', 'centroCustos', 'valorAReceber', 'cnpjCpf', 'municipio', 'uf', 'pais', 'diasAtraso');",
+  "rows": [
+    {
+      "COLUMN_NAME": "cliente",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "COLUMN_NAME": "empresaNome",
+      "DATA_TYPE": "varchar"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\tDATA_TYPE\ncliente\tvarchar\nempresaNome\tvarchar\n",
+  "stderr": "",
+  "execution_time_ms": 255
+}

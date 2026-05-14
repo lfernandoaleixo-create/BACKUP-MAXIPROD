@@ -1,0 +1,22 @@
+{
+  "query": "SELECT DISTINCT centroDeCustosId, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' GROUP BY centroDeCustosId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT centroDeCustosId, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' GROUP BY centroDeCustosId;",
+  "rows": [
+    {
+      "centroDeCustosId": "409300000278378",
+      "cnt": "20"
+    },
+    {
+      "centroDeCustosId": "409300000278377",
+      "cnt": "25"
+    },
+    {
+      "centroDeCustosId": "NULL",
+      "cnt": "463"
+    }
+  ],
+  "messages": [],
+  "stdout": "centroDeCustosId\tcnt\n409300000278378\t20\n409300000278377\t25\nNULL\t463\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

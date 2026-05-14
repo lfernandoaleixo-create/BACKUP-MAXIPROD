@@ -1,0 +1,274 @@
+{
+  "query": "DESCRIBE accounts_receivable;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute DESCRIBE accounts_receivable;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "maxiprodId",
+      "Type": "bigint",
+      "Null": "NO",
+      "Key": "UNI",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "estado",
+      "Type": "varchar(30)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "tipo",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorOriginal",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorLiquido",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorRetido",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorDeDesconto",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorDeAcrescimo",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valorRecebidoLiquido",
+      "Type": "decimal(18,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "emissaoData",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "vencimentoData",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "vencimentoOriginalData",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "liquidacaoData",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "referenteA",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "parcela",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "parcelasQuantidadeTotal",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "observacoes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "documentoVinculadoNumero",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "bloqueado",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "cliente",
+      "Type": "varchar(300)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "centroDeCustosId",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "contaId",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "empresaId",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "empresaNome",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "collectedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "bancoNome",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "contaNumero",
+      "Type": "varchar(30)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "agencia",
+      "Type": "varchar(20)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "formaCobranca",
+      "Type": "varchar(500)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "formaCobrancaId",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "anotacoes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "decisaoCobranca",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nmaxiprodId\tbigint\tNO\tUNI\tNULL\t\nestado\tvarchar(30)\tNO\t\tNULL\t\ntipo\tvarchar(50)\tYES\t\tNULL\t\nvalorOriginal\tdecimal(18,2)\tYES\t\tNULL\t\nvalorLiquido\tdecimal(18,2)\tYES\t\tNULL\t\nvalorRetido\tdecimal(18,2)\tYES\t\tNULL\t\nvalorDeDesconto\tdecimal(18,2)\tYES\t\tNULL\t\nvalorDeAcrescimo\tdecimal(18,2)\tYES\t\tNULL\t\nvalorRecebidoLiquido\tdecimal(18,2)\tYES\t\tNULL\t\nemissaoData\tvarchar(50)\tYES\t\tNULL\t\nvencimentoData\tvarchar(50)\tYES\t\tNULL\t\nvencimentoOriginalData\tvarchar(50)\tYES\t\tNULL\t\nliquidacaoData\tvarchar(50)\tYES\t\tNULL\t\nreferenteA\ttext\tYES\t\tNULL\t\nparcela\tint\tYES\t\tNULL\t\nparcelasQuantidadeTotal\tint\tYES\t\tNULL\t\nobservacoes\ttext\tYES\t\tNULL\t\ndocumentoVinculadoNumero\tvarchar(100)\tYES\t\tNULL\t\nbloqueado\ttinyint(1)\tYES\t\t0\t\ncliente\tvarchar(300)\tYES\t\tNULL\t\ncentroDeCustosId\tbigint\tYES\t\tNULL\t\ncontaId\tbigint\tYES\t\tNULL\t\nempresaId\tbigint\tYES\t\tNULL\t\nempresaNome\tvarchar(100)\tYES\t\tNULL\t\ncollectedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nbancoNome\tvarchar(200)\tYES\t\tNULL\t\ncontaNumero\tvarchar(30)\tYES\t\tNULL\t\nagencia\tvarchar(20)\tYES\t\tNULL\t\nformaCobranca\tvarchar(500)\tYES\t\tNULL\t\nformaCobrancaId\tbigint\tYES\t\tNULL\t\nanotacoes\ttext\tYES\t\tNULL\t\ndecisaoCobranca\tvarchar(200)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 254
+}

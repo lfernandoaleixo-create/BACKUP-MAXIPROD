@@ -1,0 +1,9 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.empresaNome, ar.valorOriginal, ar.valorLiquido, ar.vencimentoData, ar.tipo, ar.estado, ar.centroDeCustosId, ca.status as cobrancaStatus FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ar.id = ca.receivableId WHERE ar.estado = 'Vencido' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.empresaNome, ar.valorOriginal, ar.valorLiquido, ar.vencimentoData, ar.tipo, ar.estado, ar.centroDeCustosId, ca.status as cobrancaStatus FROM accounts_receivable ar LEFT JOIN collection_actions ca ON ar.id = ca.receivableId WHERE ar.estado = 'Vencido' LIMIT 5;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 264
+}

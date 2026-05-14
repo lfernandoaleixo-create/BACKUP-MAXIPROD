@@ -1,0 +1,34 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.valorLiquido, ar.valorRecebidoLiquido, LEFT(ar.vencimentoData,10) as venc, ar.estado FROM accounts_receivable ar WHERE UPPER(TRIM(ar.cliente)) IN ('FLAVIO JOSE DE OLIVEIRA', 'AMERICAN PIROTECNIA LTDA', 'MOISES MOREIRA DE AGUIAR', '48.128.486 CARLOS HUMBERTO BUENO') AND ar.estado = 'EMITIDO' ORDER BY ar.cliente, ar.vencimentoData;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.valorLiquido, ar.valorRecebidoLiquido, LEFT(ar.vencimentoData,10) as venc, ar.estado FROM accounts_receivable ar WHERE UPPER(TRIM(ar.cliente)) IN ('FLAVIO JOSE DE OLIVEIRA', 'AMERICAN PIROTECNIA LTDA', 'MOISES MOREIRA DE AGUIAR', '48.128.486 CARLOS HUMBERTO BUENO') AND ar.estado = 'EMITIDO' ORDER BY ar.cliente, ar.vencimentoData;",
+  "rows": [
+    {
+      "id": "5473792",
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "valorLiquido": "462.00",
+      "valorRecebidoLiquido": "112.00",
+      "venc": "2024-11-01",
+      "estado": "EMITIDO"
+    },
+    {
+      "id": "5685139",
+      "cliente": "FLAVIO JOSE DE OLIVEIRA",
+      "valorLiquido": "11290.00",
+      "valorRecebidoLiquido": "9200.00",
+      "venc": "2026-05-12",
+      "estado": "EMITIDO"
+    },
+    {
+      "id": "5473787",
+      "cliente": "MOISES MOREIRA DE AGUIAR",
+      "valorLiquido": "450.00",
+      "valorRecebidoLiquido": "150.00",
+      "venc": "2025-04-02",
+      "estado": "EMITIDO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvalorRecebidoLiquido\tvenc\testado\n5473792\t48.128.486 CARLOS HUMBERTO BUENO\t462.00\t112.00\t2024-11-01\tEMITIDO\n5685139\tFLAVIO JOSE DE OLIVEIRA\t11290.00\t9200.00\t2026-05-12\tEMITIDO\n5473787\tMOISES MOREIRA DE AGUIAR\t450.00\t150.00\t2025-04-02\tEMITIDO\n",
+  "stderr": "",
+  "execution_time_ms": 286
+}
