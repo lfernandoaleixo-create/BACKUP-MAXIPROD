@@ -1,0 +1,90 @@
+{
+  "query": "SELECT codigoItem, descricaoItem, grupoCodigo, descricaoGrupo, estoqueLocal, quantidade FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo = '18' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricaoItem, grupoCodigo, descricaoGrupo, estoqueLocal, quantidade FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo = '18' LIMIT 10;",
+  "rows": [
+    {
+      "codigoItem": "00086",
+      "descricaoItem": "VARETA AROMATIZADOR 4,0 X 218 MM 10.000",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00089",
+      "descricaoItem": "VARETA AROMATIZADOR 4,0 X 250 MM 10.000",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00090",
+      "descricaoItem": "VARETA AROMATIZADOR 4,0 X 250 MM 100 x 100",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00077",
+      "descricaoItem": "VARETA AROMATIZADOR 4,0 X 125 MM 10.000",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00095",
+      "descricaoItem": "VARETA AROMATIZADOR 3,5 X 200 MM 10.000",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00079",
+      "descricaoItem": "VARETA AROMATIZADOR 4,0 X 125 MM 200 x 100",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00080",
+      "descricaoItem": "VARETA AROMATIZADOR 4,0 X 150 MM 10.000",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00081",
+      "descricaoItem": "VARETA AROMATIZADOR 4,0 X 150 MM 100 x 100",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00082",
+      "descricaoItem": "VARETA AROMATIZADOR 4,0 X 180 MM 10.000",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00083",
+      "descricaoItem": "VARETA AROMATIZADOR 4,0 X 180 MM 100 x 100",
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "estoqueLocal": "Estoque",
+      "quantidade": "0.00000"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tdescricaoItem\tgrupoCodigo\tdescricaoGrupo\testoqueLocal\tquantidade\n00086\tVARETA AROMATIZADOR 4,0 X 218 MM 10.000\t18\t\tEstoque\t0.00000\n00089\tVARETA AROMATIZADOR 4,0 X 250 MM 10.000\t18\t\tEstoque\t0.00000\n00090\tVARETA AROMATIZADOR 4,0 X 250 MM 100 x 100\t18\t\tEstoque\t0.00000\n00077\tVARETA AROMATIZADOR 4,0 X 125 MM 10.000\t18\t\tEstoque\t0.00000\n00095\tVARETA AROMATIZADOR 3,5 X 200 MM 10.000\t18\t\tEstoque\t0.00000\n00079\tVARETA AROMATIZADOR 4,0 X 125 MM 200 x 100\t18\t\tEstoque\t0.00000\n00080\tVARETA AROMATIZADOR 4,0 X 150 MM 10.000\t18\t\tEstoque\t0.00000\n00081\tVARETA AROMATIZADOR 4,0 X 150 MM 100 x 100\t18\t\tEstoque\t0.00000\n00082\tVARETA AROMATIZADOR 4,0 X 180 MM 10.000\t18\t\tEstoque\t0.00000\n00083\tVARETA AROMATIZADOR 4,0 X 180 MM 100 x 100\t18\t\tEstoque\t0.00000\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

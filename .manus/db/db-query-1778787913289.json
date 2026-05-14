@@ -1,0 +1,9 @@
+{
+  "query": "SELECT grupoCodigo, descricaoGrupo, estoqueLocal, COUNT(*) as qtd, SUM(quantidade) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS' AND grupoCodigo IN ('20', '21') GROUP BY grupoCodigo, descricaoGrupo, estoqueLocal ORDER BY estoqueLocal;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT grupoCodigo, descricaoGrupo, estoqueLocal, COUNT(*) as qtd, SUM(quantidade) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS' AND grupoCodigo IN ('20', '21') GROUP BY grupoCodigo, descricaoGrupo, estoqueLocal ORDER BY estoqueLocal;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 261
+}

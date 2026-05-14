@@ -1,0 +1,22 @@
+{
+  "query": "SELECT card, COUNT(*) as qtd FROM stock_edit_history GROUP BY card;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT card, COUNT(*) as qtd FROM stock_edit_history GROUP BY card;",
+  "rows": [
+    {
+      "card": "semiPronto",
+      "qtd": "38"
+    },
+    {
+      "card": "aguardandoEscolha",
+      "qtd": "38"
+    },
+    {
+      "card": "madeira",
+      "qtd": "503"
+    }
+  ],
+  "messages": [],
+  "stdout": "card\tqtd\nsemiPronto\t38\naguardandoEscolha\t38\nmadeira\t503\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

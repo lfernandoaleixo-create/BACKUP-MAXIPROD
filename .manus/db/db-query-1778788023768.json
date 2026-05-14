@@ -1,0 +1,58 @@
+{
+  "query": "SELECT codigoItem, descricaoItem, descricaoGrupo, ROUND(quantidade) as qtdUn, COALESCE(unidadeDeVendaFator, 1) as fator, ROUND(quantidade / COALESCE(NULLIF(unidadeDeVendaFator, 0), 1)) as caixas FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo = '20' AND (descricaoGrupo IS NULL OR descricaoGrupo = '') AND quantidade > 0 ORDER BY quantidade DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricaoItem, descricaoGrupo, ROUND(quantidade) as qtdUn, COALESCE(unidadeDeVendaFator, 1) as fator, ROUND(quantidade / COALESCE(NULLIF(unidadeDeVendaFator, 0), 1)) as caixas FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo = '20' AND (descricaoGrupo IS NULL OR descricaoGrupo = '') AND quantidade > 0 ORDER BY quantidade DESC;",
+  "rows": [
+    {
+      "codigoItem": "00408",
+      "descricaoItem": "ESPETO DE BAMBU 3,5 X 300 MM C/ 100 x 40 UNID. - PALITIN",
+      "descricaoGrupo": "",
+      "qtdUn": "3952000",
+      "fator": "4000.00000",
+      "caixas": "988"
+    },
+    {
+      "codigoItem": "00406",
+      "descricaoItem": "ESPETO DE BAMBU 3,5 X 250 MM C/ 100 x 40 UNID. - PALITIN",
+      "descricaoGrupo": "",
+      "qtdUn": "3808000",
+      "fator": "4000.00000",
+      "caixas": "952"
+    },
+    {
+      "codigoItem": "00274Z",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - ZECA",
+      "descricaoGrupo": "",
+      "qtdUn": "2890000",
+      "fator": "5000.00000",
+      "caixas": "578"
+    },
+    {
+      "codigoItem": "00274B",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - BAMBUSA",
+      "descricaoGrupo": "",
+      "qtdUn": "1760000",
+      "fator": "5000.00000",
+      "caixas": "352"
+    },
+    {
+      "codigoItem": "00407",
+      "descricaoItem": "ESPETO DE BAMBU 3,5 X 280 MM C/ 100 x 40 UNID. - PALITIN",
+      "descricaoGrupo": "",
+      "qtdUn": "1580000",
+      "fator": "4000.00000",
+      "caixas": "395"
+    },
+    {
+      "codigoItem": "00262",
+      "descricaoItem": "APARELHO MANUAL PARA FABRICAÇÃO DE ESPETOS",
+      "descricaoGrupo": "",
+      "qtdUn": "4",
+      "fator": "1.00000",
+      "caixas": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tdescricaoItem\tdescricaoGrupo\tqtdUn\tfator\tcaixas\n00408\tESPETO DE BAMBU 3,5 X 300 MM C/ 100 x 40 UNID. - PALITIN\t\t3952000\t4000.00000\t988\n00406\tESPETO DE BAMBU 3,5 X 250 MM C/ 100 x 40 UNID. - PALITIN\t\t3808000\t4000.00000\t952\n00274Z\tESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - ZECA\t\t2890000\t5000.00000\t578\n00274B\tESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - BAMBUSA\t\t1760000\t5000.00000\t352\n00407\tESPETO DE BAMBU 3,5 X 280 MM C/ 100 x 40 UNID. - PALITIN\t\t1580000\t4000.00000\t395\n00262\tAPARELHO MANUAL PARA FABRICAÇÃO DE ESPETOS\t\t4\t1.00000\t4\n",
+  "stderr": "",
+  "execution_time_ms": 282
+}

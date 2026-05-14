@@ -1,0 +1,58 @@
+{
+  "query": "SELECT grupoCodigo, descricaoGrupo, codigoSuperGrupo, descricaoSuperGrupo, COUNT(*) as qtd, ROUND(SUM(quantidade)) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' GROUP BY grupoCodigo, descricaoGrupo, codigoSuperGrupo, descricaoSuperGrupo ORDER BY codigoSuperGrupo, grupoCodigo;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT grupoCodigo, descricaoGrupo, codigoSuperGrupo, descricaoSuperGrupo, COUNT(*) as qtd, ROUND(SUM(quantidade)) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' GROUP BY grupoCodigo, descricaoGrupo, codigoSuperGrupo, descricaoSuperGrupo ORDER BY codigoSuperGrupo, grupoCodigo;",
+  "rows": [
+    {
+      "grupoCodigo": "18",
+      "descricaoGrupo": "",
+      "codigoSuperGrupo": "",
+      "descricaoSuperGrupo": "",
+      "qtd": "90",
+      "totalQtd": "0"
+    },
+    {
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "codigoSuperGrupo": "409300004424916",
+      "descricaoSuperGrupo": "",
+      "qtd": "41",
+      "totalQtd": "56429960"
+    },
+    {
+      "grupoCodigo": "20",
+      "descricaoGrupo": "PALITO",
+      "codigoSuperGrupo": "409300004424916",
+      "descricaoSuperGrupo": "",
+      "qtd": "32",
+      "totalQtd": "574116000"
+    },
+    {
+      "grupoCodigo": "20",
+      "descricaoGrupo": "",
+      "codigoSuperGrupo": "409300004424916",
+      "descricaoSuperGrupo": "",
+      "qtd": "9",
+      "totalQtd": "13990004"
+    },
+    {
+      "grupoCodigo": "20",
+      "descricaoGrupo": "VARETA",
+      "codigoSuperGrupo": "409300004424916",
+      "descricaoSuperGrupo": "",
+      "qtd": "9",
+      "totalQtd": "1534400"
+    },
+    {
+      "grupoCodigo": "21",
+      "descricaoGrupo": "",
+      "codigoSuperGrupo": "409300004424916",
+      "descricaoSuperGrupo": "",
+      "qtd": "8",
+      "totalQtd": "12755000"
+    }
+  ],
+  "messages": [],
+  "stdout": "grupoCodigo\tdescricaoGrupo\tcodigoSuperGrupo\tdescricaoSuperGrupo\tqtd\ttotalQtd\n18\t\t\t\t90\t0\n20\tESPETO\t409300004424916\t\t41\t56429960\n20\tPALITO\t409300004424916\t\t32\t574116000\n20\t\t409300004424916\t\t9\t13990004\n20\tVARETA\t409300004424916\t\t9\t1534400\n21\t\t409300004424916\t\t8\t12755000\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

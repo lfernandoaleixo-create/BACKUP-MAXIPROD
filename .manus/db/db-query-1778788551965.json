@@ -1,0 +1,79 @@
+{
+  "query": "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE '%sync%' OR TABLE_NAME LIKE '%history%' OR TABLE_NAME LIKE '%log%' OR TABLE_NAME LIKE '%backup%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE '%sync%' OR TABLE_NAME LIKE '%history%' OR TABLE_NAME LIKE '%log%' OR TABLE_NAME LIKE '%backup%';",
+  "rows": [
+    {
+      "TABLE_NAME": "stock_edit_history"
+    },
+    {
+      "TABLE_NAME": "industrialized_billing_history"
+    },
+    {
+      "TABLE_NAME": "inadimplencia_backup"
+    },
+    {
+      "TABLE_NAME": "ecommerce_transfer_history"
+    },
+    {
+      "TABLE_NAME": "discount_selection_history"
+    },
+    {
+      "TABLE_NAME": "decision_pdf_history"
+    },
+    {
+      "TABLE_NAME": "collection_manual_tick_history"
+    },
+    {
+      "TABLE_NAME": "cobranca_planilha_backup"
+    },
+    {
+      "TABLE_NAME": "cheque_sync_changes"
+    },
+    {
+      "TABLE_NAME": "events_transactions_history_long"
+    },
+    {
+      "TABLE_NAME": "events_transactions_history"
+    },
+    {
+      "TABLE_NAME": "events_statements_history_long"
+    },
+    {
+      "TABLE_NAME": "events_statements_history"
+    },
+    {
+      "TABLE_NAME": "events_stages_history_long"
+    },
+    {
+      "TABLE_NAME": "events_stages_history"
+    },
+    {
+      "TABLE_NAME": "tidb_ttl_job_history"
+    },
+    {
+      "TABLE_NAME": "tidb_global_task_history"
+    },
+    {
+      "TABLE_NAME": "tidb_ddl_history"
+    },
+    {
+      "TABLE_NAME": "tidb_background_subtask_history"
+    },
+    {
+      "TABLE_NAME": "stats_meta_history"
+    },
+    {
+      "TABLE_NAME": "stats_history"
+    },
+    {
+      "TABLE_NAME": "password_history"
+    },
+    {
+      "TABLE_NAME": "auto_analyze_tasks_history"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\nstock_edit_history\nindustrialized_billing_history\ninadimplencia_backup\necommerce_transfer_history\ndiscount_selection_history\ndecision_pdf_history\ncollection_manual_tick_history\ncobranca_planilha_backup\ncheque_sync_changes\nevents_transactions_history_long\nevents_transactions_history\nevents_statements_history_long\nevents_statements_history\nevents_stages_history_long\nevents_stages_history\ntidb_ttl_job_history\ntidb_global_task_history\ntidb_ddl_history\ntidb_background_subtask_history\nstats_meta_history\nstats_history\npassword_history\nauto_analyze_tasks_history\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}

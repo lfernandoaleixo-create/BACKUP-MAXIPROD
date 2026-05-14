@@ -3734,3 +3734,5 @@
 - [x] Planilha de Cobrança: adicionar observação individual por etapa (1ª Cobrança, Intervalo, 2ª Cobrança, etc.)
 - [x] Planilha de Cobrança: substituir campo de texto por date picker em cada etapa
 - [x] Planilha de Cobrança: adicionar balãozinho de histórico de observações com badge vermelho
+- [ ] Estoque Importação: investigar e corrigir itens indevidos (estoque da fiscal não deve aparecer no dashboard)
+- [x] Contas Futuras: botão "Pago" que converte conta futura em despesa no card de Despesas (com anexos)

@@ -1,0 +1,14 @@
+{
+  "query": "SELECT SUM(ROUND(quantidade / COALESCE(NULLIF(unidadeDeVendaFator, 0), 1))) as totalCaixas, COUNT(*) as totalItens FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo IN ('20', '21') AND quantidade > 0;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT SUM(ROUND(quantidade / COALESCE(NULLIF(unidadeDeVendaFator, 0), 1))) as totalCaixas, COUNT(*) as totalItens FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo IN ('20', '21') AND quantidade > 0;",
+  "rows": [
+    {
+      "totalCaixas": "28342",
+      "totalItens": "53"
+    }
+  ],
+  "messages": [],
+  "stdout": "totalCaixas\ttotalItens\n28342\t53\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

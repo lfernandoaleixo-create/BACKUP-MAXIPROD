@@ -1,0 +1,280 @@
+{
+  "query": "SELECT codigoItem, descricaoItem, grupoCodigo, descricaoGrupo, ROUND(quantidade) as qtdUnidades, unidadeMedida, COALESCE(unidadeDeVendaFator, 1) as fatorCx FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo IN ('20', '21') AND quantidade > 0 ORDER BY quantidade DESC LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricaoItem, grupoCodigo, descricaoGrupo, ROUND(quantidade) as qtdUnidades, unidadeMedida, COALESCE(unidadeDeVendaFator, 1) as fatorCx FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo IN ('20', '21') AND quantidade > 0 ORDER BY quantidade DESC LIMIT 30;",
+  "rows": [
+    {
+      "codigoItem": "00032",
+      "descricaoItem": "PALITO DE DENTE BAMBU C/ 20 X 25 X 100 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "PALITO",
+      "qtdUnidades": "525050000",
+      "unidadeMedida": "un",
+      "fatorCx": "50000.00000"
+    },
+    {
+      "codigoItem": "00033",
+      "descricaoItem": "PALITO DE DENTE BAMBU EMBALADO INDIVIDUALMENTE C/ 50 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "PALITO",
+      "qtdUnidades": "33550000",
+      "unidadeMedida": "un",
+      "fatorCx": "50000.00000"
+    },
+    {
+      "codigoItem": "00110",
+      "descricaoItem": "VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA",
+      "grupoCodigo": "21",
+      "descricaoGrupo": "",
+      "qtdUnidades": "12755000",
+      "unidadeMedida": "un",
+      "fatorCx": "20000.00000"
+    },
+    {
+      "codigoItem": "00021",
+      "descricaoItem": "ESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "5860000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00024",
+      "descricaoItem": "ESPETO DE BAMBU 4,5 X 300 MM C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "5425000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00006",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 220 MM MEIA PONTA C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "4850000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00040",
+      "descricaoItem": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 10.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "PALITO",
+      "qtdUnidades": "4280000",
+      "unidadeMedida": "un",
+      "fatorCx": "10000.00000"
+    },
+    {
+      "codigoItem": "00408",
+      "descricaoItem": "ESPETO DE BAMBU 3,5 X 300 MM C/ 100 x 40 UNID. - PALITIN",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "",
+      "qtdUnidades": "3952000",
+      "unidadeMedida": "un",
+      "fatorCx": "4000.00000"
+    },
+    {
+      "codigoItem": "00005",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 220 MM  C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "3940000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00018",
+      "descricaoItem": "ESPETO DE BAMBU 4,5 X 250 MM  C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "3835000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00406",
+      "descricaoItem": "ESPETO DE BAMBU 3,5 X 250 MM C/ 100 x 40 UNID. - PALITIN",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "",
+      "qtdUnidades": "3808000",
+      "unidadeMedida": "un",
+      "fatorCx": "4000.00000"
+    },
+    {
+      "codigoItem": "00007Z",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 250 MM C/ 125 X 40 UNID. - ZECA",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "3785000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00015B",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 300 MM C/ 125 X 40 UNID. - BAMBUSA",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "3760000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00017",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "3685000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00051",
+      "descricaoItem": "PALITO DE MANICURE PONTA/CHANFRO BAMBU 5,0 X 140 MM C/ 10.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "PALITO",
+      "qtdUnidades": "3305200",
+      "unidadeMedida": "un",
+      "fatorCx": "10000.00000"
+    },
+    {
+      "codigoItem": "00003",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 200 MM  C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "3290000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00037",
+      "descricaoItem": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 10.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "PALITO",
+      "qtdUnidades": "3157600",
+      "unidadeMedida": "un",
+      "fatorCx": "10000.00000"
+    },
+    {
+      "codigoItem": "00274Z",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - ZECA",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "",
+      "qtdUnidades": "2890000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00031",
+      "descricaoItem": "ESPETO DE BAMBU 5,0 X 350 MM C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "2775000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00029",
+      "descricaoItem": "ESPETO DE BAMBU 5,0 X 300 MM C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "2715000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00004",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 200 MM MEIA PONTA C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "2695000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00199",
+      "descricaoItem": "ESPETO DE BAMBU CASCA VERDE 4,5 X 300 MM C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "2370000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00030",
+      "descricaoItem": "ESPETO DE BAMBU 5,0 X 330 MM C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "2075000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00274B",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - BAMBUSA",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "",
+      "qtdUnidades": "1760000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00407",
+      "descricaoItem": "ESPETO DE BAMBU 3,5 X 280 MM C/ 100 x 40 UNID. - PALITIN",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "",
+      "qtdUnidades": "1580000",
+      "unidadeMedida": "un",
+      "fatorCx": "4000.00000"
+    },
+    {
+      "codigoItem": "00046",
+      "descricaoItem": "PALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 10.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "PALITO",
+      "qtdUnidades": "1380000",
+      "unidadeMedida": "un",
+      "fatorCx": "10000.00000"
+    },
+    {
+      "codigoItem": "00148",
+      "descricaoItem": "PALITO PARA PETISCO BAMBU 3,5 X 120 MM C/ 10.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "PALITO",
+      "qtdUnidades": "1350000",
+      "unidadeMedida": "un",
+      "fatorCx": "10000.00000"
+    },
+    {
+      "codigoItem": "00007B",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 250 MM C/ 125 X 40 UNID. - BAMBUSA",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "1215000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00020",
+      "descricaoItem": "ESPETO DE BAMBU 4,5 X 250 MM MEIA PONTA C/ 5 X 1.000 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "1120000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    },
+    {
+      "codigoItem": "00022",
+      "descricaoItem": "ESPETO DE BAMBU 4,5 X 280 MM C/ 50 X 100 UNID.",
+      "grupoCodigo": "20",
+      "descricaoGrupo": "ESPETO",
+      "qtdUnidades": "750000",
+      "unidadeMedida": "un",
+      "fatorCx": "5000.00000"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tdescricaoItem\tgrupoCodigo\tdescricaoGrupo\tqtdUnidades\tunidadeMedida\tfatorCx\n00032\tPALITO DE DENTE BAMBU C/ 20 X 25 X 100 UNID.\t20\tPALITO\t525050000\tun\t50000.00000\n00033\tPALITO DE DENTE BAMBU EMBALADO INDIVIDUALMENTE C/ 50 X 1.000 UNID.\t20\tPALITO\t33550000\tun\t50000.00000\n00110\tVARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA\t21\t\t12755000\tun\t20000.00000\n00021\tESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.\t20\tESPETO\t5860000\tun\t5000.00000\n00024\tESPETO DE BAMBU 4,5 X 300 MM C/ 5 X 1.000 UNID.\t20\tESPETO\t5425000\tun\t5000.00000\n00006\tESPETO DE BAMBU 4,0 X 220 MM MEIA PONTA C/ 5 X 1.000 UNID.\t20\tESPETO\t4850000\tun\t5000.00000\n00040\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 10.000 UNID.\t20\tPALITO\t4280000\tun\t10000.00000\n00408\tESPETO DE BAMBU 3,5 X 300 MM C/ 100 x 40 UNID. - PALITIN\t20\t\t3952000\tun\t4000.00000\n00005\tESPETO DE BAMBU 4,0 X 220 MM  C/ 5 X 1.000 UNID.\t20\tESPETO\t3940000\tun\t5000.00000\n00018\tESPETO DE BAMBU 4,5 X 250 MM  C/ 5 X 1.000 UNID.\t20\tESPETO\t3835000\tun\t5000.00000\n00406\tESPETO DE BAMBU 3,5 X 250 MM C/ 100 x 40 UNID. - PALITIN\t20\t\t3808000\tun\t4000.00000\n00007Z\tESPETO DE BAMBU 4,0 X 250 MM C/ 125 X 40 UNID. - ZECA\t20\tESPETO\t3785000\tun\t5000.00000\n00015B\tESPETO DE BAMBU 4,0 X 300 MM C/ 125 X 40 UNID. - BAMBUSA\t20\tESPETO\t3760000\tun\t5000.00000\n00017\tESPETO DE BAMBU 4,0 X 300 MM C/ 5 X 1.000 UNID.\t20\tESPETO\t3685000\tun\t5000.00000\n00051\tPALITO DE MANICURE PONTA/CHANFRO BAMBU 5,0 X 140 MM C/ 10.000 UNID.\t20\tPALITO\t3305200\tun\t10000.00000\n00003\tESPETO DE BAMBU 4,0 X 200 MM  C/ 5 X 1.000 UNID.\t20\tESPETO\t3290000\tun\t5000.00000\n00037\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 10.000 UNID.\t20\tPALITO\t3157600\tun\t10000.00000\n00274Z\tESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - ZECA\t20\t\t2890000\tun\t5000.00000\n00031\tESPETO DE BAMBU 5,0 X 350 MM C/ 5 X 1.000 UNID.\t20\tESPETO\t2775000\tun\t5000.00000\n00029\tESPETO DE BAMBU 5,0 X 300 MM C/ 5 X 1.000 UNID.\t20\tESPETO\t2715000\tun\t5000.00000\n00004\tESPETO DE BAMBU 4,0 X 200 MM MEIA PONTA C/ 5 X 1.000 UNID.\t20\tESPETO\t2695000\tun\t5000.00000\n00199\tESPETO DE BAMBU CASCA VERDE 4,5 X 300 MM C/ 5 X 1.000 UNID.\t20\tESPETO\t2370000\tun\t5000.00000\n00030\tESPETO DE BAMBU 5,0 X 330 MM C/ 5 X 1.000 UNID.\t20\tESPETO\t2075000\tun\t5000.00000\n00274B\tESPETO DE BAMBU 4,0 X 280 MM C/ 125 X 40 UNID. - BAMBUSA\t20\t\t1760000\tun\t5000.00000\n00407\tESPETO DE BAMBU 3,5 X 280 MM C/ 100 x 40 UNID. - PALITIN\t20\t\t1580000\tun\t4000.00000\n00046\tPALITO DE MANICURE PONTA/CHANFRO BAMBU 4,0 X 125 MM C/ 10.000 UNID.\t20\tPALITO\t1380000\tun\t10000.00000\n00148\tPALITO PARA PETISCO BAMBU 3,5 X 120 MM C/ 10.000 UNID.\t20\tPALITO\t1350000\tun\t10000.00000\n00007B\tESPETO DE BAMBU 4,0 X 250 MM C/ 125 X 40 UNID. - BAMBUSA\t20\tESPETO\t1215000\tun\t5000.00000\n00020\tESPETO DE BAMBU 4,5 X 250 MM MEIA PONTA C/ 5 X 1.000 UNID.\t20\tESPETO\t1120000\tun\t5000.00000\n00022\tESPETO DE BAMBU 4,5 X 280 MM C/ 50 X 100 UNID.\t20\tESPETO\t750000\tun\t5000.00000\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

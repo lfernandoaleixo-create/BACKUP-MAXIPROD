@@ -1017,4 +1017,77 @@ export const ecommerceRouter = router({
       await db.delete(futureBillAttachments).where(eq(futureBillAttachments.id, input.id));
       return { success: true };
     }),
+
+  // ============================================================
+  // MARCAR CONTA FUTURA COMO PAGA → CRIA DESPESA
+  // ============================================================
+
+  /**
+   * Mark a future bill as paid and create a corresponding expense.
+   * Also copies any attachments from the future bill to the new expense.
+   */
+  markFutureBillAsPaid: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      billId: z.number(),
+      dataPagamento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // defaults to today
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+
+      // 1. Find the future bill
+      const [bill] = await db.select().from(ecommerceFutureBills)
+        .where(eq(ecommerceFutureBills.id, input.billId));
+      if (!bill) return { success: false, error: "Conta futura não encontrada" };
+      if (bill.status === "pago") return { success: false, error: "Conta já está marcada como paga" };
+      if (bill.status === "cancelado") return { success: false, error: "Conta cancelada não pode ser marcada como paga" };
+
+      // 2. Determine payment date (today if not provided)
+      const dataPgto = input.dataPagamento || new Date().toISOString().slice(0, 10);
+
+      // 3. Create the expense with same data
+      const [expResult] = await db.insert(ecommerceExpenses).values({
+        descricao: bill.descricao,
+        dataCompra: dataPgto,
+        formaPagamento: bill.formaPagamento,
+        parcelas: bill.parcelas,
+        valorTotal: bill.valorTotal,
+        observacao: bill.observacao ? `[Conta Futura] ${bill.observacao}` : "[Conta Futura]",
+        recorrente: bill.recorrente,
+        cartaoId: bill.cartaoId,
+        registradoPor: input.operatorName,
+      });
+      const newExpenseId = Number(expResult.insertId);
+
+      // 4. Copy attachments from future bill to the new expense
+      const billAttachments = await db.select().from(futureBillAttachments)
+        .where(eq(futureBillAttachments.billId, input.billId));
+      
+      for (const att of billAttachments) {
+        await db.insert(expenseAttachments).values({
+          expenseId: newExpenseId,
+          fileName: att.fileName,
+          fileUrl: att.fileUrl,
+          fileKey: att.fileKey,
+          mimeType: att.mimeType,
+          fileSize: att.fileSize,
+          uploadedBy: att.uploadedBy,
+        });
+      }
+
+      // 5. Mark future bill as paid
+      await db.update(ecommerceFutureBills)
+        .set({ status: "pago" })
+        .where(eq(ecommerceFutureBills.id, input.billId));
+
+      return {
+        success: true,
+        expenseId: newExpenseId,
+        attachmentsCopied: billAttachments.length,
+      };
+    }),
 });

@@ -1,0 +1,13 @@
+{
+  "query": "SHOW TABLES LIKE '%sync%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SHOW TABLES LIKE '%sync%';",
+  "rows": [
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%sync%)": "cheque_sync_changes"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%sync%)\ncheque_sync_changes\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

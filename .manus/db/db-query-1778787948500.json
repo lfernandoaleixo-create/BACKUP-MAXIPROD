@@ -1,0 +1,15 @@
+{
+  "query": "SELECT estoqueLocal, COUNT(*) as qtd, ROUND(SUM(quantidade)) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo IN ('20', '21') GROUP BY estoqueLocal ORDER BY estoqueLocal;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT estoqueLocal, COUNT(*) as qtd, ROUND(SUM(quantidade)) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo IN ('20', '21') GROUP BY estoqueLocal ORDER BY estoqueLocal;",
+  "rows": [
+    {
+      "estoqueLocal": "Estoque",
+      "qtd": "99",
+      "totalQtd": "658825364"
+    }
+  ],
+  "messages": [],
+  "stdout": "estoqueLocal\tqtd\ttotalQtd\nEstoque\t99\t658825364\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

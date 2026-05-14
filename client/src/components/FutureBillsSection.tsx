@@ -291,6 +291,9 @@ export default function FutureBillsSection() {
     { enabled: !!attachmentBillId }
   );
 
+  // tRPC utils for cross-component cache invalidation
+  const utils = trpc.useUtils();
+
   // Mutations
   const addBillMutation = trpc.ecommerce.addFutureBill.useMutation({
     onSuccess: async (data: any) => {
@@ -316,6 +319,22 @@ export default function FutureBillsSection() {
   const deleteBillMutation = trpc.ecommerce.deleteFutureBill.useMutation({ onSuccess: () => refetchBills() });
   const uploadAttachmentMutation = trpc.ecommerce.uploadFutureBillAttachment.useMutation({ onSuccess: () => refetchAttachments() });
   const deleteAttachmentMutation = trpc.ecommerce.deleteFutureBillAttachment.useMutation({ onSuccess: () => refetchAttachments() });
+
+  // Mutation: mark as paid → creates expense + copies attachments
+  const markAsPaidMutation = trpc.ecommerce.markFutureBillAsPaid.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        // Refresh future bills list and summary
+        refetchBills();
+        utils.ecommerce.getFutureBillsSummary.invalidate();
+        utils.ecommerce.getFutureBillAttachmentCounts.invalidate();
+        // Refresh the expenses card in EcommerceTab
+        utils.ecommerce.listExpenses.invalidate();
+        utils.ecommerce.getSummary.invalidate();
+        utils.ecommerce.getAttachmentCounts.invalidate();
+      }
+    },
+  });
 
   const bills = billsData?.bills || [];
   const creditCards = cardsData?.cards || [];
@@ -413,21 +432,20 @@ export default function FutureBillsSection() {
     setShowForm(true);
   };
 
+  const [payingBillId, setPayingBillId] = useState<number | null>(null);
+
   const handleMarkAsPaid = (bill: any) => {
-    if (confirm(`Marcar "${bill.descricao}" como PAGO?`)) {
-      updateBillMutation.mutate({
-        operatorName,
-        id: bill.id,
-        descricao: bill.descricao,
-        dataVencimento: bill.dataVencimento,
-        formaPagamento: bill.formaPagamento,
-        parcelas: bill.parcelas,
-        valorTotal: Number(bill.valorTotal),
-        observacao: bill.observacao || undefined,
-        recorrente: bill.recorrente === 1,
-        cartaoId: bill.cartaoId,
-        status: "pago",
-      });
+    if (confirm(`Marcar "${bill.descricao}" como PAGO?\n\nIsso vai criar automaticamente uma despesa no card de Despesas com os mesmos dados e anexos.`)) {
+      setPayingBillId(bill.id);
+      markAsPaidMutation.mutate(
+        {
+          operatorName,
+          billId: bill.id,
+        },
+        {
+          onSettled: () => setPayingBillId(null),
+        }
+      );
     }
   };
 
@@ -823,18 +841,23 @@ export default function FutureBillsSection() {
                       <td className="px-4 py-3 text-center text-xs text-slate-600">{bill.registradoPor}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1">
-                          {/* Mark as paid */}
+                          {/* Mark as paid → creates expense */}
                           {bill.status === "pendente" && canEdit && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
                                   onClick={() => handleMarkAsPaid(bill)}
-                                  className="text-slate-400 hover:text-green-600 transition-colors p-1 cursor-pointer"
+                                  disabled={payingBillId === bill.id}
+                                  className="text-slate-400 hover:text-green-600 transition-colors p-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  {payingBillId === bill.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-green-500" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
                                 </button>
                               </TooltipTrigger>
-                              <TooltipContent>Marcar como Pago</TooltipContent>
+                              <TooltipContent>Pagar → Criar Despesa</TooltipContent>
                             </Tooltip>
                           )}
                           {/* Clips */}

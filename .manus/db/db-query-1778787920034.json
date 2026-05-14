@@ -1,0 +1,9 @@
+{
+  "query": "SELECT grupoCodigo, descricaoGrupo, codigoSuperGrupo, descricaoSuperGrupo, COUNT(*) as qtd, SUM(quantidade) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS' GROUP BY grupoCodigo, descricaoGrupo, codigoSuperGrupo, descricaoSuperGrupo ORDER BY grupoCodigo;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT grupoCodigo, descricaoGrupo, codigoSuperGrupo, descricaoSuperGrupo, COUNT(*) as qtd, SUM(quantidade) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS' GROUP BY grupoCodigo, descricaoGrupo, codigoSuperGrupo, descricaoSuperGrupo ORDER BY grupoCodigo;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 264
+}

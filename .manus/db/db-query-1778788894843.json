@@ -1,0 +1,277 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "accounts_payable"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "accounts_receivable"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "aguardando_escolha_stock"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "annotation_entries"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "app_settings"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "auth_completion"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "bank_accounts"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "bank_reconciliation"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "bank_transactions"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "billed_industrialized_snapshot"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "billing_authorizations"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "billing_observations"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "cheque_custodians"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "cheque_exchanges"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "cheque_sync_changes"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "cobranca_etapa_obs"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "cobranca_planilha"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "cobranca_planilha_backup"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "collection_action_edits"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "collection_actions"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "collection_daily_actions"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "collection_documents"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "collection_manual_tick_history"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "collection_manual_ticks"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "collection_status"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "collection_step_overrides"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "daily_reconciliation"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "dashboard_data"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "decision_pdf_history"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "depot_inventory"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "discount_alert_reads"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "discount_alerts"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "discount_selection_history"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "ecommerce_credit_cards"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "ecommerce_daily_sales"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "ecommerce_expenses"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "ecommerce_future_bills"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "ecommerce_refunds"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "ecommerce_stock_snapshots"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "ecommerce_transfer_history"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "expense_attachments"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "financial_changes"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "financial_snapshots"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "future_bill_attachments"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "inadimplencia_backup"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "industrialized_billing_history"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "madeira_stock"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "madeira_visibility"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "notification_reads"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "operator_granular_permissions"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "operators"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "order_cancellations"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "order_items"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "paid_accounts_monthly"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "payment_authorizations"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "payment_priority_marks"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "pickup_schedule"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "pirografia_entries"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "product_classification"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "product_pricing"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "product_segment_overrides"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "product_variants"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "product_visibility"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "production_acceptance"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "production_entries"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "production_machines"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "production_notes"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "production_sectors"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "production_status"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "purchase_order_items"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "receivable_protest_config"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "resolved_receivables"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "sales_invoice_items"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "sales_orders"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "sales_targets"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "scraper_status"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "seller_admissions"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "semi_pronto_stock"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "sicoob_card_messages"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "spreadsheet_uploads"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "stock_edit_history"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "stock_items"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "supplier_contacts"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "suppliers"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "system_notifications"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "tracking_links"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "transport_selection"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TMh5HqmzfeBw9KakgJtjjo\n__drizzle_migrations\naccounts_payable\naccounts_receivable\naguardando_escolha_stock\nannotation_entries\napp_settings\nauth_completion\nbank_accounts\nbank_reconciliation\nbank_transactions\nbilled_industrialized_snapshot\nbilling_authorizations\nbilling_observations\ncheque_custodians\ncheque_exchanges\ncheque_sync_changes\ncobranca_etapa_obs\ncobranca_planilha\ncobranca_planilha_backup\ncollection_action_edits\ncollection_actions\ncollection_daily_actions\ncollection_documents\ncollection_manual_tick_history\ncollection_manual_ticks\ncollection_status\ncollection_step_overrides\ndaily_reconciliation\ndashboard_data\ndecision_pdf_history\ndepot_inventory\ndiscount_alert_reads\ndiscount_alerts\ndiscount_selection_history\necommerce_credit_cards\necommerce_daily_sales\necommerce_expenses\necommerce_future_bills\necommerce_refunds\necommerce_stock_snapshots\necommerce_transfer_history\nexpense_attachments\nfinancial_changes\nfinancial_snapshots\nfuture_bill_attachments\ninadimplencia_backup\nindustrialized_billing_history\nmadeira_stock\nmadeira_visibility\nnotification_reads\noperator_granular_permissions\noperators\norder_cancellations\norder_items\npaid_accounts_monthly\npayment_authorizations\npayment_priority_marks\npickup_schedule\npirografia_entries\nproduct_classification\nproduct_pricing\nproduct_segment_overrides\nproduct_variants\nproduct_visibility\nproduction_acceptance\nproduction_entries\nproduction_machines\nproduction_notes\nproduction_sectors\nproduction_status\npurchase_order_items\nreceivable_protest_config\nresolved_receivables\nsales_invoice_items\nsales_orders\nsales_targets\nscraper_status\nseller_admissions\nsemi_pronto_stock\nsicoob_card_messages\nspreadsheet_uploads\nstock_edit_history\nstock_items\nsupplier_contacts\nsuppliers\nsystem_notifications\ntracking_links\ntransport_selection\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 253
+}

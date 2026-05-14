@@ -1,0 +1,28 @@
+{
+  "query": "SELECT tipoDecodificado, grupoCodigo, COUNT(*) as qtd, ROUND(SUM(quantidade)) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' GROUP BY tipoDecodificado, grupoCodigo ORDER BY grupoCodigo, tipoDecodificado;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT tipoDecodificado, grupoCodigo, COUNT(*) as qtd, ROUND(SUM(quantidade)) as totalQtd FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' GROUP BY tipoDecodificado, grupoCodigo ORDER BY grupoCodigo, tipoDecodificado;",
+  "rows": [
+    {
+      "tipoDecodificado": "Próprio",
+      "grupoCodigo": "18",
+      "qtd": "90",
+      "totalQtd": "0"
+    },
+    {
+      "tipoDecodificado": "Próprio",
+      "grupoCodigo": "20",
+      "qtd": "91",
+      "totalQtd": "646070364"
+    },
+    {
+      "tipoDecodificado": "Próprio",
+      "grupoCodigo": "21",
+      "qtd": "8",
+      "totalQtd": "12755000"
+    }
+  ],
+  "messages": [],
+  "stdout": "tipoDecodificado\tgrupoCodigo\tqtd\ttotalQtd\nPróprio\t18\t90\t0\nPróprio\t20\t91\t646070364\nPróprio\t21\t8\t12755000\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

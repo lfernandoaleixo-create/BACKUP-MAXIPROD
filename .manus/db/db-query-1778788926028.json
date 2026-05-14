@@ -1,0 +1,13 @@
+{
+  "query": "SELECT DISTINCT collectedAt FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo IN ('20', '21') ORDER BY collectedAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT collectedAt FROM stock_items WHERE empresaDona = 'PALITOS INDUSTRIA' AND grupoCodigo IN ('20', '21') ORDER BY collectedAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "collectedAt": "2026-05-14 19:58:51"
+    }
+  ],
+  "messages": [],
+  "stdout": "collectedAt\n2026-05-14 19:58:51\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}
