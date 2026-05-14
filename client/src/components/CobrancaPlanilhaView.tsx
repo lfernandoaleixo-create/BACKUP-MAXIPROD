@@ -11,8 +11,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// Status colors matching the inadimplência cards
+// Status colors matching the inadimplência (mesmos status)
 const PLANILHA_STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string; icon: React.ReactNode }> = {
+  "Pendente": {
+    label: "Pendente",
+    bg: "bg-slate-50",
+    text: "text-slate-600",
+    border: "border-slate-300",
+    icon: <AlertTriangle className="w-3 h-3" />,
+  },
   "Contatado": {
     label: "Contatado",
     bg: "bg-blue-50",
@@ -34,32 +41,46 @@ const PLANILHA_STATUS_CONFIG: Record<string, { label: string; bg: string; text: 
     border: "border-emerald-300",
     icon: <CheckCircle2 className="w-3 h-3" />,
   },
-  "Pendente": {
-    label: "Pendente",
-    bg: "bg-slate-50",
-    text: "text-slate-600",
-    border: "border-slate-300",
-    icon: <AlertTriangle className="w-3 h-3" />,
-  },
-  "Especial s/ cobrança": {
-    label: "Especial s/ cobrança",
+  "Não deu retorno": {
+    label: "Não deu retorno",
     bg: "bg-purple-50",
     text: "text-purple-700",
     border: "border-purple-300",
-    icon: <Shield className="w-3 h-3" />,
+    icon: <Clock className="w-3 h-3" />,
+  },
+  "Não atendeu": {
+    label: "Não atendeu",
+    bg: "bg-pink-50",
+    text: "text-pink-700",
+    border: "border-pink-300",
+    icon: <Phone className="w-3 h-3" />,
   },
   "Protestado": {
     label: "Protestado",
+    bg: "bg-orange-50",
+    text: "text-orange-700",
+    border: "border-orange-300",
+    icon: <AlertTriangle className="w-3 h-3" />,
+  },
+  "Jurídico": {
+    label: "Jurídico",
     bg: "bg-red-50",
     text: "text-red-700",
     border: "border-red-300",
     icon: <AlertTriangle className="w-3 h-3" />,
   },
-  "Resolvido": {
-    label: "Resolvido",
-    bg: "bg-green-50",
-    text: "text-green-700",
-    border: "border-green-300",
+  "Especial s/ cobrança": {
+    label: "Especial s/ cobrança",
+    bg: "bg-cyan-50",
+    text: "text-cyan-700",
+    border: "border-cyan-300",
+    icon: <Shield className="w-3 h-3" />,
+  },
+  "Cheque em compensação": {
+    label: "Cheque em compensação",
+    bg: "bg-teal-50",
+    text: "text-teal-700",
+    border: "border-teal-300",
     icon: <CheckCircle2 className="w-3 h-3" />,
   },
 };
@@ -365,12 +386,16 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       {/* Empresa */}
                       <td className="px-3 py-2.5">
                         <div className="flex items-start gap-2">
-                          <div className={`w-1 h-8 rounded-full shrink-0 mt-0.5 ${cfg.bg.replace("50", "400")}`} style={{
+                          <div className={`w-1 h-8 rounded-full shrink-0 mt-0.5`} style={{
                             backgroundColor: item.status === "Contatado" ? "#3b82f6" :
                               item.status === "Em negociação" ? "#f59e0b" :
                               item.status === "Promessa de Pgto" ? "#10b981" :
-                              item.status === "Protestado" ? "#ef4444" :
-                              item.status === "Especial s/ cobrança" ? "#8b5cf6" :
+                              item.status === "Não deu retorno" ? "#a855f7" :
+                              item.status === "Não atendeu" ? "#ec4899" :
+                              item.status === "Protestado" ? "#f97316" :
+                              item.status === "Jurídico" ? "#ef4444" :
+                              item.status === "Especial s/ cobrança" ? "#06b6d4" :
+                              item.status === "Cheque em compensação" ? "#14b8a6" :
                               "#94a3b8"
                           }} />
                           <div className="min-w-0">
@@ -499,11 +524,11 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                 {[
                                   { label: "Promessa Pgto", field: "promessaPgto", value: item.promessaPgto },
                                   { label: "1ª Cobrança", field: "primeiraCobranca", value: item.primeiraCobranca },
-                                  { label: "Sem ação 1", field: "semAcao1", value: item.semAcao1 },
+                                  { label: "Intervalo", field: "semAcao1", value: item.semAcao1 },
                                   { label: "2ª Cobrança", field: "segundaCobranca", value: item.segundaCobranca },
-                                  { label: "Sem ação 2", field: "semAcao2", value: item.semAcao2 },
+                                  { label: "Intervalo", field: "semAcao2", value: item.semAcao2 },
                                   { label: "3ª Cobrança", field: "terceiraCobranca", value: item.terceiraCobranca },
-                                  { label: "Sem ação 3", field: "semAcao3", value: item.semAcao3 },
+                                  { label: "Intervalo", field: "semAcao3", value: item.semAcao3 },
                                   { label: "Ação Final", field: "acaoFinal", value: item.acaoFinal },
                                 ].map(step => (
                                   <div key={step.field} className="flex items-center gap-2 text-[11px]">

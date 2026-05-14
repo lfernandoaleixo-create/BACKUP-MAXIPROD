@@ -3705,3 +3705,5 @@
 - [x] Importar 88 títulos e 14 observações da planilha Excel INADIMPLÊNCIA.xlsx
 - [x] Integrar botão "Planilha de Cobrança" na aba Inadimplência para abrir a nova view
 - [x] Testes vitest para o router cobrancaPlanilha (8 testes passando)
+- [x] Planilha de Cobrança: copiar status possíveis da inadimplência (não atendeu, não deu retorno, etc.)
+- [x] Planilha de Cobrança: renomear "Sem ação 1/2/3" para "Intervalo"
