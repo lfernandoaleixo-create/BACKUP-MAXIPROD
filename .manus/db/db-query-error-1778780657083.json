@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT ca.status, COUNT(*) as total, ROUND(SUM(ar.valorLiquido), 2) as valor\nFROM accounts_receivable ar\nLEFT JOIN collection_actions ca ON ca.accounts_receivable_id = ar.id\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nGROUP BY ca.status\nORDER BY total DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT ca.status, COUNT(*) as total, ROUND(SUM(ar.valorLiquido), 2) as valor\nFROM accounts_receivable ar\nLEFT JOIN collection_actions ca ON ca.accounts_receivable_id = ar.id\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nGROUP BY ca.status\nORDER BY total DESC;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'ca.accounts_receivable_id' in 'on clause'"
+  ]
+}

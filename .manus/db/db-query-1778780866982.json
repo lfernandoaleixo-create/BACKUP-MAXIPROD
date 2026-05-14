@@ -1,0 +1,64 @@
+{
+  "query": "\nSELECT cp.id, cp.empresa, cp.valor, cp.vencimento, cp.status, cp.ar_id,\n  CASE WHEN ar.id IS NULL THEN 'NÃO ENCONTRADO' \n       WHEN ar.estado = 'RECEBIDO' THEN 'PAGO'\n       ELSE ar.estado END as estado_inadimplencia\nFROM cobranca_planilha cp\nLEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id\nWHERE cp.ar_id IS NULL \n   OR ar.estado = 'RECEBIDO'\n   OR (ar.estado = 'EMITIDO' AND (CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))) <= 0)\nORDER BY cp.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT cp.id, cp.empresa, cp.valor, cp.vencimento, cp.status, cp.ar_id,\n  CASE WHEN ar.id IS NULL THEN 'NÃO ENCONTRADO' \n       WHEN ar.estado = 'RECEBIDO' THEN 'PAGO'\n       ELSE ar.estado END as estado_inadimplencia\nFROM cobranca_planilha cp\nLEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id\nWHERE cp.ar_id IS NULL \n   OR ar.estado = 'RECEBIDO'\n   OR (ar.estado = 'EMITIDO' AND (CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))) <= 0)\nORDER BY cp.id;\n",
+  "rows": [
+    {
+      "id": "5",
+      "empresa": "AMERICAN PIROTECNIA LTDA",
+      "valor": "9000.00",
+      "vencimento": "2026-05-11",
+      "status": "Especial s/ cobrança",
+      "ar_id": "NULL",
+      "estado_inadimplencia": "NÃO ENCONTRADO"
+    },
+    {
+      "id": "21",
+      "empresa": "FAZENDA SANTA CRUZ",
+      "valor": "3686.40",
+      "vencimento": "2026-04-10",
+      "status": "Especial s/ cobrança",
+      "ar_id": "NULL",
+      "estado_inadimplencia": "NÃO ENCONTRADO"
+    },
+    {
+      "id": "26",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valor": "1600.00",
+      "vencimento": "2026-05-11",
+      "status": "Especial s/ cobrança",
+      "ar_id": "NULL",
+      "estado_inadimplencia": "NÃO ENCONTRADO"
+    },
+    {
+      "id": "27",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valor": "3150.00",
+      "vencimento": "2026-05-11",
+      "status": "Especial s/ cobrança",
+      "ar_id": "NULL",
+      "estado_inadimplencia": "NÃO ENCONTRADO"
+    },
+    {
+      "id": "76",
+      "empresa": "CLAUDIO GRACIANO FREITAS",
+      "valor": "485.00",
+      "vencimento": "2025-04-16",
+      "status": "Contatado",
+      "ar_id": "NULL",
+      "estado_inadimplencia": "NÃO ENCONTRADO"
+    },
+    {
+      "id": "87",
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "valor": "238.00",
+      "vencimento": "2024-10-08",
+      "status": "Contatado",
+      "ar_id": "5473791",
+      "estado_inadimplencia": "PAGO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tvalor\tvencimento\tstatus\tar_id\testado_inadimplencia\n5\tAMERICAN PIROTECNIA LTDA\t9000.00\t2026-05-11\tEspecial s/ cobrança\tNULL\tNÃO ENCONTRADO\n21\tFAZENDA SANTA CRUZ\t3686.40\t2026-04-10\tEspecial s/ cobrança\tNULL\tNÃO ENCONTRADO\n26\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t1600.00\t2026-05-11\tEspecial s/ cobrança\tNULL\tNÃO ENCONTRADO\n27\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t3150.00\t2026-05-11\tEspecial s/ cobrança\tNULL\tNÃO ENCONTRADO\n76\tCLAUDIO GRACIANO FREITAS\t485.00\t2025-04-16\tContatado\tNULL\tNÃO ENCONTRADO\n87\t48.128.486 CARLOS HUMBERTO BUENO\t238.00\t2024-10-08\tContatado\t5473791\tPAGO\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

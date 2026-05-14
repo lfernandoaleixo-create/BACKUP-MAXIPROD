@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT 'inadimplencia' as fonte, COUNT(*) as total, \n  ROUND(SUM(valorLiquido), 2) as valor_liquido,\n  ROUND(SUM(valorOriginal), 2) as valor_original\nFROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData < CURDATE()\nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nUNION ALL\nSELECT 'planilha' as fonte, COUNT(*) as total, \n  ROUND(SUM(valor), 2) as valor_liquido,\n  0 as valor_original\nFROM cobranca_planilha;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT 'inadimplencia' as fonte, COUNT(*) as total, \n  ROUND(SUM(valorLiquido), 2) as valor_liquido,\n  ROUND(SUM(valorOriginal), 2) as valor_original\nFROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData < CURDATE()\nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nUNION ALL\nSELECT 'planilha' as fonte, COUNT(*) as total, \n  ROUND(SUM(valor), 2) as valor_liquido,\n  0 as valor_original\nFROM cobranca_planilha;\n",
+  "rows": [
+    {
+      "fonte": "planilha",
+      "total": "93",
+      "valor_liquido": "524152.53",
+      "valor_original": "0.00"
+    },
+    {
+      "fonte": "inadimplencia",
+      "total": "87",
+      "valor_liquido": "524728.08",
+      "valor_original": "524728.08"
+    }
+  ],
+  "messages": [],
+  "stdout": "fonte\ttotal\tvalor_liquido\tvalor_original\nplanilha\t93\t524152.53\t0.00\ninadimplencia\t87\t524728.08\t524728.08\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

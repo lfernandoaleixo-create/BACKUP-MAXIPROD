@@ -1,0 +1,82 @@
+{
+  "query": "\nSELECT ar.id, ar.cliente, ar.valorOriginal, ar.valorLiquido, ar.valorRecebidoLiquido,\n  (ar.valorLiquido - COALESCE(ar.valorRecebidoLiquido, 0)) as valorAReceber,\n  ar.vencimentoData\nFROM accounts_receivable ar\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND ar.valorRecebidoLiquido > 0\nORDER BY ar.valorRecebidoLiquido DESC\nLIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT ar.id, ar.cliente, ar.valorOriginal, ar.valorLiquido, ar.valorRecebidoLiquido,\n  (ar.valorLiquido - COALESCE(ar.valorRecebidoLiquido, 0)) as valorAReceber,\n  ar.vencimentoData\nFROM accounts_receivable ar\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND ar.valorRecebidoLiquido > 0\nORDER BY ar.valorRecebidoLiquido DESC\nLIMIT 10;\n",
+  "rows": [
+    {
+      "id": "5685139",
+      "cliente": "FLAVIO JOSE DE OLIVEIRA",
+      "valorOriginal": "11290.00",
+      "valorLiquido": "11290.00",
+      "valorRecebidoLiquido": "9200.00",
+      "valorAReceber": "2090.00",
+      "vencimentoData": "2026-05-12T12:00:00.000-03:00"
+    },
+    {
+      "id": "5684781",
+      "cliente": "FOGOS BEIJA FLOR",
+      "valorOriginal": "8000.00",
+      "valorLiquido": "8000.00",
+      "valorRecebidoLiquido": "4000.00",
+      "valorAReceber": "4000.00",
+      "vencimentoData": "2026-04-23T12:00:00.000-03:00"
+    },
+    {
+      "id": "5684779",
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "valorOriginal": "2250.00",
+      "valorLiquido": "2250.00",
+      "valorRecebidoLiquido": "1712.45",
+      "valorAReceber": "537.55",
+      "vencimentoData": "2026-03-24T12:00:00.000-03:00"
+    },
+    {
+      "id": "5473724",
+      "cliente": "SUPER MIX DISTRIBUIDORA LTDA",
+      "valorOriginal": "2323.00",
+      "valorLiquido": "2323.00",
+      "valorRecebidoLiquido": "1623.00",
+      "valorAReceber": "700.00",
+      "vencimentoData": "2025-11-18T12:00:00.000-03:00"
+    },
+    {
+      "id": "5684786",
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "valorOriginal": "2250.00",
+      "valorLiquido": "2250.00",
+      "valorRecebidoLiquido": "1387.50",
+      "valorAReceber": "862.50",
+      "vencimentoData": "2026-03-24T12:00:00.000-03:00"
+    },
+    {
+      "id": "5473748",
+      "cliente": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "valorOriginal": "1100.00",
+      "valorLiquido": "1100.00",
+      "valorRecebidoLiquido": "550.00",
+      "valorAReceber": "550.00",
+      "vencimentoData": "2026-03-10T12:00:00.000-03:00"
+    },
+    {
+      "id": "5473787",
+      "cliente": "MOISES MOREIRA DE AGUIAR",
+      "valorOriginal": "450.00",
+      "valorLiquido": "450.00",
+      "valorRecebidoLiquido": "150.00",
+      "valorAReceber": "300.00",
+      "vencimentoData": "2025-04-02T12:00:00.000-03:00"
+    },
+    {
+      "id": "5473792",
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "valorOriginal": "462.00",
+      "valorLiquido": "462.00",
+      "valorRecebidoLiquido": "112.00",
+      "valorAReceber": "350.00",
+      "vencimentoData": "2024-11-01T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorOriginal\tvalorLiquido\tvalorRecebidoLiquido\tvalorAReceber\tvencimentoData\n5685139\tFLAVIO JOSE DE OLIVEIRA\t11290.00\t11290.00\t9200.00\t2090.00\t2026-05-12T12:00:00.000-03:00\n5684781\tFOGOS BEIJA FLOR\t8000.00\t8000.00\t4000.00\t4000.00\t2026-04-23T12:00:00.000-03:00\n5684779\tRONALDO ANTONIO DE MOURA\t2250.00\t2250.00\t1712.45\t537.55\t2026-03-24T12:00:00.000-03:00\n5473724\tSUPER MIX DISTRIBUIDORA LTDA\t2323.00\t2323.00\t1623.00\t700.00\t2025-11-18T12:00:00.000-03:00\n5684786\tRONALDO ANTONIO DE MOURA\t2250.00\t2250.00\t1387.50\t862.50\t2026-03-24T12:00:00.000-03:00\n5473748\t59.252.539 GLAUCIENE MATEUS GOMES GERTH\t1100.00\t1100.00\t550.00\t550.00\t2026-03-10T12:00:00.000-03:00\n5473787\tMOISES MOREIRA DE AGUIAR\t450.00\t450.00\t150.00\t300.00\t2025-04-02T12:00:00.000-03:00\n5473792\t48.128.486 CARLOS HUMBERTO BUENO\t462.00\t462.00\t112.00\t350.00\t2024-11-01T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

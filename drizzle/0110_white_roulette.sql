@@ -1,0 +1,1 @@
+ALTER TABLE `cobranca_planilha` ADD `ativo` boolean DEFAULT true NOT NULL;

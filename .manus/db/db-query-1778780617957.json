@@ -1,0 +1,26 @@
+{
+  "query": "SHOW COLUMNS FROM accounts_receivable LIKE '%venc%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SHOW COLUMNS FROM accounts_receivable LIKE '%venc%';",
+  "rows": [
+    {
+      "Field": "vencimentoData",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "vencimentoOriginalData",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nvencimentoData\tvarchar(50)\tYES\t\tNULL\t\nvencimentoOriginalData\tvarchar(50)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 257
+}

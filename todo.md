@@ -3714,3 +3714,4 @@
 - [x] Planilha de Cobrança: criar botão de backup instantâneo
 - [x] Planilha de Cobrança: sincronizar automaticamente com dados da inadimplência (títulos, valores, status) sem perder marcações manuais
 - [x] BUG: Sincronização da Planilha de Cobrança não puxa todos os títulos, valores e status da inadimplência
+- [x] Planilha de Cobrança: puxar exatamente os mesmos títulos, valores e status da inadimplência (espelhar fielmente)

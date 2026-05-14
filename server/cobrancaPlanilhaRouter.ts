@@ -99,6 +99,7 @@ export const cobrancaPlanilhaRouter = router({
     return db
       .select()
       .from(cobrancaPlanilha)
+      .where(eq(cobrancaPlanilha.ativo, true))
       .orderBy(desc(cobrancaPlanilha.diasVencidos));
   }),
 
@@ -297,7 +298,7 @@ export const cobrancaPlanilhaRouter = router({
     const db = await getDb();
     if (!db) return { total: 0, byStatus: {}, byCenter: {}, totalValor: 0 };
     
-    const all = await db.select().from(cobrancaPlanilha);
+    const all = await db.select().from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
     
     const byStatus: Record<string, { count: number; valor: number }> = {};
     const byCenter: Record<string, { count: number; valor: number }> = {};
@@ -591,33 +592,41 @@ export const cobrancaPlanilhaRouter = router({
       }
 
       // 8. Para títulos da planilha que NÃO foram matched (não estão mais na inadimplência)
-      // Apenas atualizar dias vencidos — NÃO deletar nem alterar status
+      // Marcar como inativos (pago/resolvido) — NÃO deletar
       let notInInadimplencia = 0;
+      let deactivated = 0;
       for (const item of planilhaAtual) {
         if (!matchedPlanilhaIds.has(item.id)) {
-          // Atualizar dias vencidos para manter atualizado
-          if (item.vencimento) {
-            const diasAtrasoRaw = Math.floor((new Date(todayStr).getTime() - new Date(item.vencimento).getTime()) / 86400000);
-            const businessDays = diasAtrasoRaw > 0 ? countBusinessDays(item.vencimento, todayStr) : 0;
-            await db.update(cobrancaPlanilha)
-              .set({ diasVencidos: businessDays })
-              .where(eq(cobrancaPlanilha.id, item.id));
-          }
+          // Marcar como inativo — título não está mais na inadimplência (pago ou removido)
+          await db.update(cobrancaPlanilha)
+            .set({ ativo: false, updatedBy: `Sync: ${input.updatedBy} (pago/resolvido)` })
+            .where(eq(cobrancaPlanilha.id, item.id));
+          if (item.ativo) deactivated++;
           notInInadimplencia++;
         }
       }
 
-      // 9. Buscar planilha atualizada para retornar contagem
-      const planilhaFinal = await db.select().from(cobrancaPlanilha);
+      // 8b. Reativar títulos que voltaram à inadimplência (estavam inativos mas agora têm match)
+      for (const item of planilhaAtual) {
+        if (matchedPlanilhaIds.has(item.id) && !item.ativo) {
+          await db.update(cobrancaPlanilha)
+            .set({ ativo: true })
+            .where(eq(cobrancaPlanilha.id, item.id));
+        }
+      }
+
+      // 9. Buscar planilha atualizada para retornar contagem (apenas ativos)
+      const planilhaFinal = await db.select().from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
 
       return {
         success: true,
         summary: {
-          totalBefore: planilhaAtual.length,
+          totalBefore: planilhaAtual.filter(p => p.ativo).length,
           totalAfter: planilhaFinal.length,
           updated,
           added,
           statusUpdated,
+          deactivated,
           notInInadimplencia,
           inadimplenciaTotal: inadTitles.length,
           backupCreated: true,

@@ -166,11 +166,11 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [showBackupInfo, setShowBackupInfo] = useState(false);
-  const [syncResult, setSyncResult] = useState<{ updated: number; added: number; statusUpdated: number; notInInadimplencia: number; inadimplenciaTotal: number; totalAfter: number } | null>(null);
+  const [syncResult, setSyncResult] = useState<{ updated: number; added: number; statusUpdated: number; deactivated: number; notInInadimplencia: number; inadimplenciaTotal: number; totalAfter: number } | null>(null);
   const syncFromInadimplencia = trpc.cobrancaPlanilha.syncFromInadimplencia.useMutation({
     onSuccess: (data) => {
       const s = data.summary;
-      setSyncResult({ updated: s.updated, added: s.added, statusUpdated: s.statusUpdated, notInInadimplencia: s.notInInadimplencia, inadimplenciaTotal: s.inadimplenciaTotal, totalAfter: s.totalAfter });
+      setSyncResult({ updated: s.updated, added: s.added, statusUpdated: s.statusUpdated, deactivated: s.deactivated, notInInadimplencia: s.notInInadimplencia, inadimplenciaTotal: s.inadimplenciaTotal, totalAfter: s.totalAfter });
       toast.success(`Sincronizado! ${s.totalAfter} títulos na planilha (${s.inadimplenciaTotal} da inadimplência). ${s.updated} atualizados, ${s.added} novos.`);
       refetch();
       refetchBackups();
@@ -417,7 +417,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               {syncResult.updated > 0 && <span className="ml-1">{syncResult.updated} atualizados.</span>}
               {syncResult.added > 0 && <span className="ml-1 text-green-700 font-bold">{syncResult.added} novos adicionados.</span>}
               {syncResult.statusUpdated > 0 && <span className="ml-1">{syncResult.statusUpdated} status alterados.</span>}
-              {syncResult.notInInadimplencia > 0 && <span className="ml-1 text-amber-700">{syncResult.notInInadimplencia} não encontrados na inadimplência (mantidos).</span>}
+              {syncResult.deactivated > 0 && <span className="ml-1 text-amber-700">{syncResult.deactivated} pagos/resolvidos (removidos da lista).</span>}
             </div>
           </div>
           <button onClick={() => setSyncResult(null)} className="text-blue-400 hover:text-blue-600">

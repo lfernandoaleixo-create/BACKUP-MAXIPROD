@@ -1824,6 +1824,7 @@ export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
   // Observações / comentários (importados dos triângulos vermelhos do Excel + edições manuais)
   observacoes: text("observacoes"),
   // Controle
+  ativo: boolean("ativo").notNull().default(true), // false = título pago/resolvido, não aparece nos cards
   updatedBy: varchar("updated_by", { length: 200 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

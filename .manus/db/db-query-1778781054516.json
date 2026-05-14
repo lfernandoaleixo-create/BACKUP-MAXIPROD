@@ -1,0 +1,52 @@
+{
+  "query": "\nSELECT 'planilha_ativos' as fonte, status, COUNT(*) as total, ROUND(SUM(CAST(valor AS DECIMAL(18,2))), 2) as valor\nFROM cobranca_planilha WHERE ativo = true\nGROUP BY status\nORDER BY total DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT 'planilha_ativos' as fonte, status, COUNT(*) as total, ROUND(SUM(CAST(valor AS DECIMAL(18,2))), 2) as valor\nFROM cobranca_planilha WHERE ativo = true\nGROUP BY status\nORDER BY total DESC;\n",
+  "rows": [
+    {
+      "fonte": "planilha_ativos",
+      "status": "Especial s/ cobrança",
+      "total": "44",
+      "valor": "353577.45"
+    },
+    {
+      "fonte": "planilha_ativos",
+      "status": "Contatado",
+      "total": "17",
+      "valor": "53269.49"
+    },
+    {
+      "fonte": "planilha_ativos",
+      "status": "Em negociação",
+      "total": "12",
+      "valor": "48700.00"
+    },
+    {
+      "fonte": "planilha_ativos",
+      "status": "Promessa de Pgto",
+      "total": "6",
+      "valor": "18395.00"
+    },
+    {
+      "fonte": "planilha_ativos",
+      "status": "Pendente",
+      "total": "3",
+      "valor": "24119.33"
+    },
+    {
+      "fonte": "planilha_ativos",
+      "status": "Protestado",
+      "total": "3",
+      "valor": "3960.00"
+    },
+    {
+      "fonte": "planilha_ativos",
+      "status": "Cheque em compensação",
+      "total": "2",
+      "valor": "3971.86"
+    }
+  ],
+  "messages": [],
+  "stdout": "fonte\tstatus\ttotal\tvalor\nplanilha_ativos\tEspecial s/ cobrança\t44\t353577.45\nplanilha_ativos\tContatado\t17\t53269.49\nplanilha_ativos\tEm negociação\t12\t48700.00\nplanilha_ativos\tPromessa de Pgto\t6\t18395.00\nplanilha_ativos\tPendente\t3\t24119.33\nplanilha_ativos\tProtestado\t3\t3960.00\nplanilha_ativos\tCheque em compensação\t2\t3971.86\n",
+  "stderr": "",
+  "execution_time_ms": 273
+}

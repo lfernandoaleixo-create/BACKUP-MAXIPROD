@@ -1,0 +1,46 @@
+{
+  "query": "\nSELECT ar.id, ar.cliente, ca.status, COUNT(*) as cnt\nFROM accounts_receivable ar\nJOIN collection_actions ca ON ca.receivableId = ar.id\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nGROUP BY ar.id, ar.cliente, ca.status\nHAVING cnt > 1\nLIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT ar.id, ar.cliente, ca.status, COUNT(*) as cnt\nFROM accounts_receivable ar\nJOIN collection_actions ca ON ca.receivableId = ar.id\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nGROUP BY ar.id, ar.cliente, ca.status\nHAVING cnt > 1\nLIMIT 10;\n",
+  "rows": [
+    {
+      "id": "5473747",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "especial_sem_cobranca",
+      "cnt": "2"
+    },
+    {
+      "id": "5473788",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "especial_sem_cobranca",
+      "cnt": "2"
+    },
+    {
+      "id": "5473727",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "status": "em_negociacao",
+      "cnt": "2"
+    },
+    {
+      "id": "5473739",
+      "cliente": "KEURE QUIMICA LTDA",
+      "status": "especial_sem_cobranca",
+      "cnt": "2"
+    },
+    {
+      "id": "5473769",
+      "cliente": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "status": "contatado",
+      "cnt": "2"
+    },
+    {
+      "id": "5473782",
+      "cliente": "EXCELENCIA CARNES E COMERCIO LTDA",
+      "status": "contatado",
+      "cnt": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tstatus\tcnt\n5473747\tKEURE QUIMICA LTDA\tespecial_sem_cobranca\t2\n5473788\tKEURE QUIMICA LTDA\tespecial_sem_cobranca\t2\n5473727\tJK COMERCIO E REPRESENTACOES LTDA\tem_negociacao\t2\n5473739\tKEURE QUIMICA LTDA\tespecial_sem_cobranca\t2\n5473769\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tcontatado\t2\n5473782\tEXCELENCIA CARNES E COMERCIO LTDA\tcontatado\t2\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

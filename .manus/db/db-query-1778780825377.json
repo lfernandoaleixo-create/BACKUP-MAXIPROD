@@ -1,0 +1,52 @@
+{
+  "query": "\n-- Inadimplência: total e por status\nSELECT 'inadimplencia' as fonte,\n  COALESCE(ca.status, 'pendente') as status_key,\n  COUNT(*) as total,\n  ROUND(SUM(CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))), 2) as valor\nFROM accounts_receivable ar\nLEFT JOIN (\n  SELECT receivableId, status, ROW_NUMBER() OVER (PARTITION BY receivableId ORDER BY id DESC) as rn\n  FROM collection_actions\n) ca ON ca.receivableId = ar.id AND ca.rn = 1\nWHERE ar.estado = 'EMITIDO' \nAND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND (CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0\nGROUP BY COALESCE(ca.status, 'pendente')\nORDER BY total DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Inadimplência: total e por status\nSELECT 'inadimplencia' as fonte,\n  COALESCE(ca.status, 'pendente') as status_key,\n  COUNT(*) as total,\n  ROUND(SUM(CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))), 2) as valor\nFROM accounts_receivable ar\nLEFT JOIN (\n  SELECT receivableId, status, ROW_NUMBER() OVER (PARTITION BY receivableId ORDER BY id DESC) as rn\n  FROM collection_actions\n) ca ON ca.receivableId = ar.id AND ca.rn = 1\nWHERE ar.estado = 'EMITIDO' \nAND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND (CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0\nGROUP BY COALESCE(ca.status, 'pendente')\nORDER BY total DESC;\n",
+  "rows": [
+    {
+      "fonte": "inadimplencia",
+      "status_key": "especial_sem_cobranca",
+      "total": "44",
+      "valor": "353577.45"
+    },
+    {
+      "fonte": "inadimplencia",
+      "status_key": "contatado",
+      "total": "17",
+      "valor": "53269.49"
+    },
+    {
+      "fonte": "inadimplencia",
+      "status_key": "em_negociacao",
+      "total": "12",
+      "valor": "48700.00"
+    },
+    {
+      "fonte": "inadimplencia",
+      "status_key": "promessa",
+      "total": "6",
+      "valor": "18395.00"
+    },
+    {
+      "fonte": "inadimplencia",
+      "status_key": "pendente",
+      "total": "3",
+      "valor": "24119.33"
+    },
+    {
+      "fonte": "inadimplencia",
+      "status_key": "protestado",
+      "total": "3",
+      "valor": "3960.00"
+    },
+    {
+      "fonte": "inadimplencia",
+      "status_key": "cheque_compensacao",
+      "total": "2",
+      "valor": "3971.86"
+    }
+  ],
+  "messages": [],
+  "stdout": "fonte\tstatus_key\ttotal\tvalor\ninadimplencia\tespecial_sem_cobranca\t44\t353577.45\ninadimplencia\tcontatado\t17\t53269.49\ninadimplencia\tem_negociacao\t12\t48700.00\ninadimplencia\tpromessa\t6\t18395.00\ninadimplencia\tpendente\t3\t24119.33\ninadimplencia\tprotestado\t3\t3960.00\ninadimplencia\tcheque_compensacao\t2\t3971.86\n",
+  "stderr": "",
+  "execution_time_ms": 283
+}

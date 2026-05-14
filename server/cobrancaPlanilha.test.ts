@@ -132,7 +132,9 @@ describe("cobrancaPlanilha router", () => {
     expect(result.summary.backupCreated).toBe(true);
     expect(typeof result.summary.updated).toBe("number");
     expect(typeof result.summary.added).toBe("number");
-    expect(result.summary.totalAfter).toBeGreaterThanOrEqual(result.summary.totalBefore);
+    // totalAfter pode ser menor que totalBefore se títulos foram pagos/desativados
+    expect(typeof result.summary.totalAfter).toBe("number");
+    expect(result.summary).toHaveProperty("deactivated");
   }, 30000);
 
   it("syncFromInadimplencia preserves manual annotations", async () => {

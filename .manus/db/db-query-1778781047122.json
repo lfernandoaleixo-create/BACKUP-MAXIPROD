@@ -1,0 +1,20 @@
+{
+  "query": "\nSELECT ativo, COUNT(*) as total, ROUND(SUM(CAST(valor AS DECIMAL(18,2))), 2) as valor_total\nFROM cobranca_planilha\nGROUP BY ativo;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT ativo, COUNT(*) as total, ROUND(SUM(CAST(valor AS DECIMAL(18,2))), 2) as valor_total\nFROM cobranca_planilha\nGROUP BY ativo;\n",
+  "rows": [
+    {
+      "ativo": "0",
+      "total": "6",
+      "valor_total": "18159.40"
+    },
+    {
+      "ativo": "1",
+      "total": "87",
+      "valor_total": "505993.13"
+    }
+  ],
+  "messages": [],
+  "stdout": "ativo\ttotal\tvalor_total\n0\t6\t18159.40\n1\t87\t505993.13\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

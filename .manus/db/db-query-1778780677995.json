@@ -1,0 +1,45 @@
+{
+  "query": "\nSELECT status, COUNT(*) as total, ROUND(SUM(valor), 2) as valor\nFROM cobranca_planilha\nGROUP BY status\nORDER BY total DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT status, COUNT(*) as total, ROUND(SUM(valor), 2) as valor\nFROM cobranca_planilha\nGROUP BY status\nORDER BY total DESC;\n",
+  "rows": [
+    {
+      "status": "Especial s/ cobrança",
+      "total": "48",
+      "valor": "371013.85"
+    },
+    {
+      "status": "Contatado",
+      "total": "19",
+      "valor": "53992.49"
+    },
+    {
+      "status": "Em negociação",
+      "total": "12",
+      "valor": "48700.00"
+    },
+    {
+      "status": "Promessa de Pgto",
+      "total": "6",
+      "valor": "18395.00"
+    },
+    {
+      "status": "Pendente",
+      "total": "3",
+      "valor": "24119.33"
+    },
+    {
+      "status": "Protestado",
+      "total": "3",
+      "valor": "3960.00"
+    },
+    {
+      "status": "Cheque em compensação",
+      "total": "2",
+      "valor": "3971.86"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\ttotal\tvalor\nEspecial s/ cobrança\t48\t371013.85\nContatado\t19\t53992.49\nEm negociação\t12\t48700.00\nPromessa de Pgto\t6\t18395.00\nPendente\t3\t24119.33\nProtestado\t3\t3960.00\nCheque em compensação\t2\t3971.86\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

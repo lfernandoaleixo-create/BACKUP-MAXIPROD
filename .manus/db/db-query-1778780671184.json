@@ -1,0 +1,45 @@
+{
+  "query": "\nSELECT ca.status, COUNT(*) as total, ROUND(SUM(ar.valorLiquido), 2) as valor\nFROM accounts_receivable ar\nLEFT JOIN collection_actions ca ON ca.receivableId = ar.id\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nGROUP BY ca.status\nORDER BY total DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT ca.status, COUNT(*) as total, ROUND(SUM(ar.valorLiquido), 2) as valor\nFROM accounts_receivable ar\nLEFT JOIN collection_actions ca ON ca.receivableId = ar.id\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE()\nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nGROUP BY ca.status\nORDER BY total DESC;\n",
+  "rows": [
+    {
+      "status": "especial_sem_cobranca",
+      "total": "49",
+      "valor": "396393.40"
+    },
+    {
+      "status": "contatado",
+      "total": "19",
+      "valor": "57055.49"
+    },
+    {
+      "status": "em_negociacao",
+      "total": "13",
+      "valor": "53200.00"
+    },
+    {
+      "status": "promessa",
+      "total": "7",
+      "valor": "32288.00"
+    },
+    {
+      "status": "NULL",
+      "total": "3",
+      "valor": "24119.33"
+    },
+    {
+      "status": "protestado",
+      "total": "3",
+      "valor": "3960.00"
+    },
+    {
+      "status": "cheque_compensacao",
+      "total": "2",
+      "valor": "3971.86"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\ttotal\tvalor\nespecial_sem_cobranca\t49\t396393.40\ncontatado\t19\t57055.49\nem_negociacao\t13\t53200.00\npromessa\t7\t32288.00\nNULL\t3\t24119.33\nprotestado\t3\t3960.00\ncheque_compensacao\t2\t3971.86\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}
