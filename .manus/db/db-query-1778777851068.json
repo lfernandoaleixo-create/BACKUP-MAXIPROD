@@ -1,0 +1,16 @@
+{
+  "query": "\nSELECT DISTINCT empresaNome FROM accounts_receivable WHERE estado = 'EMITIDO' ORDER BY empresaNome;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT DISTINCT empresaNome FROM accounts_receivable WHERE estado = 'EMITIDO' ORDER BY empresaNome;\n",
+  "rows": [
+    {
+      "empresaNome": "ESPETOS INDUSTRIA"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresaNome\nESPETOS INDUSTRIA\nPALITOS INDUSTRIA\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

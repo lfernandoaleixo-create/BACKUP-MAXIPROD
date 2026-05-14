@@ -1799,6 +1799,7 @@ export type InsertInadimplenciaBackup = typeof inadimplenciaBackup.$inferInsert;
  */
 export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
   id: int("id").autoincrement().primaryKey(),
+  arId: int("ar_id"), // FK para accounts_receivable.id — permite cruzamento exato na sincronização
   empresa: varchar("empresa", { length: 500 }).notNull(),
   descricao: text("descricao"),
   cnpjCpf: varchar("cnpj_cpf", { length: 30 }),

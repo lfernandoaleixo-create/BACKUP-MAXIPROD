@@ -1,0 +1,8 @@
+{
+  "query": "\n-- Contar títulos na inadimplência (EMITIDO, vencidos, TODOS os tipos)\nSELECT 'inadimplencia_all_types' as source, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimento_data <= NOW();\n\n-- Contar títulos na inadimplência (filtro RECEIVABLE_VALID_TYPES)\nSELECT 'inadimplencia_valid_types' as source, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimento_data <= NOW() \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO');\n\n-- Contar títulos na planilha de cobrança\nSELECT 'planilha' as source, COUNT(*) as cnt FROM cobranca_planilha;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Contar títulos na inadimplência (EMITIDO, vencidos, TODOS os tipos)\nSELECT 'inadimplencia_all_types' as source, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimento_data <= NOW();\n\n-- Contar títulos na inadimplência (filtro RECEIVABLE_VALID_TYPES)\nSELECT 'inadimplencia_valid_types' as source, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimento_data <= NOW() \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO');\n\n-- Contar títulos na planilha de cobrança\nSELECT 'planilha' as source, COUNT(*) as cnt FROM cobranca_planilha;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 3: Unknown column 'vencimento_data' in 'where clause'"
+  ]
+}

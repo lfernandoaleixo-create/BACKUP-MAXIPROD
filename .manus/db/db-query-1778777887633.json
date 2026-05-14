@@ -1,0 +1,15 @@
+{
+  "query": "\n-- Verificar quantos títulos vencidos existem por empresaNome\nSELECT empresaNome, COUNT(*) as cnt, SUM(CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as totalAReceber\nFROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND vencimentoData < '2026-05-14T23:59:59'\nAND (CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) > 0\nGROUP BY empresaNome;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Verificar quantos títulos vencidos existem por empresaNome\nSELECT empresaNome, COUNT(*) as cnt, SUM(CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as totalAReceber\nFROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND vencimentoData < '2026-05-14T23:59:59'\nAND (CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) > 0\nGROUP BY empresaNome;\n",
+  "rows": [
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "128",
+      "totalAReceber": "672139.74"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresaNome\tcnt\ttotalAReceber\nPALITOS INDUSTRIA\t128\t672139.74\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

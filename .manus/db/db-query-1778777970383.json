@@ -1,0 +1,34 @@
+{
+  "query": "\n-- Verificar AMERICAN PIROTECNIA na inadimplência\nSELECT id, cliente, valorLiquido, valorRecebidoLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%AMERICAN%' AND estado = 'EMITIDO' AND LEFT(vencimentoData,10) = '2026-05-11';\n\n-- Verificar FLAVIO JOSE na inadimplência  \nSELECT id, cliente, valorLiquido, valorRecebidoLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%FLAVIO JOSE%' AND estado = 'EMITIDO';\n\n-- Verificar FOGOS BEIJA FLOR\nSELECT id, cliente, valorLiquido, valorRecebidoLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%BEIJA FLOR%' AND estado = 'EMITIDO';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Verificar AMERICAN PIROTECNIA na inadimplência\nSELECT id, cliente, valorLiquido, valorRecebidoLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%AMERICAN%' AND estado = 'EMITIDO' AND LEFT(vencimentoData,10) = '2026-05-11';\n\n-- Verificar FLAVIO JOSE na inadimplência  \nSELECT id, cliente, valorLiquido, valorRecebidoLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%FLAVIO JOSE%' AND estado = 'EMITIDO';\n\n-- Verificar FOGOS BEIJA FLOR\nSELECT id, cliente, valorLiquido, valorRecebidoLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%BEIJA FLOR%' AND estado = 'EMITIDO';\n",
+  "rows": [
+    {
+      "id": "5685139",
+      "cliente": "FLAVIO JOSE DE OLIVEIRA",
+      "valorLiquido": "11290.00",
+      "valorRecebidoLiquido": "9200.00",
+      "venc": "2026-05-12",
+      "tipo": "TITULO"
+    },
+    {
+      "id": "id",
+      "cliente": "cliente",
+      "valorLiquido": "valorLiquido",
+      "valorRecebidoLiquido": "valorRecebidoLiquido",
+      "venc": "venc",
+      "tipo": "tipo"
+    },
+    {
+      "id": "5684781",
+      "cliente": "FOGOS BEIJA FLOR",
+      "valorLiquido": "8000.00",
+      "valorRecebidoLiquido": "4000.00",
+      "venc": "2026-04-23",
+      "tipo": "TITULO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvalorRecebidoLiquido\tvenc\ttipo\n5685139\tFLAVIO JOSE DE OLIVEIRA\t11290.00\t9200.00\t2026-05-12\tTITULO\nid\tcliente\tvalorLiquido\tvalorRecebidoLiquido\tvenc\ttipo\n5684781\tFOGOS BEIJA FLOR\t8000.00\t4000.00\t2026-04-23\tTITULO\n",
+  "stderr": "",
+  "execution_time_ms": 285
+}

@@ -1,0 +1,274 @@
+{
+  "query": "\n-- Verificar KEURE QUIMICA na planilha\nSELECT empresa, vencimento, valor, status FROM cobranca_planilha \nWHERE UPPER(empresa) LIKE '%KEURE%' ORDER BY vencimento;\n\n-- Verificar RONALDO na planilha\nSELECT empresa, vencimento, valor, status FROM cobranca_planilha \nWHERE UPPER(empresa) LIKE '%RONALDO%' ORDER BY vencimento;\n\n-- Verificar M D DA SILVA na planilha\nSELECT empresa, vencimento, valor, status FROM cobranca_planilha \nWHERE UPPER(empresa) LIKE '%M D DA SILVA%' ORDER BY vencimento;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Verificar KEURE QUIMICA na planilha\nSELECT empresa, vencimento, valor, status FROM cobranca_planilha \nWHERE UPPER(empresa) LIKE '%KEURE%' ORDER BY vencimento;\n\n-- Verificar RONALDO na planilha\nSELECT empresa, vencimento, valor, status FROM cobranca_planilha \nWHERE UPPER(empresa) LIKE '%RONALDO%' ORDER BY vencimento;\n\n-- Verificar M D DA SILVA na planilha\nSELECT empresa, vencimento, valor, status FROM cobranca_planilha \nWHERE UPPER(empresa) LIKE '%M D DA SILVA%' ORDER BY vencimento;\n",
+  "rows": [
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-09-18",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-09-18",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-09-25",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-10-02",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-10-02",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-10-09",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-10-09",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-10-16",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-10-23",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-11-06",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-11-13",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-11-13",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-11-20",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-11-20",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-11-27",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-12-04",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-12-30",
+      "valor": "9250.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-01-04",
+      "valor": "1225.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-01-06",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-01-06",
+      "valor": "9250.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-01-07",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-01-13",
+      "valor": "9250.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-01-14",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-01-21",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-01-27",
+      "valor": "9250.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-02-04",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-02-18",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-02-19",
+      "valor": "14800.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-02-26",
+      "valor": "14800.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-03-04",
+      "valor": "8750.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-03-05",
+      "valor": "14800.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-03-12",
+      "valor": "14800.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-03-19",
+      "valor": "14800.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2026-04-02",
+      "valor": "14800.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "empresa",
+      "vencimento": "vencimento",
+      "valor": "valor",
+      "status": "status"
+    },
+    {
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "vencimento": "2026-03-24",
+      "valor": "862.50",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "vencimento": "2026-03-24",
+      "valor": "2250.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "vencimento": "2026-03-24",
+      "valor": "537.55",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "vencimento": "2026-04-28",
+      "valor": "2250.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "empresa",
+      "vencimento": "vencimento",
+      "valor": "valor",
+      "status": "status"
+    },
+    {
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "vencimento": "2026-04-23",
+      "valor": "25914.56",
+      "status": "Contatado"
+    },
+    {
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "vencimento": "2026-04-24",
+      "valor": "3963.33",
+      "status": "Contatado"
+    },
+    {
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "vencimento": "2026-05-13",
+      "valor": "3577.86",
+      "status": "Cheque em compensação"
+    },
+    {
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "vencimento": "2026-05-13",
+      "valor": "22336.66",
+      "status": "Pendente"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresa\tvencimento\tvalor\tstatus\nKEURE QUIMICA LTDA\t2025-09-18\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-09-18\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-09-25\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-10-02\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-10-02\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-10-09\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-10-09\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-10-16\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-10-23\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-11-06\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-11-13\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-11-13\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-11-20\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-11-20\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-11-27\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-12-04\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2025-12-30\t9250.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-01-04\t1225.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-01-06\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-01-06\t9250.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-01-07\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-01-13\t9250.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-01-14\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-01-21\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-01-27\t9250.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-02-04\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-02-18\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-02-19\t14800.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-02-26\t14800.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-03-04\t8750.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-03-05\t14800.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-03-12\t14800.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-03-19\t14800.00\tEspecial s/ cobrança\nKEURE QUIMICA LTDA\t2026-04-02\t14800.00\tEspecial s/ cobrança\nempresa\tvencimento\tvalor\tstatus\nRONALDO ANTONIO DE MOURA\t2026-03-24\t862.50\tEspecial s/ cobrança\nRONALDO ANTONIO DE MOURA\t2026-03-24\t2250.00\tEspecial s/ cobrança\nRONALDO ANTONIO DE MOURA\t2026-03-24\t537.55\tEspecial s/ cobrança\nRONALDO ANTONIO DE MOURA\t2026-04-28\t2250.00\tEspecial s/ cobrança\nempresa\tvencimento\tvalor\tstatus\nM D DA SILVA ARTEFATOS DE BAMBU\t2026-04-23\t25914.56\tContatado\nM D DA SILVA ARTEFATOS DE BAMBU\t2026-04-24\t3963.33\tContatado\nM D DA SILVA ARTEFATOS DE BAMBU\t2026-05-13\t3577.86\tCheque em compensação\nM D DA SILVA ARTEFATOS DE BAMBU\t2026-05-13\t22336.66\tPendente\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

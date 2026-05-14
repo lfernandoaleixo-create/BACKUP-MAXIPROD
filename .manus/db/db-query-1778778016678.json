@@ -1,0 +1,58 @@
+{
+  "query": "\nSELECT id, empresa, valor, vencimento, centro_custos, status FROM cobranca_planilha WHERE ar_id IS NULL ORDER BY CAST(valor AS DECIMAL(12,2)) DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT id, empresa, valor, vencimento, centro_custos, status FROM cobranca_planilha WHERE ar_id IS NULL ORDER BY CAST(valor AS DECIMAL(12,2)) DESC;\n",
+  "rows": [
+    {
+      "id": "5",
+      "empresa": "AMERICAN PIROTECNIA LTDA",
+      "valor": "9000.00",
+      "vencimento": "2026-05-11",
+      "centro_custos": "ROJÃO",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "id": "21",
+      "empresa": "FAZENDA SANTA CRUZ",
+      "valor": "3686.40",
+      "vencimento": "2026-04-10",
+      "centro_custos": "SERRAGEM",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "id": "27",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valor": "3150.00",
+      "vencimento": "2026-05-11",
+      "centro_custos": "ROJÃO",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "id": "26",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valor": "1600.00",
+      "vencimento": "2026-05-11",
+      "centro_custos": "BAMBU",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "id": "76",
+      "empresa": "CLAUDIO GRACIANO FREITAS",
+      "valor": "485.00",
+      "vencimento": "2025-04-16",
+      "centro_custos": "BAMBU",
+      "status": "Contatado"
+    },
+    {
+      "id": "86",
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "valor": "350.00",
+      "vencimento": "2024-11-01",
+      "centro_custos": "BAMBU",
+      "status": "Contatado"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tvalor\tvencimento\tcentro_custos\tstatus\n5\tAMERICAN PIROTECNIA LTDA\t9000.00\t2026-05-11\tROJÃO\tEspecial s/ cobrança\n21\tFAZENDA SANTA CRUZ\t3686.40\t2026-04-10\tSERRAGEM\tEspecial s/ cobrança\n27\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t3150.00\t2026-05-11\tROJÃO\tEspecial s/ cobrança\n26\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t1600.00\t2026-05-11\tBAMBU\tEspecial s/ cobrança\n76\tCLAUDIO GRACIANO FREITAS\t485.00\t2025-04-16\tBAMBU\tContatado\n86\t48.128.486 CARLOS HUMBERTO BUENO\t350.00\t2024-11-01\tBAMBU\tContatado\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

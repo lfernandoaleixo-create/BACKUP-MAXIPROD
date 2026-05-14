@@ -1,0 +1,8 @@
+{
+  "query": "SELECT ar.nomeCliente, ar.valorTitulo, ar.vencimentoData, ar.tipoCobranca, ar.centroDeCustosId FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE() AND NOT EXISTS ( SELECT 1 FROM cobranca_planilha cp WHERE UPPER(TRIM(cp.empresa)) = UPPER(TRIM(ar.nomeCliente)) AND ABS(CAST(cp.valor AS DECIMAL(15,2)) - CAST(ar.valorTitulo AS DECIMAL(15,2))) < 0.02 ) ORDER BY ar.nomeCliente LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.nomeCliente, ar.valorTitulo, ar.vencimentoData, ar.tipoCobranca, ar.centroDeCustosId FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE() AND NOT EXISTS ( SELECT 1 FROM cobranca_planilha cp WHERE UPPER(TRIM(cp.empresa)) = UPPER(TRIM(ar.nomeCliente)) AND ABS(CAST(cp.valor AS DECIMAL(15,2)) - CAST(ar.valorTitulo AS DECIMAL(15,2))) < 0.02 ) ORDER BY ar.nomeCliente LIMIT 30;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'ar.nomeCliente' in 'order clause'"
+  ]
+}

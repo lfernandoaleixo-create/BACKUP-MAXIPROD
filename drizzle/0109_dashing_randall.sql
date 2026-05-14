@@ -1,0 +1,1 @@
+ALTER TABLE `cobranca_planilha` ADD `ar_id` int;

@@ -1,0 +1,14 @@
+{
+  "query": "\n-- 13/05/2026 é terça-feira, então o dia útil anterior é 13/05/2026\n-- Verificar quantos títulos com vencimento até 13/05/2026\nSELECT COUNT(*) as cnt,\n  SUM(CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as total\nFROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND vencimentoData <= '2026-05-13T23:59:59'\nAND (CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) > 0\nAND UPPER(cliente) NOT IN ('CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA');\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- 13/05/2026 é terça-feira, então o dia útil anterior é 13/05/2026\n-- Verificar quantos títulos com vencimento até 13/05/2026\nSELECT COUNT(*) as cnt,\n  SUM(CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as total\nFROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND vencimentoData <= '2026-05-13T23:59:59'\nAND (CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) > 0\nAND UPPER(cliente) NOT IN ('CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA');\n",
+  "rows": [
+    {
+      "cnt": "87",
+      "total": "505993.13"
+    }
+  ],
+  "messages": [],
+  "stdout": "cnt\ttotal\n87\t505993.13\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

@@ -1,0 +1,58 @@
+{
+  "query": "\nSELECT ar.cliente, LEFT(ar.vencimentoData, 10) as venc, COUNT(*) as cnt, \n  GROUP_CONCAT(ar.valorLiquido) as valores\nFROM accounts_receivable ar\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData <= NOW() \nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND (CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0\nGROUP BY ar.cliente, LEFT(ar.vencimentoData, 10)\nHAVING cnt > 1\nORDER BY cnt DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT ar.cliente, LEFT(ar.vencimentoData, 10) as venc, COUNT(*) as cnt, \n  GROUP_CONCAT(ar.valorLiquido) as valores\nFROM accounts_receivable ar\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData <= NOW() \nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND (CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0\nGROUP BY ar.cliente, LEFT(ar.vencimentoData, 10)\nHAVING cnt > 1\nORDER BY cnt DESC;\n",
+  "rows": [
+    {
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "venc": "2026-03-24",
+      "cnt": "3",
+      "valores": "2250.00,2250.00,2250.00"
+    },
+    {
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "venc": "2026-05-13",
+      "cnt": "2",
+      "valores": "3577.86,22336.66"
+    },
+    {
+      "cliente": "KEURE QUIMICA LTDA",
+      "venc": "2025-11-20",
+      "cnt": "2",
+      "valores": "8750.00,8750.00"
+    },
+    {
+      "cliente": "KEURE QUIMICA LTDA",
+      "venc": "2025-10-02",
+      "cnt": "2",
+      "valores": "8750.00,8750.00"
+    },
+    {
+      "cliente": "KEURE QUIMICA LTDA",
+      "venc": "2026-01-06",
+      "cnt": "2",
+      "valores": "9250.00,8750.00"
+    },
+    {
+      "cliente": "KEURE QUIMICA LTDA",
+      "venc": "2025-11-13",
+      "cnt": "2",
+      "valores": "8750.00,8750.00"
+    },
+    {
+      "cliente": "KEURE QUIMICA LTDA",
+      "venc": "2025-09-18",
+      "cnt": "2",
+      "valores": "8750.00,8750.00"
+    },
+    {
+      "cliente": "KEURE QUIMICA LTDA",
+      "venc": "2025-10-09",
+      "cnt": "2",
+      "valores": "8750.00,8750.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\tvenc\tcnt\tvalores\nRONALDO ANTONIO DE MOURA\t2026-03-24\t3\t2250.00,2250.00,2250.00\nM D DA SILVA ARTEFATOS DE BAMBU\t2026-05-13\t2\t3577.86,22336.66\nKEURE QUIMICA LTDA\t2025-11-20\t2\t8750.00,8750.00\nKEURE QUIMICA LTDA\t2025-10-02\t2\t8750.00,8750.00\nKEURE QUIMICA LTDA\t2026-01-06\t2\t9250.00,8750.00\nKEURE QUIMICA LTDA\t2025-11-13\t2\t8750.00,8750.00\nKEURE QUIMICA LTDA\t2025-09-18\t2\t8750.00,8750.00\nKEURE QUIMICA LTDA\t2025-10-09\t2\t8750.00,8750.00\n",
+  "stderr": "",
+  "execution_time_ms": 257
+}

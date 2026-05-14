@@ -1,0 +1,46 @@
+{
+  "query": "\n-- Verificar CARLOS HUMBERTO com vencimento 2024-10-08\nSELECT id, cliente, LEFT(vencimentoData,10) as venc, valorLiquido FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CARLOS HUMBERTO%';\n\n-- Verificar RONALDO ANTONIO com vencimento 2026-03-24\nSELECT id, cliente, LEFT(vencimentoData,10) as venc, valorLiquido FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%RONALDO%' AND LEFT(vencimentoData,10) = '2026-03-24';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Verificar CARLOS HUMBERTO com vencimento 2024-10-08\nSELECT id, cliente, LEFT(vencimentoData,10) as venc, valorLiquido FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CARLOS HUMBERTO%';\n\n-- Verificar RONALDO ANTONIO com vencimento 2026-03-24\nSELECT id, cliente, LEFT(vencimentoData,10) as venc, valorLiquido FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%RONALDO%' AND LEFT(vencimentoData,10) = '2026-03-24';\n",
+  "rows": [
+    {
+      "id": "5473791",
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "venc": "2024-10-08",
+      "valorLiquido": "238.00"
+    },
+    {
+      "id": "5473792",
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "venc": "2024-11-01",
+      "valorLiquido": "462.00"
+    },
+    {
+      "id": "id",
+      "cliente": "cliente",
+      "venc": "venc",
+      "valorLiquido": "valorLiquido"
+    },
+    {
+      "id": "5684779",
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "venc": "2026-03-24",
+      "valorLiquido": "2250.00"
+    },
+    {
+      "id": "5684780",
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "venc": "2026-03-24",
+      "valorLiquido": "2250.00"
+    },
+    {
+      "id": "5684786",
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "venc": "2026-03-24",
+      "valorLiquido": "2250.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvenc\tvalorLiquido\n5473791\t48.128.486 CARLOS HUMBERTO BUENO\t2024-10-08\t238.00\n5473792\t48.128.486 CARLOS HUMBERTO BUENO\t2024-11-01\t462.00\nid\tcliente\tvenc\tvalorLiquido\n5684779\tRONALDO ANTONIO DE MOURA\t2026-03-24\t2250.00\n5684780\tRONALDO ANTONIO DE MOURA\t2026-03-24\t2250.00\n5684786\tRONALDO ANTONIO DE MOURA\t2026-03-24\t2250.00\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

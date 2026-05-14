@@ -1,0 +1,9 @@
+{
+  "query": "\n-- CARLOS HUMBERTO cp_id=86 (350) → ar_id=5473792 (valorAReceber=350 = cp_valor!)\nUPDATE cobranca_planilha SET ar_id = 5473792 WHERE id = 86;\n\n-- CLAUDIO GRACIANO: vencimento na planilha é 2025-04-16 mas na inadimplência é 2026-05-18 (futuro)\n-- Verificar se existe com vencimento 2025-04-16\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CLAUDIO GRACIANO%' AND LEFT(vencimentoData,10) = '2025-04-16';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- CARLOS HUMBERTO cp_id=86 (350) → ar_id=5473792 (valorAReceber=350 = cp_valor!)\nUPDATE cobranca_planilha SET ar_id = 5473792 WHERE id = 86;\n\n-- CLAUDIO GRACIANO: vencimento na planilha é 2025-04-16 mas na inadimplência é 2026-05-18 (futuro)\n-- Verificar se existe com vencimento 2025-04-16\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CLAUDIO GRACIANO%' AND LEFT(vencimentoData,10) = '2025-04-16';\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 278
+}

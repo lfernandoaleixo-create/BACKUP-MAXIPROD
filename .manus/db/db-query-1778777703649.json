@@ -1,0 +1,19 @@
+{
+  "query": "\nSELECT COUNT(*) as com_arid FROM cobranca_planilha WHERE ar_id IS NOT NULL;\nSELECT COUNT(*) as sem_arid FROM cobranca_planilha WHERE ar_id IS NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT COUNT(*) as com_arid FROM cobranca_planilha WHERE ar_id IS NOT NULL;\nSELECT COUNT(*) as sem_arid FROM cobranca_planilha WHERE ar_id IS NULL;\n",
+  "rows": [
+    {
+      "com_arid": "79"
+    },
+    {
+      "com_arid": "sem_arid"
+    },
+    {
+      "com_arid": "14"
+    }
+  ],
+  "messages": [],
+  "stdout": "com_arid\n79\nsem_arid\n14\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

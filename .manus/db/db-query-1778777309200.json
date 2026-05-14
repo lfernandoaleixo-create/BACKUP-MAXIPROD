@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total_inadimplencia_frontend FROM accounts_receivable WHERE estado = 'EMITIDO' AND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO') AND vencimentoData < CURDATE() AND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_inadimplencia_frontend FROM accounts_receivable WHERE estado = 'EMITIDO' AND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO') AND vencimentoData < CURDATE() AND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0;",
+  "rows": [
+    {
+      "total_inadimplencia_frontend": "87"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_inadimplencia_frontend\n87\n",
+  "stderr": "",
+  "execution_time_ms": 281
+}

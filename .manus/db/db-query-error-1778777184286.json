@@ -1,0 +1,8 @@
+{
+  "query": "SELECT 'inadimplencia' as fonte, COUNT(*) as total FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimento < CURDATE() UNION ALL SELECT 'planilha_cobranca' as fonte, COUNT(*) as total FROM cobranca_planilha;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT 'inadimplencia' as fonte, COUNT(*) as total FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimento < CURDATE() UNION ALL SELECT 'planilha_cobranca' as fonte, COUNT(*) as total FROM cobranca_planilha;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'vencimento' in 'where clause'"
+  ]
+}

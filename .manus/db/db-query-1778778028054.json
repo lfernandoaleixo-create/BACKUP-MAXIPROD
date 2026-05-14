@@ -1,0 +1,31 @@
+{
+  "query": "\n-- CARLOS HUMBERTO com vencimento 2024-11-01\nSELECT id, cliente, valorLiquido, valorRecebidoLiquido, \n  (CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as aReceber\nFROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CARLOS HUMBERTO%' AND LEFT(vencimentoData,10) = '2024-11-01';\n\n-- AMERICAN PIROTECNIA\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%AMERICAN%' AND estado = 'EMITIDO';\n\n-- FAZENDA SANTA CRUZ\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%FAZENDA SANTA%' AND estado = 'EMITIDO';\n\n-- CLAUDIO GRACIANO\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CLAUDIO GRACIANO%' AND estado = 'EMITIDO';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- CARLOS HUMBERTO com vencimento 2024-11-01\nSELECT id, cliente, valorLiquido, valorRecebidoLiquido, \n  (CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as aReceber\nFROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CARLOS HUMBERTO%' AND LEFT(vencimentoData,10) = '2024-11-01';\n\n-- AMERICAN PIROTECNIA\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%AMERICAN%' AND estado = 'EMITIDO';\n\n-- FAZENDA SANTA CRUZ\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%FAZENDA SANTA%' AND estado = 'EMITIDO';\n\n-- CLAUDIO GRACIANO\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CLAUDIO GRACIANO%' AND estado = 'EMITIDO';\n",
+  "rows": [
+    {
+      "id": "5473792",
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "valorLiquido": "462.00",
+      "valorRecebidoLiquido": "112.00",
+      "aReceber": "350.00"
+    },
+    {
+      "id": "id",
+      "cliente": "cliente",
+      "valorLiquido": "valorLiquido",
+      "valorRecebidoLiquido": "venc",
+      "aReceber": "tipo"
+    },
+    {
+      "id": "5473770",
+      "cliente": "CLAUDIO GRACIANO FREITAS",
+      "valorLiquido": "485.00",
+      "valorRecebidoLiquido": "2026-05-18",
+      "aReceber": "RECEITA"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvalorRecebidoLiquido\taReceber\n5473792\t48.128.486 CARLOS HUMBERTO BUENO\t462.00\t112.00\t350.00\nid\tcliente\tvalorLiquido\tvenc\ttipo\n5473770\tCLAUDIO GRACIANO FREITAS\t485.00\t2026-05-18\tRECEITA\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

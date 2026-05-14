@@ -1,0 +1,146 @@
+{
+  "query": "\n-- INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%PYROFOGOS%';\n\n-- AMERICAN PIROTECNIA\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%AMERICAN%';\n\n-- FAZENDA SANTA CRUZ\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%FAZENDA SANTA%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%PYROFOGOS%';\n\n-- AMERICAN PIROTECNIA\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%AMERICAN%';\n\n-- FAZENDA SANTA CRUZ\nSELECT id, cliente, valorLiquido, LEFT(vencimentoData,10) as venc, tipo, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%FAZENDA SANTA%';\n",
+  "rows": [
+    {
+      "id": "5474054",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "8000.00",
+      "venc": "2026-05-20",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "estado": "EMITIDO"
+    },
+    {
+      "id": "5685129",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "1600.00",
+      "venc": "2026-05-11",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5685130",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "3150.00",
+      "venc": "2026-06-13",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5862567",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "1600.00",
+      "venc": "2026-05-11",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5863075",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "1300.00",
+      "venc": "2026-05-14",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5863076",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "300.00",
+      "venc": "2026-06-13",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "id",
+      "cliente": "cliente",
+      "valorLiquido": "valorLiquido",
+      "venc": "venc",
+      "tipo": "tipo",
+      "estado": "estado"
+    },
+    {
+      "id": "5685128",
+      "cliente": "AMERICAN PIROTECNIA LTDA",
+      "valorLiquido": "9000.00",
+      "venc": "2026-05-11",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5861558",
+      "cliente": "AMERICAN PIROTECNIA LTDA",
+      "valorLiquido": "9000.00",
+      "venc": "2026-05-15",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5862561",
+      "cliente": "AMERICAN PIROTECNIA LTDA",
+      "valorLiquido": "285.00",
+      "venc": "2026-05-14",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5862562",
+      "cliente": "AMERICAN PIROTECNIA LTDA",
+      "valorLiquido": "750.00",
+      "venc": "2026-06-18",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5862563",
+      "cliente": "AMERICAN PIROTECNIA LTDA",
+      "valorLiquido": "4495.00",
+      "venc": "2026-06-25",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5862564",
+      "cliente": "AMERICAN PIROTECNIA LTDA",
+      "valorLiquido": "460.00",
+      "venc": "2026-06-30",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5862565",
+      "cliente": "AMERICAN PIROTECNIA LTDA",
+      "valorLiquido": "510.00",
+      "venc": "2026-06-30",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "5862566",
+      "cliente": "AMERICAN PIROTECNIA LTDA",
+      "valorLiquido": "2500.00",
+      "venc": "2026-06-30",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    },
+    {
+      "id": "id",
+      "cliente": "cliente",
+      "valorLiquido": "valorLiquido",
+      "venc": "venc",
+      "tipo": "tipo",
+      "estado": "estado"
+    },
+    {
+      "id": "5684834",
+      "cliente": "FAZENDA SANTA CRUZ",
+      "valorLiquido": "3686.40",
+      "venc": "2026-04-10",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvenc\ttipo\testado\n5474054\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t8000.00\t2026-05-20\tTITULO_PEDIDO_DE_VENDA\tEMITIDO\n5685129\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t1600.00\t2026-05-11\tTITULO\tRECEBIDO\n5685130\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t3150.00\t2026-06-13\tTITULO\tRECEBIDO\n5862567\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t1600.00\t2026-05-11\tTITULO_PEDIDO_DE_VENDA\tRECEBIDO\n5863075\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t1300.00\t2026-05-14\tTITULO\tRECEBIDO\n5863076\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t300.00\t2026-06-13\tTITULO\tRECEBIDO\nid\tcliente\tvalorLiquido\tvenc\ttipo\testado\n5685128\tAMERICAN PIROTECNIA LTDA\t9000.00\t2026-05-11\tTITULO\tRECEBIDO\n5861558\tAMERICAN PIROTECNIA LTDA\t9000.00\t2026-05-15\tTITULO_PEDIDO_DE_VENDA\tRECEBIDO\n5862561\tAMERICAN PIROTECNIA LTDA\t285.00\t2026-05-14\tTITULO\tRECEBIDO\n5862562\tAMERICAN PIROTECNIA LTDA\t750.00\t2026-06-18\tTITULO\tRECEBIDO\n5862563\tAMERICAN PIROTECNIA LTDA\t4495.00\t2026-06-25\tTITULO\tRECEBIDO\n5862564\tAMERICAN PIROTECNIA LTDA\t460.00\t2026-06-30\tTITULO\tRECEBIDO\n5862565\tAMERICAN PIROTECNIA LTDA\t510.00\t2026-06-30\tTITULO\tRECEBIDO\n5862566\tAMERICAN PIROTECNIA LTDA\t2500.00\t2026-06-30\tTITULO\tRECEBIDO\nid\tcliente\tvalorLiquido\tvenc\ttipo\testado\n5684834\tFAZENDA SANTA CRUZ\t3686.40\t2026-04-10\tTITULO\tRECEBIDO\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

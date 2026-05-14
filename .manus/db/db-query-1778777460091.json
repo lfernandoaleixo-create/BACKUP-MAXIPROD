@@ -1,0 +1,50 @@
+{
+  "query": "\nSELECT 'inad_all' as src, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData <= NOW();\n\nSELECT 'inad_valid' as src, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData <= NOW() \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO');\n\nSELECT 'planilha' as src, COUNT(*) as cnt FROM cobranca_planilha;\n\nSELECT tipo, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData <= NOW()\nGROUP BY tipo ORDER BY cnt DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT 'inad_all' as src, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData <= NOW();\n\nSELECT 'inad_valid' as src, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData <= NOW() \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO');\n\nSELECT 'planilha' as src, COUNT(*) as cnt FROM cobranca_planilha;\n\nSELECT tipo, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData <= NOW()\nGROUP BY tipo ORDER BY cnt DESC;\n",
+  "rows": [
+    {
+      "src": "inad_all",
+      "cnt": "128"
+    },
+    {
+      "src": "src",
+      "cnt": "cnt"
+    },
+    {
+      "src": "inad_valid",
+      "cnt": "94"
+    },
+    {
+      "src": "src",
+      "cnt": "cnt"
+    },
+    {
+      "src": "planilha",
+      "cnt": "93"
+    },
+    {
+      "src": "tipo",
+      "cnt": "cnt"
+    },
+    {
+      "src": "TITULO",
+      "cnt": "52"
+    },
+    {
+      "src": "RECEITA",
+      "cnt": "42"
+    },
+    {
+      "src": "TITULO_PROPOSTA_DE_VENDA",
+      "cnt": "28"
+    },
+    {
+      "src": "TITULO_PEDIDO_DE_VENDA",
+      "cnt": "6"
+    }
+  ],
+  "messages": [],
+  "stdout": "src\tcnt\ninad_all\t128\nsrc\tcnt\ninad_valid\t94\nsrc\tcnt\nplanilha\t93\ntipo\tcnt\nTITULO\t52\nRECEITA\t42\nTITULO_PROPOSTA_DE_VENDA\t28\nTITULO_PEDIDO_DE_VENDA\t6\n",
+  "stderr": "",
+  "execution_time_ms": 281
+}

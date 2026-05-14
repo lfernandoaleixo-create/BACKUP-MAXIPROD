@@ -3713,3 +3713,4 @@
 - [x] Planilha de Cobrança: adicionar linhas divisórias entre clientes para facilitar visualização
 - [x] Planilha de Cobrança: criar botão de backup instantâneo
 - [x] Planilha de Cobrança: sincronizar automaticamente com dados da inadimplência (títulos, valores, status) sem perder marcações manuais
+- [x] BUG: Sincronização da Planilha de Cobrança não puxa todos os títulos, valores e status da inadimplência

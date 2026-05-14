@@ -166,12 +166,12 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [showBackupInfo, setShowBackupInfo] = useState(false);
-  const [syncResult, setSyncResult] = useState<{ updated: number; added: number; notInInadimplencia: number } | null>(null);
+  const [syncResult, setSyncResult] = useState<{ updated: number; added: number; statusUpdated: number; notInInadimplencia: number; inadimplenciaTotal: number; totalAfter: number } | null>(null);
   const syncFromInadimplencia = trpc.cobrancaPlanilha.syncFromInadimplencia.useMutation({
     onSuccess: (data) => {
       const s = data.summary;
-      setSyncResult({ updated: s.updated, added: s.added, notInInadimplencia: s.notInInadimplencia });
-      toast.success(`Sincronizado! ${s.updated} atualizados, ${s.added} novos, ${s.notInInadimplencia} não encontrados na inadimplência.`);
+      setSyncResult({ updated: s.updated, added: s.added, statusUpdated: s.statusUpdated, notInInadimplencia: s.notInInadimplencia, inadimplenciaTotal: s.inadimplenciaTotal, totalAfter: s.totalAfter });
+      toast.success(`Sincronizado! ${s.totalAfter} títulos na planilha (${s.inadimplenciaTotal} da inadimplência). ${s.updated} atualizados, ${s.added} novos.`);
       refetch();
       refetchBackups();
     },
@@ -411,9 +411,14 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-blue-600" />
-            <span className="text-xs font-medium text-blue-800">
-              Sincronização concluída: {syncResult.updated} atualizados, {syncResult.added} novos adicionados{syncResult.notInInadimplencia > 0 ? `, ${syncResult.notInInadimplencia} não encontrados na inadimplência` : ""}
-            </span>
+            <div className="text-xs font-medium text-blue-800">
+              <span className="font-bold">Sincronização concluída!</span>{" "}
+              {syncResult.totalAfter} títulos na planilha ({syncResult.inadimplenciaTotal} da inadimplência).
+              {syncResult.updated > 0 && <span className="ml-1">{syncResult.updated} atualizados.</span>}
+              {syncResult.added > 0 && <span className="ml-1 text-green-700 font-bold">{syncResult.added} novos adicionados.</span>}
+              {syncResult.statusUpdated > 0 && <span className="ml-1">{syncResult.statusUpdated} status alterados.</span>}
+              {syncResult.notInInadimplencia > 0 && <span className="ml-1 text-amber-700">{syncResult.notInInadimplencia} não encontrados na inadimplência (mantidos).</span>}
+            </div>
           </div>
           <button onClick={() => setSyncResult(null)} className="text-blue-400 hover:text-blue-600">
             <X className="w-4 h-4" />

@@ -1,0 +1,150 @@
+{
+  "query": "SELECT ar.cliente, ar.valorOriginal, ar.vencimentoData, ar.tipo, ar.centroDeCustosId FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE() AND NOT EXISTS ( SELECT 1 FROM cobranca_planilha cp WHERE UPPER(TRIM(cp.empresa)) = UPPER(TRIM(ar.cliente)) AND ABS(CAST(cp.valor AS DECIMAL(15,2)) - CAST(ar.valorOriginal AS DECIMAL(15,2))) < 0.02 ) ORDER BY ar.cliente LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.cliente, ar.valorOriginal, ar.vencimentoData, ar.tipo, ar.centroDeCustosId FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE() AND NOT EXISTS ( SELECT 1 FROM cobranca_planilha cp WHERE UPPER(TRIM(cp.empresa)) = UPPER(TRIM(ar.cliente)) AND ABS(CAST(cp.valor AS DECIMAL(15,2)) - CAST(ar.valorOriginal AS DECIMAL(15,2))) < 0.02 ) ORDER BY ar.cliente LIMIT 20;",
+  "rows": [
+    {
+      "cliente": "33.317.940 ALINE POLTORAK RODRIGUES",
+      "valorOriginal": "1800.00",
+      "vencimentoData": "2026-04-07T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "valorOriginal": "462.00",
+      "vencimentoData": "2024-11-01T12:00:00.000-03:00",
+      "tipo": "RECEITA",
+      "centroDeCustosId": "409300000278378"
+    },
+    {
+      "cliente": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "valorOriginal": "1100.00",
+      "vencimentoData": "2026-03-10T12:00:00.000-03:00",
+      "tipo": "TITULO",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "59.781.379 TARCISIO ALVES PEREIRA MACHADO",
+      "valorOriginal": "950.00",
+      "vencimentoData": "2026-04-30T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "59.781.379 TARCISIO ALVES PEREIRA MACHADO",
+      "valorOriginal": "950.00",
+      "vencimentoData": "2026-04-16T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "AGNUS SEVEN FRAGRANCIA INDUSTRIA, COMERCIO, IMPORTACAO E EXP",
+      "valorOriginal": "2000.00",
+      "vencimentoData": "2026-05-11T12:00:00.000-03:00",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "AGNUS SEVEN FRAGRANCIA INDUSTRIA, COMERCIO, IMPORTACAO E EXP",
+      "valorOriginal": "2080.00",
+      "vencimentoData": "2026-05-11T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "ATELIER DIVA DECOR LTDA",
+      "valorOriginal": "1160.00",
+      "vencimentoData": "2026-03-23T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "B & C - DISTRIBUIDORA DE COSMETICOS E ACESSORIOS LTDA - ME",
+      "valorOriginal": "14700.00",
+      "vencimentoData": "2026-05-07T12:00:00.000-03:00",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "BRIFIX COSMETICOS LTDA",
+      "valorOriginal": "650.00",
+      "vencimentoData": "2026-05-01T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "CARREON CARNES ESPECIAIS LTDA",
+      "valorOriginal": "2480.00",
+      "vencimentoData": "2026-04-08T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "DIB & CAIRES LTDA",
+      "valorOriginal": "4880.00",
+      "vencimentoData": "2026-04-28T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "DIB & CAIRES LTDA",
+      "valorOriginal": "4880.00",
+      "vencimentoData": "2026-04-21T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "DIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA",
+      "valorOriginal": "20000.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "DISTRIBUIDORA A.N LTDA",
+      "valorOriginal": "1835.00",
+      "vencimentoData": "2026-05-12T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "DISTRIBUIDORA A.N LTDA",
+      "valorOriginal": "1835.00",
+      "vencimentoData": "2026-04-28T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "FLAVIO JOSE DE OLIVEIRA",
+      "valorOriginal": "11290.00",
+      "vencimentoData": "2026-05-12T12:00:00.000-03:00",
+      "tipo": "TITULO",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "FOGOS BEIJA FLOR",
+      "valorOriginal": "8000.00",
+      "vencimentoData": "2026-04-23T12:00:00.000-03:00",
+      "tipo": "TITULO",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "FREDERICO BARBOSA LOPES 99296888115",
+      "valorOriginal": "1830.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    },
+    {
+      "cliente": "GAM & CO INDUSTRIA E COMERCIO LTDA",
+      "valorOriginal": "595.00",
+      "vencimentoData": "2026-03-25T12:00:00.000-03:00",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "centroDeCustosId": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\tvalorOriginal\tvencimentoData\ttipo\tcentroDeCustosId\n33.317.940 ALINE POLTORAK RODRIGUES\t1800.00\t2026-04-07T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\n48.128.486 CARLOS HUMBERTO BUENO\t462.00\t2024-11-01T12:00:00.000-03:00\tRECEITA\t409300000278378\n59.252.539 GLAUCIENE MATEUS GOMES GERTH\t1100.00\t2026-03-10T12:00:00.000-03:00\tTITULO\tNULL\n59.781.379 TARCISIO ALVES PEREIRA MACHADO\t950.00\t2026-04-30T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\n59.781.379 TARCISIO ALVES PEREIRA MACHADO\t950.00\t2026-04-16T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nAGNUS SEVEN FRAGRANCIA INDUSTRIA, COMERCIO, IMPORTACAO E EXP\t2000.00\t2026-05-11T12:00:00.000-03:00\tTITULO_PEDIDO_DE_VENDA\tNULL\nAGNUS SEVEN FRAGRANCIA INDUSTRIA, COMERCIO, IMPORTACAO E EXP\t2080.00\t2026-05-11T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nATELIER DIVA DECOR LTDA\t1160.00\t2026-03-23T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nB & C - DISTRIBUIDORA DE COSMETICOS E ACESSORIOS LTDA - ME\t14700.00\t2026-05-07T12:00:00.000-03:00\tTITULO_PEDIDO_DE_VENDA\tNULL\nBRIFIX COSMETICOS LTDA\t650.00\t2026-05-01T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nCARREON CARNES ESPECIAIS LTDA\t2480.00\t2026-04-08T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nDIB & CAIRES LTDA\t4880.00\t2026-04-28T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nDIB & CAIRES LTDA\t4880.00\t2026-04-21T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nDIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA\t20000.00\t2026-05-13T12:00:00.000-03:00\tTITULO_PEDIDO_DE_VENDA\tNULL\nDISTRIBUIDORA A.N LTDA\t1835.00\t2026-05-12T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nDISTRIBUIDORA A.N LTDA\t1835.00\t2026-04-28T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nFLAVIO JOSE DE OLIVEIRA\t11290.00\t2026-05-12T12:00:00.000-03:00\tTITULO\tNULL\nFOGOS BEIJA FLOR\t8000.00\t2026-04-23T12:00:00.000-03:00\tTITULO\tNULL\nFREDERICO BARBOSA LOPES 99296888115\t1830.00\t2026-05-13T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\nGAM & CO INDUSTRIA E COMERCIO LTDA\t595.00\t2026-03-25T12:00:00.000-03:00\tTITULO_PROPOSTA_DE_VENDA\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

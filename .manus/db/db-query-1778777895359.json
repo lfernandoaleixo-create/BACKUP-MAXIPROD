@@ -1,0 +1,79 @@
+{
+  "query": "\n-- Verificar se existe algum campo que indique BAMBU/ROJÃO/MADEIRA/SERRAGEM na accounts_receivable\nSELECT DISTINCT referenteA FROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND vencimentoData < '2026-05-14T23:59:59'\nAND (CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) > 0\nLIMIT 30;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Verificar se existe algum campo que indique BAMBU/ROJÃO/MADEIRA/SERRAGEM na accounts_receivable\nSELECT DISTINCT referenteA FROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND vencimentoData < '2026-05-14T23:59:59'\nAND (CAST(valorLiquido AS DECIMAL(12,2)) - CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) > 0\nLIMIT 30;\n",
+  "rows": [
+    {
+      "referenteA": "XXX"
+    },
+    {
+      "referenteA": "NF 554"
+    },
+    {
+      "referenteA": "NOTA FISCAL 298"
+    },
+    {
+      "referenteA": "NOTA FISCAL 1391"
+    },
+    {
+      "referenteA": "NF 1391"
+    },
+    {
+      "referenteA": "Receita da revenda de mercadorias BAMBU"
+    },
+    {
+      "referenteA": "NOTA FISCAL 1691"
+    },
+    {
+      "referenteA": "NULL"
+    },
+    {
+      "referenteA": "NFE 1391 "
+    },
+    {
+      "referenteA": "NF 1391"
+    },
+    {
+      "referenteA": "PEDIDO 6657"
+    },
+    {
+      "referenteA": "NOTA FISCAL 1376"
+    },
+    {
+      "referenteA": "NF 1398"
+    },
+    {
+      "referenteA": "NOTA FISCAL 1639"
+    },
+    {
+      "referenteA": "s/nº (R$ 3.577,86) e s/nº (R$ 22.336,70)."
+    },
+    {
+      "referenteA": "NOTA FISCAL 1424"
+    },
+    {
+      "referenteA": "NOTA FISCAL 350"
+    },
+    {
+      "referenteA": "Parcelamento de s/nº (R$89.633,60)."
+    },
+    {
+      "referenteA": "Receita da revenda de mercadorias BAMBU NFE 901"
+    },
+    {
+      "referenteA": "NFE 1391"
+    },
+    {
+      "referenteA": "NF 1612"
+    },
+    {
+      "referenteA": "NOTA FISCAL 1365"
+    },
+    {
+      "referenteA": "NOTA FISCAL 1368"
+    }
+  ],
+  "messages": [],
+  "stdout": "referenteA\nXXX\nNF 554\nNOTA FISCAL 298\nNOTA FISCAL 1391\nNF 1391\n\nReceita da revenda de mercadorias BAMBU\nNOTA FISCAL 1691\nNULL\nNFE 1391 \nNF 1391\nPEDIDO 6657\n\nNOTA FISCAL 1376\nNF 1398\nNOTA FISCAL 1639\ns/nº (R$ 3.577,86) e s/nº (R$ 22.336,70).\nNOTA FISCAL 1424\nNOTA FISCAL 350\nParcelamento de s/nº (R$89.633,60).\nReceita da revenda de mercadorias BAMBU NFE 901\n\nNFE 1391\n\nNF 1612\nNOTA FISCAL 1365\nNOTA FISCAL 1368\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

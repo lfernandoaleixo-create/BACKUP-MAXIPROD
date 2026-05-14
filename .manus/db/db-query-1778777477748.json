@@ -1,0 +1,59 @@
+{
+  "query": "\nSELECT ar.cliente, LEFT(ar.vencimentoData, 10) as venc, ar.valorLiquido, ar.valorRecebidoLiquido, ar.tipo\nFROM accounts_receivable ar\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData <= NOW() \nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND (CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0\nAND NOT EXISTS (\n  SELECT 1 FROM cobranca_planilha cp\n  WHERE UPPER(TRIM(cp.empresa)) = UPPER(TRIM(ar.cliente))\n  AND cp.vencimento = LEFT(ar.vencimentoData, 10)\n)\nORDER BY ar.cliente;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT ar.cliente, LEFT(ar.vencimentoData, 10) as venc, ar.valorLiquido, ar.valorRecebidoLiquido, ar.tipo\nFROM accounts_receivable ar\nWHERE ar.estado = 'EMITIDO' AND ar.vencimentoData <= NOW() \nAND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND (CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0\nAND NOT EXISTS (\n  SELECT 1 FROM cobranca_planilha cp\n  WHERE UPPER(TRIM(cp.empresa)) = UPPER(TRIM(ar.cliente))\n  AND cp.vencimento = LEFT(ar.vencimentoData, 10)\n)\nORDER BY ar.cliente;\n",
+  "rows": [
+    {
+      "cliente": "DAGER COMERCIO ATACADISTA DE EMBALAGENS E ALIMENTOS LTDA",
+      "venc": "2026-05-14",
+      "valorLiquido": "1200.00",
+      "valorRecebidoLiquido": "0.00",
+      "tipo": "TITULO"
+    },
+    {
+      "cliente": "HIGIBRAS COSMETICA DO BRASIL LTDA",
+      "venc": "2026-05-14",
+      "valorLiquido": "6250.00",
+      "valorRecebidoLiquido": "0.00",
+      "tipo": "TITULO"
+    },
+    {
+      "cliente": "LATICINIO E DESCARTAVEL PACIENCIA LTDA",
+      "venc": "2026-05-14",
+      "valorLiquido": "343.75",
+      "valorRecebidoLiquido": "0.00",
+      "tipo": "TITULO"
+    },
+    {
+      "cliente": "MC COMERCIO DE ALIMENTOS 703 LTDA",
+      "venc": "2026-05-14",
+      "valorLiquido": "3500.00",
+      "valorRecebidoLiquido": "0.00",
+      "tipo": "TITULO"
+    },
+    {
+      "cliente": "N. DE A. SULINO PRODUTOS DE LIMPEZA",
+      "venc": "2026-05-14",
+      "valorLiquido": "1288.00",
+      "valorRecebidoLiquido": "0.00",
+      "tipo": "TITULO"
+    },
+    {
+      "cliente": "REDUTO JR ESSENCIAS LTDA",
+      "venc": "2026-05-14",
+      "valorLiquido": "625.00",
+      "valorRecebidoLiquido": "0.00",
+      "tipo": "TITULO"
+    },
+    {
+      "cliente": "WGO COMERCIO E SERVICOS LTDA",
+      "venc": "2026-05-14",
+      "valorLiquido": "2252.00",
+      "valorRecebidoLiquido": "0.00",
+      "tipo": "TITULO"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\tvenc\tvalorLiquido\tvalorRecebidoLiquido\ttipo\nDAGER COMERCIO ATACADISTA DE EMBALAGENS E ALIMENTOS LTDA\t2026-05-14\t1200.00\t0.00\tTITULO\nHIGIBRAS COSMETICA DO BRASIL LTDA\t2026-05-14\t6250.00\t0.00\tTITULO\nLATICINIO E DESCARTAVEL PACIENCIA LTDA\t2026-05-14\t343.75\t0.00\tTITULO\nMC COMERCIO DE ALIMENTOS 703 LTDA\t2026-05-14\t3500.00\t0.00\tTITULO\nN. DE A. SULINO PRODUTOS DE LIMPEZA\t2026-05-14\t1288.00\t0.00\tTITULO\nREDUTO JR ESSENCIAS LTDA\t2026-05-14\t625.00\t0.00\tTITULO\nWGO COMERCIO E SERVICOS LTDA\t2026-05-14\t2252.00\t0.00\tTITULO\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}

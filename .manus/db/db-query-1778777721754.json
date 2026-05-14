@@ -1,0 +1,16 @@
+{
+  "query": "\n-- Verificar CARLOS HUMBERTO BUENO na inadimplência\nSELECT cliente, LEFT(vencimentoData,10) as venc, valorLiquido, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CARLOS HUMBERTO%' AND estado = 'EMITIDO';\n\n-- Verificar AMERICAN PIROTECNIA\nSELECT cliente, LEFT(vencimentoData,10) as venc, valorLiquido, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%AMERICAN%' AND estado = 'EMITIDO';\n\n-- Verificar FAZENDA SANTA CRUZ\nSELECT cliente, LEFT(vencimentoData,10) as venc, valorLiquido, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%FAZENDA SANTA%' AND estado = 'EMITIDO';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Verificar CARLOS HUMBERTO BUENO na inadimplência\nSELECT cliente, LEFT(vencimentoData,10) as venc, valorLiquido, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%CARLOS HUMBERTO%' AND estado = 'EMITIDO';\n\n-- Verificar AMERICAN PIROTECNIA\nSELECT cliente, LEFT(vencimentoData,10) as venc, valorLiquido, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%AMERICAN%' AND estado = 'EMITIDO';\n\n-- Verificar FAZENDA SANTA CRUZ\nSELECT cliente, LEFT(vencimentoData,10) as venc, valorLiquido, estado FROM accounts_receivable \nWHERE UPPER(cliente) LIKE '%FAZENDA SANTA%' AND estado = 'EMITIDO';\n",
+  "rows": [
+    {
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "venc": "2024-11-01",
+      "valorLiquido": "462.00",
+      "estado": "EMITIDO"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\tvenc\tvalorLiquido\testado\n48.128.486 CARLOS HUMBERTO BUENO\t2024-11-01\t462.00\tEMITIDO\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

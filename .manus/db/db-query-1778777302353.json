@@ -1,0 +1,30 @@
+{
+  "query": "SELECT tipo, COUNT(*) as total, SUM(CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) as valor_total FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData < CURDATE() AND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0 GROUP BY tipo ORDER BY total DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT tipo, COUNT(*) as total, SUM(CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) as valor_total FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData < CURDATE() AND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0 GROUP BY tipo ORDER BY total DESC;",
+  "rows": [
+    {
+      "tipo": "TITULO",
+      "total": "45",
+      "valor_total": "299234.13"
+    },
+    {
+      "tipo": "RECEITA",
+      "total": "42",
+      "valor_total": "206759.00"
+    },
+    {
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "total": "26",
+      "valor_total": "91281.86"
+    },
+    {
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "total": "4",
+      "valor_total": "39370.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "tipo\ttotal\tvalor_total\nTITULO\t45\t299234.13\nRECEITA\t42\t206759.00\nTITULO_PROPOSTA_DE_VENDA\t26\t91281.86\nTITULO_PEDIDO_DE_VENDA\t4\t39370.00\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

@@ -1,0 +1,31 @@
+{
+  "query": "\n-- Total na planilha\nSELECT COUNT(*) as planilha_total FROM cobranca_planilha;\n\n-- Total na inadimplência (com filtro do frontend - getOverdueTitles)\n-- O frontend usa cutoff = dia útil anterior, mas a planilha deveria incluir TUDO vencido até HOJE\nSELECT COUNT(*) as inad_ate_hoje FROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND LEFT(vencimentoData, 10) <= '2026-05-14'\nAND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0;\n\n-- Soma dos valores na planilha\nSELECT ROUND(SUM(CAST(valor AS DECIMAL(18,2))), 2) as total_planilha FROM cobranca_planilha;\n\n-- Soma dos valores na inadimplência\nSELECT ROUND(SUM(CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))), 2) as total_inad \nFROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND LEFT(vencimentoData, 10) <= '2026-05-14'\nAND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Total na planilha\nSELECT COUNT(*) as planilha_total FROM cobranca_planilha;\n\n-- Total na inadimplência (com filtro do frontend - getOverdueTitles)\n-- O frontend usa cutoff = dia útil anterior, mas a planilha deveria incluir TUDO vencido até HOJE\nSELECT COUNT(*) as inad_ate_hoje FROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND LEFT(vencimentoData, 10) <= '2026-05-14'\nAND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0;\n\n-- Soma dos valores na planilha\nSELECT ROUND(SUM(CAST(valor AS DECIMAL(18,2))), 2) as total_planilha FROM cobranca_planilha;\n\n-- Soma dos valores na inadimplência\nSELECT ROUND(SUM(CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))), 2) as total_inad \nFROM accounts_receivable \nWHERE estado = 'EMITIDO' \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND LEFT(vencimentoData, 10) <= '2026-05-14'\nAND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0;\n",
+  "rows": [
+    {
+      "planilha_total": "93"
+    },
+    {
+      "planilha_total": "inad_ate_hoje"
+    },
+    {
+      "planilha_total": "94"
+    },
+    {
+      "planilha_total": "total_planilha"
+    },
+    {
+      "planilha_total": "524152.53"
+    },
+    {
+      "planilha_total": "total_inad"
+    },
+    {
+      "planilha_total": "521451.88"
+    }
+  ],
+  "messages": [],
+  "stdout": "planilha_total\n93\ninad_ate_hoje\n94\ntotal_planilha\n524152.53\ntotal_inad\n521451.88\n",
+  "stderr": "",
+  "execution_time_ms": 278
+}

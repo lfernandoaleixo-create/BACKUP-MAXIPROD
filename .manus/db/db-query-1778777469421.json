@@ -1,0 +1,22 @@
+{
+  "query": "\n-- Verificar com valor a receber > 0 (valorLiquido - valorRecebidoLiquido > 0)\nSELECT 'inad_valid_with_value' as src, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData <= NOW() \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0;\n\n-- Verificar quantos da planilha existem na inadimplência (match por empresa+vencimento)\nSELECT 'planilha_matched' as src, COUNT(*) as cnt FROM cobranca_planilha cp\nWHERE EXISTS (\n  SELECT 1 FROM accounts_receivable ar \n  WHERE ar.estado = 'EMITIDO' \n  AND ar.vencimentoData <= NOW()\n  AND UPPER(TRIM(ar.cliente)) = UPPER(TRIM(cp.empresa))\n  AND LEFT(ar.vencimentoData, 10) = cp.vencimento\n);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \n-- Verificar com valor a receber > 0 (valorLiquido - valorRecebidoLiquido > 0)\nSELECT 'inad_valid_with_value' as src, COUNT(*) as cnt FROM accounts_receivable \nWHERE estado = 'EMITIDO' AND vencimentoData <= NOW() \nAND tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO')\nAND (CAST(valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(valorRecebidoLiquido, 0) AS DECIMAL(18,2))) > 0;\n\n-- Verificar quantos da planilha existem na inadimplência (match por empresa+vencimento)\nSELECT 'planilha_matched' as src, COUNT(*) as cnt FROM cobranca_planilha cp\nWHERE EXISTS (\n  SELECT 1 FROM accounts_receivable ar \n  WHERE ar.estado = 'EMITIDO' \n  AND ar.vencimentoData <= NOW()\n  AND UPPER(TRIM(ar.cliente)) = UPPER(TRIM(cp.empresa))\n  AND LEFT(ar.vencimentoData, 10) = cp.vencimento\n);\n",
+  "rows": [
+    {
+      "src": "inad_valid_with_value",
+      "cnt": "94"
+    },
+    {
+      "src": "src",
+      "cnt": "cnt"
+    },
+    {
+      "src": "planilha_matched",
+      "cnt": "87"
+    }
+  ],
+  "messages": [],
+  "stdout": "src\tcnt\ninad_valid_with_value\t94\nsrc\tcnt\nplanilha_matched\t87\n",
+  "stderr": "",
+  "execution_time_ms": 269
+}

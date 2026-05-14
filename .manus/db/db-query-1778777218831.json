@@ -1,0 +1,50 @@
+{
+  "query": "SHOW COLUMNS FROM accounts_receivable WHERE Field LIKE '%nome%' OR Field LIKE '%cliente%' OR Field LIKE '%centro%' OR Field LIKE '%empresa%' OR Field LIKE '%tipo%' OR Field LIKE '%cobranca%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SHOW COLUMNS FROM accounts_receivable WHERE Field LIKE '%nome%' OR Field LIKE '%cliente%' OR Field LIKE '%centro%' OR Field LIKE '%empresa%' OR Field LIKE '%tipo%' OR Field LIKE '%cobranca%';",
+  "rows": [
+    {
+      "Field": "tipo",
+      "Type": "varchar(50)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "cliente",
+      "Type": "varchar(300)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "centroDeCustosId",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "empresaId",
+      "Type": "bigint",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "empresaNome",
+      "Type": "varchar(100)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\ntipo\tvarchar(50)\tYES\t\tNULL\t\ncliente\tvarchar(300)\tYES\t\tNULL\t\ncentroDeCustosId\tbigint\tYES\t\tNULL\t\nempresaId\tbigint\tYES\t\tNULL\t\nempresaNome\tvarchar(100)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

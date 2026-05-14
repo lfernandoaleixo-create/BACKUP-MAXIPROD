@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as faltando FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE() AND NOT EXISTS ( SELECT 1 FROM cobranca_planilha cp WHERE UPPER(TRIM(cp.empresa)) = UPPER(TRIM(ar.cliente)) AND ABS(CAST(cp.valor AS DECIMAL(15,2)) - CAST(ar.valorOriginal AS DECIMAL(15,2))) < 0.02 );",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as faltando FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.vencimentoData < CURDATE() AND NOT EXISTS ( SELECT 1 FROM cobranca_planilha cp WHERE UPPER(TRIM(cp.empresa)) = UPPER(TRIM(ar.cliente)) AND ABS(CAST(cp.valor AS DECIMAL(15,2)) - CAST(ar.valorOriginal AS DECIMAL(15,2))) < 0.02 );",
+  "rows": [
+    {
+      "faltando": "35"
+    }
+  ],
+  "messages": [],
+  "stdout": "faltando\n35\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

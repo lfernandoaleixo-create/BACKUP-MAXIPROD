@@ -1,0 +1,94 @@
+{
+  "query": "\nSELECT empresa, vencimento, valor, status FROM cobranca_planilha WHERE ar_id IS NULL ORDER BY empresa LIMIT 14;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute \nSELECT empresa, vencimento, valor, status FROM cobranca_planilha WHERE ar_id IS NULL ORDER BY empresa LIMIT 14;\n",
+  "rows": [
+    {
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "vencimento": "2024-10-08",
+      "valor": "238.00",
+      "status": "Contatado"
+    },
+    {
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "vencimento": "2024-11-01",
+      "valor": "350.00",
+      "status": "Contatado"
+    },
+    {
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "vencimento": "2026-03-10",
+      "valor": "550.00",
+      "status": "Promessa de Pgto"
+    },
+    {
+      "empresa": "AMERICAN PIROTECNIA LTDA",
+      "vencimento": "2026-05-11",
+      "valor": "9000.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "CLAUDIO GRACIANO FREITAS",
+      "vencimento": "2025-04-16",
+      "valor": "485.00",
+      "status": "Contatado"
+    },
+    {
+      "empresa": "FAZENDA SANTA CRUZ",
+      "vencimento": "2026-04-10",
+      "valor": "3686.40",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "FLAVIO JOSE DE OLIVEIRA",
+      "vencimento": "2026-05-12",
+      "valor": "2090.00",
+      "status": "Promessa de Pgto"
+    },
+    {
+      "empresa": "FOGOS BEIJA FLOR",
+      "vencimento": "2026-04-23",
+      "valor": "4000.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "vencimento": "2026-05-11",
+      "valor": "1600.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "vencimento": "2026-05-11",
+      "valor": "3150.00",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "MOISES MOREIRA DE AGUIAR",
+      "vencimento": "2025-04-02",
+      "valor": "300.00",
+      "status": "Em negociação"
+    },
+    {
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "vencimento": "2026-03-24",
+      "valor": "537.55",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "vencimento": "2026-03-24",
+      "valor": "862.50",
+      "status": "Especial s/ cobrança"
+    },
+    {
+      "empresa": "SUPER MIX DISTRIBUIDORA LTDA",
+      "vencimento": "2025-11-18",
+      "valor": "700.00",
+      "status": "Promessa de Pgto"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresa\tvencimento\tvalor\tstatus\n48.128.486 CARLOS HUMBERTO BUENO\t2024-10-08\t238.00\tContatado\n48.128.486 CARLOS HUMBERTO BUENO\t2024-11-01\t350.00\tContatado\n59.252.539 GLAUCIENE MATEUS GOMES GERTH\t2026-03-10\t550.00\tPromessa de Pgto\nAMERICAN PIROTECNIA LTDA\t2026-05-11\t9000.00\tEspecial s/ cobrança\nCLAUDIO GRACIANO FREITAS\t2025-04-16\t485.00\tContatado\nFAZENDA SANTA CRUZ\t2026-04-10\t3686.40\tEspecial s/ cobrança\nFLAVIO JOSE DE OLIVEIRA\t2026-05-12\t2090.00\tPromessa de Pgto\nFOGOS BEIJA FLOR\t2026-04-23\t4000.00\tEspecial s/ cobrança\nINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t2026-05-11\t1600.00\tEspecial s/ cobrança\nINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t2026-05-11\t3150.00\tEspecial s/ cobrança\nMOISES MOREIRA DE AGUIAR\t2025-04-02\t300.00\tEm negociação\nRONALDO ANTONIO DE MOURA\t2026-03-24\t537.55\tEspecial s/ cobrança\nRONALDO ANTONIO DE MOURA\t2026-03-24\t862.50\tEspecial s/ cobrança\nSUPER MIX DISTRIBUIDORA LTDA\t2025-11-18\t700.00\tPromessa de Pgto\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}
