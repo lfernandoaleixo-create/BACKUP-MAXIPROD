@@ -22,8 +22,9 @@ function formatCurrency(n: number): string {
 }
 
 /* ---- Constants ---- */
-// Saldo anterior que existia antes do Maxiprod (somente Serragem)
+// Saldo anterior que existia antes do Maxiprod
 const SALDO_ANTERIOR_SERRAGEM = 17230.80;
+const SALDO_ANTERIOR_ROJAO = 15251.10;
 
 /* ---- Types ---- */
 interface FinancialData {
@@ -389,11 +390,13 @@ export default function SerragemRojaoTab() {
   };
   const rojaoRecebido = rojaoRecebidoQuery.data?.total ?? 0;
   const rojaoSaidas = rojaoContasQuery.data?.saidasTotal ?? 0;
-  const rojaoVendas = rojaoVendasQuery.data?.total ?? 0;
-  const rojaoSaldoCaixa = rojaoRecebido - rojaoSaidas;
-  const rojaoTotalDivisao = (rojaoVendas - rojaoRecebido) + rojaoSaldoCaixa;
+  const rojaoVendasMaxiprod = rojaoVendasQuery.data?.total ?? 0;
+  const rojaoVendas = rojaoVendasMaxiprod + SALDO_ANTERIOR_ROJAO;
+  const rojaoRecebidoComAnterior = rojaoRecebido + SALDO_ANTERIOR_ROJAO;
+  const rojaoSaldoCaixa = rojaoRecebidoComAnterior - rojaoSaidas;
+  const rojaoTotalDivisao = (rojaoVendas - rojaoRecebidoComAnterior) + rojaoSaldoCaixa;
   const rojaoData: FinancialData = {
-    vendasFaturamento: rojaoVendas,
+    vendasFaturamento: rojaoVendasMaxiprod,
     recebido: rojaoRecebido,
     contasPagas: rojaoContasQuery.data?.contasPagas ?? 0,
     retiradaSocios: rojaoContasQuery.data?.retiradaSocios ?? 0,
@@ -410,7 +413,7 @@ export default function SerragemRojaoTab() {
     try {
       const data = type === "serragem" ? serragemData : rojaoData;
       const pdfTitle = type === "serragem" ? "Serragem" : "Rojão";
-      const saldoAnterior = type === "serragem" ? SALDO_ANTERIOR_SERRAGEM : 0;
+      const saldoAnterior = type === "serragem" ? SALDO_ANTERIOR_SERRAGEM : SALDO_ANTERIOR_ROJAO;
       const totalVendas = data.vendasFaturamento + saldoAnterior;
       const totalRecebido = data.recebido + saldoAnterior;
       const saldoCaixaComAnterior = totalRecebido - data.saidasTotal;
@@ -603,8 +606,9 @@ export default function SerragemRojaoTab() {
           isLoading={rojaoVendasQuery.isLoading || rojaoContasQuery.isLoading}
           sociosDetalhado={rojaoContasQuery.data?.sociosDetalhado}
           contasPagasDetalhado={rojaoContasQuery.data?.contasPagasDetalhado}
+          saldoAnterior={SALDO_ANTERIOR_ROJAO}
           hideDivisionCards={hideDivisionCards}
-          faltaReceber={hideDivisionCards ? ((selectedMonth !== "all" ? (rojaoVendasTotalQuery.data?.total ?? 0) : rojaoVendas) - rojaoRecebido) : undefined}
+          faltaReceber={hideDivisionCards ? ((selectedMonth !== "all" ? ((rojaoVendasTotalQuery.data?.total ?? 0) + SALDO_ANTERIOR_ROJAO) : rojaoVendas) - rojaoRecebidoComAnterior) : undefined}
           selectedMonth={selectedMonth}
           onMonthChange={setSelectedMonth}
           monthOptions={monthOptions}
