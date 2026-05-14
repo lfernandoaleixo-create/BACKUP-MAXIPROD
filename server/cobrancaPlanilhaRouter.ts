@@ -533,31 +533,77 @@ export const cobrancaPlanilhaRouter = router({
 
       for (const item of planilhaAtual) {
         if (item.arId) {
-          planilhaByArId.set(item.arId, item);
+          // Priorizar registros ativos quando há duplicatas de arId
+          const existing = planilhaByArId.get(item.arId);
+          if (!existing || (item.ativo && !existing.ativo)) {
+            planilhaByArId.set(item.arId, item);
+          }
         }
-        const empresaUpper = (item.empresa || "").toUpperCase().trim();
-        const valor = parseFloat(String(item.valor || 0)).toFixed(2);
-        const key = `${empresaUpper}|${item.vencimento || ""}|${valor}`;
-        planilhaByKey.set(key, item);
-        
-        const empVencKey = `${empresaUpper}|${item.vencimento || ""}`;
-        if (!planilhaByEmpVenc.has(empVencKey)) {
-          planilhaByEmpVenc.set(empVencKey, []);
+        // Fallback indexes: only use ACTIVE items to avoid matching new titles with old inactive records
+        if (item.ativo) {
+          const empresaUpper = (item.empresa || "").toUpperCase().trim();
+          const valor = parseFloat(String(item.valor || 0)).toFixed(2);
+          const key = `${empresaUpper}|${item.vencimento || ""}|${valor}`;
+          planilhaByKey.set(key, item);
+          
+          const empVencKey = `${empresaUpper}|${item.vencimento || ""}`;
+          if (!planilhaByEmpVenc.has(empVencKey)) {
+            planilhaByEmpVenc.set(empVencKey, []);
+          }
+          planilhaByEmpVenc.get(empVencKey)!.push(item);
         }
-        planilhaByEmpVenc.get(empVencKey)!.push(item);
       }
 
       let updated = 0;
       let added = 0;
       let statusUpdated = 0;
 
-      // 7. Para cada título da inadimplência, tentar cruzar com a planilha
+      // 7. Two-pass approach: first process titles that have arId match (most reliable),
+      //    then process remaining titles with fallback strategies.
+      //    This prevents fallback matches from "stealing" records that belong to arId-matched titles.
+      
+      // Pass 1: Match by arId only
+      const inadWithArIdMatch: typeof inadTitles = [];
+      const inadWithoutArIdMatch: typeof inadTitles = [];
+      
       for (const inad of inadTitles) {
+        const arIdMatch = planilhaByArId.get(inad.arId);
+        if (arIdMatch) {
+          inadWithArIdMatch.push(inad);
+        } else {
+          inadWithoutArIdMatch.push(inad);
+        }
+      }
+
+      // Process arId matches first
+      for (const inad of inadWithArIdMatch) {
+        const match = planilhaByArId.get(inad.arId)!;
+        matchedPlanilhaIds.add(match.id);
+        matchedInadArIds.add(inad.arId);
+        
+        const updateData: Record<string, any> = {
+          valor: String(inad.valorAReceber),
+          diasVencidos: inad.diasVencidos,
+          tipo: inad.tipo,
+          arId: inad.arId,
+          updatedBy: `Sync: ${input.updatedBy}`,
+        };
+        
+        updateData.status = inad.status;
+        if (match.status !== inad.status) {
+          statusUpdated++;
+        }
+        
+        await db.update(cobrancaPlanilha)
+          .set(updateData)
+          .where(eq(cobrancaPlanilha.id, match.id));
+        updated++;
+      }
+
+      // Pass 2: Process remaining titles with fallback strategies
+      for (const inad of inadWithoutArIdMatch) {
         const empresaUpper = inad.empresa.toUpperCase().trim();
         let match: typeof planilhaAtual[0] | undefined;
-
-        // Estratégia 1: Match por arId (mais confiável)
-        match = planilhaByArId.get(inad.arId);
         
         // Estratégia 2: Match por empresa+vencimento+valorAReceber
         if (!match) {
@@ -594,8 +640,6 @@ export const cobrancaPlanilhaRouter = router({
           matchedPlanilhaIds.add(match.id);
           matchedInadArIds.add(inad.arId);
           
-          // Atualizar: valor, dias vencidos, tipo, arId (se não tinha)
-          // Status: só atualizar se o status atual na planilha é "Pendente" (não sobrescrever marcações manuais)
           const updateData: Record<string, any> = {
             valor: String(inad.valorAReceber),
             diasVencidos: inad.diasVencidos,
@@ -604,8 +648,6 @@ export const cobrancaPlanilhaRouter = router({
             updatedBy: `Sync: ${input.updatedBy}`,
           };
           
-          // Atualizar status da inadimplência para a planilha
-          // Regra: sempre sincronizar o status da inadimplência
           updateData.status = inad.status;
           if (match.status !== inad.status) {
             statusUpdated++;

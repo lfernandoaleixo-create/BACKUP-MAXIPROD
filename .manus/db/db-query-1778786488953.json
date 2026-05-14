@@ -1,0 +1,316 @@
+{
+  "query": "SELECT id, empresa, ar_id, ativo, status, vencimento, valor FROM cobranca_planilha WHERE ar_id IN (5473783, 5473794, 5473795) OR (UPPER(TRIM(empresa)) = 'KEURE QUIMICA LTDA');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, ar_id, ativo, status, vencimento, valor FROM cobranca_planilha WHERE ar_id IN (5473783, 5473794, 5473795) OR (UPPER(TRIM(empresa)) = 'KEURE QUIMICA LTDA');",
+  "rows": [
+    {
+      "id": "40",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473778",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-09-18",
+      "valor": "8750.00"
+    },
+    {
+      "id": "41",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473777",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-09-18",
+      "valor": "8750.00"
+    },
+    {
+      "id": "42",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473779",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-09-25",
+      "valor": "8750.00"
+    },
+    {
+      "id": "43",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473781",
+      "ativo": "0",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-10-02",
+      "valor": "8750.00"
+    },
+    {
+      "id": "44",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473781",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-10-02",
+      "valor": "8750.00"
+    },
+    {
+      "id": "45",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473785",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-10-09",
+      "valor": "8750.00"
+    },
+    {
+      "id": "46",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473784",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-10-09",
+      "valor": "8750.00"
+    },
+    {
+      "id": "47",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473786",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-10-16",
+      "valor": "8750.00"
+    },
+    {
+      "id": "48",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473788",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-10-23",
+      "valor": "8750.00"
+    },
+    {
+      "id": "49",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473753",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-11-06",
+      "valor": "8750.00"
+    },
+    {
+      "id": "50",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473755",
+      "ativo": "0",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-11-13",
+      "valor": "8750.00"
+    },
+    {
+      "id": "51",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473755",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-11-13",
+      "valor": "8750.00"
+    },
+    {
+      "id": "52",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473754",
+      "ativo": "0",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-11-20",
+      "valor": "8750.00"
+    },
+    {
+      "id": "53",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473754",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-11-20",
+      "valor": "8750.00"
+    },
+    {
+      "id": "54",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473789",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-11-27",
+      "valor": "8750.00"
+    },
+    {
+      "id": "55",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473756",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-12-04",
+      "valor": "8750.00"
+    },
+    {
+      "id": "56",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473793",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-01-06",
+      "valor": "8750.00"
+    },
+    {
+      "id": "57",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473729",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2025-12-30",
+      "valor": "9250.00"
+    },
+    {
+      "id": "58",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473733",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-01-04",
+      "valor": "1225.00"
+    },
+    {
+      "id": "59",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473730",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-01-06",
+      "valor": "9250.00"
+    },
+    {
+      "id": "60",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473734",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-01-07",
+      "valor": "8750.00"
+    },
+    {
+      "id": "61",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473731",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-01-13",
+      "valor": "9250.00"
+    },
+    {
+      "id": "62",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473735",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-01-14",
+      "valor": "8750.00"
+    },
+    {
+      "id": "63",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473736",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-01-21",
+      "valor": "8750.00"
+    },
+    {
+      "id": "64",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473732",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-01-27",
+      "valor": "9250.00"
+    },
+    {
+      "id": "65",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473738",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-02-04",
+      "valor": "8750.00"
+    },
+    {
+      "id": "66",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473739",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-02-18",
+      "valor": "8750.00"
+    },
+    {
+      "id": "67",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473742",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-02-19",
+      "valor": "14800.00"
+    },
+    {
+      "id": "68",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473743",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-02-26",
+      "valor": "14800.00"
+    },
+    {
+      "id": "69",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473740",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-03-04",
+      "valor": "8750.00"
+    },
+    {
+      "id": "70",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473744",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-03-05",
+      "valor": "14800.00"
+    },
+    {
+      "id": "71",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473745",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-03-12",
+      "valor": "14800.00"
+    },
+    {
+      "id": "72",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473746",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-03-19",
+      "valor": "14800.00"
+    },
+    {
+      "id": "73",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473747",
+      "ativo": "1",
+      "status": "Especial s/ cobrança",
+      "vencimento": "2026-04-02",
+      "valor": "14800.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tar_id\tativo\tstatus\tvencimento\tvalor\n40\tKEURE QUIMICA LTDA\t5473778\t1\tEspecial s/ cobrança\t2025-09-18\t8750.00\n41\tKEURE QUIMICA LTDA\t5473777\t1\tEspecial s/ cobrança\t2025-09-18\t8750.00\n42\tKEURE QUIMICA LTDA\t5473779\t1\tEspecial s/ cobrança\t2025-09-25\t8750.00\n43\tKEURE QUIMICA LTDA\t5473781\t0\tEspecial s/ cobrança\t2025-10-02\t8750.00\n44\tKEURE QUIMICA LTDA\t5473781\t1\tEspecial s/ cobrança\t2025-10-02\t8750.00\n45\tKEURE QUIMICA LTDA\t5473785\t1\tEspecial s/ cobrança\t2025-10-09\t8750.00\n46\tKEURE QUIMICA LTDA\t5473784\t1\tEspecial s/ cobrança\t2025-10-09\t8750.00\n47\tKEURE QUIMICA LTDA\t5473786\t1\tEspecial s/ cobrança\t2025-10-16\t8750.00\n48\tKEURE QUIMICA LTDA\t5473788\t1\tEspecial s/ cobrança\t2025-10-23\t8750.00\n49\tKEURE QUIMICA LTDA\t5473753\t1\tEspecial s/ cobrança\t2025-11-06\t8750.00\n50\tKEURE QUIMICA LTDA\t5473755\t0\tEspecial s/ cobrança\t2025-11-13\t8750.00\n51\tKEURE QUIMICA LTDA\t5473755\t1\tEspecial s/ cobrança\t2025-11-13\t8750.00\n52\tKEURE QUIMICA LTDA\t5473754\t0\tEspecial s/ cobrança\t2025-11-20\t8750.00\n53\tKEURE QUIMICA LTDA\t5473754\t1\tEspecial s/ cobrança\t2025-11-20\t8750.00\n54\tKEURE QUIMICA LTDA\t5473789\t1\tEspecial s/ cobrança\t2025-11-27\t8750.00\n55\tKEURE QUIMICA LTDA\t5473756\t1\tEspecial s/ cobrança\t2025-12-04\t8750.00\n56\tKEURE QUIMICA LTDA\t5473793\t1\tEspecial s/ cobrança\t2026-01-06\t8750.00\n57\tKEURE QUIMICA LTDA\t5473729\t1\tEspecial s/ cobrança\t2025-12-30\t9250.00\n58\tKEURE QUIMICA LTDA\t5473733\t1\tEspecial s/ cobrança\t2026-01-04\t1225.00\n59\tKEURE QUIMICA LTDA\t5473730\t1\tEspecial s/ cobrança\t2026-01-06\t9250.00\n60\tKEURE QUIMICA LTDA\t5473734\t1\tEspecial s/ cobrança\t2026-01-07\t8750.00\n61\tKEURE QUIMICA LTDA\t5473731\t1\tEspecial s/ cobrança\t2026-01-13\t9250.00\n62\tKEURE QUIMICA LTDA\t5473735\t1\tEspecial s/ cobrança\t2026-01-14\t8750.00\n63\tKEURE QUIMICA LTDA\t5473736\t1\tEspecial s/ cobrança\t2026-01-21\t8750.00\n64\tKEURE QUIMICA LTDA\t5473732\t1\tEspecial s/ cobrança\t2026-01-27\t9250.00\n65\tKEURE QUIMICA LTDA\t5473738\t1\tEspecial s/ cobrança\t2026-02-04\t8750.00\n66\tKEURE QUIMICA LTDA\t5473739\t1\tEspecial s/ cobrança\t2026-02-18\t8750.00\n67\tKEURE QUIMICA LTDA\t5473742\t1\tEspecial s/ cobrança\t2026-02-19\t14800.00\n68\tKEURE QUIMICA LTDA\t5473743\t1\tEspecial s/ cobrança\t2026-02-26\t14800.00\n69\tKEURE QUIMICA LTDA\t5473740\t1\tEspecial s/ cobrança\t2026-03-04\t8750.00\n70\tKEURE QUIMICA LTDA\t5473744\t1\tEspecial s/ cobrança\t2026-03-05\t14800.00\n71\tKEURE QUIMICA LTDA\t5473745\t1\tEspecial s/ cobrança\t2026-03-12\t14800.00\n72\tKEURE QUIMICA LTDA\t5473746\t1\tEspecial s/ cobrança\t2026-03-19\t14800.00\n73\tKEURE QUIMICA LTDA\t5473747\t1\tEspecial s/ cobrança\t2026-04-02\t14800.00\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

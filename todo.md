@@ -3729,3 +3729,4 @@
 - [x] Despesas: permitir anexar documentos no formulário antes de salvar
 - [x] Contas Futuras: permitir anexar documentos no formulário antes de salvar
 - [x] Planilha de Cobrança: corrigir para puxar número de títulos e valor de inadimplência automaticamente da aba Inadimplência
+- [x] Planilha de Cobrança: corrigir sync two-pass para não perder títulos duplicados (diferença de 3 títulos KEURE resolvida)

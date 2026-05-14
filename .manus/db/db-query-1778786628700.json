@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, ar_id, ativo, vencimento, valor FROM cobranca_planilha WHERE UPPER(TRIM(empresa)) = 'KEURE QUIMICA LTDA' AND vencimento = '2025-10-02' AND ativo = true;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, ar_id, ativo, vencimento, valor FROM cobranca_planilha WHERE UPPER(TRIM(empresa)) = 'KEURE QUIMICA LTDA' AND vencimento = '2025-10-02' AND ativo = true;",
+  "rows": [
+    {
+      "id": "44",
+      "ar_id": "5473781",
+      "ativo": "1",
+      "vencimento": "2025-10-02",
+      "valor": "8750.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tar_id\tativo\tvencimento\tvalor\n44\t5473781\t1\t2025-10-02\t8750.00\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}

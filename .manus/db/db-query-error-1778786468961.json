@@ -1,0 +1,8 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.vencimentoData, CAST(ar.valorLiquido AS DECIMAL(15,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(15,2)) as valor_a_receber FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO') AND ar.vencimentoData <= '2026-05-13T23:59:59' AND (CAST(ar.valorLiquido AS DECIMAL(15,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(15,2))) > 0 AND UPPER(TRIM(ar.cliente)) NOT IN ('CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA') AND ar.id NOT IN (SELECT arId FROM cobranca_planilha WHERE ativo = true AND arId IS NOT NULL);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.vencimentoData, CAST(ar.valorLiquido AS DECIMAL(15,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(15,2)) as valor_a_receber FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.tipo IN ('TITULO', 'RECEITA', 'ADIANTAMENTO') AND ar.vencimentoData <= '2026-05-13T23:59:59' AND (CAST(ar.valorLiquido AS DECIMAL(15,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(15,2))) > 0 AND UPPER(TRIM(ar.cliente)) NOT IN ('CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA') AND ar.id NOT IN (SELECT arId FROM cobranca_planilha WHERE ativo = true AND arId IS NOT NULL);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'arid' in 'where clause'"
+  ]
+}

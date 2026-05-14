@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, cliente, vencimentoData, valorLiquido, valorRecebidoLiquido FROM accounts_receivable WHERE UPPER(TRIM(cliente)) = 'KEURE QUIMICA LTDA' AND estado = 'EMITIDO' AND vencimentoData LIKE '2025-10-02%' ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, vencimentoData, valorLiquido, valorRecebidoLiquido FROM accounts_receivable WHERE UPPER(TRIM(cliente)) = 'KEURE QUIMICA LTDA' AND estado = 'EMITIDO' AND vencimentoData LIKE '2025-10-02%' ORDER BY id;",
+  "rows": [
+    {
+      "id": "5473781",
+      "cliente": "KEURE QUIMICA LTDA",
+      "vencimentoData": "2025-10-02T12:00:00.000-03:00",
+      "valorLiquido": "8750.00",
+      "valorRecebidoLiquido": "0.00"
+    },
+    {
+      "id": "5473783",
+      "cliente": "KEURE QUIMICA LTDA",
+      "vencimentoData": "2025-10-02T12:00:00.000-03:00",
+      "valorLiquido": "8750.00",
+      "valorRecebidoLiquido": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvencimentoData\tvalorLiquido\tvalorRecebidoLiquido\n5473781\tKEURE QUIMICA LTDA\t2025-10-02T12:00:00.000-03:00\t8750.00\t0.00\n5473783\tKEURE QUIMICA LTDA\t2025-10-02T12:00:00.000-03:00\t8750.00\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

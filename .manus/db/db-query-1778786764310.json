@@ -1,0 +1,73 @@
+{
+  "query": "SELECT id, ar_id, ativo, empresa, vencimento FROM cobranca_planilha WHERE ativo = false ORDER BY id LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, ar_id, ativo, empresa, vencimento FROM cobranca_planilha WHERE ativo = false ORDER BY id LIMIT 15;",
+  "rows": [
+    {
+      "id": "5",
+      "ar_id": "NULL",
+      "ativo": "0",
+      "empresa": "AMERICAN PIROTECNIA LTDA",
+      "vencimento": "2026-05-11"
+    },
+    {
+      "id": "21",
+      "ar_id": "NULL",
+      "ativo": "0",
+      "empresa": "FAZENDA SANTA CRUZ",
+      "vencimento": "2026-04-10"
+    },
+    {
+      "id": "26",
+      "ar_id": "NULL",
+      "ativo": "0",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "vencimento": "2026-05-11"
+    },
+    {
+      "id": "27",
+      "ar_id": "NULL",
+      "ativo": "0",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "vencimento": "2026-05-11"
+    },
+    {
+      "id": "43",
+      "ar_id": "5473781",
+      "ativo": "0",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-10-02"
+    },
+    {
+      "id": "50",
+      "ar_id": "5473755",
+      "ativo": "0",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-11-13"
+    },
+    {
+      "id": "52",
+      "ar_id": "5473754",
+      "ativo": "0",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vencimento": "2025-11-20"
+    },
+    {
+      "id": "76",
+      "ar_id": "NULL",
+      "ativo": "0",
+      "empresa": "CLAUDIO GRACIANO FREITAS",
+      "vencimento": "2025-04-16"
+    },
+    {
+      "id": "87",
+      "ar_id": "5473791",
+      "ativo": "0",
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "vencimento": "2024-10-08"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tar_id\tativo\tempresa\tvencimento\n5\tNULL\t0\tAMERICAN PIROTECNIA LTDA\t2026-05-11\n21\tNULL\t0\tFAZENDA SANTA CRUZ\t2026-04-10\n26\tNULL\t0\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t2026-05-11\n27\tNULL\t0\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t2026-05-11\n43\t5473781\t0\tKEURE QUIMICA LTDA\t2025-10-02\n50\t5473755\t0\tKEURE QUIMICA LTDA\t2025-11-13\n52\t5473754\t0\tKEURE QUIMICA LTDA\t2025-11-20\n76\tNULL\t0\tCLAUDIO GRACIANO FREITAS\t2025-04-16\n87\t5473791\t0\t48.128.486 CARLOS HUMBERTO BUENO\t2024-10-08\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

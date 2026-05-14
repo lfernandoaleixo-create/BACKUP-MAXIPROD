@@ -1,0 +1,58 @@
+{
+  "query": "SELECT id, empresa, ar_id, ativo, vencimento, valor FROM cobranca_planilha WHERE ar_id IN (5473781, 5473755, 5473754) ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, ar_id, ativo, vencimento, valor FROM cobranca_planilha WHERE ar_id IN (5473781, 5473755, 5473754) ORDER BY id;",
+  "rows": [
+    {
+      "id": "43",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473781",
+      "ativo": "0",
+      "vencimento": "2025-10-02",
+      "valor": "8750.00"
+    },
+    {
+      "id": "44",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473781",
+      "ativo": "1",
+      "vencimento": "2025-10-02",
+      "valor": "8750.00"
+    },
+    {
+      "id": "50",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473755",
+      "ativo": "0",
+      "vencimento": "2025-11-13",
+      "valor": "8750.00"
+    },
+    {
+      "id": "51",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473755",
+      "ativo": "1",
+      "vencimento": "2025-11-13",
+      "valor": "8750.00"
+    },
+    {
+      "id": "52",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473754",
+      "ativo": "0",
+      "vencimento": "2025-11-20",
+      "valor": "8750.00"
+    },
+    {
+      "id": "53",
+      "empresa": "KEURE QUIMICA LTDA",
+      "ar_id": "5473754",
+      "ativo": "1",
+      "vencimento": "2025-11-20",
+      "valor": "8750.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tar_id\tativo\tvencimento\tvalor\n43\tKEURE QUIMICA LTDA\t5473781\t0\t2025-10-02\t8750.00\n44\tKEURE QUIMICA LTDA\t5473781\t1\t2025-10-02\t8750.00\n50\tKEURE QUIMICA LTDA\t5473755\t0\t2025-11-13\t8750.00\n51\tKEURE QUIMICA LTDA\t5473755\t1\t2025-11-13\t8750.00\n52\tKEURE QUIMICA LTDA\t5473754\t0\t2025-11-20\t8750.00\n53\tKEURE QUIMICA LTDA\t5473754\t1\t2025-11-20\t8750.00\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}
