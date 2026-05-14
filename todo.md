@@ -3728,3 +3728,4 @@
 - [x] E-commerce: criar componente frontend FutureBillsSection
 - [x] Despesas: permitir anexar documentos no formulário antes de salvar
 - [x] Contas Futuras: permitir anexar documentos no formulário antes de salvar
+- [x] Planilha de Cobrança: corrigir para puxar número de títulos e valor de inadimplência automaticamente da aba Inadimplência

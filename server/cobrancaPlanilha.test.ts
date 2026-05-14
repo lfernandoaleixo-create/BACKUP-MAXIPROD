@@ -176,4 +176,21 @@ describe("cobrancaPlanilha router", () => {
     const autoBackup = backups.find(b => (b.createdBy || "").includes("Auto-backup"));
     expect(autoBackup).toBeDefined();
   });
+
+  it("getLiveInadimplenciaStats returns real-time totals", async () => {
+    const stats = await caller.cobrancaPlanilha.getLiveInadimplenciaStats();
+    expect(stats).toHaveProperty("totalTitulos");
+    expect(stats).toHaveProperty("totalValor");
+    expect(typeof stats.totalTitulos).toBe("number");
+    expect(typeof stats.totalValor).toBe("number");
+    expect(stats.totalTitulos).toBeGreaterThan(0);
+    expect(stats.totalValor).toBeGreaterThan(0);
+  });
+
+  it("getLiveInadimplenciaStats matches sync inadimplenciaTotal", async () => {
+    const stats = await caller.cobrancaPlanilha.getLiveInadimplenciaStats();
+    // The live stats should be consistent with what sync would report
+    const syncResult = await caller.cobrancaPlanilha.syncFromInadimplencia({ updatedBy: "test-live-match" });
+    expect(stats.totalTitulos).toBe(syncResult.summary.inadimplenciaTotal);
+  });
 });

@@ -324,6 +324,54 @@ export const cobrancaPlanilhaRouter = router({
   }),
 
   /**
+   * Obter estatísticas em tempo real da inadimplência (sem depender da tabela local)
+   * Usa a mesma lógica do sync para garantir que os valores coincidam
+   */
+  getLiveInadimplenciaStats: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { totalTitulos: 0, totalValor: 0 };
+
+    const cutoff = getPreviousBusinessDay();
+    const todayStr = getTodayBR();
+
+    const rows = await db
+      .select({
+        id: accountsReceivable.id,
+        cliente: accountsReceivable.cliente,
+        valorLiquido: accountsReceivable.valorLiquido,
+        valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+        vencimentoData: accountsReceivable.vencimentoData,
+        tipo: accountsReceivable.tipo,
+      })
+      .from(accountsReceivable)
+      .where(
+        and(
+          eq(accountsReceivable.estado, "EMITIDO"),
+          inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+          lte(accountsReceivable.vencimentoData, cutoff + "T23:59:59")
+        )
+      );
+
+    const TEST_CLIENTS = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
+
+    let totalTitulos = 0;
+    let totalValor = 0;
+
+    for (const row of rows) {
+      const valorOriginal = Number(row.valorLiquido) || 0;
+      const valorPago = Number(row.valorRecebidoLiquido) || 0;
+      const valorAReceber = valorOriginal - valorPago;
+      const cliente = (row.cliente || "").toUpperCase().trim();
+      if (valorAReceber > 0 && !TEST_CLIENTS.includes(cliente)) {
+        totalTitulos++;
+        totalValor += valorAReceber;
+      }
+    }
+
+    return { totalTitulos, totalValor };
+  }),
+
+  /**
    * Criar backup instantâneo da planilha de cobrança
    */
   createBackup: publicProcedure

@@ -139,6 +139,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const { operator } = useOperator();
   const { data: items, isLoading, refetch } = trpc.cobrancaPlanilha.getAll.useQuery();
   const { data: summary } = trpc.cobrancaPlanilha.getSummary.useQuery();
+  const { data: liveStats } = trpc.cobrancaPlanilha.getLiveInadimplenciaStats.useQuery();
   const updateField = trpc.cobrancaPlanilha.updateField.useMutation({
     onSuccess: () => { refetch(); toast.success("Atualizado!"); },
     onError: (err) => toast.error(err.message),
@@ -326,7 +327,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               Planilha de Cobrança
             </h2>
             <p className="text-xs text-slate-500">
-              {filteredItems.length} título{filteredItems.length !== 1 ? "s" : ""} · Total: {formatCurrency(totalValor)}
+              {liveStats ? liveStats.totalTitulos : filteredItems.length} título{(liveStats ? liveStats.totalTitulos : filteredItems.length) !== 1 ? "s" : ""} · Total: {formatCurrency(liveStats ? liveStats.totalValor : totalValor)}
             </p>
           </div>
         </div>
