@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import {
   X, Search, Filter, ChevronDown, ChevronUp, Edit3, Save, MessageSquare,
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
-  CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw
+  CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw,
+  History, Plus, Paperclip
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -157,6 +158,17 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   });
   const { data: backups, refetch: refetchBackups } = trpc.cobrancaPlanilha.listBackups.useQuery();
 
+  // Observações por etapa
+  const addEtapaObs = trpc.cobrancaPlanilha.addEtapaObs.useMutation({
+    onSuccess: () => { toast.success("Observação salva!"); },
+    onError: (err) => toast.error(err.message),
+  });
+  const planilhaIds = useMemo(() => (items || []).map(i => i.id), [items]);
+  const { data: obsCountMap, refetch: refetchObsCounts } = trpc.cobrancaPlanilha.countEtapaObs.useQuery(
+    { planilhaIds },
+    { enabled: planilhaIds.length > 0 }
+  );
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [centerFilter, setCenterFilter] = useState<string>("todos");
@@ -164,6 +176,9 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [editingObs, setEditingObs] = useState<number | null>(null);
   const [obsText, setObsText] = useState("");
+  const [etapaObsDialog, setEtapaObsDialog] = useState<{ planilhaId: number; etapa: string; label: string } | null>(null);
+  const [newEtapaObs, setNewEtapaObs] = useState("");
+  const [historyDialog, setHistoryDialog] = useState<number | null>(null);
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [showBackupInfo, setShowBackupInfo] = useState(false);
@@ -640,28 +655,18 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       <td className="text-center px-2 py-2.5">
                         {renderCobrancaStep("Final", item.acaoFinal)}
                       </td>
-                      {/* Obs */}
+                      {/* Histórico Obs */}
                       <td className="text-center px-2 py-2.5" onClick={e => e.stopPropagation()}>
-                        {item.observacoes ? (
-                          <button
-                            onClick={() => { setEditingObs(item.id); setObsText(item.observacoes || ""); }}
-                            className="p-1 rounded-md hover:bg-amber-100 text-amber-600 transition-colors relative"
-                            title={item.observacoes}
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
+                        <button
+                          onClick={() => setHistoryDialog(item.id)}
+                          className="p-1 rounded-md hover:bg-amber-100 text-amber-600 transition-colors relative"
+                          title="Ver histórico de observações"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          {obsCountMap && obsCountMap[item.id] > 0 && (
                             <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-                          </button>
-                        ) : canEdit ? (
-                          <button
-                            onClick={() => { setEditingObs(item.id); setObsText(""); }}
-                            className="p-1 rounded-md hover:bg-slate-100 text-slate-300 transition-colors"
-                            title="Adicionar observação"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </button>
-                        ) : (
-                          <span className="text-slate-200">-</span>
-                        )}
+                          )}
+                        </button>
                       </td>
                     </tr>
                     {/* Expanded Row - Details */}
@@ -704,20 +709,33 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                     <span className="font-medium text-slate-500 w-[85px] shrink-0">{step.label}:</span>
                                     {canEdit ? (
                                       <input
-                                        defaultValue={step.value || ""}
+                                        type="date"
+                                        defaultValue={step.value && /^\d{4}-\d{2}-\d{2}$/.test(step.value) ? step.value : ""}
                                         onBlur={e => {
                                           if (e.target.value !== (step.value || "")) {
                                             handleCobrancaFieldChange(item.id, step.field, e.target.value);
                                           }
                                         }}
-                                        className="flex-1 px-2 py-0.5 rounded border border-slate-200 text-[11px] bg-white focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
-                                        placeholder="Data ou texto..."
+                                        onChange={e => {
+                                          if (e.target.value && e.target.value !== (step.value || "")) {
+                                            handleCobrancaFieldChange(item.id, step.field, e.target.value);
+                                          }
+                                        }}
+                                        className="flex-1 px-2 py-0.5 rounded border border-slate-200 text-[11px] bg-white focus:ring-1 focus:ring-blue-400 focus:border-blue-400 max-w-[130px]"
                                       />
                                     ) : (
                                       <span className={step.value ? "text-slate-700" : "text-slate-300"}>
                                         {step.value ? (step.value.match(/^\d{4}-\d{2}-\d{2}$/) ? formatDate(step.value) : step.value) : "-"}
                                       </span>
                                     )}
+                                    {/* Botão de observação por etapa */}
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setEtapaObsDialog({ planilhaId: item.id, etapa: step.field, label: step.label }); setNewEtapaObs(""); }}
+                                      className="p-0.5 rounded hover:bg-amber-100 text-slate-400 hover:text-amber-600 transition-colors shrink-0"
+                                      title={`Observações: ${step.label}`}
+                                    >
+                                      <MessageSquare className="w-3 h-3" />
+                                    </button>
                                   </div>
                                 ))}
                               </div>
@@ -725,37 +743,26 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                             {/* Observações */}
                             <div className="space-y-2">
                               <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-                                Observações
+                                <History className="w-3.5 h-3.5 text-amber-500" />
+                                Histórico de Observações
                               </h4>
-                              {canEdit ? (
-                                <div className="space-y-2">
-                                  <textarea
-                                    defaultValue={item.observacoes || ""}
-                                    onBlur={e => {
-                                      if (e.target.value !== (item.observacoes || "")) {
-                                        updateObservacao.mutate({
-                                          id: item.id,
-                                          observacoes: e.target.value,
-                                          updatedBy: operator!.name,
-                                        });
-                                      }
-                                    }}
-                                    rows={4}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-[11px] bg-white focus:ring-1 focus:ring-blue-400 resize-none"
-                                    placeholder="Adicionar observação..."
-                                  />
-                                </div>
-                              ) : (
-                                <div className="text-[11px] text-slate-600 whitespace-pre-wrap bg-white rounded-lg border border-slate-100 p-3 min-h-[80px]">
-                                  {item.observacoes || <span className="text-slate-300 italic">Sem observações</span>}
-                                </div>
-                              )}
-                              {item.updatedBy && (
-                                <div className="text-[9px] text-slate-400 italic">
-                                  Última edição: {item.updatedBy}
-                                </div>
-                              )}
+                              <div className="text-[11px] text-slate-500 bg-white rounded-lg border border-slate-100 p-3">
+                                <p className="mb-2">Clique no ícone <MessageSquare className="w-3 h-3 inline text-amber-500" /> ao lado de cada etapa para adicionar ou ver observações individuais.</p>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => { e.stopPropagation(); setHistoryDialog(item.id); }}
+                                  className="text-[11px] gap-1"
+                                >
+                                  <History className="w-3 h-3" />
+                                  Ver histórico completo
+                                  {obsCountMap && obsCountMap[item.id] > 0 && (
+                                    <span className="ml-1 bg-red-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">
+                                      {obsCountMap[item.id]}
+                                    </span>
+                                  )}
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -769,46 +776,159 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         </div>
       </div>
 
-      {/* Observation Edit Dialog */}
-      {editingObs !== null && (
-        <Dialog open onOpenChange={() => setEditingObs(null)}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-sm">
-                <MessageSquare className="w-4 h-4 text-amber-500" />
-                Observações
-              </DialogTitle>
-            </DialogHeader>
-            <div className="py-2">
-              {canEdit ? (
-                <textarea
-                  value={obsText}
-                  onChange={e => setObsText(e.target.value)}
-                  rows={6}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 resize-none"
-                  placeholder="Adicionar observação..."
-                  autoFocus
-                />
-              ) : (
-                <div className="text-sm text-slate-600 whitespace-pre-wrap bg-slate-50 rounded-lg p-4 min-h-[120px]">
-                  {obsText || <span className="text-slate-300 italic">Sem observações</span>}
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingObs(null)}>
-                {canEdit ? "Cancelar" : "Fechar"}
-              </Button>
-              {canEdit && (
-                <Button onClick={() => handleSaveObs(editingObs)} className="bg-emerald-600 hover:bg-emerald-700">
-                  <Save className="w-4 h-4 mr-1" />
-                  Salvar
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      {/* Diálogo de Observação por Etapa */}
+      {etapaObsDialog && (
+        <EtapaObsDialog
+          planilhaId={etapaObsDialog.planilhaId}
+          etapa={etapaObsDialog.etapa}
+          label={etapaObsDialog.label}
+          canEdit={!!canEdit}
+          operatorName={operator?.name || ""}
+          onClose={() => { setEtapaObsDialog(null); refetchObsCounts(); }}
+        />
+      )}
+
+      {/* Diálogo de Histórico Completo */}
+      {historyDialog !== null && (
+        <HistoryObsDialog
+          planilhaId={historyDialog}
+          empresa={items?.find(i => i.id === historyDialog)?.empresa || ""}
+          onClose={() => setHistoryDialog(null)}
+        />
       )}
     </div>
+  );
+}
+
+/** Sub-componente: Diálogo de observações por etapa */
+function EtapaObsDialog({ planilhaId, etapa, label, canEdit, operatorName, onClose }: {
+  planilhaId: number; etapa: string; label: string; canEdit: boolean; operatorName: string; onClose: () => void;
+}) {
+  const [newObs, setNewObs] = useState("");
+  const { data: obsList, refetch } = trpc.cobrancaPlanilha.getEtapaObs.useQuery({ planilhaId, etapa });
+  const addObs = trpc.cobrancaPlanilha.addEtapaObs.useMutation({
+    onSuccess: () => { setNewObs(""); refetch(); toast.success("Observação adicionada!"); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <MessageSquare className="w-4 h-4 text-amber-500" />
+            Observações: {label}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="py-2 space-y-3">
+          {/* Lista de observações existentes */}
+          <div className="max-h-[250px] overflow-y-auto space-y-2">
+            {(!obsList || obsList.length === 0) && (
+              <p className="text-sm text-slate-400 italic text-center py-4">Nenhuma observação registrada para esta etapa.</p>
+            )}
+            {obsList?.map((obs) => (
+              <div key={obs.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                <p className="text-sm text-slate-700 whitespace-pre-wrap">{obs.observacao}</p>
+                <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
+                  <span className="font-medium">{obs.registradoPor}</span>
+                  <span>•</span>
+                  <span>{new Date(obs.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Adicionar nova */}
+          {canEdit && (
+            <div className="border-t border-slate-100 pt-3">
+              <textarea
+                value={newObs}
+                onChange={e => setNewObs(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="Adicionar observação..."
+                autoFocus
+              />
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          {canEdit && (
+            <Button
+              onClick={() => addObs.mutate({ planilhaId, etapa, observacao: newObs, registradoPor: operatorName })}
+              disabled={!newObs.trim() || addObs.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Adicionar
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Sub-componente: Diálogo de histórico completo de observações */
+function HistoryObsDialog({ planilhaId, empresa, onClose }: {
+  planilhaId: number; empresa: string; onClose: () => void;
+}) {
+  const { data: allObs, isLoading } = trpc.cobrancaPlanilha.getAllEtapaObs.useQuery({ planilhaId });
+
+  const ETAPA_LABELS: Record<string, string> = {
+    promessaPgto: "Promessa Pgto",
+    primeiraCobranca: "1ª Cobrança",
+    semAcao1: "Intervalo 1",
+    segundaCobranca: "2ª Cobrança",
+    semAcao2: "Intervalo 2",
+    terceiraCobranca: "3ª Cobrança",
+    semAcao3: "Intervalo 3",
+    acaoFinal: "Ação Final",
+  };
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <History className="w-4 h-4 text-amber-500" />
+            Histórico de Observações
+            <span className="text-slate-400 font-normal text-xs truncate max-w-[200px]">— {empresa}</span>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="py-2">
+          {isLoading && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+            </div>
+          )}
+          {!isLoading && (!allObs || allObs.length === 0) && (
+            <p className="text-sm text-slate-400 italic text-center py-8">Nenhuma observação registrada.</p>
+          )}
+          {!isLoading && allObs && allObs.length > 0 && (
+            <div className="max-h-[400px] overflow-y-auto space-y-2">
+              {allObs.map((obs) => (
+                <div key={obs.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                      {ETAPA_LABELS[obs.etapa] || obs.etapa}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{obs.observacao}</p>
+                  <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
+                    <span className="font-medium">{obs.registradoPor}</span>
+                    <span>•</span>
+                    <span>{new Date(obs.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

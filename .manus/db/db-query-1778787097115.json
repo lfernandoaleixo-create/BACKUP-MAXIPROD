@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `cobranca_etapa_obs` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`planilha_id` int NOT NULL,\n\t`etapa` varchar(50) NOT NULL,\n\t`observacao` text NOT NULL,\n\t`registrado_por` varchar(200) NOT NULL,\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `cobranca_etapa_obs_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `cobranca_etapa_obs` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`planilha_id` int NOT NULL,\n\t`etapa` varchar(50) NOT NULL,\n\t`observacao` text NOT NULL,\n\t`registrado_por` varchar(200) NOT NULL,\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `cobranca_etapa_obs_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 342
+}

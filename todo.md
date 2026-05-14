@@ -3730,3 +3730,7 @@
 - [x] Contas Futuras: permitir anexar documentos no formulário antes de salvar
 - [x] Planilha de Cobrança: corrigir para puxar número de títulos e valor de inadimplência automaticamente da aba Inadimplência
 - [x] Planilha de Cobrança: corrigir sync two-pass para não perder títulos duplicados (diferença de 3 títulos KEURE resolvida)
+- [x] Planilha de Cobrança: remover campo "Observações" geral
+- [x] Planilha de Cobrança: adicionar observação individual por etapa (1ª Cobrança, Intervalo, 2ª Cobrança, etc.)
+- [x] Planilha de Cobrança: substituir campo de texto por date picker em cada etapa
+- [x] Planilha de Cobrança: adicionar balãozinho de histórico de observações com badge vermelho

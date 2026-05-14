@@ -1,7 +1,7 @@
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions } from "../drizzle/schema";
+import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs } from "../drizzle/schema";
 import { eq, desc, sql, and, inArray, lte, asc, isNull } from "drizzle-orm";
 
 /**
@@ -722,5 +722,78 @@ export const cobrancaPlanilhaRouter = router({
           backupCreated: true,
         },
       };
+    }),
+
+  // ==================== OBSERVAÇÕES POR ETAPA ====================
+
+  /** Adicionar observação a uma etapa específica */
+  addEtapaObs: protectedProcedure
+    .input(z.object({
+      planilhaId: z.number(),
+      etapa: z.string(),
+      observacao: z.string().min(1),
+      registradoPor: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.insert(cobrancaEtapaObs).values({
+        planilhaId: input.planilhaId,
+        etapa: input.etapa,
+        observacao: input.observacao,
+        registradoPor: input.registradoPor,
+      });
+      return { success: true };
+    }),
+
+  /** Listar observações de uma etapa específica de um título */
+  getEtapaObs: protectedProcedure
+    .input(z.object({
+      planilhaId: z.number(),
+      etapa: z.string().optional(), // se não informar, retorna todas as etapas
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const conditions = [eq(cobrancaEtapaObs.planilhaId, input.planilhaId)];
+      if (input.etapa) {
+        conditions.push(eq(cobrancaEtapaObs.etapa, input.etapa));
+      }
+      const rows = await db.select().from(cobrancaEtapaObs)
+        .where(and(...conditions))
+        .orderBy(desc(cobrancaEtapaObs.createdAt));
+      return rows;
+    }),
+
+  /** Listar TODAS as observações de um título (para o balãozinho de histórico) */
+  getAllEtapaObs: protectedProcedure
+    .input(z.object({ planilhaId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const rows = await db.select().from(cobrancaEtapaObs)
+        .where(eq(cobrancaEtapaObs.planilhaId, input.planilhaId))
+        .orderBy(desc(cobrancaEtapaObs.createdAt));
+      return rows;
+    }),
+
+  /** Contar observações por título (para badge no balãozinho) */
+  countEtapaObs: protectedProcedure
+    .input(z.object({ planilhaIds: z.array(z.number()) }))
+    .query(async ({ input }) => {
+      if (input.planilhaIds.length === 0) return {};
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const rows = await db.select({
+        planilhaId: cobrancaEtapaObs.planilhaId,
+        count: sql<number>`COUNT(*)`,
+      }).from(cobrancaEtapaObs)
+        .where(inArray(cobrancaEtapaObs.planilhaId, input.planilhaIds))
+        .groupBy(cobrancaEtapaObs.planilhaId);
+      const map: Record<number, number> = {};
+      for (const r of rows) {
+        map[r.planilhaId] = Number(r.count);
+      }
+      return map;
     }),
 });

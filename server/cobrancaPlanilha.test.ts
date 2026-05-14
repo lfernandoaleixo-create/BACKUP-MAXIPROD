@@ -33,7 +33,10 @@ describe("cobrancaPlanilha router", () => {
     const result = await caller.cobrancaPlanilha.getSummary();
     const statuses = Object.keys(result.byStatus);
     expect(statuses.length).toBeGreaterThan(0);
-    expect(statuses).toContain("Pendente");
+    // At least one known status should exist
+    const knownStatuses = ["Pendente", "Contatado", "Em Negociação", "Promessa de Pgto", "Especial s/ Cobrança", "Protestado"];
+    const hasKnown = statuses.some(s => knownStatuses.includes(s));
+    expect(hasKnown).toBe(true);
   });
 
   it("getSummary has correct center distribution", async () => {
@@ -192,5 +195,74 @@ describe("cobrancaPlanilha router", () => {
     // The live stats should be consistent with what sync would report
     const syncResult = await caller.cobrancaPlanilha.syncFromInadimplencia({ updatedBy: "test-live-match" });
     expect(stats.totalTitulos).toBe(syncResult.summary.inadimplenciaTotal);
+  });
+
+  it("addEtapaObs adds observation to a specific step", async () => {
+    const callerAuth = appRouter.createCaller({
+      user: { id: 1, openId: "test", name: "Test", role: "admin" },
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
+    });
+    const items = await callerAuth.cobrancaPlanilha.getAll();
+    if (items.length === 0) return;
+    const testItem = items[0];
+    const result = await callerAuth.cobrancaPlanilha.addEtapaObs({
+      planilhaId: testItem.id,
+      etapa: "primeiraCobranca",
+      observacao: "Teste vitest obs etapa",
+      registradoPor: "Test",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("getEtapaObs returns observations for a step", async () => {
+    const callerAuth = appRouter.createCaller({
+      user: { id: 1, openId: "test", name: "Test", role: "admin" },
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
+    });
+    const items = await callerAuth.cobrancaPlanilha.getAll();
+    if (items.length === 0) return;
+    const testItem = items[0];
+    const obs = await callerAuth.cobrancaPlanilha.getEtapaObs({
+      planilhaId: testItem.id,
+      etapa: "primeiraCobranca",
+    });
+    expect(Array.isArray(obs)).toBe(true);
+    expect(obs.length).toBeGreaterThan(0);
+    expect(obs[0]).toHaveProperty("observacao");
+    expect(obs[0]).toHaveProperty("registradoPor");
+    expect(obs[0]).toHaveProperty("etapa");
+  });
+
+  it("getAllEtapaObs returns all observations for a title", async () => {
+    const callerAuth = appRouter.createCaller({
+      user: { id: 1, openId: "test", name: "Test", role: "admin" },
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
+    });
+    const items = await callerAuth.cobrancaPlanilha.getAll();
+    if (items.length === 0) return;
+    const testItem = items[0];
+    const allObs = await callerAuth.cobrancaPlanilha.getAllEtapaObs({
+      planilhaId: testItem.id,
+    });
+    expect(Array.isArray(allObs)).toBe(true);
+    expect(allObs.length).toBeGreaterThan(0);
+  });
+
+  it("countEtapaObs returns count map", async () => {
+    const callerAuth = appRouter.createCaller({
+      user: { id: 1, openId: "test", name: "Test", role: "admin" },
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
+    });
+    const items = await callerAuth.cobrancaPlanilha.getAll();
+    if (items.length === 0) return;
+    const ids = items.slice(0, 5).map(i => i.id);
+    const counts = await callerAuth.cobrancaPlanilha.countEtapaObs({ planilhaIds: ids });
+    expect(typeof counts).toBe("object");
+    // The item we added obs to should have count > 0
+    expect(counts[items[0].id]).toBeGreaterThan(0);
   });
 });

@@ -1904,3 +1904,20 @@ export const futureBillAttachments = mysqlTable("future_bill_attachments", {
 });
 export type FutureBillAttachment = typeof futureBillAttachments.$inferSelect;
 export type InsertFutureBillAttachment = typeof futureBillAttachments.$inferInsert;
+
+
+/**
+ * Observações por etapa de cobrança.
+ * Cada registro = uma observação vinculada a uma etapa específica de um título da planilha de cobrança.
+ * Permite histórico completo de todas as anotações feitas pelo Thiago em cada etapa.
+ */
+export const cobrancaEtapaObs = mysqlTable("cobranca_etapa_obs", {
+  id: int("id").autoincrement().primaryKey(),
+  planilhaId: int("planilha_id").notNull(), // FK para cobranca_planilha.id
+  etapa: varchar("etapa", { length: 50 }).notNull(), // promessaPgto, primeiraCobranca, semAcao1, segundaCobranca, semAcao2, terceiraCobranca, semAcao3, acaoFinal
+  observacao: text("observacao").notNull(),
+  registradoPor: varchar("registrado_por", { length: 200 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type CobrancaEtapaObs = typeof cobrancaEtapaObs.$inferSelect;
+export type InsertCobrancaEtapaObs = typeof cobrancaEtapaObs.$inferInsert;
