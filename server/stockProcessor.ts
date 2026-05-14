@@ -136,7 +136,9 @@ interface ProcessedItem {
  * Checks unidadeMedida field AND description for KG pattern.
  * Products like "PCT 20KG" are sold in kg even if unidadeMedida is "un".
  */
-function isKgBasedProduct(unidadeMedida: string, descricao: string): boolean {
+function isKgBasedProduct(unidadeMedida: string, descricao: string, codigoItem?: string): boolean {
+  // Produtos forçados como KG por código (Vareta para Velas de Madeira)
+  if (codigoItem === "00193" || codigoItem === "00142") return true;
   if (unidadeMedida.toLowerCase() === "kg") return true;
   const d = descricao.toUpperCase();
   // Match descriptions containing KG but not UNID (e.g., "PCT 20KG")
@@ -684,7 +686,7 @@ export async function processStockData(): Promise<void> {
     }
     
     // isKg: produtos vendidos em kg (ex: PCT 20KG)
-    const isKg = item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem);
+    const isKg = item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem, item.codigoItem);
     const estoqueCxVal = unitsPerBox ? Math.floor(itemUn / unitsPerBox) : null;
     const pedidosCxVal = orderData
       ? (unitsPerBox && unitsPerBox !== 1
@@ -727,7 +729,7 @@ export async function processStockData(): Promise<void> {
       grupo: baseClassification.grupo,
       subgrupo: finalSubgrupo,
       // Produto 00808: NÃO é kg product, é convertido para caixas (peso / 11.6)
-      isKgProduct: item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem),
+      isKgProduct: item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem, item.codigoItem),
       estadoConfiguravel: estadoConfPredominante,
       segmentosCRM: Array.from(segCRMSet),
       // Variações
@@ -831,7 +833,7 @@ export async function processStockData(): Promise<void> {
       })(),
       segmento: classifySegment(descricaoItem),
       ...classifyGrupoFromDesc(descricaoItem, poData.lotes[0]?.referenciaPO),
-      isKgProduct: isKgBasedProduct(poItem.unidadeMedidaEstoque || poItem.unidadeMedida || "", poItem.descricaoItem || poItem.descricao || ""),
+      isKgProduct: isKgBasedProduct(poItem.unidadeMedidaEstoque || poItem.unidadeMedida || "", poItem.descricaoItem || poItem.descricao || "", code),
       estadoConfiguravel: estadoConfPredominantePO,
       segmentosCRM: Array.from(segCRMSetPO),
       // Variações

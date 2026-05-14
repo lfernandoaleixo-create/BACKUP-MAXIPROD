@@ -1,0 +1,22 @@
+{
+  "query": "SELECT codigoItem, descricaoItem, unidadeMedida, quantidade FROM stock_items WHERE codigoItem IN ('00193', '00142') LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricaoItem, unidadeMedida, quantidade FROM stock_items WHERE codigoItem IN ('00193', '00142') LIMIT 10;",
+  "rows": [
+    {
+      "codigoItem": "00142",
+      "descricaoItem": "VARETA PARA VELAS DE MADEIRA 8 CM",
+      "unidadeMedida": "",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00193",
+      "descricaoItem": "VARETA PARA VELAS DE MADEIRA 15 CM",
+      "unidadeMedida": "",
+      "quantidade": "0.00000"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tdescricaoItem\tunidadeMedida\tquantidade\n00142\tVARETA PARA VELAS DE MADEIRA 8 CM\t\t0.00000\n00193\tVARETA PARA VELAS DE MADEIRA 15 CM\t\t0.00000\n",
+  "stderr": "",
+  "execution_time_ms": 364
+}
