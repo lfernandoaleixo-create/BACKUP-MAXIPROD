@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { ecommerceExpenses, ecommerceRefunds, depotInventory, ecommerceDailySales, ecommerceCreditCards, expenseAttachments } from "../drizzle/schema";
+import { ecommerceExpenses, ecommerceRefunds, depotInventory, ecommerceDailySales, ecommerceCreditCards, expenseAttachments, ecommerceFutureBills, futureBillAttachments } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 
@@ -753,6 +753,268 @@ export const ecommerceRouter = router({
         return { success: false, error: "Apenas quem enviou ou o admin pode excluir" };
       }
       await db.delete(expenseAttachments).where(eq(expenseAttachments.id, input.id));
+      return { success: true };
+    }),
+
+  // ============================================================
+  // PREVISÃO DE CONTAS FUTURAS
+  // ============================================================
+
+  /**
+   * List all future bills (sorted by due date asc)
+   */
+  listFutureBills: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+    }))
+    .query(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", bills: [] };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", bills: [] };
+      const rows = await db.select().from(ecommerceFutureBills).orderBy(asc(ecommerceFutureBills.dataVencimento));
+      return { success: true, bills: rows };
+    }),
+
+  /**
+   * Add a new future bill
+   */
+  addFutureBill: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      descricao: z.string().min(1).max(500),
+      dataVencimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      formaPagamento: z.enum(["pix", "boleto", "cartao_credito"]),
+      parcelas: z.number().int().min(1).max(48).default(1),
+      valorTotal: z.number().min(0.01),
+      observacao: z.string().max(1000).optional(),
+      recorrente: z.boolean().default(false),
+      cartaoId: z.number().int().nullable().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      await db.insert(ecommerceFutureBills).values({
+        descricao: input.descricao.trim(),
+        dataVencimento: input.dataVencimento,
+        formaPagamento: input.formaPagamento,
+        parcelas: input.parcelas,
+        valorTotal: String(input.valorTotal),
+        observacao: input.observacao?.trim() || null,
+        recorrente: input.recorrente ? 1 : 0,
+        cartaoId: input.cartaoId || null,
+        registradoPor: input.operatorName,
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Update a future bill
+   */
+  updateFutureBill: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+      descricao: z.string().min(1).max(500),
+      dataVencimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      formaPagamento: z.enum(["pix", "boleto", "cartao_credito"]),
+      parcelas: z.number().int().min(1).max(48).default(1),
+      valorTotal: z.number().min(0.01),
+      observacao: z.string().max(1000).optional(),
+      recorrente: z.boolean().default(false),
+      cartaoId: z.number().int().nullable().optional(),
+      status: z.enum(["pendente", "pago", "cancelado"]).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      const [bill] = await db.select().from(ecommerceFutureBills).where(eq(ecommerceFutureBills.id, input.id));
+      if (!bill) return { success: false, error: "Conta não encontrada" };
+      if (bill.registradoPor !== input.operatorName && input.operatorName !== "Guilherme") {
+        return { success: false, error: "Apenas quem registrou ou o admin pode editar" };
+      }
+      await db.update(ecommerceFutureBills)
+        .set({
+          descricao: input.descricao.trim(),
+          dataVencimento: input.dataVencimento,
+          formaPagamento: input.formaPagamento,
+          parcelas: input.parcelas,
+          valorTotal: String(input.valorTotal),
+          observacao: input.observacao?.trim() || null,
+          recorrente: input.recorrente ? 1 : 0,
+          cartaoId: input.formaPagamento === "cartao_credito" ? (input.cartaoId || null) : null,
+          status: input.status || "pendente",
+        })
+        .where(eq(ecommerceFutureBills.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Delete a future bill
+   */
+  deleteFutureBill: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      const [bill] = await db.select().from(ecommerceFutureBills).where(eq(ecommerceFutureBills.id, input.id));
+      if (!bill) return { success: false, error: "Conta não encontrada" };
+      if (bill.registradoPor !== input.operatorName && input.operatorName !== "Guilherme") {
+        return { success: false, error: "Apenas quem registrou ou o admin pode excluir" };
+      }
+      await db.delete(ecommerceFutureBills).where(eq(ecommerceFutureBills.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Get summary for future bills
+   */
+  getFutureBillsSummary: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+    }))
+    .query(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", summary: null };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", summary: null };
+      
+      const [totalRow] = await db.select({
+        total: sql<string>`COALESCE(SUM(valorTotal), 0)`,
+        count: sql<number>`COUNT(*)`,
+      }).from(ecommerceFutureBills).where(eq(ecommerceFutureBills.status, "pendente"));
+
+      const now = new Date();
+      const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const [mesRow] = await db.select({
+        total: sql<string>`COALESCE(SUM(valorTotal), 0)`,
+        count: sql<number>`COUNT(*)`,
+      }).from(ecommerceFutureBills).where(and(
+        eq(ecommerceFutureBills.status, "pendente"),
+        sql`dataVencimento LIKE ${mesAtual + '%'}`
+      ));
+
+      return {
+        success: true,
+        summary: {
+          totalPendente: Number(totalRow?.total || 0),
+          totalCount: Number(totalRow?.count || 0),
+          mesAtual: { total: Number(mesRow?.total || 0), count: Number(mesRow?.count || 0) },
+        },
+      };
+    }),
+
+  // ============================================================
+  // ANEXOS DE CONTAS FUTURAS
+  // ============================================================
+
+  uploadFutureBillAttachment: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      billId: z.number(),
+      fileName: z.string().min(1).max(500),
+      fileData: z.string(), // base64
+      mimeType: z.string(),
+      fileSize: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/gif",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel",
+        "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+      if (!allowedTypes.includes(input.mimeType)) {
+        return { success: false, error: "Tipo de arquivo não permitido" };
+      }
+      if (input.fileSize > 10 * 1024 * 1024) {
+        return { success: false, error: "Arquivo muito grande (máx. 10MB)" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      const buffer = Buffer.from(input.fileData, "base64");
+      const suffix = Math.random().toString(36).substring(2, 10);
+      const fileKey = `future-bill-attachments/${input.billId}/${suffix}-${input.fileName}`;
+      const { url } = await storagePut(fileKey, buffer, input.mimeType);
+      await db.insert(futureBillAttachments).values({
+        billId: input.billId,
+        fileName: input.fileName,
+        fileUrl: url,
+        fileKey,
+        mimeType: input.mimeType,
+        fileSize: input.fileSize,
+        uploadedBy: input.operatorName,
+      });
+      return { success: true };
+    }),
+
+  listFutureBillAttachments: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      billId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", attachments: [] };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", attachments: [] };
+      const rows = await db.select().from(futureBillAttachments)
+        .where(eq(futureBillAttachments.billId, input.billId))
+        .orderBy(desc(futureBillAttachments.createdAt));
+      return { success: true, attachments: rows };
+    }),
+
+  getFutureBillAttachmentCounts: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+    }))
+    .query(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado", counts: {} };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível", counts: {} };
+      const rows = await db.select({
+        billId: futureBillAttachments.billId,
+        count: sql<number>`COUNT(*)`,
+      }).from(futureBillAttachments).groupBy(futureBillAttachments.billId);
+      const counts: Record<number, number> = {};
+      for (const r of rows) counts[r.billId] = Number(r.count);
+      return { success: true, counts };
+    }),
+
+  deleteFutureBillAttachment: publicProcedure
+    .input(z.object({
+      operatorName: z.string(),
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      if (!ECOMMERCE_ALLOWED_OPERATORS.includes(input.operatorName)) {
+        return { success: false, error: "Acesso negado" };
+      }
+      const db = await getDb();
+      if (!db) return { success: false, error: "DB indisponível" };
+      const [attachment] = await db.select().from(futureBillAttachments).where(eq(futureBillAttachments.id, input.id));
+      if (!attachment) return { success: false, error: "Anexo não encontrado" };
+      if (attachment.uploadedBy !== input.operatorName && input.operatorName !== "Guilherme") {
+        return { success: false, error: "Apenas quem enviou ou o admin pode excluir" };
+      }
+      await db.delete(futureBillAttachments).where(eq(futureBillAttachments.id, input.id));
       return { success: true };
     }),
 });

@@ -1865,3 +1865,42 @@ export const expenseAttachments = mysqlTable("expense_attachments", {
 });
 export type ExpenseAttachment = typeof expenseAttachments.$inferSelect;
 export type InsertExpenseAttachment = typeof expenseAttachments.$inferInsert;
+
+/**
+ * Previsão de contas futuras do e-commerce.
+ * Pedro lança contas que serão pagas no futuro para planejamento financeiro.
+ */
+export const ecommerceFutureBills = mysqlTable("ecommerce_future_bills", {
+  id: int("id").autoincrement().primaryKey(),
+  descricao: varchar("descricao", { length: 500 }).notNull(),
+  dataVencimento: varchar("dataVencimento", { length: 10 }).notNull(), // YYYY-MM-DD
+  formaPagamento: mysqlEnum("formaPagamento", ["pix", "boleto", "cartao_credito"]).notNull(),
+  parcelas: int("parcelas").notNull().default(1),
+  valorTotal: decimal("valorTotal", { precision: 12, scale: 2 }).notNull(),
+  observacao: text("observacao"),
+  recorrente: tinyint("recorrente").notNull().default(0),
+  cartaoId: int("cartao_id"),
+  status: mysqlEnum("status", ["pendente", "pago", "cancelado"]).notNull().default("pendente"),
+  registradoPor: varchar("registradoPor", { length: 100 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EcommerceFutureBill = typeof ecommerceFutureBills.$inferSelect;
+export type InsertEcommerceFutureBill = typeof ecommerceFutureBills.$inferInsert;
+
+/**
+ * Anexos de contas futuras do e-commerce.
+ */
+export const futureBillAttachments = mysqlTable("future_bill_attachments", {
+  id: int("id").autoincrement().primaryKey(),
+  billId: int("bill_id").notNull(), // FK para ecommerce_future_bills
+  fileName: varchar("file_name", { length: 500 }).notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileKey: varchar("file_key", { length: 500 }).notNull(),
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  fileSize: int("file_size").notNull(),
+  uploadedBy: varchar("uploaded_by", { length: 100 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type FutureBillAttachment = typeof futureBillAttachments.$inferSelect;
+export type InsertFutureBillAttachment = typeof futureBillAttachments.$inferInsert;

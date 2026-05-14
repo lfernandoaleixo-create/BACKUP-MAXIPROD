@@ -3722,3 +3722,7 @@
 - [x] Despesas: preview de imagens inline no modal de anexos
 - [x] Despesas: indicador visual na tabela quando despesa tem anexo
 - [x] Despesas: exportar PDF com lista de anexos
+- [x] E-commerce: criar card "Previsão de Contas Futuras" com mesmas funcionalidades do card Despesas
+- [x] E-commerce: criar tabela ecommerce_future_bills no banco
+- [x] E-commerce: criar endpoints tRPC para contas futuras (CRUD + anexos)
+- [x] E-commerce: criar componente frontend FutureBillsSection

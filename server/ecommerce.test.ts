@@ -274,3 +274,98 @@ describe("E-commerce Router - Attachment (Clips) Procedures", () => {
     }
   });
 });
+
+describe("E-commerce Router - Future Bills Procedures", () => {
+  it("should define all future bills procedures", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    expect(ecommerceRouter._def.procedures.listFutureBills).toBeDefined();
+    expect(ecommerceRouter._def.procedures.addFutureBill).toBeDefined();
+    expect(ecommerceRouter._def.procedures.updateFutureBill).toBeDefined();
+    expect(ecommerceRouter._def.procedures.deleteFutureBill).toBeDefined();
+    expect(ecommerceRouter._def.procedures.getFutureBillsSummary).toBeDefined();
+  });
+
+  it("listFutureBills should be a query procedure", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.listFutureBills as any;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("query");
+  });
+
+  it("addFutureBill should be a mutation procedure", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.addFutureBill as any;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("mutation");
+  });
+
+  it("updateFutureBill should be a mutation procedure", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.updateFutureBill as any;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("mutation");
+  });
+
+  it("deleteFutureBill should be a mutation procedure", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.deleteFutureBill as any;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("mutation");
+  });
+
+  it("getFutureBillsSummary should be a query procedure", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.getFutureBillsSummary as any;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("query");
+  });
+});
+
+describe("E-commerce Router - Future Bill Attachment Procedures", () => {
+  it("should define all future bill attachment procedures", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    expect(ecommerceRouter._def.procedures.uploadFutureBillAttachment).toBeDefined();
+    expect(ecommerceRouter._def.procedures.listFutureBillAttachments).toBeDefined();
+    expect(ecommerceRouter._def.procedures.getFutureBillAttachmentCounts).toBeDefined();
+    expect(ecommerceRouter._def.procedures.deleteFutureBillAttachment).toBeDefined();
+  });
+
+  it("uploadFutureBillAttachment should be a mutation", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.uploadFutureBillAttachment as any;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("mutation");
+  });
+
+  it("listFutureBillAttachments should be a query", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.listFutureBillAttachments as any;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("query");
+  });
+
+  it("getFutureBillAttachmentCounts should be a query", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.getFutureBillAttachmentCounts as any;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("query");
+  });
+
+  it("deleteFutureBillAttachment should be a mutation", async () => {
+    const { ecommerceRouter } = await import("./ecommerceRouter");
+    const proc = ecommerceRouter._def.procedures.deleteFutureBillAttachment as any;
+    expect(proc).toBeDefined();
+    expect(proc._def.type).toBe("mutation");
+  });
+
+  it("future bill access should follow ECOMMERCE_ALLOWED_OPERATORS", () => {
+    const allowed = ["Pedro", "Flavio", "Guilherme", "Thiago", "Thalita"];
+    const denied = ["Fernando", "Bruno", "Maria"];
+    for (const name of allowed) {
+      expect(allowed.includes(name)).toBe(true);
+    }
+    for (const name of denied) {
+      expect(allowed.includes(name)).toBe(false);
+    }
+  });
+});

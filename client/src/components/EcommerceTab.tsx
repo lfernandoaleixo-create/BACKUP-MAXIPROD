@@ -4,6 +4,7 @@
  */
 import React, { useState, useMemo, useCallback, useRef } from "react";
 import RefundsSection from "@/components/RefundsSection";
+import FutureBillsSection from "@/components/FutureBillsSection";
 import { generateSalesReportPdf } from "@/lib/ecommerceSalesReportPdf";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
@@ -1448,7 +1449,15 @@ export default function EcommerceTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Separator between Despesas and Estornos */}
+      {/* Separator between Despesas and Contas Futuras */}
+      <div className="my-10">
+        <div className="h-[2px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
+      </div>
+
+      {/* Future Bills Section */}
+      <FutureBillsSection />
+
+      {/* Separator between Contas Futuras and Estornos */}
       <div className="my-10">
         <div className="h-[2px] bg-gradient-to-r from-transparent via-teal-400/60 to-transparent" />
       </div>
