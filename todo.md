@@ -3771,3 +3771,4 @@
 - [x] Corrigir sobreposição do card Histórico de Observações com os ícones de balão na row expandida
 - [x] Garantir que o status na planilha de cobrança NUNCA seja sobrescrito pela sincronização (fica fixo até mudança manual)
 - [x] Corrigir erro Unicode "t\u00edtulos" aparecendo literalmente nos cards de segmento
+- [x] Mostrar mensagem "O PDF DE DECISÃO FOI GERADO, MAS O CLIENTE REALIZOU O PAGAMENTO E SAIU DA INADIMPLÊNCIA" no histórico de PDFs da Planilha de Cobrança para clientes que já pagaram

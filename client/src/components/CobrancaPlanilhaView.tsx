@@ -1877,6 +1877,19 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                         <Button
                           variant="outline"
                           size="sm"
+                          className="text-xs h-7 text-green-600 border-green-200 hover:bg-green-50"
+                          onClick={async () => {
+                            await markPaid.mutateAsync({ ids: pdfHistorySelectedIds });
+                            setPdfHistorySelectedIds([]);
+                            utils.financial.listAllDecisionPdfs.invalidate();
+                            toast.success("Marcado(s) como pago!");
+                          }}
+                        >
+                          <Check className="w-3 h-3 mr-1" /> Marcar como Pago
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
                           onClick={async () => {
                             for (const pid of pdfHistorySelectedIds) {
@@ -1891,37 +1904,82 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                         </Button>
                       </div>
                     )}
-                    {filtered.map(pdf => (
-                      <div key={pdf.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50">
-                        <input
-                          type="checkbox"
-                          checked={pdfHistorySelectedIds.includes(pdf.id)}
-                          onChange={e => {
-                            if (e.target.checked) setPdfHistorySelectedIds(prev => [...prev, pdf.id]);
-                            else setPdfHistorySelectedIds(prev => prev.filter(x => x !== pdf.id));
-                          }}
-                          className="w-4 h-4 rounded border-slate-300"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{pdf.cliente}</p>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                            <span>Protocolo: {pdf.protocolo}</span>
-                            {pdf.vendedor && <span>• Vendedor: {pdf.vendedor}</span>}
-                            {pdf.valorAberto && <span>• {pdf.valorAberto}</span>}
+                    {filtered.map(pdf => {
+                      const isPaid = pdf.paidAfterPdf;
+                      return (
+                        <div key={pdf.id} className={`border rounded-lg p-3 transition-colors ${
+                          isPaid ? "bg-green-50 border-green-200" : "hover:bg-slate-50 border-slate-200"
+                        }`}>
+                          <div className="flex items-start gap-2">
+                            {/* Checkbox / Paid icon */}
+                            {!isPaid ? (
+                              <button
+                                onClick={() => {
+                                  if (pdfHistorySelectedIds.includes(pdf.id)) {
+                                    setPdfHistorySelectedIds(prev => prev.filter(x => x !== pdf.id));
+                                  } else {
+                                    setPdfHistorySelectedIds(prev => [...prev, pdf.id]);
+                                  }
+                                }}
+                                className={`mt-1 shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                  pdfHistorySelectedIds.includes(pdf.id) ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 hover:border-blue-400"
+                                }`}
+                              >
+                                {pdfHistorySelectedIds.includes(pdf.id) && <Check className="w-3 h-3" />}
+                              </button>
+                            ) : (
+                              <div className="mt-1 shrink-0 w-5 h-5 rounded bg-green-600 flex items-center justify-center">
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-bold text-slate-800 truncate">{pdf.cliente}</p>
+                                {pdf.decisao && pdf.decisao.toUpperCase().includes("COM PROTESTO") && (
+                                  <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-300">COM PROTESTO</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                <span>Protocolo: <span className="font-mono">{pdf.protocolo}</span></span>
+                                {pdf.valorAberto && <span>{pdf.valorAberto}</span>}
+                                {pdf.vendedor && <span>Vendedor: {pdf.vendedor}</span>}
+                              </div>
+                              <p className="text-[10px] text-slate-400">Gerado em {new Date(Number(pdf.generatedAt)).toLocaleString('pt-BR')}    por {pdf.generatedBy}</p>
+                              {/* Mensagem de pagamento */}
+                              {isPaid && (
+                                <div className="mt-1.5 px-2 py-1 bg-green-100 rounded text-xs font-semibold text-green-700">
+                                  O PDF DE DECISÃO FOI GERADO, MAS O CLIENTE REALIZOU O PAGAMENTO E SAIU DA INADIMPLÊNCIA
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <a
+                                href={pdf.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-blue-600 transition-colors"
+                                title="Baixar PDF"
+                              >
+                                <Download className="w-4 h-4" />
+                              </a>
+                              <button
+                                onClick={async () => {
+                                  if (confirm("Excluir este PDF de decisão?")) {
+                                    await deletePdf.mutateAsync({ id: pdf.id });
+                                    utils.financial.listAllDecisionPdfs.invalidate();
+                                    toast.success("PDF excluído!");
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                                title="Excluir PDF"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
-                          <p className="text-[10px] text-slate-400">Gerado por {pdf.generatedBy} em {new Date(Number(pdf.generatedAt)).toLocaleString('pt-BR')}</p>
                         </div>
-                        <a
-                          href={pdf.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100 transition-colors"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Baixar
-                        </a>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })()}
