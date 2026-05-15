@@ -265,4 +265,91 @@ describe("cobrancaPlanilha router", () => {
     // The item we added obs to should have count > 0
     expect(counts[items[0].id]).toBeGreaterThan(0);
   });
+
+  it("updateField accepts new editable fields (contato, email, regiao)", async () => {
+    const items = await caller.cobrancaPlanilha.getAll();
+    if (items.length === 0) return;
+    const item = items[0];
+
+    // Test contato field
+    const result1 = await caller.cobrancaPlanilha.updateField({
+      id: item.id,
+      field: "contato",
+      value: "(11) 99999-0000",
+      updatedBy: "test",
+    });
+    expect(result1.success).toBe(true);
+
+    // Test email field
+    const result2 = await caller.cobrancaPlanilha.updateField({
+      id: item.id,
+      field: "email",
+      value: "teste@empresa.com",
+      updatedBy: "test",
+    });
+    expect(result2.success).toBe(true);
+
+    // Test regiao field
+    const result3 = await caller.cobrancaPlanilha.updateField({
+      id: item.id,
+      field: "regiao",
+      value: "Sudeste",
+      updatedBy: "test",
+    });
+    expect(result3.success).toBe(true);
+
+    // Test municipio field
+    const result4 = await caller.cobrancaPlanilha.updateField({
+      id: item.id,
+      field: "municipio",
+      value: "São Paulo",
+      updatedBy: "test",
+    });
+    expect(result4.success).toBe(true);
+
+    // Test uf field
+    const result5 = await caller.cobrancaPlanilha.updateField({
+      id: item.id,
+      field: "uf",
+      value: "SP",
+      updatedBy: "test",
+    });
+    expect(result5.success).toBe(true);
+
+    // Verify the updates persisted
+    const updated = await caller.cobrancaPlanilha.getAll();
+    const updatedItem = updated.find(i => i.id === item.id);
+    expect((updatedItem as any).contato).toBe("(11) 99999-0000");
+    expect((updatedItem as any).email).toBe("teste@empresa.com");
+    expect((updatedItem as any).regiao).toBe("Sudeste");
+    expect(updatedItem?.municipio).toBe("São Paulo");
+    expect(updatedItem?.uf).toBe("SP");
+
+    // Restore original values
+    await caller.cobrancaPlanilha.updateField({ id: item.id, field: "contato", value: (item as any).contato || null, updatedBy: "test" });
+    await caller.cobrancaPlanilha.updateField({ id: item.id, field: "email", value: (item as any).email || null, updatedBy: "test" });
+    await caller.cobrancaPlanilha.updateField({ id: item.id, field: "regiao", value: (item as any).regiao || null, updatedBy: "test" });
+    await caller.cobrancaPlanilha.updateField({ id: item.id, field: "municipio", value: item.municipio || null, updatedBy: "test" });
+    await caller.cobrancaPlanilha.updateField({ id: item.id, field: "uf", value: item.uf || null, updatedBy: "test" });
+  });
+
+  it("syncFromInadimplencia enriches client data from sales_orders", async () => {
+    // Run sync and verify it doesn't crash with the new enrichment logic
+    const result = await caller.cobrancaPlanilha.syncFromInadimplencia({
+      updatedBy: "test-enrichment",
+    });
+    expect(result.success).toBe(true);
+    expect(typeof result.summary.updated).toBe("number");
+    expect(typeof result.summary.added).toBe("number");
+
+    // Verify items have the new fields available (even if null)
+    const items = await caller.cobrancaPlanilha.getAll();
+    if (items.length > 0) {
+      const item = items[0] as any;
+      // Fields should exist (may be null if no sales data)
+      expect("contato" in item).toBe(true);
+      expect("email" in item).toBe(true);
+      expect("regiao" in item).toBe(true);
+    }
+  }, 30000);
 });

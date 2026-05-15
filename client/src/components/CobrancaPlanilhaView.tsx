@@ -209,7 +209,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         (item.descricao || "").toLowerCase().includes(s) ||
         (item.cnpjCpf || "").toLowerCase().includes(s) ||
         (item.municipio || "").toLowerCase().includes(s) ||
-        (item.observacoes || "").toLowerCase().includes(s)
+        (item.observacoes || "").toLowerCase().includes(s) ||
+        ((item as any).contato || "").toLowerCase().includes(s) ||
+        ((item as any).email || "").toLowerCase().includes(s) ||
+        ((item as any).regiao || "").toLowerCase().includes(s)
       );
     }
 
@@ -680,11 +683,35 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                 <Building2 className="w-3.5 h-3.5 text-blue-500" />
                                 Dados da Empresa
                               </h4>
-                              <div className="text-[11px] space-y-1 text-slate-600">
-                                <div><span className="font-medium text-slate-500">CNPJ/CPF:</span> {item.cnpjCpf || "-"}</div>
-                                <div><span className="font-medium text-slate-500">Município:</span> {item.municipio || "-"} - {item.uf || "-"}</div>
-                                <div><span className="font-medium text-slate-500">País:</span> {item.pais || "-"}</div>
-                                <div><span className="font-medium text-slate-500">Centro:</span> {item.centroCustos || "-"}</div>
+                              <div className="text-[11px] space-y-1.5 text-slate-600">
+                                {[
+                                  { label: "CNPJ/CPF", field: "cnpjCpf", value: item.cnpjCpf },
+                                  { label: "Município", field: "municipio", value: item.municipio },
+                                  { label: "UF", field: "uf", value: item.uf },
+                                  { label: "Região", field: "regiao", value: (item as any).regiao },
+                                  { label: "Contato", field: "contato", value: (item as any).contato },
+                                  { label: "Email", field: "email", value: (item as any).email },
+                                  { label: "Centro", field: "centroCustos", value: item.centroCustos },
+                                ].map(f => (
+                                  <div key={f.field} className="flex items-center gap-2">
+                                    <span className="font-medium text-slate-500 w-[70px] shrink-0">{f.label}:</span>
+                                    {canEdit ? (
+                                      <input
+                                        type="text"
+                                        defaultValue={f.value || ""}
+                                        placeholder="-"
+                                        onBlur={e => {
+                                          if (e.target.value !== (f.value || "")) {
+                                            handleCobrancaFieldChange(item.id, f.field, e.target.value);
+                                          }
+                                        }}
+                                        className="flex-1 px-2 py-0.5 rounded border border-slate-200 text-[11px] bg-white focus:ring-1 focus:ring-blue-400 focus:border-blue-400 max-w-[200px]"
+                                      />
+                                    ) : (
+                                      <span>{f.value || "-"}</span>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             </div>
                             {/* Cobrança Timeline */}

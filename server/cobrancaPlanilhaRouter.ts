@@ -1,7 +1,7 @@
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs } from "../drizzle/schema";
+import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders } from "../drizzle/schema";
 import { eq, desc, sql, and, inArray, lte, asc, isNull } from "drizzle-orm";
 
 /**
@@ -195,6 +195,7 @@ export const cobrancaPlanilhaRouter = router({
         'status', 'observacoes', 'promessaPgto', 'primeiraCobranca',
         'semAcao1', 'segundaCobranca', 'semAcao2', 'terceiraCobranca',
         'semAcao3', 'acaoFinal', 'tipo', 'diasVencidos',
+        'contato', 'email', 'regiao', 'municipio', 'uf', 'cnpjCpf', 'centroCustos',
       ];
       
       if (!editableFields.includes(input.field)) {
@@ -214,6 +215,13 @@ export const cobrancaPlanilhaRouter = router({
         acaoFinal: 'acao_final',
         tipo: 'tipo',
         diasVencidos: 'dias_vencidos',
+        contato: 'contato',
+        email: 'email',
+        regiao: 'regiao',
+        municipio: 'municipio',
+        uf: 'uf',
+        cnpjCpf: 'cnpj_cpf',
+        centroCustos: 'centro_custos',
       };
       
       const colName = fieldToColumn[input.field] || input.field;
@@ -517,6 +525,42 @@ export const cobrancaPlanilhaRouter = router({
         .filter(t => t.valorAReceber > 0)
         .filter(t => !TEST_CLIENTS.includes(t.empresa.toUpperCase().trim()));
 
+      // 4b. Enriquecer dados de contato do cliente via sales_orders (telefone, email, cidade, UF, região)
+      const clienteNames = Array.from(new Set(inadTitles.map(t => t.empresa)));
+      const clienteDataMap: Record<string, { contato?: string; email?: string; municipio?: string; uf?: string; regiao?: string }> = {};
+      
+      if (clienteNames.length > 0) {
+        // Buscar dados mais recentes de cada cliente nos pedidos de venda
+        const salesData = await db
+          .select({
+            cliente: salesOrders.cliente,
+            clienteTelefone: salesOrders.clienteTelefone,
+            clienteEmail: salesOrders.clienteEmail,
+            enderecoCidade: salesOrders.enderecoCidade,
+            uf: salesOrders.uf,
+            regiao: salesOrders.regiao,
+          })
+          .from(salesOrders)
+          .where(inArray(salesOrders.cliente, clienteNames))
+          .orderBy(desc(salesOrders.id))
+          .limit(5000);
+        
+        // Pegar o dado mais recente (primeiro encontrado) de cada cliente
+        for (const row of salesData) {
+          const key = (row.cliente || "").trim();
+          if (!key) continue;
+          if (!clienteDataMap[key]) {
+            clienteDataMap[key] = {};
+          }
+          const data = clienteDataMap[key];
+          if (!data.contato && row.clienteTelefone) data.contato = row.clienteTelefone;
+          if (!data.email && row.clienteEmail) data.email = row.clienteEmail;
+          if (!data.municipio && row.enderecoCidade) data.municipio = row.enderecoCidade;
+          if (!data.uf && row.uf) data.uf = row.uf;
+          if (!data.regiao && row.regiao) data.regiao = row.regiao;
+        }
+      }
+
       // 5. Buscar planilha atual
       const planilhaAtual = await db.select().from(cobrancaPlanilha);
 
@@ -593,6 +637,14 @@ export const cobrancaPlanilhaRouter = router({
         if (match.status !== inad.status) {
           statusUpdated++;
         }
+
+        // Enriquecer dados de contato se ainda não preenchidos
+        const clienteData = clienteDataMap[inad.empresa] || {};
+        if (!match.contato && clienteData.contato) updateData.contato = clienteData.contato;
+        if (!match.email && clienteData.email) updateData.email = clienteData.email;
+        if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
+        if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
+        if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
         
         await db.update(cobrancaPlanilha)
           .set(updateData)
@@ -652,6 +704,14 @@ export const cobrancaPlanilhaRouter = router({
           if (match.status !== inad.status) {
             statusUpdated++;
           }
+
+          // Enriquecer dados de contato se ainda não preenchidos
+          const clienteData = clienteDataMap[inad.empresa] || {};
+          if (!match.contato && clienteData.contato) updateData.contato = clienteData.contato;
+          if (!match.email && clienteData.email) updateData.email = clienteData.email;
+          if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
+          if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
+          if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
           
           await db.update(cobrancaPlanilha)
             .set(updateData)
@@ -661,13 +721,16 @@ export const cobrancaPlanilhaRouter = router({
           // NOVO título — adicionar à planilha
           matchedInadArIds.add(inad.arId);
           
+          // Enriquecer com dados de contato do cliente
+          const clienteData = clienteDataMap[inad.empresa] || {};
+          
           await db.insert(cobrancaPlanilha).values({
             arId: inad.arId,
             empresa: inad.empresa,
             descricao: inad.descricao || null,
             cnpjCpf: null,
-            municipio: null,
-            uf: null,
+            municipio: clienteData.municipio || null,
+            uf: clienteData.uf || null,
             pais: null,
             centroCustos: null, // Será preenchido manualmente
             valor: String(inad.valorAReceber),
@@ -675,6 +738,9 @@ export const cobrancaPlanilhaRouter = router({
             diasVencidos: inad.diasVencidos,
             tipo: inad.tipo,
             status: inad.status,
+            contato: clienteData.contato || null,
+            email: clienteData.email || null,
+            regiao: clienteData.regiao || null,
             updatedBy: `Sync: ${input.updatedBy}`,
           });
           added++;

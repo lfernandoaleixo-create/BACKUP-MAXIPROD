@@ -1823,6 +1823,10 @@ export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
   acaoFinal: text("acao_final"),
   // Observações / comentários (importados dos triângulos vermelhos do Excel + edições manuais)
   observacoes: text("observacoes"),
+  // Dados de contato do cliente (preenchidos automaticamente via sales_orders ou manualmente)
+  contato: varchar("contato", { length: 100 }), // Telefone do cliente
+  email: varchar("email", { length: 200 }), // Email do cliente
+  regiao: varchar("regiao", { length: 100 }), // Região comercial do cliente
   // Controle
   ativo: boolean("ativo").notNull().default(true), // false = título pago/resolvido, não aparece nos cards
   updatedBy: varchar("updated_by", { length: 200 }),
