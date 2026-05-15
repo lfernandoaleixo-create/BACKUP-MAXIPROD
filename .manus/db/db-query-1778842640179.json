@@ -1,0 +1,77 @@
+{
+  "query": "SELECT ceo.id, cp.empresa, ceo.etapa, ceo.observacao, ceo.registrado_por, ceo.created_at \nFROM cobranca_etapa_obs ceo \nJOIN cobranca_planilha cp ON cp.id = ceo.planilha_id \nWHERE ceo.registrado_por LIKE '%importado%' \nORDER BY ceo.id",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ceo.id, cp.empresa, ceo.etapa, ceo.observacao, ceo.registrado_por, ceo.created_at \nFROM cobranca_etapa_obs ceo \nJOIN cobranca_planilha cp ON cp.id = ceo.planilha_id \nWHERE ceo.registrado_por LIKE '%importado%' \nORDER BY ceo.id",
+  "rows": [
+    {
+      "id": "30002",
+      "empresa": "ESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA",
+      "etapa": "primeiraCobranca",
+      "observacao": "1ª cobrança: mensagem enviada no email valbermendes2015@gmail.com e whatsapp 11 99631-1105. Cliente retornou com promessa de pagamento dia 18/05/2026.",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    },
+    {
+      "id": "30003",
+      "empresa": "FLAVIO JOSE DE OLIVEIRA",
+      "etapa": "primeiraCobranca",
+      "observacao": "Cliente ligou para Juvenal informando que enviará o pix restante até dia 15/05/2026",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    },
+    {
+      "id": "30004",
+      "empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "etapa": "primeiraCobranca",
+      "observacao": "1ª cobrança: mensagem enviada no email adm@pantanalaromas.com.br e whatsapps 11 99938-4231 e 11 98821-7207",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    },
+    {
+      "id": "30005",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "etapa": "primeiraCobranca",
+      "observacao": "Trata-se cliente Gustavo do Rio, ele está pagando parcialmente os valores em aberto, ficou de enviar nova remessa de pagamento até dia 15/05/2026",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    },
+    {
+      "id": "30007",
+      "empresa": "ALMEIDA PATURI COMERCIO DE CARNES LTDA",
+      "etapa": "terceiraCobranca",
+      "observacao": "2  ligações não atendidas e 3°cobrança feita",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    },
+    {
+      "id": "30008",
+      "empresa": "BR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA",
+      "etapa": "terceiraCobranca",
+      "observacao": "2  ligações não atendidas e 3°cobrança feita",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    },
+    {
+      "id": "30009",
+      "empresa": "FERREIRA E SILVA COMERCIO DE CARNES LTDA",
+      "etapa": "terceiraCobranca",
+      "observacao": "1 ligação não atendida e 3°cobrança feita",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    },
+    {
+      "id": "30010",
+      "empresa": "ESPETOLIN PRODUTOS ALIMENTICIOS LTDA",
+      "etapa": "acaoFinal",
+      "observacao": "cliente informou  que sera feita uma consulta em seu financeiro, pediu prazo ate dia 18/05",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    }
+  ],
+  "messages": [
+    "30006\tJK COMERCIO E REPRESENTACOES LTDA\tsemAcao1\tCliente está negociando devolução com Juvenal dia 04",
+    "/05/2026\tThiago (importado do Excel)\t2026-05-15 10:56:35"
+  ],
+  "stdout": "id\tempresa\tetapa\tobservacao\tregistrado_por\tcreated_at\n30002\tESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA\tprimeiraCobranca\t1ª cobrança: mensagem enviada no email valbermendes2015@gmail.com e whatsapp 11 99631-1105. Cliente retornou com promessa de pagamento dia 18/05/2026.\tThiago (importado do Excel)\t2026-05-15 10:56:35\n30003\tFLAVIO JOSE DE OLIVEIRA\tprimeiraCobranca\tCliente ligou para Juvenal informando que enviará o pix restante até dia 15/05/2026\tThiago (importado do Excel)\t2026-05-15 10:56:35\n30004\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\tprimeiraCobranca\t1ª cobrança: mensagem enviada no email adm@pantanalaromas.com.br e whatsapps 11 99938-4231 e 11 98821-7207\tThiago (importado do Excel)\t2026-05-15 10:56:35\n30005\tWGO COMERCIO E SERVICOS LTDA\tprimeiraCobranca\tTrata-se cliente Gustavo do Rio, ele está pagando parcialmente os valores em aberto, ficou de enviar nova remessa de pagamento até dia 15/05/2026\tThiago (importado do Excel)\t2026-05-15 10:56:35\n30006\tJK COMERCIO E REPRESENTACOES LTDA\tsemAcao1\tCliente está negociando devolução com Juvenal dia 04\n/05/2026\tThiago (importado do Excel)\t2026-05-15 10:56:35\n30007\tALMEIDA PATURI COMERCIO DE CARNES LTDA\tterceiraCobranca\t2  ligações não atendidas e 3°cobrança feita\tThiago (importado do Excel)\t2026-05-15 10:56:35\n30008\tBR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA\tterceiraCobranca\t2  ligações não atendidas e 3°cobrança feita\tThiago (importado do Excel)\t2026-05-15 10:56:35\n30009\tFERREIRA E SILVA COMERCIO DE CARNES LTDA\tterceiraCobranca\t1 ligação não atendida e 3°cobrança feita\tThiago (importado do Excel)\t2026-05-15 10:56:35\n30010\tESPETOLIN PRODUTOS ALIMENTICIOS LTDA\tacaoFinal\tcliente informou  que sera feita uma consulta em seu financeiro, pediu prazo ate dia 18/05\tThiago (importado do Excel)\t2026-05-15 10:56:35\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

@@ -5,7 +5,7 @@ import {
   X, Search, Filter, ChevronDown, ChevronUp, Edit3, Save, MessageSquare,
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
   CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw,
-  History, Plus, Paperclip
+  History, Plus, Paperclip, Pencil, Trash2, Check
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -722,7 +722,6 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                               </h4>
                               <div className="space-y-1.5">
                                 {[
-                                  { label: "Promessa Pgto", field: "promessaPgto", value: item.promessaPgto },
                                   { label: "1ª Cobrança", field: "primeiraCobranca", value: item.primeiraCobranca },
                                   { label: "Intervalo", field: "semAcao1", value: item.semAcao1 },
                                   { label: "2ª Cobrança", field: "segundaCobranca", value: item.segundaCobranca },
@@ -832,9 +831,19 @@ function EtapaObsDialog({ planilhaId, etapa, label, canEdit, operatorName, onClo
   planilhaId: number; etapa: string; label: string; canEdit: boolean; operatorName: string; onClose: () => void;
 }) {
   const [newObs, setNewObs] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
   const { data: obsList, refetch } = trpc.cobrancaPlanilha.getEtapaObs.useQuery({ planilhaId, etapa });
   const addObs = trpc.cobrancaPlanilha.addEtapaObs.useMutation({
     onSuccess: () => { setNewObs(""); refetch(); toast.success("Observação adicionada!"); },
+    onError: (err) => toast.error(err.message),
+  });
+  const updateObs = trpc.cobrancaPlanilha.updateEtapaObs.useMutation({
+    onSuccess: () => { setEditingId(null); setEditText(""); refetch(); toast.success("Observação atualizada!"); },
+    onError: (err) => toast.error(err.message),
+  });
+  const deleteObs = trpc.cobrancaPlanilha.deleteEtapaObs.useMutation({
+    onSuccess: () => { refetch(); toast.success("Observação excluída!"); },
     onError: (err) => toast.error(err.message),
   });
 
@@ -849,18 +858,67 @@ function EtapaObsDialog({ planilhaId, etapa, label, canEdit, operatorName, onClo
         </DialogHeader>
         <div className="py-2 space-y-3">
           {/* Lista de observações existentes */}
-          <div className="max-h-[250px] overflow-y-auto space-y-2">
+          <div className="max-h-[300px] overflow-y-auto space-y-2">
             {(!obsList || obsList.length === 0) && (
               <p className="text-sm text-slate-400 italic text-center py-4">Nenhuma observação registrada para esta etapa.</p>
             )}
             {obsList?.map((obs) => (
-              <div key={obs.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">{obs.observacao}</p>
-                <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
-                  <span className="font-medium">{obs.registradoPor}</span>
-                  <span>•</span>
-                  <span>{new Date(obs.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-                </div>
+              <div key={obs.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100 group">
+                {editingId === obs.id ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={editText}
+                      onChange={e => setEditText(e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm focus:ring-2 focus:ring-blue-500 resize-none"
+                      autoFocus
+                    />
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => updateObs.mutate({ id: obs.id, observacao: editText })}
+                        disabled={!editText.trim() || updateObs.isPending}
+                        className="px-2 py-1 rounded bg-emerald-600 text-white text-[11px] font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <Check className="w-3 h-3" /> Salvar
+                      </button>
+                      <button
+                        onClick={() => { setEditingId(null); setEditText(""); }}
+                        className="px-2 py-1 rounded bg-slate-200 text-slate-600 text-[11px] font-medium hover:bg-slate-300"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{obs.observacao}</p>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                        <span className="font-medium">{obs.registradoPor}</span>
+                        <span>•</span>
+                        <span>{new Date(obs.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+                      {canEdit && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => { setEditingId(obs.id); setEditText(obs.observacao); }}
+                            className="p-1 rounded hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition-colors"
+                            title="Editar"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => { if (confirm("Excluir esta observação?")) deleteObs.mutate({ id: obs.id }); }}
+                            className="p-1 rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -873,7 +931,6 @@ function EtapaObsDialog({ planilhaId, etapa, label, canEdit, operatorName, onClo
                 rows={3}
                 className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 resize-none"
                 placeholder="Adicionar observação..."
-                autoFocus
               />
             </div>
           )}
@@ -900,10 +957,19 @@ function EtapaObsDialog({ planilhaId, etapa, label, canEdit, operatorName, onClo
 function HistoryObsDialog({ planilhaId, empresa, onClose }: {
   planilhaId: number; empresa: string; onClose: () => void;
 }) {
-  const { data: allObs, isLoading } = trpc.cobrancaPlanilha.getAllEtapaObs.useQuery({ planilhaId });
+  const { data: allObs, isLoading, refetch } = trpc.cobrancaPlanilha.getAllEtapaObs.useQuery({ planilhaId });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
+  const updateObs = trpc.cobrancaPlanilha.updateEtapaObs.useMutation({
+    onSuccess: () => { setEditingId(null); setEditText(""); refetch(); toast.success("Observação atualizada!"); },
+    onError: (err) => toast.error(err.message),
+  });
+  const deleteObs = trpc.cobrancaPlanilha.deleteEtapaObs.useMutation({
+    onSuccess: () => { refetch(); toast.success("Observação excluída!"); },
+    onError: (err) => toast.error(err.message),
+  });
 
   const ETAPA_LABELS: Record<string, string> = {
-    promessaPgto: "Promessa Pgto",
     primeiraCobranca: "1ª Cobrança",
     semAcao1: "Intervalo 1",
     segundaCobranca: "2ª Cobrança",
@@ -935,18 +1001,65 @@ function HistoryObsDialog({ planilhaId, empresa, onClose }: {
           {!isLoading && allObs && allObs.length > 0 && (
             <div className="max-h-[400px] overflow-y-auto space-y-2">
               {allObs.map((obs) => (
-                <div key={obs.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                <div key={obs.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100 group">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                       {ETAPA_LABELS[obs.etapa] || obs.etapa}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{obs.observacao}</p>
-                  <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
-                    <span className="font-medium">{obs.registradoPor}</span>
-                    <span>•</span>
-                    <span>{new Date(obs.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-                  </div>
+                  {editingId === obs.id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={editText}
+                        onChange={e => setEditText(e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm focus:ring-2 focus:ring-blue-500 resize-none"
+                        autoFocus
+                      />
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => updateObs.mutate({ id: obs.id, observacao: editText })}
+                          disabled={!editText.trim() || updateObs.isPending}
+                          className="px-2 py-1 rounded bg-emerald-600 text-white text-[11px] font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3" /> Salvar
+                        </button>
+                        <button
+                          onClick={() => { setEditingId(null); setEditText(""); }}
+                          className="px-2 py-1 rounded bg-slate-200 text-slate-600 text-[11px] font-medium hover:bg-slate-300"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{obs.observacao}</p>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                          <span className="font-medium">{obs.registradoPor}</span>
+                          <span>•</span>
+                          <span>{new Date(obs.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => { setEditingId(obs.id); setEditText(obs.observacao); }}
+                            className="p-1 rounded hover:bg-blue-100 text-slate-400 hover:text-blue-600 transition-colors"
+                            title="Editar"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => { if (confirm("Excluir esta observação?")) deleteObs.mutate({ id: obs.id }); }}
+                            className="p-1 rounded hover:bg-red-100 text-slate-400 hover:text-red-600 transition-colors"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>

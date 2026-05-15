@@ -843,6 +843,32 @@ export const cobrancaPlanilhaRouter = router({
       return rows;
     }),
 
+  /** Editar uma observação existente */
+  updateEtapaObs: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      observacao: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(cobrancaEtapaObs)
+        .set({ observacao: input.observacao })
+        .where(eq(cobrancaEtapaObs.id, input.id));
+      return { success: true };
+    }),
+
+  /** Excluir uma observação */
+  deleteEtapaObs: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.delete(cobrancaEtapaObs)
+        .where(eq(cobrancaEtapaObs.id, input.id));
+      return { success: true };
+    }),
+
   /** Contar observações por título (para badge no balãozinho) */
   countEtapaObs: protectedProcedure
     .input(z.object({ planilhaIds: z.array(z.number()) }))

@@ -3740,3 +3740,6 @@
 - [x] Planilha de Cobrança: puxar automaticamente clientes novos da inadimplência
 - [x] Planilha de Cobrança: campos editáveis extras (estado, cidade, contato, email, região)
 - [x] Planilha de Cobrança: remover automaticamente clientes que saíram da inadimplência
+- [x] Importar comentários/observações da planilha Excel do Thiago para os campos corretos da Planilha de Cobrança
+- [x] Planilha de Cobrança: remover etapa "Promessa Pgto" das Etapas de Cobrança
+- [x] Planilha de Cobrança: tornar histórico de observações editável (editar e excluir)
