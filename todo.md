@@ -3736,3 +3736,4 @@
 - [x] Planilha de Cobrança: adicionar balãozinho de histórico de observações com badge vermelho
 - [ ] Estoque Importação: investigar e corrigir itens indevidos (estoque da fiscal não deve aparecer no dashboard)
 - [x] Contas Futuras: botão "Pago" que converte conta futura em despesa no card de Despesas (com anexos)
+- [x] BUG Serragem: card "Total para Divisão à Receber" mostrando valor errado (deveria ser Total - Disponível = 4.803,36, mas mostra 8.002,40)

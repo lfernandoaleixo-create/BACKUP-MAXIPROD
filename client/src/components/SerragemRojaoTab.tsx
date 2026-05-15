@@ -358,16 +358,6 @@ export default function SerragemRojaoTab() {
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
-  // Buscar Total para Divisão à Receber (Contas a Receber pendentes)
-  const serragemAReceberQuery = trpc.serragemRojao.getAReceber.useQuery(
-    { tipo: "SERRAGEM" },
-    { enabled: selectedView === "serragem" || selectedView === "menu" }
-  );
-  const rojaoAReceberQuery = trpc.serragemRojao.getAReceber.useQuery(
-    { tipo: "ROJÃO" },
-    { enabled: selectedView === "rojao" || selectedView === "menu" }
-  );
-
   // Montar dados financeiros (Recebido/Saídas são sempre acumulado total, saldo anterior sempre incluso)
   const saldoAnteriorAtivo = SALDO_ANTERIOR_SERRAGEM;
   const serragemRecebido = serragemRecebidoQuery.data?.total ?? 0;
@@ -386,7 +376,7 @@ export default function SerragemRojaoTab() {
     saldoDisponivelCaixa: serragemSaldoCaixa,
     totalParaDivisao: serragemTotalDivisao,
     totalParaDivisaoDisponivel: serragemSaldoCaixa,
-    totalParaDivisaoAReceber: serragemAReceberQuery.data?.total ?? 0,
+    totalParaDivisaoAReceber: serragemTotalDivisao - serragemSaldoCaixa,
   };
   const rojaoRecebido = rojaoRecebidoQuery.data?.total ?? 0;
   const rojaoSaidas = rojaoContasQuery.data?.saidasTotal ?? 0;
@@ -404,7 +394,7 @@ export default function SerragemRojaoTab() {
     saldoDisponivelCaixa: rojaoSaldoCaixa,
     totalParaDivisao: rojaoTotalDivisao,
     totalParaDivisaoDisponivel: rojaoSaldoCaixa,
-    totalParaDivisaoAReceber: rojaoAReceberQuery.data?.total ?? 0,
+    totalParaDivisaoAReceber: rojaoTotalDivisao - rojaoSaldoCaixa,
   };
 
   // Exportar PDF
