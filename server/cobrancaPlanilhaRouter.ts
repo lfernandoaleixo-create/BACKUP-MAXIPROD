@@ -3,7 +3,6 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders } from "../drizzle/schema";
 import { eq, desc, sql, and, inArray, lte, asc, isNull, like } from "drizzle-orm";
-import { gql } from "./maxiprodGraphQL";
 
 /**
  * Router para a Planilha de Cobrança interativa.
@@ -540,13 +539,13 @@ export const cobrancaPlanilhaRouter = router({
           const statusInad = action?.status || "pendente";
           const statusPlanilha = STATUS_MAP[statusInad] || "Pendente";
           
-          // Tipo: protesto (por extenso, sem abreviação)
+          // Tipo: protesto
           const decisao = (row.decisaoCobranca || "").toUpperCase();
-          let tipoPlanilha = "SEM PROTESTO";
+          let tipoPlanilha = "S/ Prot.";
           if (decisao.includes("COM PROTESTO") || decisao === "COM PROTESTO") {
-            tipoPlanilha = "COM PROTESTO";
+            tipoPlanilha = "Protesto";
           } else if (decisao.includes("SEM PROTESTO") || decisao === "SEM PROTESTO") {
-            tipoPlanilha = "SEM PROTESTO";
+            tipoPlanilha = "S/ Prot.";
           }
 
           return {
@@ -559,7 +558,6 @@ export const cobrancaPlanilhaRouter = router({
             diasVencidos: businessDaysOverdue,
             tipo: tipoPlanilha,
             status: statusPlanilha,
-            formaCobranca: row.formaCobranca || "",
           };
         })
         .filter(t => t.valorAReceber > 0)
@@ -567,7 +565,7 @@ export const cobrancaPlanilhaRouter = router({
 
       // 4b. Enriquecer dados de contato do cliente via sales_orders (telefone, email, cidade, UF, região)
       const clienteNames = Array.from(new Set(inadTitles.map(t => t.empresa)));
-      const clienteDataMap: Record<string, { contato?: string; email?: string; municipio?: string; uf?: string; regiao?: string; vendedor?: string; contatosAdicionais?: string[] }> = {};
+      const clienteDataMap: Record<string, { contato?: string; email?: string; municipio?: string; uf?: string; regiao?: string }> = {};
       
       if (clienteNames.length > 0) {
         // Buscar dados mais recentes de cada cliente nos pedidos de venda
@@ -579,7 +577,6 @@ export const cobrancaPlanilhaRouter = router({
             enderecoCidade: salesOrders.enderecoCidade,
             uf: salesOrders.uf,
             regiao: salesOrders.regiao,
-            representante: salesOrders.representante,
           })
           .from(salesOrders)
           .where(inArray(salesOrders.cliente, clienteNames))
@@ -599,62 +596,7 @@ export const cobrancaPlanilhaRouter = router({
           if (!data.municipio && row.enderecoCidade) data.municipio = row.enderecoCidade;
           if (!data.uf && row.uf) data.uf = row.uf;
           if (!data.regiao && row.regiao) data.regiao = row.regiao;
-          if (!data.vendedor && row.representante) data.vendedor = row.representante;
         }
-      }
-
-      // 4c. Buscar contatos adicionais (telefone2, telefone3, telefone4) do Maxiprod GraphQL
-      // e vendedor preferencial do cadastro do cliente
-      const contatosAdicionaisMap: Record<string, string[]> = {};
-      const vendedorGraphQLMap: Record<string, string> = {};
-      try {
-        const PAGE_SIZE = 200;
-        let skip = 0;
-        let hasMore = true;
-        while (hasMore) {
-          const result = await gql(`{
-            empresas(skip: ${skip}, take: ${PAGE_SIZE}, where: { cliente: { eq: true } }) {
-              items {
-                nomeFantasia
-                razaoSocial
-                apelido
-                representanteOuVendedor1Preferencial { nomeFantasia razaoSocial }
-                endereco { telefone1 telefone2 telefone3 telefone4 }
-                enderecoDeCobranca { telefone1 telefone2 telefone3 telefone4 }
-              }
-            }
-          }`);
-          const items = result.empresas?.items || [];
-          if (items.length === 0) { hasMore = false; break; }
-          for (const emp of items) {
-            const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
-            // Coletar todos os telefones únicos
-            const phones = new Set<string>();
-            for (const end of [emp.endereco, emp.enderecoDeCobranca]) {
-              if (!end) continue;
-              for (const f of [end.telefone1, end.telefone2, end.telefone3, end.telefone4]) {
-                if (f && f.trim() && !f.match(/^\(\s*\)\s*\.?\s*$/) && !f.match(/^\(\s*\)\s*-\s*$/)) {
-                  phones.add(f.trim());
-                }
-              }
-            }
-            // Vendedor preferencial do cadastro
-            const rep = emp.representanteOuVendedor1Preferencial;
-            const vendedorName = rep?.nomeFantasia || rep?.razaoSocial || "";
-            
-            for (const name of names) {
-              if (!name) continue;
-              const key = name.trim();
-              if (phones.size > 0) contatosAdicionaisMap[key] = Array.from(phones);
-              if (vendedorName && !vendedorGraphQLMap[key]) vendedorGraphQLMap[key] = vendedorName;
-            }
-          }
-          skip += PAGE_SIZE;
-          if (items.length < PAGE_SIZE) hasMore = false;
-        }
-        console.log(`[CobrancaPlanilha Sync] Fetched contatos adicionais de ${Object.keys(contatosAdicionaisMap).length} clientes do GraphQL`);
-      } catch (err) {
-        console.error("[CobrancaPlanilha Sync] Erro ao buscar contatos adicionais do GraphQL:", (err as Error).message);
       }
 
       // 5. Buscar planilha atual
@@ -742,17 +684,6 @@ export const cobrancaPlanilhaRouter = router({
         if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
         if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
         
-        // Sempre atualizar: forma de cobrança (vem da inadimplência)
-        updateData.formaCobranca = inad.formaCobranca || null;
-        
-        // Vendedor: prioridade GraphQL > sales_orders
-        const vendedor = vendedorGraphQLMap[inad.empresa] || clienteData.vendedor || null;
-        if (vendedor) updateData.vendedor = vendedor;
-        
-        // Contatos adicionais do Maxiprod (todos os telefones do cadastro)
-        const contatos = contatosAdicionaisMap[inad.empresa];
-        if (contatos && contatos.length > 0) updateData.contatosAdicionais = contatos;
-        
         await db.update(cobrancaPlanilha)
           .set(updateData)
           .where(eq(cobrancaPlanilha.id, match.id));
@@ -820,13 +751,6 @@ export const cobrancaPlanilhaRouter = router({
           if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
           if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
           
-          // Sempre atualizar: forma de cobrança, vendedor, contatos adicionais
-          updateData.formaCobranca = inad.formaCobranca || null;
-          const vendedor2 = vendedorGraphQLMap[inad.empresa] || clienteData.vendedor || null;
-          if (vendedor2) updateData.vendedor = vendedor2;
-          const contatos2 = contatosAdicionaisMap[inad.empresa];
-          if (contatos2 && contatos2.length > 0) updateData.contatosAdicionais = contatos2;
-          
           await db.update(cobrancaPlanilha)
             .set(updateData)
             .where(eq(cobrancaPlanilha.id, match.id));
@@ -837,10 +761,6 @@ export const cobrancaPlanilhaRouter = router({
           
           // Enriquecer com dados de contato do cliente
           const clienteData = clienteDataMap[inad.empresa] || {};
-          
-          // Vendedor e contatos adicionais para novos títulos
-          const vendedorNovo = vendedorGraphQLMap[inad.empresa] || clienteData.vendedor || null;
-          const contatosNovo = contatosAdicionaisMap[inad.empresa] || null;
           
           await db.insert(cobrancaPlanilha).values({
             arId: inad.arId,
@@ -859,9 +779,6 @@ export const cobrancaPlanilhaRouter = router({
             contato: clienteData.contato || null,
             email: clienteData.email || null,
             regiao: clienteData.regiao || null,
-            formaCobranca: inad.formaCobranca || null,
-            vendedor: vendedorNovo,
-            contatosAdicionais: contatosNovo,
             updatedBy: `Sync: ${input.updatedBy}`,
           });
           added++;

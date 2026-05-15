@@ -350,12 +350,8 @@ describe("cobrancaPlanilha router", () => {
       expect("contato" in item).toBe(true);
       expect("email" in item).toBe(true);
       expect("regiao" in item).toBe(true);
-      // New fields: formaCobranca, vendedor, contatosAdicionais
-      expect("formaCobranca" in item).toBe(true);
-      expect("vendedor" in item).toBe(true);
-      expect("contatosAdicionais" in item).toBe(true);
     }
-  }, 120000);
+  }, 30000);
 
   it("toggleEtapaPausada marks and unmarks an etapa as paused", async () => {
     const items = await caller.cobrancaPlanilha.getAll();
