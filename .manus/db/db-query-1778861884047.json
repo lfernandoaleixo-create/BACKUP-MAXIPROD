@@ -1,0 +1,38 @@
+{
+  "query": "SELECT status, COUNT(*) as qtd FROM collection_actions GROUP BY status ORDER BY qtd DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT status, COUNT(*) as qtd FROM collection_actions GROUP BY status ORDER BY qtd DESC;",
+  "rows": [
+    {
+      "status": "especial_sem_cobranca",
+      "qtd": "106"
+    },
+    {
+      "status": "contatado",
+      "qtd": "61"
+    },
+    {
+      "status": "em_negociacao",
+      "qtd": "25"
+    },
+    {
+      "status": "promessa",
+      "qtd": "15"
+    },
+    {
+      "status": "pendente",
+      "qtd": "12"
+    },
+    {
+      "status": "cheque_compensacao",
+      "qtd": "8"
+    },
+    {
+      "status": "protestado",
+      "qtd": "3"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\tqtd\nespecial_sem_cobranca\t106\ncontatado\t61\nem_negociacao\t25\npromessa\t15\npendente\t12\ncheque_compensacao\t8\nprotestado\t3\n",
+  "stderr": "",
+  "execution_time_ms": 269
+}

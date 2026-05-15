@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) as com_arid, SUM(CASE WHEN ar_id IS NULL THEN 1 ELSE 0 END) as sem_arid FROM cobranca_planilha;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as com_arid, SUM(CASE WHEN ar_id IS NULL THEN 1 ELSE 0 END) as sem_arid FROM cobranca_planilha;",
+  "rows": [
+    {
+      "com_arid": "103",
+      "sem_arid": "5"
+    }
+  ],
+  "messages": [],
+  "stdout": "com_arid\tsem_arid\n103\t5\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

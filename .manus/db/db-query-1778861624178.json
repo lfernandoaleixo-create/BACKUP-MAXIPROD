@@ -1,0 +1,9 @@
+{
+  "query": "SELECT cp.status, cp.ar_id, ar.id as ar_real_id FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.ar_id IS NOT NULL AND ar.id NOT IN (SELECT receivableId FROM collection_actions) LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.status, cp.ar_id, ar.id as ar_real_id FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.ar_id IS NOT NULL AND ar.id NOT IN (SELECT receivableId FROM collection_actions) LIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 273
+}

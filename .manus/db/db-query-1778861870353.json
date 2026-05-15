@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE collection_actions ca\nJOIN cobranca_planilha cp ON cp.ar_id = ca.receivableId\nSET ca.status = CASE cp.status\n  WHEN 'Pendente' THEN 'pendente'\n  WHEN 'Contatado' THEN 'contatado'\n  WHEN 'Em negociação' THEN 'em_negociacao'\n  WHEN 'Promessa de Pgto' THEN 'promessa'\n  WHEN 'Protestado' THEN 'protestado'\n  WHEN 'Especial s/ cobrança' THEN 'especial_sem_cobranca'\n  WHEN 'Cheque em compensação' THEN 'cheque_compensacao'\n  ELSE ca.status\nEND\nWHERE cp.ar_id IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute UPDATE collection_actions ca\nJOIN cobranca_planilha cp ON cp.ar_id = ca.receivableId\nSET ca.status = CASE cp.status\n  WHEN 'Pendente' THEN 'pendente'\n  WHEN 'Contatado' THEN 'contatado'\n  WHEN 'Em negociação' THEN 'em_negociacao'\n  WHEN 'Promessa de Pgto' THEN 'promessa'\n  WHEN 'Protestado' THEN 'protestado'\n  WHEN 'Especial s/ cobrança' THEN 'especial_sem_cobranca'\n  WHEN 'Cheque em compensação' THEN 'cheque_compensacao'\n  ELSE ca.status\nEND\nWHERE cp.ar_id IS NOT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 276
+}

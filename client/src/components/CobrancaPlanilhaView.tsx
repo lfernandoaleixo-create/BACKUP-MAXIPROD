@@ -1,12 +1,15 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import {
   X, Search, Filter, ChevronDown, ChevronUp, Edit3, Save, MessageSquare,
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
   CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw,
-  History, Plus, Paperclip, Pencil, Trash2, Check, FileDown
+  History, Plus, Paperclip, Pencil, Trash2, Check, FileDown, User, CreditCard,
+  ShieldCheck, Stamp, ArrowUpDown, ArrowDown, ArrowUp, Users
 } from "lucide-react";
+import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
+import { generateDecisionPdf, type DecisionPdfInput } from "@/lib/decisionPdfExport";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -135,6 +138,55 @@ function getStatusBarColor(status: string): string {
   }
 }
 
+/** Encurtar forma de cobrança para exibição na tabela */
+function shortFormaCobranca(desc: string | null | undefined): { label: string; color: string } {
+  if (!desc) return { label: "", color: "text-slate-400" };
+  const d = desc.toUpperCase();
+  if (d.startsWith("PIX")) return { label: "PIX", color: "text-emerald-600" };
+  if (d.startsWith("BOLETO")) return { label: "Boleto", color: "text-blue-600" };
+  if (d.startsWith("CHEQUE")) return { label: "Cheque", color: "text-amber-600" };
+  if (d.startsWith("DEPÓSITO") || d.startsWith("DEPOSITO")) return { label: "Depósito", color: "text-purple-600" };
+  if (d.startsWith("DINHEIRO")) return { label: "Dinheiro", color: "text-green-700" };
+  const first = desc.split(" ")[0];
+  return { label: first.charAt(0).toUpperCase() + first.slice(1).toLowerCase(), color: "text-slate-600" };
+}
+
+/** Renderizar badge de tipo (protesto) com cores */
+function renderTipoBadge(tipo: string | null | undefined) {
+  if (!tipo) return <span className="text-slate-300 text-[9px]">-</span>;
+  const upper = tipo.toUpperCase();
+  if (upper.includes("COM PROTESTO")) {
+    return (
+      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300 whitespace-nowrap">
+        COM PROTESTO
+      </span>
+    );
+  }
+  if (upper.includes("SEM PROTESTO")) {
+    return (
+      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300 whitespace-nowrap">
+        SEM PROTESTO
+      </span>
+    );
+  }
+  // Fallback para valores antigos
+  if (upper === "COM PROTESTO" || upper === "PROTESTO") {
+    return (
+      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-300 whitespace-nowrap">
+        COM PROTESTO
+      </span>
+    );
+  }
+  if (upper === "SEM PROTESTO" || upper === "S/ PROT." || upper === "S/ PROT") {
+    return (
+      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300 whitespace-nowrap">
+        SEM PROTESTO
+      </span>
+    );
+  }
+  return <span className="text-[9px] text-slate-500">{tipo}</span>;
+}
+
 interface CobrancaPlanilhaViewProps {
   onClose: () => void;
 }
@@ -160,6 +212,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     onError: (err) => toast.error(`Erro ao criar backup: ${err.message}`),
   });
   const { data: backups, refetch: refetchBackups } = trpc.cobrancaPlanilha.listBackups.useQuery();
+  // Moved queries below state declarations
 
   // Toggle Cobrança Pausada
   const togglePausada = trpc.cobrancaPlanilha.toggleEtapaPausada.useMutation({
@@ -191,6 +244,23 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [editingStatus, setEditingStatus] = useState<number | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [showBackupInfo, setShowBackupInfo] = useState(false);
+  const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
+  const [showDecisionPdfHistory, setShowDecisionPdfHistory] = useState(false);
+  const [showResolved, setShowResolved] = useState(false);
+  const [resolvedSortBy, setResolvedSortBy] = useState<'resolvedAt' | 'diasAtraso' | 'valor'>('resolvedAt');
+  const [resolvedSortDir, setResolvedSortDir] = useState<'asc' | 'desc'>('desc');
+  const [decisionPdfItemId, setDecisionPdfItemId] = useState<number | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfHistoryFilterMonth, setPdfHistoryFilterMonth] = useState("");
+  const [pdfHistorySelectedIds, setPdfHistorySelectedIds] = useState<number[]>([]);
+
+  // Queries que dependem dos estados acima
+  const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: 'newest', sortBy: resolvedSortBy, sortDir: resolvedSortDir });
+  const { data: decisionPdfsData } = trpc.financial.listAllDecisionPdfs.useQuery();
+  const deletePdf = trpc.financial.deleteDecisionPdf.useMutation();
+  const markPaid = trpc.financial.markDecisionPdfsPaid.useMutation();
+  const saveDecisionPdf = trpc.financial.saveDecisionPdf.useMutation();
+  const utils = trpc.useUtils();
   const [syncResult, setSyncResult] = useState<{ updated: number; added: number; statusUpdated: number; deactivated: number; notInInadimplencia: number; inadimplenciaTotal: number; totalAfter: number } | null>(null);
   const syncFromInadimplencia = trpc.cobrancaPlanilha.syncFromInadimplencia.useMutation({
     onSuccess: (data) => {
@@ -205,6 +275,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
 
   // Permission: Thiago, Guilherme, Flavio can edit
   const canEdit = operator && ["Thiago", "Guilherme", "Flavio"].includes(operator.name);
+  const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson", "Thalita"];
+  const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
 
   const filteredItems = useMemo(() => {
     if (!items) return [];
@@ -220,7 +292,9 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         (item.municipio || "").toLowerCase().includes(s) ||
         (item.observacoes || "").toLowerCase().includes(s) ||
         ((item as any).contato || "").toLowerCase().includes(s) ||
-        ((item as any).email || "").toLowerCase().includes(s)
+        ((item as any).email || "").toLowerCase().includes(s) ||
+        (item.vendedor || "").toLowerCase().includes(s) ||
+        (item.formaCobranca || "").toLowerCase().includes(s)
       );
     }
 
@@ -258,6 +332,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   }, [items, search, statusFilter, centerFilter, sortBy, sortDir]);
 
   const totalValor = filteredItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
+  const uniqueClients = useMemo(() => new Set(filteredItems.map(i => getClientKey(i.empresa))), [filteredItems]);
 
   function toggleSort(field: typeof sortBy) {
     if (sortBy === field) {
@@ -386,6 +461,17 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           { field: "acaoFinal", value: item.acaoFinal },
         ].filter(e => e.value).map(e => `${ETAPA_SHORT[e.field]}: ${formatDate(e.value!)}`);
 
+        // Tipo por extenso
+        const tipoLabel = (() => {
+          const t = (item.tipo || "").toUpperCase();
+          if (t.includes("COM PROTESTO")) return "COM PROTESTO";
+          if (t.includes("SEM PROTESTO")) return "SEM PROTESTO";
+          return item.tipo || "-";
+        })();
+
+        // Forma de cobrança curta
+        const fc = shortFormaCobranca(item.formaCobranca);
+
         return [
           item.empresa || "-",
           item.cnpjCpf || "-",
@@ -393,42 +479,45 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           item.vencimento ? formatDate(item.vencimento) : "-",
           String(item.diasVencidos ?? "-"),
           item.status || "-",
+          tipoLabel,
           item.centroCustos || "-",
+          item.vendedor || "-",
+          fc.label || "-",
           (item as any).contato || "-",
-          (item as any).email || "-",
-          item.municipio ? `${item.municipio}${item.uf ? "/" + item.uf : ""}` : (item.uf || "-"),
           etapas.length > 0 ? etapas.join("; ") : "-",
         ];
       });
 
       autoTable(doc, {
         startY: y,
-        head: [["Empresa", "CNPJ/CPF", "Valor", "Venc.", "Dias", "Status", "Centro", "Contato", "Email", "Cidade/UF", "Etapas Cobran\u00E7a"]],
+        head: [["Empresa", "CNPJ/CPF", "Valor", "Venc.", "Dias", "Status", "Tipo", "Centro", "Vendedor", "Forma Cob.", "Contato", "Etapas"]],
         body: tableData,
         theme: "grid",
         headStyles: {
           fillColor: [15, 23, 42],
           textColor: [255, 255, 255],
-          fontSize: 6.5,
+          fontSize: 5.5,
           fontStyle: "bold",
-          cellPadding: 2,
+          cellPadding: 1.5,
         },
-        bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+        bodyStyles: { fontSize: 5.5, cellPadding: 1.2 },
         columnStyles: {
-          0: { cellWidth: 38 },
-          1: { cellWidth: 24 },
-          2: { cellWidth: 22, halign: "right", fontStyle: "bold" },
-          3: { cellWidth: 16, halign: "center" },
-          4: { cellWidth: 10, halign: "center" },
-          5: { cellWidth: 22, halign: "center" },
-          6: { cellWidth: 18, halign: "center" },
-          7: { cellWidth: 24 },
-          8: { cellWidth: 30 },
-          9: { cellWidth: 22 },
-          10: { cellWidth: "auto" },
+          0: { cellWidth: 34 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 18, halign: "right", fontStyle: "bold" },
+          3: { cellWidth: 14, halign: "center" },
+          4: { cellWidth: 8, halign: "center" },
+          5: { cellWidth: 20, halign: "center" },
+          6: { cellWidth: 20, halign: "center" },
+          7: { cellWidth: 16, halign: "center" },
+          8: { cellWidth: 24 },
+          9: { cellWidth: 14, halign: "center" },
+          10: { cellWidth: 22 },
+          11: { cellWidth: "auto" },
         },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         didParseCell: (data: any) => {
+          // Status colors
           if (data.section === "body" && data.column.index === 5) {
             const val = data.cell.raw;
             if (val === "Pendente") {
@@ -444,6 +533,17 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               data.cell.styles.fontStyle = "bold";
             } else if (val === "Protestado" || val === "Jur\u00EDdico") {
               data.cell.styles.textColor = [185, 28, 28];
+              data.cell.styles.fontStyle = "bold";
+            }
+          }
+          // Tipo (protesto) colors
+          if (data.section === "body" && data.column.index === 6) {
+            const val = (data.cell.raw || "").toUpperCase();
+            if (val.includes("COM PROTESTO")) {
+              data.cell.styles.textColor = [185, 28, 28];
+              data.cell.styles.fontStyle = "bold";
+            } else if (val.includes("SEM PROTESTO")) {
+              data.cell.styles.textColor = [21, 128, 61];
               data.cell.styles.fontStyle = "bold";
             }
           }
@@ -513,7 +613,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           {value && /^\d{4}-\d{2}-\d{2}$/.test(value) && (
             <span className="text-[9px] text-blue-500">{formatDate(value)}</span>
           )}
-          <span className="text-[9px] font-bold text-amber-600 italic leading-tight">cobrança\npausada</span>
+          <span className="text-[9px] font-bold text-amber-600 italic leading-tight">cobrança pausada</span>
         </div>
       );
     }
@@ -554,13 +654,15 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={onClose}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar
-          </button>
+          {operator?.name === "Guilherme" && (
+            <button
+              onClick={onClose}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Tela Antiga
+            </button>
+          )}
           <div>
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <FileText className="w-5 h-5 text-emerald-600" />
@@ -675,6 +777,132 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         </div>
       )}
 
+      {/* Resumo Visual - Títulos, Valor, Clientes */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-red-50 border border-red-200">
+          <FileText className="w-5 h-5 text-red-500" />
+          <div>
+            <span className="text-2xl font-bold text-red-600">{liveStats ? liveStats.totalTitulos : filteredItems.length}</span>
+            <span className="text-xs text-red-500 ml-1.5">títulos vencidos</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-red-50 border border-red-200">
+          <DollarSign className="w-5 h-5 text-red-500" />
+          <div>
+            <span className="text-lg font-bold text-red-600">{formatCurrency(liveStats ? liveStats.totalValor : totalValor)}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-red-50 border border-red-200">
+          <Users className="w-5 h-5 text-red-500" />
+          <div>
+            <span className="text-2xl font-bold text-red-600">{uniqueClients.size}</span>
+            <span className="text-xs text-red-500 ml-1.5">clientes</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Botões: Guia de Cobrança + PDF Decisão */}
+      <div className="flex flex-wrap gap-2">
+        {canSeeCobrancaGuide && (
+          <button
+            onClick={() => setShowCobrancaGuide(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white text-xs font-bold shadow-lg hover:shadow-xl hover:scale-[1.03] transition-all animate-pulse hover:animate-none border-2 border-white/30"
+          >
+            <Eye className="w-4 h-4" />
+            Guia de Cobrança
+          </button>
+        )}
+        <button
+          onClick={() => setShowDecisionPdfHistory(true)}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white text-xs font-semibold shadow-md hover:shadow-lg hover:from-blue-800 hover:to-blue-700 transition-all hover:scale-[1.02]"
+        >
+          <Stamp className="w-4 h-4" />
+          PDF Decisão
+        </button>
+      </div>
+
+      {/* Card de Pagos/Resolvidos */}
+      {resolvedData && resolvedData.titles.length > 0 && (
+        <div className="rounded-xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50 overflow-hidden">
+          <button
+            onClick={() => setShowResolved(!showResolved)}
+            className="w-full flex items-center justify-between p-4 hover:bg-emerald-100/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-md">
+                <ShieldCheck className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-emerald-900 font-bold text-sm flex items-center gap-2">
+                  Pagos / Resolvidos
+                  <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{resolvedData.stats.count}</span>
+                </h3>
+                <p className="text-emerald-700 text-xs">Clientes que pagaram e saíram da inadimplência • {formatCurrency(resolvedData.stats.valorTotal)} recuperados</p>
+              </div>
+            </div>
+            {showResolved ? <ChevronUp className="w-5 h-5 text-emerald-600" /> : <ChevronDown className="w-5 h-5 text-emerald-600" />}
+          </button>
+          {showResolved && (
+            <div className="border-t border-emerald-200">
+              <div className="flex flex-wrap items-center gap-2 px-4 py-2 bg-emerald-50/50 border-b border-emerald-200">
+                <span className="text-[10px] text-emerald-700 font-medium uppercase tracking-wider mr-1">Ordenar:</span>
+                <button
+                  onClick={() => { if (resolvedSortBy === 'resolvedAt') { setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc'); } else { setResolvedSortBy('resolvedAt'); setResolvedSortDir('desc'); } }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'resolvedAt' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                >
+                  {resolvedSortBy === 'resolvedAt' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
+                  Data
+                </button>
+                <button
+                  onClick={() => { if (resolvedSortBy === 'diasAtraso') { setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc'); } else { setResolvedSortBy('diasAtraso'); setResolvedSortDir('desc'); } }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'diasAtraso' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                >
+                  {resolvedSortBy === 'diasAtraso' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
+                  Dias Atraso
+                </button>
+                <button
+                  onClick={() => { if (resolvedSortBy === 'valor') { setResolvedSortDir(prev => prev === 'desc' ? 'asc' : 'desc'); } else { setResolvedSortBy('valor'); setResolvedSortDir('desc'); } }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${resolvedSortBy === 'valor' ? 'bg-emerald-200 text-emerald-800 ring-1 ring-emerald-400' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
+                >
+                  {resolvedSortBy === 'valor' ? (resolvedSortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3" />}
+                  Valor
+                </button>
+              </div>
+              <div className="divide-y divide-emerald-100 max-h-[400px] overflow-y-auto">
+                {resolvedData.titles.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between px-4 py-3 hover:bg-emerald-50/80">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{t.cliente}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          {t.documento && <span>NF {t.documento}</span>}
+                          {t.empresa && <span>• {t.empresa}</span>}
+                          <span>• {t.totalContatos} contato{t.totalContatos !== 1 ? 's' : ''} registrado{t.totalContatos !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-emerald-700">{formatCurrency(t.valorAReceber)}</p>
+                        <p className="text-[10px] text-slate-500">Venc: {t.vencimento ? new Date(t.vencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-emerald-600 font-medium">Resolvido em</p>
+                        <p className="text-xs font-semibold text-emerald-800">{t.resolvedAt ? new Date(t.resolvedAt).toLocaleDateString('pt-BR') : '-'}</p>
+                        <p className="text-[10px] text-slate-500">{t.diasAtrasoNaResolucao}d de atraso</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -733,7 +961,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           type="text"
-          placeholder="Buscar empresa, CNPJ, município, observação..."
+          placeholder="Buscar empresa, CNPJ, município, vendedor, forma de cobrança..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -746,44 +974,46 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-gradient-to-r from-slate-100 to-slate-50 border-b-2 border-slate-200">
-                <th className="text-left px-3 py-3 font-semibold text-slate-600 min-w-[200px]">
+                <th className="text-left px-3 py-3 font-semibold text-slate-600 min-w-[180px]">
                   <button onClick={() => toggleSort("empresa")} className="flex items-center gap-1 hover:text-slate-800">
                     Empresa
                     {sortBy === "empresa" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : null}
                   </button>
                 </th>
-                <th className="text-right px-3 py-3 font-semibold text-slate-600 min-w-[90px]">
+                <th className="text-right px-2 py-3 font-semibold text-slate-600 min-w-[80px]">
                   <button onClick={() => toggleSort("valor")} className="flex items-center gap-1 justify-end hover:text-slate-800 ml-auto">
                     Valor
                     {sortBy === "valor" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : null}
                   </button>
                 </th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[70px]">
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[65px]">
                   <button onClick={() => toggleSort("vencimento")} className="flex items-center gap-1 justify-center hover:text-slate-800 mx-auto">
                     Venc.
                     {sortBy === "vencimento" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : null}
                   </button>
                 </th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[50px]">
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[45px]">
                   <button onClick={() => toggleSort("diasVencidos")} className="flex items-center gap-1 justify-center hover:text-slate-800 mx-auto">
                     Dias
                     {sortBy === "diasVencidos" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : null}
                   </button>
                 </th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[60px]">Tipo</th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[70px]">Centro</th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[120px]">Status</th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[60px]">1ª Cob</th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[60px]">2ª Cob</th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[60px]">3ª Cob</th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[60px]">Final</th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[40px]">Obs</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[85px]">Tipo</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[50px]">Centro</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[70px]">Vendedor</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[55px]">Forma</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[110px]">Status</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[55px]">1ª Cob</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[55px]">2ª Cob</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[55px]">3ª Cob</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[55px]">Final</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[35px]">Obs</th>
               </tr>
             </thead>
             <tbody>
               {filteredItems.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-slate-400">
+                  <td colSpan={14} className="py-12 text-center text-slate-400">
                     <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p>Nenhum título encontrado</p>
                   </td>
@@ -794,12 +1024,13 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                 const isExpanded = expandedRow === item.id;
                 const valor = item.valor ? parseFloat(String(item.valor)) : 0;
                 const isNewClient = clientBoundaries.has(idx);
+                const fc = shortFormaCobranca(item.formaCobranca);
                 return (
                   <React.Fragment key={item.id}>
                     {/* Linha divisória entre clientes diferentes */}
                     {isNewClient && (
                       <tr>
-                        <td colSpan={12} className="p-0">
+                        <td colSpan={14} className="p-0">
                           <div className="h-[3px] bg-gradient-to-r from-slate-300 via-slate-400 to-slate-300" />
                         </td>
                       </tr>
@@ -815,17 +1046,17 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                             backgroundColor: getStatusBarColor(item.status)
                           }} />
                           <div className="min-w-0">
-                            <div className="font-semibold text-slate-800 text-[11px] leading-tight truncate max-w-[250px]" title={item.empresa}>
+                            <div className="font-semibold text-slate-800 text-[11px] leading-tight truncate max-w-[220px]" title={item.empresa}>
                               {item.empresa}
                             </div>
-                            <div className="text-[9px] text-slate-400 truncate max-w-[250px]" title={item.descricao || ""}>
+                            <div className="text-[9px] text-slate-400 truncate max-w-[220px]" title={item.descricao || ""}>
                               {item.descricao || "-"}
                             </div>
                           </div>
                         </div>
                       </td>
                       {/* Valor */}
-                      <td className="text-right px-3 py-2.5 font-bold text-slate-800 tabular-nums">
+                      <td className="text-right px-2 py-2.5 font-bold text-slate-800 tabular-nums text-[11px]">
                         {formatCurrency(valor)}
                       </td>
                       {/* Vencimento */}
@@ -834,7 +1065,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       </td>
                       {/* Dias */}
                       <td className="text-center px-2 py-2.5">
-                        <span className={`inline-flex items-center justify-center min-w-[32px] px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        <span className={`inline-flex items-center justify-center min-w-[28px] px-1 py-0.5 rounded-full text-[10px] font-bold ${
                           (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
                           (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
                           "bg-blue-100 text-blue-700"
@@ -842,17 +1073,27 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                           {item.diasVencidos || 0}
                         </span>
                       </td>
-                      {/* Tipo */}
+                      {/* Tipo (Protesto) */}
                       <td className="text-center px-2 py-2.5">
-                        <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${
-                          item.tipo === "Com protesto" ? "bg-red-50 text-red-600 border border-red-200" : "bg-slate-50 text-slate-500 border border-slate-200"
-                        }`}>
-                          {item.tipo === "Com protesto" ? "Protesto" : item.tipo === "Sem protesto" ? "S/ Prot." : item.tipo || "-"}
-                        </span>
+                        {renderTipoBadge(item.tipo)}
                       </td>
                       {/* Centro */}
                       <td className="text-center px-2 py-2.5">
                         <span className="text-[10px] font-medium text-slate-600">{item.centroCustos || "-"}</span>
+                      </td>
+                      {/* Vendedor */}
+                      <td className="text-center px-2 py-2.5">
+                        <span className="text-[9px] font-medium text-slate-600 truncate block max-w-[80px]" title={item.vendedor || ""}>
+                          {item.vendedor ? item.vendedor.split(" ")[0] : "-"}
+                        </span>
+                      </td>
+                      {/* Forma Cobrança */}
+                      <td className="text-center px-2 py-2.5">
+                        {fc.label ? (
+                          <span className={`text-[9px] font-semibold ${fc.color}`}>{fc.label}</span>
+                        ) : (
+                          <span className="text-[9px] text-slate-300">-</span>
+                        )}
                       </td>
                       {/* Status */}
                       <td className="text-center px-2 py-2.5" onClick={e => e.stopPropagation()}>
@@ -888,29 +1129,37 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       <td className="text-center px-2 py-2.5">
                         {renderCobrancaStep("Final", item.acaoFinal, "acaoFinal", item.etapasPausadas as Record<string, boolean> | null)}
                       </td>
-                      {/* Histórico Obs */}
+                      {/* Ações */}
                       <td className="text-center px-2 py-2.5" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={() => setHistoryDialog(item.id)}
-                          className="p-1 rounded-md hover:bg-amber-100 text-amber-600 transition-colors relative"
-                          title="Ver histórico de observações"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          {/* Bolinha vermelha se tem etapa pausada */}
-                          {Object.values((item.etapasPausadas as Record<string, boolean>) || {}).some(v => v) && (
-                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
-                          )}
-                          {obsCountMap && obsCountMap[item.id] > 0 && !Object.values((item.etapasPausadas as Record<string, boolean>) || {}).some(v => v) && (
-                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-                          )}
-                        </button>
+                        <div className="flex items-center justify-center gap-0.5">
+                          <button
+                            onClick={() => setHistoryDialog(item.id)}
+                            className="p-1 rounded-md hover:bg-amber-100 text-amber-600 transition-colors relative"
+                            title="Ver histórico de observações"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            {Object.values((item.etapasPausadas as Record<string, boolean>) || {}).some(v => v) && (
+                              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
+                            )}
+                            {obsCountMap && obsCountMap[item.id] > 0 && !Object.values((item.etapasPausadas as Record<string, boolean>) || {}).some(v => v) && (
+                              <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => setDecisionPdfItemId(item.id)}
+                            className="p-1 rounded-md hover:bg-blue-100 text-blue-600 transition-colors"
+                            title="Gerar PDF de Decisão"
+                          >
+                            <Stamp className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     {/* Expanded Row - Details */}
                     {isExpanded && (
                       <tr className="bg-slate-50/80">
-                        <td colSpan={12} className="px-4 py-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <td colSpan={14} className="px-4 py-4">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             {/* Info */}
                             <div className="space-y-2">
                               <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -945,8 +1194,64 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                     )}
                                   </div>
                                 ))}
+                                {/* Vendedor (somente leitura) */}
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-slate-500 w-[70px] shrink-0">Vendedor:</span>
+                                  <span className="text-slate-700 font-medium">{item.vendedor || "-"}</span>
+                                </div>
+                                {/* Forma de Cobrança (somente leitura) */}
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-slate-500 w-[70px] shrink-0">Forma:</span>
+                                  {item.formaCobranca ? (
+                                    <span className={`font-semibold ${shortFormaCobranca(item.formaCobranca).color}`}>
+                                      {item.formaCobranca}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-300">-</span>
+                                  )}
+                                </div>
+                                {/* Tipo / Protesto (somente leitura) */}
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-slate-500 w-[70px] shrink-0">Tipo:</span>
+                                  {renderTipoBadge(item.tipo)}
+                                </div>
                               </div>
                             </div>
+
+                            {/* Contatos Extras */}
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <Phone className="w-3.5 h-3.5 text-green-500" />
+                                Contatos / Telefones
+                              </h4>
+                              <div className="text-[11px] space-y-1 text-slate-600">
+                                {/* Contato principal */}
+                                {(item as any).contato && (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">PRINCIPAL</span>
+                                    <a href={`tel:${(item as any).contato}`} className="text-blue-600 hover:underline font-medium">
+                                      {(item as any).contato}
+                                    </a>
+                                  </div>
+                                )}
+                                {/* Contatos adicionais do Maxiprod */}
+                                {(() => {
+                                  const extras = (item.contatosAdicionais as string[] | null) || [];
+                                  if (extras.length === 0) {
+                                    return <p className="text-slate-400 italic text-[10px]">Nenhum contato adicional encontrado no Maxiprod.</p>;
+                                  }
+                                  return extras.map((tel, i) => (
+                                    <div key={i} className="flex items-center gap-1.5">
+                                      <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                      <a href={`tel:${tel}`} className="text-blue-600 hover:underline">
+                                        {tel}
+                                      </a>
+                                    </div>
+                                  ));
+                                })()}
+                              </div>
+                            </div>
+
                             {/* Cobrança Timeline */}
                             <div className="space-y-2">
                               <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -1077,6 +1382,241 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           empresa={items?.find(i => i.id === historyDialog)?.empresa || ""}
           onClose={() => setHistoryDialog(null)}
         />
+      )}
+
+      {/* Guia de Cobrança */}
+      {showCobrancaGuide && (
+        <CobrancaGuideSimulator
+          valorTotal={totalValor}
+          onClose={() => setShowCobrancaGuide(false)}
+        />
+      )}
+
+      {/* Dialog de PDF de Decisão por item da planilha */}
+      {decisionPdfItemId && (() => {
+        const planilhaItem = items?.find(i => i.id === decisionPdfItemId);
+        if (!planilhaItem) return null;
+        return (
+          <Dialog open onOpenChange={() => setDecisionPdfItemId(null)}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-sm">
+                  <Stamp className="w-4 h-4 text-blue-600" />
+                  Gerar PDF de Decisão
+                </DialogTitle>
+              </DialogHeader>
+              <div className="py-3 space-y-3">
+                <div className="bg-slate-50 rounded-lg p-3 space-y-1">
+                  <p className="text-sm font-semibold text-slate-800">{planilhaItem.empresa}</p>
+                  <p className="text-xs text-slate-500">Valor: {formatCurrency(parseFloat(String(planilhaItem.valor || 0)))}</p>
+                  <p className="text-xs text-slate-500">Vencimento: {formatDate(planilhaItem.vencimento)}</p>
+                  <p className="text-xs text-slate-500">Dias vencidos: {planilhaItem.diasVencidos || 0}</p>
+                  <p className="text-xs text-slate-500">Tipo: {planilhaItem.tipo || '-'}</p>
+                </div>
+                <p className="text-xs text-slate-500">Será gerado um PDF formal de decisão de cobrança para este cliente com base nos dados da planilha.</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" size="sm" onClick={() => setDecisionPdfItemId(null)}>Cancelar</Button>
+                <Button
+                  size="sm"
+                  disabled={isGeneratingPdf}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={async () => {
+                    setIsGeneratingPdf(true);
+                    try {
+                      const etapas = [
+                        { etapa: "primeiraCobranca", data: planilhaItem.primeiraCobranca },
+                        { etapa: "semAcao1", data: planilhaItem.semAcao1 },
+                        { etapa: "segundaCobranca", data: planilhaItem.segundaCobranca },
+                        { etapa: "semAcao2", data: planilhaItem.semAcao2 },
+                        { etapa: "terceiraCobranca", data: planilhaItem.terceiraCobranca },
+                        { etapa: "semAcao3", data: planilhaItem.semAcao3 },
+                        { etapa: "acaoFinal", data: planilhaItem.acaoFinal },
+                      ];
+                      const STEP_LABELS: Record<string, string> = {
+                        primeiraCobranca: "1ª Cobrança",
+                        semAcao1: "Sem Ação 1",
+                        segundaCobranca: "2ª Cobrança",
+                        semAcao2: "Sem Ação 2",
+                        terceiraCobranca: "3ª Cobrança",
+                        semAcao3: "Sem Ação 3",
+                        acaoFinal: "Ação Final",
+                      };
+                      const checklistSteps = etapas.map((e, idx) => ({
+                        dia: idx + 1,
+                        label: STEP_LABELS[e.etapa] || e.etapa,
+                        descricao: STEP_LABELS[e.etapa] || e.etapa,
+                        motivo: e.data ? "Realizada" : "Pendente",
+                        data: e.data || "",
+                        status: e.data ? "concluido" : "pendente",
+                      }));
+                      const titleInput: DecisionPdfInput["title"] = {
+                        id: planilhaItem.arId || planilhaItem.id,
+                        cliente: planilhaItem.empresa,
+                        vendedor: planilhaItem.vendedor || "",
+                        valorAReceber: parseFloat(String(planilhaItem.valor || 0)),
+                        vencimento: planilhaItem.vencimento || "",
+                        diasAtraso: planilhaItem.diasVencidos || 0,
+                        referenteA: planilhaItem.descricao || "",
+                        documento: "",
+                        parcela: "",
+                        empresa: planilhaItem.centroCustos || "",
+                        decisaoCobranca: planilhaItem.tipo || "",
+                        formaCobranca: planilhaItem.formaCobranca || "",
+                        observacoesMaxiprod: planilhaItem.observacoes || "",
+                        cobranca: {
+                          status: planilhaItem.status,
+                          promessaData: planilhaItem.promessaPgto || null,
+                          promessaValor: null,
+                          observacoes: planilhaItem.observacoes || null,
+                          contatoHistorico: [],
+                          cobrancaStartedAt: null,
+                        },
+                      };
+                      const pdfResult = await generateDecisionPdf({
+                        title: titleInput,
+                        checklistSteps,
+                        operatorName: operator?.name || "Operador",
+                        planilhaCobranca: {
+                          etapas: etapas.map(e => ({ etapa: STEP_LABELS[e.etapa] || e.etapa, data: e.data || null })),
+                          observacoes: [],
+                          contato: planilhaItem.contato || null,
+                          email: planilhaItem.email || null,
+                        },
+                      });
+                      // Salvar no backend
+                      await saveDecisionPdf.mutateAsync({
+                        receivableId: planilhaItem.arId || planilhaItem.id,
+                        cliente: planilhaItem.empresa,
+                        vendedor: planilhaItem.vendedor || undefined,
+                        valorAberto: formatCurrency(parseFloat(String(planilhaItem.valor || 0))),
+                        diasAtraso: planilhaItem.diasVencidos || 0,
+                        decisao: planilhaItem.tipo || undefined,
+                        protocolo: pdfResult.protocolo,
+                        fileBase64: pdfResult.base64,
+                        generatedBy: operator?.name || "Operador",
+                      });
+                      // Download
+                      const url = URL.createObjectURL(pdfResult.blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `decisao_${planilhaItem.empresa.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30)}_${pdfResult.protocolo}.pdf`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success(`PDF gerado! Protocolo: ${pdfResult.protocolo}`);
+                      setDecisionPdfItemId(null);
+                    } catch (err: any) {
+                      toast.error(`Erro ao gerar PDF: ${err.message}`);
+                    } finally {
+                      setIsGeneratingPdf(false);
+                    }
+                  }}
+                >
+                  {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Stamp className="w-4 h-4 mr-1" />}
+                  {isGeneratingPdf ? "Gerando..." : "Gerar PDF"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
+
+      {/* Histórico de PDFs de Decisão */}
+      {showDecisionPdfHistory && (
+        <Dialog open onOpenChange={() => setShowDecisionPdfHistory(false)}>
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-sm">
+                <Stamp className="w-4 h-4 text-blue-600" />
+                Histórico de PDFs de Decisão
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-2 space-y-3">
+              {/* Filtro por mês */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">Filtrar por mês:</span>
+                <Input
+                  type="month"
+                  value={pdfHistoryFilterMonth}
+                  onChange={e => setPdfHistoryFilterMonth(e.target.value)}
+                  className="w-40 h-8 text-xs"
+                />
+                {pdfHistoryFilterMonth && (
+                  <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setPdfHistoryFilterMonth("")}>Limpar</Button>
+                )}
+              </div>
+              {/* Lista */}
+              {(() => {
+                const allPdfs = decisionPdfsData?.pdfs || [];
+                const filtered = pdfHistoryFilterMonth
+                  ? allPdfs.filter(p => {
+                      const d = new Date(Number(p.generatedAt));
+                      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                      return ym === pdfHistoryFilterMonth;
+                    })
+                  : allPdfs;
+                if (filtered.length === 0) {
+                  return <p className="text-sm text-slate-400 italic text-center py-6">Nenhum PDF de decisão gerado ainda.</p>;
+                }
+                return (
+                  <div className="space-y-2">
+                    {pdfHistorySelectedIds.length > 0 && (
+                      <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                        <span className="text-xs text-blue-700 font-medium">{pdfHistorySelectedIds.length} selecionado(s)</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={async () => {
+                            for (const pid of pdfHistorySelectedIds) {
+                              await deletePdf.mutateAsync({ id: pid });
+                            }
+                            setPdfHistorySelectedIds([]);
+                            utils.financial.listAllDecisionPdfs.invalidate();
+                            toast.success("PDFs excluídos!");
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" /> Excluir
+                        </Button>
+                      </div>
+                    )}
+                    {filtered.map(pdf => (
+                      <div key={pdf.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50">
+                        <input
+                          type="checkbox"
+                          checked={pdfHistorySelectedIds.includes(pdf.id)}
+                          onChange={e => {
+                            if (e.target.checked) setPdfHistorySelectedIds(prev => [...prev, pdf.id]);
+                            else setPdfHistorySelectedIds(prev => prev.filter(x => x !== pdf.id));
+                          }}
+                          className="w-4 h-4 rounded border-slate-300"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{pdf.cliente}</p>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                            <span>Protocolo: {pdf.protocolo}</span>
+                            {pdf.vendedor && <span>• Vendedor: {pdf.vendedor}</span>}
+                            {pdf.valorAberto && <span>• {pdf.valorAberto}</span>}
+                          </div>
+                          <p className="text-[10px] text-slate-400">Gerado por {pdf.generatedBy} em {new Date(Number(pdf.generatedAt)).toLocaleString('pt-BR')}</p>
+                        </div>
+                        <a
+                          href={pdf.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100 transition-colors"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Baixar
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

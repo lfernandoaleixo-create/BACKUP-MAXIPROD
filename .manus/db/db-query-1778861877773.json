@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO collection_actions (receivableId, status)\nSELECT cp.ar_id, CASE cp.status\n  WHEN 'Pendente' THEN 'pendente'\n  WHEN 'Contatado' THEN 'contatado'\n  WHEN 'Em negociação' THEN 'em_negociacao'\n  WHEN 'Promessa de Pgto' THEN 'promessa'\n  WHEN 'Protestado' THEN 'protestado'\n  WHEN 'Especial s/ cobrança' THEN 'especial_sem_cobranca'\n  WHEN 'Cheque em compensação' THEN 'cheque_compensacao'\n  ELSE 'pendente'\nEND\nFROM cobranca_planilha cp\nWHERE cp.ar_id IS NOT NULL\nAND cp.ar_id NOT IN (SELECT receivableId FROM collection_actions);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute INSERT INTO collection_actions (receivableId, status)\nSELECT cp.ar_id, CASE cp.status\n  WHEN 'Pendente' THEN 'pendente'\n  WHEN 'Contatado' THEN 'contatado'\n  WHEN 'Em negociação' THEN 'em_negociacao'\n  WHEN 'Promessa de Pgto' THEN 'promessa'\n  WHEN 'Protestado' THEN 'protestado'\n  WHEN 'Especial s/ cobrança' THEN 'especial_sem_cobranca'\n  WHEN 'Cheque em compensação' THEN 'cheque_compensacao'\n  ELSE 'pendente'\nEND\nFROM cobranca_planilha cp\nWHERE cp.ar_id IS NOT NULL\nAND cp.ar_id NOT IN (SELECT receivableId FROM collection_actions);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 277
+}

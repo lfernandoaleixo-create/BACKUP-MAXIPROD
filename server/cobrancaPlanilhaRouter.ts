@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders } from "../drizzle/schema";
 import { eq, desc, sql, and, inArray, lte, asc, isNull, like } from "drizzle-orm";
+import { gql } from "./maxiprodGraphQL";
 
 /**
  * Router para a Planilha de Cobrança interativa.
@@ -539,13 +540,13 @@ export const cobrancaPlanilhaRouter = router({
           const statusInad = action?.status || "pendente";
           const statusPlanilha = STATUS_MAP[statusInad] || "Pendente";
           
-          // Tipo: protesto
+          // Tipo: protesto — texto completo
           const decisao = (row.decisaoCobranca || "").toUpperCase();
-          let tipoPlanilha = "S/ Prot.";
-          if (decisao.includes("COM PROTESTO") || decisao === "COM PROTESTO") {
-            tipoPlanilha = "Protesto";
-          } else if (decisao.includes("SEM PROTESTO") || decisao === "SEM PROTESTO") {
-            tipoPlanilha = "S/ Prot.";
+          let tipoPlanilha = "SEM PROTESTO";
+          if (decisao.includes("COM PROTESTO")) {
+            tipoPlanilha = "COM PROTESTO (CART\u00d3RIO)";
+          } else if (decisao.includes("SEM PROTESTO") || decisao === "") {
+            tipoPlanilha = "SEM PROTESTO";
           }
 
           return {
@@ -596,6 +597,98 @@ export const cobrancaPlanilhaRouter = router({
           if (!data.municipio && row.enderecoCidade) data.municipio = row.enderecoCidade;
           if (!data.uf && row.uf) data.uf = row.uf;
           if (!data.regiao && row.regiao) data.regiao = row.regiao;
+        }
+      }
+
+      // 4c. Buscar vendedor de cada cliente via GraphQL (representanteOuVendedor1Preferencial)
+      const vendedorMap: Record<string, string> = {};
+      try {
+        const PAGE_SIZE = 200;
+        let skip = 0;
+        let total = 0;
+        do {
+          const resp = await gql<any>(`{
+            empresas(skip: ${skip}, take: ${PAGE_SIZE}, where: { cliente: { eq: true } }) {
+              totalCount
+              items {
+                nomeFantasia
+                razaoSocial
+                apelido
+                representanteOuVendedor1Preferencial { nomeFantasia razaoSocial }
+              }
+            }
+          }`);
+          if (!resp?.data?.empresas) break;
+          total = resp.data.empresas.totalCount;
+          for (const emp of resp.data.empresas.items) {
+            const rep = emp.representanteOuVendedor1Preferencial;
+            if (!rep) continue;
+            const vendedorName = rep.nomeFantasia || rep.razaoSocial || "";
+            if (!vendedorName) continue;
+            const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
+            for (const name of names) {
+              if (!vendedorMap[name]) vendedorMap[name] = vendedorName;
+            }
+          }
+          skip += PAGE_SIZE;
+        } while (skip < total);
+      } catch (e) {
+        console.error("[Sync] Erro ao buscar vendedores:", e);
+      }
+
+      // 4d. Buscar contatos extras (múltiplos telefones) de cada cliente via GraphQL
+      const contatosExtrasMap: Record<string, string[]> = {};
+      try {
+        const PAGE_SIZE = 200;
+        let skip = 0;
+        let total = 0;
+        do {
+          const resp = await gql<any>(`{
+            empresas(skip: ${skip}, take: ${PAGE_SIZE}, where: { cliente: { eq: true } }) {
+              totalCount
+              items {
+                nomeFantasia
+                razaoSocial
+                apelido
+                enderecoPrincipal { telefone1 telefone2 telefone3 telefone4 }
+                enderecoDeCobranca { telefone1 telefone2 telefone3 telefone4 }
+                enderecoDeEntrega { telefone1 telefone2 telefone3 telefone4 }
+                enderecoDeFaturamento { telefone1 telefone2 telefone3 telefone4 }
+              }
+            }
+          }`);
+          if (!resp?.data?.empresas) break;
+          total = resp.data.empresas.totalCount;
+          for (const emp of resp.data.empresas.items) {
+            const phones = new Set<string>();
+            const addrs = [emp.enderecoPrincipal, emp.enderecoDeCobranca, emp.enderecoDeEntrega, emp.enderecoDeFaturamento];
+            for (const addr of addrs) {
+              if (!addr) continue;
+              for (const key of ['telefone1', 'telefone2', 'telefone3', 'telefone4']) {
+                const tel = (addr[key] || "").trim();
+                if (tel && tel.length >= 8) phones.add(tel);
+              }
+            }
+            if (phones.size > 0) {
+              const phonesArr = Array.from(phones);
+              const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
+              for (const name of names) {
+                if (!contatosExtrasMap[name]) contatosExtrasMap[name] = phonesArr;
+              }
+            }
+          }
+          skip += PAGE_SIZE;
+        } while (skip < total);
+      } catch (e) {
+        console.error("[Sync] Erro ao buscar contatos extras:", e);
+      }
+
+      // 4e. Mapear forma de cobrança por arId
+      const formaCobrancaMap: Record<number, string> = {};
+      for (const inad of inadTitles) {
+        const row = rows.find(r => r.id === inad.arId);
+        if (row?.formaCobranca) {
+          formaCobrancaMap[inad.arId] = row.formaCobranca;
         }
       }
 
@@ -683,6 +776,14 @@ export const cobrancaPlanilhaRouter = router({
         if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
         if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
         if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
+
+        // Vendedor, forma de cobrança e contatos extras (sempre atualizar)
+        const vendedor = vendedorMap[inad.empresa];
+        if (vendedor) updateData.vendedor = vendedor;
+        const fc = formaCobrancaMap[inad.arId];
+        if (fc) updateData.formaCobranca = fc;
+        const contExtras = contatosExtrasMap[inad.empresa];
+        if (contExtras && contExtras.length > 0) updateData.contatosAdicionais = contExtras;
         
         await db.update(cobrancaPlanilha)
           .set(updateData)
@@ -750,6 +851,14 @@ export const cobrancaPlanilhaRouter = router({
           if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
           if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
           if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
+
+          // Vendedor, forma de cobrança e contatos extras
+          const vendedor2 = vendedorMap[inad.empresa];
+          if (vendedor2) updateData.vendedor = vendedor2;
+          const fc2 = formaCobrancaMap[inad.arId];
+          if (fc2) updateData.formaCobranca = fc2;
+          const contExtras2 = contatosExtrasMap[inad.empresa];
+          if (contExtras2 && contExtras2.length > 0) updateData.contatosAdicionais = contExtras2;
           
           await db.update(cobrancaPlanilha)
             .set(updateData)
@@ -779,6 +888,9 @@ export const cobrancaPlanilhaRouter = router({
             contato: clienteData.contato || null,
             email: clienteData.email || null,
             regiao: clienteData.regiao || null,
+            vendedor: vendedorMap[inad.empresa] || null,
+            formaCobranca: formaCobrancaMap[inad.arId] || null,
+            contatosAdicionais: contatosExtrasMap[inad.empresa] || [],
             updatedBy: `Sync: ${input.updatedBy}`,
           });
           added++;

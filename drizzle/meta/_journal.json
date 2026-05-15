@@ -827,6 +827,13 @@
       "when": 1778860189114,
       "tag": "0117_wise_nextwave",
       "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "5",
+      "when": 1778862224998,
+      "tag": "0118_skinny_vampiro",
+      "breakpoints": true
     }
   ]
 }

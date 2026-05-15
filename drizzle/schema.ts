@@ -1827,6 +1827,12 @@ export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
   contato: varchar("contato", { length: 100 }), // Telefone do cliente
   email: varchar("email", { length: 200 }), // Email do cliente
   regiao: varchar("regiao", { length: 100 }), // Região comercial do cliente
+  // Forma de cobrança (PIX, Cheque, Boleto, etc.)
+  formaCobranca: varchar("forma_cobranca", { length: 100 }),
+  // Nome do vendedor (puxado do Maxiprod via GraphQL)
+  vendedor: varchar("vendedor", { length: 200 }),
+  // Contatos adicionais do cliente (JSON array de telefones do Maxiprod)
+  contatosAdicionais: json("contatos_adicionais").$type<string[]>().default([]),
   // Controle de pausa por etapa (JSON: {primeiraCobranca: true, semAcao1: false, ...})
   etapasPausadas: json("etapas_pausadas").$type<Record<string, boolean>>().default({}),
   // Controle

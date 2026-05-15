@@ -3755,5 +3755,13 @@
 - [ ] Reimplementar: puxar forma de cobrança (PIX, Cheque, Boleto) da inadimplência no sync
 - [ ] Reimplementar: puxar nome do vendedor via GraphQL no sync
 - [ ] Reimplementar: puxar múltiplos contatos/telefones do Maxiprod GraphQL no sync
-- [ ] Reimplementar: escrever "COM PROTESTO" e "SEM PROTESTO" por extenso com cores diferentes
+- [ ] Reimplementar: escrever "COM PROTESTO (CARTÓRIO)" e "SEM PROTESTO" por extenso com cores diferentes
 - [ ] Reimplementar: exibir novos campos na tabela, row expandida e PDF de exportação
+- [x] Planilha de Cobrança como tela principal ao clicar em Inadimplência (para todos)
+- [x] Tela atual de inadimplência como secundária, acessível apenas pelo Guilherme
+- [x] Card Pagos/Resolvidos visível na Planilha de Cobrança (tela principal)
+- [x] Cards de resumo (títulos vencidos, valor, clientes) na Planilha de Cobrança
+- [x] Card Pagos/Resolvidos na Planilha de Cobrança
+- [x] Botão Guia de Cobrança na Planilha de Cobrança
+- [x] Botão PDF Decisão + histórico na Planilha de Cobrança
+- [x] Botão PDF Decisão ao lado de cada cliente na tabela da planilha

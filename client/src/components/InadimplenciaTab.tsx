@@ -573,7 +573,8 @@ export default function InadimplenciaTab() {
   const [phoneMenuSelected, setPhoneMenuSelected] = useState<'mute' | 'unmute' | 'register' | 'history' | null>(null);
   const [showCobrancaGuide, setShowCobrancaGuide] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [showCobrancaPlanilha, setShowCobrancaPlanilha] = useState(false);
+  // Planilha de Cobrança é a tela principal para todos; tela antiga só para Guilherme
+  const [showCobrancaPlanilha, setShowCobrancaPlanilha] = useState(true);
   const [decisaoTutorialData, setDecisaoTutorialData] = useState<{clienteName: string; vendedorName: string} | null>(null);
   const [decisionPdfTitleId, setDecisionPdfTitleId] = useState<number | null>(null);
   const [showDecisionPdfHistory, setShowDecisionPdfHistory] = useState(false);

@@ -1,0 +1,31 @@
+{
+  "query": "SELECT DISTINCT status FROM collection_actions ORDER BY status;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT status FROM collection_actions ORDER BY status;",
+  "rows": [
+    {
+      "status": "cheque_compensacao"
+    },
+    {
+      "status": "contatado"
+    },
+    {
+      "status": "em_negociacao"
+    },
+    {
+      "status": "especial_sem_cobranca"
+    },
+    {
+      "status": "pendente"
+    },
+    {
+      "status": "promessa"
+    },
+    {
+      "status": "protestado"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\ncheque_compensacao\ncontatado\nem_negociacao\nespecial_sem_cobranca\npendente\npromessa\nprotestado\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

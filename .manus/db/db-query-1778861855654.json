@@ -1,0 +1,31 @@
+{
+  "query": "SELECT DISTINCT cp.status as planilha_status FROM cobranca_planilha cp ORDER BY cp.status;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT cp.status as planilha_status FROM cobranca_planilha cp ORDER BY cp.status;",
+  "rows": [
+    {
+      "planilha_status": "Cheque em compensação"
+    },
+    {
+      "planilha_status": "Contatado"
+    },
+    {
+      "planilha_status": "Em negociação"
+    },
+    {
+      "planilha_status": "Especial s/ cobrança"
+    },
+    {
+      "planilha_status": "Pendente"
+    },
+    {
+      "planilha_status": "Promessa de Pgto"
+    },
+    {
+      "planilha_status": "Protestado"
+    }
+  ],
+  "messages": [],
+  "stdout": "planilha_status\nCheque em compensação\nContatado\nEm negociação\nEspecial s/ cobrança\nPendente\nPromessa de Pgto\nProtestado\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}
