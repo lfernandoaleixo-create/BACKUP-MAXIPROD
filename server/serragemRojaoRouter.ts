@@ -415,6 +415,117 @@ async function fetchAReceber(
   }
 }
 
+/**
+ * Fetch "Valor Recebido" total from Contas a Receber
+ * Approach: NF cross-reference with tipo=TITULO, estados EMITIDO+RECEBIDO
+ * Sums valorRecebidoLiquido (the actual amount received so far)
+ * No date filter by default (all time) - matches Maxiprod UI behavior
+ */
+async function fetchRecebidoTotal(
+  tipo: "SERRAGEM" | "ROJÃO"
+): Promise<{
+  totalRecebido: number;
+  totalOriginal: number;
+  totalAReceber: number;
+  count: number;
+  items: Array<{
+    vencimento: string;
+    valorOriginal: number;
+    valorRecebido: number;
+    valorAReceber: number;
+    nfNumero: string;
+    cliente: string;
+    estado: string;
+  }>;
+}> {
+  try {
+    // Step 1: Get all NF numbers for this tipo
+    let nfNumbers = new Set<string>();
+    let skip = 0;
+    const take = 1000;
+
+    while (true) {
+      const data = await gql<any>(`{
+        notasFiscais(
+          skip: ${skip}, take: ${take},
+          where: {
+            estado: { eq: EMITIDA }
+            entradaOuSaida: { eq: SAIDA }
+            estadoConfiguravel: { descricao: { eq: "${tipo}" } }
+          }
+        ) {
+          totalCount
+          items { numero }
+        }
+      }`);
+      if (!data?.notasFiscais) break;
+      data.notasFiscais.items.forEach((i: any) => nfNumbers.add(String(i.numero)));
+      skip += take;
+      if (skip >= data.notasFiscais.totalCount) break;
+    }
+
+    // Step 2: Get ALL contaAReceber with tipo=TITULO and estado EMITIDO or RECEBIDO
+    let allItems: any[] = [];
+    skip = 0;
+
+    while (true) {
+      const data = await gql<any>(`{
+        contaAReceber(
+          skip: ${skip}, take: ${take},
+          where: {
+            tipo: { eq: TITULO }
+            or: [
+              { estado: { eq: EMITIDO } }
+              { estado: { eq: RECEBIDO } }
+            ]
+          }
+        ) {
+          totalCount
+          items {
+            valorOriginal
+            valorRecebidoLiquido
+            valorLiquido
+            estado
+            documentoVinculadoNumero
+            vencimentoData
+            cliente { nomeFantasia }
+          }
+        }
+      }`);
+      if (!data?.contaAReceber) break;
+      allItems.push(...data.contaAReceber.items);
+      skip += take;
+      if (skip >= data.contaAReceber.totalCount) break;
+    }
+
+    // Step 3: Cross-reference by NF number
+    const matched = allItems.filter(r => nfNumbers.has(r.documentoVinculadoNumero));
+
+    const totalRecebido = Math.round(matched.reduce((s: number, i: any) => s + (i.valorRecebidoLiquido || 0), 0) * 100) / 100;
+    const totalOriginal = Math.round(matched.reduce((s: number, i: any) => s + (i.valorOriginal || 0), 0) * 100) / 100;
+    const totalAReceber = Math.round((totalOriginal - totalRecebido) * 100) / 100;
+
+    const items = matched
+      .sort((a: any, b: any) => (a.vencimentoData || '').localeCompare(b.vencimentoData || ''))
+      .map((i: any) => ({
+        vencimento: i.vencimentoData?.split('T')[0] || '',
+        valorOriginal: Math.round((i.valorOriginal || 0) * 100) / 100,
+        valorRecebido: Math.round((i.valorRecebidoLiquido || 0) * 100) / 100,
+        valorAReceber: Math.round(((i.valorOriginal || 0) - (i.valorRecebidoLiquido || 0)) * 100) / 100,
+        nfNumero: i.documentoVinculadoNumero || '',
+        cliente: i.cliente?.nomeFantasia || '-',
+        estado: i.estado === 'RECEBIDO' ? 'Recebido' : 'A Receber',
+      }));
+
+    console.log(`[Serragem/Rojão] ${tipo} Recebido Total: R$ ${totalRecebido.toFixed(2)} / R$ ${totalOriginal.toFixed(2)} (${matched.length} títulos)`);
+
+    return { totalRecebido, totalOriginal, totalAReceber, count: matched.length, items };
+  } catch (error: any) {
+    console.error(`[Serragem/Rojão] Error fetching recebido total ${tipo}:`, error.message);
+    return { totalRecebido: 0, totalOriginal: 0, totalAReceber: 0, count: 0, items: [] };
+  }
+}
+
 export const serragemRojaoRouter = router({
   /**
    * Get Vendas/Faturamento for Serragem or Rojão
@@ -474,5 +585,19 @@ export const serragemRojaoRouter = router({
     }))
     .query(async ({ input }) => {
       return fetchAReceber(input.tipo);
+    }),
+
+  /**
+   * Get Valor Recebido Total (all time)
+   * Source: Maxiprod → Financeiro → Contas a Receber
+   * Filters: tipo=TITULO, estado=EMITIDO+RECEBIDO, cruzamento com NFs do estadoConfiguravel
+   * Sums valorRecebidoLiquido for each matched item
+   */
+  getRecebidoTotal: publicProcedure
+    .input(z.object({
+      tipo: z.enum(["SERRAGEM", "ROJÃO"]),
+    }))
+    .query(async ({ input }) => {
+      return fetchRecebidoTotal(input.tipo);
     }),
 });

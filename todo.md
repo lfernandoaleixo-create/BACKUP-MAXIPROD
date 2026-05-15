@@ -3772,3 +3772,7 @@
 - [x] Garantir que o status na planilha de cobrança NUNCA seja sobrescrito pela sincronização (fica fixo até mudança manual)
 - [x] Corrigir erro Unicode "t\u00edtulos" aparecendo literalmente nos cards de segmento
 - [x] Mostrar mensagem "O PDF DE DECISÃO FOI GERADO, MAS O CLIENTE REALIZOU O PAGAMENTO E SAIU DA INADIMPLÊNCIA" no histórico de PDFs da Planilha de Cobrança para clientes que já pagaram
+- [x] Buscar Contas a Receber do Maxiprod via GraphQL com Estado Configurável = ROJAO e SERRAGEM
+- [x] Somar coluna "Valor Recebido" para Rojão e Serragem separadamente
+- [x] Aplicar lógica de recebidos do Rojão também para Serragem na aba Análise Serragem/Rojão
+- [x] Mostrar total de Valor Recebido por segmento no frontend

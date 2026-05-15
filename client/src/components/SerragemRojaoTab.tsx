@@ -368,9 +368,20 @@ export default function SerragemRojaoTab() {
     { enabled: selectedView === "rojao" || selectedView === "menu" }
   );
 
+  // Buscar Valor Recebido Total (all time) - soma valorRecebidoLiquido de TITULO EMITIDO+RECEBIDO cruzado com NFs
+  const serragemRecebidoTotalQuery = trpc.serragemRojao.getRecebidoTotal.useQuery(
+    { tipo: "SERRAGEM" },
+    { enabled: selectedView === "serragem" || selectedView === "menu" }
+  );
+  const rojaoRecebidoTotalQuery = trpc.serragemRojao.getRecebidoTotal.useQuery(
+    { tipo: "ROJÃO" },
+    { enabled: selectedView === "rojao" || selectedView === "menu" }
+  );
+
   // Montar dados financeiros (Recebido/Saídas são sempre acumulado total, saldo anterior sempre incluso)
   const saldoAnteriorAtivo = SALDO_ANTERIOR_SERRAGEM;
-  const serragemRecebido = serragemRecebidoQuery.data?.total ?? 0;
+  // Usar getRecebidoTotal (soma valorRecebidoLiquido de TITULO) se disponível, senão fallback para getRecebido
+  const serragemRecebido = serragemRecebidoTotalQuery.data?.totalRecebido ?? serragemRecebidoQuery.data?.total ?? 0;
   const serragemSaidas = serragemContasQuery.data?.saidasTotal ?? 0;
   const serragemVendasMaxiprod = serragemVendasQuery.data?.total ?? 0;
   const serragemVendas = serragemVendasMaxiprod + saldoAnteriorAtivo;
@@ -388,7 +399,7 @@ export default function SerragemRojaoTab() {
     totalParaDivisaoDisponivel: serragemSaldoCaixa,
     totalParaDivisaoAReceber: serragemAReceberQuery.data?.total ?? 0,
   };
-  const rojaoRecebido = rojaoRecebidoQuery.data?.total ?? 0;
+  const rojaoRecebido = rojaoRecebidoTotalQuery.data?.totalRecebido ?? rojaoRecebidoQuery.data?.total ?? 0;
   const rojaoSaidas = rojaoContasQuery.data?.saidasTotal ?? 0;
   const rojaoVendasMaxiprod = rojaoVendasQuery.data?.total ?? 0;
   const rojaoVendas = rojaoVendasMaxiprod + SALDO_ANTERIOR_ROJAO;
