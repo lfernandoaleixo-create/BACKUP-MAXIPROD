@@ -333,7 +333,9 @@ async function fetchRecebido(
 
 /**
  * Fetch "Total para Divisão à Receber" - Contas a Receber pendentes
- * Abordagem: cruzamento de NFs do estadoConfiguravel com Contas a Receber EMITIDO
+ * Abordagem: cruzamento de NF IDs (notaFiscalId) do estadoConfiguravel com Contas a Receber EMITIDO
+ * Usa notaFiscalId (ID único) ao invés de documentoVinculadoNumero (número da NF) para evitar
+ * falsos positivos quando NFs de empresas diferentes compartilham o mesmo número.
  * ReceberEstado enum: EMITIDO = "A receber" na UI do Maxiprod
  * Sem filtro de data (todas as pendentes)
  */
@@ -341,8 +343,8 @@ async function fetchAReceber(
   tipo: "SERRAGEM" | "ROJÃO"
 ): Promise<{ total: number; count: number; items: Array<{ vencimento: string; valor: number; nfNumero: string; cliente: string }> }> {
   try {
-    // Step 1: Get all NF numbers for this tipo
-    let nfNumbers = new Set<string>();
+    // Step 1: Get all NF IDs (unique identifiers) for this tipo
+    let nfIds = new Set<string>();
     let skip = 0;
     const take = 1000;
 
@@ -357,16 +359,16 @@ async function fetchAReceber(
           }
         ) {
           totalCount
-          items { numero }
+          items { id numero }
         }
       }`);
       if (!data?.notasFiscais) break;
-      data.notasFiscais.items.forEach((i: any) => nfNumbers.add(String(i.numero)));
+      data.notasFiscais.items.forEach((i: any) => nfIds.add(String(i.id)));
       skip += take;
       if (skip >= data.notasFiscais.totalCount) break;
     }
 
-    // Step 2: Get all EMITIDO (A receber) contas
+    // Step 2: Get all EMITIDO (A receber) contas with notaFiscalId
     let allEmitido: any[] = [];
     skip = 0;
 
@@ -381,6 +383,7 @@ async function fetchAReceber(
           totalCount
           items {
             valorLiquido
+            notaFiscalId
             documentoVinculadoNumero
             vencimentoData
             cliente { nomeFantasia }
@@ -393,8 +396,8 @@ async function fetchAReceber(
       if (skip >= data.contaAReceber.totalCount) break;
     }
 
-    // Step 3: Cross-reference - only keep items whose documentoVinculadoNumero matches NFs
-    const matched = allEmitido.filter(r => nfNumbers.has(r.documentoVinculadoNumero));
+    // Step 3: Cross-reference using notaFiscalId (unique) instead of documentoVinculadoNumero
+    const matched = allEmitido.filter(r => r.notaFiscalId && nfIds.has(String(r.notaFiscalId)));
     const total = Math.round(matched.reduce((sum: number, i: any) => sum + (i.valorLiquido || 0), 0) * 100) / 100;
     const items = matched.map((i: any) => ({
       vencimento: i.vencimentoData?.split("T")[0] || "",
@@ -403,7 +406,7 @@ async function fetchAReceber(
       cliente: i.cliente?.nomeFantasia || "",
     }));
 
-    console.log(`[Serragem/Rojão] ${tipo} A Receber: R$ ${total.toFixed(2)} (${items.length} itens)`);
+    console.log(`[Serragem/Rojão] ${tipo} A Receber: R$ ${total.toFixed(2)} (${items.length} itens, ${nfIds.size} NFs)`);
 
     return { total, count: items.length, items };
   } catch (error: any) {

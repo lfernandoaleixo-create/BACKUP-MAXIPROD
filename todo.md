@@ -3747,3 +3747,5 @@
 - [x] Serragem/Rojão: corrigir "Total para Divisão à Receber" para puxar do Maxiprod (contas a receber com estado configurável serragem/rojao + estado "A receber")
 - [x] Planilha de Cobrança: exportação para PDF com dados completos (sem campo região)
 - [x] Planilha de Cobrança: omitir/remover campo "região" da interface
+- [x] Serragem/Rojão: corrigir valor do "Total para Divisão à Receber" — valor R$ 8.002,40 não bate com o esperado
+- [x] Serragem/Rojão: corrigir "Total para Divisão à Receber" — usar notaFiscalId (ID único) ao invés de documentoVinculadoNumero para cruzamento preciso — valor correto R$ 4.802,40 (SERRAGEM)
