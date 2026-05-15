@@ -3765,3 +3765,7 @@
 - [x] Botão Guia de Cobrança na Planilha de Cobrança
 - [x] Botão PDF Decisão + histórico na Planilha de Cobrança
 - [x] Botão PDF Decisão ao lado de cada cliente na tabela da planilha
+- [x] Cards de resumo por segmento (Bambu vs Madeira) na Planilha de Cobrança
+- [x] Detalhamento ao clicar no card de segmento (lista de clientes do segmento)
+- [x] Exportação de relatório PDF por segmento (Bambu / Madeira)
+- [x] Corrigir sobreposição do card Histórico de Observações com os ícones de balão na row expandida

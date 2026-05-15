@@ -6,7 +6,7 @@ import {
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
   CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw,
   History, Plus, Paperclip, Pencil, Trash2, Check, FileDown, User, CreditCard,
-  ShieldCheck, Stamp, ArrowUpDown, ArrowDown, ArrowUp, Users
+  ShieldCheck, Stamp, ArrowUpDown, ArrowDown, ArrowUp, Users, TreePine, Leaf, Flame, Layers
 } from "lucide-react";
 import CobrancaGuideSimulator from "@/components/CobrancaGuideSimulator";
 import { generateDecisionPdf, type DecisionPdfInput } from "@/lib/decisionPdfExport";
@@ -253,6 +253,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfHistoryFilterMonth, setPdfHistoryFilterMonth] = useState("");
   const [pdfHistorySelectedIds, setPdfHistorySelectedIds] = useState<number[]>([]);
+  const [segmentDetailOpen, setSegmentDetailOpen] = useState<string | null>(null);
 
   // Queries que dependem dos estados acima
   const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: 'newest', sortBy: resolvedSortBy, sortDir: resolvedSortDir });
@@ -333,6 +334,198 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
 
   const totalValor = filteredItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
   const uniqueClients = useMemo(() => new Set(filteredItems.map(i => getClientKey(i.empresa))), [filteredItems]);
+
+  // Dados agrupados por segmento (centro de custos)
+  const segmentData = useMemo(() => {
+    if (!items) return [];
+    const map = new Map<string, { center: string; items: typeof items; totalValor: number; uniqueClients: Set<string> }>();
+    for (const item of items) {
+      const center = item.centroCustos || "SEM CLASSIFICAÇÃO";
+      if (!map.has(center)) {
+        map.set(center, { center, items: [], totalValor: 0, uniqueClients: new Set() });
+      }
+      const entry = map.get(center)!;
+      entry.items.push(item);
+      entry.totalValor += parseFloat(String(item.valor || 0));
+      entry.uniqueClients.add(getClientKey(item.empresa));
+    }
+    return Array.from(map.values()).sort((a, b) => b.totalValor - a.totalValor);
+  }, [items]);
+
+  const SEGMENT_STYLES: Record<string, { icon: React.ReactNode; gradient: string; border: string; bg: string; text: string; accent: string }> = {
+    "MADEIRA": { icon: <TreePine className="w-5 h-5 text-white" />, gradient: "from-amber-600 to-yellow-700", border: "border-amber-300", bg: "from-amber-50 via-yellow-50 to-orange-50", text: "text-amber-900", accent: "text-amber-700" },
+    "BAMBU": { icon: <Leaf className="w-5 h-5 text-white" />, gradient: "from-green-600 to-emerald-700", border: "border-green-300", bg: "from-green-50 via-emerald-50 to-teal-50", text: "text-green-900", accent: "text-green-700" },
+    "ROJÃO": { icon: <Flame className="w-5 h-5 text-white" />, gradient: "from-red-600 to-rose-700", border: "border-red-300", bg: "from-red-50 via-rose-50 to-pink-50", text: "text-red-900", accent: "text-red-700" },
+    "SERRAGEM": { icon: <Layers className="w-5 h-5 text-white" />, gradient: "from-purple-600 to-violet-700", border: "border-purple-300", bg: "from-purple-50 via-violet-50 to-fuchsia-50", text: "text-purple-900", accent: "text-purple-700" },
+    "SEM CLASSIFICAÇÃO": { icon: <AlertTriangle className="w-5 h-5 text-white" />, gradient: "from-slate-500 to-gray-600", border: "border-slate-300", bg: "from-slate-50 via-gray-50 to-zinc-50", text: "text-slate-900", accent: "text-slate-700" },
+  };
+
+  function getSegmentStyle(center: string) {
+    return SEGMENT_STYLES[center] || SEGMENT_STYLES["SEM CLASSIFICAÇÃO"];
+  }
+
+  function handleExportSegmentPdf(center: string) {
+    const seg = segmentData.find(s => s.center === center);
+    if (!seg || seg.items.length === 0) {
+      toast.error("Nenhum título para exportar");
+      return;
+    }
+    try {
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      // Header band
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, pageW, 32, "F");
+      const segStyle = getSegmentStyle(center);
+      const headerColors: Record<string, [number, number, number]> = {
+        "MADEIRA": [217, 119, 6], "BAMBU": [22, 163, 74], "ROJÃO": [220, 38, 38],
+        "SERRAGEM": [147, 51, 234], "SEM CLASSIFICAÇÃO": [100, 116, 139],
+      };
+      const hc = headerColors[center] || [100, 116, 139];
+      doc.setFillColor(hc[0], hc[1], hc[2]);
+      doc.rect(0, 32, pageW, 2, "F");
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("GRUPO FOX", 14, 12);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Inadimplência — ${center}`, 14, 20);
+      doc.setFontSize(8);
+      doc.setTextColor(180, 180, 180);
+      doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 14, 27);
+
+      let y = 38;
+
+      // Summary boxes
+      const boxW = 52;
+      const gap = 6;
+      const boxH = 16;
+
+      doc.setFillColor(hc[0], hc[1], hc[2]);
+      doc.roundedRect(14, y, boxW, boxH, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.text("TOTAL EM ABERTO", 18, y + 5);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(formatCurrency(seg.totalValor), 18, y + 13);
+
+      doc.setFillColor(71, 85, 105);
+      doc.roundedRect(14 + boxW + gap, y, boxW, boxH, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.text("TÍTULOS", 18 + boxW + gap, y + 5);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(String(seg.items.length), 18 + boxW + gap, y + 13);
+
+      doc.setFillColor(59, 130, 246);
+      doc.roundedRect(14 + (boxW + gap) * 2, y, boxW, boxH, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.text("CLIENTES", 18 + (boxW + gap) * 2, y + 5);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(String(seg.uniqueClients.size), 18 + (boxW + gap) * 2, y + 13);
+
+      y += boxH + 6;
+
+      const ETAPA_SHORT: Record<string, string> = {
+        primeiraCobranca: "1ª Cob", segundaCobranca: "2ª Cob",
+        terceiraCobranca: "3ª Cob", acaoFinal: "Final",
+      };
+
+      const tableData = seg.items.map((item) => {
+        const etapas = [
+          { field: "primeiraCobranca", value: item.primeiraCobranca },
+          { field: "segundaCobranca", value: item.segundaCobranca },
+          { field: "terceiraCobranca", value: item.terceiraCobranca },
+          { field: "acaoFinal", value: item.acaoFinal },
+        ].filter(e => e.value).map(e => `${ETAPA_SHORT[e.field]}: ${formatDate(e.value!)}`);
+
+        const tipoLabel = (() => {
+          const t = (item.tipo || "").toUpperCase();
+          if (t.includes("COM PROTESTO")) return "COM PROTESTO";
+          if (t.includes("SEM PROTESTO")) return "SEM PROTESTO";
+          return item.tipo || "-";
+        })();
+
+        return [
+          item.empresa || "-",
+          item.cnpjCpf || "-",
+          formatCurrency(parseFloat(String(item.valor || 0))),
+          item.vencimento ? formatDate(item.vencimento) : "-",
+          String(item.diasVencidos ?? "-"),
+          item.status || "-",
+          tipoLabel,
+          item.vendedor || "-",
+          (item as any).contato || "-",
+          etapas.length > 0 ? etapas.join("; ") : "-",
+        ];
+      });
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Empresa", "CNPJ/CPF", "Valor", "Venc.", "Dias", "Status", "Tipo", "Vendedor", "Contato", "Etapas"]],
+        body: tableData,
+        theme: "grid",
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 5.5, fontStyle: "bold", cellPadding: 1.5 },
+        bodyStyles: { fontSize: 5.5, cellPadding: 1.2 },
+        columnStyles: {
+          0: { cellWidth: 38 }, 1: { cellWidth: 22 }, 2: { cellWidth: 20, halign: "right", fontStyle: "bold" },
+          3: { cellWidth: 14, halign: "center" }, 4: { cellWidth: 10, halign: "center" },
+          5: { cellWidth: 22, halign: "center" }, 6: { cellWidth: 22, halign: "center" },
+          7: { cellWidth: 26 }, 8: { cellWidth: 24 }, 9: { cellWidth: "auto" },
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        didParseCell: (data: any) => {
+          if (data.section === "body" && data.column.index === 5) {
+            const val = data.cell.raw;
+            if (val === "Contatado") { data.cell.styles.textColor = [29, 78, 216]; data.cell.styles.fontStyle = "bold"; }
+            else if (val === "Em negociação") { data.cell.styles.textColor = [180, 120, 20]; data.cell.styles.fontStyle = "bold"; }
+            else if (val === "Promessa de Pgto") { data.cell.styles.textColor = [21, 128, 61]; data.cell.styles.fontStyle = "bold"; }
+            else if (val === "Protestado" || val === "Jurídico") { data.cell.styles.textColor = [185, 28, 28]; data.cell.styles.fontStyle = "bold"; }
+          }
+          if (data.section === "body" && data.column.index === 6) {
+            const val = (data.cell.raw || "").toUpperCase();
+            if (val.includes("COM PROTESTO")) { data.cell.styles.textColor = [185, 28, 28]; data.cell.styles.fontStyle = "bold"; }
+            else if (val.includes("SEM PROTESTO")) { data.cell.styles.textColor = [21, 128, 61]; data.cell.styles.fontStyle = "bold"; }
+          }
+          if (data.section === "body" && data.column.index === 4) {
+            const days = parseInt(data.cell.raw);
+            if (days >= 90) { data.cell.styles.textColor = [185, 28, 28]; data.cell.styles.fontStyle = "bold"; }
+            else if (days >= 30) { data.cell.styles.textColor = [180, 120, 20]; data.cell.styles.fontStyle = "bold"; }
+          }
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      const totalPages = doc.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(14, pageH - 12, pageW - 14, pageH - 12);
+        doc.setTextColor(148, 163, 184);
+        doc.setFontSize(6.5);
+        doc.text(`Grupo Fox — Inadimplência ${center}`, 14, pageH - 7);
+        doc.text(`Página ${p} de ${totalPages}`, pageW - 14 - doc.getTextWidth(`Página ${p} de ${totalPages}`), pageH - 7);
+      }
+
+      const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      doc.save(`Inadimplencia_${center.replace(/[^a-zA-Z0-9]/g, "_")}_${datePart}.pdf`);
+      toast.success(`PDF de ${center} exportado com sucesso!`);
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+      toast.error("Erro ao gerar PDF");
+    }
+  }
 
   function toggleSort(field: typeof sortBy) {
     if (sortBy === field) {
@@ -927,6 +1120,124 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         </div>
       )}
 
+      {/* Cards de Segmento (Centro de Custos) */}
+      {segmentData.length > 0 && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+            {segmentData.map(seg => {
+              const style = getSegmentStyle(seg.center);
+              const isOpen = segmentDetailOpen === seg.center;
+              const isFiltered = centerFilter === seg.center;
+              return (
+                <button
+                  key={seg.center}
+                  onClick={() => {
+                    setCenterFilter(isFiltered ? "todos" : seg.center);
+                    setSegmentDetailOpen(isOpen ? null : seg.center);
+                  }}
+                  className={`rounded-xl border-2 p-3 text-left transition-all hover:shadow-lg hover:scale-[1.02] ${style.border} bg-gradient-to-br ${style.bg} ${
+                    isFiltered ? "ring-2 ring-blue-500 shadow-lg scale-[1.02]" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${style.gradient} flex items-center justify-center shadow-sm`}>
+                      {style.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <div className={`text-xs font-bold ${style.text} truncate`}>{seg.center}</div>
+                      <div className={`text-[10px] ${style.accent}`}>{seg.uniqueClients.size} cliente{seg.uniqueClients.size !== 1 ? "s" : ""}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className={`text-lg font-bold ${style.text}`}>{seg.items.length}</span>
+                    <span className={`text-[10px] font-semibold ${style.accent}`}>{formatCurrency(seg.totalValor)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className={`text-[9px] ${style.accent} opacity-70`}>t\u00edtulos</span>
+                    <span className={`text-[9px] flex items-center gap-0.5 ${isOpen ? style.text : style.accent}`}>
+                      {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      {isOpen ? "Fechar" : "Detalhes"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Detalhe do segmento expandido */}
+          {segmentDetailOpen && (() => {
+            const seg = segmentData.find(s => s.center === segmentDetailOpen);
+            if (!seg) return null;
+            const style = getSegmentStyle(seg.center);
+            const segItems = seg.items.sort((a, b) => parseFloat(String(b.valor || 0)) - parseFloat(String(a.valor || 0)));
+            return (
+              <div className={`rounded-xl border-2 ${style.border} bg-gradient-to-r ${style.bg} overflow-hidden`}>
+                <div className="flex items-center justify-between p-4 border-b border-slate-200/50">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${style.gradient} flex items-center justify-center shadow-md`}>
+                      {style.icon}
+                    </div>
+                    <div>
+                      <h3 className={`font-bold text-sm ${style.text}`}>Inadimpl\u00eancia \u2014 {seg.center}</h3>
+                      <p className={`text-xs ${style.accent}`}>{seg.items.length} t\u00edtulos \u2022 {seg.uniqueClients.size} clientes \u2022 {formatCurrency(seg.totalValor)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleExportSegmentPdf(seg.center); }}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r ${style.gradient} text-white text-xs font-semibold shadow-md hover:shadow-lg transition-all hover:scale-[1.02]`}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Exportar PDF
+                    </button>
+                    <button
+                      onClick={() => setSegmentDetailOpen(null)}
+                      className="p-1.5 rounded-lg hover:bg-white/50 transition-colors"
+                    >
+                      <X className="w-4 h-4 text-slate-500" />
+                    </button>
+                  </div>
+                </div>
+                <div className="divide-y divide-slate-200/50 max-h-[400px] overflow-y-auto">
+                  {segItems.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/40 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${style.gradient} bg-opacity-20 flex items-center justify-center flex-shrink-0`}>
+                          <Building2 className={`w-4 h-4 ${style.accent}`} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{item.empresa}</p>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                            {item.cnpjCpf && <span>{item.cnpjCpf}</span>}
+                            {item.vendedor && <span>\u2022 {item.vendedor}</span>}
+                            <span>\u2022 {item.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 flex-shrink-0">
+                        <div className="text-right">
+                          <p className={`text-sm font-bold ${style.text}`}>{formatCurrency(parseFloat(String(item.valor || 0)))}</p>
+                          <p className="text-[10px] text-slate-500">Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
+                            (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
+                            "bg-blue-100 text-blue-700"
+                          }`}>
+                            {item.diasVencidos || 0}d
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Centro de Custos filter pills */}
       {summary && (
         <div className="flex flex-wrap gap-2">
@@ -1159,7 +1470,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     {isExpanded && (
                       <tr className="bg-slate-50/80">
                         <td colSpan={14} className="px-4 py-4">
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative">
                             {/* Info */}
                             <div className="space-y-2">
                               <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -1328,12 +1639,12 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                               </div>
                             </div>
                             {/* Observações */}
-                            <div className="space-y-2">
+                            <div className="space-y-2 relative z-10">
                               <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                                 <History className="w-3.5 h-3.5 text-amber-500" />
                                 Histórico de Observações
                               </h4>
-                              <div className="text-[11px] text-slate-500 bg-white rounded-lg border border-slate-100 p-3">
+                              <div className="text-[11px] text-slate-500 bg-white rounded-lg border border-slate-100 p-3 shadow-sm">
                                 <p className="mb-2">Clique no ícone <MessageSquare className="w-3 h-3 inline text-amber-500" /> ao lado de cada etapa para adicionar ou ver observações individuais.</p>
                                 <Button
                                   variant="outline"

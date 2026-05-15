@@ -1,0 +1,35 @@
+{
+  "query": "SELECT centro_custos, COUNT(*) as cnt, SUM(CAST(valor AS DECIMAL(18,2))) as total FROM cobranca_planilha GROUP BY centro_custos ORDER BY total DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT centro_custos, COUNT(*) as cnt, SUM(CAST(valor AS DECIMAL(18,2))) as total FROM cobranca_planilha GROUP BY centro_custos ORDER BY total DESC",
+  "rows": [
+    {
+      "centro_custos": "MADEIRA",
+      "cnt": "45",
+      "total": "359727.60"
+    },
+    {
+      "centro_custos": "BAMBU",
+      "cnt": "33",
+      "total": "103046.89"
+    },
+    {
+      "centro_custos": "NULL",
+      "cnt": "14",
+      "total": "67547.94"
+    },
+    {
+      "centro_custos": "ROJÃO",
+      "cnt": "8",
+      "total": "27050.05"
+    },
+    {
+      "centro_custos": "SERRAGEM",
+      "cnt": "3",
+      "total": "8488.80"
+    }
+  ],
+  "messages": [],
+  "stdout": "centro_custos\tcnt\ttotal\nMADEIRA\t45\t359727.60\nBAMBU\t33\t103046.89\nNULL\t14\t67547.94\nROJÃO\t8\t27050.05\nSERRAGEM\t3\t8488.80\n",
+  "stderr": "",
+  "execution_time_ms": 280
+}
