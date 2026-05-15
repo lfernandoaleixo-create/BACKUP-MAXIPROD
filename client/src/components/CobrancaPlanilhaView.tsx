@@ -5,12 +5,14 @@ import {
   X, Search, Filter, ChevronDown, ChevronUp, Edit3, Save, MessageSquare,
   ArrowLeft, DollarSign, Calendar, Building2, FileText, AlertTriangle,
   CheckCircle2, Clock, Phone, Shield, Loader2, Eye, Database, Download, RefreshCw,
-  History, Plus, Paperclip, Pencil, Trash2, Check
+  History, Plus, Paperclip, Pencil, Trash2, Check, FileDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // Status colors matching the inadimplência (mesmos status)
 const PLANILHA_STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string; icon: React.ReactNode }> = {
@@ -211,8 +213,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         (item.municipio || "").toLowerCase().includes(s) ||
         (item.observacoes || "").toLowerCase().includes(s) ||
         ((item as any).contato || "").toLowerCase().includes(s) ||
-        ((item as any).email || "").toLowerCase().includes(s) ||
-        ((item as any).regiao || "").toLowerCase().includes(s)
+        ((item as any).email || "").toLowerCase().includes(s)
       );
     }
 
@@ -273,6 +274,206 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   function handleCobrancaFieldChange(id: number, field: string, value: string) {
     if (!canEdit) return;
     updateField.mutate({ id, field, value: value || null, updatedBy: operator!.name });
+  }
+
+  function handleExportPdf() {
+    if (filteredItems.length === 0) {
+      toast.error("Nenhum título para exportar");
+      return;
+    }
+    try {
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      // Header band
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, pageW, 32, "F");
+      doc.setFillColor(16, 185, 129); // emerald-500
+      doc.rect(0, 32, pageW, 2, "F");
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("GRUPO FOX", 14, 12);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("Planilha de Cobran\u00E7a \u2014 Inadimpl\u00EAncia", 14, 20);
+      doc.setFontSize(8);
+      doc.setTextColor(180, 180, 180);
+      doc.text(`Gerado em: ${new Date().toLocaleString("pt-BR")}`, 14, 27);
+
+      // Filters info
+      let y = 38;
+      const activeFilters: string[] = [];
+      if (search) activeFilters.push(`Busca: "${search}"`);
+      if (statusFilter !== "todos") activeFilters.push(`Status: ${statusFilter}`);
+      if (centerFilter !== "todos") activeFilters.push(`Centro: ${centerFilter}`);
+
+      if (activeFilters.length > 0) {
+        doc.setFillColor(255, 247, 237);
+        doc.roundedRect(14, y, pageW - 28, 12, 2, 2, "F");
+        doc.setDrawColor(251, 191, 36);
+        doc.roundedRect(14, y, pageW - 28, 12, 2, 2, "S");
+        doc.setTextColor(146, 64, 14);
+        doc.setFontSize(7.5);
+        doc.setFont("helvetica", "bold");
+        doc.text("FILTROS APLICADOS:", 18, y + 5);
+        doc.setFont("helvetica", "normal");
+        doc.text(activeFilters.join("  \u2022  "), 18, y + 10);
+        y += 16;
+      }
+
+      // Summary boxes
+      const boxW = 52;
+      const gap = 6;
+      const boxH = 16;
+
+      doc.setFillColor(16, 185, 129); // emerald
+      doc.roundedRect(14, y, boxW, boxH, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.text("TOTAL EM ABERTO", 18, y + 5);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(formatCurrency(totalValor), 18, y + 13);
+
+      doc.setFillColor(71, 85, 105); // slate
+      doc.roundedRect(14 + boxW + gap, y, boxW, boxH, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.text("T\u00CDTULOS", 18 + boxW + gap, y + 5);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(String(filteredItems.length), 18 + boxW + gap, y + 13);
+
+      // Count unique clients
+      const uniqueClients = new Set(filteredItems.map(i => getClientKey(i.empresa)));
+      doc.setFillColor(59, 130, 246); // blue
+      doc.roundedRect(14 + (boxW + gap) * 2, y, boxW, boxH, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.text("CLIENTES", 18 + (boxW + gap) * 2, y + 5);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(String(uniqueClients.size), 18 + (boxW + gap) * 2, y + 13);
+
+      y += boxH + 6;
+
+      // Main table
+      const ETAPA_SHORT: Record<string, string> = {
+        primeiraCobranca: "1\u00AA Cob",
+        segundaCobranca: "2\u00AA Cob",
+        terceiraCobranca: "3\u00AA Cob",
+        acaoFinal: "Final",
+      };
+
+      const tableData = filteredItems.map((item) => {
+        const etapas = [
+          { field: "primeiraCobranca", value: item.primeiraCobranca },
+          { field: "segundaCobranca", value: item.segundaCobranca },
+          { field: "terceiraCobranca", value: item.terceiraCobranca },
+          { field: "acaoFinal", value: item.acaoFinal },
+        ].filter(e => e.value).map(e => `${ETAPA_SHORT[e.field]}: ${formatDate(e.value!)}`);
+
+        return [
+          item.empresa || "-",
+          item.cnpjCpf || "-",
+          formatCurrency(parseFloat(String(item.valor || 0))),
+          item.vencimento ? formatDate(item.vencimento) : "-",
+          String(item.diasVencidos ?? "-"),
+          item.status || "-",
+          item.centroCustos || "-",
+          (item as any).contato || "-",
+          (item as any).email || "-",
+          item.municipio ? `${item.municipio}${item.uf ? "/" + item.uf : ""}` : (item.uf || "-"),
+          etapas.length > 0 ? etapas.join("; ") : "-",
+        ];
+      });
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Empresa", "CNPJ/CPF", "Valor", "Venc.", "Dias", "Status", "Centro", "Contato", "Email", "Cidade/UF", "Etapas Cobran\u00E7a"]],
+        body: tableData,
+        theme: "grid",
+        headStyles: {
+          fillColor: [15, 23, 42],
+          textColor: [255, 255, 255],
+          fontSize: 6.5,
+          fontStyle: "bold",
+          cellPadding: 2,
+        },
+        bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+        columnStyles: {
+          0: { cellWidth: 38 },
+          1: { cellWidth: 24 },
+          2: { cellWidth: 22, halign: "right", fontStyle: "bold" },
+          3: { cellWidth: 16, halign: "center" },
+          4: { cellWidth: 10, halign: "center" },
+          5: { cellWidth: 22, halign: "center" },
+          6: { cellWidth: 18, halign: "center" },
+          7: { cellWidth: 24 },
+          8: { cellWidth: 30 },
+          9: { cellWidth: 22 },
+          10: { cellWidth: "auto" },
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        didParseCell: (data: any) => {
+          if (data.section === "body" && data.column.index === 5) {
+            const val = data.cell.raw;
+            if (val === "Pendente") {
+              data.cell.styles.textColor = [100, 116, 139];
+            } else if (val === "Contatado") {
+              data.cell.styles.textColor = [29, 78, 216];
+              data.cell.styles.fontStyle = "bold";
+            } else if (val === "Em negocia\u00E7\u00E3o") {
+              data.cell.styles.textColor = [180, 120, 20];
+              data.cell.styles.fontStyle = "bold";
+            } else if (val === "Promessa de Pgto") {
+              data.cell.styles.textColor = [21, 128, 61];
+              data.cell.styles.fontStyle = "bold";
+            } else if (val === "Protestado" || val === "Jur\u00EDdico") {
+              data.cell.styles.textColor = [185, 28, 28];
+              data.cell.styles.fontStyle = "bold";
+            }
+          }
+          // Highlight high days overdue
+          if (data.section === "body" && data.column.index === 4) {
+            const days = parseInt(data.cell.raw);
+            if (days >= 90) {
+              data.cell.styles.textColor = [185, 28, 28];
+              data.cell.styles.fontStyle = "bold";
+            } else if (days >= 30) {
+              data.cell.styles.textColor = [180, 120, 20];
+              data.cell.styles.fontStyle = "bold";
+            }
+          }
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      // Footer on all pages
+      const totalPages = doc.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(14, pageH - 12, pageW - 14, pageH - 12);
+        doc.setTextColor(148, 163, 184);
+        doc.setFontSize(6.5);
+        doc.text("Grupo Fox \u2014 Planilha de Cobran\u00E7a", 14, pageH - 7);
+        doc.text(`P\u00E1gina ${p} de ${totalPages}`, pageW - 14 - doc.getTextWidth(`P\u00E1gina ${p} de ${totalPages}`), pageH - 7);
+      }
+
+      const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      doc.save(`Planilha_Cobranca_${datePart}.pdf`);
+      toast.success("PDF exportado com sucesso!");
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+      toast.error("Erro ao gerar PDF");
+    }
   }
 
   function handleCreateBackup() {
@@ -352,8 +553,16 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             </p>
           </div>
         </div>
-        {/* Sync + Backup buttons */}
+        {/* Sync + Backup + Export buttons */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportPdf}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors shadow-sm"
+            title="Exportar planilha de cobran\u00E7a como PDF"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            Exportar PDF
+          </button>
           <button
             onClick={handleSyncFromInadimplencia}
             disabled={syncFromInadimplencia.isPending}
@@ -691,7 +900,6 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                   { label: "CNPJ/CPF", field: "cnpjCpf", value: item.cnpjCpf },
                                   { label: "Município", field: "municipio", value: item.municipio },
                                   { label: "UF", field: "uf", value: item.uf },
-                                  { label: "Região", field: "regiao", value: (item as any).regiao },
                                   { label: "Contato", field: "contato", value: (item as any).contato },
                                   { label: "Email", field: "email", value: (item as any).email },
                                   { label: "Centro", field: "centroCustos", value: item.centroCustos },
