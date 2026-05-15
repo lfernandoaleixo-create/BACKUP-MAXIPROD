@@ -728,6 +728,99 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         </div>
       )}
 
+      {/* Card resumo do centro selecionado */}
+      {centerFilter !== "todos" && summary && (() => {
+        const centerData = summary.byCenter[centerFilter];
+        if (!centerData) return null;
+        const centerItems = (items || []).filter(i => i.centroCustos === centerFilter);
+        const centerValor = centerItems.reduce((s, i) => s + parseFloat(String(i.valor || 0)), 0);
+        const uniqueClientsCenter = new Set(centerItems.map(i => getClientKey(i.empresa)));
+        // Top 5 clientes por valor
+        const clientTotals: Record<string, number> = {};
+        centerItems.forEach(i => {
+          const key = i.empresa || "Desconhecido";
+          clientTotals[key] = (clientTotals[key] || 0) + parseFloat(String(i.valor || 0));
+        });
+        const topClients = Object.entries(clientTotals).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        // Status breakdown
+        const statusBreak: Record<string, { count: number; valor: number }> = {};
+        centerItems.forEach(i => {
+          const st = i.status || "Pendente";
+          if (!statusBreak[st]) statusBreak[st] = { count: 0, valor: 0 };
+          statusBreak[st].count++;
+          statusBreak[st].valor += parseFloat(String(i.valor || 0));
+        });
+        return (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-blue-900 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-blue-600" />
+                Resumo: {centerFilter}
+              </h3>
+              <button
+                onClick={() => {
+                  setCenterFilter(centerFilter);
+                  handleExportPdf();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition-colors shadow-sm"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                Exportar PDF ({centerFilter})
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+                <div className="text-[10px] text-slate-500 uppercase font-medium">Total em Aberto</div>
+                <div className="text-lg font-bold text-emerald-700">{formatCurrency(centerValor)}</div>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+                <div className="text-[10px] text-slate-500 uppercase font-medium">Títulos</div>
+                <div className="text-lg font-bold text-slate-800">{centerItems.length}</div>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-blue-100 shadow-sm">
+                <div className="text-[10px] text-slate-500 uppercase font-medium">Clientes</div>
+                <div className="text-lg font-bold text-blue-700">{uniqueClientsCenter.size}</div>
+              </div>
+            </div>
+            {/* Top clientes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-600 uppercase mb-1.5">Top 5 Clientes (por valor)</h4>
+                <div className="space-y-1">
+                  {topClients.map(([name, val], idx) => (
+                    <div key={name} className="flex items-center justify-between bg-white rounded-md px-2 py-1 border border-slate-100">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] font-bold text-blue-600 w-4">{idx + 1}.</span>
+                        <span className="text-[10px] text-slate-700 truncate max-w-[160px]" title={name}>{name}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-700">{formatCurrency(val)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-600 uppercase mb-1.5">Distribuição por Status</h4>
+                <div className="space-y-1">
+                  {Object.entries(statusBreak).sort((a, b) => b[1].valor - a[1].valor).slice(0, 5).map(([st, d]) => {
+                    const cfg = getStatusConfig(st);
+                    return (
+                      <div key={st} className="flex items-center justify-between bg-white rounded-md px-2 py-1 border border-slate-100">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[9px] ${cfg.text}`}>{cfg.icon}</span>
+                          <span className="text-[10px] text-slate-700">{cfg.label}</span>
+                          <span className="text-[9px] text-slate-400">({d.count})</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-600">{formatCurrency(d.valor)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

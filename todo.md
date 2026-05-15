@@ -3751,3 +3751,5 @@
 - [x] Serragem/Rojão: corrigir "Total para Divisão à Receber" — usar notaFiscalId (ID único) ao invés de documentoVinculadoNumero para cruzamento preciso — valor correto R$ 4.802,40 (SERRAGEM)
 - [x] Planilha de Cobrança: adicionar checkbox "Cobrança Pausada" em cada linha de etapa de cobrança (ao lado do seletor de data)
 - [x] Planilha de Cobrança: quando "Cobrança Pausada" estiver marcada, mostrar indicação visual no card do cliente (texto laranja "cobrança pausada")
+- [x] Planilha de Cobrança: card resumo ao selecionar centro de custos (BAMBU, MADEIRA, ROJÃO, SERRAGEM, Outros) com total títulos, valor total, principais clientes
+- [x] Planilha de Cobrança: botão exportar PDF filtrado por centro de custos selecionado
