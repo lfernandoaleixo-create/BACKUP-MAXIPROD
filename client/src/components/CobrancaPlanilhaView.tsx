@@ -280,6 +280,9 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
       toast.error("Operador não identificado");
       return;
     }
+    if (!confirm("Tem certeza que deseja criar um backup instantâneo? Esta ação irá salvar uma cópia completa dos dados atuais da planilha.")) {
+      return;
+    }
     createBackup.mutate({ createdBy: operator.name });
   }
 
