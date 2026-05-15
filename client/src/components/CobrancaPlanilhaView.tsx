@@ -971,24 +971,24 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
       )}
 
       {/* Resumo Visual - Títulos, Valor, Clientes */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-red-50 border border-red-200">
-          <FileText className="w-5 h-5 text-red-500" />
-          <div>
-            <span className="text-2xl font-bold text-red-600">{liveStats ? liveStats.totalTitulos : filteredItems.length}</span>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl bg-red-50 border border-red-200">
+          <FileText className="w-5 h-5 text-red-500 shrink-0" />
+          <div className="min-w-0">
+            <span className="text-xl sm:text-2xl font-bold text-red-600">{liveStats ? liveStats.totalTitulos : filteredItems.length}</span>
             <span className="text-xs text-red-500 ml-1.5">títulos vencidos</span>
           </div>
         </div>
-        <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-red-50 border border-red-200">
-          <DollarSign className="w-5 h-5 text-red-500" />
-          <div>
-            <span className="text-lg font-bold text-red-600">{formatCurrency(liveStats ? liveStats.totalValor : totalValor)}</span>
+        <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl bg-red-50 border border-red-200">
+          <DollarSign className="w-5 h-5 text-red-500 shrink-0" />
+          <div className="min-w-0">
+            <span className="text-base sm:text-lg font-bold text-red-600 truncate block">{formatCurrency(liveStats ? liveStats.totalValor : totalValor)}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-red-50 border border-red-200">
-          <Users className="w-5 h-5 text-red-500" />
-          <div>
-            <span className="text-2xl font-bold text-red-600">{uniqueClients.size}</span>
+        <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl bg-red-50 border border-red-200">
+          <Users className="w-5 h-5 text-red-500 shrink-0" />
+          <div className="min-w-0">
+            <span className="text-xl sm:text-2xl font-bold text-red-600">{uniqueClients.size}</span>
             <span className="text-xs text-red-500 ml-1.5">clientes</span>
           </div>
         </div>

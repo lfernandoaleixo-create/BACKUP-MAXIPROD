@@ -3776,3 +3776,5 @@
 - [x] Somar coluna "Valor Recebido" para Rojão e Serragem separadamente
 - [x] Aplicar lógica de recebidos do Rojão também para Serragem na aba Análise Serragem/Rojão
 - [x] Mostrar total de Valor Recebido por segmento no frontend
+- [x] Corrigir layout mobile dos cards de resumo (títulos, valor, clientes) na Planilha de Cobrança - texto cortado
+- [x] Mensagem verde no PDF Decisão aparece corretamente para qualquer cliente marcado como pago via botão 'Marcar como Pago'
