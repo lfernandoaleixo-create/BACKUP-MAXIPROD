@@ -386,15 +386,28 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           { field: "acaoFinal", value: item.acaoFinal },
         ].filter(e => e.value).map(e => `${ETAPA_SHORT[e.field]}: ${formatDate(e.value!)}`);
 
+        // Contatos: principal + adicionais
+        const mainPhone = ((item as any).contato || "").trim();
+        const extraPhones = Array.isArray((item as any).contatosAdicionais) 
+          ? ((item as any).contatosAdicionais as string[]).filter(p => p.trim() !== mainPhone)
+          : [];
+        const allPhones = mainPhone ? [mainPhone, ...extraPhones].join(" / ") : (extraPhones.length > 0 ? extraPhones.join(" / ") : "-");
+        
+        // Tipo protesto por extenso
+        const tipoProtesto = (item.tipo || "").toUpperCase().includes("COM PROTESTO") ? "COM PROTESTO" : "SEM PROTESTO";
+        
         return [
           item.empresa || "-",
           item.cnpjCpf || "-",
           formatCurrency(parseFloat(String(item.valor || 0))),
           item.vencimento ? formatDate(item.vencimento) : "-",
           String(item.diasVencidos ?? "-"),
+          tipoProtesto,
+          (item as any).formaCobranca || "-",
+          (item as any).vendedor || "-",
           item.status || "-",
           item.centroCustos || "-",
-          (item as any).contato || "-",
+          allPhones,
           (item as any).email || "-",
           item.municipio ? `${item.municipio}${item.uf ? "/" + item.uf : ""}` : (item.uf || "-"),
           etapas.length > 0 ? etapas.join("; ") : "-",
@@ -403,33 +416,46 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
 
       autoTable(doc, {
         startY: y,
-        head: [["Empresa", "CNPJ/CPF", "Valor", "Venc.", "Dias", "Status", "Centro", "Contato", "Email", "Cidade/UF", "Etapas Cobran\u00E7a"]],
+        head: [["Empresa", "CNPJ/CPF", "Valor", "Venc.", "Dias", "Protesto", "Forma Cob.", "Vendedor", "Status", "Centro", "Contatos", "Email", "Cidade/UF", "Etapas"]],
         body: tableData,
         theme: "grid",
         headStyles: {
           fillColor: [15, 23, 42],
           textColor: [255, 255, 255],
-          fontSize: 6.5,
+          fontSize: 5.5,
           fontStyle: "bold",
-          cellPadding: 2,
+          cellPadding: 1.5,
         },
-        bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+        bodyStyles: { fontSize: 5.5, cellPadding: 1.2 },
         columnStyles: {
-          0: { cellWidth: 38 },
-          1: { cellWidth: 24 },
-          2: { cellWidth: 22, halign: "right", fontStyle: "bold" },
-          3: { cellWidth: 16, halign: "center" },
-          4: { cellWidth: 10, halign: "center" },
-          5: { cellWidth: 22, halign: "center" },
-          6: { cellWidth: 18, halign: "center" },
-          7: { cellWidth: 24 },
-          8: { cellWidth: 30 },
-          9: { cellWidth: 22 },
-          10: { cellWidth: "auto" },
+          0: { cellWidth: 30 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 18, halign: "right", fontStyle: "bold" },
+          3: { cellWidth: 14, halign: "center" },
+          4: { cellWidth: 8, halign: "center" },
+          5: { cellWidth: 18, halign: "center" },
+          6: { cellWidth: 16, halign: "center" },
+          7: { cellWidth: 18 },
+          8: { cellWidth: 18, halign: "center" },
+          9: { cellWidth: 14, halign: "center" },
+          10: { cellWidth: 28 },
+          11: { cellWidth: 26 },
+          12: { cellWidth: 18 },
+          13: { cellWidth: "auto" },
         },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         didParseCell: (data: any) => {
-          if (data.section === "body" && data.column.index === 5) {
+          // Colorir coluna Protesto (col 5)
+          if (data.section === 'body' && data.column.index === 5) {
+            if (data.cell.raw === 'COM PROTESTO') {
+              data.cell.styles.textColor = [185, 28, 28];
+              data.cell.styles.fontStyle = 'bold';
+            } else {
+              data.cell.styles.textColor = [21, 128, 61];
+            }
+          }
+          // Colorir coluna Status (col 8)
+          if (data.section === "body" && data.column.index === 8) {
             const val = data.cell.raw;
             if (val === "Pendente") {
               data.cell.styles.textColor = [100, 116, 139];
@@ -447,7 +473,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
               data.cell.styles.fontStyle = "bold";
             }
           }
-          // Highlight high days overdue
+          // Highlight high days overdue (col 4)
           if (data.section === "body" && data.column.index === 4) {
             const days = parseInt(data.cell.raw);
             if (days >= 90) {
@@ -863,7 +889,9 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     {sortBy === "diasVencidos" ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />) : null}
                   </button>
                 </th>
-                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[60px]">Tipo</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[90px]">Tipo</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[80px]">Forma Cob.</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[80px]">Vendedor</th>
                 <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[70px]">Centro</th>
                 <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[120px]">Status</th>
                 <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[60px]">1ª Cob</th>
@@ -876,7 +904,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             <tbody>
               {filteredItems.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-slate-400">
+                  <td colSpan={14} className="py-12 text-center text-slate-400">
                     <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p>Nenhum título encontrado</p>
                   </td>
@@ -892,7 +920,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     {/* Linha divisória entre clientes diferentes */}
                     {isNewClient && (
                       <tr>
-                        <td colSpan={12} className="p-0">
+                        <td colSpan={14} className="p-0">
                           <div className="h-[3px] bg-gradient-to-r from-slate-300 via-slate-400 to-slate-300" />
                         </td>
                       </tr>
@@ -935,12 +963,39 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                           {item.diasVencidos || 0}
                         </span>
                       </td>
-                      {/* Tipo */}
+                      {/* Tipo (Protesto) */}
                       <td className="text-center px-2 py-2.5">
-                        <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${
-                          item.tipo === "Com protesto" ? "bg-red-50 text-red-600 border border-red-200" : "bg-slate-50 text-slate-500 border border-slate-200"
+                        <span className={`text-[9px] font-bold px-2 py-1 rounded-md whitespace-nowrap ${
+                          (item.tipo || "").toUpperCase().includes("COM PROTESTO") 
+                            ? "bg-red-100 text-red-700 border-2 border-red-400" 
+                            : "bg-emerald-50 text-emerald-700 border-2 border-emerald-300"
                         }`}>
-                          {item.tipo === "Com protesto" ? "Protesto" : item.tipo === "Sem protesto" ? "S/ Prot." : item.tipo || "-"}
+                          {(item.tipo || "").toUpperCase().includes("COM PROTESTO") ? "COM PROTESTO" : "SEM PROTESTO"}
+                        </span>
+                      </td>
+                      {/* Forma de Cobrança */}
+                      <td className="text-center px-2 py-2.5">
+                        <span className="text-[9px] font-medium text-slate-600 max-w-[80px] truncate block" title={(item as any).formaCobranca || "-"}>
+                          {(() => {
+                            const fc = ((item as any).formaCobranca || "").trim();
+                            if (!fc) return "-";
+                            // Simplificar: PIX..., Boleto..., Cheque..., etc.
+                            const upper = fc.toUpperCase();
+                            if (upper.startsWith("PIX")) return "PIX";
+                            if (upper.startsWith("BOLETO")) return "BOLETO";
+                            if (upper.startsWith("CHEQUE")) return "CHEQUE";
+                            if (upper.startsWith("DEPOSITO") || upper.startsWith("DEPÓSITO")) return "DEPÓSITO";
+                            if (upper.startsWith("TRANSFER")) return "TRANSFERÊNCIA";
+                            if (upper.startsWith("CARTÃO") || upper.startsWith("CARTAO")) return "CARTÃO";
+                            if (upper.startsWith("DINHEIRO")) return "DINHEIRO";
+                            return fc.length > 12 ? fc.substring(0, 12) + "..." : fc;
+                          })()}
+                        </span>
+                      </td>
+                      {/* Vendedor */}
+                      <td className="text-center px-2 py-2.5">
+                        <span className="text-[9px] font-medium text-indigo-700 max-w-[80px] truncate block" title={(item as any).vendedor || "-"}>
+                          {((item as any).vendedor || "-")}
                         </span>
                       </td>
                       {/* Centro */}
@@ -1002,7 +1057,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     {/* Expanded Row - Details */}
                     {isExpanded && (
                       <tr className="bg-slate-50/80">
-                        <td colSpan={12} className="px-4 py-4">
+                        <td colSpan={14} className="px-4 py-4">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Info */}
                             <div className="space-y-2">
@@ -1018,6 +1073,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                   { label: "Contato", field: "contato", value: (item as any).contato },
                                   { label: "Email", field: "email", value: (item as any).email },
                                   { label: "Centro", field: "centroCustos", value: item.centroCustos },
+                                  { label: "Vendedor", field: "vendedor", value: (item as any).vendedor },
+                                  { label: "Forma Cob.", field: "formaCobranca", value: (item as any).formaCobranca },
                                 ].map(f => (
                                   <div key={f.field} className="flex items-center gap-2">
                                     <span className="font-medium text-slate-500 w-[70px] shrink-0">{f.label}:</span>
@@ -1038,6 +1095,36 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                     )}
                                   </div>
                                 ))}
+                                {/* Contatos Adicionais do Maxiprod */}
+                                {(() => {
+                                  const contatos = (item as any).contatosAdicionais;
+                                  if (!contatos || (Array.isArray(contatos) && contatos.length === 0)) return null;
+                                  const phones = Array.isArray(contatos) ? contatos : [];
+                                  if (phones.length === 0) return null;
+                                  // Filtrar telefone principal se já exibido
+                                  const mainPhone = ((item as any).contato || "").trim();
+                                  const extras = phones.filter((p: string) => p.trim() !== mainPhone);
+                                  if (extras.length === 0) return null;
+                                  return (
+                                    <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                                      <span className="font-bold text-blue-700 text-[10px] flex items-center gap-1 mb-1">
+                                        <Phone className="w-3 h-3" /> Contatos Adicionais (Maxiprod)
+                                      </span>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {extras.map((phone: string, idx: number) => (
+                                          <a
+                                            key={idx}
+                                            href={`tel:${phone.replace(/[^0-9+]/g, "")}`}
+                                            className="inline-flex items-center gap-1 text-[10px] bg-white px-2 py-0.5 rounded border border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors"
+                                          >
+                                            <Phone className="w-2.5 h-2.5" />
+                                            {phone}
+                                          </a>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
                             {/* Cobrança Timeline */}
