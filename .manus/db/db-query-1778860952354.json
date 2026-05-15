@@ -1,0 +1,112 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'cobranca_planilha' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'cobranca_planilha' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "empresa"
+    },
+    {
+      "COLUMN_NAME": "descricao"
+    },
+    {
+      "COLUMN_NAME": "cnpj_cpf"
+    },
+    {
+      "COLUMN_NAME": "municipio"
+    },
+    {
+      "COLUMN_NAME": "uf"
+    },
+    {
+      "COLUMN_NAME": "pais"
+    },
+    {
+      "COLUMN_NAME": "centro_custos"
+    },
+    {
+      "COLUMN_NAME": "valor"
+    },
+    {
+      "COLUMN_NAME": "vencimento"
+    },
+    {
+      "COLUMN_NAME": "dias_vencidos"
+    },
+    {
+      "COLUMN_NAME": "tipo"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "promessa_pgto"
+    },
+    {
+      "COLUMN_NAME": "primeira_cobranca"
+    },
+    {
+      "COLUMN_NAME": "sem_acao_1"
+    },
+    {
+      "COLUMN_NAME": "segunda_cobranca"
+    },
+    {
+      "COLUMN_NAME": "sem_acao_2"
+    },
+    {
+      "COLUMN_NAME": "terceira_cobranca"
+    },
+    {
+      "COLUMN_NAME": "sem_acao_3"
+    },
+    {
+      "COLUMN_NAME": "acao_final"
+    },
+    {
+      "COLUMN_NAME": "observacoes"
+    },
+    {
+      "COLUMN_NAME": "updated_by"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "ar_id"
+    },
+    {
+      "COLUMN_NAME": "ativo"
+    },
+    {
+      "COLUMN_NAME": "contato"
+    },
+    {
+      "COLUMN_NAME": "email"
+    },
+    {
+      "COLUMN_NAME": "regiao"
+    },
+    {
+      "COLUMN_NAME": "etapas_pausadas"
+    },
+    {
+      "COLUMN_NAME": "forma_cobranca"
+    },
+    {
+      "COLUMN_NAME": "vendedor"
+    },
+    {
+      "COLUMN_NAME": "contatos_adicionais"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nempresa\ndescricao\ncnpj_cpf\nmunicipio\nuf\npais\ncentro_custos\nvalor\nvencimento\ndias_vencidos\ntipo\nstatus\npromessa_pgto\nprimeira_cobranca\nsem_acao_1\nsegunda_cobranca\nsem_acao_2\nterceira_cobranca\nsem_acao_3\nacao_final\nobservacoes\nupdated_by\ncreatedAt\nupdatedAt\nar_id\nativo\ncontato\nemail\nregiao\netapas_pausadas\nforma_cobranca\nvendedor\ncontatos_adicionais\n",
+  "stderr": "",
+  "execution_time_ms": 257
+}

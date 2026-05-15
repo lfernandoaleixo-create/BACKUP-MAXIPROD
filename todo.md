@@ -3751,3 +3751,9 @@
 - [x] Serragem/Rojão: corrigir "Total para Divisão à Receber" — usar notaFiscalId (ID único) ao invés de documentoVinculadoNumero para cruzamento preciso — valor correto R$ 4.802,40 (SERRAGEM)
 - [x] Planilha de Cobrança: adicionar checkbox "Cobrança Pausada" em cada linha de etapa de cobrança (ao lado do seletor de data)
 - [x] Planilha de Cobrança: quando "Cobrança Pausada" estiver marcada, mostrar indicação visual no card do cliente (texto laranja "cobrança pausada")
+- [ ] Reimplementar: adicionar colunas forma_cobranca, vendedor, contatos_adicionais no banco (com segurança)
+- [ ] Reimplementar: puxar forma de cobrança (PIX, Cheque, Boleto) da inadimplência no sync
+- [ ] Reimplementar: puxar nome do vendedor via GraphQL no sync
+- [ ] Reimplementar: puxar múltiplos contatos/telefones do Maxiprod GraphQL no sync
+- [ ] Reimplementar: escrever "COM PROTESTO" e "SEM PROTESTO" por extenso com cores diferentes
+- [ ] Reimplementar: exibir novos campos na tabela, row expandida e PDF de exportação

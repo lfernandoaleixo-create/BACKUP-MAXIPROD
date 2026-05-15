@@ -1,0 +1,14 @@
+{
+  "query": "SELECT ativo, COUNT(*) as qtd FROM cobranca_planilha GROUP BY ativo;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ativo, COUNT(*) as qtd FROM cobranca_planilha GROUP BY ativo;",
+  "rows": [
+    {
+      "ativo": "1",
+      "qtd": "103"
+    }
+  ],
+  "messages": [],
+  "stdout": "ativo\tqtd\n1\t103\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}
