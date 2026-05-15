@@ -4595,6 +4595,38 @@ function DecisionPdfDialog({ title, operatorName, onClose }: {
     }
     setIsGenerating(true);
     try {
+      // Buscar dados da Planilha de Cobrança para enriquecer o PDF
+      let planilhaCobranca: any = null;
+      try {
+        const planilhaData = await utils.cobrancaPlanilha.getByEmpresa.fetch({ empresa: title.cliente });
+        if (planilhaData && planilhaData.items.length > 0) {
+          const item = planilhaData.items[0];
+          const etapas = [
+            { etapa: "primeiraCobranca", data: item.primeiraCobranca },
+            { etapa: "semAcao1", data: item.semAcao1 },
+            { etapa: "segundaCobranca", data: item.segundaCobranca },
+            { etapa: "semAcao2", data: item.semAcao2 },
+            { etapa: "terceiraCobranca", data: item.terceiraCobranca },
+            { etapa: "semAcao3", data: item.semAcao3 },
+            { etapa: "acaoFinal", data: item.acaoFinal },
+          ];
+          planilhaCobranca = {
+            etapas,
+            observacoes: planilhaData.observacoes.map(o => ({
+              etapa: o.etapa,
+              observacao: o.observacao,
+              registradoPor: o.registradoPor,
+              createdAt: String(o.createdAt),
+            })),
+            contato: item.contato,
+            email: item.email,
+          };
+        }
+      } catch (e) {
+        // Se não encontrar dados da planilha, segue sem enriquecer
+        console.warn("Dados da planilha de cobrança não encontrados:", e);
+      }
+
       const result = await generateDecisionPdf({
         title: {
           id: title.id,
@@ -4621,6 +4653,7 @@ function DecisionPdfDialog({ title, operatorName, onClose }: {
           status: s.status,
         })),
         operatorName,
+        planilhaCobranca,
       });
 
       // Download the PDF

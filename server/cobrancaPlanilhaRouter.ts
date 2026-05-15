@@ -2,7 +2,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders } from "../drizzle/schema";
-import { eq, desc, sql, and, inArray, lte, asc, isNull } from "drizzle-orm";
+import { eq, desc, sql, and, inArray, lte, asc, isNull, like } from "drizzle-orm";
 
 /**
  * Router para a Planilha de Cobrança interativa.
@@ -887,5 +887,51 @@ export const cobrancaPlanilhaRouter = router({
         map[r.planilhaId] = Number(r.count);
       }
       return map;
+    }),
+
+  /** Buscar dados da planilha de cobrança por nome de empresa (para enriquecer PDF) */
+  getByEmpresa: protectedProcedure
+    .input(z.object({ empresa: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      // Buscar títulos ativos dessa empresa
+      const items = await db.select().from(cobrancaPlanilha)
+        .where(and(
+          like(cobrancaPlanilha.empresa, `%${input.empresa}%`),
+          eq(cobrancaPlanilha.ativo, true)
+        ));
+      if (items.length === 0) return null;
+      // Buscar observações de etapa de todos os títulos encontrados
+      const planilhaIds = items.map(i => i.id);
+      const obs = await db.select().from(cobrancaEtapaObs)
+        .where(inArray(cobrancaEtapaObs.planilhaId, planilhaIds))
+        .orderBy(cobrancaEtapaObs.createdAt);
+      return {
+        items: items.map(i => ({
+          id: i.id,
+          empresa: i.empresa,
+          valor: i.valor,
+          vencimento: i.vencimento,
+          diasVencidos: i.diasVencidos,
+          tipo: i.tipo,
+          status: i.status,
+          primeiraCobranca: i.primeiraCobranca,
+          semAcao1: i.semAcao1,
+          segundaCobranca: i.segundaCobranca,
+          semAcao2: i.semAcao2,
+          terceiraCobranca: i.terceiraCobranca,
+          semAcao3: i.semAcao3,
+          acaoFinal: i.acaoFinal,
+          contato: i.contato,
+          email: i.email,
+        })),
+        observacoes: obs.map(o => ({
+          etapa: o.etapa,
+          observacao: o.observacao,
+          registradoPor: o.registradoPor,
+          createdAt: o.createdAt,
+        })),
+      };
     }),
 });

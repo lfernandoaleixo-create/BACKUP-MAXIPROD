@@ -102,6 +102,12 @@ export type DecisionPdfInput = {
     status: string;
   }>;
   operatorName: string;
+  planilhaCobranca?: {
+    etapas: Array<{ etapa: string; data: string | null }>;
+    observacoes: Array<{ etapa: string; observacao: string; registradoPor: string; createdAt: string }>;
+    contato?: string | null;
+    email?: string | null;
+  } | null;
 };
 
 export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ blob: Blob; protocolo: string; base64: string }> {
@@ -380,13 +386,74 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
     y += 20;
   }
 
+  // ── Etapas de Cobrança (dados da Planilha de Cobrança) ──
+  if (input.planilhaCobranca && input.planilhaCobranca.etapas.length > 0) {
+    const ETAPA_LABELS: Record<string, string> = {
+      primeiraCobranca: "1ª Cobrança",
+      semAcao1: "Intervalo 1",
+      segundaCobranca: "2ª Cobrança",
+      semAcao2: "Intervalo 2",
+      terceiraCobranca: "3ª Cobrança",
+      semAcao3: "Intervalo 3",
+      acaoFinal: "Ação Final",
+    };
+    const etapasComData = input.planilhaCobranca.etapas.filter(e => e.data);
+    if (etapasComData.length > 0) {
+      if (y + 12 > 270) { doc.addPage(); y = 15; }
+      doc.setFillColor(59, 130, 246); // blue-500
+      doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text("ETAPAS DE COBRAN\u00C7A REALIZADAS", margin + 4, y + 5.5);
+      y += 11;
+
+      // Montar tabela com etapas + observações inline
+      const etapaBody = etapasComData.map(e => {
+        const label = ETAPA_LABELS[e.etapa] || e.etapa;
+        const obsForEtapa = input.planilhaCobranca?.observacoes?.filter(o => o.etapa === e.etapa) || [];
+        const obsText = obsForEtapa.length > 0 ? obsForEtapa.map(o => o.observacao).join("; ") : "—";
+        return [label, e.data || "—", obsText];
+      });
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Etapa", "Data", "Observação"]],
+        body: etapaBody,
+        margin: { left: margin, right: margin },
+        styles: {
+          fontSize: 7.5,
+          cellPadding: 2,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1,
+          textColor: COLORS.darkSlate,
+        },
+        headStyles: {
+          fillColor: [96, 165, 250] as any, // blue-400
+          textColor: COLORS.white,
+          fontStyle: "bold",
+          fontSize: 7.5,
+        },
+        alternateRowStyles: {
+          fillColor: [239, 246, 255] as any, // blue-50
+        },
+        columnStyles: {
+          0: { cellWidth: 28, fontStyle: "bold" },
+          1: { cellWidth: 22, halign: "center" },
+          2: { cellWidth: "auto" },
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 4;
+    }
+  }
+
   // ── Próximo Passo ──
   const vendorName = title.vendedor || "Vendedor responsável";
   let respText: string;
   if (isComProtesto) {
-    respText = `Todos os passos de cobrança foram executados corretamente. Como a decisão do vendedor ${vendorName} foi de Protesto, esse cliente será encaminhado para protesto em cartório.`;
+    respText = `Todas as 3 ações de cobrança foram realizadas corretamente pelo responsável. Como a decisão do vendedor ${vendorName} foi de Protesto, esse cliente será encaminhado para protesto em cartório.`;
   } else {
-    respText = `Todos os passos de cobrança foram executados corretamente. Como o vendedor responsável ${vendorName} escolheu não protestar, cabe a ele escolher qual o próximo passo a ser feito, para que a equipe de cobrança dê continuidade no processo.`;
+    respText = `Todas as 3 ações de cobrança foram realizadas corretamente pelo responsável. Como o vendedor responsável ${vendorName} escolheu não protestar, fica a cargo dele definir a próxima medida a ser tomada para que a equipe de cobrança dê continuidade no processo.`;
   }
   
   // Calculate box height dynamically based on text

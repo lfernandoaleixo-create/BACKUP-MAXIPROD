@@ -3743,3 +3743,5 @@
 - [x] Importar comentários/observações da planilha Excel do Thiago para os campos corretos da Planilha de Cobrança
 - [x] Planilha de Cobrança: remover etapa "Promessa Pgto" das Etapas de Cobrança
 - [x] Planilha de Cobrança: tornar histórico de observações editável (editar e excluir)
+- [x] PDF Cobrança: enriquecer PRÓXIMOS PDFs com dados da Planilha de Cobrança (datas, observações, ações) + mensagem protesto/sem protesto (1 folha) — não alterar PDFs já gerados
+- [x] Serragem/Rojão: corrigir "Total para Divisão à Receber" para puxar do Maxiprod (contas a receber com estado configurável serragem/rojao + estado "A receber")
