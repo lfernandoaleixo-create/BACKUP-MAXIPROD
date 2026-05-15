@@ -466,12 +466,15 @@ export const cobrancaPlanilhaRouter = router({
    * 1. Busca TODOS os títulos vencidos da inadimplência (accounts_receivable + collection_actions)
    * 2. Cruza com a planilha por arId (chave primária) — mais confiável que nome+data+valor
    * 3. Para títulos sem arId: tenta match por empresa+vencimento+valorAReceber
-   * 4. Atualiza: valor, status, dias vencidos, tipo — SEM apagar marcações manuais
+   * 4. Atualiza: valor, dias vencidos — SEM sobrescrever status, tipo ou marcações manuais
    * 5. Adiciona novos títulos que apareceram na inadimplência
    * 6. Títulos pagos (não mais na inadimplência) ficam intactos com marcação
    * 
-   * PRESERVA: observacoes, promessaPgto, primeiraCobranca, semAcao1, segundaCobranca,
-   *           semAcao2, terceiraCobranca, semAcao3, acaoFinal, centroCustos
+   * PRESERVA (NUNCA sobrescreve): status, tipo, observacoes, promessaPgto, primeiraCobranca,
+   *           semAcao1, segundaCobranca, semAcao2, terceiraCobranca, semAcao3, acaoFinal, centroCustos
+   * 
+   * REGRA CRÍTICA: O status e tipo que o Thiago/Thalita marcarem ficam FIXOS
+   *               até eles mudarem manualmente. A sincronização NUNCA sobrescreve esses campos.
    */
   syncFromInadimplencia: publicProcedure
     .input(z.object({
@@ -759,12 +762,20 @@ export const cobrancaPlanilhaRouter = router({
         const updateData: Record<string, any> = {
           valor: String(inad.valorAReceber),
           diasVencidos: inad.diasVencidos,
-          tipo: inad.tipo,
           arId: inad.arId,
           updatedBy: `Sync: ${input.updatedBy}`,
         };
         
-        updateData.status = inad.status;
+        // REGRA CRÍTICA: NUNCA sobrescrever campos editados manualmente.
+        // O status e tipo que o Thiago/Thalita marcarem ficam FIXOS até eles mudarem manualmente.
+        // Apenas preencher se ainda estiver vazio/null.
+        if (!match.status || match.status === '') {
+          updateData.status = inad.status;
+        }
+        if (!match.tipo || match.tipo === '') {
+          updateData.tipo = inad.tipo;
+        }
+        // Contar se houve diferença (apenas para log, sem sobrescrever)
         if (match.status !== inad.status) {
           statusUpdated++;
         }
@@ -834,12 +845,18 @@ export const cobrancaPlanilhaRouter = router({
           const updateData: Record<string, any> = {
             valor: String(inad.valorAReceber),
             diasVencidos: inad.diasVencidos,
-            tipo: inad.tipo,
             arId: inad.arId,
             updatedBy: `Sync: ${input.updatedBy}`,
           };
           
-          updateData.status = inad.status;
+          // REGRA CRÍTICA: NUNCA sobrescrever campos editados manualmente.
+          // Apenas preencher se ainda estiver vazio/null.
+          if (!match.status || match.status === '') {
+            updateData.status = inad.status;
+          }
+          if (!match.tipo || match.tipo === '') {
+            updateData.tipo = inad.tipo;
+          }
           if (match.status !== inad.status) {
             statusUpdated++;
           }

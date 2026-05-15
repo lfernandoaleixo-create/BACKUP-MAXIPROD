@@ -1153,7 +1153,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     <span className={`text-[10px] font-semibold ${style.accent}`}>{formatCurrency(seg.totalValor)}</span>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className={`text-[9px] ${style.accent} opacity-70`}>t\u00edtulos</span>
+                    <span className={`text-[9px] ${style.accent} opacity-70`}>títulos</span>
                     <span className={`text-[9px] flex items-center gap-0.5 ${isOpen ? style.text : style.accent}`}>
                       {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       {isOpen ? "Fechar" : "Detalhes"}
@@ -1178,8 +1178,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       {style.icon}
                     </div>
                     <div>
-                      <h3 className={`font-bold text-sm ${style.text}`}>Inadimpl\u00eancia \u2014 {seg.center}</h3>
-                      <p className={`text-xs ${style.accent}`}>{seg.items.length} t\u00edtulos \u2022 {seg.uniqueClients.size} clientes \u2022 {formatCurrency(seg.totalValor)}</p>
+                      <h3 className={`font-bold text-sm ${style.text}`}>Inadimplência — {seg.center}</h3>
+                      <p className={`text-xs ${style.accent}`}>{seg.items.length} títulos • {seg.uniqueClients.size} clientes • {formatCurrency(seg.totalValor)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

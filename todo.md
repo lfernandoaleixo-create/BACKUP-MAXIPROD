@@ -3769,3 +3769,5 @@
 - [x] Detalhamento ao clicar no card de segmento (lista de clientes do segmento)
 - [x] Exportação de relatório PDF por segmento (Bambu / Madeira)
 - [x] Corrigir sobreposição do card Histórico de Observações com os ícones de balão na row expandida
+- [x] Garantir que o status na planilha de cobrança NUNCA seja sobrescrito pela sincronização (fica fixo até mudança manual)
+- [x] Corrigir erro Unicode "t\u00edtulos" aparecendo literalmente nos cards de segmento
