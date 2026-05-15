@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -159,6 +160,12 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     onError: (err) => toast.error(`Erro ao criar backup: ${err.message}`),
   });
   const { data: backups, refetch: refetchBackups } = trpc.cobrancaPlanilha.listBackups.useQuery();
+
+  // Toggle Cobrança Pausada
+  const togglePausada = trpc.cobrancaPlanilha.toggleEtapaPausada.useMutation({
+    onSuccess: () => { refetch(); },
+    onError: (err) => toast.error(err.message),
+  });
 
   // Observações por etapa
   const addEtapaObs = trpc.cobrancaPlanilha.addEtapaObs.useMutation({
@@ -496,14 +503,25 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     syncFromInadimplencia.mutate({ updatedBy: operator.name });
   }
 
-  // Cobrança step display helper
-  function renderCobrancaStep(label: string, value: string | null | undefined) {
-    if (!value) return <span className="text-slate-300 text-[10px]">-</span>;
-    const isDate = /^\d{4}-\d{2}-\d{2}$/.test(value);
-    const isPaused = value.toLowerCase().includes("pausada");
+  // Cobrança step display helper - agora recebe o item para verificar pausa
+  function renderCobrancaStep(label: string, value: string | null | undefined, etapaField?: string, etapasPausadas?: Record<string, boolean> | null) {
+    const isPausedByCheckbox = etapaField && etapasPausadas?.[etapaField];
+    if (!value && !isPausedByCheckbox) return <span className="text-slate-300 text-[10px]">-</span>;
+    if (isPausedByCheckbox) {
+      return (
+        <div className="flex flex-col items-center gap-0.5">
+          {value && /^\d{4}-\d{2}-\d{2}$/.test(value) && (
+            <span className="text-[9px] text-blue-500">{formatDate(value)}</span>
+          )}
+          <span className="text-[9px] font-bold text-amber-600 italic leading-tight">cobrança\npausada</span>
+        </div>
+      );
+    }
+    const isDate = /^\d{4}-\d{2}-\d{2}$/.test(value!);
+    const isPaused = value!.toLowerCase().includes("pausada");
     return (
       <span className={`text-[10px] font-medium ${isPaused ? "text-amber-600 italic" : isDate ? "text-blue-600" : "text-slate-600"}`}>
-        {isDate ? formatDate(value) : value}
+        {isDate ? formatDate(value!) : value}
       </span>
     );
   }
@@ -856,19 +874,19 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       </td>
                       {/* 1ª Cobrança */}
                       <td className="text-center px-2 py-2.5">
-                        {renderCobrancaStep("1ª", item.primeiraCobranca)}
+                        {renderCobrancaStep("1ª", item.primeiraCobranca, "primeiraCobranca", item.etapasPausadas as Record<string, boolean> | null)}
                       </td>
                       {/* 2ª Cobrança */}
                       <td className="text-center px-2 py-2.5">
-                        {renderCobrancaStep("2ª", item.segundaCobranca)}
+                        {renderCobrancaStep("2ª", item.segundaCobranca, "segundaCobranca", item.etapasPausadas as Record<string, boolean> | null)}
                       </td>
                       {/* 3ª Cobrança */}
                       <td className="text-center px-2 py-2.5">
-                        {renderCobrancaStep("3ª", item.terceiraCobranca)}
+                        {renderCobrancaStep("3ª", item.terceiraCobranca, "terceiraCobranca", item.etapasPausadas as Record<string, boolean> | null)}
                       </td>
                       {/* Ação Final */}
                       <td className="text-center px-2 py-2.5">
-                        {renderCobrancaStep("Final", item.acaoFinal)}
+                        {renderCobrancaStep("Final", item.acaoFinal, "acaoFinal", item.etapasPausadas as Record<string, boolean> | null)}
                       </td>
                       {/* Histórico Obs */}
                       <td className="text-center px-2 py-2.5" onClick={e => e.stopPropagation()}>
@@ -878,7 +896,11 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                           title="Ver histórico de observações"
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
-                          {obsCountMap && obsCountMap[item.id] > 0 && (
+                          {/* Bolinha vermelha se tem etapa pausada */}
+                          {Object.values((item.etapasPausadas as Record<string, boolean>) || {}).some(v => v) && (
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
+                          )}
+                          {obsCountMap && obsCountMap[item.id] > 0 && !Object.values((item.etapasPausadas as Record<string, boolean>) || {}).some(v => v) && (
                             <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
                           )}
                         </button>
@@ -940,9 +962,11 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                   { label: "3ª Cobrança", field: "terceiraCobranca", value: item.terceiraCobranca },
                                   { label: "Intervalo", field: "semAcao3", value: item.semAcao3 },
                                   { label: "Ação Final", field: "acaoFinal", value: item.acaoFinal },
-                                ].map(step => (
+                                ].map(step => {
+                                  const isPaused = !!(item.etapasPausadas as Record<string, boolean> | null)?.[step.field];
+                                  return (
                                   <div key={step.field} className="flex items-center gap-2 text-[11px]">
-                                    <div className={`w-2 h-2 rounded-full shrink-0 ${step.value ? "bg-emerald-400" : "bg-slate-200"}`} />
+                                    <div className={`w-2 h-2 rounded-full shrink-0 ${isPaused ? "bg-amber-400" : step.value ? "bg-emerald-400" : "bg-slate-200"}`} />
                                     <span className="font-medium text-slate-500 w-[85px] shrink-0">{step.label}:</span>
                                     {canEdit ? (
                                       <input
@@ -965,6 +989,26 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                         {step.value ? (step.value.match(/^\d{4}-\d{2}-\d{2}$/) ? formatDate(step.value) : step.value) : "-"}
                                       </span>
                                     )}
+                                    {/* Checkbox Cobrança Pausada */}
+                                    <label
+                                      className={`flex items-center gap-1 shrink-0 cursor-pointer select-none rounded px-1.5 py-0.5 border text-[9px] font-semibold transition-colors ${
+                                        isPaused
+                                          ? "bg-amber-50 border-amber-400 text-amber-700"
+                                          : "bg-white border-slate-200 text-slate-400 hover:border-amber-300 hover:text-amber-500"
+                                      }`}
+                                      onClick={e => e.stopPropagation()}
+                                    >
+                                      <Checkbox
+                                        checked={isPaused}
+                                        onCheckedChange={(checked) => {
+                                          if (!canEdit) { toast.error("Sem permissão"); return; }
+                                          togglePausada.mutate({ id: item.id, etapa: step.field, pausada: !!checked, updatedBy: operator!.name });
+                                        }}
+                                        disabled={!canEdit}
+                                        className="w-3 h-3 rounded-sm border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                                      />
+                                      <span>Pausada</span>
+                                    </label>
                                     {/* Botão de observação por etapa */}
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setEtapaObsDialog({ planilhaId: item.id, etapa: step.field, label: step.label }); setNewEtapaObs(""); }}
@@ -974,7 +1018,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                       <MessageSquare className="w-3 h-3" />
                                     </button>
                                   </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                             {/* Observações */}

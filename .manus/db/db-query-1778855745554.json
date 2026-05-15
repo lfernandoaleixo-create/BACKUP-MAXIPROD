@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE cobranca_planilha ADD COLUMN etapas_pausadas JSON DEFAULT NULL COMMENT 'JSON object com campos de etapa como chave e boolean como valor, ex: {\"primeiraCobranca\": true, \"semAcao1\": false}';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute ALTER TABLE cobranca_planilha ADD COLUMN etapas_pausadas JSON DEFAULT NULL COMMENT 'JSON object com campos de etapa como chave e boolean como valor, ex: {\"primeiraCobranca\": true, \"semAcao1\": false}';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 449
+}

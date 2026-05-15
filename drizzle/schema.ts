@@ -1827,6 +1827,8 @@ export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
   contato: varchar("contato", { length: 100 }), // Telefone do cliente
   email: varchar("email", { length: 200 }), // Email do cliente
   regiao: varchar("regiao", { length: 100 }), // Região comercial do cliente
+  // Controle de pausa por etapa (JSON: {primeiraCobranca: true, semAcao1: false, ...})
+  etapasPausadas: json("etapas_pausadas").$type<Record<string, boolean>>().default({}),
   // Controle
   ativo: boolean("ativo").notNull().default(true), // false = título pago/resolvido, não aparece nos cards
   updatedBy: varchar("updated_by", { length: 200 }),

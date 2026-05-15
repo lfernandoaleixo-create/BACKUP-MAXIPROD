@@ -233,6 +233,44 @@ export const cobrancaPlanilhaRouter = router({
     }),
 
   /**
+   * Toggle "Cobrança Pausada" para uma etapa específica de um título.
+   * Armazena no campo JSON etapas_pausadas: { campo: boolean }
+   */
+  toggleEtapaPausada: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      etapa: z.string(),
+      pausada: z.boolean(),
+      updatedBy: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const validEtapas = ['primeiraCobranca', 'semAcao1', 'segundaCobranca', 'semAcao2', 'terceiraCobranca', 'semAcao3', 'acaoFinal'];
+      if (!validEtapas.includes(input.etapa)) {
+        throw new Error(`Etapa '${input.etapa}' inválida`);
+      }
+      
+      // Get current value
+      const [row] = await db.select({ etapasPausadas: cobrancaPlanilha.etapasPausadas })
+        .from(cobrancaPlanilha)
+        .where(eq(cobrancaPlanilha.id, input.id));
+      
+      const current = (row?.etapasPausadas as Record<string, boolean>) || {};
+      const updated = { ...current, [input.etapa]: input.pausada };
+      
+      await db.update(cobrancaPlanilha)
+        .set({
+          etapasPausadas: updated,
+          updatedBy: input.updatedBy,
+        })
+        .where(eq(cobrancaPlanilha.id, input.id));
+      
+      return { success: true, etapasPausadas: updated };
+    }),
+
+  /**
    * Importar dados em lote (para migração inicial da planilha Excel)
    */
   importBatch: publicProcedure

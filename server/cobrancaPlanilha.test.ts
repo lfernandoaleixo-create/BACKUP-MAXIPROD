@@ -352,4 +352,58 @@ describe("cobrancaPlanilha router", () => {
       expect("regiao" in item).toBe(true);
     }
   }, 30000);
+
+  it("toggleEtapaPausada marks and unmarks an etapa as paused", async () => {
+    const items = await caller.cobrancaPlanilha.getAll();
+    if (items.length === 0) return;
+    const item = items[0];
+
+    // Mark primeiraCobranca as paused
+    const result1 = await caller.cobrancaPlanilha.toggleEtapaPausada({
+      id: item.id,
+      etapa: "primeiraCobranca",
+      pausada: true,
+      updatedBy: "test",
+    });
+    expect(result1.success).toBe(true);
+    expect(result1.etapasPausadas.primeiraCobranca).toBe(true);
+
+    // Verify it persisted
+    const updated = await caller.cobrancaPlanilha.getAll();
+    const updatedItem = updated.find(i => i.id === item.id);
+    expect((updatedItem?.etapasPausadas as any)?.primeiraCobranca).toBe(true);
+
+    // Unmark it
+    const result2 = await caller.cobrancaPlanilha.toggleEtapaPausada({
+      id: item.id,
+      etapa: "primeiraCobranca",
+      pausada: false,
+      updatedBy: "test",
+    });
+    expect(result2.success).toBe(true);
+    expect(result2.etapasPausadas.primeiraCobranca).toBe(false);
+  });
+
+  it("toggleEtapaPausada rejects invalid etapa", async () => {
+    const items = await caller.cobrancaPlanilha.getAll();
+    if (items.length === 0) return;
+    const item = items[0];
+
+    await expect(
+      caller.cobrancaPlanilha.toggleEtapaPausada({
+        id: item.id,
+        etapa: "invalidEtapa",
+        pausada: true,
+        updatedBy: "test",
+      })
+    ).rejects.toThrow();
+  });
+
+  it("getAll returns etapasPausadas field", async () => {
+    const items = await caller.cobrancaPlanilha.getAll();
+    if (items.length === 0) return;
+    // etapasPausadas should exist as a field (object or null)
+    const item = items[0] as any;
+    expect("etapasPausadas" in item).toBe(true);
+  });
 });
