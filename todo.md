@@ -3778,3 +3778,4 @@
 - [x] Mostrar total de Valor Recebido por segmento no frontend
 - [x] Corrigir layout mobile dos cards de resumo (títulos, valor, clientes) na Planilha de Cobrança - texto cortado
 - [x] Mensagem verde no PDF Decisão aparece corretamente para qualquer cliente marcado como pago via botão 'Marcar como Pago'
+- [x] Implementar refresh automático do token JWT (renovar sessão silenciosamente antes de expirar para evitar deslogamento frequente)

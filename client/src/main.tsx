@@ -20,6 +20,66 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * Controle de refresh: evita múltiplas tentativas simultâneas de refresh
+ * quando vários erros de auth acontecem ao mesmo tempo.
+ */
+let isRefreshing = false;
+let refreshAttempted = false;
+
+const attemptRefreshBeforeRedirect = async () => {
+  // Se já tentou refresh nesta "sessão de erros", redireciona direto
+  if (refreshAttempted) {
+    window.location.href = getLoginUrl();
+    return;
+  }
+
+  // Se já está fazendo refresh, aguarda
+  if (isRefreshing) return;
+
+  isRefreshing = true;
+  refreshAttempted = true;
+
+  try {
+    // Tenta renovar a sessão silenciosamente
+    const response = await fetch("/api/trpc/auth.refreshSession", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({}),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      // superjson wraps in { result: { data: { json: ... } } }
+      const data = result?.result?.data?.json ?? result?.result?.data ?? result;
+      
+      if (data?.success) {
+        console.log("[Session] Token renovado com sucesso após erro de auth");
+        // Refresh bem-sucedido: invalidar todas as queries para refazer com novo token
+        refreshAttempted = false;
+        queryClient.invalidateQueries();
+        isRefreshing = false;
+        return;
+      }
+    }
+
+    // Refresh falhou: redirecionar para login
+    console.warn("[Session] Refresh falhou, redirecionando para login");
+    window.location.href = getLoginUrl();
+  } catch (error) {
+    console.error("[Session] Erro ao tentar refresh:", error);
+    window.location.href = getLoginUrl();
+  } finally {
+    isRefreshing = false;
+  }
+};
+
+// Resetar flag de tentativa a cada 5 minutos (permite nova tentativa após um tempo)
+setInterval(() => {
+  refreshAttempted = false;
+}, 5 * 60 * 1000);
+
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
@@ -28,7 +88,8 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  window.location.href = getLoginUrl();
+  // Tentar refresh antes de redirecionar para login
+  attemptRefreshBeforeRedirect();
 };
 
 queryClient.getQueryCache().subscribe(event => {

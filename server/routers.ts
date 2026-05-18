@@ -1,5 +1,6 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
@@ -47,6 +48,34 @@ export const appRouter = router({
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
+    }),
+    /**
+     * Refresh silencioso da sessão: verifica se o JWT atual é válido,
+     * emite um novo token com validade renovada (1 ano) e atualiza o cookie.
+     * Chamado periodicamente pelo frontend para manter a sessão ativa.
+     */
+    refreshSession: publicProcedure.mutation(async ({ ctx }) => {
+      // Se o usuário já está autenticado no contexto, basta renovar o token
+      if (!ctx.user) {
+        return { success: false, reason: "not_authenticated" } as const;
+      }
+
+      try {
+        // Criar novo token com validade renovada
+        const newSessionToken = await sdk.createSessionToken(ctx.user.openId, {
+          name: ctx.user.name || "",
+          expiresInMs: ONE_YEAR_MS,
+        });
+
+        // Atualizar o cookie com o novo token
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, newSessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+        return { success: true, expiresIn: ONE_YEAR_MS } as const;
+      } catch (error) {
+        console.error("[Auth] Failed to refresh session:", error);
+        return { success: false, reason: "refresh_failed" } as const;
+      }
     }),
   }),
 

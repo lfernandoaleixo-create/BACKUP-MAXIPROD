@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { OperatorProvider, useOperator } from "./contexts/OperatorContext";
 import { DiscountAlertProvider } from "./contexts/DiscountAlertContext";
+import { useSessionRefresh } from "./hooks/useSessionRefresh";
 import LoginScreen from "./components/LoginScreen";
 import Home from "./pages/Home";
 import Sales from "./pages/Sales";
@@ -32,6 +33,9 @@ function Router() {
 
 function AppContent() {
   const { isLoggedIn } = useOperator();
+
+  // Refresh automático da sessão OAuth (renova token a cada 30min e ao voltar de inatividade)
+  useSessionRefresh();
 
   if (!isLoggedIn) {
     return <LoginScreen />;
