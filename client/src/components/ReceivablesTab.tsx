@@ -2425,10 +2425,10 @@ export default function ReceivablesTab() {
                           const ungrouped: any[] = [];
                           for (const c of allCheques) {
                             if (c.dadosCheque) {
-                              // Extract banco + número (everything before the last " - TITULAR")
-                              // Format: "BANCO - Nº X - TITULAR" -> key = "BANCO - Nº X"
-                              const parts = (c.dadosCheque as string).split(" - ");
-                              const key = parts.length >= 2 ? parts.slice(0, 2).join(" - ").trim() : c.dadosCheque;
+                              // Extract banco + número + titular for grouping
+                              // Format: "BANCO - Nº X - TITULAR" -> key = full dadosCheque string
+                              // Only group if SAME banco + SAME número + SAME titular (cliente)
+                              const key = (c.dadosCheque as string).trim();
                               if (!groups.has(key)) groups.set(key, []);
                               groups.get(key)!.push(c);
                             } else {
@@ -2451,7 +2451,7 @@ export default function ReceivablesTab() {
                                 _groupedItems: items,
                                 valor: totalValor,
                                 cliente: clientes.join(", "),
-                                dadosCheque: key + (items[0].dadosCheque.split(" - ").length > 2 ? " - " + items[0].dadosCheque.split(" - ").slice(2).join(" - ") : ""),
+                                dadosCheque: key,
                                 vencimentoData: vencimentos[vencimentos.length - 1] || null,
                                 emissaoData: emissoes[0] || null,
                                 descricao: items.map((i: any) => i.descricao + (i.parcela ? ` (${i.parcela}/${i.parcelasTotal || "?"})` : "")).join(" | "),
