@@ -274,8 +274,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
     onError: (err) => toast.error(`Erro na sincronização: ${err.message}`),
   });
 
-  // Permission: Thiago, Guilherme, Flavio can edit
-  const canEdit = operator && ["Thiago", "Guilherme", "Flavio"].includes(operator.name);
+  // Permission: Thiago, Guilherme, Flavio, Thalita can edit
+  const canEdit = operator && ["Thiago", "Guilherme", "Flavio", "Thalita"].includes(operator.name);
   const COBRANCA_GUIDE_OPERATORS = ["Flavio", "Thiago", "Guilherme", "Fernando", "Bruno", "Gilson", "Thalita"];
   const canSeeCobrancaGuide = operator && COBRANCA_GUIDE_OPERATORS.includes(operator.name);
 

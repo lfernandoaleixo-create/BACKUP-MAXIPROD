@@ -1,0 +1,358 @@
+{
+  "query": "SELECT ogp.operatorId, o.name, ogp.permissionKey, ogp.enabled FROM operator_granular_permissions ogp JOIN operators o ON o.id = ogp.operatorId WHERE o.name IN ('Thalita', 'Thiago') ORDER BY o.name, ogp.permissionKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ogp.operatorId, o.name, ogp.permissionKey, ogp.enabled FROM operator_granular_permissions ogp JOIN operators o ON o.id = ogp.operatorId WHERE o.name IN ('Thalita', 'Thiago') ORDER BY o.name, ogp.permissionKey;",
+  "rows": [
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "cfg.alertas",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "cfg.bancos",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "cfg.dados",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "cfg.produtos",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "cfg.senhas",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "cfg.variacoes",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "est.valorizacao",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.aceiteProducao",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.agendamentoColeta",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.autorizarFaturamento",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.coletado",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.desautorizarFaturamento",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.imprimirPedido",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.notaProducao",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.observacaoFaturar",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.pedidoColeta",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.rastreio",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.statusProducao",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.toggleValores",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.transportadora",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fat.verRastreio",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.autorizacaoPagamento",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.comentarioPagamento",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verContasPagar",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verContasReceber",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verFluxoCaixa",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verInadimplencia",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verResumoFinanceiro",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verSaldoBancario",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "cfg.alertas",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "cfg.bancos",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "cfg.dados",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "cfg.produtos",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "cfg.senhas",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "cfg.variacoes",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "est.valorizacao",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.aceiteProducao",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.agendamentoColeta",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.autorizarFaturamento",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.coletado",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.desautorizarFaturamento",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.imprimirPedido",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.notaProducao",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.observacaoFaturar",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.pedidoColeta",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.rastreio",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.statusProducao",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.toggleValores",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.transportadora",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fat.verRastreio",
+      "enabled": "0"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.autorizacaoPagamento",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.comentarioPagamento",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verContasPagar",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verContasReceber",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verFluxoCaixa",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verInadimplencia",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verResumoFinanceiro",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verSaldoBancario",
+      "enabled": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "operatorId\tname\tpermissionKey\tenabled\n12\tThalita\tcfg.alertas\t1\n12\tThalita\tcfg.bancos\t1\n12\tThalita\tcfg.dados\t1\n12\tThalita\tcfg.produtos\t1\n12\tThalita\tcfg.senhas\t1\n12\tThalita\tcfg.variacoes\t1\n12\tThalita\test.valorizacao\t1\n12\tThalita\tfat.aceiteProducao\t0\n12\tThalita\tfat.agendamentoColeta\t0\n12\tThalita\tfat.autorizarFaturamento\t0\n12\tThalita\tfat.coletado\t0\n12\tThalita\tfat.desautorizarFaturamento\t0\n12\tThalita\tfat.imprimirPedido\t0\n12\tThalita\tfat.notaProducao\t0\n12\tThalita\tfat.observacaoFaturar\t0\n12\tThalita\tfat.pedidoColeta\t0\n12\tThalita\tfat.rastreio\t0\n12\tThalita\tfat.statusProducao\t0\n12\tThalita\tfat.toggleValores\t0\n12\tThalita\tfat.transportadora\t0\n12\tThalita\tfat.verRastreio\t0\n12\tThalita\tfin.autorizacaoPagamento\t1\n12\tThalita\tfin.comentarioPagamento\t1\n12\tThalita\tfin.verContasPagar\t1\n12\tThalita\tfin.verContasReceber\t1\n12\tThalita\tfin.verFluxoCaixa\t1\n12\tThalita\tfin.verInadimplencia\t1\n12\tThalita\tfin.verResumoFinanceiro\t1\n12\tThalita\tfin.verSaldoBancario\t1\n11\tThiago\tcfg.alertas\t1\n11\tThiago\tcfg.bancos\t1\n11\tThiago\tcfg.dados\t1\n11\tThiago\tcfg.produtos\t1\n11\tThiago\tcfg.senhas\t1\n11\tThiago\tcfg.variacoes\t1\n11\tThiago\test.valorizacao\t1\n11\tThiago\tfat.aceiteProducao\t0\n11\tThiago\tfat.agendamentoColeta\t0\n11\tThiago\tfat.autorizarFaturamento\t0\n11\tThiago\tfat.coletado\t0\n11\tThiago\tfat.desautorizarFaturamento\t0\n11\tThiago\tfat.imprimirPedido\t0\n11\tThiago\tfat.notaProducao\t0\n11\tThiago\tfat.observacaoFaturar\t0\n11\tThiago\tfat.pedidoColeta\t0\n11\tThiago\tfat.rastreio\t0\n11\tThiago\tfat.statusProducao\t0\n11\tThiago\tfat.toggleValores\t0\n11\tThiago\tfat.transportadora\t0\n11\tThiago\tfat.verRastreio\t0\n11\tThiago\tfin.autorizacaoPagamento\t1\n11\tThiago\tfin.comentarioPagamento\t1\n11\tThiago\tfin.verContasPagar\t1\n11\tThiago\tfin.verContasReceber\t1\n11\tThiago\tfin.verFluxoCaixa\t1\n11\tThiago\tfin.verInadimplencia\t1\n11\tThiago\tfin.verResumoFinanceiro\t1\n11\tThiago\tfin.verSaldoBancario\t1\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

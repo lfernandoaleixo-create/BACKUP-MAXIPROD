@@ -1,0 +1,106 @@
+{
+  "query": "SELECT ogp.operatorId, o.name, ogp.permissionKey, ogp.enabled FROM operator_granular_permissions ogp JOIN operators o ON o.id = ogp.operatorId WHERE o.name IN ('Thalita', 'Thiago') AND ogp.permissionKey LIKE 'fin.%' ORDER BY o.name, ogp.permissionKey;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ogp.operatorId, o.name, ogp.permissionKey, ogp.enabled FROM operator_granular_permissions ogp JOIN operators o ON o.id = ogp.operatorId WHERE o.name IN ('Thalita', 'Thiago') AND ogp.permissionKey LIKE 'fin.%' ORDER BY o.name, ogp.permissionKey;",
+  "rows": [
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.autorizacaoPagamento",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.comentarioPagamento",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verContasPagar",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verContasReceber",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verFluxoCaixa",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verInadimplencia",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verResumoFinanceiro",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "12",
+      "name": "Thalita",
+      "permissionKey": "fin.verSaldoBancario",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.autorizacaoPagamento",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.comentarioPagamento",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verContasPagar",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verContasReceber",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verFluxoCaixa",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verInadimplencia",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verResumoFinanceiro",
+      "enabled": "1"
+    },
+    {
+      "operatorId": "11",
+      "name": "Thiago",
+      "permissionKey": "fin.verSaldoBancario",
+      "enabled": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "operatorId\tname\tpermissionKey\tenabled\n12\tThalita\tfin.autorizacaoPagamento\t1\n12\tThalita\tfin.comentarioPagamento\t1\n12\tThalita\tfin.verContasPagar\t1\n12\tThalita\tfin.verContasReceber\t1\n12\tThalita\tfin.verFluxoCaixa\t1\n12\tThalita\tfin.verInadimplencia\t1\n12\tThalita\tfin.verResumoFinanceiro\t1\n12\tThalita\tfin.verSaldoBancario\t1\n11\tThiago\tfin.autorizacaoPagamento\t1\n11\tThiago\tfin.comentarioPagamento\t1\n11\tThiago\tfin.verContasPagar\t1\n11\tThiago\tfin.verContasReceber\t1\n11\tThiago\tfin.verFluxoCaixa\t1\n11\tThiago\tfin.verInadimplencia\t1\n11\tThiago\tfin.verResumoFinanceiro\t1\n11\tThiago\tfin.verSaldoBancario\t1\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

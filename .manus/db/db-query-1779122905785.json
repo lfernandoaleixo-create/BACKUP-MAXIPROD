@@ -1,0 +1,16 @@
+{
+  "query": "SELECT ogp.operatorId, o.name, ogp.permissionKey, ogp.enabled FROM operator_granular_permissions ogp JOIN operators o ON o.id = ogp.operatorId WHERE ogp.permissionKey = 'fin.cobranca' ORDER BY o.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ogp.operatorId, o.name, ogp.permissionKey, ogp.enabled FROM operator_granular_permissions ogp JOIN operators o ON o.id = ogp.operatorId WHERE ogp.permissionKey = 'fin.cobranca' ORDER BY o.name;",
+  "rows": [
+    {
+      "operatorId": "10",
+      "name": "Brenda",
+      "permissionKey": "fin.cobranca",
+      "enabled": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "operatorId\tname\tpermissionKey\tenabled\n10\tBrenda\tfin.cobranca\t1\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}
