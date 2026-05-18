@@ -2419,15 +2419,60 @@ export default function ReceivablesTab() {
                         <div className="text-center py-6 text-red-500 text-sm">Erro ao carregar cheques</div>
                       ) : (() => {
                         const allCheques = chequesQuery.data?.cheques || [];
+                        // Agrupar cheques com mesmo banco+número (ex: "SICREDI - Nº 7")
+                        const groupedCheques = (() => {
+                          const groups = new Map<string, any[]>();
+                          const ungrouped: any[] = [];
+                          for (const c of allCheques) {
+                            if (c.dadosCheque) {
+                              // Extract banco + número (everything before the last " - TITULAR")
+                              // Format: "BANCO - Nº X - TITULAR" -> key = "BANCO - Nº X"
+                              const parts = (c.dadosCheque as string).split(" - ");
+                              const key = parts.length >= 2 ? parts.slice(0, 2).join(" - ").trim() : c.dadosCheque;
+                              if (!groups.has(key)) groups.set(key, []);
+                              groups.get(key)!.push(c);
+                            } else {
+                              ungrouped.push(c);
+                            }
+                          }
+                          const result: any[] = [];
+                          for (const [key, items] of Array.from(groups.entries())) {
+                            if (items.length > 1) {
+                              // Merge into single entry
+                              const totalValor = items.reduce((s: number, i: any) => s + i.valor, 0);
+                              const clientes = Array.from(new Set(items.map((i: any) => i.cliente).filter(Boolean)));
+                              const vencimentos = items.map((i: any) => i.vencimentoData).filter(Boolean).sort();
+                              const emissoes = items.map((i: any) => i.emissaoData).filter(Boolean).sort();
+                              result.push({
+                                ...items[0],
+                                id: items[0].id,
+                                _groupedIds: items.map((i: any) => i.id),
+                                _groupedCount: items.length,
+                                _groupedItems: items,
+                                valor: totalValor,
+                                cliente: clientes.join(", "),
+                                dadosCheque: key + (items[0].dadosCheque.split(" - ").length > 2 ? " - " + items[0].dadosCheque.split(" - ").slice(2).join(" - ") : ""),
+                                vencimentoData: vencimentos[vencimentos.length - 1] || null,
+                                emissaoData: emissoes[0] || null,
+                                descricao: items.map((i: any) => i.descricao + (i.parcela ? ` (${i.parcela}/${i.parcelasTotal || "?"})` : "")).join(" | "),
+                                _isGrouped: true,
+                              });
+                            } else {
+                              result.push(items[0]);
+                            }
+                          }
+                          return [...result, ...ungrouped];
+                        })();
                         const searchLower = chequeSearchQuery.toLowerCase().trim();
                         const searchFiltered = searchLower
-                          ? allCheques.filter((c: any) =>
+                          ? groupedCheques.filter((c: any) =>
                               (c.cliente || "").toLowerCase().includes(searchLower) ||
                               (c.formaPagamento || "").toLowerCase().includes(searchLower) ||
                               (c.descricao || "").toLowerCase().includes(searchLower) ||
-                              (c.estadoCheque || "").toLowerCase().includes(searchLower)
+                              (c.estadoCheque || "").toLowerCase().includes(searchLower) ||
+                              (c.dadosCheque || "").toLowerCase().includes(searchLower)
                             )
-                          : allCheques;
+                          : groupedCheques;
                         const displayCheques = chequeSelectedFilter
                           ? searchFiltered.filter((c: any) => c.estadoCheque === chequeSelectedFilter)
                           : searchFiltered;
@@ -2577,14 +2622,17 @@ export default function ReceivablesTab() {
                                             <span className="text-slate-300 dark:text-slate-600 italic">—</span>
                                           )}
                                         </td>
-                                        <td className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap text-[10px] sm:text-xs">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                        <td className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap text-[10px] sm:text-xs">
+                                          R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                          {cheque._isGrouped && <span className="ml-1 inline-block px-1 py-0 rounded bg-amber-100 text-amber-700 text-[8px] sm:text-[9px] font-bold" title={`${cheque._groupedCount} cheques agrupados`}>{cheque._groupedCount}x</span>}
+                                        </td>
                                         <td className="px-2 sm:px-3 py-2 text-center">
                                           <span className={`inline-block px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold whitespace-nowrap ${badgeColor}`}>
                                             {formaShort}
                                           </span>
                                         </td>
-                                        <td className="px-2 sm:px-3 py-2 text-center text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs">
-                                          {cheque.descricao}{cheque.parcela ? ` (${cheque.parcela}/${cheque.parcelasTotal || "?"})` : ""}
+                                        <td className="px-2 sm:px-3 py-2 text-center text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs max-w-[200px]" title={cheque.descricao}>
+                                          <span className="line-clamp-2">{cheque.descricao}{!cheque._isGrouped && cheque.parcela ? ` (${cheque.parcela}/${cheque.parcelasTotal || "?"})` : ""}</span>
                                         </td>
 
                                       </tr>

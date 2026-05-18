@@ -3792,3 +3792,4 @@
 - [x] Permitir que Flavio lance valores manualmente para cada uma das 5 semanas
 - [x] Ajustar banco de dados para armazenar valores por semana (semana 1 a 5)
 - [x] Frontend: exibir campos editáveis para cada semana dentro do card
+- [x] Agrupar cheques com mesmo banco e número (ex: "SICREDI - Nº 7") em uma única linha, somando os valores
