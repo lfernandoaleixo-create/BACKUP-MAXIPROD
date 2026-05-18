@@ -2252,7 +2252,7 @@ export default function ReceivablesTab() {
                         }
                         return (
                           <div className="border border-slate-200 rounded-xl overflow-hidden">
-                            <div className="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                            <div className="px-2 sm:px-3 py-2 sm:py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
                               <div className="flex items-center gap-3">
                                 <span className="text-xs font-semibold text-slate-600">
                                   {displayCheques.length} cheque{displayCheques.length !== 1 ? "s" : ""}
@@ -2315,8 +2315,8 @@ export default function ReceivablesTab() {
                                 </button>
                               </div>
                             </div>
-                            <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-                              <table className="w-full text-xs min-w-[700px]">
+                            <div className="overflow-x-auto max-h-[500px] overflow-y-auto -mx-1 px-1">
+                              <table className="w-full text-xs min-w-[850px]">
                                 <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 z-10">
                                   <tr className="border-b border-slate-200">
                                     {exchangeMode && (
@@ -2336,13 +2336,13 @@ export default function ReceivablesTab() {
                                         />
                                       </th>
                                     )}
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Vencimento</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Emissão</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Cliente</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap min-w-[180px]">Dados do Cheque</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Valor</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Forma de Pagamento</th>
-                                    <th className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">Descrição</th>
+                                    <th className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap text-[10px] sm:text-xs">Vencimento</th>
+                                    <th className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap text-[10px] sm:text-xs">Emissão</th>
+                                    <th className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap text-[10px] sm:text-xs">Cliente</th>
+                                    <th className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap text-[10px] sm:text-xs min-w-[160px] sm:min-w-[200px]">Dados do Cheque</th>
+                                    <th className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap text-[10px] sm:text-xs">Valor</th>
+                                    <th className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap text-[10px] sm:text-xs">Forma Pgto</th>
+                                    <th className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap text-[10px] sm:text-xs">Descrição</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -2377,23 +2377,23 @@ export default function ReceivablesTab() {
                                             />
                                           </td>
                                         )}
-                                        <td className={`px-3 py-2 text-center whitespace-nowrap font-medium ${isVencido ? "text-red-600" : "text-slate-700 dark:text-slate-300"}`}>{venc}</td>
-                                        <td className="px-3 py-2 text-center whitespace-nowrap text-slate-500 dark:text-slate-400">{emis}</td>
-                                        <td className="px-3 py-2 text-center text-slate-700 dark:text-slate-300">{cheque.cliente}</td>
-                                        <td className="px-3 py-2 text-center text-slate-600 dark:text-slate-400 text-xs">
+                                        <td className={`px-2 sm:px-3 py-2 text-center whitespace-nowrap font-medium text-[10px] sm:text-xs ${isVencido ? "text-red-600" : "text-slate-700 dark:text-slate-300"}`}>{venc}</td>
+                                        <td className="px-2 sm:px-3 py-2 text-center whitespace-nowrap text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs">{emis}</td>
+                                        <td className="px-2 sm:px-3 py-2 text-center text-slate-700 dark:text-slate-300 text-[10px] sm:text-xs max-w-[120px] sm:max-w-none truncate" title={cheque.cliente}>{cheque.cliente}</td>
+                                        <td className="px-2 sm:px-3 py-2 text-center text-[10px] sm:text-xs">
                                           {cheque.dadosCheque ? (
-                                            <span className="inline-block px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium whitespace-nowrap">{cheque.dadosCheque}</span>
+                                            <span className="inline-block px-1.5 sm:px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium whitespace-nowrap text-[10px] sm:text-xs">{cheque.dadosCheque}</span>
                                           ) : (
                                             <span className="text-slate-300 dark:text-slate-600 italic">—</span>
                                           )}
                                         </td>
-                                        <td className="px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-2 text-center">
-                                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${badgeColor}`}>
+                                        <td className="px-2 sm:px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap text-[10px] sm:text-xs">R$ {cheque.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                        <td className="px-2 sm:px-3 py-2 text-center">
+                                          <span className={`inline-block px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold whitespace-nowrap ${badgeColor}`}>
                                             {formaShort}
                                           </span>
                                         </td>
-                                        <td className="px-3 py-2 text-center text-slate-500 dark:text-slate-400">
+                                        <td className="px-2 sm:px-3 py-2 text-center text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs">
                                           {cheque.descricao}{cheque.parcela ? ` (${cheque.parcela}/${cheque.parcelasTotal || "?"})` : ""}
                                         </td>
 
@@ -2403,8 +2403,8 @@ export default function ReceivablesTab() {
                                 </tbody>
                                 <tfoot>
                                   <tr className="bg-amber-50 border-t-2 border-amber-300">
-                                    <td colSpan={exchangeMode ? 5 : 4} className="px-3 py-2.5 text-left text-xs font-bold text-amber-800 whitespace-nowrap">TOTAL ({displayCheques.length} cheques)</td>
-                                    <td className="px-3 py-2.5 text-center text-sm font-extrabold text-amber-700 whitespace-nowrap">R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                    <td colSpan={exchangeMode ? 5 : 4} className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold text-amber-800 whitespace-nowrap">TOTAL ({displayCheques.length} cheques)</td>
+                                    <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-center text-xs sm:text-sm font-extrabold text-amber-700 whitespace-nowrap">R$ {totalDisplay.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                                     <td colSpan={2}></td>
                                   </tr>
                                 </tfoot>
