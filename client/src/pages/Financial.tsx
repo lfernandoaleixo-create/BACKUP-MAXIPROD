@@ -584,6 +584,26 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [calcMode, setCalcMode] = useState(false);
 
+  // Fernando tick system (only for Pagamentos)
+  const { operator } = useOperator();
+  const utils = trpc.useUtils();
+  const { data: ticksData } = trpc.financial.getPaymentCalendarTicks.useQuery(undefined, {
+    enabled: !!isPagar,
+  });
+  const tickedIds = useMemo(() => {
+    const s = new Set<number>();
+    if (ticksData?.ticks) {
+      for (const t of ticksData.ticks) s.add(t.maxiprodId);
+    }
+    return s;
+  }, [ticksData]);
+  const toggleTickMut = trpc.financial.togglePaymentCalendarTick.useMutation({
+    onSuccess: () => {
+      utils.financial.getPaymentCalendarTicks.invalidate();
+    },
+  });
+  const canTick = isPagar && operator && ["Fernando", "Flavio", "Guilherme"].includes(operator.name);
+
   const VISIBLE = 5;
 
   const processedItems = useMemo(() => {
@@ -804,20 +824,41 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
           {visibleItems.map((item: any, idx: number) => {
             const itemId = String(item.maxiprodId || idx);
             const isChecked = selectedIds.has(itemId);
+            const isTicked = isPagar && item.maxiprodId && tickedIds.has(item.maxiprodId);
             const hasSecondary = item.referenteA || item.vencimentoOriginal;
             return (
               <div
                 key={item.maxiprodId || idx}
                 className={`py-2.5 px-1 transition-colors ${
-                  calcMode && isChecked
-                    ? 'bg-violet-50/80'
-                    : idx % 2 === 0
-                      ? 'bg-transparent'
-                      : 'bg-slate-50/40'
+                  isTicked
+                    ? 'bg-amber-50 border-l-3 border-l-amber-400'
+                    : calcMode && isChecked
+                      ? 'bg-violet-50/80'
+                      : idx % 2 === 0
+                        ? 'bg-transparent'
+                        : 'bg-slate-50/40'
                 } hover:bg-slate-100/60`}
               >
-                {/* Main row: checkbox + name + date + value */}
+                {/* Main row: tick checkbox + calc checkbox + name + date + value */}
                 <div className="flex items-center gap-x-2">
+                  {/* Fernando tick checkbox */}
+                  {isPagar && canTick && (
+                    <Checkbox
+                      checked={!!isTicked}
+                      onCheckedChange={() => {
+                        if (item.maxiprodId) {
+                          toggleTickMut.mutate({ maxiprodId: item.maxiprodId, operatorName: operator?.name || "Fernando" });
+                        }
+                      }}
+                      className={`w-4 h-4 shrink-0 border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 cursor-pointer`}
+                    />
+                  )}
+                  {/* Show tick indicator for non-tick operators */}
+                  {isPagar && !canTick && isTicked && (
+                    <span className="w-4 h-4 shrink-0 flex items-center justify-center">
+                      <CheckSquare className="w-3.5 h-3.5 text-amber-500" />
+                    </span>
+                  )}
                   {calcMode && (
                     <Checkbox
                       checked={isChecked}
@@ -825,18 +866,18 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                       className="w-3.5 h-3.5 shrink-0 border-violet-400 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
                     />
                   )}
-                  <span className="text-[11px] md:text-[13px] font-medium text-slate-700 truncate min-w-0" style={{ flex: '1 1 0' }}>
-                    {item.fornecedor || item.referenteA || "—"}
+                  <span className={`text-[11px] md:text-[13px] font-medium truncate min-w-0 ${isTicked ? 'text-amber-800' : 'text-slate-700'}`} style={{ flex: '1 1 0' }}>
+                    {item.fornecedor || item.referenteA || "\u2014"}
                   </span>
                   <span
-                    className="text-[10px] md:text-[11px] text-slate-400 whitespace-nowrap text-right shrink-0"
+                    className={`text-[10px] md:text-[11px] whitespace-nowrap text-right shrink-0 ${isTicked ? 'text-amber-600' : 'text-slate-400'}`}
                     style={{ width: '62px', fontVariantNumeric: 'tabular-nums' }}
                   >
                     {formatDate(item.vencimento)}
                   </span>
                   <span
                     className={`text-[11px] md:text-[13px] font-bold whitespace-nowrap text-right shrink-0 ${
-                      calcMode && isChecked ? 'text-violet-700' : isPagar ? 'text-red-700' : 'text-emerald-700'
+                      isTicked ? 'text-amber-700' : calcMode && isChecked ? 'text-violet-700' : isPagar ? 'text-red-700' : 'text-emerald-700'
                     }`}
                     style={{ width: '80px', fontVariantNumeric: 'tabular-nums' }}
                   >
@@ -845,9 +886,9 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                 </div>
                 {/* Secondary row: referenteA + vencimento original */}
                 {hasSecondary && (
-                  <div className="flex items-center gap-x-2 mt-0.5" style={{ paddingLeft: calcMode ? '22px' : '0' }}>
+                  <div className="flex items-center gap-x-2 mt-0.5" style={{ paddingLeft: (calcMode || (isPagar && canTick)) ? '22px' : '0' }}>
                     {item.referenteA && (
-                      <span className="text-[10.5px] text-slate-400 truncate min-w-0 italic" style={{ flex: '1 1 0' }}>
+                      <span className={`text-[10.5px] truncate min-w-0 italic ${isTicked ? 'text-amber-600' : 'text-slate-400'}`} style={{ flex: '1 1 0' }}>
                         {item.referenteA}
                       </span>
                     )}
@@ -865,7 +906,7 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
                 )}
                 {/* Annotations */}
                 {item.anotacoes && (
-                  <div className="mt-1" style={{ paddingLeft: calcMode ? '22px' : '0' }}>
+                  <div className="mt-1" style={{ paddingLeft: (calcMode || (isPagar && canTick)) ? '22px' : '0' }}>
                     <span
                       className="inline-flex items-center text-[10px] font-bold text-pink-800 bg-pink-100 border border-pink-300 px-1.5 py-0.5 rounded"
                       style={{ wordBreak: 'break-word' }}

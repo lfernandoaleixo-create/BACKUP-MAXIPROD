@@ -3793,3 +3793,6 @@
 - [x] Ajustar banco de dados para armazenar valores por semana (semana 1 a 5)
 - [x] Frontend: exibir campos editáveis para cada semana dentro do card
 - [x] Agrupar cheques com mesmo banco e número (ex: "SICREDI - Nº 7") em uma única linha, somando os valores
+- [x] Adicionar checkbox em cada conta na seção Pagamentos para o Fernando ticar/selecionar
+- [x] Mudar cor da conta quando ticada (visual para todos os operadores verem)
+- [x] Persistir tiques no banco de dados (todos veem o estado atual)

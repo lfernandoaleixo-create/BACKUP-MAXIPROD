@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges, paymentCalendarTicks } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
@@ -7087,6 +7087,46 @@ ${acoesTexto}
       }
 
       return { success: true, removed: false };
+    }),
+
+  /**
+   * getPaymentCalendarTicks - Retorna todas as contas ticadas pelo Fernando
+   */
+  getPaymentCalendarTicks: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return { ticks: [] };
+      const rows = await db.select().from(paymentCalendarTicks);
+      return { ticks: rows };
+    }),
+
+  /**
+   * togglePaymentCalendarTick - Fernando tica/destica uma conta a pagar
+   * Se já existe tick para esse maxiprodId, remove. Se não existe, cria.
+   */
+  togglePaymentCalendarTick: publicProcedure
+    .input(z.object({
+      maxiprodId: z.number(),
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      const [existing] = await db.select().from(paymentCalendarTicks)
+        .where(eq(paymentCalendarTicks.maxiprodId, input.maxiprodId))
+        .limit(1);
+
+      if (existing) {
+        await db.delete(paymentCalendarTicks).where(eq(paymentCalendarTicks.id, existing.id));
+        return { ticked: false };
+      } else {
+        await db.insert(paymentCalendarTicks).values({
+          maxiprodId: input.maxiprodId,
+          tickedBy: input.operatorName,
+        });
+        return { ticked: true };
+      }
     }),
 
   /**

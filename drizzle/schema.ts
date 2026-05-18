@@ -1936,3 +1936,20 @@ export const cobrancaEtapaObs = mysqlTable("cobranca_etapa_obs", {
 });
 export type CobrancaEtapaObs = typeof cobrancaEtapaObs.$inferSelect;
 export type InsertCobrancaEtapaObs = typeof cobrancaEtapaObs.$inferInsert;
+
+
+/**
+ * Tiques de pagamento no calendário financeiro.
+ * Fernando marca contas a pagar como "selecionadas" (checkbox).
+ * Quando ticada, a conta muda de cor para todos verem.
+ * Persiste até ser desticada manualmente.
+ * Futuramente: Flávio joga essas contas no Maxiprod com vencimento 2029.
+ */
+export const paymentCalendarTicks = mysqlTable("payment_calendar_ticks", {
+  id: int("id").autoincrement().primaryKey(),
+  maxiprodId: bigint("maxiprod_id", { mode: "number" }).notNull(), // ID da conta a pagar
+  tickedBy: varchar("ticked_by", { length: 100 }).notNull(), // Quem ticou (Fernando)
+  tickedAt: bigint("ticked_at", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+});
+export type PaymentCalendarTick = typeof paymentCalendarTicks.$inferSelect;
+export type InsertPaymentCalendarTick = typeof paymentCalendarTicks.$inferInsert;
