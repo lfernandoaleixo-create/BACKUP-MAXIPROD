@@ -1829,6 +1829,8 @@ export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
   regiao: varchar("regiao", { length: 100 }), // Região comercial do cliente
   // Forma de cobrança (PIX, Cheque, Boleto, etc.)
   formaCobranca: varchar("forma_cobranca", { length: 100 }),
+  // Apelido da empresa (puxado do Maxiprod via GraphQL)
+  apelido: varchar("apelido", { length: 200 }),
   // Nome do vendedor (puxado do Maxiprod via GraphQL)
   vendedor: varchar("vendedor", { length: 200 }),
   // Contatos adicionais do cliente (JSON array de telefones do Maxiprod)

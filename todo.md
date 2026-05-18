@@ -3782,3 +3782,5 @@
 - [x] Corrigir card "Total para Divisão à Receber" Rojão/Serragem: usar campo "Valor a Receber" (valorAReceber) ao invés de "Valor Original" — filtro sem datas, estado configurável ROJÃO/SERRAGEM, estado A RECEBER
 - [x] Corrigir layout do card "Histórico de Observações" - está sobrepondo os ícones de balãozinho das etapas, mover card mais para a direita
 - [x] Bug: Retirada Sócios no Rojão - total correto (R$ 45.780,00) mas valores individuais (Gilson, Fernando, Bruno) aparecem R$ 0,00
+- [x] Corrigir coluna Vendedor na Planilha de Cobrança - buscar representante/vendedor do cadastro da empresa no Maxiprod (ex: Arlindo Romão → JUVENAL)
+- [x] Adicionar campo Apelido da empresa nos dados expandidos da Planilha de Cobrança (ex: MOGILANDI → apelido "AM.A.")

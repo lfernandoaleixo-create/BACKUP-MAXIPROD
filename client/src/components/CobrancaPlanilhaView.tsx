@@ -295,7 +295,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         ((item as any).contato || "").toLowerCase().includes(s) ||
         ((item as any).email || "").toLowerCase().includes(s) ||
         (item.vendedor || "").toLowerCase().includes(s) ||
-        (item.formaCobranca || "").toLowerCase().includes(s)
+        (item.formaCobranca || "").toLowerCase().includes(s) ||
+        ((item as any).apelido || "").toLowerCase().includes(s)
       );
     }
 
@@ -1207,10 +1208,11 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-800 truncate">{item.empresa}</p>
+                          {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600 truncate">({(item as any).apelido})</p>}
                           <div className="flex items-center gap-2 text-[10px] text-slate-500">
                             {item.cnpjCpf && <span>{item.cnpjCpf}</span>}
-                            {item.vendedor && <span>\u2022 {item.vendedor}</span>}
-                            <span>\u2022 {item.status}</span>
+                            {item.vendedor && <span>• {item.vendedor}</span>}
+                            <span>• {item.status}</span>
                           </div>
                         </div>
                       </div>
@@ -1360,6 +1362,11 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                             <div className="font-semibold text-slate-800 text-[11px] leading-tight truncate max-w-[220px]" title={item.empresa}>
                               {item.empresa}
                             </div>
+                            {(item as any).apelido && (
+                              <div className="text-[9px] font-bold text-purple-600 truncate max-w-[220px]">
+                                ({(item as any).apelido})
+                              </div>
+                            )}
                             <div className="text-[9px] text-slate-400 truncate max-w-[220px]" title={item.descricao || ""}>
                               {item.descricao || "-"}
                             </div>
@@ -1505,6 +1512,11 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                     )}
                                   </div>
                                 ))}
+                                {/* Apelido (somente leitura - puxado do Maxiprod) */}
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-slate-500 w-[70px] shrink-0">Apelido:</span>
+                                  <span className="text-purple-700 font-bold">{(item as any).apelido || "-"}</span>
+                                </div>
                                 {/* Vendedor (somente leitura) */}
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium text-slate-500 w-[70px] shrink-0">Vendedor:</span>

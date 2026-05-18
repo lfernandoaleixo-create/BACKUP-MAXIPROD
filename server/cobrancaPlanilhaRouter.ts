@@ -603,8 +603,9 @@ export const cobrancaPlanilhaRouter = router({
         }
       }
 
-      // 4c. Buscar vendedor de cada cliente via GraphQL (representanteOuVendedor1Preferencial)
+      // 4c. Buscar vendedor e apelido de cada cliente via GraphQL (representanteOuVendedor1Preferencial)
       const vendedorMap: Record<string, string> = {};
+      const apelidoMap: Record<string, string> = {};
       try {
         const PAGE_SIZE = 200;
         let skip = 0;
@@ -624,13 +625,24 @@ export const cobrancaPlanilhaRouter = router({
           if (!resp?.data?.empresas) break;
           total = resp.data.empresas.totalCount;
           for (const emp of resp.data.empresas.items) {
+            const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
+            const normalizedNames = names.map((n: string) => n.toUpperCase().trim());
+            
+            // Mapear apelido para cada nome da empresa
+            const apelidoValue = (emp.apelido || "").trim();
+            if (apelidoValue) {
+              for (const normName of normalizedNames) {
+                if (!apelidoMap[normName]) apelidoMap[normName] = apelidoValue;
+              }
+            }
+            
+            // Mapear vendedor
             const rep = emp.representanteOuVendedor1Preferencial;
             if (!rep) continue;
             const vendedorName = rep.nomeFantasia || rep.razaoSocial || "";
             if (!vendedorName) continue;
-            const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
-            for (const name of names) {
-              if (!vendedorMap[name]) vendedorMap[name] = vendedorName;
+            for (const normName of normalizedNames) {
+              if (!vendedorMap[normName]) vendedorMap[normName] = vendedorName;
             }
           }
           skip += PAGE_SIZE;
@@ -676,7 +688,8 @@ export const cobrancaPlanilhaRouter = router({
               const phonesArr = Array.from(phones);
               const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
               for (const name of names) {
-                if (!contatosExtrasMap[name]) contatosExtrasMap[name] = phonesArr;
+                const normName = name.toUpperCase().trim();
+                if (!contatosExtrasMap[normName]) contatosExtrasMap[normName] = phonesArr;
               }
             }
           }
@@ -788,12 +801,15 @@ export const cobrancaPlanilhaRouter = router({
         if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
         if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
-        // Vendedor, forma de cobrança e contatos extras (sempre atualizar)
-        const vendedor = vendedorMap[inad.empresa];
+        // Vendedor, apelido, forma de cobrança e contatos extras (sempre atualizar)
+        const empresaNorm = inad.empresa.toUpperCase().trim();
+        const vendedor = vendedorMap[empresaNorm];
         if (vendedor) updateData.vendedor = vendedor;
+        const apelidoVal = apelidoMap[empresaNorm];
+        if (apelidoVal) updateData.apelido = apelidoVal;
         const fc = formaCobrancaMap[inad.arId];
         if (fc) updateData.formaCobranca = fc;
-        const contExtras = contatosExtrasMap[inad.empresa];
+        const contExtras = contatosExtrasMap[empresaNorm];
         if (contExtras && contExtras.length > 0) updateData.contatosAdicionais = contExtras;
         
         await db.update(cobrancaPlanilha)
@@ -869,12 +885,15 @@ export const cobrancaPlanilhaRouter = router({
           if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
           if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
-          // Vendedor, forma de cobrança e contatos extras
-          const vendedor2 = vendedorMap[inad.empresa];
+          // Vendedor, apelido, forma de cobrança e contatos extras
+          const empresaNorm2 = inad.empresa.toUpperCase().trim();
+          const vendedor2 = vendedorMap[empresaNorm2];
           if (vendedor2) updateData.vendedor = vendedor2;
+          const apelidoVal2 = apelidoMap[empresaNorm2];
+          if (apelidoVal2) updateData.apelido = apelidoVal2;
           const fc2 = formaCobrancaMap[inad.arId];
           if (fc2) updateData.formaCobranca = fc2;
-          const contExtras2 = contatosExtrasMap[inad.empresa];
+          const contExtras2 = contatosExtrasMap[empresaNorm2];
           if (contExtras2 && contExtras2.length > 0) updateData.contatosAdicionais = contExtras2;
           
           await db.update(cobrancaPlanilha)
@@ -905,9 +924,10 @@ export const cobrancaPlanilhaRouter = router({
             contato: clienteData.contato || null,
             email: clienteData.email || null,
             regiao: clienteData.regiao || null,
-            vendedor: vendedorMap[inad.empresa] || null,
+            apelido: apelidoMap[inad.empresa.toUpperCase().trim()] || null,
+            vendedor: vendedorMap[inad.empresa.toUpperCase().trim()] || null,
             formaCobranca: formaCobrancaMap[inad.arId] || null,
-            contatosAdicionais: contatosExtrasMap[inad.empresa] || [],
+            contatosAdicionais: contatosExtrasMap[inad.empresa.toUpperCase().trim()] || [],
             updatedBy: `Sync: ${input.updatedBy}`,
           });
           added++;
