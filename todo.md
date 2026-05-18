@@ -3780,3 +3780,4 @@
 - [x] Mensagem verde no PDF Decisão aparece corretamente para qualquer cliente marcado como pago via botão 'Marcar como Pago'
 - [x] Implementar refresh automático do token JWT (renovar sessão silenciosamente antes de expirar para evitar deslogamento frequente)
 - [x] Corrigir card "Total para Divisão à Receber" Rojão/Serragem: usar campo "Valor a Receber" (valorAReceber) ao invés de "Valor Original" — filtro sem datas, estado configurável ROJÃO/SERRAGEM, estado A RECEBER
+- [x] Corrigir layout do card "Histórico de Observações" - está sobrepondo os ícones de balãozinho das etapas, mover card mais para a direita

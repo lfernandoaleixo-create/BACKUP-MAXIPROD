@@ -1470,7 +1470,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                     {isExpanded && (
                       <tr className="bg-slate-50/80">
                         <td colSpan={14} className="px-4 py-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
                             {/* Info */}
                             <div className="space-y-2">
                               <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -1564,7 +1564,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                             </div>
 
                             {/* Cobrança Timeline */}
-                            <div className="space-y-2">
+                            <div className="space-y-2 overflow-visible">
                               <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                                 <Calendar className="w-3.5 h-3.5 text-emerald-500" />
                                 Etapas de Cobrança
@@ -1639,7 +1639,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                               </div>
                             </div>
                             {/* Observações */}
-                            <div className="space-y-2 relative z-10">
+                            <div className="space-y-2 relative z-10 ml-5">
                               <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                                 <History className="w-3.5 h-3.5 text-amber-500" />
                                 Histórico de Observações
