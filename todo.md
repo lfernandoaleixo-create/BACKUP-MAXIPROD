@@ -3785,3 +3785,6 @@
 - [x] Corrigir coluna Vendedor na Planilha de Cobrança - buscar representante/vendedor do cadastro da empresa no Maxiprod (ex: Arlindo Romão → JUVENAL)
 - [x] Adicionar campo Apelido da empresa nos dados expandidos da Planilha de Cobrança (ex: MOGILANDI → apelido "AM.A.")
 - [x] Dar à Thalita as mesmas permissões que o Thiago na Planilha de Cobrança (acesso completo para visualizar e editar)
+- [x] Remover coluna "Responsável" (quem está com o cheque) da aba Recebíveis em todos os 9 tipos de cheque
+- [x] Adicionar coluna "Dados do Cheque" ao lado da coluna "Cliente" na aba Recebíveis, puxando dados do Maxiprod (banco, número, titular)
+- [x] Garantir formatação legível sem cortar ou sobrepor letras na nova coluna

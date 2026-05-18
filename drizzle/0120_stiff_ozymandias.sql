@@ -1,0 +1,1 @@
+ALTER TABLE `accounts_receivable` ADD `dadosCheque` varchar(500);

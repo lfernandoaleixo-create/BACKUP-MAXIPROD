@@ -1,0 +1,110 @@
+{
+  "query": "SELECT id, cliente, formaCobranca, anotacoes, bancoNome, contaNumero, documentoVinculadoNumero, referenteA FROM accounts_receivable WHERE formaCobranca LIKE 'Cheque%' AND estado = 'EMITIDO' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, formaCobranca, anotacoes, bancoNome, contaNumero, documentoVinculadoNumero, referenteA FROM accounts_receivable WHERE formaCobranca LIKE 'Cheque%' AND estado = 'EMITIDO' LIMIT 10;",
+  "rows": [
+    {
+      "id": "6401326",
+      "cliente": "DISTRIBUIDORA M7 EMBALAGENS LTDA",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "235",
+      "referenteA": "NULL"
+    },
+    {
+      "id": "6401348",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "formaCobranca": "Cheque CHEQUE LINHA 11",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE LINHA 11",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "NULL",
+      "referenteA": "Parcelamento de s/nº (R$89.633,60)."
+    },
+    {
+      "id": "6401349",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "formaCobranca": "Cheque CHEQUE EM COMPENSACAO",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE EM COMPENSACAO",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "NULL",
+      "referenteA": "Parcelamento de s/nº (R$89.633,60)."
+    },
+    {
+      "id": "6401350",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "formaCobranca": "Cheque CHEQUE VOLTOU OUTROS MOTIVOS",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE VOLTOU OUTROS MOTIVOS",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "NULL",
+      "referenteA": "Parcelamento de s/nº (R$89.633,60)."
+    },
+    {
+      "id": "6401351",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "NULL",
+      "referenteA": "Parcelamento de s/nº (R$89.633,60)."
+    },
+    {
+      "id": "6401352",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "NULL",
+      "referenteA": "Parcelamento de s/nº (R$89.633,60)."
+    },
+    {
+      "id": "6401416",
+      "cliente": "QUEZIA BERNARDES GARCIA",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "254",
+      "referenteA": "NULL"
+    },
+    {
+      "id": "6401417",
+      "cliente": "QUEZIA BERNARDES GARCIA",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "254",
+      "referenteA": "NULL"
+    },
+    {
+      "id": "6401418",
+      "cliente": "QUEZIA BERNARDES GARCIA",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "254",
+      "referenteA": "NULL"
+    },
+    {
+      "id": "6401419",
+      "cliente": "QUEZIA BERNARDES GARCIA",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "anotacoes": "NULL",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "contaNumero": "NULL",
+      "documentoVinculadoNumero": "254",
+      "referenteA": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tformaCobranca\tanotacoes\tbancoNome\tcontaNumero\tdocumentoVinculadoNumero\treferenteA\n6401326\tDISTRIBUIDORA M7 EMBALAGENS LTDA\tCheque CHEQUE DISPONIVEL\tNULL\tCHEQUE DISPONIVEL\tNULL\t235\tNULL\n6401348\tM D DA SILVA ARTEFATOS DE BAMBU\tCheque CHEQUE LINHA 11\tNULL\tCHEQUE LINHA 11\tNULL\tNULL\tParcelamento de s/nº (R$89.633,60).\n6401349\tM D DA SILVA ARTEFATOS DE BAMBU\tCheque CHEQUE EM COMPENSACAO\tNULL\tCHEQUE EM COMPENSACAO\tNULL\tNULL\tParcelamento de s/nº (R$89.633,60).\n6401350\tM D DA SILVA ARTEFATOS DE BAMBU\tCheque CHEQUE VOLTOU OUTROS MOTIVOS\tNULL\tCHEQUE VOLTOU OUTROS MOTIVOS\tNULL\tNULL\tParcelamento de s/nº (R$89.633,60).\n6401351\tM D DA SILVA ARTEFATOS DE BAMBU\tCheque CHEQUE DISPONIVEL\tNULL\tCHEQUE DISPONIVEL\tNULL\tNULL\tParcelamento de s/nº (R$89.633,60).\n6401352\tM D DA SILVA ARTEFATOS DE BAMBU\tCheque CHEQUE DISPONIVEL\tNULL\tCHEQUE DISPONIVEL\tNULL\tNULL\tParcelamento de s/nº (R$89.633,60).\n6401416\tQUEZIA BERNARDES GARCIA\tCheque CHEQUE DISPONIVEL\tNULL\tCHEQUE DISPONIVEL\tNULL\t254\tNULL\n6401417\tQUEZIA BERNARDES GARCIA\tCheque CHEQUE DISPONIVEL\tNULL\tCHEQUE DISPONIVEL\tNULL\t254\tNULL\n6401418\tQUEZIA BERNARDES GARCIA\tCheque CHEQUE DISPONIVEL\tNULL\tCHEQUE DISPONIVEL\tNULL\t254\tNULL\n6401419\tQUEZIA BERNARDES GARCIA\tCheque CHEQUE DISPONIVEL\tNULL\tCHEQUE DISPONIVEL\tNULL\t254\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

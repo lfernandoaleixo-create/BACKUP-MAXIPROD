@@ -371,6 +371,7 @@ export const accountsReceivable = mysqlTable("accounts_receivable", {
   formaCobrancaId: bigint("formaCobrancaId", { mode: "number" }), // ID da FormaDeCobranca no Maxiprod
   anotacoes: text("anotacoes"), // Anotações do Maxiprod (tarefasEAnotacoes.descricao concatenadas)
   decisaoCobranca: varchar("decisaoCobranca", { length: 200 }), // Decisão de cobrança do cliente (COM PROTESTO / SEM PROTESTO) - campo adicional "SITUAÇÃO" do Maxiprod
+  dadosCheque: varchar("dadosCheque", { length: 500 }), // Dados do cheque do Maxiprod (ex: "SANTANDER - Nº 90 - M D DA SILVA") - campo adicional tag DadosDoCheque
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 

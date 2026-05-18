@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, cliente, dadosCheque FROM accounts_receivable WHERE formaCobranca LIKE 'Cheque%' AND estado = 'EMITIDO' AND dadosCheque IS NOT NULL LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, dadosCheque FROM accounts_receivable WHERE formaCobranca LIKE 'Cheque%' AND estado = 'EMITIDO' AND dadosCheque IS NOT NULL LIMIT 10;",
+  "rows": [
+    {
+      "id": "6401326",
+      "cliente": "DISTRIBUIDORA M7 EMBALAGENS LTDA",
+      "dadosCheque": "SICREDI - Nº 7 - DISTRIBUIDORA M7 EMBALAGENS"
+    },
+    {
+      "id": "6401348",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "dadosCheque": "SANTANDER - Nº 90 - M D DA SILVA"
+    },
+    {
+      "id": "6401349",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "dadosCheque": "SANTANDER - Nº 85 - M D DA SILVA"
+    },
+    {
+      "id": "6401350",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "dadosCheque": "SANTANDER - Nº 88 - M D DA SILVA"
+    },
+    {
+      "id": "6401351",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "dadosCheque": "SANTANDER - Nº 91 - M D DA SILVA"
+    },
+    {
+      "id": "6401352",
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "dadosCheque": "SANTANDER - Nº 92 - M D DA SILVA"
+    },
+    {
+      "id": "6401416",
+      "cliente": "QUEZIA BERNARDES GARCIA",
+      "dadosCheque": "SICOOB - Nº 19 - APARECIDO GARCIA DA SILVA"
+    },
+    {
+      "id": "6401417",
+      "cliente": "QUEZIA BERNARDES GARCIA",
+      "dadosCheque": "SICOOB - Nº 20 - APARECIDO GARCIA DA SILVA"
+    },
+    {
+      "id": "6401418",
+      "cliente": "QUEZIA BERNARDES GARCIA",
+      "dadosCheque": "SICOOB - Nº 1302 - APARECIDO GARCIA DA SILVA"
+    },
+    {
+      "id": "6401419",
+      "cliente": "QUEZIA BERNARDES GARCIA",
+      "dadosCheque": "SICOOB - Nº 1303 - APARECIDO GARCIA DA SILVA"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tdadosCheque\n6401326\tDISTRIBUIDORA M7 EMBALAGENS LTDA\tSICREDI - Nº 7 - DISTRIBUIDORA M7 EMBALAGENS\n6401348\tM D DA SILVA ARTEFATOS DE BAMBU\tSANTANDER - Nº 90 - M D DA SILVA\n6401349\tM D DA SILVA ARTEFATOS DE BAMBU\tSANTANDER - Nº 85 - M D DA SILVA\n6401350\tM D DA SILVA ARTEFATOS DE BAMBU\tSANTANDER - Nº 88 - M D DA SILVA\n6401351\tM D DA SILVA ARTEFATOS DE BAMBU\tSANTANDER - Nº 91 - M D DA SILVA\n6401352\tM D DA SILVA ARTEFATOS DE BAMBU\tSANTANDER - Nº 92 - M D DA SILVA\n6401416\tQUEZIA BERNARDES GARCIA\tSICOOB - Nº 19 - APARECIDO GARCIA DA SILVA\n6401417\tQUEZIA BERNARDES GARCIA\tSICOOB - Nº 20 - APARECIDO GARCIA DA SILVA\n6401418\tQUEZIA BERNARDES GARCIA\tSICOOB - Nº 1302 - APARECIDO GARCIA DA SILVA\n6401419\tQUEZIA BERNARDES GARCIA\tSICOOB - Nº 1303 - APARECIDO GARCIA DA SILVA\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

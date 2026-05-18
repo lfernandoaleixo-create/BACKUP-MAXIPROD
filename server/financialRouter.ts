@@ -6649,6 +6649,7 @@ ${acoesTexto}
         parcela: accountsReceivable.parcela,
         parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
         documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+        dadosCheque: accountsReceivable.dadosCheque,
       })
         .from(accountsReceivable)
         .where(and(...conditions))
@@ -6711,6 +6712,7 @@ ${acoesTexto}
           empresaNome: row.empresaNome || "",
           parcela: row.parcela,
           parcelasTotal: row.parcelasQuantidadeTotal,
+          dadosCheque: row.dadosCheque || "",
         };
       });
 
@@ -6791,6 +6793,7 @@ ${acoesTexto}
         parcela: accountsReceivable.parcela,
         parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
         documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+        dadosCheque: accountsReceivable.dadosCheque,
       })
         .from(accountsReceivable)
         .where(and(...conditions))
@@ -6850,6 +6853,7 @@ ${acoesTexto}
           empresaNome: row.empresaNome || "",
           parcela: row.parcela,
           parcelasTotal: row.parcelasQuantidadeTotal,
+          dadosCheque: row.dadosCheque || "",
         };
       });
 
