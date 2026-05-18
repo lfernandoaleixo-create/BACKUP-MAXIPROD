@@ -3788,3 +3788,7 @@
 - [x] Remover coluna "Responsável" (quem está com o cheque) da aba Recebíveis em todos os 9 tipos de cheque
 - [x] Adicionar coluna "Dados do Cheque" ao lado da coluna "Cliente" na aba Recebíveis, puxando dados do Maxiprod (banco, número, titular)
 - [x] Garantir formatação legível sem cortar ou sobrepor letras na nova coluna
+- [x] Expandir card "Valor previsto de liberação para desconto na semana" para suportar 5 semanas (semana atual + 4 posteriores)
+- [x] Permitir que Flavio lance valores manualmente para cada uma das 5 semanas
+- [x] Ajustar banco de dados para armazenar valores por semana (semana 1 a 5)
+- [x] Frontend: exibir campos editáveis para cada semana dentro do card

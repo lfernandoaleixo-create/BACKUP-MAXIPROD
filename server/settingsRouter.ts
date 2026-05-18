@@ -1073,36 +1073,79 @@ export const settingsRouter = router({
 
   /**
    * Get Sicoob Palitos "Valor previsto de liberação para desconto na semana"
+   * Returns values for 5 weeks (current week + 4 future weeks)
    */
   getSicoobDescontoSemanal: publicProcedure.query(async () => {
-    const data = await getSetting("sicoob_desconto_semanal");
-    if (!data) return { valor: null, updatedBy: null, updatedAt: null };
-    return {
-      valor: data.valor as number | null,
-      updatedBy: data.updatedBy as string | null,
-      updatedAt: data.updatedAt as string | null,
-    };
+    const data = await getSetting("sicoob_desconto_semanal_v2");
+    if (!data) {
+      // Fallback: try legacy single-value format
+      const legacy = await getSetting("sicoob_desconto_semanal");
+      if (legacy && legacy.valor != null) {
+        return {
+          weeks: [
+            { weekIndex: 0, valor: legacy.valor as number, updatedBy: legacy.updatedBy as string | null, updatedAt: legacy.updatedAt as string | null },
+            { weekIndex: 1, valor: null, updatedBy: null, updatedAt: null },
+            { weekIndex: 2, valor: null, updatedBy: null, updatedAt: null },
+            { weekIndex: 3, valor: null, updatedBy: null, updatedAt: null },
+            { weekIndex: 4, valor: null, updatedBy: null, updatedAt: null },
+          ],
+        };
+      }
+      return {
+        weeks: [
+          { weekIndex: 0, valor: null, updatedBy: null, updatedAt: null },
+          { weekIndex: 1, valor: null, updatedBy: null, updatedAt: null },
+          { weekIndex: 2, valor: null, updatedBy: null, updatedAt: null },
+          { weekIndex: 3, valor: null, updatedBy: null, updatedAt: null },
+          { weekIndex: 4, valor: null, updatedBy: null, updatedAt: null },
+        ],
+      };
+    }
+    return { weeks: data.weeks };
   }),
 
   /**
    * Update Sicoob Palitos "Valor previsto de liberação para desconto na semana"
-   * Only operator "Flavio" can update this value.
+   * Supports updating a specific week (0-4). Only operator "Flavio" can update.
    */
   updateSicoobDescontoSemanal: publicProcedure
     .input(z.object({
       valor: z.number().min(0, "Valor deve ser positivo"),
       operatorName: z.string(),
+      weekIndex: z.number().min(0).max(4).default(0),
     }))
     .mutation(async ({ input }) => {
       if (input.operatorName !== "Flavio") {
         throw new Error("Apenas o operador Flávio pode atualizar este valor.");
       }
       const now = new Date().toISOString();
-      await setSetting("sicoob_desconto_semanal", {
+      // Load existing data
+      let data = await getSetting("sicoob_desconto_semanal_v2");
+      if (!data || !data.weeks) {
+        // Initialize with empty weeks
+        data = {
+          weeks: [
+            { weekIndex: 0, valor: null, updatedBy: null, updatedAt: null },
+            { weekIndex: 1, valor: null, updatedBy: null, updatedAt: null },
+            { weekIndex: 2, valor: null, updatedBy: null, updatedAt: null },
+            { weekIndex: 3, valor: null, updatedBy: null, updatedAt: null },
+            { weekIndex: 4, valor: null, updatedBy: null, updatedAt: null },
+          ],
+        };
+        // Migrate legacy value to week 0
+        const legacy = await getSetting("sicoob_desconto_semanal");
+        if (legacy && legacy.valor != null) {
+          data.weeks[0] = { weekIndex: 0, valor: legacy.valor, updatedBy: legacy.updatedBy, updatedAt: legacy.updatedAt };
+        }
+      }
+      // Update the specific week
+      data.weeks[input.weekIndex] = {
+        weekIndex: input.weekIndex,
         valor: input.valor,
         updatedBy: input.operatorName,
         updatedAt: now,
-      });
+      };
+      await setSetting("sicoob_desconto_semanal_v2", data);
       return { success: true };
     }),
 

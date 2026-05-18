@@ -1490,15 +1490,205 @@ const BLUE_SCHEME = {
 };
 
 function SicoobDescontoSemanalCard() {
+  const { operator } = useOperator();
+  const isFlavio = operator?.name === "Flavio";
+  const query = trpc.settings.getSicoobDescontoSemanal.useQuery();
+  const utils = trpc.useUtils();
+  const mutation = trpc.settings.updateSicoobDescontoSemanal.useMutation({
+    onSuccess: () => {
+      utils.settings.getSicoobDescontoSemanal.invalidate();
+      toast.success("Valor atualizado com sucesso!");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const [editingWeek, setEditingWeek] = useState<number | null>(null);
+  const [inputValue, setInputValue] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingValue, setPendingValue] = useState<number>(0);
+  const [pendingWeekIdx, setPendingWeekIdx] = useState<number>(0);
+
+  const weeks = query.data?.weeks || [];
+
+  // Calculate week date ranges
+  function getWeekLabel(weekIndex: number): string {
+    const now = new Date();
+    // Get Monday of current week
+    const dayOfWeek = now.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + mondayOffset + (weekIndex * 7));
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 4);
+    const fmtDay = (d: Date) => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    if (weekIndex === 0) return `Semana Atual (${fmtDay(monday)} - ${fmtDay(friday)})`;
+    return `Semana ${weekIndex + 1} (${fmtDay(monday)} - ${fmtDay(friday)})`;
+  }
+
+  function startEditing(weekIdx: number) {
+    const w = weeks[weekIdx];
+    setInputValue(w?.valor != null ? String(w.valor) : "");
+    setEditingWeek(weekIdx);
+  }
+
+  function handleSave(weekIdx: number) {
+    const parsed = parseFloat(inputValue.replace(/\./g, "").replace(",", "."));
+    if (isNaN(parsed) || parsed < 0) {
+      toast.error("Valor inválido");
+      return;
+    }
+    setPendingValue(parsed);
+    setPendingWeekIdx(weekIdx);
+    setShowConfirm(true);
+  }
+
+  function confirmSave() {
+    mutation.mutate({ valor: pendingValue, operatorName: operator!.name, weekIndex: pendingWeekIdx });
+    setShowConfirm(false);
+    setEditingWeek(null);
+  }
+
+  function formatUpdatedAt(iso: string) {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    } catch { return iso; }
+  }
+
+  const c = BLUE_SCHEME;
+  const totalSemanas = weeks.reduce((sum: number, w: any) => sum + (w?.valor || 0), 0);
+
   return (
-    <SicoobInfoCardWithChat
-      title="Valor previsto de liberação para desconto na semana"
-      subtitle="Sicoob Palitos"
-      icon={CalendarRange}
-      colorScheme={BLUE_SCHEME}
-      queryHook={() => trpc.settings.getSicoobDescontoSemanal.useQuery()}
-      mutationHook={(opts) => trpc.settings.updateSicoobDescontoSemanal.useMutation(opts)}
-    />
+    <div>
+      <div className={`relative overflow-hidden rounded-lg border ${c.border} ${c.bg} px-3 py-2.5 shadow-sm`}>
+        <div className={`absolute top-0 right-0 w-24 h-24 ${c.decoA} rounded-full blur-3xl -translate-y-1/2 translate-x-1/2`} />
+        <div className={`absolute bottom-0 left-0 w-16 h-16 ${c.decoB} rounded-full blur-3xl translate-y-1/2 -translate-x-1/2`} />
+
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-7 h-7 rounded-md bg-gradient-to-br ${c.iconFrom} ${c.iconTo} flex items-center justify-center shadow-md ${c.iconShadow}`}>
+              <CalendarRange className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h4 className={`${c.text} font-bold text-xs leading-tight`}>Valor previsto de liberação para desconto</h4>
+              <p className={`${c.textMuted} text-[9px] font-medium`}>Sicoob Palitos · Próximas 5 semanas</p>
+            </div>
+          </div>
+
+          {/* Total */}
+          {totalSemanas > 0 && (
+            <div className="mb-2 px-2 py-1.5 bg-blue-100/50 rounded-md border border-blue-200/50">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-blue-600 uppercase">Total 5 Semanas</span>
+                <span className="text-sm font-extrabold text-blue-800">{formatCurrency(totalSemanas)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Week rows */}
+          <div className="space-y-1.5">
+            {[0, 1, 2, 3, 4].map((weekIdx) => {
+              const w = weeks[weekIdx];
+              const isEditing = editingWeek === weekIdx;
+              return (
+                <div key={weekIdx} className={`flex items-center gap-2 px-2 py-1.5 rounded-md border transition-all ${
+                  weekIdx === 0 ? "border-blue-300 bg-blue-50/80" : "border-slate-200/60 bg-white/50 hover:bg-blue-50/30"
+                }`}>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-[10px] font-bold ${weekIdx === 0 ? "text-blue-700" : "text-slate-600"} truncate`}>
+                      {getWeekLabel(weekIdx)}
+                    </div>
+                    {isEditing ? (
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className="relative flex-1">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-blue-700 font-bold text-[10px]">R$</span>
+                          <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder="0,00"
+                            className="w-full pl-7 pr-2 py-1 rounded border border-blue-300 bg-white text-xs font-bold text-blue-800 focus:ring-1 focus:ring-blue-400 focus:outline-none"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSave(weekIdx);
+                              if (e.key === "Escape") setEditingWeek(null);
+                            }}
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleSave(weekIdx)}
+                          disabled={mutation.isPending}
+                          className="px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] transition-all disabled:opacity-50"
+                        >
+                          {mutation.isPending ? "..." : "OK"}
+                        </button>
+                        <button
+                          onClick={() => setEditingWeek(null)}
+                          className="px-1.5 py-1 rounded border border-blue-200 text-blue-600 font-medium text-[10px] hover:bg-blue-50"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`text-sm font-extrabold ${w?.valor != null ? "text-blue-800" : "text-slate-300 italic text-xs"}`}>
+                          {w?.valor != null ? formatCurrency(w.valor) : "—"}
+                        </span>
+                        {w?.updatedBy && w?.updatedAt && (
+                          <span className="text-[8px] text-blue-500/60 font-medium hidden sm:inline">
+                            {w.updatedBy} · {formatUpdatedAt(w.updatedAt)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {isFlavio && !isEditing && (
+                    <button
+                      onClick={() => startEditing(weekIdx)}
+                      className="flex-shrink-0 p-1.5 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-700 transition-all"
+                      title="Editar valor"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Dialog de confirmação */}
+        {showConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 max-w-sm mx-4 border border-slate-200">
+              <h3 className="text-lg font-bold text-slate-800 mb-2">Confirmar alteração</h3>
+              <p className="text-sm text-slate-600 mb-1">Atualizar valor da <strong>{getWeekLabel(pendingWeekIdx)}</strong>?</p>
+              <div className="bg-slate-50 rounded-lg p-3 mb-4">
+                <p className="text-xs text-slate-500">Valor atual: <span className="font-bold text-slate-700">{weeks[pendingWeekIdx]?.valor != null ? formatCurrency(weeks[pendingWeekIdx].valor!) : "Não definido"}</span></p>
+                <p className="text-xs text-slate-500 mt-1">Novo valor: <span className="font-bold text-emerald-700">{formatCurrency(pendingValue)}</span></p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="flex-1 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmSave}
+                  disabled={mutation.isPending}
+                  className="flex-1 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all disabled:opacity-50"
+                >
+                  {mutation.isPending ? "Salvando..." : "Confirmar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      <CardChat cardKey="sicoob_desconto_semanal" colorScheme={c} />
+    </div>
   );
 }
 
