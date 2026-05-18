@@ -13,6 +13,11 @@ import { gql } from "./maxiprodGraphQL";
  * Editável pelo Thiago e operadores com acesso financeiro.
  */
 
+// Normalizar nome removendo acentos para match correto
+function normalizeName(name: string): string {
+  return name.toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 // Tipos válidos de contas a receber (mesmo filtro da inadimplência)
 const RECEIVABLE_VALID_TYPES = ["TITULO", "RECEITA", "ADIANTAMENTO"];
 
@@ -622,17 +627,23 @@ export const cobrancaPlanilhaRouter = router({
               }
             }
           }`);
-          if (!resp?.data?.empresas) break;
-          total = resp.data.empresas.totalCount;
-          for (const emp of resp.data.empresas.items) {
+          if (!resp?.empresas) break;
+          total = resp.empresas.totalCount;
+          for (const emp of resp.empresas.items) {
             const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
-            const normalizedNames = names.map((n: string) => n.toUpperCase().trim());
+            const normalizedNames = names.map((n: string) => normalizeName(n));
             
-            // Mapear apelido para cada nome da empresa
+            // Mapear apelido para cada nome da empresa (só se diferente do nome/razão)
             const apelidoValue = (emp.apelido || "").trim();
             if (apelidoValue) {
-              for (const normName of normalizedNames) {
-                if (!apelidoMap[normName]) apelidoMap[normName] = apelidoValue;
+              const apelidoNorm = normalizeName(apelidoValue);
+              const nomeNorm = normalizeName(emp.nomeFantasia || "");
+              const razaoNorm = normalizeName(emp.razaoSocial || "");
+              // Só salvar apelido se for diferente do nome fantasia e razão social
+              if (apelidoNorm !== nomeNorm && apelidoNorm !== razaoNorm) {
+                for (const normName of normalizedNames) {
+                  if (!apelidoMap[normName]) apelidoMap[normName] = apelidoValue;
+                }
               }
             }
             
@@ -665,18 +676,17 @@ export const cobrancaPlanilhaRouter = router({
                 nomeFantasia
                 razaoSocial
                 apelido
-                enderecoPrincipal { telefone1 telefone2 telefone3 telefone4 }
                 enderecoDeCobranca { telefone1 telefone2 telefone3 telefone4 }
                 enderecoDeEntrega { telefone1 telefone2 telefone3 telefone4 }
                 enderecoDeFaturamento { telefone1 telefone2 telefone3 telefone4 }
               }
             }
           }`);
-          if (!resp?.data?.empresas) break;
-          total = resp.data.empresas.totalCount;
-          for (const emp of resp.data.empresas.items) {
+          if (!resp?.empresas) break;
+          total = resp.empresas.totalCount;
+          for (const emp of resp.empresas.items) {
             const phones = new Set<string>();
-            const addrs = [emp.enderecoPrincipal, emp.enderecoDeCobranca, emp.enderecoDeEntrega, emp.enderecoDeFaturamento];
+            const addrs = [emp.enderecoDeCobranca, emp.enderecoDeEntrega, emp.enderecoDeFaturamento];
             for (const addr of addrs) {
               if (!addr) continue;
               for (const key of ['telefone1', 'telefone2', 'telefone3', 'telefone4']) {
@@ -688,7 +698,7 @@ export const cobrancaPlanilhaRouter = router({
               const phonesArr = Array.from(phones);
               const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
               for (const name of names) {
-                const normName = name.toUpperCase().trim();
+                const normName = normalizeName(name);
                 if (!contatosExtrasMap[normName]) contatosExtrasMap[normName] = phonesArr;
               }
             }
@@ -802,7 +812,7 @@ export const cobrancaPlanilhaRouter = router({
         if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
         // Vendedor, apelido, forma de cobrança e contatos extras (sempre atualizar)
-        const empresaNorm = inad.empresa.toUpperCase().trim();
+        const empresaNorm = normalizeName(inad.empresa);
         const vendedor = vendedorMap[empresaNorm];
         if (vendedor) updateData.vendedor = vendedor;
         const apelidoVal = apelidoMap[empresaNorm];
@@ -886,7 +896,7 @@ export const cobrancaPlanilhaRouter = router({
           if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
           // Vendedor, apelido, forma de cobrança e contatos extras
-          const empresaNorm2 = inad.empresa.toUpperCase().trim();
+          const empresaNorm2 = normalizeName(inad.empresa);
           const vendedor2 = vendedorMap[empresaNorm2];
           if (vendedor2) updateData.vendedor = vendedor2;
           const apelidoVal2 = apelidoMap[empresaNorm2];
@@ -924,10 +934,10 @@ export const cobrancaPlanilhaRouter = router({
             contato: clienteData.contato || null,
             email: clienteData.email || null,
             regiao: clienteData.regiao || null,
-            apelido: apelidoMap[inad.empresa.toUpperCase().trim()] || null,
-            vendedor: vendedorMap[inad.empresa.toUpperCase().trim()] || null,
+            apelido: apelidoMap[normalizeName(inad.empresa)] || null,
+            vendedor: vendedorMap[normalizeName(inad.empresa)] || null,
             formaCobranca: formaCobrancaMap[inad.arId] || null,
-            contatosAdicionais: contatosExtrasMap[inad.empresa.toUpperCase().trim()] || [],
+            contatosAdicionais: contatosExtrasMap[normalizeName(inad.empresa)] || [],
             updatedBy: `Sync: ${input.updatedBy}`,
           });
           added++;
