@@ -176,8 +176,12 @@ async function fetchContasPagar(
     let totalRetiradaSocios = 0;
     let countSocios = 0;
     const items: Array<{ data: string; valor: number; fornecedor: string; referenteA: string; descricao: string; contaDestino: string; isSocio: boolean }> = [];
-    // Detalhamento por sócio: Gilson-458, Fernando-459, Bruno-460
-    const sociosMap: Record<string, { nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }> = {
+    // Detalhamento por sócio: Serragem: 458=Gilson, 459=Fernando, 460=Bruno | Rojão: 454=Gilson, 455=Fernando, 456=Bruno
+    const sociosMap: Record<string, { nome: string; conta: string; total: number; items: Array<{ data: string; valor: number; referenteA: string }> }> = tipo === "ROJÃO" ? {
+      "454": { nome: 'Gilson', conta: '454', total: 0, items: [] },
+      "455": { nome: 'Fernando', conta: '455', total: 0, items: [] },
+      "456": { nome: 'Bruno', conta: '456', total: 0, items: [] },
+    } : {
       "458": { nome: 'Gilson', conta: '458', total: 0, items: [] },
       "459": { nome: 'Fernando', conta: '459', total: 0, items: [] },
       "460": { nome: 'Bruno', conta: '460', total: 0, items: [] },
