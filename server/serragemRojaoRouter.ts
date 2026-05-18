@@ -338,10 +338,13 @@ async function fetchRecebido(
  * falsos positivos quando NFs de empresas diferentes compartilham o mesmo número.
  * ReceberEstado enum: EMITIDO = "A receber" na UI do Maxiprod
  * Sem filtro de data (todas as pendentes)
+ * 
+ * IMPORTANTE: O valor correto é "Valor a Receber" = valorOriginal - valorRecebidoLiquido
+ * (desconta pagamentos parciais já feitos). NÃO usar valorLiquido/valorOriginal sozinho.
  */
 async function fetchAReceber(
   tipo: "SERRAGEM" | "ROJÃO"
-): Promise<{ total: number; count: number; items: Array<{ vencimento: string; valor: number; nfNumero: string; cliente: string }> }> {
+): Promise<{ total: number; count: number; items: Array<{ vencimento: string; valor: number; valorOriginal: number; valorRecebido: number; nfNumero: string; cliente: string }> }> {
   try {
     // Step 1: Get all NF IDs (unique identifiers) for this tipo
     let nfIds = new Set<string>();
@@ -382,6 +385,8 @@ async function fetchAReceber(
         ) {
           totalCount
           items {
+            valorOriginal
+            valorRecebidoLiquido
             valorLiquido
             notaFiscalId
             documentoVinculadoNumero
@@ -398,15 +403,28 @@ async function fetchAReceber(
 
     // Step 3: Cross-reference using notaFiscalId (unique) instead of documentoVinculadoNumero
     const matched = allEmitido.filter(r => r.notaFiscalId && nfIds.has(String(r.notaFiscalId)));
-    const total = Math.round(matched.reduce((sum: number, i: any) => sum + (i.valorLiquido || 0), 0) * 100) / 100;
-    const items = matched.map((i: any) => ({
-      vencimento: i.vencimentoData?.split("T")[0] || "",
-      valor: i.valorLiquido || 0,
-      nfNumero: i.documentoVinculadoNumero || "",
-      cliente: i.cliente?.nomeFantasia || "",
-    }));
+    
+    // CORRETO: Valor a Receber = valorOriginal - valorRecebidoLiquido (desconta pagamentos parciais)
+    const total = Math.round(matched.reduce((sum: number, i: any) => {
+      const valorOriginal = i.valorOriginal || 0;
+      const valorRecebido = i.valorRecebidoLiquido || 0;
+      return sum + (valorOriginal - valorRecebido);
+    }, 0) * 100) / 100;
+    
+    const items = matched.map((i: any) => {
+      const valorOriginal = i.valorOriginal || 0;
+      const valorRecebido = i.valorRecebidoLiquido || 0;
+      return {
+        vencimento: i.vencimentoData?.split("T")[0] || "",
+        valor: Math.round((valorOriginal - valorRecebido) * 100) / 100,
+        valorOriginal: Math.round(valorOriginal * 100) / 100,
+        valorRecebido: Math.round(valorRecebido * 100) / 100,
+        nfNumero: i.documentoVinculadoNumero || "",
+        cliente: i.cliente?.nomeFantasia || "",
+      };
+    });
 
-    console.log(`[Serragem/Rojão] ${tipo} A Receber: R$ ${total.toFixed(2)} (${items.length} itens, ${nfIds.size} NFs)`);
+    console.log(`[Serragem/Rojão] ${tipo} A Receber: R$ ${total.toFixed(2)} (${items.length} itens, ${nfIds.size} NFs) [valorOriginal - valorRecebido]`);
 
     return { total, count: items.length, items };
   } catch (error: any) {
