@@ -274,9 +274,10 @@ export default function CadastroVendedoresTab() {
                                 e.stopPropagation();
                                 setExpandedSeller(isSellerExpanded ? null : `${grupo.gestor}|${vendedor}`);
                               }}
-                              className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+                              className="flex flex-col items-center gap-0.5 p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
                               title="Configurar produtos visíveis"
                             >
+                              <span className="text-[8px] font-semibold uppercase leading-none">Estoque</span>
                               <Package className="w-4 h-4" />
                             </button>
                           )}
