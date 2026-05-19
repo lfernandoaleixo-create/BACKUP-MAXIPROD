@@ -3840,3 +3840,8 @@
 - [x] Sistema de PDFs/Catálogos: upload de PDFs com pastas (ex: Catálogos)
 - [x] Sistema de PDFs/Catálogos: ticagem por vendedor (gestor seleciona quais PDFs cada vendedor vê)
 - [x] Sistema de PDFs/Catálogos: aba Catálogos no SellerApp com visualização dos PDFs liberados
+- [x] Pedido de Venda: schema do banco (pedidos, itens, preços mínimos, status aprovação)
+- [x] Pedido de Venda: endpoints tRPC (CRUD, busca clientes, validação preço, aprovação)
+- [x] Pedido de Venda: formulário no SellerApp (cadastro cliente com autocomplete + produtos + frete + pagamento)
+- [x] Pedido de Venda: fluxo de aprovação (alerta gestor quando preço abaixo do mínimo)
+- [x] Pedido de Venda: tela da Vitória para ver pedidos aprovados e preencher no Maxiprod

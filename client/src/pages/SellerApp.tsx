@@ -5,8 +5,9 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { Package, LogOut, Lock, AlertCircle, Search, RefreshCw, FileText, FolderOpen } from "lucide-react";
+import { Package, LogOut, Lock, AlertCircle, Search, RefreshCw, FileText, FolderOpen, ShoppingCart, ClipboardList } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import SalesOrderForm from "@/components/SalesOrderForm";
 
 interface SellerSession {
   id: number;
@@ -140,7 +141,9 @@ function SellerMainView({
   setSearch: (v: string) => void;
   onLogout: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<"estoque" | "pdfs">("estoque");
+  const [activeTab, setActiveTab] = useState<"estoque" | "pdfs" | "pedidos">("estoque");
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -172,6 +175,17 @@ function SellerMainView({
           >
             <Package className="w-3.5 h-3.5" />
             Estoque
+          </button>
+          <button
+            onClick={() => setActiveTab("pedidos")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === "pedidos"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            Pedidos
           </button>
           <button
             onClick={() => setActiveTab("pdfs")}
@@ -211,6 +225,8 @@ function SellerMainView({
       {/* Content */}
       {activeTab === "estoque" ? (
         <StockTab session={session} search={search} />
+      ) : activeTab === "pedidos" ? (
+        <OrdersTab session={session} showOrderForm={showOrderForm} setShowOrderForm={setShowOrderForm} orderSuccess={orderSuccess} setOrderSuccess={setOrderSuccess} />
       ) : (
         <CatalogsTab catalogs={session.catalogs} />
       )}
@@ -273,6 +289,107 @@ function StockTab({ session, search }: { session: SellerSession; search: string 
                 <p className={`text-base font-bold ${color} whitespace-nowrap`}>
                   {qty} <span className="text-xs font-semibold">{unit}</span>
                 </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OrdersTab({ session, showOrderForm, setShowOrderForm, orderSuccess, setOrderSuccess }: {
+  session: SellerSession;
+  showOrderForm: boolean;
+  setShowOrderForm: (v: boolean) => void;
+  orderSuccess: boolean;
+  setOrderSuccess: (v: boolean) => void;
+}) {
+  const ordersQuery = trpc.salesOrders.getSellerOrders.useQuery({ sellerId: session.id });
+
+  if (showOrderForm) {
+    return (
+      <SalesOrderForm
+        sellerId={session.id}
+        onBack={() => setShowOrderForm(false)}
+        onSuccess={() => {
+          setShowOrderForm(false);
+          setOrderSuccess(true);
+          ordersQuery.refetch();
+          setTimeout(() => setOrderSuccess(false), 5000);
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="p-4 space-y-4 pb-24">
+      {orderSuccess && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
+          <ShoppingCart className="w-4 h-4 text-emerald-600" />
+          <p className="text-xs font-medium text-emerald-700">Pedido enviado com sucesso!</p>
+        </div>
+      )}
+
+      <button
+        onClick={() => setShowOrderForm(true)}
+        className="w-full py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+      >
+        <ShoppingCart className="w-4 h-4" />
+        Novo Pedido de Venda
+      </button>
+
+      {/* Orders list */}
+      <p className="text-xs font-bold text-slate-500 uppercase">Meus Pedidos</p>
+
+      {ordersQuery.isLoading ? (
+        <div className="text-center py-8">
+          <RefreshCw className="w-5 h-5 text-blue-500 animate-spin mx-auto mb-2" />
+          <p className="text-xs text-slate-400">Carregando...</p>
+        </div>
+      ) : !ordersQuery.data || ordersQuery.data.length === 0 ? (
+        <div className="text-center py-8">
+          <ClipboardList className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <p className="text-sm text-slate-400">Nenhum pedido ainda</p>
+          <p className="text-[10px] text-slate-400 mt-1">Crie seu primeiro pedido de venda!</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {ordersQuery.data.map((order: any) => {
+            const statusColors: Record<string, string> = {
+              pendente: "bg-amber-100 text-amber-700",
+              aprovado: "bg-emerald-100 text-emerald-700",
+              rejeitado: "bg-red-100 text-red-700",
+              processado: "bg-blue-100 text-blue-700",
+            };
+            const statusLabels: Record<string, string> = {
+              pendente: "Aguardando Gestor",
+              aprovado: "Aprovado",
+              rejeitado: "Rejeitado",
+              processado: "Processado",
+            };
+            return (
+              <div key={order.id} className="bg-white rounded-xl border border-slate-100 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-slate-800 truncate">{order.razaoSocial}</p>
+                    <p className="text-[10px] text-slate-400">{order.cnpjCpf}</p>
+                  </div>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColors[order.status] || "bg-slate-100 text-slate-600"}`}>
+                    {statusLabels[order.status] || order.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+                  <p className="text-[10px] text-slate-400">
+                    {new Date(order.createdAt).toLocaleDateString("pt-BR")}
+                  </p>
+                  <p className="text-xs font-bold text-slate-700">R$ {Number(order.totalPedido || 0).toFixed(2)}</p>
+                </div>
+                {order.status === "rejeitado" && order.motivoRejeicao && (
+                  <div className="mt-2 bg-red-50 rounded-lg px-2 py-1.5">
+                    <p className="text-[10px] text-red-600">Motivo: {order.motivoRejeicao}</p>
+                  </div>
+                )}
               </div>
             );
           })}

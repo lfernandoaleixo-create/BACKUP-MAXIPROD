@@ -80,6 +80,7 @@ import FornecedoresBrasileirosTab from "@/components/FornecedoresBrasileirosTab"
 import MetricaVendasTab from "@/components/MetricaVendasTab";
 import MetricaClientesTab from "@/components/MetricaClientesTab";
 import CadastroVendedoresTab from "@/components/CadastroVendedoresTab";
+import PedidosVendedoresTab from "@/components/PedidosVendedoresTab";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
@@ -3263,7 +3264,7 @@ export default function Sales() {
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const FORNECEDORES_OPERATORS = ["Guilherme", "Fernando"];
   const canSeeFornecedores = operator && FORNECEDORES_OPERATORS.includes(operator.name);
-  const [salesTab, setSalesTab] = useState<"vendas" | "fornecedores" | "metricas" | "clientes" | "cadastro_vendedores">("vendas");
+  const [salesTab, setSalesTab] = useState<"vendas" | "fornecedores" | "metricas" | "clientes" | "cadastro_vendedores" | "pedidos_vendedores">("vendas");
   const [verifyingCard, setVerifyingCard] = useState<{ card: string; startDate: string; endDate: string; dashboardValue: number } | null>(null);
   const [simulatorCard, setSimulatorCard] = useState<{ section: string; title: string; subtitle: string; value: number } | null>(null);
   const [showCanceledDialog, setShowCanceledDialog] = useState(false);
@@ -3613,6 +3614,17 @@ export default function Sales() {
               <UserPlus className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
               <span className="whitespace-nowrap">Cadastro de Vendedores</span>
             </button>
+            <button
+              onClick={() => setSalesTab("pedidos_vendedores")}
+              className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
+                salesTab === "pedidos_vendedores"
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
+            >
+              <ClipboardList className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Pedidos Vendedores</span>
+            </button>
           </div>
         )}
 
@@ -3634,6 +3646,11 @@ export default function Sales() {
         {/* Tab: Cadastro de Vendedores */}
         {salesTab === "cadastro_vendedores" && canSeeFornecedores && (
           <CadastroVendedoresTab />
+        )}
+
+        {/* Tab: Pedidos dos Vendedores */}
+        {salesTab === "pedidos_vendedores" && canSeeFornecedores && (
+          <PedidosVendedoresTab />
         )}
 
         {/* Tab: Vendas (conteúdo original) */}

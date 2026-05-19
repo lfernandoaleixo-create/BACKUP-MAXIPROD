@@ -2052,3 +2052,100 @@ export const sellerCatalogVisibility = mysqlTable("seller_catalog_visibility", {
 });
 
 export type SellerCatalogVisibility = typeof sellerCatalogVisibility.$inferSelect;
+
+/**
+ * Preços mínimos por produto - definidos pelo gestor
+ * Usado para validar se o vendedor pode vender no preço informado
+ */
+export const productMinPrices = mysqlTable("product_min_prices", {
+  id: int("id").autoincrement().primaryKey(),
+  codigoItem: varchar("codigo_item", { length: 20 }).notNull(),
+  descricaoItem: text("descricao_item").notNull(),
+  precoMinimo: decimal("preco_minimo", { precision: 18, scale: 2 }).notNull(),
+  unidadeMedida: varchar("unidade_medida", { length: 10 }),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ProductMinPrice = typeof productMinPrices.$inferSelect;
+
+/**
+ * Pedidos de Venda criados pelos vendedores de rua
+ * Status: pendente -> aprovado/rejeitado -> processado (digitado no Maxiprod)
+ */
+export const salesOrderRequests = mysqlTable("sales_order_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerId: int("seller_id").notNull(), // FK seller_permissions.id
+  sellerName: varchar("seller_name", { length: 200 }).notNull(),
+  status: mysqlEnum("status", ["pendente", "aprovado", "rejeitado", "processado"]).default("pendente").notNull(),
+  
+  // Dados do cliente
+  cnpjCpf: varchar("cnpj_cpf", { length: 20 }).notNull(),
+  razaoSocial: varchar("razao_social", { length: 300 }).notNull(),
+  nomeFantasia: varchar("nome_fantasia", { length: 300 }),
+  inscricaoEstadual: varchar("inscricao_estadual", { length: 30 }),
+  tipoContribuinte: varchar("tipo_contribuinte", { length: 30 }), // Contribuinte, Isento, Não contribuinte
+  regimeTributario: varchar("regime_tributario", { length: 30 }), // Normal, Simples Nacional
+  emailNfe: varchar("email_nfe", { length: 300 }),
+  cnaeFiscal: varchar("cnae_fiscal", { length: 20 }),
+  
+  // Endereço
+  cep: varchar("cep", { length: 10 }),
+  endereco: varchar("endereco", { length: 300 }),
+  numero: varchar("numero", { length: 20 }),
+  complemento: varchar("complemento", { length: 200 }),
+  bairro: varchar("bairro", { length: 200 }),
+  municipio: varchar("municipio", { length: 200 }),
+  uf: varchar("uf", { length: 2 }),
+  telefone1: varchar("telefone1", { length: 20 }),
+  telefone2: varchar("telefone2", { length: 20 }),
+  emailContato: varchar("email_contato", { length: 300 }),
+  
+  // Dados de venda
+  segmento: varchar("segmento", { length: 100 }),
+  condicaoPagamento: varchar("condicao_pagamento", { length: 200 }),
+  valorFrete: decimal("valor_frete", { precision: 18, scale: 2 }),
+  tipoFrete: varchar("tipo_frete", { length: 50 }), // CIF, FOB
+  observacoes: text("observacoes"),
+  
+  // Totais
+  totalProdutos: decimal("total_produtos", { precision: 18, scale: 2 }).notNull(),
+  totalPedido: decimal("total_pedido", { precision: 18, scale: 2 }).notNull(),
+  
+  // Validação
+  temPrecoAbaixoMinimo: boolean("tem_preco_abaixo_minimo").default(false).notNull(),
+  motivoAlerta: text("motivo_alerta"), // Razão pela qual precisa de aprovação do gestor
+  
+  // Aprovação
+  aprovadoPor: varchar("aprovado_por", { length: 100 }),
+  dataAprovacao: timestamp("data_aprovacao"),
+  motivoRejeicao: text("motivo_rejeicao"),
+  
+  // Processamento (Vitória)
+  processadoPor: varchar("processado_por", { length: 100 }),
+  dataProcessamento: timestamp("data_processamento"),
+  numeroPedidoMaxiprod: varchar("numero_pedido_maxiprod", { length: 30 }),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SalesOrderRequest = typeof salesOrderRequests.$inferSelect;
+
+/**
+ * Itens do pedido de venda
+ */
+export const salesOrderRequestItems = mysqlTable("sales_order_request_items", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("order_id").notNull(), // FK sales_order_requests.id
+  codigoItem: varchar("codigo_item", { length: 20 }).notNull(),
+  descricaoItem: text("descricao_item").notNull(),
+  quantidade: decimal("quantidade", { precision: 18, scale: 3 }).notNull(),
+  unidadeMedida: varchar("unidade_medida", { length: 10 }),
+  precoUnitario: decimal("preco_unitario", { precision: 18, scale: 2 }).notNull(),
+  precoMinimo: decimal("preco_minimo", { precision: 18, scale: 2 }), // snapshot do preço mínimo na hora do pedido
+  totalItem: decimal("total_item", { precision: 18, scale: 2 }).notNull(),
+  abaixoDoMinimo: boolean("abaixo_do_minimo").default(false).notNull(),
+});
+
+export type SalesOrderRequestItem = typeof salesOrderRequestItems.$inferSelect;
