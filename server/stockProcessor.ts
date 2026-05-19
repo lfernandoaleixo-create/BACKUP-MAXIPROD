@@ -633,14 +633,10 @@ export async function processStockData(): Promise<void> {
     const unitsPerBox = item.codigoItem === '00808' ? 11.6 : (maxiprodFator || descFator);
     
     const orderData = orderByCode.get(item.codigoItem);
-    const pedidosUn = orderData?.totalUn || 0;
     
     const poData = poByCode.get(item.codigoItem);
     const poUn = poData?.totalUn || 0;
     const poCx = poData?.totalCx || 0;
-    
-    const disponivelUn = itemUn - pedidosUn;
-    const projetadoUn = disponivelUn + poUn;
     
     // Agregar pedidos por cliente + status para tooltip
     // Inclui pedidos que reservam (Aprovado/A aprovar) E pedidos em Digitação (só informação)
@@ -684,6 +680,18 @@ export async function processStockData(): Promise<void> {
         finalSubgrupo = "madeira";
       }
     }
+    
+    // ─── CORREÇÃO DUPLICIDADE DE BAIXA (19/05/2026) ───
+    // Para itens MADEIRA/MADEIRA CONTABILIZADO, os pedidos NÃO devem reservar estoque.
+    // A baixa desses itens já acontece automaticamente no faturamento via processIndustrializedBaixa.
+    // Se descontássemos aqui também, teríamos duplo desconto.
+    // IMPORTANTE: Isso NÃO afeta importação (BAMBU, FIBRA, MADEIRA IMPORTADA) — apenas industrializados.
+    const isMadeiraIndustrializado = estadoConfPredominante && 
+      (estadoConfPredominante.toUpperCase() === 'MADEIRA' || estadoConfPredominante.toUpperCase() === 'MADEIRA CONTABILIZADO');
+    const pedidosUn = isMadeiraIndustrializado ? 0 : (orderData?.totalUn || 0);
+    
+    const disponivelUn = itemUn - pedidosUn;
+    const projetadoUn = disponivelUn + poUn;
     
     // isKg: produtos vendidos em kg (ex: PCT 20KG)
     const isKg = item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem, item.codigoItem);
@@ -765,7 +773,6 @@ export async function processStockData(): Promise<void> {
     
     // ─── Cruzar com pedidos de venda para itens PO-only ───
     const orderData = orderByCode.get(code);
-    const pedidosUn = orderData?.totalUn || 0;
     const reservaPorCliente = orderData
       ? aggregateOrdersByClient(orderData.items, unitsPerBox)
       : [];
@@ -792,6 +799,11 @@ export async function processStockData(): Promise<void> {
     for (const [ec, count] of Array.from(estadoConfCountsPO.entries())) {
       if (count > maxCountPO) { maxCountPO = count; estadoConfPredominantePO = ec; }
     }
+    
+    // CORREÇÃO DUPLICIDADE DE BAIXA (19/05/2026): mesma regra da seção principal
+    const isMadeiraIndustrializadoPO = estadoConfPredominantePO && 
+      (estadoConfPredominantePO.toUpperCase() === 'MADEIRA' || estadoConfPredominantePO.toUpperCase() === 'MADEIRA CONTABILIZADO');
+    const pedidosUn = isMadeiraIndustrializadoPO ? 0 : (orderData?.totalUn || 0);
     
     const disponivelUn = 0 - pedidosUn; // estoque 0 - pedidos
     const projetadoUn = disponivelUn + poUn;

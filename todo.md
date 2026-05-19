@@ -3805,3 +3805,4 @@
 - [x] Implementar UI de cadastro de gestores na aba Cadastro de Vendedores
 - [x] Pré-cadastrar Juvenal Teixeira e Jordão Laine como gestores
 - [x] Garantir responsividade mobile em toda a interface
+- [x] Corrigir lógica: itens industrializados (MADEIRA/MADEIRA CONTABILIZADO) NÃO devem ter pedidos descontados do estoque disponível no dashboard — baixa só no faturamento (não mexer no estoque atual)

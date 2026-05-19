@@ -1017,3 +1017,165 @@ describe("stockProcessor - E-commerce PC→CX conversion and E-COMMERCE order ex
     expect(item.estoqueCx).toBe(50);
   });
 });
+
+describe("stockProcessor - Correção duplicidade de baixa MADEIRA", () => {
+  beforeEach(() => {
+    mockStockItems.length = 0;
+    mockOrderItems.length = 0;
+    mockPurchaseOrderItems.length = 0;
+    insertedDashboardData = null;
+  });
+
+  it("should NOT deduct orders from disponivel for MADEIRA items (baixa happens at billing)", async () => {
+    // Item de madeira (SG:16, G:18) com estoque
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00400",
+        descricaoItem: "PALITO DENTAL MADEIRA C/ 5.000 UNID",
+        quantidade: "100000",
+        grupoCodigo: "18",
+        superGrupoCodigo: "16",
+      }),
+    );
+    // Pedido aprovado com estadoConfiguravel = MADEIRA
+    mockOrderItems.push(
+      makeOrderItem({
+        codigoItem: "00400",
+        quantidade: "10",
+        quantidadeUnEstoque: "50000",
+        estadoNota: "Aprovado",
+        estadoConfiguravel: "MADEIRA",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00400");
+    
+    // pedidosUn deve ser 0 para MADEIRA (não reserva estoque)
+    expect(item.pedidosUn).toBe(0);
+    // disponível = estoque (sem desconto de pedidos)
+    expect(item.disponivelUn).toBe(100000);
+  });
+
+  it("should NOT deduct orders from disponivel for MADEIRA CONTABILIZADO items", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00401",
+        descricaoItem: "VARETA AROMATIZADOR 4,0 X 250 MM C/ 100 UNID.",
+        quantidade: "50000",
+        grupoCodigo: "18",
+        superGrupoCodigo: "16",
+      }),
+    );
+    mockOrderItems.push(
+      makeOrderItem({
+        codigoItem: "00401",
+        quantidade: "5",
+        quantidadeUnEstoque: "500",
+        estadoNota: "Aprovado",
+        estadoConfiguravel: "MADEIRA CONTABILIZADO",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00401");
+    
+    expect(item.pedidosUn).toBe(0);
+    expect(item.disponivelUn).toBe(50000);
+  });
+
+  it("should STILL deduct orders for BAMBU items (importação, não industrializado)", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00100",
+        descricaoItem: "VARETA DE BAMBU 3,0 X 250 MM C/ 5.000 UNID",
+        quantidade: "100000",
+        grupoCodigo: "20",
+        superGrupoCodigo: "12",
+      }),
+    );
+    mockOrderItems.push(
+      makeOrderItem({
+        codigoItem: "00100",
+        quantidade: "5",
+        quantidadeUnEstoque: "25000",
+        estadoNota: "Aprovado",
+        estadoConfiguravel: "BAMBU",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00100");
+    
+    // BAMBU deve continuar descontando normalmente
+    expect(item.pedidosUn).toBe(25000);
+    expect(item.disponivelUn).toBe(75000); // 100k - 25k
+  });
+
+  it("should STILL deduct orders for FIBRA items (importação, não industrializado)", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00200",
+        descricaoItem: "ESPETO FIBRA 3,5 X 300 MM C/ 5.000 UNID",
+        quantidade: "200000",
+        grupoCodigo: "21",
+        superGrupoCodigo: "12",
+      }),
+    );
+    mockOrderItems.push(
+      makeOrderItem({
+        codigoItem: "00200",
+        quantidade: "10",
+        quantidadeUnEstoque: "50000",
+        estadoNota: "Aprovado",
+        estadoConfiguravel: "FIBRA",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00200");
+    
+    // FIBRA deve continuar descontando normalmente
+    expect(item.pedidosUn).toBe(50000);
+    expect(item.disponivelUn).toBe(150000); // 200k - 50k
+  });
+
+  it("should still show MADEIRA orders in pedidosPorCliente tooltip (informational)", async () => {
+    mockStockItems.push(
+      makeStockItem({
+        codigoItem: "00400",
+        descricaoItem: "PALITO DENTAL MADEIRA C/ 5.000 UNID",
+        quantidade: "100000",
+        grupoCodigo: "18",
+        superGrupoCodigo: "16",
+      }),
+    );
+    mockOrderItems.push(
+      makeOrderItem({
+        codigoItem: "00400",
+        quantidade: "10",
+        quantidadeUnEstoque: "50000",
+        estadoNota: "Aprovado",
+        estadoConfiguravel: "MADEIRA",
+        cliente: "CLIENTE MADEIRA LTDA",
+      }),
+    );
+
+    await processStockData();
+
+    const items = JSON.parse(insertedDashboardData.dataJson);
+    const item = items.find((i: any) => i.codigoItem === "00400");
+    
+    // Pedidos devem aparecer no tooltip (informacional) mesmo sem reservar estoque
+    expect(item.pedidosPorCliente.length).toBeGreaterThan(0);
+    expect(item.pedidosPorCliente[0].cliente).toBe("CLIENTE MADEIRA LTDA");
+  });
+});
