@@ -1953,3 +1953,17 @@ export const paymentCalendarTicks = mysqlTable("payment_calendar_ticks", {
 });
 export type PaymentCalendarTick = typeof paymentCalendarTicks.$inferSelect;
 export type InsertPaymentCalendarTick = typeof paymentCalendarTicks.$inferInsert;
+
+/**
+ * Gestores de vendas - gestores internos que gerenciam vendedores de rua
+ */
+export const salesManagers = mysqlTable("sales_managers", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SalesManager = typeof salesManagers.$inferSelect;
+export type InsertSalesManager = typeof salesManagers.$inferInsert;

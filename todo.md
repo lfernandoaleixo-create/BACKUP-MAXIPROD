@@ -3800,3 +3800,8 @@
 - [x] Criar nova aba "Cadastro de Vendedores" na seção Vendas
 - [x] Restringir acesso à aba apenas para Fernando e Guilherme
 - [x] Estrutura inicial da aba (placeholder para funcionalidades futuras)
+- [x] Criar tabela de gestores de vendas no banco de dados
+- [x] Criar endpoints backend para CRUD de gestores
+- [x] Implementar UI de cadastro de gestores na aba Cadastro de Vendedores
+- [x] Pré-cadastrar Juvenal Teixeira e Jordão Laine como gestores
+- [x] Garantir responsividade mobile em toda a interface

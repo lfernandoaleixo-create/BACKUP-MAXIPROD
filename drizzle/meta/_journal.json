@@ -855,6 +855,13 @@
       "when": 1779134592933,
       "tag": "0121_gigantic_blackheart",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "5",
+      "when": 1779191519141,
+      "tag": "0122_low_genesis",
+      "breakpoints": true
     }
   ]
 }

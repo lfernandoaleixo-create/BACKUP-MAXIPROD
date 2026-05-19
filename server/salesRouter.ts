@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -2899,23 +2899,60 @@ export const salesRouter = router({
   getClientSegmentOptions: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("DB not available");
-
     const prodSegments = await db.select({
       seg: salesOrders.estadoConfiguravel,
     }).from(salesOrders)
       .where(sql`${salesOrders.estadoConfiguravel} IS NOT NULL AND ${salesOrders.estadoConfiguravel} != '' AND ${salesOrders.estadoConfiguravel} != 'NULL'`)
       .groupBy(salesOrders.estadoConfiguravel);
-
     const clientSegments = await db.select({
       seg: salesOrders.segmento,
     }).from(salesOrders)
       .where(sql`${salesOrders.segmento} IS NOT NULL AND ${salesOrders.segmento} != ''`)
       .groupBy(salesOrders.segmento);
-
     const allowedProdutoSegmentos = ["MADEIRA", "BAMBU", "FIBRA", "MADEIRA IMPORTADA"];
     return {
-      produtoSegmentos: prodSegments.map(s => s.seg).filter((s): s is string => typeof s === "string" && allowedProdutoSegmentos.includes(s)),
-      clienteSegmentos: clientSegments.map(s => s.seg).filter(Boolean) as string[],
+      produtoSegmentos: prodSegments.map((s: any) => s.seg).filter((s: any): s is string => typeof s === "string" && allowedProdutoSegmentos.includes(s)),
+      clienteSegmentos: clientSegments.map((s: any) => s.seg).filter(Boolean) as string[],
     };
   }),
+
+  // ===== Gestores de Vendas =====
+  listSalesManagers: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+    const managers = await db.select().from(salesManagers).orderBy(salesManagers.name);
+    return managers;
+  }),
+
+  createSalesManager: publicProcedure
+    .input(z.object({ name: z.string().min(2) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.insert(salesManagers).values({ name: input.name });
+      return { success: true };
+    }),
+
+  updateSalesManager: publicProcedure
+    .input(z.object({ id: z.number(), name: z.string().min(2).optional(), active: z.boolean().optional() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const updates: Record<string, unknown> = {};
+      if (input.name !== undefined) updates.name = input.name;
+      if (input.active !== undefined) updates.active = input.active;
+      if (Object.keys(updates).length > 0) {
+        await db.update(salesManagers).set(updates).where(eq(salesManagers.id, input.id));
+      }
+      return { success: true };
+    }),
+
+  deleteSalesManager: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.delete(salesManagers).where(eq(salesManagers.id, input.id));
+      return { success: true };
+    }),
 });
