@@ -213,36 +213,23 @@ function StockView({
         ) : (
           <div className="space-y-2">
             <p className="text-xs text-slate-400 mb-3">{items.length} produto{items.length !== 1 ? "s" : ""}</p>
-            {items.map((item: any) => (
-              <div
-                key={item.codigoItem}
-                className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{item.descricao}</p>
-                    <p className="text-[10px] font-mono text-slate-400 mt-0.5">{item.codigoItem}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-lg font-bold text-teal-600">
-                      {item.disponivelCx != null ? item.disponivelCx : item.disponivel || 0}
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      {item.disponivelCx != null ? "caixas" : "un"}
-                    </p>
-                  </div>
+            {items.map((item: any) => {
+              const isKg = item.isKgProduct || (item.descricao || "").toLowerCase().includes("kg");
+              const qty = item.disponivelCx != null ? item.disponivelCx : item.disponivel || 0;
+              const unit = isKg ? "kg" : "cx";
+              const color = qty <= 0 ? "text-orange-500" : "text-emerald-700";
+              return (
+                <div
+                  key={item.codigoItem}
+                  className="bg-white rounded-xl border border-slate-100 px-4 py-3 flex items-center justify-between gap-3"
+                >
+                  <p className="text-sm font-medium text-slate-800 truncate flex-1 min-w-0">{item.descricao}</p>
+                  <p className={`text-base font-bold ${color} whitespace-nowrap`}>
+                    {qty} <span className="text-xs font-semibold">{unit}</span>
+                  </p>
                 </div>
-                {/* Detalhes extras */}
-                <div className="mt-2 flex items-center gap-4 text-[10px] text-slate-400">
-                  {item.estoqueAtualCx != null && (
-                    <span>Estoque: {item.estoqueAtualCx} cx</span>
-                  )}
-                  {item.pedidosCx != null && item.pedidosCx > 0 && (
-                    <span>Pedidos: {item.pedidosCx} cx</span>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

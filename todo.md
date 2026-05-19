@@ -3831,3 +3831,4 @@
 - [x] Feature: Quando vendedor for Keure ou Johnson na planilha de cobrança, preencher automaticamente como "Grupo Fox"
 - [x] Cobrança: buscar e exibir AMBOS os emails do cliente (emailParaEnvioDeDocumentosFiscais + email do endereço)
 - [x] Normalizar representante "JUVENAL TEIXEIRA DA SILVA NETO" para "JUVENAL TEIXEIRA" no ranking de vendas e inadimplência
+- [x] SellerApp: simplificar visualização de estoque para mostrar apenas nome do produto + quantidade disponível (cx/kg)
