@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE cobranca_planilha SET tipo = 'COM PROTESTO (CARTÓRIO)' WHERE empresa LIKE '%BOUTIQUE%' AND ativo = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute UPDATE cobranca_planilha SET tipo = 'COM PROTESTO (CARTÓRIO)' WHERE empresa LIKE '%BOUTIQUE%' AND ativo = 1;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 269
+}

@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, cliente, decisaoCobranca, estado, tipo FROM accounts_receivable WHERE cliente LIKE '%BOUTIQUE%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, decisaoCobranca, estado, tipo FROM accounts_receivable WHERE cliente LIKE '%BOUTIQUE%' LIMIT 10;",
+  "rows": [
+    {
+      "id": "6401219",
+      "cliente": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "decisaoCobranca": "COM PROTESTO",
+      "estado": "EMITIDO",
+      "tipo": "RECEITA"
+    },
+    {
+      "id": "6401220",
+      "cliente": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "decisaoCobranca": "COM PROTESTO",
+      "estado": "EMITIDO",
+      "tipo": "RECEITA"
+    },
+    {
+      "id": "6401222",
+      "cliente": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "decisaoCobranca": "COM PROTESTO",
+      "estado": "EMITIDO",
+      "tipo": "RECEITA"
+    },
+    {
+      "id": "6401223",
+      "cliente": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "decisaoCobranca": "COM PROTESTO",
+      "estado": "EMITIDO",
+      "tipo": "RECEITA"
+    },
+    {
+      "id": "6401226",
+      "cliente": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "decisaoCobranca": "COM PROTESTO",
+      "estado": "EMITIDO",
+      "tipo": "RECEITA"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tdecisaoCobranca\testado\ttipo\n6401219\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO\tEMITIDO\tRECEITA\n6401220\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO\tEMITIDO\tRECEITA\n6401222\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO\tEMITIDO\tRECEITA\n6401223\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO\tEMITIDO\tRECEITA\n6401226\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO\tEMITIDO\tRECEITA\n",
+  "stderr": "",
+  "execution_time_ms": 324
+}

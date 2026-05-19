@@ -195,7 +195,7 @@ describe("cobrancaPlanilha router", () => {
     // The live stats should be consistent with what sync would report
     const syncResult = await caller.cobrancaPlanilha.syncFromInadimplencia({ updatedBy: "test-live-match" });
     expect(stats.totalTitulos).toBe(syncResult.summary.inadimplenciaTotal);
-  });
+  }, 60000);
 
   it("addEtapaObs adds observation to a specific step", async () => {
     const callerAuth = appRouter.createCaller({

@@ -18,6 +18,14 @@ function normalizeName(name: string): string {
   return name.toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+// Clientes com vendedor fixo "Grupo Fox" (definido manualmente por Fernando)
+const CLIENTES_GRUPO_FOX = ["JOHNSON", "KEURE", "S C JOHNSON", "SC JOHNSON", "S. C. JOHNSON"];
+
+function isClienteGrupoFox(nome: string): boolean {
+  const upper = nome.toUpperCase();
+  return CLIENTES_GRUPO_FOX.some(prefix => upper.includes(prefix));
+}
+
 // Tipos válidos de contas a receber (mesmo filtro da inadimplência)
 const RECEIVABLE_VALID_TYPES = ["TITULO", "RECEITA", "ADIANTAMENTO"];
 
@@ -832,7 +840,8 @@ export const cobrancaPlanilhaRouter = router({
         if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
         // Vendedor, apelido, forma de cobrança e contatos extras (sempre atualizar)
-        const vendedor = vendedorMap[empresaNorm];
+        // REGRA: Se cliente é Keure/Johnson → vendedor = "Grupo Fox"
+        const vendedor = isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : vendedorMap[empresaNorm];
         if (vendedor) updateData.vendedor = vendedor;
         const apelidoVal = apelidoMap[empresaNorm];
         if (apelidoVal) updateData.apelido = apelidoVal;
@@ -926,7 +935,8 @@ export const cobrancaPlanilhaRouter = router({
 
           // Vendedor, apelido, forma de cobrança e contatos extras
           const empresaNorm2 = normalizeName(inad.empresa);
-          const vendedor2 = vendedorMap[empresaNorm2];
+          // REGRA: Se cliente é Keure/Johnson → vendedor = "Grupo Fox"
+          const vendedor2 = isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : vendedorMap[empresaNorm2];
           if (vendedor2) updateData.vendedor = vendedor2;
           const apelidoVal2 = apelidoMap[empresaNorm2];
           if (apelidoVal2) updateData.apelido = apelidoVal2;
@@ -964,7 +974,7 @@ export const cobrancaPlanilhaRouter = router({
             email: emailNfeMap[normalizeName(inad.empresa)] || clienteData.email || null,
             regiao: clienteData.regiao || null,
             apelido: apelidoMap[normalizeName(inad.empresa)] || null,
-            vendedor: vendedorMap[normalizeName(inad.empresa)] || null,
+            vendedor: isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : (vendedorMap[normalizeName(inad.empresa)] || null),
             formaCobranca: formaCobrancaMap[inad.arId] || null,
             contatosAdicionais: contatosExtrasMap[normalizeName(inad.empresa)] || [],
             updatedBy: `Sync: ${input.updatedBy}`,

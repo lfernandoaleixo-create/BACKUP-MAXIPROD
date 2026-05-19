@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE cobranca_planilha SET vendedor = 'Grupo Fox' WHERE (UPPER(empresa) LIKE '%KEURE%' OR UPPER(empresa) LIKE '%JOHNSON%' OR UPPER(empresa) LIKE '%S C JOHNSON%' OR UPPER(empresa) LIKE '%SC JOHNSON%') AND ativo = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute UPDATE cobranca_planilha SET vendedor = 'Grupo Fox' WHERE (UPPER(empresa) LIKE '%KEURE%' OR UPPER(empresa) LIKE '%JOHNSON%' OR UPPER(empresa) LIKE '%S C JOHNSON%' OR UPPER(empresa) LIKE '%SC JOHNSON%') AND ativo = 1;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 271
+}

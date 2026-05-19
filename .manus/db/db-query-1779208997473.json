@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, empresa, tipo, ar_id FROM cobranca_planilha WHERE empresa LIKE '%BOUTIQUE%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, tipo, ar_id FROM cobranca_planilha WHERE empresa LIKE '%BOUTIQUE%';",
+  "rows": [
+    {
+      "id": "18",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "COM PROTESTO (CARTÓRIO)",
+      "ar_id": "6401226"
+    },
+    {
+      "id": "20",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "COM PROTESTO (CARTÓRIO)",
+      "ar_id": "6401223"
+    },
+    {
+      "id": "30",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "COM PROTESTO (CARTÓRIO)",
+      "ar_id": "6401222"
+    },
+    {
+      "id": "32",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "COM PROTESTO (CARTÓRIO)",
+      "ar_id": "6401220"
+    },
+    {
+      "id": "33",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "COM PROTESTO (CARTÓRIO)",
+      "ar_id": "6401219"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\ttipo\tar_id\n18\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO (CARTÓRIO)\t6401226\n20\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO (CARTÓRIO)\t6401223\n30\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO (CARTÓRIO)\t6401222\n32\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO (CARTÓRIO)\t6401220\n33\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tCOM PROTESTO (CARTÓRIO)\t6401219\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

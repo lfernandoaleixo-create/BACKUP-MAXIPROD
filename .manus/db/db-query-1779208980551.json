@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, empresa, tipo, ar_id, ativo, dias_vencidos FROM cobranca_planilha WHERE empresa LIKE '%BOUTIQUE%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, tipo, ar_id, ativo, dias_vencidos FROM cobranca_planilha WHERE empresa LIKE '%BOUTIQUE%' LIMIT 10;",
+  "rows": [
+    {
+      "id": "18",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "SEM PROTESTO",
+      "ar_id": "6401226",
+      "ativo": "1",
+      "dias_vencidos": "118"
+    },
+    {
+      "id": "20",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "SEM PROTESTO",
+      "ar_id": "6401223",
+      "ativo": "1",
+      "dias_vencidos": "123"
+    },
+    {
+      "id": "30",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "SEM PROTESTO",
+      "ar_id": "6401222",
+      "ativo": "1",
+      "dias_vencidos": "128"
+    },
+    {
+      "id": "32",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "SEM PROTESTO",
+      "ar_id": "6401220",
+      "ativo": "1",
+      "dias_vencidos": "133"
+    },
+    {
+      "id": "33",
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "tipo": "SEM PROTESTO",
+      "ar_id": "6401219",
+      "ativo": "1",
+      "dias_vencidos": "138"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\ttipo\tar_id\tativo\tdias_vencidos\n18\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tSEM PROTESTO\t6401226\t1\t118\n20\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tSEM PROTESTO\t6401223\t1\t123\n30\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tSEM PROTESTO\t6401222\t1\t128\n32\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tSEM PROTESTO\t6401220\t1\t133\n33\tBOUTIQUE DO CONSTRUTOR SLU LTDA\tSEM PROTESTO\t6401219\t1\t138\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}
