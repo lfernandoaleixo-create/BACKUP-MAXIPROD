@@ -67,6 +67,7 @@ import {
   CheckCircle2,
   Ban,
   Info,
+  UserPlus,
 } from "lucide-react";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
@@ -78,6 +79,7 @@ import type { VerifySection } from "@/components/MaxiprodAutoVerifier";
 import FornecedoresBrasileirosTab from "@/components/FornecedoresBrasileirosTab";
 import MetricaVendasTab from "@/components/MetricaVendasTab";
 import MetricaClientesTab from "@/components/MetricaClientesTab";
+import CadastroVendedoresTab from "@/components/CadastroVendedoresTab";
 
 const MAXIPROD_AUTHORIZED_OPERATORS = ["Guilherme", "Fernando", "Bruno"];
 const MAXIPROD_LOGIN_URL = "https://app.maxiprod.com.br/";
@@ -3261,7 +3263,7 @@ export default function Sales() {
   const canVerifyMaxiprod = operator && MAXIPROD_AUTHORIZED_OPERATORS.includes(operator.name);
   const FORNECEDORES_OPERATORS = ["Guilherme", "Fernando"];
   const canSeeFornecedores = operator && FORNECEDORES_OPERATORS.includes(operator.name);
-  const [salesTab, setSalesTab] = useState<"vendas" | "fornecedores" | "metricas" | "clientes">("vendas");
+  const [salesTab, setSalesTab] = useState<"vendas" | "fornecedores" | "metricas" | "clientes" | "cadastro_vendedores">("vendas");
   const [verifyingCard, setVerifyingCard] = useState<{ card: string; startDate: string; endDate: string; dashboardValue: number } | null>(null);
   const [simulatorCard, setSimulatorCard] = useState<{ section: string; title: string; subtitle: string; value: number } | null>(null);
   const [showCanceledDialog, setShowCanceledDialog] = useState(false);
@@ -3555,7 +3557,7 @@ export default function Sales() {
 
         {/* Sub-abas Vendas */}
         {canSeeFornecedores && (
-          <div className="grid grid-cols-2 md:flex md:items-center md:justify-center gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+          <div className="grid grid-cols-3 md:flex md:items-center md:justify-center gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-1">
             <button
               onClick={() => setSalesTab("vendas")}
               className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
@@ -3600,6 +3602,17 @@ export default function Sales() {
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
               <span className="truncate"><span className="md:hidden">Mét. Clientes</span><span className="hidden md:inline">Métrica de Clientes</span></span>
             </button>
+            <button
+              onClick={() => setSalesTab("cadastro_vendedores")}
+              className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
+                salesTab === "cadastro_vendedores"
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+              <span className="truncate"><span className="md:hidden">Cad. Vendedores</span><span className="hidden md:inline">Cadastro de Vendedores</span></span>
+            </button>
           </div>
         )}
 
@@ -3616,6 +3629,11 @@ export default function Sales() {
         {/* Tab: Métrica de Clientes */}
         {salesTab === "clientes" && canSeeFornecedores && (
           <MetricaClientesTab />
+        )}
+
+        {/* Tab: Cadastro de Vendedores */}
+        {salesTab === "cadastro_vendedores" && canSeeFornecedores && (
+          <CadastroVendedoresTab />
         )}
 
         {/* Tab: Vendas (conteúdo original) */}

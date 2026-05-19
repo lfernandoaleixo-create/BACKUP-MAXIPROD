@@ -3797,3 +3797,6 @@
 - [x] Mudar cor da conta quando ticada (visual para todos os operadores verem)
 - [x] Persistir tiques no banco de dados (todos veem o estado atual)
 - [x] Vareta de Apito (00223 e 00058): mudar unidade de cx para Kg no lançamento de embalagem na Produção
+- [x] Criar nova aba "Cadastro de Vendedores" na seção Vendas
+- [x] Restringir acesso à aba apenas para Fernando e Guilherme
+- [x] Estrutura inicial da aba (placeholder para funcionalidades futuras)
