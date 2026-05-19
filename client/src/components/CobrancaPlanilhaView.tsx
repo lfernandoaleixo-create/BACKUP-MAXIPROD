@@ -1402,7 +1402,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       {/* Vendedor */}
                       <td className="text-center px-2 py-2.5">
                         <span className="text-[9px] font-medium text-slate-600 truncate block max-w-[80px]" title={item.vendedor || ""}>
-                          {item.vendedor ? item.vendedor.split(" ")[0] : "-"}
+                          {item.vendedor || "-"}
                         </span>
                       </td>
                       {/* Forma Cobrança */}

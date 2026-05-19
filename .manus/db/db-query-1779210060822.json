@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, empresa, vendedor, LENGTH(vendedor) as len FROM cobranca_planilha WHERE vendedor LIKE '%Grupo%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, vendedor, LENGTH(vendedor) as len FROM cobranca_planilha WHERE vendedor LIKE '%Grupo%' LIMIT 10;",
+  "rows": [
+    {
+      "id": "40",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    },
+    {
+      "id": "41",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    },
+    {
+      "id": "42",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    },
+    {
+      "id": "43",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    },
+    {
+      "id": "44",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    },
+    {
+      "id": "45",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    },
+    {
+      "id": "46",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    },
+    {
+      "id": "47",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    },
+    {
+      "id": "48",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    },
+    {
+      "id": "49",
+      "empresa": "KEURE QUIMICA LTDA",
+      "vendedor": "Grupo Fox",
+      "len": "9"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tvendedor\tlen\n40\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n41\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n42\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n43\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n44\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n45\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n46\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n47\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n48\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n49\tKEURE QUIMICA LTDA\tGrupo Fox\t9\n",
+  "stderr": "",
+  "execution_time_ms": 339
+}
