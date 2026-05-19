@@ -3814,3 +3814,6 @@
 - [x] Criar query GraphQL para puxar representantes (Apelido=vendedor, Representante/vendedor=gestor)
 - [x] Criar endpoint tRPC que retorna vendedores agrupados por gestor
 - [x] Atualizar UI CadastroVendedoresTab para usar dados do Maxiprod (sem CRUD manual)
+- [x] Cobrança: buscar campo "E-mail para envio da NF-e/NFC-e/NFS-e" além do email do endereço (campo: emailParaEnvioDeDocumentosFiscais)
+- [x] Cobrança: corrigir bug BOUTIQUE DO CONSTRUTOR mostrando "SEM PROTESTO" quando no Maxiprod está "COM PROTESTO" — sync agora SEMPRE atualiza tipo do Maxiprod
+- [x] Cobrança: reativar atualização de decisaoCobranca no sync de contas a receber

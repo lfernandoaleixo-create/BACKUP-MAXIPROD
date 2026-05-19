@@ -1456,8 +1456,8 @@ async function saveFinancialData(
                 empresaId: sql`VALUES(empresaId)`,
                 empresaNome: sql`VALUES(empresaNome)`,
                 anotacoes: sql`VALUES(anotacoes)`,
-                // NUNCA sobrescrever decisaoCobranca na sync - campo manual do Thiago (inadimplência)
-                // decisaoCobranca: sql`VALUES(decisaoCobranca)`,
+                // Atualizar decisaoCobranca do Maxiprod (campo SITUAÇÃO do cliente)
+                decisaoCobranca: sql`VALUES(decisaoCobranca)`,
                 collectedAt: sql`NOW()`,
               },
             });

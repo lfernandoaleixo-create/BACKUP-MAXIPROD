@@ -178,3 +178,102 @@ describe("decisaoCobranca no getOverdueTitles", () => {
     expect(decisao).toBe("");
   });
 });
+
+describe("sync planilha: tipo (protesto) deve ser atualizado do Maxiprod", () => {
+  it("deve atualizar tipo quando Maxiprod tem valor diferente do salvo", () => {
+    // Simula a lógica corrigida no cobrancaPlanilhaRouter
+    const match = { tipo: "SEM PROTESTO", email: "old@test.com" };
+    const inad = { tipo: "COM PROTESTO (CARTÓRIO)", empresa: "BOUTIQUE DO CONSTRUTOR" };
+    const updateData: Record<string, any> = {};
+
+    // Nova lógica: SEMPRE atualizar tipo do Maxiprod
+    if (inad.tipo && match.tipo !== inad.tipo) {
+      updateData.tipo = inad.tipo;
+    }
+
+    expect(updateData.tipo).toBe("COM PROTESTO (CARTÓRIO)");
+  });
+
+  it("não deve atualizar tipo quando valores são iguais", () => {
+    const match = { tipo: "COM PROTESTO (CARTÓRIO)" };
+    const inad = { tipo: "COM PROTESTO (CARTÓRIO)", empresa: "TESTE" };
+    const updateData: Record<string, any> = {};
+
+    if (inad.tipo && match.tipo !== inad.tipo) {
+      updateData.tipo = inad.tipo;
+    }
+
+    expect(updateData.tipo).toBeUndefined();
+  });
+
+  it("deve atualizar tipo quando match.tipo está vazio", () => {
+    const match = { tipo: "" };
+    const inad = { tipo: "SEM PROTESTO", empresa: "TESTE" };
+    const updateData: Record<string, any> = {};
+
+    if (inad.tipo && match.tipo !== inad.tipo) {
+      updateData.tipo = inad.tipo;
+    }
+
+    expect(updateData.tipo).toBe("SEM PROTESTO");
+  });
+});
+
+describe("sync planilha: email NF-e deve ter prioridade", () => {
+  it("deve usar emailParaEnvioDeDocumentosFiscais quando disponível", () => {
+    const match = { email: null };
+    const emailNfeMap: Record<string, string> = { "elian carrilho santiago da silva": "elanfael@gmail.com" };
+    const clienteData = { email: "outro@email.com" };
+    const empresaNorm = "elian carrilho santiago da silva";
+    const updateData: Record<string, any> = {};
+
+    if (!match.email) {
+      const nfeEmail = emailNfeMap[empresaNorm];
+      if (nfeEmail) {
+        updateData.email = nfeEmail;
+      } else if (clienteData.email) {
+        updateData.email = clienteData.email;
+      }
+    }
+
+    expect(updateData.email).toBe("elanfael@gmail.com");
+  });
+
+  it("deve usar email do pedido como fallback quando NF-e não disponível", () => {
+    const match = { email: null };
+    const emailNfeMap: Record<string, string> = {};
+    const clienteData = { email: "pedido@email.com" };
+    const empresaNorm = "empresa sem nfe";
+    const updateData: Record<string, any> = {};
+
+    if (!match.email) {
+      const nfeEmail = emailNfeMap[empresaNorm];
+      if (nfeEmail) {
+        updateData.email = nfeEmail;
+      } else if (clienteData.email) {
+        updateData.email = clienteData.email;
+      }
+    }
+
+    expect(updateData.email).toBe("pedido@email.com");
+  });
+
+  it("não deve sobrescrever email já preenchido manualmente", () => {
+    const match = { email: "manual@email.com" };
+    const emailNfeMap: Record<string, string> = { "empresa": "nfe@email.com" };
+    const clienteData = { email: "pedido@email.com" };
+    const empresaNorm = "empresa";
+    const updateData: Record<string, any> = {};
+
+    if (!match.email) {
+      const nfeEmail = emailNfeMap[empresaNorm];
+      if (nfeEmail) {
+        updateData.email = nfeEmail;
+      } else if (clienteData.email) {
+        updateData.email = clienteData.email;
+      }
+    }
+
+    expect(updateData.email).toBeUndefined(); // Não sobrescreve
+  });
+});

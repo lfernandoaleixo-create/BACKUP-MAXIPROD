@@ -608,9 +608,10 @@ export const cobrancaPlanilhaRouter = router({
         }
       }
 
-      // 4c. Buscar vendedor e apelido de cada cliente via GraphQL (representanteOuVendedor1Preferencial)
+      // 4c. Buscar vendedor, apelido e email NF-e de cada cliente via GraphQL
       const vendedorMap: Record<string, string> = {};
       const apelidoMap: Record<string, string> = {};
+      const emailNfeMap: Record<string, string> = {};
       try {
         const PAGE_SIZE = 200;
         let skip = 0;
@@ -623,6 +624,7 @@ export const cobrancaPlanilhaRouter = router({
                 nomeFantasia
                 razaoSocial
                 apelido
+                emailParaEnvioDeDocumentosFiscais
                 representanteOuVendedor1Preferencial { nomeFantasia razaoSocial }
               }
             }
@@ -644,6 +646,14 @@ export const cobrancaPlanilhaRouter = router({
                 for (const normName of normalizedNames) {
                   if (!apelidoMap[normName]) apelidoMap[normName] = apelidoValue;
                 }
+              }
+            }
+            
+            // Mapear email para envio de NF-e
+            const emailNfe = (emp.emailParaEnvioDeDocumentosFiscais || "").trim();
+            if (emailNfe) {
+              for (const normName of normalizedNames) {
+                if (!emailNfeMap[normName]) emailNfeMap[normName] = emailNfe;
               }
             }
             
@@ -795,7 +805,8 @@ export const cobrancaPlanilhaRouter = router({
         if (!match.status || match.status === '') {
           updateData.status = inad.status;
         }
-        if (!match.tipo || match.tipo === '') {
+        // Tipo (protesto): SEMPRE atualizar do Maxiprod pois vem do campo SITUAÇÃO do cadastro do cliente
+        if (inad.tipo && match.tipo !== inad.tipo) {
           updateData.tipo = inad.tipo;
         }
         // Contar se houve diferença (apenas para log, sem sobrescrever)
@@ -805,14 +816,22 @@ export const cobrancaPlanilhaRouter = router({
 
         // Enriquecer dados de contato se ainda não preenchidos
         const clienteData = clienteDataMap[inad.empresa] || {};
+        const empresaNorm = normalizeName(inad.empresa);
         if (!match.contato && clienteData.contato) updateData.contato = clienteData.contato;
-        if (!match.email && clienteData.email) updateData.email = clienteData.email;
+        // Email: priorizar emailParaEnvioDeDocumentosFiscais do Maxiprod, fallback para email do pedido
+        if (!match.email) {
+          const nfeEmail = emailNfeMap[empresaNorm];
+          if (nfeEmail) {
+            updateData.email = nfeEmail;
+          } else if (clienteData.email) {
+            updateData.email = clienteData.email;
+          }
+        }
         if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
         if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
         if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
         // Vendedor, apelido, forma de cobrança e contatos extras (sempre atualizar)
-        const empresaNorm = normalizeName(inad.empresa);
         const vendedor = vendedorMap[empresaNorm];
         if (vendedor) updateData.vendedor = vendedor;
         const apelidoVal = apelidoMap[empresaNorm];
@@ -880,7 +899,8 @@ export const cobrancaPlanilhaRouter = router({
           if (!match.status || match.status === '') {
             updateData.status = inad.status;
           }
-          if (!match.tipo || match.tipo === '') {
+          // Tipo (protesto): SEMPRE atualizar do Maxiprod pois vem do campo SITUAÇÃO do cadastro do cliente
+          if (inad.tipo && match.tipo !== inad.tipo) {
             updateData.tipo = inad.tipo;
           }
           if (match.status !== inad.status) {
@@ -889,8 +909,17 @@ export const cobrancaPlanilhaRouter = router({
 
           // Enriquecer dados de contato se ainda não preenchidos
           const clienteData = clienteDataMap[inad.empresa] || {};
+          const empresaNormFb = normalizeName(inad.empresa);
           if (!match.contato && clienteData.contato) updateData.contato = clienteData.contato;
-          if (!match.email && clienteData.email) updateData.email = clienteData.email;
+          // Email: priorizar emailParaEnvioDeDocumentosFiscais do Maxiprod, fallback para email do pedido
+          if (!match.email) {
+            const nfeEmail = emailNfeMap[empresaNormFb];
+            if (nfeEmail) {
+              updateData.email = nfeEmail;
+            } else if (clienteData.email) {
+              updateData.email = clienteData.email;
+            }
+          }
           if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
           if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
           if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
@@ -932,7 +961,7 @@ export const cobrancaPlanilhaRouter = router({
             tipo: inad.tipo,
             status: inad.status,
             contato: clienteData.contato || null,
-            email: clienteData.email || null,
+            email: emailNfeMap[normalizeName(inad.empresa)] || clienteData.email || null,
             regiao: clienteData.regiao || null,
             apelido: apelidoMap[normalizeName(inad.empresa)] || null,
             vendedor: vendedorMap[normalizeName(inad.empresa)] || null,
