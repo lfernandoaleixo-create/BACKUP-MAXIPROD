@@ -2952,25 +2952,38 @@ export const salesRouter = router({
     }
 
     // Processar: agrupar vendedores por gestor
+    // Regra:
+    // - Apelido == Representante/vendedor → é um GESTOR (registrar como gestor)
+    // - Apelido != Representante/vendedor → é SUBORDINADO daquele gestor
+    // - Sem Representante/vendedor → ignorar
     const gestoresMap = new Map<string, string[]>();
-    const semGestor: string[] = [];
 
     for (const emp of data.empresas.items) {
-      const vendedorName = emp.apelido || emp.nomeFantasia || emp.razaoSocial || "";
-      if (!vendedorName) continue;
+      const apelido = (emp.apelido || emp.nomeFantasia || emp.razaoSocial || "").trim();
+      if (!apelido) continue;
 
       const gestor = emp.representanteOuVendedor1Preferencial;
-      const gestorName = gestor?.nomeFantasia || gestor?.razaoSocial || gestor?.apelido || "";
+      const gestorName = (gestor?.apelido || gestor?.nomeFantasia || gestor?.razaoSocial || "").trim();
 
-      if (gestorName && gestorName !== vendedorName) {
-        // Vendedor com gestor vinculado
+      // Sem representante/vendedor preenchido → ignorar
+      if (!gestorName) continue;
+
+      // Normalizar para comparação (case insensitive)
+      const apelidoNorm = apelido.toUpperCase();
+      const gestorNorm = gestorName.toUpperCase();
+
+      if (apelidoNorm === gestorNorm) {
+        // Apelido == Representante/vendedor → é um GESTOR
+        // Garantir que o gestor existe no mapa (mesmo sem subordinados)
         if (!gestoresMap.has(gestorName)) {
           gestoresMap.set(gestorName, []);
         }
-        gestoresMap.get(gestorName)!.push(vendedorName);
       } else {
-        // Sem gestor ou é o próprio gestor
-        semGestor.push(vendedorName);
+        // Apelido != Representante/vendedor → é subordinado daquele gestor
+        if (!gestoresMap.has(gestorName)) {
+          gestoresMap.set(gestorName, []);
+        }
+        gestoresMap.get(gestorName)!.push(apelido);
       }
     }
 
@@ -2978,9 +2991,8 @@ export const salesRouter = router({
     const result = {
       gestores: Array.from(gestoresMap.entries()).map(([gestor, vendedores]) => ({
         gestor,
-        vendedores: vendedores.sort((a, b) => a.localeCompare(b, 'pt-BR')),
+        vendedores: vendedores.sort((a: string, b: string) => a.localeCompare(b, 'pt-BR')),
       })).sort((a, b) => a.gestor.localeCompare(b.gestor, 'pt-BR')),
-      semGestor: semGestor.sort((a, b) => a.localeCompare(b, 'pt-BR')),
       total: data.empresas.totalCount,
     };
 

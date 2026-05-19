@@ -3817,3 +3817,4 @@
 - [x] Cobrança: buscar campo "E-mail para envio da NF-e/NFC-e/NFS-e" além do email do endereço (campo: emailParaEnvioDeDocumentosFiscais)
 - [x] Cobrança: corrigir bug BOUTIQUE DO CONSTRUTOR mostrando "SEM PROTESTO" quando no Maxiprod está "COM PROTESTO" — sync agora SEMPRE atualiza tipo do Maxiprod
 - [x] Cobrança: reativar atualização de decisaoCobranca no sync de contas a receber
+- [x] Corrigir lógica de identificação de gestores/vendedores: Apelido == Representante/vendedor = GESTOR; Apelido != Representante/vendedor = subordinado; sem Representante/vendedor = ignorar
