@@ -2,10 +2,11 @@
  * Cadastro de Vendedores - Aba em Vendas
  * Exibe gestores e vendedores de rua puxados diretamente do Maxiprod.
  * Cada vendedor tem: checkbox de autorização, senha, e configuração de produtos visíveis.
+ * Produtos separados por categoria (Madeira / Bambu) com referência completa.
  */
 
 import React, { useState, useEffect } from "react";
-import { Users, ChevronDown, ChevronRight, RefreshCw, AlertCircle, Shield, ShieldCheck, Lock, Package, Check } from "lucide-react";
+import { Users, ChevronDown, ChevronRight, RefreshCw, AlertCircle, Shield, ShieldCheck, Lock, Package, Check, Layers } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 interface SellerPermission {
@@ -19,6 +20,13 @@ interface SellerPermission {
 interface GestorGroup {
   gestor: string;
   vendedores: string[];
+}
+
+interface StockItem {
+  codigoItem: string;
+  descricaoItem: string;
+  grupo: string;
+  subgrupo: string;
 }
 
 export default function CadastroVendedoresTab() {
@@ -292,7 +300,8 @@ export default function CadastroVendedoresTab() {
 }
 
 /**
- * Painel de configuração de produtos visíveis para um vendedor
+ * Painel de configuração de produtos visíveis para um vendedor.
+ * Separado por categorias: Estoque > Madeira / Bambu
  */
 function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
   const productsQuery = trpc.sales.getSellerProducts.useQuery({ sellerId });
@@ -306,6 +315,7 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
 
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [initialized, setInitialized] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["madeira", "bambu"]));
 
   // Inicializar seleção com produtos já configurados
   useEffect(() => {
@@ -327,16 +337,42 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
     });
   };
 
-  const stockItems = stockQuery.data?.items || [];
-
-  const selectAll = () => {
-    if (stockItems.length > 0) {
-      setSelectedProducts(new Set(stockItems.map((item: any) => item.codigoItem)));
-    }
+  const toggleCategory = (cat: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) {
+        next.delete(cat);
+      } else {
+        next.add(cat);
+      }
+      return next;
+    });
   };
 
-  const deselectAll = () => {
-    setSelectedProducts(new Set());
+  const stockItems: StockItem[] = (stockQuery.data?.items || []) as StockItem[];
+
+  // Separar por categoria
+  const madeiraItems = stockItems.filter((item: StockItem) =>
+    item.grupo === "industrializacao" && item.subgrupo === "madeira"
+  );
+  const bambuItems = stockItems.filter((item: StockItem) =>
+    item.grupo === "importacao_revenda" && item.subgrupo === "bambu"
+  );
+
+  const selectAllCategory = (items: StockItem[]) => {
+    setSelectedProducts(prev => {
+      const next = new Set(prev);
+      items.forEach(item => next.add(item.codigoItem));
+      return next;
+    });
+  };
+
+  const deselectAllCategory = (items: StockItem[]) => {
+    setSelectedProducts(prev => {
+      const next = new Set(prev);
+      items.forEach(item => next.delete(item.codigoItem));
+      return next;
+    });
   };
 
   const saveProducts = () => {
@@ -361,71 +397,180 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
     return false;
   })();
 
+  const countSelected = (items: StockItem[]) => items.filter(i => selectedProducts.has(i.codigoItem)).length;
+
   return (
     <div className="mx-6 md:mx-10 mb-3 p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-xs font-semibold text-slate-700">
-          Produtos visíveis para {sellerName}
-        </h4>
+      {/* Título da seção */}
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <button
-            onClick={selectAll}
-            className="text-[10px] text-teal-600 hover:text-teal-800 font-medium cursor-pointer"
-          >
-            Todos
-          </button>
-          <span className="text-[10px] text-slate-300">|</span>
-          <button
-            onClick={deselectAll}
-            className="text-[10px] text-teal-600 hover:text-teal-800 font-medium cursor-pointer"
-          >
-            Nenhum
-          </button>
-          {hasChanges && (
-            <button
-              onClick={saveProducts}
-              disabled={setProductsMutation.isPending}
-              className="ml-2 flex items-center gap-1 px-2.5 py-1 bg-teal-600 text-white text-[10px] font-medium rounded-md hover:bg-teal-700 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              <Check className="w-3 h-3" />
-              Salvar
-            </button>
-          )}
+          <Layers className="w-4 h-4 text-teal-600" />
+          <h4 className="text-sm font-bold text-slate-800">Estoque</h4>
+          <span className="text-[10px] text-slate-400 ml-1">
+            Produtos visíveis para {sellerName}
+          </span>
         </div>
+        {hasChanges && (
+          <button
+            onClick={saveProducts}
+            disabled={setProductsMutation.isPending}
+            className="flex items-center gap-1 px-3 py-1.5 bg-teal-600 text-white text-xs font-medium rounded-md hover:bg-teal-700 transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            <Check className="w-3 h-3" />
+            Salvar
+          </button>
+        )}
       </div>
 
-      {/* Lista de produtos com checkboxes */}
       {stockQuery.isLoading ? (
         <p className="text-xs text-slate-400">Carregando produtos...</p>
-      ) : stockItems.length > 0 ? (
-        <div className="max-h-60 overflow-y-auto space-y-1">
-          {stockItems.map((item: any) => (
-            <label
-              key={item.codigoItem}
-              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={selectedProducts.has(item.codigoItem)}
-                onChange={() => toggleProduct(item.codigoItem)}
-                className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
-              />
-              <span className="text-xs text-slate-600 truncate">
-                <span className="font-mono text-slate-400">{item.codigoItem}</span>
-                {" \u2014 "}
-                {item.descricao}
-              </span>
-            </label>
-          ))}
-        </div>
       ) : (
-        <p className="text-xs text-slate-400">Nenhum produto dispon\u00edvel no estoque.</p>
+        <div className="space-y-3">
+          {/* Categoria: Madeira */}
+          <CategorySection
+            title="Madeira"
+            items={madeiraItems}
+            selectedProducts={selectedProducts}
+            isExpanded={expandedCategories.has("madeira")}
+            onToggleExpand={() => toggleCategory("madeira")}
+            onToggleProduct={toggleProduct}
+            onSelectAll={() => selectAllCategory(madeiraItems)}
+            onDeselectAll={() => deselectAllCategory(madeiraItems)}
+            countSelected={countSelected(madeiraItems)}
+            color="amber"
+          />
+
+          {/* Categoria: Bambu */}
+          <CategorySection
+            title="Bambu"
+            items={bambuItems}
+            selectedProducts={selectedProducts}
+            isExpanded={expandedCategories.has("bambu")}
+            onToggleExpand={() => toggleCategory("bambu")}
+            onToggleProduct={toggleProduct}
+            onSelectAll={() => selectAllCategory(bambuItems)}
+            onDeselectAll={() => deselectAllCategory(bambuItems)}
+            countSelected={countSelected(bambuItems)}
+            color="green"
+          />
+        </div>
       )}
 
       {setProductsMutation.isSuccess && (
-        <p className="text-[10px] text-emerald-600 mt-2">
-          Produtos salvos com sucesso! ({selectedProducts.size} selecionados)
+        <p className="text-[10px] text-emerald-600 mt-3">
+          Produtos salvos com sucesso! ({selectedProducts.size} selecionados no total)
         </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Seção de categoria com lista de produtos e checkboxes
+ */
+function CategorySection({
+  title,
+  items,
+  selectedProducts,
+  isExpanded,
+  onToggleExpand,
+  onToggleProduct,
+  onSelectAll,
+  onDeselectAll,
+  countSelected,
+  color,
+}: {
+  title: string;
+  items: StockItem[];
+  selectedProducts: Set<string>;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onToggleProduct: (code: string) => void;
+  onSelectAll: () => void;
+  onDeselectAll: () => void;
+  countSelected: number;
+  color: "amber" | "green";
+}) {
+  const colorClasses = {
+    amber: {
+      bg: "bg-amber-50",
+      border: "border-amber-200",
+      badge: "bg-amber-100 text-amber-700",
+      icon: "text-amber-600",
+    },
+    green: {
+      bg: "bg-green-50",
+      border: "border-green-200",
+      badge: "bg-green-100 text-green-700",
+      icon: "text-green-600",
+    },
+  };
+
+  const colors = colorClasses[color];
+
+  return (
+    <div className={`rounded-lg border ${colors.border} overflow-hidden`}>
+      {/* Header da categoria */}
+      <button
+        onClick={onToggleExpand}
+        className={`w-full flex items-center justify-between px-3 py-2.5 ${colors.bg} hover:opacity-90 transition-opacity cursor-pointer`}
+      >
+        <div className="flex items-center gap-2">
+          <div className={colors.icon}>
+            {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </div>
+          <span className="text-xs font-semibold text-slate-700">{title}</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${colors.badge}`}>
+            {countSelected}/{items.length}
+          </span>
+        </div>
+      </button>
+
+      {/* Lista de produtos */}
+      {isExpanded && (
+        <div className="bg-white">
+          {/* Controles Todos/Nenhum */}
+          <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100">
+            <button
+              onClick={(e) => { e.stopPropagation(); onSelectAll(); }}
+              className="text-[10px] text-teal-600 hover:text-teal-800 font-medium cursor-pointer"
+            >
+              Todos
+            </button>
+            <span className="text-[10px] text-slate-300">|</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); onDeselectAll(); }}
+              className="text-[10px] text-teal-600 hover:text-teal-800 font-medium cursor-pointer"
+            >
+              Nenhum
+            </button>
+          </div>
+
+          {items.length > 0 ? (
+            <div className="max-h-60 overflow-y-auto">
+              {items.map((item: StockItem) => (
+                <label
+                  key={item.codigoItem}
+                  className="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-b-0"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.has(item.codigoItem)}
+                    onChange={() => onToggleProduct(item.codigoItem)}
+                    className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer flex-shrink-0"
+                  />
+                  <span className="text-xs text-slate-700 leading-tight">
+                    <span className="font-mono font-semibold text-slate-500">{item.codigoItem}</span>
+                    <span className="text-slate-400 mx-1">—</span>
+                    <span className="font-medium">{item.descricaoItem}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 px-3 py-3">Nenhum produto nesta categoria.</p>
+          )}
+        </div>
       )}
     </div>
   );

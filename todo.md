@@ -3824,3 +3824,6 @@
 - [x] Login vendedor no app mobile (senha = primeiro nome, primeira letra maiúscula)
 - [x] Filtrar produtos no estoque do app mobile conforme permissões do vendedor (rota /vendedor)
 - [x] Preparar estrutura para futuras abas de catálogos PDF com permissões por vendedor
+- [x] Permissões: mostrar produtos com referência completa (código + nome) ao invés de só código
+- [x] Permissões: separar produtos por categoria (Madeira / Bambu) com sub-seções
+- [x] Permissões: adicionar título "Estoque" acima das categorias de produtos
