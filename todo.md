@@ -3818,3 +3818,9 @@
 - [x] Cobrança: corrigir bug BOUTIQUE DO CONSTRUTOR mostrando "SEM PROTESTO" quando no Maxiprod está "COM PROTESTO" — sync agora SEMPRE atualiza tipo do Maxiprod
 - [x] Cobrança: reativar atualização de decisaoCobranca no sync de contas a receber
 - [x] Corrigir lógica de identificação de gestores/vendedores: Apelido == Representante/vendedor = GESTOR; Apelido != Representante/vendedor = subordinado; sem Representante/vendedor = ignorar
+- [x] Criar tabela seller_permissions (vendedor, senha=primeiro nome, autorizado pelo gestor, produtos visíveis)
+- [x] Criar endpoints: login vendedor, autorizar vendedor, configurar produtos visíveis
+- [x] UI gestor: checkbox de autorização + seleção de produtos visíveis por vendedor
+- [x] Login vendedor no app mobile (senha = primeiro nome, primeira letra maiúscula)
+- [x] Filtrar produtos no estoque do app mobile conforme permissões do vendedor (rota /vendedor)
+- [x] Preparar estrutura para futuras abas de catálogos PDF com permissões por vendedor

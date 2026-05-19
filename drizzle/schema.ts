@@ -1983,3 +1983,71 @@ export const fieldSellers = mysqlTable("field_sellers", {
 
 export type FieldSeller = typeof fieldSellers.$inferSelect;
 export type InsertFieldSeller = typeof fieldSellers.$inferInsert;
+
+/**
+ * Permissões de vendedores de rua
+ * - sellerName: nome do vendedor (apelido do Maxiprod)
+ * - gestorName: nome do gestor responsável
+ * - password: senha do vendedor (primeiro nome, primeira letra maiúscula)
+ * - authorized: se o gestor autorizou o acesso (checkbox)
+ * - Sem autorização = vendedor não pode logar no app
+ */
+export const sellerPermissions = mysqlTable("seller_permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerName: varchar("seller_name", { length: 200 }).notNull(),
+  gestorName: varchar("gestor_name", { length: 200 }).notNull(),
+  password: varchar("password", { length: 100 }).notNull(), // primeiro nome, primeira letra maiúscula
+  authorized: boolean("authorized").default(false).notNull(), // gestor precisa ticar pra liberar
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SellerPermission = typeof sellerPermissions.$inferSelect;
+export type InsertSellerPermission = typeof sellerPermissions.$inferInsert;
+
+/**
+ * Produtos visíveis por vendedor
+ * - sellerId: FK para seller_permissions.id
+ * - productCode: código do produto no estoque (codigoItem)
+ * - visible: se o produto está visível para este vendedor
+ */
+export const sellerProductVisibility = mysqlTable("seller_product_visibility", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerId: int("seller_id").notNull(), // FK para seller_permissions.id
+  productCode: varchar("product_code", { length: 100 }).notNull(),
+  visible: boolean("visible").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SellerProductVisibility = typeof sellerProductVisibility.$inferSelect;
+export type InsertSellerProductVisibility = typeof sellerProductVisibility.$inferInsert;
+
+/**
+ * Catálogos (PDFs) disponíveis - preparação para futuras abas
+ * - name: nome do catálogo
+ * - url: URL do PDF armazenado
+ */
+export const catalogs = mysqlTable("catalogs", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  url: varchar("url", { length: 500 }).notNull(),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Catalog = typeof catalogs.$inferSelect;
+
+/**
+ * Visibilidade de catálogos por vendedor
+ * - sellerId: FK para seller_permissions.id
+ * - catalogId: FK para catalogs.id
+ */
+export const sellerCatalogVisibility = mysqlTable("seller_catalog_visibility", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerId: int("seller_id").notNull(), // FK para seller_permissions.id
+  catalogId: int("catalog_id").notNull(), // FK para catalogs.id
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SellerCatalogVisibility = typeof sellerCatalogVisibility.$inferSelect;

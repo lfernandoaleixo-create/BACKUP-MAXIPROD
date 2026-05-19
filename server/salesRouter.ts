@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -3039,5 +3039,176 @@ export const salesRouter = router({
       if (!db) throw new Error("DB not available");
       await db.delete(salesManagers).where(eq(salesManagers.id, input.id));
       return { success: true };
+    }),
+
+  // ==========================================
+  // PERMISSÕES DE VENDEDORES
+  // ==========================================
+
+  /**
+   * Listar permissões de todos os vendedores (para o gestor configurar)
+   */
+  listSellerPermissions: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+    const perms = await db.select().from(sellerPermissions).orderBy(sellerPermissions.gestorName, sellerPermissions.sellerName);
+    return perms;
+  }),
+
+  /**
+   * Sincronizar vendedores do Maxiprod com a tabela de permissões.
+   * Cria registros novos para vendedores que ainda não existem.
+   * Senha = primeiro nome com primeira letra maiúscula.
+   */
+  syncSellerPermissions: publicProcedure.mutation(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+
+    // Buscar representantes do Maxiprod
+    const data = await gql<any>(`{
+      empresas(skip: 0, take: 200, where: { representanteOuVendedor: { eq: true } }) {
+        items {
+          apelido
+          nomeFantasia
+          razaoSocial
+          representanteOuVendedor1Preferencial { nomeFantasia razaoSocial apelido }
+        }
+      }
+    }`);
+
+    if (!data?.empresas) throw new Error("Falha ao buscar representantes");
+
+    // Identificar vendedores (apelido != gestor)
+    const vendedores: { sellerName: string; gestorName: string }[] = [];
+    for (const emp of data.empresas.items) {
+      const apelido = (emp.apelido || emp.nomeFantasia || emp.razaoSocial || "").trim();
+      if (!apelido) continue;
+      const gestor = emp.representanteOuVendedor1Preferencial;
+      const gestorName = (gestor?.apelido || gestor?.nomeFantasia || gestor?.razaoSocial || "").trim();
+      if (!gestorName) continue;
+      if (apelido.toUpperCase() === gestorName.toUpperCase()) continue; // é gestor, não vendedor
+      vendedores.push({ sellerName: apelido, gestorName });
+    }
+
+    // Buscar permissões existentes
+    const existing = await db.select().from(sellerPermissions);
+    const existingSet = new Set(existing.map(e => `${e.sellerName.toUpperCase()}|${e.gestorName.toUpperCase()}`));
+
+    // Inserir novos vendedores
+    let inserted = 0;
+    for (const v of vendedores) {
+      const key = `${v.sellerName.toUpperCase()}|${v.gestorName.toUpperCase()}`;
+      if (existingSet.has(key)) continue;
+
+      // Senha = primeiro nome com primeira letra maiúscula
+      const firstName = v.sellerName.split(/\s+/)[0];
+      const password = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+
+      await db.insert(sellerPermissions).values({
+        sellerName: v.sellerName,
+        gestorName: v.gestorName,
+        password,
+        authorized: false,
+      });
+      inserted++;
+    }
+
+    return { total: vendedores.length, inserted, existing: existing.length };
+  }),
+
+  /**
+   * Autorizar/desautorizar vendedor (checkbox do gestor)
+   */
+  toggleSellerAuthorization: publicProcedure
+    .input(z.object({ sellerId: z.number(), authorized: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.update(sellerPermissions)
+        .set({ authorized: input.authorized })
+        .where(eq(sellerPermissions.id, input.sellerId));
+      return { success: true };
+    }),
+
+  /**
+   * Listar produtos visíveis de um vendedor
+   */
+  getSellerProducts: publicProcedure
+    .input(z.object({ sellerId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const products = await db.select().from(sellerProductVisibility)
+        .where(eq(sellerProductVisibility.sellerId, input.sellerId));
+      return products;
+    }),
+
+  /**
+   * Configurar produtos visíveis para um vendedor (bulk update)
+   * Recebe lista de productCodes que o vendedor pode ver.
+   */
+  setSellerProducts: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      productCodes: z.array(z.string()),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Remover permissões antigas
+      await db.delete(sellerProductVisibility)
+        .where(eq(sellerProductVisibility.sellerId, input.sellerId));
+
+      // Inserir novas
+      if (input.productCodes.length > 0) {
+        await db.insert(sellerProductVisibility).values(
+          input.productCodes.map(code => ({
+            sellerId: input.sellerId,
+            productCode: code,
+            visible: true,
+          }))
+        );
+      }
+
+      return { success: true, count: input.productCodes.length };
+    }),
+
+  /**
+   * Login do vendedor (app mobile)
+   * Verifica senha e se está autorizado pelo gestor.
+   */
+  sellerLogin: publicProcedure
+    .input(z.object({ password: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // Buscar vendedor pela senha
+      const sellers = await db.select().from(sellerPermissions)
+        .where(eq(sellerPermissions.password, input.password));
+
+      if (sellers.length === 0) {
+        return { success: false, error: "Senha inválida" };
+      }
+
+      const seller = sellers[0];
+      if (!seller.authorized) {
+        return { success: false, error: "Acesso não autorizado. Aguarde liberação do gestor." };
+      }
+
+      // Buscar produtos visíveis
+      const products = await db.select().from(sellerProductVisibility)
+        .where(eq(sellerProductVisibility.sellerId, seller.id));
+
+      return {
+        success: true,
+        seller: {
+          id: seller.id,
+          name: seller.sellerName,
+          gestor: seller.gestorName,
+        },
+        visibleProducts: products.map(p => p.productCode),
+      };
     }),
 });

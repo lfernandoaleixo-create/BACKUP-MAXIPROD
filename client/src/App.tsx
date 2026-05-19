@@ -14,6 +14,7 @@ import Billing from "./pages/Billing";
 import Financial from "./pages/Financial";
 import Production from "./pages/Production";
 import SettingsPage from "./pages/SettingsPage";
+import SellerApp from "./pages/SellerApp";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -36,6 +37,11 @@ function AppContent() {
 
   // Refresh automático da sessão OAuth (renova token a cada 30min e ao voltar de inatividade)
   useSessionRefresh();
+
+  // Rota pública do app de vendedor (não precisa de login de operador)
+  if (typeof window !== "undefined" && window.location.pathname === "/vendedor") {
+    return <SellerApp />;
+  }
 
   if (!isLoggedIn) {
     return <LoginScreen />;

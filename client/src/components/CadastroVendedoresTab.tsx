@@ -1,21 +1,51 @@
 /**
  * Cadastro de Vendedores - Aba em Vendas
  * Exibe gestores e vendedores de rua puxados diretamente do Maxiprod.
- * Apelido = vendedor, Representante/vendedor = gestor.
- * Cards expandíveis por gestor.
+ * Cada vendedor tem: checkbox de autorização, senha, e configuração de produtos visíveis.
  */
 
-import React, { useState } from "react";
-import { Users, ChevronDown, ChevronRight, RefreshCw, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Users, ChevronDown, ChevronRight, RefreshCw, AlertCircle, Shield, ShieldCheck, Lock, Package, Check } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+
+interface SellerPermission {
+  id: number;
+  sellerName: string;
+  gestorName: string;
+  password: string;
+  authorized: boolean;
+}
+
+interface GestorGroup {
+  gestor: string;
+  vendedores: string[];
+}
 
 export default function CadastroVendedoresTab() {
   const [expandedGestores, setExpandedGestores] = useState<Set<string>>(new Set());
+  const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
 
   const representantesQuery = trpc.sales.listRepresentantesMaxiprod.useQuery(undefined, {
-    staleTime: 5 * 60 * 1000, // 5 min
+    staleTime: 5 * 60 * 1000,
   });
+  const permissionsQuery = trpc.sales.listSellerPermissions.useQuery(undefined, {
+    staleTime: 30 * 1000,
+  });
+  const syncMutation = trpc.sales.syncSellerPermissions.useMutation();
+  const toggleAuthMutation = trpc.sales.toggleSellerAuthorization.useMutation();
   const utils = trpc.useUtils();
+
+  // Sincronizar permissões quando dados do Maxiprod carregam
+  useEffect(() => {
+    if (representantesQuery.data && !syncMutation.isPending) {
+      syncMutation.mutate(undefined, {
+        onSuccess: () => {
+          utils.sales.listSellerPermissions.invalidate();
+        },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [representantesQuery.data]);
 
   const toggleExpanded = (gestor: string) => {
     setExpandedGestores(prev => {
@@ -31,7 +61,7 @@ export default function CadastroVendedoresTab() {
 
   const expandAll = () => {
     if (representantesQuery.data) {
-      setExpandedGestores(new Set(representantesQuery.data.gestores.map((g: { gestor: string; vendedores: string[] }) => g.gestor)));
+      setExpandedGestores(new Set(representantesQuery.data.gestores.map((g: GestorGroup) => g.gestor)));
     }
   };
 
@@ -39,8 +69,28 @@ export default function CadastroVendedoresTab() {
     setExpandedGestores(new Set());
   };
 
+  const handleToggleAuth = (sellerId: number, currentAuth: boolean) => {
+    toggleAuthMutation.mutate(
+      { sellerId, authorized: !currentAuth },
+      {
+        onSuccess: () => {
+          utils.sales.listSellerPermissions.invalidate();
+        },
+      }
+    );
+  };
+
+  const getPermission = (sellerName: string, gestorName: string): SellerPermission | undefined => {
+    if (!permissionsQuery.data) return undefined;
+    return permissionsQuery.data.find(
+      (p: SellerPermission) =>
+        p.sellerName.toUpperCase() === sellerName.toUpperCase() &&
+        p.gestorName.toUpperCase() === gestorName.toUpperCase()
+    );
+  };
+
   const data = representantesQuery.data;
-  const totalVendedores = data?.gestores.reduce((acc: number, g: { gestor: string; vendedores: string[] }) => acc + g.vendedores.length, 0) || 0;
+  const totalVendedores = data?.gestores.reduce((acc: number, g: GestorGroup) => acc + g.vendedores.length, 0) || 0;
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -65,7 +115,10 @@ export default function CadastroVendedoresTab() {
               </span>
             )}
             <button
-              onClick={() => utils.sales.listRepresentantesMaxiprod.invalidate()}
+              onClick={() => {
+                utils.sales.listRepresentantesMaxiprod.invalidate();
+                utils.sales.listSellerPermissions.invalidate();
+              }}
               disabled={representantesQuery.isFetching}
               className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
               title="Atualizar do Maxiprod"
@@ -117,7 +170,7 @@ export default function CadastroVendedoresTab() {
       )}
 
       {/* Gestores com vendedores */}
-      {data && data.gestores.map((grupo: { gestor: string; vendedores: string[] }) => {
+      {data && data.gestores.map((grupo: GestorGroup) => {
         const isExpanded = expandedGestores.has(grupo.gestor);
 
         return (
@@ -154,25 +207,226 @@ export default function CadastroVendedoresTab() {
             {isExpanded && (
               <div className="border-t border-slate-100 bg-slate-50">
                 <div className="divide-y divide-slate-100">
-                  {grupo.vendedores.map((vendedor: string) => (
-                    <div
-                      key={vendedor}
-                      className="flex items-center gap-3 px-6 md:px-10 py-3 hover:bg-slate-100 transition-colors"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
-                        {vendedor.charAt(0).toUpperCase()}
+                  {grupo.vendedores.map((vendedor: string) => {
+                    const perm = getPermission(vendedor, grupo.gestor);
+                    const isSellerExpanded = expandedSeller === `${grupo.gestor}|${vendedor}`;
+
+                    return (
+                      <div key={vendedor}>
+                        <div className="flex items-center gap-3 px-6 md:px-10 py-3 hover:bg-slate-100 transition-colors">
+                          {/* Avatar */}
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-[10px]">
+                            {vendedor.charAt(0).toUpperCase()}
+                          </div>
+
+                          {/* Nome e senha */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-700">{vendedor}</p>
+                            {perm && (
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <Lock className="w-3 h-3 text-slate-400" />
+                                <span className="text-[10px] text-slate-400">Senha: {perm.password}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Checkbox de autorização */}
+                          {perm && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleAuth(perm.id, perm.authorized);
+                              }}
+                              disabled={toggleAuthMutation.isPending}
+                              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                                perm.authorized
+                                  ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                                  : "bg-red-50 text-red-600 hover:bg-red-100"
+                              }`}
+                              title={perm.authorized ? "Clique para bloquear acesso" : "Clique para autorizar acesso"}
+                            >
+                              {perm.authorized ? (
+                                <>
+                                  <ShieldCheck className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Autorizado</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Shield className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Bloqueado</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+
+                          {/* Botão de configurar produtos */}
+                          {perm && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedSeller(isSellerExpanded ? null : `${grupo.gestor}|${vendedor}`);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+                              title="Configurar produtos visíveis"
+                            >
+                              <Package className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Painel de produtos (expandido) */}
+                        {isSellerExpanded && perm && (
+                          <SellerProductsPanel sellerId={perm.id} sellerName={vendedor} />
+                        )}
                       </div>
-                      <p className="text-sm font-medium text-slate-700">{vendedor}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
         );
       })}
+    </div>
+  );
+}
 
+/**
+ * Painel de configuração de produtos visíveis para um vendedor
+ */
+function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
+  const productsQuery = trpc.sales.getSellerProducts.useQuery({ sellerId });
+  const setProductsMutation = trpc.sales.setSellerProducts.useMutation();
+  const utils = trpc.useUtils();
 
+  // Buscar lista de produtos do estoque para mostrar checkboxes
+  const stockQuery = trpc.dashboard.getData.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [initialized, setInitialized] = useState(false);
+
+  // Inicializar seleção com produtos já configurados
+  useEffect(() => {
+    if (productsQuery.data && !initialized) {
+      setSelectedProducts(new Set(productsQuery.data.map((p: { productCode: string }) => p.productCode)));
+      setInitialized(true);
+    }
+  }, [productsQuery.data, initialized]);
+
+  const toggleProduct = (code: string) => {
+    setSelectedProducts(prev => {
+      const next = new Set(prev);
+      if (next.has(code)) {
+        next.delete(code);
+      } else {
+        next.add(code);
+      }
+      return next;
+    });
+  };
+
+  const stockItems = stockQuery.data?.items || [];
+
+  const selectAll = () => {
+    if (stockItems.length > 0) {
+      setSelectedProducts(new Set(stockItems.map((item: any) => item.codigoItem)));
+    }
+  };
+
+  const deselectAll = () => {
+    setSelectedProducts(new Set());
+  };
+
+  const saveProducts = () => {
+    setProductsMutation.mutate(
+      { sellerId, productCodes: Array.from(selectedProducts) },
+      {
+        onSuccess: () => {
+          utils.sales.getSellerProducts.invalidate({ sellerId });
+        },
+      }
+    );
+  };
+
+  const hasChanges = (() => {
+    if (!productsQuery.data) return false;
+    const current = new Set(productsQuery.data.map((p: { productCode: string }) => p.productCode));
+    if (current.size !== selectedProducts.size) return true;
+    const arr = Array.from(selectedProducts);
+    for (let i = 0; i < arr.length; i++) {
+      if (!current.has(arr[i])) return true;
+    }
+    return false;
+  })();
+
+  return (
+    <div className="mx-6 md:mx-10 mb-3 p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-xs font-semibold text-slate-700">
+          Produtos visíveis para {sellerName}
+        </h4>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={selectAll}
+            className="text-[10px] text-teal-600 hover:text-teal-800 font-medium cursor-pointer"
+          >
+            Todos
+          </button>
+          <span className="text-[10px] text-slate-300">|</span>
+          <button
+            onClick={deselectAll}
+            className="text-[10px] text-teal-600 hover:text-teal-800 font-medium cursor-pointer"
+          >
+            Nenhum
+          </button>
+          {hasChanges && (
+            <button
+              onClick={saveProducts}
+              disabled={setProductsMutation.isPending}
+              className="ml-2 flex items-center gap-1 px-2.5 py-1 bg-teal-600 text-white text-[10px] font-medium rounded-md hover:bg-teal-700 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              <Check className="w-3 h-3" />
+              Salvar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Lista de produtos com checkboxes */}
+      {stockQuery.isLoading ? (
+        <p className="text-xs text-slate-400">Carregando produtos...</p>
+      ) : stockItems.length > 0 ? (
+        <div className="max-h-60 overflow-y-auto space-y-1">
+          {stockItems.map((item: any) => (
+            <label
+              key={item.codigoItem}
+              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={selectedProducts.has(item.codigoItem)}
+                onChange={() => toggleProduct(item.codigoItem)}
+                className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+              />
+              <span className="text-xs text-slate-600 truncate">
+                <span className="font-mono text-slate-400">{item.codigoItem}</span>
+                {" \u2014 "}
+                {item.descricao}
+              </span>
+            </label>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-400">Nenhum produto dispon\u00edvel no estoque.</p>
+      )}
+
+      {setProductsMutation.isSuccess && (
+        <p className="text-[10px] text-emerald-600 mt-2">
+          Produtos salvos com sucesso! ({selectedProducts.size} selecionados)
+        </p>
+      )}
     </div>
   );
 }
