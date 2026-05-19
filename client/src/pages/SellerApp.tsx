@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { Package, LogOut, Lock, AlertCircle, Search, RefreshCw } from "lucide-react";
+import { Package, LogOut, Lock, AlertCircle, Search, RefreshCw, FileText, FolderOpen } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 interface SellerSession {
@@ -13,6 +13,7 @@ interface SellerSession {
   name: string;
   gestor: string;
   visibleProducts: string[];
+  catalogs: { id: number; name: string; folder: string; url: string }[];
 }
 
 export default function SellerApp() {
@@ -39,6 +40,7 @@ export default function SellerApp() {
               name: result.seller.name,
               gestor: result.seller.gestor,
               visibleProducts: result.visibleProducts || [],
+              catalogs: (result as any).catalogs || [],
             });
           } else {
             setError(result.error || "Erro ao fazer login");
@@ -61,7 +63,7 @@ export default function SellerApp() {
     return <LoginView password={password} setPassword={setPassword} error={error} onLogin={handleLogin} isPending={loginMutation.isPending} />;
   }
 
-  return <StockView session={session} search={search} setSearch={setSearch} onLogout={handleLogout} />;
+  return <SellerMainView session={session} search={search} setSearch={setSearch} onLogout={handleLogout} />;
 }
 
 function LoginView({
@@ -127,7 +129,7 @@ function LoginView({
   );
 }
 
-function StockView({
+function SellerMainView({
   session,
   search,
   setSearch,
@@ -138,26 +140,7 @@ function StockView({
   setSearch: (v: string) => void;
   onLogout: () => void;
 }) {
-  const stockQuery = trpc.dashboard.getData.useQuery(undefined, {
-    refetchInterval: 60000,
-  });
-
-  const items = useMemo(() => {
-    if (!stockQuery.data?.items) return [];
-    const visibleSet = new Set(session.visibleProducts);
-    // Filtrar apenas produtos visíveis para este vendedor
-    let filtered = stockQuery.data.items.filter((item: any) => visibleSet.has(item.codigoItem));
-    // Aplicar busca
-    if (search.trim()) {
-      const term = search.trim().toLowerCase();
-      filtered = filtered.filter(
-        (item: any) =>
-          (item.codigoItem || "").toLowerCase().includes(term) ||
-          (item.descricao || "").toLowerCase().includes(term)
-      );
-    }
-    return filtered;
-  }, [stockQuery.data, session.visibleProducts, search]);
+  const [activeTab, setActiveTab] = useState<"estoque" | "pdfs">("estoque");
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -177,62 +160,173 @@ function StockView({
           </button>
         </div>
 
-        {/* Search */}
-        <div className="px-4 pb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar produto..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
+        {/* Tabs */}
+        <div className="flex border-b border-slate-100">
+          <button
+            onClick={() => setActiveTab("estoque")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === "estoque"
+                ? "text-teal-600 border-b-2 border-teal-600"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <Package className="w-3.5 h-3.5" />
+            Estoque
+          </button>
+          <button
+            onClick={() => setActiveTab("pdfs")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === "pdfs"
+                ? "text-rose-600 border-b-2 border-rose-600"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Catálogos
+            {session.catalogs.length > 0 && (
+              <span className="ml-1 bg-rose-100 text-rose-600 text-[10px] px-1.5 py-0.5 rounded-full">
+                {session.catalogs.length}
+              </span>
+            )}
+          </button>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="p-4">
-        {stockQuery.isLoading ? (
-          <div className="text-center py-12">
-            <RefreshCw className="w-6 h-6 text-teal-500 animate-spin mx-auto mb-3" />
-            <p className="text-sm text-slate-500">Carregando estoque...</p>
-          </div>
-        ) : session.visibleProducts.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500 font-medium">Nenhum produto liberado</p>
-            <p className="text-xs text-slate-400 mt-1">Aguarde seu gestor configurar os produtos visíveis.</p>
-          </div>
-        ) : items.length === 0 ? (
-          <div className="text-center py-12">
-            <Search className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">Nenhum produto encontrado</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs text-slate-400 mb-3">{items.length} produto{items.length !== 1 ? "s" : ""}</p>
-            {items.map((item: any) => {
-              const isKg = item.isKgProduct || (item.descricao || "").toLowerCase().includes("kg");
-              const qty = item.disponivelCx != null ? item.disponivelCx : item.disponivel || 0;
-              const unit = isKg ? "kg" : "cx";
-              const color = qty <= 0 ? "text-orange-500" : "text-emerald-700";
-              return (
-                <div
-                  key={item.codigoItem}
-                  className="bg-white rounded-xl border border-slate-100 px-4 py-3 flex items-center justify-between gap-3"
-                >
-                  <p className="text-sm font-medium text-slate-800 truncate flex-1 min-w-0">{item.descricao}</p>
-                  <p className={`text-base font-bold ${color} whitespace-nowrap`}>
-                    {qty} <span className="text-xs font-semibold">{unit}</span>
-                  </p>
-                </div>
-              );
-            })}
+        {/* Search (only for Estoque) */}
+        {activeTab === "estoque" && (
+          <div className="px-4 py-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar produto..."
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
           </div>
         )}
       </div>
+
+      {/* Content */}
+      {activeTab === "estoque" ? (
+        <StockTab session={session} search={search} />
+      ) : (
+        <CatalogsTab catalogs={session.catalogs} />
+      )}
+    </div>
+  );
+}
+
+function StockTab({ session, search }: { session: SellerSession; search: string }) {
+  const stockQuery = trpc.dashboard.getData.useQuery(undefined, {
+    refetchInterval: 60000,
+  });
+
+  const items = useMemo(() => {
+    if (!stockQuery.data?.items) return [];
+    const visibleSet = new Set(session.visibleProducts);
+    let filtered = stockQuery.data.items.filter((item: any) => visibleSet.has(item.codigoItem));
+    if (search.trim()) {
+      const term = search.trim().toLowerCase();
+      filtered = filtered.filter(
+        (item: any) =>
+          (item.codigoItem || "").toLowerCase().includes(term) ||
+          (item.descricao || "").toLowerCase().includes(term)
+      );
+    }
+    return filtered;
+  }, [stockQuery.data, session.visibleProducts, search]);
+
+  return (
+    <div className="p-4">
+      {stockQuery.isLoading ? (
+        <div className="text-center py-12">
+          <RefreshCw className="w-6 h-6 text-teal-500 animate-spin mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Carregando estoque...</p>
+        </div>
+      ) : session.visibleProducts.length === 0 ? (
+        <div className="text-center py-12">
+          <Package className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-500 font-medium">Nenhum produto liberado</p>
+          <p className="text-xs text-slate-400 mt-1">Aguarde seu gestor configurar os produtos visíveis.</p>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-12">
+          <Search className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Nenhum produto encontrado</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-slate-400 mb-3">{items.length} produto{items.length !== 1 ? "s" : ""}</p>
+          {items.map((item: any) => {
+            const isKg = item.isKgProduct || (item.descricao || "").toLowerCase().includes("kg");
+            const qty = item.disponivelCx != null ? item.disponivelCx : item.disponivel || 0;
+            const unit = isKg ? "kg" : "cx";
+            const color = qty <= 0 ? "text-orange-500" : "text-emerald-700";
+            return (
+              <div
+                key={item.codigoItem}
+                className="bg-white rounded-xl border border-slate-100 px-4 py-3 flex items-center justify-between gap-3"
+              >
+                <p className="text-sm font-medium text-slate-800 truncate flex-1 min-w-0">{item.descricao}</p>
+                <p className={`text-base font-bold ${color} whitespace-nowrap`}>
+                  {qty} <span className="text-xs font-semibold">{unit}</span>
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CatalogsTab({ catalogs }: { catalogs: { id: number; name: string; folder: string; url: string }[] }) {
+  if (catalogs.length === 0) {
+    return (
+      <div className="p-4">
+        <div className="text-center py-12">
+          <FileText className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-500 font-medium">Nenhum catálogo disponível</p>
+          <p className="text-xs text-slate-400 mt-1">Aguarde seu gestor liberar os catálogos.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Group by folder
+  const folders = Array.from(new Set(catalogs.map(c => c.folder)));
+
+  return (
+    <div className="p-4 space-y-4">
+      {folders.map(folder => (
+        <div key={folder}>
+          <div className="flex items-center gap-2 mb-2">
+            <FolderOpen className="w-4 h-4 text-rose-500" />
+            <h3 className="text-xs font-bold text-slate-700 uppercase">{folder}</h3>
+          </div>
+          <div className="space-y-2">
+            {catalogs.filter(c => c.folder === folder).map(catalog => (
+              <a
+                key={catalog.id}
+                href={catalog.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white rounded-xl border border-slate-100 px-4 py-3 flex items-center gap-3 hover:bg-rose-50 hover:border-rose-200 transition-colors"
+              >
+                <div className="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-rose-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800 truncate">{catalog.name}</p>
+                  <p className="text-[10px] text-slate-400">Toque para abrir PDF</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

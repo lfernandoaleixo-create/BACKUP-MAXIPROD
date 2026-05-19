@@ -3832,3 +3832,11 @@
 - [x] Cobrança: buscar e exibir AMBOS os emails do cliente (emailParaEnvioDeDocumentosFiscais + email do endereço)
 - [x] Normalizar representante "JUVENAL TEIXEIRA DA SILVA NETO" para "JUVENAL TEIXEIRA" no ranking de vendas e inadimplência
 - [x] SellerApp: simplificar visualização de estoque para mostrar apenas nome do produto + quantidade disponível (cx/kg)
+- [ ] Sistema de PDFs: criar schema (pastas, arquivos, visibilidade por vendedor)
+- [ ] Sistema de PDFs: endpoints tRPC (CRUD pastas, upload PDF, ticagem visibilidade)
+- [ ] Sistema de PDFs: ícone PDF no CadastroVendedoresTab + painel de gestão
+- [ ] Sistema de PDFs: visualização no SellerApp (vendedor vê apenas PDFs ticados)
+- [x] Sistema de PDFs/Catálogos: ícone PDF ao lado do ESTOQUE na tela de permissões
+- [x] Sistema de PDFs/Catálogos: upload de PDFs com pastas (ex: Catálogos)
+- [x] Sistema de PDFs/Catálogos: ticagem por vendedor (gestor seleciona quais PDFs cada vendedor vê)
+- [x] Sistema de PDFs/Catálogos: aba Catálogos no SellerApp com visualização dos PDFs liberados

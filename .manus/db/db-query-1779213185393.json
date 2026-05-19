@@ -1,0 +1,16 @@
+{
+  "query": "SHOW TABLES LIKE '%catalog%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SHOW TABLES LIKE '%catalog%';",
+  "rows": [
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%catalog%)": "catalogs"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%catalog%)": "seller_catalog_visibility"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%catalog%)\ncatalogs\nseller_catalog_visibility\n",
+  "stderr": "",
+  "execution_time_ms": 277
+}

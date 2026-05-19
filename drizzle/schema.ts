@@ -2030,6 +2030,7 @@ export type InsertSellerProductVisibility = typeof sellerProductVisibility.$infe
 export const catalogs = mysqlTable("catalogs", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 200 }).notNull(),
+  folder: varchar("folder", { length: 200 }).notNull().default("Catálogos"),
   url: varchar("url", { length: 500 }).notNull(),
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -1,8 +1,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility } from "../drizzle/schema";
-import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility } from "../drizzle/schema";
+import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
 // Cache para representantes do Maxiprod (5 minutos)
@@ -3201,6 +3201,16 @@ export const salesRouter = router({
       const products = await db.select().from(sellerProductVisibility)
         .where(eq(sellerProductVisibility.sellerId, seller.id));
 
+      // Buscar catálogos visíveis
+      const visibleCatalogs = await db.select().from(sellerCatalogVisibility)
+        .where(eq(sellerCatalogVisibility.sellerId, seller.id));
+      const catalogIds = visibleCatalogs.map(c => c.catalogId);
+      let sellerCatalogs: any[] = [];
+      if (catalogIds.length > 0) {
+        sellerCatalogs = await db.select().from(catalogs)
+          .where(and(eq(catalogs.active, true), inArray(catalogs.id, catalogIds)));
+      }
+
       return {
         success: true,
         seller: {
@@ -3209,6 +3219,94 @@ export const salesRouter = router({
           gestor: seller.gestorName,
         },
         visibleProducts: products.map(p => p.productCode),
+        catalogs: sellerCatalogs.map(c => ({ id: c.id, name: c.name, folder: c.folder, url: c.url })),
       };
+    }),
+
+  // ===== CATALOG / PDF MANAGEMENT =====
+
+  /** List all catalogs (for gestor) */
+  listCatalogs: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+    return db.select().from(catalogs).where(eq(catalogs.active, true));
+  }),
+
+  /** List distinct folders */
+  listCatalogFolders: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+    const rows = await db.selectDistinct({ folder: catalogs.folder }).from(catalogs).where(eq(catalogs.active, true));
+    return rows.map(r => r.folder);
+  }),
+
+  /** Upload a new PDF catalog */
+  uploadCatalog: publicProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      folder: z.string().default("Catálogos"),
+      fileBase64: z.string(), // base64-encoded PDF
+      fileName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const { storagePut } = await import("./storage");
+      const buffer = Buffer.from(input.fileBase64, "base64");
+      const randomSuffix = Math.random().toString(36).slice(2, 8);
+      const fileKey = `catalogs/${input.folder}/${input.fileName.replace(/\.pdf$/i, '')}-${randomSuffix}.pdf`;
+      const { url } = await storagePut(fileKey, buffer, "application/pdf");
+      const result = await db.insert(catalogs).values({
+        name: input.name,
+        folder: input.folder,
+        url,
+        active: true,
+      });
+      return { success: true, id: Number(result[0].insertId), url };
+    }),
+
+  /** Delete (deactivate) a catalog */
+  deleteCatalog: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.update(catalogs).set({ active: false }).where(eq(catalogs.id, input.id));
+      return { success: true };
+    }),
+
+  /** Get catalog visibility for a specific seller */
+  getSellerCatalogs: publicProcedure
+    .input(z.object({ sellerId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const rows = await db.select().from(sellerCatalogVisibility)
+        .where(eq(sellerCatalogVisibility.sellerId, input.sellerId));
+      return rows.map(r => r.catalogId);
+    }),
+
+  /** Set catalog visibility for a seller (replace all) */
+  setSellerCatalogs: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      catalogIds: z.array(z.number()),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      // Remove old
+      await db.delete(sellerCatalogVisibility)
+        .where(eq(sellerCatalogVisibility.sellerId, input.sellerId));
+      // Insert new
+      if (input.catalogIds.length > 0) {
+        await db.insert(sellerCatalogVisibility).values(
+          input.catalogIds.map(catalogId => ({
+            sellerId: input.sellerId,
+            catalogId,
+          }))
+        );
+      }
+      return { success: true };
     }),
 });
