@@ -862,6 +862,13 @@
       "when": 1779191519141,
       "tag": "0122_low_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 123,
+      "version": "5",
+      "when": 1779194637990,
+      "tag": "0123_equal_magus",
+      "breakpoints": true
     }
   ]
 }

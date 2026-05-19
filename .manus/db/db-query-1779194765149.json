@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO field_sellers (name, managerId) VALUES \n  ('Clarindo', 1),\n  ('Daniel', 1),\n  ('Romera', 1),\n  ('Luiz Matias', 1),\n  ('Renato', 1);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute INSERT INTO field_sellers (name, managerId) VALUES \n  ('Clarindo', 1),\n  ('Daniel', 1),\n  ('Romera', 1),\n  ('Luiz Matias', 1),\n  ('Renato', 1);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 279
+}

@@ -1967,3 +1967,19 @@ export const salesManagers = mysqlTable("sales_managers", {
 
 export type SalesManager = typeof salesManagers.$inferSelect;
 export type InsertSalesManager = typeof salesManagers.$inferInsert;
+
+/**
+ * Vendedores de rua - vendedores externos vinculados a gestores internos
+ * Cada vendedor pertence a um gestor (managerId → sales_managers.id)
+ */
+export const fieldSellers = mysqlTable("field_sellers", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  managerId: int("managerId").notNull(), // FK para sales_managers.id
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FieldSeller = typeof fieldSellers.$inferSelect;
+export type InsertFieldSeller = typeof fieldSellers.$inferInsert;

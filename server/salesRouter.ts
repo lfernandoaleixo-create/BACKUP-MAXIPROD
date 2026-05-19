@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -2952,7 +2952,50 @@ export const salesRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
+      // Também remover vendedores vinculados ao gestor
+      await db.delete(fieldSellers).where(eq(fieldSellers.managerId, input.id));
       await db.delete(salesManagers).where(eq(salesManagers.id, input.id));
+      return { success: true };
+    }),
+
+  // ===== Vendedores de Rua =====
+  listFieldSellers: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+    const sellers = await db.select().from(fieldSellers).orderBy(fieldSellers.name);
+    return sellers;
+  }),
+
+  createFieldSeller: publicProcedure
+    .input(z.object({ name: z.string().min(2), managerId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.insert(fieldSellers).values({ name: input.name, managerId: input.managerId });
+      return { success: true };
+    }),
+
+  updateFieldSeller: publicProcedure
+    .input(z.object({ id: z.number(), name: z.string().min(2).optional(), managerId: z.number().optional(), active: z.boolean().optional() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      const updates: Record<string, unknown> = {};
+      if (input.name !== undefined) updates.name = input.name;
+      if (input.managerId !== undefined) updates.managerId = input.managerId;
+      if (input.active !== undefined) updates.active = input.active;
+      if (Object.keys(updates).length > 0) {
+        await db.update(fieldSellers).set(updates).where(eq(fieldSellers.id, input.id));
+      }
+      return { success: true };
+    }),
+
+  deleteFieldSeller: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      await db.delete(fieldSellers).where(eq(fieldSellers.id, input.id));
       return { success: true };
     }),
 });
