@@ -3557,7 +3557,7 @@ export default function Sales() {
 
         {/* Sub-abas Vendas */}
         {canSeeFornecedores && (
-          <div className="grid grid-cols-3 md:flex md:items-center md:justify-center gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-1">
+          <div className="flex flex-wrap items-center justify-center gap-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-1">
             <button
               onClick={() => setSalesTab("vendas")}
               className={`flex items-center justify-center gap-1.5 px-2 md:px-4 py-2 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
@@ -3578,7 +3578,7 @@ export default function Sales() {
               }`}
             >
               <Truck className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
-              <span className="truncate"><span className="md:hidden">Fornecedores</span><span className="hidden md:inline">Fornecedores Brasileiros</span></span>
+              <span className="whitespace-nowrap"><span className="md:hidden">Fornecedores</span><span className="hidden md:inline">Fornecedores Brasileiros</span></span>
             </button>
             <button
               onClick={() => setSalesTab("metricas")}
@@ -3589,7 +3589,7 @@ export default function Sales() {
               }`}
             >
               <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
-              <span className="truncate"><span className="md:hidden">Mét. Vendas</span><span className="hidden md:inline">Métricas de Vendas</span></span>
+              <span className="whitespace-nowrap"><span className="md:hidden">Mét. Vendas</span><span className="hidden md:inline">Métricas de Vendas</span></span>
             </button>
             <button
               onClick={() => setSalesTab("clientes")}
@@ -3600,7 +3600,7 @@ export default function Sales() {
               }`}
             >
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
-              <span className="truncate"><span className="md:hidden">Mét. Clientes</span><span className="hidden md:inline">Métrica de Clientes</span></span>
+              <span className="whitespace-nowrap"><span className="md:hidden">Mét. Clientes</span><span className="hidden md:inline">Métrica de Clientes</span></span>
             </button>
             <button
               onClick={() => setSalesTab("cadastro_vendedores")}
@@ -3611,7 +3611,7 @@ export default function Sales() {
               }`}
             >
               <UserPlus className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />
-              <span className="truncate"><span className="md:hidden">Cad. Vendedores</span><span className="hidden md:inline">Cadastro de Vendedores</span></span>
+              <span className="whitespace-nowrap">Cadastro de Vendedores</span>
             </button>
           </div>
         )}
