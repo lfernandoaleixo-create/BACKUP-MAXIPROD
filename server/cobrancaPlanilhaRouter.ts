@@ -680,8 +680,9 @@ export const cobrancaPlanilhaRouter = router({
         console.error("[Sync] Erro ao buscar vendedores:", e);
       }
 
-      // 4d. Buscar contatos extras (múltiplos telefones) de cada cliente via GraphQL
+      // 4d. Buscar contatos extras (múltiplos telefones) e email do endereço de cada cliente via GraphQL
       const contatosExtrasMap: Record<string, string[]> = {};
+      const emailEnderecoMap: Record<string, string> = {};
       try {
         const PAGE_SIZE = 200;
         let skip = 0;
@@ -694,9 +695,9 @@ export const cobrancaPlanilhaRouter = router({
                 nomeFantasia
                 razaoSocial
                 apelido
-                enderecoDeCobranca { telefone1 telefone2 telefone3 telefone4 }
-                enderecoDeEntrega { telefone1 telefone2 telefone3 telefone4 }
-                enderecoDeFaturamento { telefone1 telefone2 telefone3 telefone4 }
+                enderecoDeCobranca { telefone1 telefone2 telefone3 telefone4 email }
+                enderecoDeEntrega { telefone1 telefone2 telefone3 telefone4 email }
+                enderecoDeFaturamento { telefone1 telefone2 telefone3 telefone4 email }
               }
             }
           }`);
@@ -704,6 +705,7 @@ export const cobrancaPlanilhaRouter = router({
           total = resp.empresas.totalCount;
           for (const emp of resp.empresas.items) {
             const phones = new Set<string>();
+            const emails = new Set<string>();
             const addrs = [emp.enderecoDeCobranca, emp.enderecoDeEntrega, emp.enderecoDeFaturamento];
             for (const addr of addrs) {
               if (!addr) continue;
@@ -711,13 +713,23 @@ export const cobrancaPlanilhaRouter = router({
                 const tel = (addr[key] || "").trim();
                 if (tel && tel.length >= 8) phones.add(tel);
               }
+              // Coletar email do endereço
+              const addrEmail = (addr.email || "").trim();
+              if (addrEmail && addrEmail.includes('@')) emails.add(addrEmail);
             }
+            const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
             if (phones.size > 0) {
               const phonesArr = Array.from(phones);
-              const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
               for (const name of names) {
                 const normName = normalizeName(name);
                 if (!contatosExtrasMap[normName]) contatosExtrasMap[normName] = phonesArr;
+              }
+            }
+            if (emails.size > 0) {
+              const firstEmail = Array.from(emails)[0];
+              for (const name of names) {
+                const normName = normalizeName(name);
+                if (!emailEnderecoMap[normName]) emailEnderecoMap[normName] = firstEmail;
               }
             }
           }
@@ -826,14 +838,17 @@ export const cobrancaPlanilhaRouter = router({
         const clienteData = clienteDataMap[inad.empresa] || {};
         const empresaNorm = normalizeName(inad.empresa);
         if (!match.contato && clienteData.contato) updateData.contato = clienteData.contato;
-        // Email: priorizar emailParaEnvioDeDocumentosFiscais do Maxiprod, fallback para email do pedido
-        if (!match.email) {
-          const nfeEmail = emailNfeMap[empresaNorm];
-          if (nfeEmail) {
-            updateData.email = nfeEmail;
-          } else if (clienteData.email) {
-            updateData.email = clienteData.email;
-          }
+        // Email: combinar emailParaEnvioDeDocumentosFiscais + email do endereço (ambos quando existirem)
+        {
+          const nfeEmail = emailNfeMap[empresaNorm] || "";
+          const endEmail = emailEnderecoMap[empresaNorm] || "";
+          const pedidoEmail = clienteData.email || "";
+          const allEmails = new Set<string>();
+          if (nfeEmail) allEmails.add(nfeEmail.toLowerCase());
+          if (endEmail) allEmails.add(endEmail.toLowerCase());
+          if (pedidoEmail && allEmails.size === 0) allEmails.add(pedidoEmail.toLowerCase());
+          const combinedEmail = Array.from(allEmails).join(' / ');
+          if (combinedEmail) updateData.email = combinedEmail;
         }
         if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
         if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
@@ -920,14 +935,17 @@ export const cobrancaPlanilhaRouter = router({
           const clienteData = clienteDataMap[inad.empresa] || {};
           const empresaNormFb = normalizeName(inad.empresa);
           if (!match.contato && clienteData.contato) updateData.contato = clienteData.contato;
-          // Email: priorizar emailParaEnvioDeDocumentosFiscais do Maxiprod, fallback para email do pedido
-          if (!match.email) {
-            const nfeEmail = emailNfeMap[empresaNormFb];
-            if (nfeEmail) {
-              updateData.email = nfeEmail;
-            } else if (clienteData.email) {
-              updateData.email = clienteData.email;
-            }
+          // Email: combinar emailParaEnvioDeDocumentosFiscais + email do endereço (ambos quando existirem)
+          {
+            const nfeEmail = emailNfeMap[empresaNormFb] || "";
+            const endEmail = emailEnderecoMap[empresaNormFb] || "";
+            const pedidoEmail = clienteData.email || "";
+            const allEmails = new Set<string>();
+            if (nfeEmail) allEmails.add(nfeEmail.toLowerCase());
+            if (endEmail) allEmails.add(endEmail.toLowerCase());
+            if (pedidoEmail && allEmails.size === 0) allEmails.add(pedidoEmail.toLowerCase());
+            const combinedEmail = Array.from(allEmails).join(' / ');
+            if (combinedEmail) updateData.email = combinedEmail;
           }
           if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
           if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
@@ -971,7 +989,17 @@ export const cobrancaPlanilhaRouter = router({
             tipo: inad.tipo,
             status: inad.status,
             contato: clienteData.contato || null,
-            email: emailNfeMap[normalizeName(inad.empresa)] || clienteData.email || null,
+            email: (() => {
+              const normEmp = normalizeName(inad.empresa);
+              const nfe = emailNfeMap[normEmp] || "";
+              const end = emailEnderecoMap[normEmp] || "";
+              const ped = clienteData.email || "";
+              const set = new Set<string>();
+              if (nfe) set.add(nfe.toLowerCase());
+              if (end) set.add(end.toLowerCase());
+              if (ped && set.size === 0) set.add(ped.toLowerCase());
+              return set.size > 0 ? Array.from(set).join(' / ') : null;
+            })(),
             regiao: clienteData.regiao || null,
             apelido: apelidoMap[normalizeName(inad.empresa)] || null,
             vendedor: isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : (vendedorMap[normalizeName(inad.empresa)] || null),
