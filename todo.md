@@ -3810,3 +3810,7 @@
 - [x] Criar endpoints backend CRUD para vendedores
 - [x] Implementar UI de cadastro de vendedores na aba Cadastro de Vendedores
 - [x] Pré-cadastrar vendedores do Juvenal: Clarindo, Daniel, Romera, Luiz Matias, Renato
+- [x] Substituir cadastro manual de gestores/vendedores por consulta GraphQL ao Maxiprod
+- [x] Criar query GraphQL para puxar representantes (Apelido=vendedor, Representante/vendedor=gestor)
+- [x] Criar endpoint tRPC que retorna vendedores agrupados por gestor
+- [x] Atualizar UI CadastroVendedoresTab para usar dados do Maxiprod (sem CRUD manual)

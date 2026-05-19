@@ -5,6 +5,11 @@ import { salesOrders, orderItems, accountsReceivable, orderCancellations, seller
 import { sql, and, gte, lte, like, or, eq, desc } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
+// Cache para representantes do Maxiprod (5 minutos)
+const REPRESENTANTES_CACHE_TTL = 5 * 60 * 1000;
+let representantesCache: any = null;
+let representantesCacheTimestamp = 0;
+
 /**
  * Sales analytics router
  * Provides endpoints for ingesting sales order data and querying analytics
@@ -2916,7 +2921,75 @@ export const salesRouter = router({
     };
   }),
 
-  // ===== Gestores de Vendas =====
+  // ===== Gestores e Vendedores (direto do Maxiprod) =====
+  /**
+   * Puxa representantes/vendedores do Maxiprod via GraphQL.
+   * Apelido = nome do vendedor de rua
+   * representanteOuVendedor1Preferencial = gestor do vendedor
+   * Retorna agrupado por gestor, com vendedores que têm gestor vinculado.
+   * Cache de 5 minutos para não sobrecarregar a API.
+   */
+  listRepresentantesMaxiprod: publicProcedure.query(async () => {
+    const now = Date.now();
+    if (now - representantesCacheTimestamp < REPRESENTANTES_CACHE_TTL && representantesCache) {
+      return representantesCache;
+    }
+
+    const data = await gql<any>(`{
+      empresas(skip: 0, take: 200, where: { representanteOuVendedor: { eq: true } }) {
+        totalCount
+        items {
+          apelido
+          nomeFantasia
+          razaoSocial
+          representanteOuVendedor1Preferencial { nomeFantasia razaoSocial apelido }
+        }
+      }
+    }`);
+
+    if (!data?.empresas) {
+      throw new Error("Falha ao buscar representantes do Maxiprod");
+    }
+
+    // Processar: agrupar vendedores por gestor
+    const gestoresMap = new Map<string, string[]>();
+    const semGestor: string[] = [];
+
+    for (const emp of data.empresas.items) {
+      const vendedorName = emp.apelido || emp.nomeFantasia || emp.razaoSocial || "";
+      if (!vendedorName) continue;
+
+      const gestor = emp.representanteOuVendedor1Preferencial;
+      const gestorName = gestor?.nomeFantasia || gestor?.razaoSocial || gestor?.apelido || "";
+
+      if (gestorName && gestorName !== vendedorName) {
+        // Vendedor com gestor vinculado
+        if (!gestoresMap.has(gestorName)) {
+          gestoresMap.set(gestorName, []);
+        }
+        gestoresMap.get(gestorName)!.push(vendedorName);
+      } else {
+        // Sem gestor ou é o próprio gestor
+        semGestor.push(vendedorName);
+      }
+    }
+
+    // Montar resultado
+    const result = {
+      gestores: Array.from(gestoresMap.entries()).map(([gestor, vendedores]) => ({
+        gestor,
+        vendedores: vendedores.sort((a, b) => a.localeCompare(b, 'pt-BR')),
+      })).sort((a, b) => a.gestor.localeCompare(b.gestor, 'pt-BR')),
+      semGestor: semGestor.sort((a, b) => a.localeCompare(b, 'pt-BR')),
+      total: data.empresas.totalCount,
+    };
+
+    representantesCache = result;
+    representantesCacheTimestamp = now;
+    return result;
+  }),
+
+  // Manter endpoints antigos para compatibilidade (podem ser removidos depois)
   listSalesManagers: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("DB not available");
@@ -2952,50 +3025,7 @@ export const salesRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
-      // Também remover vendedores vinculados ao gestor
-      await db.delete(fieldSellers).where(eq(fieldSellers.managerId, input.id));
       await db.delete(salesManagers).where(eq(salesManagers.id, input.id));
-      return { success: true };
-    }),
-
-  // ===== Vendedores de Rua =====
-  listFieldSellers: publicProcedure.query(async () => {
-    const db = await getDb();
-    if (!db) throw new Error("DB not available");
-    const sellers = await db.select().from(fieldSellers).orderBy(fieldSellers.name);
-    return sellers;
-  }),
-
-  createFieldSeller: publicProcedure
-    .input(z.object({ name: z.string().min(2), managerId: z.number() }))
-    .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("DB not available");
-      await db.insert(fieldSellers).values({ name: input.name, managerId: input.managerId });
-      return { success: true };
-    }),
-
-  updateFieldSeller: publicProcedure
-    .input(z.object({ id: z.number(), name: z.string().min(2).optional(), managerId: z.number().optional(), active: z.boolean().optional() }))
-    .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("DB not available");
-      const updates: Record<string, unknown> = {};
-      if (input.name !== undefined) updates.name = input.name;
-      if (input.managerId !== undefined) updates.managerId = input.managerId;
-      if (input.active !== undefined) updates.active = input.active;
-      if (Object.keys(updates).length > 0) {
-        await db.update(fieldSellers).set(updates).where(eq(fieldSellers.id, input.id));
-      }
-      return { success: true };
-    }),
-
-  deleteFieldSeller: publicProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("DB not available");
-      await db.delete(fieldSellers).where(eq(fieldSellers.id, input.id));
       return { success: true };
     }),
 });
