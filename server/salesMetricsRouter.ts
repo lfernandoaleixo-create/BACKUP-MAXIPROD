@@ -15,6 +15,7 @@ import { getDb } from "./db";
 import { salesOrders, accountsReceivable } from "../drizzle/schema";
 import { sql, and, gte, lte, ne, eq, desc, asc, inArray } from "drizzle-orm";
 import { ENV } from "./_core/env";
+import { normalizeVendedorName } from "./maxiprodGraphQL";
 
 // === CONSTANTS (same as financialRouter) ===
 const RECEIVABLE_VALID_TYPES = ["TITULO", "RECEITA", "ADIANTAMENTO"];
@@ -171,6 +172,9 @@ async function fetchVendedorMap(): Promise<Record<string, string>> {
           }
         }
 
+        // Normalizar nome do vendedor (ex: "63.134.331 JUVENAL TEIXEIRA DA SILVA NETO" → "JUVENAL TEIXEIRA")
+        vendedor = normalizeVendedorName(vendedor);
+
         if (vendedor) {
           if (nomeFantasia && !map[nomeFantasia]) map[nomeFantasia] = vendedor;
           if (razaoSocial && !map[razaoSocial]) map[razaoSocial] = vendedor;
@@ -284,8 +288,8 @@ export const salesMetricsRouter = router({
         const pedido = o.pedido || `item-${Math.random()}`;
         if (!pedidoMap.has(pedido)) {
           const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
-          let vendedor = o.representante || "";
-          const vendedorRealValue = o.vendedorReal || o.representante || "";
+          let vendedor = normalizeVendedorName(o.representante || "");
+          const vendedorRealValue = normalizeVendedorName(o.vendedorReal || o.representante || "");
           if (!vendedor || isEditorNaoVendedor(vendedor)) {
             vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
           }
@@ -402,8 +406,8 @@ export const salesMetricsRouter = router({
         const pedido = o.pedido || `item-${Math.random()}`;
         if (!pedidoMap.has(pedido)) {
           const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
-          let vendedor = o.representante || "";
-          const vendedorRealValue = o.vendedorReal || o.representante || "";
+          let vendedor = normalizeVendedorName(o.representante || "");
+          const vendedorRealValue = normalizeVendedorName(o.vendedorReal || o.representante || "");
           if (!vendedor || isEditorNaoVendedor(vendedor)) {
             vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
           }

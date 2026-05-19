@@ -1,0 +1,14 @@
+{
+  "query": "SELECT DISTINCT cliente, representante FROM sales_orders WHERE representante = '63.134.331 JUVENAL TEIXEIRA DA SILVA NETO' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT cliente, representante FROM sales_orders WHERE representante = '63.134.331 JUVENAL TEIXEIRA DA SILVA NETO' LIMIT 10;",
+  "rows": [
+    {
+      "cliente": "ABRASA INDUSTRIA E COMERCIO LTDA",
+      "representante": "63.134.331 JUVENAL TEIXEIRA DA SILVA NETO"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\trepresentante\nABRASA INDUSTRIA E COMERCIO LTDA\t63.134.331 JUVENAL TEIXEIRA DA SILVA NETO\n",
+  "stderr": "",
+  "execution_time_ms": 364
+}

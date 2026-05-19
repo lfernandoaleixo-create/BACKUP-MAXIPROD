@@ -1,0 +1,25 @@
+{
+  "query": "SELECT DISTINCT representante FROM sales_orders WHERE representante LIKE '%JUVENAL%' OR representante LIKE '%JORDAO%' OR representante LIKE '%JORDÃO%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT representante FROM sales_orders WHERE representante LIKE '%JUVENAL%' OR representante LIKE '%JORDAO%' OR representante LIKE '%JORDÃO%';",
+  "rows": [
+    {
+      "representante": "63.134.331 JUVENAL TEIXEIRA DA SILVA NETO"
+    },
+    {
+      "representante": "JUVENAL"
+    },
+    {
+      "representante": "JORDAO"
+    },
+    {
+      "representante": "JUVENAL TEIXEIRA"
+    },
+    {
+      "representante": "JORDAO LAINE"
+    }
+  ],
+  "messages": [],
+  "stdout": "representante\n63.134.331 JUVENAL TEIXEIRA DA SILVA NETO\nJUVENAL\nJORDAO\nJUVENAL TEIXEIRA\nJORDAO LAINE\n",
+  "stderr": "",
+  "execution_time_ms": 288
+}

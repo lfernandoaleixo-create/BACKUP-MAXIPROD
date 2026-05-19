@@ -11,7 +11,7 @@ import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizz
 import { storagePut, storageGet } from "./storage";
 import { ENV } from "./_core/env";
 import { generateCollectionPdf } from "./generateCollectionPdf";
-import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial, gql } from "./maxiprodGraphQL";
+import { fetchPaidAccountsTotal, fetchPaidAccountsDetails, fetchReceivedAccountsTotal, fetchReceivedAccountsDetails, fetchOtherInflowsTotal, fetchOtherInflowsDetails, fetchMonthlyOFXInflows, fetchInvoicesTotal, fetchInvoicesDetails, fetchBankBalancesWithInitial, gql, normalizeVendedorName } from "./maxiprodGraphQL";
 import { checkAndResetIfNeeded } from "./paymentAuthReset";
 
 // Cache em memória para contraprova Maxiprod (TTL 5 minutos)
@@ -202,8 +202,9 @@ async function fetchVendedorMapFromGraphQL(): Promise<Record<string, string>> {
         for (const emp of empData.data.empresas.items) {
           const rep = emp.representanteOuVendedor1Preferencial;
           if (!rep) continue;
-          const vendedorName = rep.nomeFantasia || rep.razaoSocial || "";
-          if (!vendedorName) continue;
+          const vendedorNameRaw = rep.nomeFantasia || rep.razaoSocial || "";
+          if (!vendedorNameRaw) continue;
+          const vendedorName = normalizeVendedorName(vendedorNameRaw);
           const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
           for (const name of names) {
             if (!map[name]) map[name] = vendedorName;
@@ -270,6 +271,9 @@ async function fetchVendedorMapFromGraphQL(): Promise<Record<string, string>> {
             vendedor = responsavel;
           }
         }
+
+        // Normalizar nome do vendedor (ex: "63.134.331 JUVENAL TEIXEIRA DA SILVA NETO" → "JUVENAL TEIXEIRA")
+        vendedor = normalizeVendedorName(vendedor);
 
         if (vendedor) {
           if (nomeFantasia && !map[nomeFantasia]) map[nomeFantasia] = vendedor;

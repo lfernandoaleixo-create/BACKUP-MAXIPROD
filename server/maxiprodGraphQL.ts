@@ -675,6 +675,34 @@ function isEditorNaoVendedorSync(nome: string): boolean {
 }
 
 /**
+ * Normaliza nomes de vendedores para exibição consistente.
+ * Ex: "63.134.331 JUVENAL TEIXEIRA DA SILVA NETO" → "JUVENAL TEIXEIRA"
+ *     "JUVENAL" → "JUVENAL TEIXEIRA"
+ *     "JORDAO LAINE" → "JORDAO"
+ */
+const VENDEDOR_NAME_ALIASES: Record<string, string> = {
+  "JUVENAL": "JUVENAL TEIXEIRA",
+  "JORDAO LAINE": "JORDAO",
+};
+
+export function normalizeVendedorName(name: string): string {
+  if (!name) return name;
+  const trimmed = name.trim();
+  const upper = trimmed.toUpperCase();
+  
+  // Check exact alias match
+  if (VENDEDOR_NAME_ALIASES[upper]) return VENDEDOR_NAME_ALIASES[upper];
+  
+  // Check if name contains JUVENAL (handles "63.134.331 JUVENAL TEIXEIRA DA SILVA NETO")
+  if (upper.includes("JUVENAL")) return "JUVENAL TEIXEIRA";
+  
+  // Check if name contains JORDAO with extra text
+  if (upper.includes("JORDAO") || upper.includes("JORDÃO")) return "JORDAO";
+  
+  return trimmed;
+}
+
+/**
  * Resolve representante/vendedor from GraphQL data using fallback logic:
  * 1. representanteOuVendedor1.nomeFantasia (priority)
  * 2. representanteOuVendedor1.razaoSocial (fallback if nomeFantasia is null)
@@ -698,6 +726,9 @@ function resolveRepresentante(pv: any): { representante: string; vendedorReal: s
   }
 
   const clienteNome = pv.cliente?.nomeFantasia || pv.cliente?.razaoSocial || "";
+  
+  // Normalize vendedor name
+  vendedorReal = normalizeVendedorName(vendedorReal);
   
   // Override manual: clientes Johnson e Keure → "Grupo Fox"
   if (clienteNome && isClienteGrupoFoxSync(clienteNome)) {

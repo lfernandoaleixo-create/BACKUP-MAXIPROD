@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders } from "../drizzle/schema";
 import { eq, desc, sql, and, inArray, lte, asc, isNull, like } from "drizzle-orm";
-import { gql } from "./maxiprodGraphQL";
+import { gql, normalizeVendedorName } from "./maxiprodGraphQL";
 
 /**
  * Router para a Planilha de Cobrança interativa.
@@ -668,8 +668,9 @@ export const cobrancaPlanilhaRouter = router({
             // Mapear vendedor
             const rep = emp.representanteOuVendedor1Preferencial;
             if (!rep) continue;
-            const vendedorName = rep.nomeFantasia || rep.razaoSocial || "";
-            if (!vendedorName) continue;
+            const vendedorNameRaw = rep.nomeFantasia || rep.razaoSocial || "";
+            if (!vendedorNameRaw) continue;
+            const vendedorName = normalizeVendedorName(vendedorNameRaw);
             for (const normName of normalizedNames) {
               if (!vendedorMap[normName]) vendedorMap[normName] = vendedorName;
             }
