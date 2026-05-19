@@ -3796,3 +3796,4 @@
 - [x] Adicionar checkbox em cada conta na seção Pagamentos para o Fernando ticar/selecionar
 - [x] Mudar cor da conta quando ticada (visual para todos os operadores verem)
 - [x] Persistir tiques no banco de dados (todos veem o estado atual)
+- [x] Vareta de Apito (00223 e 00058): mudar unidade de cx para Kg no lançamento de embalagem na Produção

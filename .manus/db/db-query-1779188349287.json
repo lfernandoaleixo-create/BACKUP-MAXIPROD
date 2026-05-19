@@ -1,0 +1,20 @@
+{
+  "query": "SELECT codigoItem, descricaoItem, unidadeMedida FROM stock_items WHERE descricaoItem LIKE '%VARETA%APITO%' OR codigoItem = '00223' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricaoItem, unidadeMedida FROM stock_items WHERE descricaoItem LIKE '%VARETA%APITO%' OR codigoItem = '00223' LIMIT 5;",
+  "rows": [
+    {
+      "codigoItem": "00058",
+      "descricaoItem": "VARETA DE APITO BAMBU 3,0 X 350 MM PCT 20KG",
+      "unidadeMedida": "un"
+    },
+    {
+      "codigoItem": "00223",
+      "descricaoItem": "VARETA DE APITO MADEIRA 3,0 X 350 MM PCT 20KG",
+      "unidadeMedida": "kg"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tdescricaoItem\tunidadeMedida\n00058\tVARETA DE APITO BAMBU 3,0 X 350 MM PCT 20KG\tun\n00223\tVARETA DE APITO MADEIRA 3,0 X 350 MM PCT 20KG\tkg\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

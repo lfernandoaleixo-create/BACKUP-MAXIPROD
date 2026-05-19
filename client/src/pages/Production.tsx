@@ -1863,6 +1863,7 @@ function EmbalagemSector({ sector, selectedDate, entries, savingKeys, onSaveProd
   /** Get the display unit for a product (Rojão 00129 = dz, others = cx) */
   const getProductUnit = (codigoItem: string, unidadeMedida?: string): string => {
     if (codigoItem === "00129") return "dz"; // Rojão: dúzias
+    if (codigoItem === "00223" || codigoItem === "00058") return "kg"; // Vareta de Apito: quilogramas
     return "cx";
   };
 

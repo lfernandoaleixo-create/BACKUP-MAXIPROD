@@ -1,0 +1,28 @@
+{
+  "query": "SHOW TABLES LIKE '%stock%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SHOW TABLES LIKE '%stock%';",
+  "rows": [
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%stock%)": "aguardando_escolha_stock"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%stock%)": "ecommerce_stock_snapshots"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%stock%)": "madeira_stock"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%stock%)": "semi_pronto_stock"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%stock%)": "stock_edit_history"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%stock%)": "stock_items"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%stock%)\naguardando_escolha_stock\necommerce_stock_snapshots\nmadeira_stock\nsemi_pronto_stock\nstock_edit_history\nstock_items\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}
