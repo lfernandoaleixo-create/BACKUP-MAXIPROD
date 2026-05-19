@@ -43,6 +43,14 @@ function AppContent() {
     return <SellerApp />;
   }
 
+  // Rota do app de vendedor para gestores (Guilherme/Fernando) - acesso completo sem senha de vendedor
+  if (typeof window !== "undefined" && window.location.pathname === "/vendedor-gestor") {
+    if (isLoggedIn) {
+      return <SellerApp gestorMode={true} />;
+    }
+    return <LoginScreen />;
+  }
+
   if (!isLoggedIn) {
     return <LoginScreen />;
   }

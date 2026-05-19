@@ -17,13 +17,22 @@ interface SellerSession {
   catalogs: { id: number; name: string; folder: string; url: string }[];
 }
 
-export default function SellerApp() {
+export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean }) {
   const [session, setSession] = useState<SellerSession | null>(null);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
   const loginMutation = trpc.sales.sellerLogin.useMutation();
+
+  // Modo gestor: acesso completo sem precisar de senha de vendedor
+  const gestorSession: SellerSession = {
+    id: 0,
+    name: "Gestor",
+    gestor: "Admin",
+    visibleProducts: ["__ALL__"],
+    catalogs: [],
+  };
 
   const handleLogin = () => {
     if (!password.trim()) {
@@ -55,10 +64,19 @@ export default function SellerApp() {
   };
 
   const handleLogout = () => {
+    if (gestorMode) {
+      window.location.href = "/";
+      return;
+    }
     setSession(null);
     setPassword("");
     setError("");
   };
+
+  // Modo gestor: pula login e mostra tudo
+  if (gestorMode) {
+    return <SellerMainView session={gestorSession} search={search} setSearch={setSearch} onLogout={handleLogout} gestorMode={true} />;
+  }
 
   if (!session) {
     return <LoginView password={password} setPassword={setPassword} error={error} onLogin={handleLogin} isPending={loginMutation.isPending} />;
@@ -135,11 +153,13 @@ function SellerMainView({
   search,
   setSearch,
   onLogout,
+  gestorMode = false,
 }: {
   session: SellerSession;
   search: string;
   setSearch: (v: string) => void;
   onLogout: () => void;
+  gestorMode?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<"estoque" | "pdfs" | "pedidos">("estoque");
   const [showOrderForm, setShowOrderForm] = useState(false);
@@ -241,8 +261,11 @@ function StockTab({ session, search }: { session: SellerSession; search: string 
 
   const items = useMemo(() => {
     if (!stockQuery.data?.items) return [];
+    const showAll = session.visibleProducts.includes("__ALL__");
     const visibleSet = new Set(session.visibleProducts);
-    let filtered = stockQuery.data.items.filter((item: any) => visibleSet.has(item.codigoItem));
+    let filtered = showAll
+      ? stockQuery.data.items
+      : stockQuery.data.items.filter((item: any) => visibleSet.has(item.codigoItem));
     if (search.trim()) {
       const term = search.trim().toLowerCase();
       filtered = filtered.filter(
