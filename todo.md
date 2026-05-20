@@ -3875,3 +3875,4 @@
 - [x] Mostrar todos os produtos disponíveis na etapa Produtos do Novo Pedido (lista completa visível por padrão)
 - [x] Exibir todas as specs do produto (medida, peso, dimensões, código de barras, unidade, grupo)
 - [x] Manter busca como filtro opcional sobre a lista completa
+- [x] Painel consolidado de métricas de vendas de TODOS os vendedores na Gestão Comercial (ranking, KPIs, filtros de período)

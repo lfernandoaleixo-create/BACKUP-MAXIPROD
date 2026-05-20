@@ -1,0 +1,46 @@
+{
+  "query": "SELECT id, seller_name, gestor_name, authorized FROM seller_permissions ORDER BY gestor_name, seller_name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, seller_name, gestor_name, authorized FROM seller_permissions ORDER BY gestor_name, seller_name;",
+  "rows": [
+    {
+      "id": "6",
+      "seller_name": "ANA PAULA ALEIXO",
+      "gestor_name": "JORDÃO LAINE",
+      "authorized": "0"
+    },
+    {
+      "id": "2",
+      "seller_name": "CLARINDO GONCALVES",
+      "gestor_name": "JUVENAL TEIXEIRA",
+      "authorized": "0"
+    },
+    {
+      "id": "1",
+      "seller_name": "DANIEL TAVARES",
+      "gestor_name": "JUVENAL TEIXEIRA",
+      "authorized": "0"
+    },
+    {
+      "id": "5",
+      "seller_name": "LUIZ MATIAS",
+      "gestor_name": "JUVENAL TEIXEIRA",
+      "authorized": "0"
+    },
+    {
+      "id": "4",
+      "seller_name": "PEDRO AUGUSTO",
+      "gestor_name": "JUVENAL TEIXEIRA",
+      "authorized": "0"
+    },
+    {
+      "id": "3",
+      "seller_name": "ROMERA REPRESENTACOES",
+      "gestor_name": "JUVENAL TEIXEIRA",
+      "authorized": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tseller_name\tgestor_name\tauthorized\n6\tANA PAULA ALEIXO\tJORDÃO LAINE\t0\n2\tCLARINDO GONCALVES\tJUVENAL TEIXEIRA\t0\n1\tDANIEL TAVARES\tJUVENAL TEIXEIRA\t0\n5\tLUIZ MATIAS\tJUVENAL TEIXEIRA\t0\n4\tPEDRO AUGUSTO\tJUVENAL TEIXEIRA\t0\n3\tROMERA REPRESENTACOES\tJUVENAL TEIXEIRA\t0\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}
