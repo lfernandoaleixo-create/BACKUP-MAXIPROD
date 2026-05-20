@@ -3853,3 +3853,4 @@
 - [x] Mover ticagem de produtos para aba Configurações do vendedor
 - [x] Aba Estoque do vendedor: mostrar produtos ticados com Disponível p/ Venda e POs projetadas
 - [x] Sistema de reservas: vendedor reserva caixas de POs futuras para clientes
+- [x] Aba Vendas do vendedor: métricas de vendas filtradas por vendedor com seletor de período (dia, semana, mês atual, mês anterior, 3 meses, personalizado)

@@ -36,6 +36,11 @@ import {
   ShoppingCart,
   Calendar,
   Bookmark,
+  DollarSign,
+  TrendingUp,
+  Users,
+  Trophy,
+  Filter,
 } from "lucide-react";
 
 type TabType = "estoque" | "clientes" | "vendas" | "configuracoes";
@@ -201,7 +206,7 @@ export default function VendedorDetalhe() {
         )}
 
         {activeTab === "vendas" && (
-          <PlaceholderTab title="Vendas" description="Funcionalidade em desenvolvimento. Em breve você poderá visualizar as vendas deste vendedor." />
+          <SellerSalesView sellerName={seller.sellerName} />
         )}
 
         {activeTab === "configuracoes" && (
@@ -1512,6 +1517,304 @@ function ReservationsPanel({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+
+/**
+ * ============================================================
+ * SellerSalesView - Métricas de vendas do vendedor
+ * Usa salesMetrics.getVendedorRanking e getVendedorDetail
+ * Filtros: Hoje, Semana, Mês Atual, Mês Anterior, 3 Meses, Personalizado
+ * ============================================================
+ */
+
+type SalesPeriod = "day" | "week" | "month" | "prev_month" | "3months" | "custom";
+
+const SALES_PERIODS: { label: string; value: SalesPeriod }[] = [
+  { label: "Hoje", value: "day" },
+  { label: "Semana", value: "week" },
+  { label: "Mês Atual", value: "month" },
+  { label: "Mês Anterior", value: "prev_month" },
+  { label: "3 Meses", value: "3months" },
+  { label: "Personalizado", value: "custom" },
+];
+
+function getSalesDateRange(period: SalesPeriod, customStart?: string, customEnd?: string): { startDate: string; endDate: string } {
+  const now = new Date();
+  const spNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const today = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-${String(spNow.getDate()).padStart(2, "0")}`;
+
+  switch (period) {
+    case "day":
+      return { startDate: today, endDate: today };
+    case "week": {
+      const dow = spNow.getDay();
+      const mondayOff = dow === 0 ? -6 : 1 - dow;
+      const monday = new Date(spNow);
+      monday.setDate(spNow.getDate() + mondayOff);
+      const startDate = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+      return { startDate, endDate: today };
+    }
+    case "month": {
+      const startDate = `${spNow.getFullYear()}-${String(spNow.getMonth() + 1).padStart(2, "0")}-01`;
+      return { startDate, endDate: today };
+    }
+    case "prev_month": {
+      const prevMonth = new Date(spNow.getFullYear(), spNow.getMonth() - 1, 1);
+      const lastDay = new Date(spNow.getFullYear(), spNow.getMonth(), 0);
+      const startDate = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, "0")}-01`;
+      const endDate = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`;
+      return { startDate, endDate };
+    }
+    case "3months": {
+      const threeMonthsAgo = new Date(spNow.getFullYear(), spNow.getMonth() - 2, 1);
+      const startDate = `${threeMonthsAgo.getFullYear()}-${String(threeMonthsAgo.getMonth() + 1).padStart(2, "0")}-01`;
+      return { startDate, endDate: today };
+    }
+    case "custom":
+      return { startDate: customStart || today, endDate: customEnd || today };
+  }
+}
+
+function formatCurrencySales(value: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+}
+
+function formatDateSales(dateStr: string) {
+  if (!dateStr) return "-";
+  const datePart = dateStr.split("T")[0];
+  const parts = datePart.split("-");
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return dateStr;
+}
+
+function SellerSalesView({ sellerName }: { sellerName: string }) {
+  const [period, setPeriod] = useState<SalesPeriod>("month");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [showCustom, setShowCustom] = useState(false);
+
+  const { startDate, endDate } = useMemo(
+    () => getSalesDateRange(period, customStart, customEnd),
+    [period, customStart, customEnd]
+  );
+
+  // Buscar ranking geral para posicionar o vendedor
+  const { data: ranking, isLoading: loadingRanking } = trpc.salesMetrics.getVendedorRanking.useQuery(
+    { startDate, endDate },
+    { staleTime: 60 * 1000 }
+  );
+
+  // Buscar detalhe do vendedor (por cliente)
+  const { data: vendedorDetail, isLoading: loadingDetail } = trpc.salesMetrics.getVendedorDetail.useQuery(
+    { vendedor: sellerName, startDate, endDate },
+    { staleTime: 60 * 1000 }
+  );
+
+  // Encontrar posição no ranking
+  const sellerRankData = ranking?.find(
+    (r) => r.vendedor.toUpperCase() === sellerName.toUpperCase()
+  );
+  const rankPosition = ranking?.findIndex(
+    (r) => r.vendedor.toUpperCase() === sellerName.toUpperCase()
+  );
+  const position = rankPosition !== undefined && rankPosition >= 0 ? rankPosition + 1 : null;
+
+  const totalVendas = sellerRankData?.totalVendas || 0;
+  const qtdPedidos = sellerRankData?.qtdPedidos || 0;
+  const qtdClientes = sellerRankData?.qtdClientes || 0;
+  const ticketMedio = qtdPedidos > 0 ? totalVendas / qtdPedidos : 0;
+  const totalRanking = ranking?.length || 0;
+
+  const isLoading = loadingRanking || loadingDetail;
+
+  const periodLabel = SALES_PERIODS.find((p) => p.value === period)?.label || "";
+
+  return (
+    <div className="space-y-4">
+      {/* Header com seletor de período */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-teal-600" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              Vendas de {sellerName}
+            </h3>
+          </div>
+
+          {/* Period chips */}
+          <div className="flex flex-wrap gap-1.5">
+            {SALES_PERIODS.map((p) => (
+              <button
+                key={p.value}
+                onClick={() => {
+                  setPeriod(p.value);
+                  if (p.value === "custom") setShowCustom(true);
+                  else setShowCustom(false);
+                }}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
+                  period === p.value
+                    ? "bg-teal-600 text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-teal-900/30"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom date inputs */}
+        {showCustom && period === "custom" && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+            <Calendar className="w-4 h-4 text-slate-400" />
+            <input
+              type="date"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+            />
+            <span className="text-xs text-slate-400">até</span>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="w-5 h-5 text-teal-500 animate-spin" />
+        </div>
+      )}
+
+      {!isLoading && (
+        <>
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
+                  <DollarSign className="w-3.5 h-3.5 text-green-600" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase font-medium">Total Vendas</span>
+              </div>
+              <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100">
+                {formatCurrencySales(totalVendas)}
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                  <ShoppingCart className="w-3.5 h-3.5 text-blue-600" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase font-medium">Pedidos</span>
+              </div>
+              <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100">
+                {qtdPedidos}
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                  <Users className="w-3.5 h-3.5 text-purple-600" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase font-medium">Clientes</span>
+              </div>
+              <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100">
+                {qtdClientes}
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                  <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase font-medium">Ranking</span>
+              </div>
+              <p className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-100">
+                {position ? `${position}º` : "-"}{" "}
+                <span className="text-xs font-normal text-slate-400">/ {totalRanking}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Ticket Médio */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-teal-600" />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Ticket Médio</span>
+              </div>
+              <span className="text-sm font-bold text-teal-700 dark:text-teal-400">
+                {formatCurrencySales(ticketMedio)}
+              </span>
+            </div>
+          </div>
+
+          {/* Detalhe por cliente */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-700">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-slate-500" />
+                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                  Vendas por Cliente
+                </h4>
+                <span className="text-[10px] text-slate-400 ml-auto">{periodLabel}</span>
+              </div>
+            </div>
+
+            {(!vendedorDetail || vendedorDetail.length === 0) ? (
+              <div className="p-8 text-center">
+                <p className="text-sm text-slate-400">Nenhuma venda encontrada no período.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                {vendedorDetail.map((client, idx) => (
+                  <div key={client.cliente} className="p-3 md:p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className="text-[10px] font-bold text-slate-400 w-5 text-right">
+                          {idx + 1}.
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+                            {client.cliente}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-slate-400">
+                              {client.qtdPedidos} pedido{client.qtdPedidos !== 1 ? "s" : ""}
+                            </span>
+                            {client.ultimoPedido && (
+                              <span className="text-[10px] text-slate-400">
+                                · Último: {formatDateSales(client.ultimoPedido)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right ml-3">
+                        <p className="text-xs md:text-sm font-bold text-green-700 dark:text-green-400">
+                          {formatCurrencySales(client.totalVendas)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
