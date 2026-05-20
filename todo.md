@@ -3886,3 +3886,4 @@
 - [x] Criar procedures tRPC para reserva de PO (criar reserva, listar reservas, cancelar reserva)
 - [x] Adicionar botão de reserva nos cards de produto com PO chegando (Novo Pedido)
 - [x] Mostrar reservas de PO no dashboard de Estoque (visível para todos - caixas comprometidas por PO)
+- [x] Novo Pedido: busca de cliente letra a letra com dropdown e preenchimento automático de todos os campos ao selecionar

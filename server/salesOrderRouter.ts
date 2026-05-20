@@ -20,7 +20,7 @@ export const salesOrderRouter = router({
 
   /** Search clients from existing sales_orders for autocomplete */
   searchClients: publicProcedure
-    .input(z.object({ query: z.string().min(2) }))
+    .input(z.object({ query: z.string().min(1) }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];

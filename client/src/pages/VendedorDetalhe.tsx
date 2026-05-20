@@ -2739,7 +2739,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   // Queries
   const clientSearchQuery = trpc.salesOrders.searchClients.useQuery(
     { query: clientSearch },
-    { enabled: clientSearch.length >= 2 }
+    { enabled: clientSearch.length >= 1 }
   );
   const productsQuery = trpc.salesOrders.getProductsForSeller.useQuery({ sellerId });
   const createOrderMutation = trpc.salesOrders.createOrder.useMutation();
@@ -2889,28 +2889,48 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
         {step === "cliente" && (
           <div className="space-y-3">
             <p className="text-xs font-semibold text-slate-500 uppercase">1. Dados do Cliente</p>
-            {/* Client search */}
+            {/* Client search - autocomplete */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-teal-500" />
               <input
                 type="text"
-                placeholder="Buscar cliente existente (nome ou CNPJ)..."
+                placeholder="Digite o nome, fantasia ou CNPJ do cliente..."
                 value={clientSearch}
                 onChange={(e) => { setClientSearch(e.target.value); setShowClientDropdown(true); }}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+                onFocus={() => { if (clientSearch.length >= 1) setShowClientDropdown(true); }}
+                onBlur={() => setTimeout(() => setShowClientDropdown(false), 200)}
+                className="w-full pl-9 pr-3 py-3 text-sm border-2 border-teal-200 dark:border-teal-700 rounded-xl bg-teal-50/50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-400"
               />
+              {clientSearch.length >= 1 && clientSearchQuery.isLoading && (
+                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg p-3">
+                  <p className="text-xs text-slate-400 text-center">Buscando clientes...</p>
+                </div>
+              )}
               {showClientDropdown && clientSearchQuery.data && clientSearchQuery.data.length > 0 && (
-                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-teal-200 dark:border-slate-600 rounded-xl shadow-xl max-h-64 overflow-y-auto">
+                  <div className="px-3 py-1.5 bg-teal-50 dark:bg-teal-900/30 border-b border-teal-100 dark:border-teal-800">
+                    <p className="text-[10px] font-semibold text-teal-700 dark:text-teal-400 uppercase">Clientes encontrados ({clientSearchQuery.data.length})</p>
+                  </div>
                   {clientSearchQuery.data.map((c: any, idx: number) => (
                     <button
                       key={idx}
                       onClick={() => selectClient(c)}
-                      className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 last:border-0"
+                      className="w-full text-left px-3 py-2.5 hover:bg-teal-50 dark:hover:bg-teal-900/20 border-b border-slate-100 dark:border-slate-700 last:border-0 transition-colors"
                     >
-                      <p className="text-xs font-medium text-slate-700 dark:text-slate-200">{c.razaoSocial}</p>
-                      <p className="text-[10px] text-slate-400">{c.cnpjCpf} {c.municipio && `- ${c.municipio}/${c.uf}`}</p>
+                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{c.razaoSocial}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-[10px] text-slate-500 font-mono">{c.cnpjCpf}</span>
+                        {c.nomeFantasia && <span className="text-[10px] text-teal-600 dark:text-teal-400 font-medium">{c.nomeFantasia}</span>}
+                        {c.municipio && <span className="text-[10px] text-slate-400">{c.municipio}/{c.uf}</span>}
+                        {c.telefone1 && <span className="text-[10px] text-slate-400">{c.telefone1}</span>}
+                      </div>
                     </button>
                   ))}
+                </div>
+              )}
+              {showClientDropdown && clientSearch.length >= 1 && clientSearchQuery.data && clientSearchQuery.data.length === 0 && !clientSearchQuery.isLoading && (
+                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg p-3">
+                  <p className="text-xs text-slate-400 text-center">Nenhum cliente encontrado. Preencha os dados manualmente abaixo.</p>
                 </div>
               )}
             </div>
