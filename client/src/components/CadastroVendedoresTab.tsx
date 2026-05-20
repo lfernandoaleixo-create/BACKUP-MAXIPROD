@@ -6,8 +6,9 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Users, ChevronDown, ChevronRight, RefreshCw, AlertCircle, Shield, ShieldCheck, Lock, Package, Check, Layers, FileText, Upload, Trash2, X, FolderOpen } from "lucide-react";
+import { Users, ChevronDown, ChevronRight, RefreshCw, AlertCircle, Shield, ShieldCheck, Lock, Package, Check, Layers, FileText, Upload, Trash2, X, FolderOpen, ExternalLink } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { useLocation } from "wouter";
 
 interface SellerPermission {
   id: number;
@@ -30,6 +31,7 @@ interface StockItem {
 }
 
 export default function CadastroVendedoresTab() {
+  const [, navigate] = useLocation();
   const [expandedGestores, setExpandedGestores] = useState<Set<string>>(new Set());
   const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
   const [expandedPdfSeller, setExpandedPdfSeller] = useState<string | null>(null);
@@ -228,9 +230,9 @@ export default function CadastroVendedoresTab() {
                             {vendedor.charAt(0).toUpperCase()}
                           </div>
 
-                          {/* Nome e senha */}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-700">{vendedor}</p>
+                          {/* Nome e senha - clicável para abrir detalhe */}
+                          <div className="flex-1 min-w-0 cursor-pointer" onClick={() => { if (perm) navigate(`/gestao-comercial/vendedor/${perm.id}`); }}>
+                            <p className="text-sm font-medium text-slate-700 hover:text-teal-600 transition-colors">{vendedor}</p>
                             {perm && (
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <Lock className="w-3 h-3 text-slate-400" />

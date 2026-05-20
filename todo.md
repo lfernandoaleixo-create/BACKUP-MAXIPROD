@@ -3848,3 +3848,5 @@
 
 - [x] Aba "Gestão Comercial" vazia entre Vendas e Faturamento (acessível apenas para Fernando e Guilherme)
 - [x] Migrar "Cadastro de Vendedores" da aba Vendas para a aba Gestão Comercial
+- [x] Página de detalhe do vendedor com abas: Estoque, Cadastro de Cliente, Vendas, Configurações
+- [x] Clicar no vendedor na Gestão Comercial abre a página de detalhe
