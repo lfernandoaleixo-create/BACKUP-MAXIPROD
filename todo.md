@@ -3864,3 +3864,7 @@
 - [x] Integrar clientes cadastrados manualmente na listagem existente da aba Cadastro de Cliente
 - [x] Renomear aba "Vendas" para "Métrica de Vendas" no VendedorDetalhe
 - [x] Criar nova aba "Pedidos de Venda" antes de "Métrica de Vendas" no VendedorDetalhe
+- [x] Filtros de tempo na aba Pedidos de Venda (mês atual, mês anterior, personalizado)
+- [x] Manter filtros de status (Todos, Aprovado, Faturado) junto com filtro de tempo
+- [x] Card "Novo Pedido de Venda" na aba Pedidos para o vendedor criar pedidos
+- [x] Seleção de produtos do estoque visível do vendedor com specs completas (peso, dimensões, código de barras, unidade, descrição complementar)

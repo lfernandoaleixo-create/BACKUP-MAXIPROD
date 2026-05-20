@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
 
 /**
@@ -79,6 +79,12 @@ export const salesOrderRouter = router({
       const db = await getDb();
       if (!db) return [];
 
+      // Get seller's visible product codes
+      const visibleProducts = await db.select()
+        .from(sellerProductVisibility)
+        .where(eq(sellerProductVisibility.sellerId, input.sellerId));
+      const visibleCodes = new Set(visibleProducts.map(p => p.productCode));
+
       // Get stock items with available quantity
       const items = await db.select({
         codigoItem: stockItems.codigoItem,
@@ -86,21 +92,30 @@ export const salesOrderRouter = router({
         quantidade: stockItems.quantidade,
         unidadeMedida: stockItems.unidadeMedida,
         unidadeDeVendaFator: stockItems.unidadeDeVendaFator,
+        codigoGrupo: stockItems.codigoGrupo,
+        descricaoGrupo: stockItems.descricaoGrupo,
+        custoUnitario: stockItems.custoUnitario,
       })
       .from(stockItems)
       .where(sql`CAST(${stockItems.quantidade} AS DECIMAL) > 0`);
+
+      // Filter by visibility if seller has configured products
+      const filteredItems = visibleCodes.size > 0
+        ? items.filter(item => visibleCodes.has(item.codigoItem))
+        : items;
 
       // Get min prices
       const prices = await db.select().from(productMinPrices);
       const priceMap = new Map(prices.map(p => [p.codigoItem, p.precoMinimo]));
 
-      return items.map(item => ({
+      return filteredItems.map(item => ({
         codigoItem: item.codigoItem,
         descricaoItem: item.descricaoItem,
         disponivel: item.quantidade,
         unidadeMedida: item.unidadeMedida,
         unidadeDeVendaFator: item.unidadeDeVendaFator,
         precoMinimo: priceMap.get(item.codigoItem) || null,
+        grupo: item.descricaoGrupo || item.codigoGrupo || "",
       }));
     }),
 
