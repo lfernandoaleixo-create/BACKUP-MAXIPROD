@@ -1,0 +1,37 @@
+{
+  "query": "SELECT DISTINCT representante FROM sales_orders WHERE SUBSTRING(dataEmissao, 1, 7) = '2026-05' AND representante IS NOT NULL AND representante != '' ORDER BY representante;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT representante FROM sales_orders WHERE SUBSTRING(dataEmissao, 1, 7) = '2026-05' AND representante IS NOT NULL AND representante != '' ORDER BY representante;",
+  "rows": [
+    {
+      "representante": "ANA PAULA ALEIXO"
+    },
+    {
+      "representante": "CLARINDO GONCALVES"
+    },
+    {
+      "representante": "DANIEL DA CONCEIÇÃO TAVARES"
+    },
+    {
+      "representante": "GILSON ALEIXO"
+    },
+    {
+      "representante": "Grupo Fox"
+    },
+    {
+      "representante": "JORDAO"
+    },
+    {
+      "representante": "JUVENAL TEIXEIRA"
+    },
+    {
+      "representante": "PEDRO AUGUSTO"
+    },
+    {
+      "representante": "ROMERA REPRESENTACAO COMERCIAL DE PRODUTOS DESCARTAVEIS LTDA"
+    }
+  ],
+  "messages": [],
+  "stdout": "representante\nANA PAULA ALEIXO\nCLARINDO GONCALVES\nDANIEL DA CONCEIÇÃO TAVARES\nGILSON ALEIXO\nGrupo Fox\nJORDAO\nJUVENAL TEIXEIRA\nPEDRO AUGUSTO\nROMERA REPRESENTACAO COMERCIAL DE PRODUTOS DESCARTAVEIS LTDA\n",
+  "stderr": "",
+  "execution_time_ms": 285
+}
