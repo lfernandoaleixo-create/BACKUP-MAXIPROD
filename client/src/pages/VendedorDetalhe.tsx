@@ -41,6 +41,10 @@ import {
   Users,
   Trophy,
   Filter,
+  Search,
+  Phone,
+  Mail,
+  MapPin,
 } from "lucide-react";
 
 type TabType = "estoque" | "clientes" | "vendas" | "configuracoes";
@@ -202,7 +206,7 @@ export default function VendedorDetalhe() {
         )}
 
         {activeTab === "clientes" && (
-          <PlaceholderTab title="Cadastro de Cliente" description="Funcionalidade em desenvolvimento. Em breve você poderá gerenciar os clientes deste vendedor." />
+          <SellerClientsView sellerName={seller.sellerName} />
         )}
 
         {activeTab === "vendas" && (
@@ -1553,6 +1557,271 @@ function formatDateSales(dateStr: string) {
   const parts = datePart.split("-");
   if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
   return dateStr;
+}
+
+/**
+ * ============================================================
+ * ABA CADASTRO DE CLIENTE - Lista todos os clientes do vendedor
+ * Dados combinados: sales_orders DB + GraphQL vendedorMap
+ * ============================================================
+ */
+function SellerClientsView({ sellerName }: { sellerName: string }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"valor" | "pedidos" | "recente">("valor");
+
+  const { data: clientes, isLoading } = trpc.salesMetrics.getClientesByVendedor.useQuery(
+    { vendedor: sellerName },
+    { staleTime: 2 * 60 * 1000 }
+  );
+
+  const filteredClientes = useMemo(() => {
+    if (!clientes) return [];
+    let result = [...clientes];
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toUpperCase();
+      result = result.filter(
+        (c) =>
+          c.cliente.toUpperCase().includes(q) ||
+          (c.razaoSocial || "").toUpperCase().includes(q) ||
+          (c.cidade || "").toUpperCase().includes(q) ||
+          (c.uf || "").toUpperCase().includes(q) ||
+          (c.segmento || "").toUpperCase().includes(q)
+      );
+    }
+    // Sort
+    switch (sortBy) {
+      case "valor":
+        result.sort((a, b) => b.totalVendas - a.totalVendas);
+        break;
+      case "pedidos":
+        result.sort((a, b) => b.qtdPedidos - a.qtdPedidos);
+        break;
+      case "recente":
+        result.sort((a, b) => (b.ultimoPedido || "").localeCompare(a.ultimoPedido || ""));
+        break;
+    }
+    return result;
+  }, [clientes, searchQuery, sortBy]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+        <div className="flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4 text-teal-500 animate-spin" />
+          <span className="text-sm text-slate-500">Carregando clientes...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!clientes || clientes.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+        <div className="text-center">
+          <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-500">Nenhum cliente encontrado</p>
+          <p className="text-xs text-slate-400 mt-1">
+            Não há pedidos de venda registrados para {sellerName}.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalClientes = clientes.length;
+  const totalVendasGeral = clientes.reduce((sum, c) => sum + c.totalVendas, 0);
+  const totalPedidosGeral = clientes.reduce((sum, c) => sum + c.qtdPedidos, 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Header com KPIs */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-teal-600" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              Clientes de {sellerName}
+            </h3>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            <span className="flex items-center gap-1">
+              <Users className="w-3.5 h-3.5" />
+              {totalClientes} cliente{totalClientes !== 1 ? "s" : ""}
+            </span>
+            <span className="flex items-center gap-1">
+              <ShoppingCart className="w-3.5 h-3.5" />
+              {totalPedidosGeral} pedidos
+            </span>
+            <span className="flex items-center gap-1 font-medium text-green-600">
+              <DollarSign className="w-3.5 h-3.5" />
+              {formatCurrencySales(totalVendasGeral)}
+            </span>
+          </div>
+        </div>
+
+        {/* Search + Sort */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar cliente por nome, cidade, UF ou segmento..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-slate-400 whitespace-nowrap">Ordenar:</span>
+            {(["valor", "pedidos", "recente"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setSortBy(s)}
+                className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                  sortBy === s
+                    ? "bg-teal-600 text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-teal-50"
+                }`}
+              >
+                {s === "valor" ? "Valor" : s === "pedidos" ? "Pedidos" : "Recente"}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Lista de clientes */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        {filteredClientes.length === 0 ? (
+          <div className="p-8 text-center">
+            <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm text-slate-500">Nenhum cliente encontrado para "{searchQuery}"</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            {filteredClientes.map((client, idx) => (
+              <ClientRow key={client.cliente} client={client} index={idx} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ClientRow({ client, index }: { client: {
+  cliente: string;
+  razaoSocial: string;
+  uf: string;
+  segmento: string;
+  totalVendas: number;
+  qtdPedidos: number;
+  primeiroPedido: string;
+  ultimoPedido: string;
+  telefone: string;
+  email: string;
+  cidade: string;
+  endereco: string;
+}; index: number }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="group">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
+      >
+        <span className="text-[10px] font-bold text-slate-400 w-5 text-right flex-shrink-0">
+          {index + 1}.
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+              {client.cliente}
+            </p>
+            {client.uf && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 flex-shrink-0">
+                {client.uf}
+              </span>
+            )}
+            {client.segmento && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 flex-shrink-0 hidden sm:inline">
+                {client.segmento}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[10px] text-slate-400">
+              {client.qtdPedidos} pedido{client.qtdPedidos !== 1 ? "s" : ""}
+            </span>
+            {client.ultimoPedido && (
+              <span className="text-[10px] text-slate-400">
+                · Último: {formatDateSales(client.ultimoPedido)}
+              </span>
+            )}
+            {client.cidade && (
+              <span className="text-[10px] text-slate-400 hidden sm:inline">
+                · {client.cidade}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-right ml-3 flex-shrink-0">
+          <p className="text-xs md:text-sm font-bold text-green-700 dark:text-green-400">
+            {formatCurrencySales(client.totalVendas)}
+          </p>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${
+          expanded ? "rotate-180" : ""
+        }`} />
+      </button>
+
+      {/* Detalhes expandidos */}
+      {expanded && (
+        <div className="px-4 pb-3 ml-8 border-l-2 border-teal-200 dark:border-teal-800">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            {client.razaoSocial && client.razaoSocial !== client.cliente && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Razão Social:</span>
+                <span className="text-slate-600 dark:text-slate-300 truncate">{client.razaoSocial}</span>
+              </div>
+            )}
+            {client.endereco && (
+              <div className="flex items-start gap-1.5">
+                <MapPin className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+                <span className="text-slate-600 dark:text-slate-300">{client.endereco}</span>
+              </div>
+            )}
+            {client.telefone && (
+              <div className="flex items-center gap-1.5">
+                <Phone className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                <a href={`tel:${client.telefone}`} className="text-teal-600 hover:underline">{client.telefone}</a>
+              </div>
+            )}
+            {client.email && (
+              <div className="flex items-center gap-1.5">
+                <Mail className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                <a href={`mailto:${client.email}`} className="text-teal-600 hover:underline truncate">{client.email}</a>
+              </div>
+            )}
+            {client.primeiroPedido && (
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                <span className="text-slate-400 font-medium">Cliente desde:</span>
+                <span className="text-slate-600 dark:text-slate-300">{formatDateSales(client.primeiroPedido)}</span>
+              </div>
+            )}
+            {client.segmento && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400 font-medium">Segmento:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.segmento}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function SellerSalesView({ sellerName }: { sellerName: string }) {

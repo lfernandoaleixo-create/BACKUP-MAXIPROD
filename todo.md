@@ -3854,3 +3854,7 @@
 - [x] Aba Estoque do vendedor: mostrar produtos ticados com Disponível p/ Venda e POs projetadas
 - [x] Sistema de reservas: vendedor reserva caixas de POs futuras para clientes
 - [x] Aba Vendas do vendedor: métricas de vendas filtradas por vendedor com seletor de período (dia, semana, mês atual, mês anterior, 3 meses, personalizado)
+- [x] Aba Cadastro de Cliente no VendedorDetalhe: lista todos os clientes do vendedor com dados reais (nome, razão social, UF, segmento, total vendas, pedidos, primeiro/último pedido, telefone, email, endereço)
+- [x] Procedure getClientesByVendedor: combina dados do banco sales_orders + GraphQL vendedorMap para mapear clientes ao vendedor
+- [x] UI com busca por nome/cidade/UF/segmento, ordenação por valor/pedidos/recente, e detalhes expandíveis por cliente
+- [x] Testes vitest para getClientesByVendedor (3 testes passando)

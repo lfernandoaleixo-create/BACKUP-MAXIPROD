@@ -701,4 +701,201 @@ export const salesMetricsRouter = router({
 
       return { months, estados, data };
     }),
+
+  /**
+   * Get all clients for a specific vendor (Cadastro de Cliente)
+   * Combines local sales_orders DB data with GraphQL vendedorMap
+   * Returns: client name, razaoSocial, UF, segmento, total value, order count, last order, phone, email, address
+   */
+  getClientesByVendedor: publicProcedure
+    .input(z.object({
+      vendedor: z.string(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      // Fetch all sales orders (no date filter - we want ALL clients ever)
+      const allItems = await db.select({
+        pedido: salesOrders.pedido,
+        cliente: salesOrders.cliente,
+        clienteApelido: salesOrders.clienteApelido,
+        razaoSocial: salesOrders.razaoSocial,
+        representante: salesOrders.representante,
+        vendedorReal: salesOrders.vendedorReal,
+        valorTotalPedido: salesOrders.valorTotalPedido,
+        valorTotal: salesOrders.valorTotal,
+        estadoNota: salesOrders.estadoNota,
+        estadoConfiguravel: salesOrders.estadoConfiguravel,
+        crmSegmento: salesOrders.crmSegmento,
+        dataEmissao: salesOrders.dataEmissao,
+        uf: salesOrders.uf,
+        clienteTelefone: salesOrders.clienteTelefone,
+        clienteEmail: salesOrders.clienteEmail,
+        enderecoCidade: salesOrders.enderecoCidade,
+        enderecoLogradouro: salesOrders.enderecoLogradouro,
+        enderecoNumero: salesOrders.enderecoNumero,
+        enderecoBairro: salesOrders.enderecoBairro,
+        enderecoCep: salesOrders.enderecoCep,
+      }).from(salesOrders);
+
+      // Filter: exclude Digitação and Outros (same as other procedures)
+      const isDigitacao = (nota: string | null) => {
+        if (!nota) return false;
+        const n = nota.toUpperCase();
+        return n === 'DIGITAÇÃO' || n === 'DIGITACAO';
+      };
+      const isOutros = (estado: string | null) => {
+        if (!estado) return true;
+        const e = estado.toUpperCase();
+        if (e === 'BAMBU' || e === 'FIBRA') return false;
+        if (e === 'MADEIRA' || e === 'MADEIRA CONTABILIZADO') return false;
+        if (e === 'MADEIRA IMPORTAÇÃO' || e === 'MADEIRA IMPORTACAO' || e === 'MADEIRA IMPORTADA') return false;
+        if (e === 'FOGOS' || e === 'FOGO') return false;
+        return true;
+      };
+
+      const filtered = allItems.filter(item => !isDigitacao(item.estadoNota) && !isOutros(item.estadoConfiguravel));
+
+      const vendedorMap = await fetchVendedorMap();
+
+      // Group by pedido first (same logic as getVendedorDetail)
+      const pedidoMap = new Map<string, {
+        cliente: string;
+        vendedor: string;
+        valorTotalPedido: number;
+        somaItens: number;
+        data: string;
+        uf: string;
+        segmento: string;
+        telefone: string;
+        email: string;
+        razaoSocial: string;
+        cidade: string;
+        logradouro: string;
+        numero: string;
+        bairro: string;
+        cep: string;
+      }>();
+
+      for (const o of filtered) {
+        const pedido = o.pedido || `item-${Math.random()}`;
+        if (!pedidoMap.has(pedido)) {
+          const clienteName = o.cliente || o.clienteApelido || o.razaoSocial || "";
+          let vendedor = normalizeVendedorName(o.representante || "");
+          if (!vendedor || isEditorNaoVendedor(vendedor)) {
+            vendedor = vendedorMap[clienteName] || vendedorMap[o.razaoSocial || ""] || vendedorMap[o.clienteApelido || ""] || "";
+          }
+          if (isClienteGrupoFox(clienteName)) vendedor = "Grupo Fox";
+          if (!vendedor) vendedor = "Não identificado";
+
+          pedidoMap.set(pedido, {
+            cliente: clienteName,
+            vendedor,
+            valorTotalPedido: o.valorTotalPedido ? Number(o.valorTotalPedido) : 0,
+            somaItens: Number(o.valorTotal || 0),
+            data: o.dataEmissao || "",
+            uf: o.uf || "",
+            segmento: o.crmSegmento || "",
+            telefone: o.clienteTelefone || "",
+            email: o.clienteEmail || "",
+            razaoSocial: o.razaoSocial || "",
+            cidade: o.enderecoCidade || "",
+            logradouro: o.enderecoLogradouro || "",
+            numero: o.enderecoNumero || "",
+            bairro: o.enderecoBairro || "",
+            cep: o.enderecoCep || "",
+          });
+        } else {
+          const p = pedidoMap.get(pedido)!;
+          if (!p.valorTotalPedido && o.valorTotalPedido) {
+            p.valorTotalPedido = Number(o.valorTotalPedido);
+          }
+          p.somaItens += Number(o.valorTotal || 0);
+          // Update contact info if missing
+          if (!p.uf && o.uf) p.uf = o.uf;
+          if (!p.segmento && o.crmSegmento) p.segmento = o.crmSegmento;
+          if (!p.telefone && o.clienteTelefone) p.telefone = o.clienteTelefone;
+          if (!p.email && o.clienteEmail) p.email = o.clienteEmail;
+          if (!p.razaoSocial && o.razaoSocial) p.razaoSocial = o.razaoSocial;
+          if (!p.cidade && o.enderecoCidade) p.cidade = o.enderecoCidade;
+        }
+      }
+
+      // Filter for this vendedor and aggregate by client
+      const clienteMap: Record<string, {
+        totalVendas: number;
+        pedidos: number;
+        primeiroPedido: string;
+        ultimoPedido: string;
+        uf: string;
+        segmento: string;
+        telefone: string;
+        email: string;
+        razaoSocial: string;
+        cidade: string;
+        logradouro: string;
+        numero: string;
+        bairro: string;
+        cep: string;
+      }> = {};
+
+      for (const [_, data] of Array.from(pedidoMap.entries())) {
+        if (data.vendedor.toUpperCase() !== input.vendedor.toUpperCase()) continue;
+        const valor = data.valorTotalPedido || data.somaItens;
+        const clienteKey = data.cliente;
+        if (!clienteKey) continue;
+
+        if (!clienteMap[clienteKey]) {
+          clienteMap[clienteKey] = {
+            totalVendas: 0,
+            pedidos: 0,
+            primeiroPedido: data.data || "",
+            ultimoPedido: data.data || "",
+            uf: data.uf,
+            segmento: data.segmento,
+            telefone: data.telefone,
+            email: data.email,
+            razaoSocial: data.razaoSocial,
+            cidade: data.cidade,
+            logradouro: data.logradouro,
+            numero: data.numero,
+            bairro: data.bairro,
+            cep: data.cep,
+          };
+        }
+        clienteMap[clienteKey].totalVendas += valor;
+        clienteMap[clienteKey].pedidos += 1;
+        if (data.data && data.data > clienteMap[clienteKey].ultimoPedido) {
+          clienteMap[clienteKey].ultimoPedido = data.data;
+        }
+        if (data.data && (data.data < clienteMap[clienteKey].primeiroPedido || !clienteMap[clienteKey].primeiroPedido)) {
+          clienteMap[clienteKey].primeiroPedido = data.data;
+        }
+        // Update contact info if missing
+        if (!clienteMap[clienteKey].uf && data.uf) clienteMap[clienteKey].uf = data.uf;
+        if (!clienteMap[clienteKey].segmento && data.segmento) clienteMap[clienteKey].segmento = data.segmento;
+        if (!clienteMap[clienteKey].telefone && data.telefone) clienteMap[clienteKey].telefone = data.telefone;
+        if (!clienteMap[clienteKey].email && data.email) clienteMap[clienteKey].email = data.email;
+        if (!clienteMap[clienteKey].razaoSocial && data.razaoSocial) clienteMap[clienteKey].razaoSocial = data.razaoSocial;
+        if (!clienteMap[clienteKey].cidade && data.cidade) clienteMap[clienteKey].cidade = data.cidade;
+      }
+
+      return Object.entries(clienteMap)
+        .map(([cliente, stats]) => ({
+          cliente,
+          razaoSocial: stats.razaoSocial || cliente,
+          uf: stats.uf,
+          segmento: stats.segmento,
+          totalVendas: Math.round(stats.totalVendas * 100) / 100,
+          qtdPedidos: stats.pedidos,
+          primeiroPedido: stats.primeiroPedido,
+          ultimoPedido: stats.ultimoPedido,
+          telefone: stats.telefone,
+          email: stats.email,
+          cidade: stats.cidade,
+          endereco: [stats.logradouro, stats.numero, stats.bairro, stats.cidade, stats.uf, stats.cep].filter(Boolean).join(', '),
+        }))
+        .sort((a, b) => b.totalVendas - a.totalVendas);
+    }),
 });
