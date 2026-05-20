@@ -307,40 +307,6 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
 
   return (
     <div className="space-y-4">
-      {/* Resumo */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Package className="w-4 h-4 text-teal-600" />
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-            Estoque de {sellerName}
-          </h3>
-          <span className="text-[10px] text-slate-400 ml-1">
-            {visibleProducts.length} produtos
-          </span>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-center">
-            <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
-              {visibleProducts.reduce((sum, p) => sum + (p.disponivelCx ?? 0), 0).toLocaleString("pt-BR")}
-            </p>
-            <p className="text-[10px] text-emerald-600 dark:text-emerald-500 font-medium">Disponível (cx)</p>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-            <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
-              {visibleProducts.reduce((sum, p) => sum + (p.poCx ?? 0), 0).toLocaleString("pt-BR")}
-            </p>
-            <p className="text-[10px] text-blue-600 dark:text-blue-500 font-medium">Chegando (POs)</p>
-          </div>
-          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
-            <p className="text-lg font-bold text-purple-700 dark:text-purple-400">
-              {visibleProducts.reduce((sum, p) => sum + (p.projetadoCx ?? 0), 0).toLocaleString("pt-BR")}
-            </p>
-            <p className="text-[10px] text-purple-600 dark:text-purple-500 font-medium">Projetado (cx)</p>
-          </div>
-        </div>
-      </div>
-
       {/* Madeira */}
       {madeiraProducts.length > 0 && (
         <StockCategorySection
@@ -349,7 +315,8 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
           color="amber"
           sellerName={sellerName}
           sellerId={sellerId}
-          onReserve={(item, po) => { setReservationItem(item); setReservationPO(po || null); }}
+          allowReserve={false}
+          onReserve={() => {}}
           reservationSummary={reservationSummary.data || {}}
         />
       )}
@@ -357,11 +324,12 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
       {/* Bambu */}
       {bambuProducts.length > 0 && (
         <StockCategorySection
-          title="Bambu"
+          title="Bambu (Importação)"
           items={bambuProducts}
           color="green"
           sellerName={sellerName}
           sellerId={sellerId}
+          allowReserve={true}
           onReserve={(item, po) => { setReservationItem(item); setReservationPO(po || null); }}
           reservationSummary={reservationSummary.data || {}}
         />
@@ -404,6 +372,7 @@ function StockCategorySection({
   color,
   sellerName,
   sellerId,
+  allowReserve,
   onReserve,
   reservationSummary,
 }: {
@@ -412,6 +381,7 @@ function StockCategorySection({
   color: "amber" | "green";
   sellerName: string;
   sellerId: number;
+  allowReserve: boolean;
   onReserve: (item: DashboardItem, po?: { referencia: string; dataEntrega: string; quantidade: number }) => void;
   reservationSummary: Record<string, number>;
 }) {
@@ -456,12 +426,12 @@ function StockCategorySection({
       {expanded && (
         <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
           {/* Header da tabela - mobile-friendly */}
-          <div className="hidden md:grid md:grid-cols-12 gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700/30 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            <div className="col-span-5">Produto</div>
+          <div className={`hidden md:grid ${allowReserve ? 'md:grid-cols-12' : 'md:grid-cols-11'} gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700/30 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider`}>
+            <div className={allowReserve ? 'col-span-5' : 'col-span-5'}>Produto</div>
             <div className="col-span-2 text-center">Disponível</div>
             <div className="col-span-2 text-center">PO (chegando)</div>
             <div className="col-span-2 text-center">Projetado</div>
-            <div className="col-span-1 text-center">Ação</div>
+            {allowReserve && <div className="col-span-1 text-center">Ação</div>}
           </div>
 
           {items.map((item) => {
@@ -473,7 +443,7 @@ function StockCategorySection({
             return (
               <div key={item.codigoItem}>
                 {/* Desktop row */}
-                <div className="hidden md:grid md:grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                <div className={`hidden md:grid ${allowReserve ? 'md:grid-cols-12' : 'md:grid-cols-11'} gap-2 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors`}>
                   <div className="col-span-5">
                     <p className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-tight">
                       <span className="font-mono text-slate-400 dark:text-slate-500 mr-1">{item.codigoItem}</span>
@@ -505,20 +475,15 @@ function StockCategorySection({
                       {projCx.toLocaleString("pt-BR")} cx
                     </span>
                   </div>
-                  <div className="col-span-1 text-center">
-                    <button
-                      className="p-1.5 rounded-md text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors cursor-pointer"
-                      title="Reservar"
-                      onClick={() => onReserve(item)}
-                    >
-                      <Bookmark className="w-3.5 h-3.5" />
-                    </button>
-                    {reservationSummary[item.codigoItem] > 0 && (
-                      <span className="text-[9px] text-amber-600 font-bold block mt-0.5">
-                        {reservationSummary[item.codigoItem]} res.
-                      </span>
-                    )}
-                  </div>
+                  {allowReserve && (
+                    <div className="col-span-1 text-center">
+                      {reservationSummary[item.codigoItem] > 0 && (
+                        <span className="text-[9px] text-amber-600 font-bold block mt-0.5">
+                          {reservationSummary[item.codigoItem]} res.
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Mobile row */}
@@ -552,13 +517,11 @@ function StockCategorySection({
                         = {projCx.toLocaleString("pt-BR")} cx
                       </span>
                     </div>
-                    <button
-                      className="ml-auto p-1 rounded text-slate-400 hover:text-teal-600 cursor-pointer"
-                      title="Reservar"
-                      onClick={() => onReserve(item)}
-                    >
-                      <Bookmark className="w-3.5 h-3.5" />
-                    </button>
+                    {allowReserve && (
+                      <span className="ml-auto text-[9px] text-amber-600 font-bold">
+                        {reservationSummary[item.codigoItem] > 0 ? `${reservationSummary[item.codigoItem]} res.` : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -600,17 +563,19 @@ function StockCategorySection({
                               {lote.tipoPO}
                             </span>
                           )}
-                          <button
-                            onClick={() => onReserve(item, {
-                              referencia: lote.referenciaPO || lote.numeroPedido,
-                              dataEntrega: lote.dataEntrega,
-                              quantidade: lote.quantidade,
-                            })}
-                            className="ml-auto flex items-center gap-1 px-2 py-1 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded text-[10px] font-medium hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer"
-                          >
-                            <Bookmark className="w-3 h-3" />
-                            Reservar
-                          </button>
+                          {allowReserve && (
+                            <button
+                              onClick={() => onReserve(item, {
+                                referencia: lote.referenciaPO || lote.numeroPedido,
+                                dataEntrega: lote.dataEntrega,
+                                quantidade: lote.quantidade,
+                              })}
+                              className="ml-auto flex items-center gap-1 px-2 py-1 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded text-[10px] font-medium hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer"
+                            >
+                              <Bookmark className="w-3 h-3" />
+                              Reservar
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
