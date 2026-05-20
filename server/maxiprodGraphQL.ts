@@ -683,6 +683,7 @@ function isEditorNaoVendedorSync(nome: string): boolean {
 const VENDEDOR_NAME_ALIASES: Record<string, string> = {
   "JUVENAL": "JUVENAL TEIXEIRA",
   "JORDAO LAINE": "JORDAO",
+  "CLARINDO GONCALVES DOS SANTOS NETO": "CLARINDO GONCALVES",
 };
 
 export function normalizeVendedorName(name: string): string {
@@ -698,6 +699,9 @@ export function normalizeVendedorName(name: string): string {
   
   // Check if name contains JORDAO with extra text
   if (upper.includes("JORDAO") || upper.includes("JORDÃO")) return "JORDAO";
+  
+  // Check if name contains CLARINDO (handles "CLARINDO GONCALVES DOS SANTOS NETO")
+  if (upper.includes("CLARINDO")) return "CLARINDO GONCALVES";
   
   return trimmed;
 }

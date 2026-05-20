@@ -1,0 +1,14 @@
+{
+  "query": "SELECT id, seller_name FROM seller_permissions WHERE seller_name LIKE '%CLARINDO%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, seller_name FROM seller_permissions WHERE seller_name LIKE '%CLARINDO%' LIMIT 5;",
+  "rows": [
+    {
+      "id": "2",
+      "seller_name": "CLARINDO GONCALVES"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tseller_name\n2\tCLARINDO GONCALVES\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}
