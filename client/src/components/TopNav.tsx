@@ -155,7 +155,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
 
         {/* Fixed bottom navigation bar */}
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-          <div className="flex items-center justify-around h-14 px-1">
+          <div className="flex items-center justify-around h-14 px-0.5">
             {navItems.map((item) => {
               const active = isActive(item.href);
               const Icon = item.icon;
@@ -176,7 +176,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                     handleNavClick(e, item.href, item.section, item.label);
                   }}
                   className={`
-                    relative flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-lg transition-colors min-w-[48px]
+                    relative flex flex-col items-center justify-center gap-0.5 px-1 py-1 rounded-lg transition-colors min-w-0 flex-1
                     ${active
                       ? "text-teal-700"
                       : allowed
@@ -186,8 +186,8 @@ export default function TopNav({ rightContent }: TopNavProps) {
                     ${shouldBlink ? "animate-discount-blink" : ""}
                   `}
                 >
-                  <Icon className={`w-5 h-5 ${active ? "text-teal-600" : !allowed ? "text-slate-200" : ""}`} />
-                  <span className={`text-[9px] font-medium leading-none ${active ? "text-teal-700 font-semibold" : ""}`}>{item.label}</span>
+                  <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? "text-teal-600" : !allowed ? "text-slate-200" : ""}`} />
+                  <span className={`text-[8px] font-medium leading-none whitespace-nowrap ${active ? "text-teal-700 font-semibold" : ""}`}>{item.label}</span>
                   {shouldBlink && (
                     <span className="absolute top-0 right-0.5 w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                   )}
@@ -248,7 +248,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                     handleNavClick(e, item.href, item.section, item.label);
                   }}
                   className={`
-                    relative flex items-center gap-2 px-4 h-16 text-sm font-medium transition-colors
+                    relative flex items-center gap-1.5 px-2.5 h-16 text-xs font-medium transition-colors whitespace-nowrap
                     ${active
                       ? "text-teal-700"
                       : allowed
@@ -258,7 +258,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                     ${shouldBlink ? "animate-discount-blink" : ""}
                   `}
                 >
-                  <Icon className={`w-5 h-5 ${active ? "text-teal-600" : !allowed ? "text-slate-300" : ""}`} />
+                  <Icon className={`w-4 h-4 shrink-0 ${active ? "text-teal-600" : !allowed ? "text-slate-300" : ""}`} />
                   <span className="hidden sm:inline">{'desktopLabel' in item && item.desktopLabel ? item.desktopLabel : item.label}</span>
                   {/* Discount alert indicator dot */}
                   {shouldBlink && (
