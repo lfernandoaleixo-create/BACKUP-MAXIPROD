@@ -2232,3 +2232,4 @@ export const vendorClients = mysqlTable("vendor_clients", {
 
 export type VendorClient = typeof vendorClients.$inferSelect;
 export type InsertVendorClient = typeof vendorClients.$inferInsert;
+

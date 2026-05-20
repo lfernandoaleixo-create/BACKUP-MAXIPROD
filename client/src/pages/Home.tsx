@@ -70,6 +70,8 @@ import {
   ArrowRight,
   Download,
   Calendar,
+  Bookmark,
+  User,
 } from "lucide-react";
 import {
   Dialog,
@@ -1578,6 +1580,124 @@ function StockTable({ items, search, segmentoFilter, grupoFilter, subgrupoFilter
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/* --- PO Reservations Card (visible to all team in Estoque dashboard) --- */
+function POReservationsCard() {
+  const [isOpen, setIsOpen] = useState(false);
+  const reservationsQuery = trpc.sales.listReservations.useQuery({});
+  const cancelMutation = trpc.sales.cancelReservation.useMutation();
+
+  const reservations = reservationsQuery.data || [];
+  if (reservations.length === 0) return null;
+
+  // Group by product
+  const grouped = useMemo(() => {
+    const map = new Map<string, { codigoItem: string; descricaoItem: string; totalCx: number; items: typeof reservations }>();
+    for (const r of reservations) {
+      const key = r.codigoItem;
+      if (!map.has(key)) {
+        map.set(key, { codigoItem: r.codigoItem, descricaoItem: r.descricaoItem, totalCx: 0, items: [] });
+      }
+      const g = map.get(key)!;
+      g.totalCx += r.quantidadeCx;
+      g.items.push(r);
+    }
+    return Array.from(map.values()).sort((a, b) => b.totalCx - a.totalCx);
+  }, [reservations]);
+
+  const totalReservado = reservations.reduce((sum, r) => sum + r.quantidadeCx, 0);
+
+  const handleCancel = (id: number) => {
+    if (!confirm("Cancelar esta reserva?")) return;
+    cancelMutation.mutate({ id }, { onSuccess: () => reservationsQuery.refetch() });
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-amber-200 dark:border-amber-700 shadow-sm overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 px-5 py-4 border-b border-amber-100 dark:border-amber-800 text-left hover:from-amber-100/60 hover:to-orange-100/60 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+              <Bookmark className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-200">Reservas de PO (Comprometidas)</h3>
+              <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400">
+                {reservations.length} reservas ativas &middot; {grouped.length} produtos &middot; Total: <strong>{totalReservado.toLocaleString('pt-BR')} cx comprometidas</strong>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="text-right">
+              <p className="text-lg md:text-2xl font-extrabold text-amber-600 whitespace-nowrap">{totalReservado.toLocaleString('pt-BR')} <span className="text-xs md:text-base">cx</span></p>
+              <p className="text-[10px] md:text-xs text-slate-400">comprometidas</p>
+            </div>
+            {isOpen ? <ChevronUp className="w-5 h-5 text-amber-400" /> : <ChevronDown className="w-5 h-5 text-amber-400" />}
+          </div>
+        </div>
+      </button>
+
+      {/* Expanded list */}
+      {isOpen && (
+        <div className="divide-y divide-slate-100 dark:divide-slate-700">
+          {grouped.map((g) => (
+            <div key={g.codigoItem} className="px-4 md:px-5 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                    <span className="font-mono text-slate-400 mr-1">{g.codigoItem}</span>
+                    {g.descricaoItem}
+                  </p>
+                </div>
+                <span className="text-sm font-extrabold text-amber-600 whitespace-nowrap ml-2">
+                  {g.totalCx.toLocaleString('pt-BR')} cx
+                </span>
+              </div>
+              <div className="space-y-1.5 pl-2 border-l-2 border-amber-200 dark:border-amber-800">
+                {g.items.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-2 text-[11px] py-1">
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                      <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-medium">
+                        <User className="w-3 h-3 text-slate-400" />
+                        {r.sellerName}
+                      </span>
+                      <span className="font-bold text-teal-600">{r.quantidadeCx} cx</span>
+                      <span className="text-slate-400">&rarr;</span>
+                      <span className="text-slate-600 dark:text-slate-300">{r.clienteNome}</span>
+                      {r.fonte === "po" && r.poReferencia && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 font-medium">
+                          PO {r.poReferencia}
+                        </span>
+                      )}
+                      {r.poDataEntrega && (
+                        <span className="text-[9px] text-slate-400 flex items-center gap-0.5">
+                          <Calendar className="w-2.5 h-2.5" />
+                          {r.poDataEntrega}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleCancel(r.id)}
+                      disabled={cancelMutation.isPending}
+                      className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors cursor-pointer"
+                      title="Cancelar reserva"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -4537,6 +4657,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
 
       {/* PO Overview Card */}
       <POOverviewCard items={items} />
+
+      {/* PO Reservations Card - visible to all team */}
+      <POReservationsCard />
 
 
 

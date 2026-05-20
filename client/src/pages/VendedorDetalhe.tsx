@@ -2728,6 +2728,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
   const [items, setItems] = useState<OrderItem[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
+  const [reservePO, setReservePO] = useState<{ codigoItem: string; descricaoItem: string; referencia: string; dataEntrega: string; quantidade: number } | null>(null);
 
   // Payment
   const [condicaoPagamento, setCondicaoPagamento] = useState("");
@@ -3087,9 +3088,17 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                 const poQtd = Math.floor(Number(po.quantidade) || 0);
                                 const poDate = po.dataEntrega ? new Date(po.dataEntrega).toLocaleDateString('pt-BR') : 'Sem data';
                                 return (
-                                  <div key={idx} className="flex items-center justify-between py-1 text-[10px]">
+                                  <div key={idx} className="flex items-center justify-between py-1 text-[10px] gap-2">
                                     <span className="text-slate-600 dark:text-slate-300">{po.referencia || 'PO'} — <strong>{poQtd.toLocaleString('pt-BR')} {unidadeVenda}</strong></span>
-                                    <span className="text-blue-600 font-medium">Previsão: {poDate}</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-blue-600 font-medium">Previsão: {poDate}</span>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setReservePO({ codigoItem: p.codigoItem, descricaoItem: p.descricaoItem, referencia: po.referencia || 'PO', dataEntrega: poDate, quantidade: poQtd }); }}
+                                        className="px-2 py-0.5 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded text-[9px] font-medium hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer flex items-center gap-0.5"
+                                      >
+                                        <Bookmark className="w-2.5 h-2.5" /> Reservar
+                                      </button>
+                                    </div>
                                   </div>
                                 );
                               })}
@@ -3120,7 +3129,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[10px] text-slate-400">Cód: {item.codigoItem}</span>
                           {item.grupo && <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-600 rounded text-slate-500 dark:text-slate-400">{item.grupo}</span>}
-                          <span className="text-[10px] text-blue-500">Disp: {Number(item.disponivel).toFixed(0)} {item.unidadeMedida}</span>
+
                         </div>
                       </div>
                       <button onClick={() => removeProduct(idx)} className="p-1 hover:bg-red-50 rounded">
@@ -3299,6 +3308,17 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
           </div>
         )}
       </div>
+      {/* PO Reservation Modal */}
+      {reservePO && (
+        <ReservationModal
+          item={{ codigoItem: reservePO.codigoItem, descricaoItem: reservePO.descricaoItem, disponivelCx: 0 } as any}
+          po={{ referencia: reservePO.referencia, dataEntrega: reservePO.dataEntrega, quantidade: reservePO.quantidade }}
+          sellerId={sellerId}
+          sellerName={sellerName}
+          onClose={() => setReservePO(null)}
+          onSuccess={() => setReservePO(null)}
+        />
+      )}
     </div>
   );
 }

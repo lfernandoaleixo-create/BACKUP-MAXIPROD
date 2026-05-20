@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `po_reservations` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`seller_id` int NOT NULL,\n\t`seller_name` varchar(200) NOT NULL,\n\t`codigo_item` varchar(20) NOT NULL,\n\t`descricao_item` text NOT NULL,\n\t`purchase_order_item_id` int,\n\t`po_referencia` varchar(100),\n\t`quantidade_caixas` decimal(18,2) NOT NULL,\n\t`data_entrega_prevista` varchar(30),\n\t`cliente_nome` varchar(300),\n\t`observacoes` text,\n\t`status` enum('ativa','cancelada','concluida') NOT NULL DEFAULT 'ativa',\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\t`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `po_reservations_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `po_reservations` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`seller_id` int NOT NULL,\n\t`seller_name` varchar(200) NOT NULL,\n\t`codigo_item` varchar(20) NOT NULL,\n\t`descricao_item` text NOT NULL,\n\t`purchase_order_item_id` int,\n\t`po_referencia` varchar(100),\n\t`quantidade_caixas` decimal(18,2) NOT NULL,\n\t`data_entrega_prevista` varchar(30),\n\t`cliente_nome` varchar(300),\n\t`observacoes` text,\n\t`status` enum('ativa','cancelada','concluida') NOT NULL DEFAULT 'ativa',\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\t`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `po_reservations_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 332
+}

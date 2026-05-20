@@ -3881,3 +3881,8 @@
 - [x] Converter disponível de unidades para caixas/kg/dúzias (dividir pelo fator de venda)
 - [x] Mostrar projeção de PO (ordens de compra pendentes: qtd chegando e data prevista)
 - [x] Adicionar caixa expansível (accordion) em cada produto com todas as informações do Maxiprod
+- [x] Remover exibição de "Disp: XXXXX un" (unidades brutas) dos cards de produto no Novo Pedido
+- [x] Criar tabela po_reservations no banco (vendedor, produto, PO, quantidade reservada em caixas, data)
+- [x] Criar procedures tRPC para reserva de PO (criar reserva, listar reservas, cancelar reserva)
+- [x] Adicionar botão de reserva nos cards de produto com PO chegando (Novo Pedido)
+- [x] Mostrar reservas de PO no dashboard de Estoque (visível para todos - caixas comprometidas por PO)
