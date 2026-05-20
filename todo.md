@@ -3845,3 +3845,5 @@
 - [x] Pedido de Venda: formulário no SellerApp (cadastro cliente com autocomplete + produtos + frete + pagamento)
 - [x] Pedido de Venda: fluxo de aprovação (alerta gestor quando preço abaixo do mínimo)
 - [x] Pedido de Venda: tela da Vitória para ver pedidos aprovados e preencher no Maxiprod
+
+- [x] Aba "Gestão Comercial" vazia entre Vendas e Faturamento (acessível a todos os operadores)

@@ -9,6 +9,7 @@ import { Link, useLocation } from "wouter";
 import {
   Package,
   BarChart3,
+  Briefcase,
   FileCheck,
   DollarSign,
   Factory,
@@ -29,6 +30,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 const navItems = [
   { href: "/", label: "Estoque", icon: Package, section: "estoque" },
   { href: "/vendas", label: "Vendas", icon: BarChart3, section: "vendas" },
+  { href: "/gestao-comercial", label: "Gestão", desktopLabel: "Gestão Comercial", icon: Briefcase, section: "gestao-comercial" },
   { href: "/faturamento", label: "Faturamento", icon: FileCheck, section: "faturamento" },
   { href: "/financeiro", label: "Financeiro", icon: DollarSign, section: "financeiro" },
   { href: "/producao", label: "Produção", icon: Factory, section: "producao" },

@@ -15,6 +15,7 @@ import Financial from "./pages/Financial";
 import Production from "./pages/Production";
 import SettingsPage from "./pages/SettingsPage";
 import SellerApp from "./pages/SellerApp";
+import GestaoComercial from "./pages/GestaoComercial";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -22,6 +23,7 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/vendas"} component={Sales} />
+      <Route path={"/gestao-comercial"} component={GestaoComercial} />
       <Route path={"/faturamento"} component={Billing} />
       <Route path={"/financeiro"} component={Financial} />
       <Route path={"/producao"} component={Production} />
