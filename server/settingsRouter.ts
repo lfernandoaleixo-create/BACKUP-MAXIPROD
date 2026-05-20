@@ -1188,4 +1188,51 @@ export const settingsRouter = router({
       });
       return { success: true, id: row.insertId };
     }),
+
+  /**
+   * Get Bradesco "Limite atual da conta garantida"
+   * Stores per-empresa values: { palitos: {...}, espetos: {...}, varetas: {...} }
+   */
+  getBradescoLimiteContaGarantida: publicProcedure.query(async () => {
+    const data = await getSetting("bradesco_limite_conta_garantida");
+    if (!data) return {
+      palitos: { valor: null, updatedBy: null, updatedAt: null },
+      espetos: { valor: null, updatedBy: null, updatedAt: null },
+      varetas: { valor: null, updatedBy: null, updatedAt: null },
+    };
+    return {
+      palitos: data.palitos || { valor: null, updatedBy: null, updatedAt: null },
+      espetos: data.espetos || { valor: null, updatedBy: null, updatedAt: null },
+      varetas: data.varetas || { valor: null, updatedBy: null, updatedAt: null },
+    };
+  }),
+
+  /**
+   * Update Bradesco "Limite atual da conta garantida" for a specific empresa
+   * Only operator "Flavio" can update this value.
+   */
+  updateBradescoLimiteContaGarantida: publicProcedure
+    .input(z.object({
+      empresa: z.enum(["palitos", "espetos", "varetas"]),
+      valor: z.number().min(0, "Valor deve ser positivo"),
+      operatorName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      if (input.operatorName !== "Flavio") {
+        throw new Error("Apenas o operador Flávio pode atualizar o limite.");
+      }
+      const now = new Date().toISOString();
+      const existing = await getSetting("bradesco_limite_conta_garantida") || {
+        palitos: { valor: null, updatedBy: null, updatedAt: null },
+        espetos: { valor: null, updatedBy: null, updatedAt: null },
+        varetas: { valor: null, updatedBy: null, updatedAt: null },
+      };
+      existing[input.empresa] = {
+        valor: input.valor,
+        updatedBy: input.operatorName,
+        updatedAt: now,
+      };
+      await setSetting("bradesco_limite_conta_garantida", existing);
+      return { success: true };
+    }),
 });

@@ -1705,6 +1705,159 @@ function SicoobLimiteCard() {
   );
 }
 
+const RED_SCHEME = {
+  border: 'border-red-300', bg: 'bg-gradient-to-br from-red-50 via-rose-50 to-pink-50',
+  iconFrom: 'from-red-500', iconTo: 'to-rose-600', iconShadow: 'shadow-red-500/30',
+  text: 'text-red-800', textMuted: 'text-red-600/60',
+  btnBg: 'bg-red-600', btnHover: 'hover:bg-red-700',
+  inputBorder: 'border-red-300', inputText: 'text-red-800',
+  decoA: 'bg-red-200/30', decoB: 'bg-rose-200/30',
+};
+
+function BradescoLimiteContaGarantidaCard({ empresa }: { empresa: string }) {
+  const { operator } = useOperator();
+  const isFlavio = operator?.name === "Flavio";
+  const [editing, setEditing] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingValue, setPendingValue] = useState<number>(0);
+
+  const query = trpc.settings.getBradescoLimiteContaGarantida.useQuery();
+  const utils = trpc.useUtils();
+  const mutation = trpc.settings.updateBradescoLimiteContaGarantida.useMutation({
+    onSuccess: () => {
+      utils.settings.getBradescoLimiteContaGarantida.invalidate();
+      setEditing(false);
+      toast.success("Limite atualizado com sucesso!");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const empresaKey = empresa.toLowerCase().includes("palitos") ? "palitos" 
+    : empresa.toLowerCase().includes("espetos") ? "espetos" 
+    : empresa.toLowerCase().includes("varetas") ? "varetas" 
+    : null;
+
+  if (!empresaKey) return null;
+
+  const data = query.data?.[empresaKey];
+  const valor = data?.valor ?? null;
+  const updatedBy = data?.updatedBy ?? null;
+  const updatedAt = data?.updatedAt ?? null;
+
+  function startEditing() {
+    setInputValue(valor != null ? String(valor) : "");
+    setEditing(true);
+  }
+
+  function handleSave() {
+    const parsed = parseFloat(inputValue.replace(/\./g, "").replace(",", "."));
+    if (isNaN(parsed) || parsed < 0) {
+      toast.error("Valor inválido");
+      return;
+    }
+    setPendingValue(parsed);
+    setShowConfirm(true);
+  }
+
+  function confirmSave() {
+    mutation.mutate({ empresa: empresaKey!, valor: pendingValue, operatorName: operator!.name });
+    setShowConfirm(false);
+  }
+
+  function formatUpdatedAt(iso: string) {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    } catch { return iso; }
+  }
+
+  const c = RED_SCHEME;
+
+  return (
+    <div className={`relative overflow-hidden rounded-lg border ${c.border} ${c.bg} px-3 py-2.5 shadow-sm`}>
+      <div className={`absolute top-0 right-0 w-24 h-24 ${c.decoA} rounded-full blur-3xl -translate-y-1/2 translate-x-1/2`} />
+      <div className={`absolute bottom-0 left-0 w-16 h-16 ${c.decoB} rounded-full blur-3xl translate-y-1/2 -translate-x-1/2`} />
+
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-2">
+            <div className={`w-7 h-7 rounded-md bg-gradient-to-br ${c.iconFrom} ${c.iconTo} flex items-center justify-center shadow-md ${c.iconShadow}`}>
+              <DollarSign className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h4 className={`${c.text} font-bold text-xs leading-tight`}>Limite atual da conta garantida</h4>
+              <p className={`${c.textMuted} text-[9px] font-medium`}>Bradesco {empresa}</p>
+            </div>
+          </div>
+          {isFlavio && !editing && (
+            <button
+              onClick={startEditing}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md ${c.btnBg} ${c.btnHover} text-white text-[10px] font-bold transition-all shadow-sm hover:shadow-md`}
+            >
+              <Pencil className="w-3 h-3" />
+              Editar
+            </button>
+          )}
+        </div>
+
+        {!editing ? (
+          <div>
+            <p className={`text-xl font-black ${c.text} tracking-tight`}>
+              {valor != null ? `R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "Não informado"}
+            </p>
+            {updatedBy && updatedAt && (
+              <p className={`text-[10px] ${c.textMuted} mt-0.5`}>
+                Atualizado por {updatedBy} em {formatUpdatedAt(updatedAt)}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className={`text-sm font-bold ${c.text}`}>R$</span>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="0,00"
+                className={`flex-1 px-2 py-1 rounded-md border ${c.inputBorder} ${c.inputText} text-sm font-bold bg-white/80 focus:outline-none focus:ring-2 focus:ring-red-400`}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setEditing(false)} className="flex-1 px-3 py-1.5 rounded-md bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50">
+                Cancelar
+              </button>
+              <button onClick={handleSave} className={`flex-1 px-3 py-1.5 rounded-md ${c.btnBg} ${c.btnHover} text-white text-xs font-bold shadow-sm`}>
+                Salvar
+              </button>
+            </div>
+
+            {showConfirm && (
+              <div className="mt-2 p-2 rounded-md bg-white/90 border border-red-200 shadow-sm">
+                <p className="text-xs text-slate-700 mb-2">
+                  Confirmar atualização para <strong>R$ {pendingValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong>?
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowConfirm(false)} className="flex-1 px-3 py-1.5 rounded-md bg-slate-100 text-slate-600 text-xs font-semibold">
+                    Cancelar
+                  </button>
+                  <button onClick={confirmSave} disabled={mutation.isPending}
+                    className={`flex-1 px-3 py-1.5 rounded-md ${c.btnBg} ${c.btnHover} text-white text-xs font-bold disabled:opacity-50`}
+                  >
+                    {mutation.isPending ? "Salvando..." : "Confirmar"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ============================================================
    Main Component
    ============================================================ */
@@ -2739,6 +2892,13 @@ export default function ReceivablesTab() {
                                   <div className="mx-3 my-2 space-y-2">
                                     <SicoobDescontoSemanalCard />
                                     <SicoobLimiteCard />
+                                  </div>
+                                )}
+
+                                {/* Card Bradesco - Limite atual da conta garantida */}
+                                {isContaOpen && bankShort === "Bradesco" && (
+                                  <div className="mx-3 my-2">
+                                    <BradescoLimiteContaGarantidaCard empresa={shortEmpresaName(emp.nome)} />
                                   </div>
                                 )}
 

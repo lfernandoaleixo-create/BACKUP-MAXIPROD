@@ -3868,3 +3868,7 @@
 - [x] Manter filtros de status (Todos, Aprovado, Faturado) junto com filtro de tempo
 - [x] Card "Novo Pedido de Venda" na aba Pedidos para o vendedor criar pedidos
 - [x] Seleção de produtos do estoque visível do vendedor com specs completas (peso, dimensões, código de barras, unidade, descrição complementar)
+- [x] Adicionar recebíveis do Banco Bradesco para Palitos, Espetos e Varetas na aba Financeiro
+- [x] Cards do Bradesco com mesmos filtros dos outros bancos (vencido, a vencer, cheque, depósito)
+- [x] Sync GraphQL já puxa bancoNome/contaNumero do Bradesco corretamente (títulos sem forma de cobrança são propostas/pedidos não faturados)
+- [x] Card "Limite atual da conta garantida" manual dentro do card Bradesco (similar ao "Limite troca de títulos" do Sicoob)

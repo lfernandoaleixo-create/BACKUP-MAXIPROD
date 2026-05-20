@@ -1,0 +1,37 @@
+{
+  "query": "SELECT id, maxiprodId, bancoNome, agencia, contaNumero, empresaId, empresaNome FROM bank_accounts WHERE bancoNome LIKE '%Bradesco%' OR bancoNome LIKE '%bradesco%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, maxiprodId, bancoNome, agencia, contaNumero, empresaId, empresaNome FROM bank_accounts WHERE bancoNome LIKE '%Bradesco%' OR bancoNome LIKE '%bradesco%'",
+  "rows": [
+    {
+      "id": "7",
+      "maxiprodId": "409300000007912",
+      "bancoNome": "Banco Bradesco S.A.",
+      "agencia": "2469",
+      "contaNumero": "19342",
+      "empresaId": "409300001619248",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "11",
+      "maxiprodId": "409300000007952",
+      "bancoNome": "Banco Bradesco S.A.",
+      "agencia": "2469",
+      "contaNumero": "19344",
+      "empresaId": "409300001624530",
+      "empresaNome": "VARETAS INDUSTRIA"
+    },
+    {
+      "id": "12",
+      "maxiprodId": "409300000007953",
+      "bancoNome": "Banco Bradesco S.A.",
+      "agencia": "2469",
+      "contaNumero": "19287",
+      "empresaId": "409300001630645",
+      "empresaNome": "ESPETOS INDUSTRIA"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tmaxiprodId\tbancoNome\tagencia\tcontaNumero\tempresaId\tempresaNome\n7\t409300000007912\tBanco Bradesco S.A.\t2469\t19342\t409300001619248\tPALITOS INDUSTRIA\n11\t409300000007952\tBanco Bradesco S.A.\t2469\t19344\t409300001624530\tVARETAS INDUSTRIA\n12\t409300000007953\tBanco Bradesco S.A.\t2469\t19287\t409300001630645\tESPETOS INDUSTRIA\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

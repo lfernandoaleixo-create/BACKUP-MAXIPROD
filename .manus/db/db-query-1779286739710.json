@@ -1,0 +1,70 @@
+{
+  "query": "SELECT maxiprodId, empresaId, empresaNome, tipo, cliente, valorLiquido, vencimentoData, formaCobranca, bancoNome, contaNumero FROM accounts_receivable WHERE estado = 'EMITIDO' AND (bancoNome IS NULL OR bancoNome = '') LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT maxiprodId, empresaId, empresaNome, tipo, cliente, valorLiquido, vencimentoData, formaCobranca, bancoNome, contaNumero FROM accounts_receivable WHERE estado = 'EMITIDO' AND (bancoNome IS NULL OR bancoNome = '') LIMIT 5",
+  "rows": [
+    {
+      "maxiprodId": "409300077291273",
+      "empresaId": "409300001619248",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "cliente": "ATELIER DIVA DECOR LTDA",
+      "valorLiquido": "1160.00",
+      "vencimentoData": "2026-03-23T12:00:00.000-03:00",
+      "formaCobranca": "NULL",
+      "bancoNome": "NULL",
+      "contaNumero": "NULL"
+    },
+    {
+      "maxiprodId": "409300077467061",
+      "empresaId": "409300001619248",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "cliente": "GAM & CO INDUSTRIA E COMERCIO LTDA",
+      "valorLiquido": "595.00",
+      "vencimentoData": "2026-03-25T12:00:00.000-03:00",
+      "formaCobranca": "NULL",
+      "bancoNome": "NULL",
+      "contaNumero": "NULL"
+    },
+    {
+      "maxiprodId": "409300077534691",
+      "empresaId": "409300001619248",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "cliente": "DIB & CAIRES LTDA",
+      "valorLiquido": "4880.00",
+      "vencimentoData": "2026-04-21T12:00:00.000-03:00",
+      "formaCobranca": "NULL",
+      "bancoNome": "NULL",
+      "contaNumero": "NULL"
+    },
+    {
+      "maxiprodId": "409300077534692",
+      "empresaId": "409300001619248",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "cliente": "DIB & CAIRES LTDA",
+      "valorLiquido": "4880.00",
+      "vencimentoData": "2026-04-28T12:00:00.000-03:00",
+      "formaCobranca": "NULL",
+      "bancoNome": "NULL",
+      "contaNumero": "NULL"
+    },
+    {
+      "maxiprodId": "409300077547204",
+      "empresaId": "409300001619248",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "cliente": "LATICINIOS ABAETE LTDA",
+      "valorLiquido": "2500.00",
+      "vencimentoData": "2026-04-23T12:00:00.000-03:00",
+      "formaCobranca": "NULL",
+      "bancoNome": "NULL",
+      "contaNumero": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "maxiprodId\tempresaId\tempresaNome\ttipo\tcliente\tvalorLiquido\tvencimentoData\tformaCobranca\tbancoNome\tcontaNumero\n409300077291273\t409300001619248\tPALITOS INDUSTRIA\tTITULO_PROPOSTA_DE_VENDA\tATELIER DIVA DECOR LTDA\t1160.00\t2026-03-23T12:00:00.000-03:00\tNULL\tNULL\tNULL\n409300077467061\t409300001619248\tPALITOS INDUSTRIA\tTITULO_PROPOSTA_DE_VENDA\tGAM & CO INDUSTRIA E COMERCIO LTDA\t595.00\t2026-03-25T12:00:00.000-03:00\tNULL\tNULL\tNULL\n409300077534691\t409300001619248\tPALITOS INDUSTRIA\tTITULO_PROPOSTA_DE_VENDA\tDIB & CAIRES LTDA\t4880.00\t2026-04-21T12:00:00.000-03:00\tNULL\tNULL\tNULL\n409300077534692\t409300001619248\tPALITOS INDUSTRIA\tTITULO_PROPOSTA_DE_VENDA\tDIB & CAIRES LTDA\t4880.00\t2026-04-28T12:00:00.000-03:00\tNULL\tNULL\tNULL\n409300077547204\t409300001619248\tPALITOS INDUSTRIA\tTITULO_PROPOSTA_DE_VENDA\tLATICINIOS ABAETE LTDA\t2500.00\t2026-04-23T12:00:00.000-03:00\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

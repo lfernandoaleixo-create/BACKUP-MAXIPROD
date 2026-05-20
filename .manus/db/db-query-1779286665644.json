@@ -1,0 +1,25 @@
+{
+  "query": "SELECT tipo, COUNT(*) as cnt, ROUND(SUM(valorLiquido), 2) as total FROM accounts_receivable WHERE estado = 'EMITIDO' AND (bancoNome IS NULL OR bancoNome = '') AND empresaNome = 'PALITOS INDUSTRIA' GROUP BY tipo ORDER BY cnt DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT tipo, COUNT(*) as cnt, ROUND(SUM(valorLiquido), 2) as total FROM accounts_receivable WHERE estado = 'EMITIDO' AND (bancoNome IS NULL OR bancoNome = '') AND empresaNome = 'PALITOS INDUSTRIA' GROUP BY tipo ORDER BY cnt DESC",
+  "rows": [
+    {
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "cnt": "104",
+      "total": "316323.00"
+    },
+    {
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "cnt": "26",
+      "total": "328079.72"
+    },
+    {
+      "tipo": "RECEITA",
+      "cnt": "1",
+      "total": "2007.75"
+    }
+  ],
+  "messages": [],
+  "stdout": "tipo\tcnt\ttotal\nTITULO_PROPOSTA_DE_VENDA\t104\t316323.00\nTITULO_PEDIDO_DE_VENDA\t26\t328079.72\nRECEITA\t1\t2007.75\n",
+  "stderr": "",
+  "execution_time_ms": 308
+}

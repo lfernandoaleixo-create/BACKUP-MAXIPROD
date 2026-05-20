@@ -1,0 +1,18 @@
+{
+  "query": "SELECT empresaNome, bancoNome, tipo, estado, COUNT(*) as cnt, ROUND(SUM(valorLiquido), 2) as total FROM accounts_receivable WHERE empresaNome IN ('ESPETOS INDUSTRIA', 'VARETAS INDUSTRIA') GROUP BY empresaNome, bancoNome, tipo, estado ORDER BY empresaNome, cnt DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT empresaNome, bancoNome, tipo, estado, COUNT(*) as cnt, ROUND(SUM(valorLiquido), 2) as total FROM accounts_receivable WHERE empresaNome IN ('ESPETOS INDUSTRIA', 'VARETAS INDUSTRIA') GROUP BY empresaNome, bancoNome, tipo, estado ORDER BY empresaNome, cnt DESC",
+  "rows": [
+    {
+      "empresaNome": "ESPETOS INDUSTRIA",
+      "bancoNome": "Banco Bradesco S.A.",
+      "tipo": "TITULO",
+      "estado": "EMITIDO",
+      "cnt": "2",
+      "total": "26550.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresaNome\tbancoNome\ttipo\testado\tcnt\ttotal\nESPETOS INDUSTRIA\tBanco Bradesco S.A.\tTITULO\tEMITIDO\t2\t26550.00\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

@@ -1,0 +1,16 @@
+{
+  "query": "SELECT DISTINCT formaCobranca, estado, COUNT(*) as cnt, ROUND(SUM(valorLiquido - COALESCE(valorRecebidoLiquido, 0)), 2) as saldo FROM accounts_receivable WHERE contaNumero IN ('19342', '19344', '19287') OR formaCobranca LIKE '%19342%' OR formaCobranca LIKE '%19344%' OR formaCobranca LIKE '%19287%' OR formaCobranca LIKE '%Bradesco%' GROUP BY formaCobranca, estado ORDER BY cnt DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT formaCobranca, estado, COUNT(*) as cnt, ROUND(SUM(valorLiquido - COALESCE(valorRecebidoLiquido, 0)), 2) as saldo FROM accounts_receivable WHERE contaNumero IN ('19342', '19344', '19287') OR formaCobranca LIKE '%19342%' OR formaCobranca LIKE '%19344%' OR formaCobranca LIKE '%19287%' OR formaCobranca LIKE '%Bradesco%' GROUP BY formaCobranca, estado ORDER BY cnt DESC",
+  "rows": [
+    {
+      "formaCobranca": "Boleto Bradesco ag 2469 conta 19287 carteira 2",
+      "estado": "EMITIDO",
+      "cnt": "2",
+      "saldo": "26550.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "formaCobranca\testado\tcnt\tsaldo\nBoleto Bradesco ag 2469 conta 19287 carteira 2\tEMITIDO\t2\t26550.00\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

@@ -1,0 +1,18 @@
+{
+  "query": "SELECT bancoNome, contaNumero, agencia, empresaNome, COUNT(*) as cnt, ROUND(SUM(valorLiquido), 2) as total FROM accounts_receivable WHERE bancoNome LIKE '%Bradesco%' OR bancoNome LIKE '%bradesco%' OR bancoNome LIKE '%BRADESCO%' GROUP BY bancoNome, contaNumero, agencia, empresaNome ORDER BY cnt DESC LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT bancoNome, contaNumero, agencia, empresaNome, COUNT(*) as cnt, ROUND(SUM(valorLiquido), 2) as total FROM accounts_receivable WHERE bancoNome LIKE '%Bradesco%' OR bancoNome LIKE '%bradesco%' OR bancoNome LIKE '%BRADESCO%' GROUP BY bancoNome, contaNumero, agencia, empresaNome ORDER BY cnt DESC LIMIT 20",
+  "rows": [
+    {
+      "bancoNome": "Banco Bradesco S.A.",
+      "contaNumero": "19287",
+      "agencia": "2469",
+      "empresaNome": "ESPETOS INDUSTRIA",
+      "cnt": "2",
+      "total": "26550.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "bancoNome\tcontaNumero\tagencia\tempresaNome\tcnt\ttotal\nBanco Bradesco S.A.\t19287\t2469\tESPETOS INDUSTRIA\t2\t26550.00\n",
+  "stderr": "",
+  "execution_time_ms": 322
+}

@@ -1,0 +1,17 @@
+{
+  "query": "SELECT formaCobranca, bancoNome, contaNumero, empresaNome, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' AND (bancoNome IS NULL OR bancoNome = '') GROUP BY formaCobranca, bancoNome, contaNumero, empresaNome ORDER BY cnt DESC LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT formaCobranca, bancoNome, contaNumero, empresaNome, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' AND (bancoNome IS NULL OR bancoNome = '') GROUP BY formaCobranca, bancoNome, contaNumero, empresaNome ORDER BY cnt DESC LIMIT 20",
+  "rows": [
+    {
+      "formaCobranca": "NULL",
+      "bancoNome": "NULL",
+      "contaNumero": "NULL",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "131"
+    }
+  ],
+  "messages": [],
+  "stdout": "formaCobranca\tbancoNome\tcontaNumero\tempresaNome\tcnt\nNULL\tNULL\tNULL\tPALITOS INDUSTRIA\t131\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

@@ -1,0 +1,108 @@
+{
+  "query": "SELECT empresaNome, tipo, bancoNome, COUNT(*) as cnt, ROUND(SUM(valorLiquido), 2) as total FROM accounts_receivable WHERE estado = 'EMITIDO' AND bancoNome IS NOT NULL AND bancoNome != '' GROUP BY empresaNome, tipo, bancoNome ORDER BY empresaNome, cnt DESC LIMIT 30",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT empresaNome, tipo, bancoNome, COUNT(*) as cnt, ROUND(SUM(valorLiquido), 2) as total FROM accounts_receivable WHERE estado = 'EMITIDO' AND bancoNome IS NOT NULL AND bancoNome != '' GROUP BY empresaNome, tipo, bancoNome ORDER BY empresaNome, cnt DESC LIMIT 30",
+  "rows": [
+    {
+      "empresaNome": "ESPETOS INDUSTRIA",
+      "tipo": "TITULO",
+      "bancoNome": "Banco Bradesco S.A.",
+      "cnt": "2",
+      "total": "26550.00"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "cnt": "156",
+      "total": "1172394.86"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "cnt": "74",
+      "total": "421690.82"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "RECEITA",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "cnt": "39",
+      "total": "202301.00"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "cnt": "31",
+      "total": "233014.67"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "cnt": "20",
+      "total": "64555.00"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "cnt": "19",
+      "total": "35584.00"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "cnt": "18",
+      "total": "62351.00"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "RECEITA",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "cnt": "12",
+      "total": "21650.00"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO",
+      "bancoNome": "CHEQUE EM FACTORING",
+      "cnt": "6",
+      "total": "47291.19"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "cnt": "4",
+      "total": "28914.52"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO",
+      "bancoNome": "CHEQUE EM COMPENSACAO",
+      "cnt": "1",
+      "total": "3577.86"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO",
+      "bancoNome": "CHEQUE LINHA 11",
+      "cnt": "1",
+      "total": "3963.33"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "tipo": "TITULO",
+      "bancoNome": "CHEQUE VOLTOU OUTROS MOTIVOS",
+      "cnt": "1",
+      "total": "22336.66"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresaNome\ttipo\tbancoNome\tcnt\ttotal\nESPETOS INDUSTRIA\tTITULO\tBanco Bradesco S.A.\t2\t26550.00\nPALITOS INDUSTRIA\tTITULO\tBanco Cooperativo do Brasil S.A. - BANCOOB\t156\t1172394.86\nPALITOS INDUSTRIA\tTITULO\tBanco Cooperativo Sicredi S.A.\t74\t421690.82\nPALITOS INDUSTRIA\tRECEITA\tBanco Cooperativo do Brasil S.A. - BANCOOB\t39\t202301.00\nPALITOS INDUSTRIA\tTITULO\tCHEQUE DISPONIVEL\t31\t233014.67\nPALITOS INDUSTRIA\tTITULO_PEDIDO_DE_VENDA\tBanco Cooperativo do Brasil S.A. - BANCOOB\t20\t64555.00\nPALITOS INDUSTRIA\tTITULO_PROPOSTA_DE_VENDA\tBanco Cooperativo Sicredi S.A.\t19\t35584.00\nPALITOS INDUSTRIA\tTITULO_PEDIDO_DE_VENDA\tBanco Cooperativo Sicredi S.A.\t18\t62351.00\nPALITOS INDUSTRIA\tRECEITA\tBanco Cooperativo Sicredi S.A.\t12\t21650.00\nPALITOS INDUSTRIA\tTITULO\tCHEQUE EM FACTORING\t6\t47291.19\nPALITOS INDUSTRIA\tTITULO_PROPOSTA_DE_VENDA\tBanco Cooperativo do Brasil S.A. - BANCOOB\t4\t28914.52\nPALITOS INDUSTRIA\tTITULO\tCHEQUE EM COMPENSACAO\t1\t3577.86\nPALITOS INDUSTRIA\tTITULO\tCHEQUE LINHA 11\t1\t3963.33\nPALITOS INDUSTRIA\tTITULO\tCHEQUE VOLTOU OUTROS MOTIVOS\t1\t22336.66\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

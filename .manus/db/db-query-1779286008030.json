@@ -1,0 +1,17 @@
+{
+  "query": "SELECT formaCobranca, contaNumero, bancoNome, empresaNome, COUNT(*) as cnt FROM accounts_receivable WHERE formaCobranca LIKE '%Bradesco%' GROUP BY formaCobranca, contaNumero, bancoNome, empresaNome ORDER BY cnt DESC LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT formaCobranca, contaNumero, bancoNome, empresaNome, COUNT(*) as cnt FROM accounts_receivable WHERE formaCobranca LIKE '%Bradesco%' GROUP BY formaCobranca, contaNumero, bancoNome, empresaNome ORDER BY cnt DESC LIMIT 20",
+  "rows": [
+    {
+      "formaCobranca": "Boleto Bradesco ag 2469 conta 19287 carteira 2",
+      "contaNumero": "19287",
+      "bancoNome": "Banco Bradesco S.A.",
+      "empresaNome": "ESPETOS INDUSTRIA",
+      "cnt": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "formaCobranca\tcontaNumero\tbancoNome\tempresaNome\tcnt\nBoleto Bradesco ag 2469 conta 19287 carteira 2\t19287\tBanco Bradesco S.A.\tESPETOS INDUSTRIA\t2\n",
+  "stderr": "",
+  "execution_time_ms": 255
+}
