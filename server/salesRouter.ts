@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -3415,5 +3415,138 @@ export const salesRouter = router({
         if (row.codigoItem) summary[row.codigoItem] = Number(row.totalCx) || 0;
       }
       return summary;
+    }),
+
+  // ============================================================
+  // VENDOR CLIENTS - Cadastro manual de clientes pelo vendedor/gestor
+  // ============================================================
+
+  /**
+   * Create a new client for a vendor
+   */
+  createVendorClient: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      sellerName: z.string(),
+      cnpjCpf: z.string().min(11).max(18),
+      razaoSocial: z.string().min(2).max(300),
+      nomeFantasia: z.string().max(300).optional(),
+      inscricaoEstadual: z.string().max(30).optional(),
+      cep: z.string().max(10).optional(),
+      logradouro: z.string().max(300).optional(),
+      numero: z.string().max(20).optional(),
+      complemento: z.string().max(200).optional(),
+      bairro: z.string().max(200).optional(),
+      cidade: z.string().max(200).optional(),
+      uf: z.string().max(2).optional(),
+      telefone1: z.string().max(30).optional(),
+      telefone2: z.string().max(30).optional(),
+      email: z.string().max(300).optional(),
+      nomeContato: z.string().max(200).optional(),
+      segmento: z.string().max(100).optional(),
+      observacoes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const result = await db.insert(vendorClients).values({
+        sellerId: input.sellerId,
+        sellerName: input.sellerName,
+        cnpjCpf: input.cnpjCpf,
+        razaoSocial: input.razaoSocial,
+        nomeFantasia: input.nomeFantasia || null,
+        inscricaoEstadual: input.inscricaoEstadual || null,
+        cep: input.cep || null,
+        logradouro: input.logradouro || null,
+        numero: input.numero || null,
+        complemento: input.complemento || null,
+        bairro: input.bairro || null,
+        cidade: input.cidade || null,
+        uf: input.uf || null,
+        telefone1: input.telefone1 || null,
+        telefone2: input.telefone2 || null,
+        email: input.email || null,
+        nomeContato: input.nomeContato || null,
+        segmento: input.segmento || null,
+        observacoes: input.observacoes || null,
+      });
+
+      return { success: true, id: result[0].insertId };
+    }),
+
+  /**
+   * List all manually registered clients for a vendor
+   */
+  listVendorClients: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const clients = await db.select().from(vendorClients)
+        .where(eq(vendorClients.sellerId, input.sellerId))
+        .orderBy(desc(vendorClients.createdAt));
+
+      return clients;
+    }),
+
+  /**
+   * Update an existing vendor client
+   */
+  updateVendorClient: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      cnpjCpf: z.string().min(11).max(18).optional(),
+      razaoSocial: z.string().min(2).max(300).optional(),
+      nomeFantasia: z.string().max(300).optional(),
+      inscricaoEstadual: z.string().max(30).optional(),
+      cep: z.string().max(10).optional(),
+      logradouro: z.string().max(300).optional(),
+      numero: z.string().max(20).optional(),
+      complemento: z.string().max(200).optional(),
+      bairro: z.string().max(200).optional(),
+      cidade: z.string().max(200).optional(),
+      uf: z.string().max(2).optional(),
+      telefone1: z.string().max(30).optional(),
+      telefone2: z.string().max(30).optional(),
+      email: z.string().max(300).optional(),
+      nomeContato: z.string().max(200).optional(),
+      segmento: z.string().max(100).optional(),
+      observacoes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const { id, ...updateData } = input;
+      // Remove undefined fields
+      const cleanData: Record<string, any> = {};
+      for (const [key, value] of Object.entries(updateData)) {
+        if (value !== undefined) cleanData[key] = value || null;
+      }
+
+      if (Object.keys(cleanData).length > 0) {
+        await db.update(vendorClients).set(cleanData).where(eq(vendorClients.id, id));
+      }
+
+      return { success: true };
+    }),
+
+  /**
+   * Delete a vendor client
+   */
+  deleteVendorClient: publicProcedure
+    .input(z.object({
+      id: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      await db.delete(vendorClients).where(eq(vendorClients.id, input.id));
+      return { success: true };
     }),
 });

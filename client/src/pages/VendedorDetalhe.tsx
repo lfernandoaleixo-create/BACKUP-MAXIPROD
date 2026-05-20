@@ -45,9 +45,13 @@ import {
   Phone,
   Mail,
   MapPin,
+  Plus,
+  Save,
+  Building2,
+  FileCheck,
 } from "lucide-react";
 
-type TabType = "estoque" | "clientes" | "vendas" | "configuracoes";
+type TabType = "estoque" | "clientes" | "pedidos" | "vendas" | "configuracoes";
 
 interface DashboardItem {
   codigoItem: string;
@@ -128,7 +132,8 @@ export default function VendedorDetalhe() {
   const tabs: { id: TabType; label: string; icon: typeof Package }[] = [
     { id: "estoque", label: "Estoque", icon: Package },
     { id: "clientes", label: "Cadastro de Cliente", icon: UserPlus },
-    { id: "vendas", label: "Vendas", icon: BarChart3 },
+    { id: "pedidos", label: "Pedidos de Venda", icon: ShoppingCart },
+    { id: "vendas", label: "Métrica de Vendas", icon: BarChart3 },
     { id: "configuracoes", label: "Configurações", icon: Settings },
   ];
 
@@ -206,7 +211,11 @@ export default function VendedorDetalhe() {
         )}
 
         {activeTab === "clientes" && (
-          <SellerClientsView sellerName={seller.sellerName} />
+          <SellerClientsView sellerId={sellerId} sellerName={seller.sellerName} />
+        )}
+
+        {activeTab === "pedidos" && (
+          <SellerOrdersView sellerId={sellerId} sellerName={seller.sellerName} />
         )}
 
         {activeTab === "vendas" && (
@@ -1565,13 +1574,20 @@ function formatDateSales(dateStr: string) {
  * Dados combinados: sales_orders DB + GraphQL vendedorMap
  * ============================================================
  */
-function SellerClientsView({ sellerName }: { sellerName: string }) {
+function SellerClientsView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"valor" | "pedidos" | "recente">("valor");
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
 
   const { data: clientes, isLoading } = trpc.salesMetrics.getClientesByVendedor.useQuery(
     { vendedor: sellerName },
     { staleTime: 2 * 60 * 1000 }
+  );
+
+  // Clientes cadastrados manualmente
+  const { data: manualClients, refetch: refetchManual } = trpc.sales.listVendorClients.useQuery(
+    { sellerId },
+    { staleTime: 60 * 1000 }
   );
 
   const filteredClientes = useMemo(() => {
@@ -1628,13 +1644,13 @@ function SellerClientsView({ sellerName }: { sellerName: string }) {
     );
   }
 
-  const totalClientes = clientes.length;
-  const totalVendasGeral = clientes.reduce((sum, c) => sum + c.totalVendas, 0);
-  const totalPedidosGeral = clientes.reduce((sum, c) => sum + c.qtdPedidos, 0);
+  const totalClientes = (clientes?.length || 0) + (manualClients?.length || 0);
+  const totalVendasGeral = clientes?.reduce((sum, c) => sum + c.totalVendas, 0) || 0;
+  const totalPedidosGeral = clientes?.reduce((sum, c) => sum + c.qtdPedidos, 0) || 0;
 
   return (
     <div className="space-y-4">
-      {/* Header com KPIs */}
+      {/* Header com KPIs + Botão Cadastrar */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
@@ -1643,19 +1659,28 @@ function SellerClientsView({ sellerName }: { sellerName: string }) {
               Clientes de {sellerName}
             </h3>
           </div>
-          <div className="flex items-center gap-3 text-xs text-slate-500">
-            <span className="flex items-center gap-1">
-              <Users className="w-3.5 h-3.5" />
-              {totalClientes} cliente{totalClientes !== 1 ? "s" : ""}
-            </span>
-            <span className="flex items-center gap-1">
-              <ShoppingCart className="w-3.5 h-3.5" />
-              {totalPedidosGeral} pedidos
-            </span>
-            <span className="flex items-center gap-1 font-medium text-green-600">
-              <DollarSign className="w-3.5 h-3.5" />
-              {formatCurrencySales(totalVendasGeral)}
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                {totalClientes} cliente{totalClientes !== 1 ? "s" : ""}
+              </span>
+              <span className="flex items-center gap-1">
+                <ShoppingCart className="w-3.5 h-3.5" />
+                {totalPedidosGeral} pedidos
+              </span>
+              <span className="flex items-center gap-1 font-medium text-green-600">
+                <DollarSign className="w-3.5 h-3.5" />
+                {formatCurrencySales(totalVendasGeral)}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowNewClientForm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white text-xs font-medium rounded-lg hover:bg-teal-700 transition-colors shadow-sm cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Cadastrar Novo Cliente
+            </button>
           </div>
         </div>
 
@@ -1689,6 +1714,49 @@ function SellerClientsView({ sellerName }: { sellerName: string }) {
           </div>
         </div>
       </div>
+
+      {/* Formulário de Cadastro de Novo Cliente */}
+      {showNewClientForm && (
+        <NewClientForm
+          sellerId={sellerId}
+          sellerName={sellerName}
+          onClose={() => setShowNewClientForm(false)}
+          onSuccess={() => {
+            setShowNewClientForm(false);
+            refetchManual();
+          }}
+        />
+      )}
+
+      {/* Clientes cadastrados manualmente */}
+      {manualClients && manualClients.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-teal-200 dark:border-teal-700 shadow-sm overflow-hidden">
+          <div className="px-4 py-2.5 bg-teal-50 dark:bg-teal-900/20 border-b border-teal-100 dark:border-teal-800">
+            <div className="flex items-center gap-2">
+              <FileCheck className="w-4 h-4 text-teal-600" />
+              <span className="text-xs font-bold text-teal-700 dark:text-teal-400">Clientes Cadastrados ({manualClients.length})</span>
+            </div>
+          </div>
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            {manualClients
+              .filter((mc) => {
+                if (!searchQuery.trim()) return true;
+                const q = searchQuery.trim().toUpperCase();
+                return (
+                  mc.razaoSocial.toUpperCase().includes(q) ||
+                  (mc.nomeFantasia || "").toUpperCase().includes(q) ||
+                  (mc.cidade || "").toUpperCase().includes(q) ||
+                  (mc.uf || "").toUpperCase().includes(q) ||
+                  (mc.segmento || "").toUpperCase().includes(q) ||
+                  mc.cnpjCpf.includes(q)
+                );
+              })
+              .map((mc) => (
+                <ManualClientRow key={mc.id} client={mc} onDeleted={refetchManual} />
+              ))}
+          </div>
+        </div>
+      )}
 
       {/* Lista de clientes */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -1820,6 +1888,640 @@ function ClientRow({ client, index }: { client: {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Formulário de cadastro de novo cliente
+ */
+function NewClientForm({ sellerId, sellerName, onClose, onSuccess }: {
+  sellerId: number;
+  sellerName: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [cnpjCpf, setCnpjCpf] = useState("");
+  const [razaoSocial, setRazaoSocial] = useState("");
+  const [nomeFantasia, setNomeFantasia] = useState("");
+  const [inscricaoEstadual, setInscricaoEstadual] = useState("");
+  const [cep, setCep] = useState("");
+  const [logradouro, setLogradouro] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [uf, setUf] = useState("");
+  const [telefone1, setTelefone1] = useState("");
+  const [telefone2, setTelefone2] = useState("");
+  const [email, setEmail] = useState("");
+  const [nomeContato, setNomeContato] = useState("");
+  const [segmento, setSegmento] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const createMutation = trpc.sales.createVendorClient.useMutation();
+
+  const handleSave = async () => {
+    if (!cnpjCpf.trim() || !razaoSocial.trim()) {
+      setError("CNPJ/CPF e Razão Social são obrigatórios.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await createMutation.mutateAsync({
+        sellerId,
+        sellerName,
+        cnpjCpf: cnpjCpf.trim(),
+        razaoSocial: razaoSocial.trim(),
+        nomeFantasia: nomeFantasia.trim() || undefined,
+        inscricaoEstadual: inscricaoEstadual.trim() || undefined,
+        cep: cep.trim() || undefined,
+        logradouro: logradouro.trim() || undefined,
+        numero: numero.trim() || undefined,
+        complemento: complemento.trim() || undefined,
+        bairro: bairro.trim() || undefined,
+        cidade: cidade.trim() || undefined,
+        uf: uf.trim() || undefined,
+        telefone1: telefone1.trim() || undefined,
+        telefone2: telefone2.trim() || undefined,
+        email: email.trim() || undefined,
+        nomeContato: nomeContato.trim() || undefined,
+        segmento: segmento || undefined,
+        observacoes: observacoes.trim() || undefined,
+      });
+      onSuccess();
+    } catch (e: any) {
+      setError(e.message || "Erro ao salvar cliente.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const segmentoOptions = ["", "DISTRIBUIDORA", "SUPERMERCADO", "ATACADO", "VAREJO", "INDÚSTRIA", "RESTAURANTE", "LOJA", "OUTROS"];
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border-2 border-teal-300 dark:border-teal-600 shadow-lg p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-teal-600" />
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Cadastrar Novo Cliente</h3>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {error && (
+        <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600">
+          {error}
+        </div>
+      )}
+
+      {/* Dados da Empresa */}
+      <div className="mb-3">
+        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+          <Building2 className="w-3 h-3" /> Dados da Empresa
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <FormInput label="CNPJ/CPF *" value={cnpjCpf} onChange={setCnpjCpf} placeholder="00.000.000/0001-00" />
+          <FormInput label="Inscrição Estadual" value={inscricaoEstadual} onChange={setInscricaoEstadual} placeholder="IE" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          <FormInput label="Razão Social *" value={razaoSocial} onChange={setRazaoSocial} placeholder="Nome completo da empresa" />
+          <FormInput label="Nome Fantasia" value={nomeFantasia} onChange={setNomeFantasia} placeholder="Nome fantasia (opcional)" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          <div>
+            <label className="block text-[10px] font-medium text-slate-500 mb-1">Segmento</label>
+            <select
+              value={segmento}
+              onChange={(e) => setSegmento(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            >
+              {segmentoOptions.map(opt => (
+                <option key={opt} value={opt}>{opt || "Selecione..."}</option>
+              ))}
+            </select>
+          </div>
+          <FormInput label="Pessoa de Contato" value={nomeContato} onChange={setNomeContato} placeholder="Nome do contato" />
+        </div>
+      </div>
+
+      {/* Endereço */}
+      <div className="mb-3">
+        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
+          <MapPin className="w-3 h-3" /> Endereço
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          <FormInput label="CEP" value={cep} onChange={setCep} placeholder="00000-000" />
+          <div className="col-span-2">
+            <FormInput label="Logradouro" value={logradouro} onChange={setLogradouro} placeholder="Rua/Av" />
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-2 mt-2">
+          <FormInput label="Número" value={numero} onChange={setNumero} placeholder="Nº" />
+          <FormInput label="Complemento" value={complemento} onChange={setComplemento} placeholder="Sala, Bloco..." />
+          <FormInput label="Bairro" value={bairro} onChange={setBairro} placeholder="Bairro" />
+          <FormInput label="Cidade" value={cidade} onChange={setCidade} placeholder="Cidade" />
+        </div>
+        <div className="grid grid-cols-4 gap-2 mt-2">
+          <FormInput label="UF" value={uf} onChange={setUf} placeholder="XX" />
+          <FormInput label="Telefone 1" value={telefone1} onChange={setTelefone1} placeholder="(00) 00000-0000" />
+          <FormInput label="Telefone 2" value={telefone2} onChange={setTelefone2} placeholder="(00) 00000-0000" />
+          <FormInput label="Email" value={email} onChange={setEmail} placeholder="email@empresa.com" />
+        </div>
+      </div>
+
+      {/* Observações */}
+      <div className="mb-4">
+        <label className="block text-[10px] font-medium text-slate-500 mb-1">Observações</label>
+        <textarea
+          value={observacoes}
+          onChange={(e) => setObservacoes(e.target.value)}
+          placeholder="Observações sobre o cliente (opcional)"
+          rows={2}
+          className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500 resize-none"
+        />
+      </div>
+
+      {/* Botões */}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={onClose}
+          className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
+        >
+          {saving ? (
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Save className="w-3.5 h-3.5" />
+          )}
+          {saving ? "Salvando..." : "Salvar Cliente"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Helper input field for the form
+ */
+function FormInput({ label, value, onChange, placeholder, type = "text" }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] font-medium text-slate-500 mb-1">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+      />
+    </div>
+  );
+}
+
+/**
+ * Row for manually registered clients
+ */
+function ManualClientRow({ client, onDeleted }: { client: any; onDeleted: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteMutation = trpc.sales.deleteVendorClient.useMutation();
+
+  const handleDelete = async () => {
+    await deleteMutation.mutateAsync({ id: client.id });
+    onDeleted();
+  };
+
+  const endereco = [client.logradouro, client.numero, client.bairro, client.cidade, client.uf]
+    .filter(Boolean).join(", ");
+
+  return (
+    <div className="group">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
+      >
+        <div className="w-5 h-5 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center flex-shrink-0">
+          <Building2 className="w-3 h-3 text-teal-600" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+              {client.razaoSocial}
+            </p>
+            {client.uf && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 flex-shrink-0">
+                {client.uf}
+              </span>
+            )}
+            {client.segmento && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 flex-shrink-0 hidden sm:inline">
+                {client.segmento}
+              </span>
+            )}
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 flex-shrink-0">
+              NOVO
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[10px] text-slate-400">{client.cnpjCpf}</span>
+            {client.cidade && (
+              <span className="text-[10px] text-slate-400">· {client.cidade}</span>
+            )}
+            {client.nomeContato && (
+              <span className="text-[10px] text-slate-400 hidden sm:inline">· Contato: {client.nomeContato}</span>
+            )}
+          </div>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${
+          expanded ? "rotate-180" : ""
+        }`} />
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-3 ml-8 border-l-2 border-teal-200 dark:border-teal-800">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            {client.nomeFantasia && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Nome Fantasia:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.nomeFantasia}</span>
+              </div>
+            )}
+            {client.inscricaoEstadual && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-slate-400 font-medium whitespace-nowrap">IE:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.inscricaoEstadual}</span>
+              </div>
+            )}
+            {endereco && (
+              <div className="flex items-start gap-1.5">
+                <MapPin className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+                <span className="text-slate-600 dark:text-slate-300">{endereco}</span>
+              </div>
+            )}
+            {client.telefone1 && (
+              <div className="flex items-center gap-1.5">
+                <Phone className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                <a href={`tel:${client.telefone1}`} className="text-teal-600 hover:underline">{client.telefone1}</a>
+                {client.telefone2 && <span className="text-slate-400">/ {client.telefone2}</span>}
+              </div>
+            )}
+            {client.email && (
+              <div className="flex items-center gap-1.5">
+                <Mail className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                <a href={`mailto:${client.email}`} className="text-teal-600 hover:underline truncate">{client.email}</a>
+              </div>
+            )}
+            {client.observacoes && (
+              <div className="flex items-start gap-1.5 sm:col-span-2">
+                <span className="text-slate-400 font-medium whitespace-nowrap">Obs:</span>
+                <span className="text-slate-600 dark:text-slate-300">{client.observacoes}</span>
+              </div>
+            )}
+          </div>
+          {/* Delete button */}
+          <div className="mt-3 flex items-center gap-2">
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-red-500 bg-red-50 rounded-md hover:bg-red-100 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3 h-3" />
+                Excluir
+              </button>
+            ) : (
+              <>
+                <span className="text-[10px] text-red-500 font-medium">Confirmar exclusão?</span>
+                <button
+                  onClick={handleDelete}
+                  className="px-2.5 py-1 text-[10px] font-medium text-white bg-red-500 rounded-md hover:bg-red-600 cursor-pointer"
+                >
+                  Sim, excluir
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-2.5 py-1 text-[10px] font-medium text-slate-500 bg-slate-100 rounded-md hover:bg-slate-200 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * ============================================================
+ * ABA PEDIDOS DE VENDA - Mostra os pedidos do vendedor no Maxiprod
+ * Dados da tabela sales_orders agrupados por número de pedido
+ * ============================================================
+ */
+function SellerOrdersView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [expandedPedido, setExpandedPedido] = useState<string | null>(null);
+
+  // Buscar pedidos do vendedor (do Maxiprod via sales_orders)
+  const { data: pedidos, isLoading } = trpc.salesMetrics.getPedidosByVendedor.useQuery(
+    { vendedor: sellerName },
+    { staleTime: 2 * 60 * 1000 }
+  );
+
+  // Buscar pedidos manuais (do app do vendedor via salesOrderRequests)
+  const { data: pedidosManuais } = trpc.salesOrders.getSellerOrders.useQuery(
+    { sellerId },
+    { staleTime: 60 * 1000 }
+  );
+
+  const filteredPedidos = useMemo(() => {
+    if (!pedidos) return [];
+    let result = [...pedidos];
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toUpperCase();
+      result = result.filter(
+        (p) =>
+          p.pedido.toUpperCase().includes(q) ||
+          p.cliente.toUpperCase().includes(q) ||
+          (p.estadoNota || "").toUpperCase().includes(q)
+      );
+    }
+    if (statusFilter !== "todos") {
+      result = result.filter((p) => (p.estadoNota || "").toUpperCase() === statusFilter.toUpperCase());
+    }
+    return result;
+  }, [pedidos, searchQuery, statusFilter]);
+
+  // Extract unique statuses for filter
+  const statusOptions = useMemo((): string[] => {
+    if (!pedidos) return [];
+    const statuses = new Set<string>(pedidos.map((p) => p.estadoNota || "Sem status"));
+    return Array.from(statuses).sort();
+  }, [pedidos]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+        <div className="flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4 text-teal-500 animate-spin" />
+          <span className="text-sm text-slate-500">Carregando pedidos...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const totalPedidos = pedidos?.length || 0;
+  const totalValor = pedidos?.reduce((sum: number, p) => sum + p.valorTotal, 0) || 0;
+  const totalPedidosManuais = pedidosManuais?.length || 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Header com KPIs */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5 text-teal-600" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              Pedidos de Venda
+            </h3>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            <span className="flex items-center gap-1">
+              <FileText className="w-3.5 h-3.5" />
+              {totalPedidos} pedido{totalPedidos !== 1 ? "s" : ""} (Maxiprod)
+            </span>
+            {totalPedidosManuais > 0 && (
+              <span className="flex items-center gap-1 text-teal-600">
+                <FileCheck className="w-3.5 h-3.5" />
+                {totalPedidosManuais} via App
+              </span>
+            )}
+            <span className="flex items-center gap-1 font-medium text-green-600">
+              <DollarSign className="w-3.5 h-3.5" />
+              {formatCurrencySales(totalValor)}
+            </span>
+          </div>
+        </div>
+
+        {/* Search + Status Filter */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nº pedido, cliente ou status..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500"
+            />
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            <span className="text-[11px] text-slate-400 whitespace-nowrap">Status:</span>
+            <button
+              onClick={() => setStatusFilter("todos")}
+              className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all whitespace-nowrap ${
+                statusFilter === "todos"
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-teal-50"
+              }`}
+            >
+              Todos
+            </button>
+            {statusOptions.slice(0, 5).map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all whitespace-nowrap ${
+                  statusFilter === s
+                    ? "bg-teal-600 text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-teal-50"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Pedidos manuais (via App) */}
+      {pedidosManuais && pedidosManuais.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-teal-200 dark:border-teal-700 shadow-sm overflow-hidden">
+          <div className="px-4 py-2.5 bg-teal-50 dark:bg-teal-900/20 border-b border-teal-100 dark:border-teal-800">
+            <div className="flex items-center gap-2">
+              <FileCheck className="w-4 h-4 text-teal-600" />
+              <span className="text-xs font-bold text-teal-700 dark:text-teal-400">Pedidos via App ({pedidosManuais.length})</span>
+            </div>
+          </div>
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            {pedidosManuais.slice(0, 10).map((pm: any) => (
+              <div key={pm.id} className="px-4 py-3 flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
+                      {pm.razaoSocial || pm.nomeFantasia || "Cliente"}
+                    </p>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                      pm.status === "aprovado" ? "bg-green-50 text-green-600" :
+                      pm.status === "pendente" ? "bg-amber-50 text-amber-600" :
+                      pm.status === "rejeitado" ? "bg-red-50 text-red-600" :
+                      "bg-blue-50 text-blue-600"
+                    }`}>
+                      {pm.status?.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {pm.createdAt ? new Date(pm.createdAt).toLocaleDateString("pt-BR") : ""}
+                    {pm.condicaoPagamento && ` · Pgto: ${pm.condicaoPagamento}`}
+                  </p>
+                </div>
+                <p className="text-xs font-bold text-green-700 dark:text-green-400 ml-3">
+                  {formatCurrencySales(Number(pm.totalProdutos || 0))}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lista de pedidos Maxiprod */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        {!pedidos || filteredPedidos.length === 0 ? (
+          <div className="p-8 text-center">
+            <ShoppingCart className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm text-slate-500">
+              {searchQuery || statusFilter !== "todos" ? `Nenhum pedido encontrado` : "Nenhum pedido registrado no Maxiprod"}
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            {filteredPedidos.map((pedido) => (
+              <div key={pedido.pedido} className="group">
+                <button
+                  onClick={() => setExpandedPedido(expandedPedido === pedido.pedido ? null : pedido.pedido)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left cursor-pointer"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-slate-400">#{pedido.pedido}</span>
+                      <p className="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+                        {pedido.cliente}
+                      </p>
+                      {pedido.uf && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 flex-shrink-0">
+                          {pedido.uf}
+                        </span>
+                      )}
+                      {pedido.estadoNota && (
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium flex-shrink-0 ${
+                          pedido.estadoNota === "Aprovado" ? "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400" :
+                          pedido.estadoNota === "Faturado" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" :
+                          pedido.estadoNota === "Digitação" ? "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
+                          "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400"
+                        }`}>
+                          {pedido.estadoNota}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-slate-400">
+                        {pedido.dataEmissao ? formatDateSales(pedido.dataEmissao) : ""}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        · {pedido.qtdItens} ite{pedido.qtdItens !== 1 ? "ns" : "m"}
+                      </span>
+                      {pedido.condicaoPagamento && (
+                        <span className="text-[10px] text-slate-400 hidden sm:inline">
+                          · Pgto: {pedido.condicaoPagamento}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right ml-3 flex-shrink-0">
+                    <p className="text-xs md:text-sm font-bold text-green-700 dark:text-green-400">
+                      {formatCurrencySales(pedido.valorTotal)}
+                    </p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${
+                    expandedPedido === pedido.pedido ? "rotate-180" : ""
+                  }`} />
+                </button>
+
+                {/* Detalhes expandidos do pedido */}
+                {expandedPedido === pedido.pedido && (
+                  <div className="px-4 pb-3 ml-4 border-l-2 border-teal-200 dark:border-teal-800">
+                    {pedido.itens && pedido.itens.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Itens do Pedido</p>
+                        {pedido.itens.map((item: { descricao: string; estadoItem: string; quantidade: number; valorUnitario: number; valorTotal: number; unidade: string }, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-700/50 rounded-lg px-3 py-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-slate-700 dark:text-slate-200 truncate text-[11px]">
+                                {item.descricao}
+                              </p>
+                              <p className="text-[10px] text-slate-400">
+                                {item.quantidade} {item.unidade || ""} × {formatCurrencySales(item.valorUnitario)}
+                              </p>
+                            </div>
+                            <div className="text-right ml-2 flex-shrink-0">
+                              <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                                {formatCurrencySales(item.valorTotal)}
+                              </p>
+                              {item.estadoItem && (
+                                <p className="text-[9px] text-slate-400">{item.estadoItem}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Info adicional */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 text-xs">
+                      {pedido.transportadora && (
+                        <div className="flex items-start gap-1.5">
+                          <Ship className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+                          <span className="text-slate-600 dark:text-slate-300 truncate">{pedido.transportadora}</span>
+                        </div>
+                      )}
+                      {pedido.dataEntrega && (
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                          <span className="text-slate-400 text-[10px]">Entrega:</span>
+                          <span className="text-slate-600 dark:text-slate-300 text-[10px]">{formatDateSales(pedido.dataEntrega)}</span>
+                        </div>
+                      )}
+                      {pedido.observacoes && (
+                        <div className="flex items-start gap-1.5 col-span-2 sm:col-span-3">
+                          <span className="text-slate-400 text-[10px] font-medium">Obs:</span>
+                          <span className="text-slate-600 dark:text-slate-300 text-[10px]">{pedido.observacoes}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

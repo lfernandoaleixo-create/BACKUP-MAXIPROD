@@ -3858,3 +3858,9 @@
 - [x] Procedure getClientesByVendedor: combina dados do banco sales_orders + GraphQL vendedorMap para mapear clientes ao vendedor
 - [x] UI com busca por nome/cidade/UF/segmento, ordenação por valor/pedidos/recente, e detalhes expandíveis por cliente
 - [x] Testes vitest para getClientesByVendedor (3 testes passando)
+- [x] Cadastrar Novo Cliente: botão na aba Cadastro de Cliente para cadastrar novos clientes localmente
+- [x] Formulário com campos do Maxiprod (razão social, nome fantasia, CNPJ/CPF, IE, endereço, telefone, email, segmento CRM, etc.)
+- [x] Tabela vendor_clients no banco para armazenar clientes cadastrados manualmente
+- [x] Integrar clientes cadastrados manualmente na listagem existente da aba Cadastro de Cliente
+- [x] Renomear aba "Vendas" para "Métrica de Vendas" no VendedorDetalhe
+- [x] Criar nova aba "Pedidos de Venda" antes de "Métrica de Vendas" no VendedorDetalhe

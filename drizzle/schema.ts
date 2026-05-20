@@ -2179,3 +2179,48 @@ export const stockReservations = mysqlTable("stock_reservations", {
 
 export type StockReservation = typeof stockReservations.$inferSelect;
 export type InsertStockReservation = typeof stockReservations.$inferInsert;
+
+
+/**
+ * Clientes cadastrados manualmente pelos vendedores/gestores
+ * Esses clientes ficam na base local e são exibidos na aba "Cadastro de Cliente"
+ * junto com os clientes vindos do Maxiprod (sales_orders)
+ */
+export const vendorClients = mysqlTable("vendor_clients", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerId: int("seller_id").notNull(), // FK seller_permissions.id (vendedor responsável)
+  sellerName: varchar("seller_name", { length: 200 }).notNull(),
+  
+  // Dados da empresa/cliente
+  cnpjCpf: varchar("cnpj_cpf", { length: 20 }).notNull(),
+  razaoSocial: varchar("razao_social", { length: 300 }).notNull(),
+  nomeFantasia: varchar("nome_fantasia", { length: 300 }),
+  inscricaoEstadual: varchar("inscricao_estadual", { length: 30 }),
+  
+  // Endereço
+  cep: varchar("cep", { length: 10 }),
+  logradouro: varchar("logradouro", { length: 300 }),
+  numero: varchar("numero", { length: 20 }),
+  complemento: varchar("complemento", { length: 200 }),
+  bairro: varchar("bairro", { length: 200 }),
+  cidade: varchar("cidade", { length: 200 }),
+  uf: varchar("uf", { length: 2 }),
+  
+  // Contato
+  telefone1: varchar("telefone1", { length: 30 }),
+  telefone2: varchar("telefone2", { length: 30 }),
+  email: varchar("email", { length: 300 }),
+  nomeContato: varchar("nome_contato", { length: 200 }), // pessoa de contato
+  
+  // Classificação
+  segmento: varchar("segmento", { length: 100 }), // DISTRIBUIDORA, INDÚSTRIA, LOJA, etc.
+  
+  // Observações
+  observacoes: text("observacoes"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type VendorClient = typeof vendorClients.$inferSelect;
+export type InsertVendorClient = typeof vendorClients.$inferInsert;

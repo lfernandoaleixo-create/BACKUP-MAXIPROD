@@ -898,4 +898,99 @@ export const salesMetricsRouter = router({
         }))
         .sort((a, b) => b.totalVendas - a.totalVendas);
     }),
+
+  /**
+   * getPedidosByVendedor - Retorna pedidos de venda agrupados por número de pedido
+   * para um vendedor específico
+   */
+  getPedidosByVendedor: publicProcedure
+    .input(z.object({ vendedor: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const vendedorName = input.vendedor.toUpperCase();
+
+      // Buscar todos os itens de pedido do vendedor
+      const allItems = await db.select({
+        pedido: salesOrders.pedido,
+        cliente: salesOrders.cliente,
+        uf: salesOrders.uf,
+        dataEmissao: salesOrders.dataEmissao,
+        dataEntrega: salesOrders.dataEntrega,
+        descricao: salesOrders.descricao,
+        descricaoItem: salesOrders.descricaoItem,
+        estadoItem: salesOrders.estadoItem,
+        estadoNota: salesOrders.estadoNota,
+        quantidade: salesOrders.quantidade,
+        valorUnitario: salesOrders.valorUnitario,
+        valorTotal: salesOrders.valorTotal,
+        valorTotalPedido: salesOrders.valorTotalPedido,
+        condicaoPagamento: salesOrders.condicaoPagamento,
+        transportadora: salesOrders.transportadora,
+        representante: salesOrders.representante,
+        observacoes: salesOrders.observacoes,
+        unidadeMedidaCodigo: salesOrders.unidadeMedidaCodigo,
+      }).from(salesOrders)
+        .where(
+          sql`UPPER(${salesOrders.representante}) LIKE ${`%${vendedorName}%`}`
+        )
+        .orderBy(desc(salesOrders.dataEmissao));
+
+      // Agrupar por pedido
+      const pedidoMap = new Map<string, {
+        pedido: string;
+        cliente: string;
+        uf: string;
+        dataEmissao: string;
+        dataEntrega: string;
+        estadoNota: string;
+        condicaoPagamento: string;
+        transportadora: string;
+        observacoes: string;
+        valorTotal: number;
+        qtdItens: number;
+        itens: Array<{
+          descricao: string;
+          estadoItem: string;
+          quantidade: number;
+          valorUnitario: number;
+          valorTotal: number;
+          unidade: string;
+        }>;
+      }>();
+
+      for (const item of allItems) {
+        const pedidoNum = item.pedido || `unknown-${Math.random()}`;
+        if (!pedidoMap.has(pedidoNum)) {
+          pedidoMap.set(pedidoNum, {
+            pedido: pedidoNum,
+            cliente: item.cliente || "Cliente desconhecido",
+            uf: item.uf || "",
+            dataEmissao: item.dataEmissao || "",
+            dataEntrega: item.dataEntrega || "",
+            estadoNota: item.estadoNota || "",
+            condicaoPagamento: item.condicaoPagamento || "",
+            transportadora: item.transportadora || "",
+            observacoes: item.observacoes || "",
+            valorTotal: Number(item.valorTotalPedido || 0),
+            qtdItens: 0,
+            itens: [],
+          });
+        }
+        const p = pedidoMap.get(pedidoNum)!;
+        p.qtdItens++;
+        p.itens.push({
+          descricao: item.descricaoItem || item.descricao || "Item",
+          estadoItem: item.estadoItem || "",
+          quantidade: Number(item.quantidade || 0),
+          valorUnitario: Number(item.valorUnitario || 0),
+          valorTotal: Number(item.valorTotal || 0),
+          unidade: item.unidadeMedidaCodigo || "",
+        });
+      }
+
+      return Array.from(pedidoMap.values())
+        .sort((a, b) => (b.dataEmissao || "").localeCompare(a.dataEmissao || ""));
+    }),
 });

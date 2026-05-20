@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `vendor_clients` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`seller_id` int NOT NULL,\n\t`seller_name` varchar(200) NOT NULL,\n\t`cnpj_cpf` varchar(20) NOT NULL,\n\t`razao_social` varchar(300) NOT NULL,\n\t`nome_fantasia` varchar(300),\n\t`inscricao_estadual` varchar(30),\n\t`cep` varchar(10),\n\t`logradouro` varchar(300),\n\t`numero` varchar(20),\n\t`complemento` varchar(200),\n\t`bairro` varchar(200),\n\t`cidade` varchar(200),\n\t`uf` varchar(2),\n\t`telefone1` varchar(30),\n\t`telefone2` varchar(30),\n\t`email` varchar(300),\n\t`nome_contato` varchar(200),\n\t`segmento` varchar(100),\n\t`observacoes` text,\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\t`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `vendor_clients_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `vendor_clients` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`seller_id` int NOT NULL,\n\t`seller_name` varchar(200) NOT NULL,\n\t`cnpj_cpf` varchar(20) NOT NULL,\n\t`razao_social` varchar(300) NOT NULL,\n\t`nome_fantasia` varchar(300),\n\t`inscricao_estadual` varchar(30),\n\t`cep` varchar(10),\n\t`logradouro` varchar(300),\n\t`numero` varchar(20),\n\t`complemento` varchar(200),\n\t`bairro` varchar(200),\n\t`cidade` varchar(200),\n\t`uf` varchar(2),\n\t`telefone1` varchar(30),\n\t`telefone2` varchar(30),\n\t`email` varchar(300),\n\t`nome_contato` varchar(200),\n\t`segmento` varchar(100),\n\t`observacoes` text,\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\t`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `vendor_clients_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 387
+}
