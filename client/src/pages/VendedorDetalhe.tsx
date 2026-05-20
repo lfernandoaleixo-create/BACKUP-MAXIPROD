@@ -3088,17 +3088,17 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                 const poQtd = Math.floor(Number(po.quantidade) || 0);
                                 const poDate = po.dataEntrega ? new Date(po.dataEntrega).toLocaleDateString('pt-BR') : 'Sem data';
                                 return (
-                                  <div key={idx} className="flex items-center justify-between py-1 text-[10px] gap-2">
-                                    <span className="text-slate-600 dark:text-slate-300">{po.referencia || 'PO'} — <strong>{poQtd.toLocaleString('pt-BR')} {unidadeVenda}</strong></span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-blue-600 font-medium">Previsão: {poDate}</span>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setReservePO({ codigoItem: p.codigoItem, descricaoItem: p.descricaoItem, referencia: po.referencia || 'PO', dataEntrega: poDate, quantidade: poQtd }); }}
-                                        className="px-2 py-0.5 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded text-[9px] font-medium hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer flex items-center gap-0.5"
-                                      >
-                                        <Bookmark className="w-2.5 h-2.5" /> Reservar
-                                      </button>
+                                  <div key={idx} className="py-2 border-b border-dashed border-slate-200 dark:border-slate-600 last:border-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="text-[11px] text-slate-600 dark:text-slate-300">{po.referencia || 'PO'} — <strong className="text-slate-800 dark:text-slate-100">{poQtd.toLocaleString('pt-BR')} {unidadeVenda}</strong></span>
+                                      <span className="text-[10px] text-blue-600 font-medium">Previsão: {poDate}</span>
                                     </div>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setReservePO({ codigoItem: p.codigoItem, descricaoItem: p.descricaoItem, referencia: po.referencia || 'PO', dataEntrega: poDate, quantidade: poQtd }); }}
+                                      className="mt-1.5 w-full px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white rounded-md text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                                    >
+                                      <Bookmark className="w-3 h-3" /> Reservar Caixas desta PO
+                                    </button>
                                   </div>
                                 );
                               })}
