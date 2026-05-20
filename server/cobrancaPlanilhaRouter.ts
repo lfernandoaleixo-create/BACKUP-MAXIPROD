@@ -36,6 +36,7 @@ const STATUS_MAP: Record<string, string> = {
   em_negociacao: "Em negociação",
   promessa: "Promessa de Pgto",
   especial_sem_cobranca: "Especial s/ cobrança",
+  protesto_em_analise: "Protesto em Análise",
   protestado: "Protestado",
   cheque_compensacao: "Cheque em compensação",
   nao_retornou: "Não deu retorno",

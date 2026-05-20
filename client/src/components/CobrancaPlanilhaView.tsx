@@ -62,6 +62,13 @@ const PLANILHA_STATUS_CONFIG: Record<string, { label: string; bg: string; text: 
     border: "border-pink-300",
     icon: <Phone className="w-3 h-3" />,
   },
+  "Protesto em Análise": {
+    label: "Protesto em Análise",
+    bg: "bg-yellow-50",
+    text: "text-yellow-700",
+    border: "border-yellow-300",
+    icon: <Clock className="w-3 h-3" />,
+  },
   "Protestado": {
     label: "Protestado",
     bg: "bg-orange-50",
