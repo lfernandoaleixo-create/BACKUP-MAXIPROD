@@ -2545,18 +2545,17 @@ export default function ReceivablesTab() {
                               <StateIcon className="w-4 h-4" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 ${
-                                  isActive ? c.activeNum : c.num
-                                }`}>{state.num}</span>
-                                <span className={`text-xs font-bold leading-tight truncate ${
-                                  isActive ? c.activeText : c.text
-                                }`}>{state.label}</span>
-                              </div>
+                              <span className={`text-xs font-bold leading-tight truncate block ${
+                                isActive ? c.activeText : c.text
+                              }`}>{state.label}</span>
                               <p className="text-[10px] text-slate-500 leading-snug mt-0.5 line-clamp-2">{state.desc}</p>
-                              {chequesQuery.data?.totaisPorEstado?.[state.id] && (
-                                <p className={`text-[10px] font-bold mt-0.5 ${isActive ? c.activeText : "text-slate-600"}`}>
+                              {chequesQuery.data?.totaisPorEstado?.[state.id] ? (
+                                <p className={`text-sm font-extrabold mt-1.5 ${isActive ? c.activeText : "text-slate-800"}`}>
                                   {chequesQuery.data.totaisPorEstado[state.id].count} cheques — R$ {chequesQuery.data.totaisPorEstado[state.id].valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                </p>
+                              ) : (
+                                <p className={`text-sm font-extrabold mt-1.5 ${isActive ? c.activeText : "text-slate-400"}`}>
+                                  0 cheques — R$ 0,00
                                 </p>
                               )}
                             </div>
