@@ -102,16 +102,46 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
   );
 
   // Filter ranking to only show sellers from this gestão comercial
-  const sellerNamesUpper = useMemo(() => new Set(sellerNames.map(n => n.toUpperCase())), [sellerNames]);
+  // Use fuzzy matching: seller_permissions has short names (e.g. "DANIEL TAVARES")
+  // but ranking may have full names (e.g. "DANIEL DA CONCEIÇÃO TAVARES")
+  const sellerNamesUpper = useMemo(() => sellerNames.map(n => n.toUpperCase()), [sellerNames]);
+
+  // Check if a ranking vendedor name matches any of our seller names (partial match)
+  const matchesSeller = (rankingName: string): string | null => {
+    const upper = rankingName.toUpperCase();
+    // First try exact match
+    for (const sn of sellerNamesUpper) {
+      if (upper === sn) return sn;
+    }
+    // Then try: all words of the short name appear in the full name
+    for (const sn of sellerNamesUpper) {
+      const shortWords = sn.split(/\s+/);
+      if (shortWords.length >= 2 && shortWords.every(w => upper.includes(w))) {
+        return sn;
+      }
+    }
+    // Try: first and last word of short name match first and last word of full name
+    for (const sn of sellerNamesUpper) {
+      const shortWords = sn.split(/\s+/);
+      const fullWords = upper.split(/\s+/);
+      if (shortWords.length >= 2 && fullWords.length >= 2) {
+        if (shortWords[0] === fullWords[0] && shortWords[shortWords.length - 1] === fullWords[fullWords.length - 1]) {
+          return sn;
+        }
+      }
+    }
+    return null;
+  };
 
   const filteredRanking = useMemo(() => {
     if (!ranking) return [];
-    return ranking.filter(r => sellerNamesUpper.has(r.vendedor.toUpperCase()));
+    return ranking.filter(r => matchesSeller(r.vendedor) !== null);
   }, [ranking, sellerNamesUpper]);
 
   // Also show sellers with 0 sales (not in ranking)
   const allSellersWithMetrics = useMemo(() => {
-    const rankingMap = new Map(filteredRanking.map(r => [r.vendedor.toUpperCase(), r]));
+    // Track which seller_permissions names have been matched
+    const matchedSellerNames = new Set<string>();
     const result: Array<{
       vendedor: string;
       totalVendas: number;
@@ -123,11 +153,13 @@ export default function GestaoMetricasVendedores({ sellerNames }: Props) {
     // Add sellers from ranking first (sorted by totalVendas desc)
     for (const r of filteredRanking) {
       result.push(r);
+      const matched = matchesSeller(r.vendedor);
+      if (matched) matchedSellerNames.add(matched);
     }
 
     // Add sellers not in ranking with 0 values
     for (const name of sellerNames) {
-      if (!rankingMap.has(name.toUpperCase())) {
+      if (!matchedSellerNames.has(name.toUpperCase())) {
         result.push({
           vendedor: name,
           totalVendas: 0,
