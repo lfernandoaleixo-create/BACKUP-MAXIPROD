@@ -1,0 +1,16 @@
+{
+  "query": "SELECT * FROM app_settings WHERE setting_key LIKE '%radesc%' OR setting_key LIKE '%limite%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT * FROM app_settings WHERE setting_key LIKE '%radesc%' OR setting_key LIKE '%limite%'",
+  "rows": [
+    {
+      "id": "60001",
+      "setting_key": "sicoob_limite_troca",
+      "setting_value": "{\"updatedAt\": \"2026-05-20T14:33:17.916Z\", \"updatedBy\": \"Flavio\", \"valor\": 57630.29}",
+      "updatedAt": "2026-05-20 14:33:17"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsetting_key\tsetting_value\tupdatedAt\n60001\tsicoob_limite_troca\t{\"updatedAt\": \"2026-05-20T14:33:17.916Z\", \"updatedBy\": \"Flavio\", \"valor\": 57630.29}\t2026-05-20 14:33:17\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

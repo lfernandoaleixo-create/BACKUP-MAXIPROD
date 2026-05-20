@@ -1,0 +1,101 @@
+{
+  "query": "SELECT empresaNome, formaCobranca, bancoNome, contaNumero, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' AND empresaNome IN ('PALITOS INDUSTRIA', 'VARETAS INDUSTRIA') AND formaCobranca IS NOT NULL AND formaCobranca != '' GROUP BY empresaNome, formaCobranca, bancoNome, contaNumero ORDER BY empresaNome, cnt DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT empresaNome, formaCobranca, bancoNome, contaNumero, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' AND empresaNome IN ('PALITOS INDUSTRIA', 'VARETAS INDUSTRIA') AND formaCobranca IS NOT NULL AND formaCobranca != '' GROUP BY empresaNome, formaCobranca, bancoNome, contaNumero ORDER BY empresaNome, cnt DESC",
+  "rows": [
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "contaNumero": "80247",
+      "cnt": "179"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "contaNumero": "52061",
+      "cnt": "55"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 50051 carteira 1",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "contaNumero": "50051",
+      "cnt": "33"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "contaNumero": "90244",
+      "cnt": "32"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "bancoNome": "CHEQUE DISPONIVEL",
+      "contaNumero": "NULL",
+      "cnt": "31"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "PIX Sicredi conta 50051 chave 36562762000129",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "contaNumero": "50051",
+      "cnt": "21"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 52061 carteira 1",
+      "bancoNome": "Banco Cooperativo Sicredi S.A.",
+      "contaNumero": "52061",
+      "cnt": "14"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "contaNumero": "80246",
+      "cnt": "6"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "bancoNome": "CHEQUE EM FACTORING",
+      "contaNumero": "NULL",
+      "cnt": "6"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Depósito S.A. - BANCOOB ag 3140 conta 80247",
+      "bancoNome": "Banco Cooperativo do Brasil S.A. - BANCOOB",
+      "contaNumero": "80247",
+      "cnt": "2"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Cheque CHEQUE LINHA 11",
+      "bancoNome": "CHEQUE LINHA 11",
+      "contaNumero": "NULL",
+      "cnt": "1"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Cheque CHEQUE VOLTOU OUTROS MOTIVOS",
+      "bancoNome": "CHEQUE VOLTOU OUTROS MOTIVOS",
+      "contaNumero": "NULL",
+      "cnt": "1"
+    },
+    {
+      "empresaNome": "PALITOS INDUSTRIA",
+      "formaCobranca": "Cheque CHEQUE EM COMPENSACAO",
+      "bancoNome": "CHEQUE EM COMPENSACAO",
+      "contaNumero": "NULL",
+      "cnt": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresaNome\tformaCobranca\tbancoNome\tcontaNumero\tcnt\nPALITOS INDUSTRIA\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tBanco Cooperativo do Brasil S.A. - BANCOOB\t80247\t179\nPALITOS INDUSTRIA\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\tBanco Cooperativo Sicredi S.A.\t52061\t55\nPALITOS INDUSTRIA\tBoleto Sicredi ag 0155 conta 50051 carteira 1\tBanco Cooperativo Sicredi S.A.\t50051\t33\nPALITOS INDUSTRIA\tBoleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1\tBanco Cooperativo do Brasil S.A. - BANCOOB\t90244\t32\nPALITOS INDUSTRIA\tCheque CHEQUE DISPONIVEL\tCHEQUE DISPONIVEL\tNULL\t31\nPALITOS INDUSTRIA\tPIX Sicredi conta 50051 chave 36562762000129\tBanco Cooperativo Sicredi S.A.\t50051\t21\nPALITOS INDUSTRIA\tBoleto Sicredi ag 0155 conta 52061 carteira 1\tBanco Cooperativo Sicredi S.A.\t52061\t14\nPALITOS INDUSTRIA\tBoleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1\tBanco Cooperativo do Brasil S.A. - BANCOOB\t80246\t6\nPALITOS INDUSTRIA\tCheque CHEQUE EM FACTORING\tCHEQUE EM FACTORING\tNULL\t6\nPALITOS INDUSTRIA\tDepósito S.A. - BANCOOB ag 3140 conta 80247\tBanco Cooperativo do Brasil S.A. - BANCOOB\t80247\t2\nPALITOS INDUSTRIA\tCheque CHEQUE LINHA 11\tCHEQUE LINHA 11\tNULL\t1\nPALITOS INDUSTRIA\tCheque CHEQUE VOLTOU OUTROS MOTIVOS\tCHEQUE VOLTOU OUTROS MOTIVOS\tNULL\t1\nPALITOS INDUSTRIA\tCheque CHEQUE EM COMPENSACAO\tCHEQUE EM COMPENSACAO\tNULL\t1\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

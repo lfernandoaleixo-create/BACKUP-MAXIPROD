@@ -1,0 +1,30 @@
+{
+  "query": "SELECT empresaId, empresaNome, COUNT(*) as cnt FROM accounts_receivable GROUP BY empresaId, empresaNome ORDER BY cnt DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT empresaId, empresaNome, COUNT(*) as cnt FROM accounts_receivable GROUP BY empresaId, empresaNome ORDER BY cnt DESC",
+  "rows": [
+    {
+      "empresaId": "409300001619248",
+      "empresaNome": "PALITOS INDUSTRIA",
+      "cnt": "593"
+    },
+    {
+      "empresaId": "NULL",
+      "empresaNome": "Teste Empresa",
+      "cnt": "6"
+    },
+    {
+      "empresaId": "NULL",
+      "empresaNome": "NULL",
+      "cnt": "3"
+    },
+    {
+      "empresaId": "409300001630645",
+      "empresaNome": "ESPETOS INDUSTRIA",
+      "cnt": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresaId\tempresaNome\tcnt\n409300001619248\tPALITOS INDUSTRIA\t593\nNULL\tTeste Empresa\t6\nNULL\tNULL\t3\n409300001630645\tESPETOS INDUSTRIA\t2\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

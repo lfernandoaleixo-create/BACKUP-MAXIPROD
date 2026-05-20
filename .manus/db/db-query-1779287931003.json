@@ -1,0 +1,17 @@
+{
+  "query": "SELECT empresaNome, bancoNome, contaNumero, COUNT(*) as cnt, SUM(valorLiquido) as total FROM accounts_receivable WHERE estado = 'EMITIDO' AND bancoNome LIKE '%Bradesco%' GROUP BY empresaNome, bancoNome, contaNumero",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT empresaNome, bancoNome, contaNumero, COUNT(*) as cnt, SUM(valorLiquido) as total FROM accounts_receivable WHERE estado = 'EMITIDO' AND bancoNome LIKE '%Bradesco%' GROUP BY empresaNome, bancoNome, contaNumero",
+  "rows": [
+    {
+      "empresaNome": "ESPETOS INDUSTRIA",
+      "bancoNome": "Banco Bradesco S.A.",
+      "contaNumero": "19287",
+      "cnt": "2",
+      "total": "26550.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresaNome\tbancoNome\tcontaNumero\tcnt\ttotal\nESPETOS INDUSTRIA\tBanco Bradesco S.A.\t19287\t2\t26550.00\n",
+  "stderr": "",
+  "execution_time_ms": 284
+}

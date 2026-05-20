@@ -1774,7 +1774,10 @@ function BradescoLimiteContaGarantidaCard({ empresa }: { empresa: string }) {
 
   const c = RED_SCHEME;
 
+  const cardKey = `bradesco_conta_garantida_${empresaKey}`;
+
   return (
+    <div>
     <div className={`relative overflow-hidden rounded-lg border ${c.border} ${c.bg} px-3 py-2.5 shadow-sm`}>
       <div className={`absolute top-0 right-0 w-24 h-24 ${c.decoA} rounded-full blur-3xl -translate-y-1/2 translate-x-1/2`} />
       <div className={`absolute bottom-0 left-0 w-16 h-16 ${c.decoB} rounded-full blur-3xl translate-y-1/2 -translate-x-1/2`} />
@@ -1854,6 +1857,8 @@ function BradescoLimiteContaGarantidaCard({ empresa }: { empresa: string }) {
           </div>
         )}
       </div>
+    </div>
+    <CardChat cardKey={cardKey} colorScheme={c} />
     </div>
   );
 }
