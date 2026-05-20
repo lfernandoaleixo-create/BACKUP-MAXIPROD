@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
 
 /**
@@ -18,15 +18,17 @@ export const salesOrderRouter = router({
 
   // ===== CLIENT SEARCH (AUTOCOMPLETE) =====
 
-  /** Search clients from existing sales_orders for autocomplete */
+  /** Search clients from existing sales_orders + sales_order_requests for autocomplete */
   searchClients: publicProcedure
     .input(z.object({ query: z.string().min(1) }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
       
-      // Search in previous sales_order_requests for client data
-      const fromOrders = await db.select({
+      const q = input.query.trim();
+
+      // 1. Search in previous sales_order_requests (manual orders from app)
+      const fromManualOrders = await db.select({
         cnpjCpf: salesOrderRequests.cnpjCpf,
         razaoSocial: salesOrderRequests.razaoSocial,
         nomeFantasia: salesOrderRequests.nomeFantasia,
@@ -50,24 +52,117 @@ export const salesOrderRouter = router({
       .from(salesOrderRequests)
       .where(
         or(
-          like(salesOrderRequests.razaoSocial, `%${input.query}%`),
-          like(salesOrderRequests.nomeFantasia, `%${input.query}%`),
-          like(salesOrderRequests.cnpjCpf, `%${input.query}%`)
+          like(salesOrderRequests.razaoSocial, `%${q}%`),
+          like(salesOrderRequests.nomeFantasia, `%${q}%`),
+          like(salesOrderRequests.cnpjCpf, `%${q}%`)
         )
       )
       .orderBy(desc(salesOrderRequests.createdAt))
       .limit(20);
 
-      // Deduplicate by CNPJ (keep most recent)
-      const seen = new Set<string>();
-      const unique: typeof fromOrders = [];
-      for (const row of fromOrders) {
-        if (!seen.has(row.cnpjCpf)) {
-          seen.add(row.cnpjCpf);
-          unique.push(row);
-        }
+      // 2. Search in Maxiprod sales_orders (historical clients)
+      const fromMaxiprod = await db.select({
+        cliente: salesOrders.cliente,
+        clienteApelido: salesOrders.clienteApelido,
+        razaoSocial: salesOrders.razaoSocial,
+        inscricaoEstadual: salesOrders.inscricaoEstadual,
+        uf: salesOrders.uf,
+        enderecoCep: salesOrders.enderecoCep,
+        enderecoLogradouro: salesOrders.enderecoLogradouro,
+        enderecoNumero: salesOrders.enderecoNumero,
+        enderecoComplemento: salesOrders.enderecoComplemento,
+        enderecoBairro: salesOrders.enderecoBairro,
+        enderecoCidade: salesOrders.enderecoCidade,
+        clienteTelefone: salesOrders.clienteTelefone,
+        clienteEmail: salesOrders.clienteEmail,
+        crmSegmento: salesOrders.crmSegmento,
+      })
+      .from(salesOrders)
+      .where(
+        or(
+          like(salesOrders.cliente, `%${q}%`),
+          like(salesOrders.clienteApelido, `%${q}%`),
+          like(salesOrders.razaoSocial, `%${q}%`)
+        )
+      )
+      .orderBy(desc(salesOrders.dataEmissao))
+      .limit(50);
+
+      // Deduplicate Maxiprod clients by razaoSocial/cliente
+      const maxiprodSeen = new Set<string>();
+      const maxiprodUnique: Array<{
+        cnpjCpf: string;
+        razaoSocial: string;
+        nomeFantasia: string;
+        inscricaoEstadual: string;
+        tipoContribuinte: string;
+        regimeTributario: string;
+        emailNfe: string;
+        cnaeFiscal: string;
+        cep: string;
+        endereco: string;
+        numero: string;
+        complemento: string;
+        bairro: string;
+        municipio: string;
+        uf: string;
+        telefone1: string;
+        telefone2: string;
+        emailContato: string;
+        segmento: string;
+      }> = [];
+
+      for (const row of fromMaxiprod) {
+        const key = (row.razaoSocial || row.cliente || "").toUpperCase().trim();
+        if (!key || maxiprodSeen.has(key)) continue;
+        maxiprodSeen.add(key);
+        maxiprodUnique.push({
+          cnpjCpf: "",
+          razaoSocial: row.razaoSocial || row.cliente || "",
+          nomeFantasia: row.clienteApelido || row.cliente || "",
+          inscricaoEstadual: row.inscricaoEstadual || "",
+          tipoContribuinte: "Contribuinte",
+          regimeTributario: "Normal",
+          emailNfe: "",
+          cnaeFiscal: "",
+          cep: row.enderecoCep || "",
+          endereco: row.enderecoLogradouro || "",
+          numero: row.enderecoNumero || "",
+          complemento: row.enderecoComplemento || "",
+          bairro: row.enderecoBairro || "",
+          municipio: row.enderecoCidade || "",
+          uf: row.uf || "",
+          telefone1: row.clienteTelefone || "",
+          telefone2: "",
+          emailContato: row.clienteEmail || "",
+          segmento: row.crmSegmento || "",
+        });
       }
-      return unique.slice(0, 10);
+
+      // 3. Merge: manual orders first (more complete data), then Maxiprod
+      const seen = new Set<string>();
+      const results: typeof fromManualOrders = [];
+
+      // Add manual order clients first (they have CNPJ and full data)
+      for (const row of fromManualOrders) {
+        const key = row.cnpjCpf ? row.cnpjCpf : (row.razaoSocial || "").toUpperCase().trim();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        // Also mark razaoSocial to avoid duplicates from Maxiprod
+        if (row.razaoSocial) seen.add(row.razaoSocial.toUpperCase().trim());
+        results.push(row);
+      }
+
+      // Add Maxiprod clients that aren't already in the list
+      for (const row of maxiprodUnique) {
+        const keyRazao = row.razaoSocial.toUpperCase().trim();
+        const keyCnpj = row.cnpjCpf;
+        if (seen.has(keyRazao) || (keyCnpj && seen.has(keyCnpj))) continue;
+        seen.add(keyRazao);
+        results.push(row as any);
+      }
+
+      return results.slice(0, 15);
     }),
 
   // ===== PRODUCT LIST WITH MIN PRICES =====
