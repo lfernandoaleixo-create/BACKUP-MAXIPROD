@@ -2,9 +2,13 @@
  * VendedorDetalhe - Página de detalhe de um vendedor específico
  * Abas: Estoque, Cadastro de Cliente, Vendas, Configurações
  * Acessível via /gestao-comercial/vendedor/:sellerId
+ * 
+ * - Aba Estoque: mostra APENAS os produtos que o gestor ticou, com dados reais
+ *   (disponível p/ venda, POs projetadas, reservas)
+ * - Aba Configurações: ticagem de produtos visíveis, autorização, senha, catálogos
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import TopNav from "@/components/TopNav";
 import { trpc } from "@/lib/trpc";
@@ -28,15 +32,43 @@ import {
   Shield,
   RefreshCw,
   Construction,
+  Ship,
+  ShoppingCart,
+  Calendar,
+  Bookmark,
 } from "lucide-react";
 
 type TabType = "estoque" | "clientes" | "vendas" | "configuracoes";
 
-interface StockItem {
+interface DashboardItem {
   codigoItem: string;
   descricaoItem: string;
   grupo: string;
   subgrupo: string;
+  unidadeMedida: string;
+  estoqueUn: number;
+  estoqueCx: number | null;
+  unidadesPorCaixa: number | null;
+  pedidosUn: number;
+  pedidosCx: number | null;
+  disponivelUn: number;
+  disponivelCx: number | null;
+  poCx: number | null;
+  poUn: number;
+  poEntregas: string[];
+  poFornecedores: string[];
+  poLotes: {
+    numeroPedido: string;
+    referenciaPO: string;
+    tipoPO: string;
+    quantidade: number;
+    quantidadeUn: number;
+    dataEntrega: string;
+    fornecedor: string;
+  }[];
+  projetadoUn: number;
+  projetadoCx: number | null;
+  isKgProduct: boolean;
 }
 
 export default function VendedorDetalhe() {
@@ -161,7 +193,7 @@ export default function VendedorDetalhe() {
 
         {/* Conteúdo das abas */}
         {activeTab === "estoque" && (
-          <SellerProductsPanel sellerId={sellerId} sellerName={seller.sellerName} />
+          <SellerStockView sellerId={sellerId} sellerName={seller.sellerName} />
         )}
 
         {activeTab === "clientes" && (
@@ -198,7 +230,400 @@ function PlaceholderTab({ title, description }: { title: string; description: st
 }
 
 /**
- * Aba Configurações: autorização, senha, PDFs/catálogos
+ * ============================================================
+ * ABA ESTOQUE - Mostra produtos ticados com dados reais
+ * Disponível p/ Venda + POs projetadas
+ * ============================================================
+ */
+function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
+  const [reservationItem, setReservationItem] = useState<DashboardItem | null>(null);
+  const [reservationPO, setReservationPO] = useState<{ referencia: string; dataEntrega: string; quantidade: number } | null>(null);
+
+  // Produtos ticados para este vendedor
+  const productsQuery = trpc.sales.getSellerProducts.useQuery({ sellerId });
+  // Dados completos do dashboard (estoque, pedidos, POs)
+  const stockQuery = trpc.dashboard.getData.useQuery(undefined, {
+    staleTime: 2 * 60 * 1000,
+  });
+  // Resumo de reservas ativas
+  const productCodes = useMemo(() => {
+    if (!productsQuery.data) return [];
+    return productsQuery.data.map((p: { productCode: string }) => p.productCode);
+  }, [productsQuery.data]);
+  const reservationSummary = trpc.sales.getReservationSummary.useQuery(
+    { productCodes },
+    { enabled: productCodes.length > 0, staleTime: 30 * 1000 }
+  );
+  const reservationsQuery = trpc.sales.listReservations.useQuery(
+    { sellerId },
+    { staleTime: 30 * 1000 }
+  );
+
+  const visibleProducts = useMemo(() => {
+    if (!productsQuery.data || !stockQuery.data?.items) return [];
+    const visibleCodes = new Set(productsQuery.data.map((p: { productCode: string }) => p.productCode));
+    return (stockQuery.data.items as DashboardItem[]).filter(item => visibleCodes.has(item.codigoItem));
+  }, [productsQuery.data, stockQuery.data]);
+
+  const madeiraProducts = useMemo(() =>
+    visibleProducts.filter(item => item.grupo === "industrializacao" && item.subgrupo === "madeira"),
+    [visibleProducts]
+  );
+
+  const bambuProducts = useMemo(() =>
+    visibleProducts.filter(item => item.grupo === "importacao_revenda" && item.subgrupo === "bambu"),
+    [visibleProducts]
+  );
+
+  if (productsQuery.isLoading || stockQuery.isLoading) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+        <div className="flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4 text-teal-500 animate-spin" />
+          <span className="text-sm text-slate-500">Carregando estoque...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (visibleProducts.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+        <div className="text-center">
+          <Package className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-500">Nenhum produto configurado</p>
+          <p className="text-xs text-slate-400 mt-1">
+            Vá na aba "Configurações" para selecionar os produtos visíveis para {sellerName}.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Resumo */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Package className="w-4 h-4 text-teal-600" />
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            Estoque de {sellerName}
+          </h3>
+          <span className="text-[10px] text-slate-400 ml-1">
+            {visibleProducts.length} produtos
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+              {visibleProducts.reduce((sum, p) => sum + (p.disponivelCx ?? 0), 0).toLocaleString("pt-BR")}
+            </p>
+            <p className="text-[10px] text-emerald-600 dark:text-emerald-500 font-medium">Disponível (cx)</p>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
+              {visibleProducts.reduce((sum, p) => sum + (p.poCx ?? 0), 0).toLocaleString("pt-BR")}
+            </p>
+            <p className="text-[10px] text-blue-600 dark:text-blue-500 font-medium">Chegando (POs)</p>
+          </div>
+          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-purple-700 dark:text-purple-400">
+              {visibleProducts.reduce((sum, p) => sum + (p.projetadoCx ?? 0), 0).toLocaleString("pt-BR")}
+            </p>
+            <p className="text-[10px] text-purple-600 dark:text-purple-500 font-medium">Projetado (cx)</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Madeira */}
+      {madeiraProducts.length > 0 && (
+        <StockCategorySection
+          title="Madeira"
+          items={madeiraProducts}
+          color="amber"
+          sellerName={sellerName}
+          sellerId={sellerId}
+          onReserve={(item, po) => { setReservationItem(item); setReservationPO(po || null); }}
+          reservationSummary={reservationSummary.data || {}}
+        />
+      )}
+
+      {/* Bambu */}
+      {bambuProducts.length > 0 && (
+        <StockCategorySection
+          title="Bambu"
+          items={bambuProducts}
+          color="green"
+          sellerName={sellerName}
+          sellerId={sellerId}
+          onReserve={(item, po) => { setReservationItem(item); setReservationPO(po || null); }}
+          reservationSummary={reservationSummary.data || {}}
+        />
+      )}
+
+      {/* Reservas ativas */}
+      {reservationsQuery.data && reservationsQuery.data.length > 0 && (
+        <ReservationsPanel reservations={reservationsQuery.data} onCancelSuccess={() => {
+          reservationsQuery.refetch();
+          reservationSummary.refetch();
+        }} />
+      )}
+
+      {/* Modal de Reserva */}
+      {reservationItem && (
+        <ReservationModal
+          item={reservationItem}
+          po={reservationPO}
+          sellerId={sellerId}
+          sellerName={sellerName}
+          onClose={() => { setReservationItem(null); setReservationPO(null); }}
+          onSuccess={() => {
+            setReservationItem(null);
+            setReservationPO(null);
+            reservationsQuery.refetch();
+            reservationSummary.refetch();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Seção de categoria de estoque com tabela de produtos
+ */
+function StockCategorySection({
+  title,
+  items,
+  color,
+  sellerName,
+  sellerId,
+  onReserve,
+  reservationSummary,
+}: {
+  title: string;
+  items: DashboardItem[];
+  color: "amber" | "green";
+  sellerName: string;
+  sellerId: number;
+  onReserve: (item: DashboardItem, po?: { referencia: string; dataEntrega: string; quantidade: number }) => void;
+  reservationSummary: Record<string, number>;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const [expandedPO, setExpandedPO] = useState<string | null>(null);
+
+  const colorClasses = {
+    amber: {
+      bg: "bg-amber-50 dark:bg-amber-900/20",
+      border: "border-amber-200 dark:border-amber-800",
+      badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+      icon: "text-amber-600 dark:text-amber-400",
+    },
+    green: {
+      bg: "bg-green-50 dark:bg-green-900/20",
+      border: "border-green-200 dark:border-green-800",
+      badge: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+      icon: "text-green-600 dark:text-green-400",
+    },
+  };
+
+  const colors = colorClasses[color];
+
+  return (
+    <div className={`bg-white dark:bg-slate-800 rounded-xl border ${colors.border} shadow-sm overflow-hidden`}>
+      {/* Header da categoria */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className={`w-full flex items-center justify-between px-4 py-3 ${colors.bg} hover:opacity-90 transition-opacity cursor-pointer`}
+      >
+        <div className="flex items-center gap-2">
+          <div className={colors.icon}>
+            {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </div>
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{title}</span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors.badge}`}>
+            {items.length} produtos
+          </span>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+          {/* Header da tabela - mobile-friendly */}
+          <div className="hidden md:grid md:grid-cols-12 gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-700/30 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+            <div className="col-span-5">Produto</div>
+            <div className="col-span-2 text-center">Disponível</div>
+            <div className="col-span-2 text-center">PO (chegando)</div>
+            <div className="col-span-2 text-center">Projetado</div>
+            <div className="col-span-1 text-center">Ação</div>
+          </div>
+
+          {items.map((item) => {
+            const isPOExpanded = expandedPO === item.codigoItem;
+            const dispCx = item.disponivelCx ?? 0;
+            const poCx = item.poCx ?? 0;
+            const projCx = item.projetadoCx ?? 0;
+
+            return (
+              <div key={item.codigoItem}>
+                {/* Desktop row */}
+                <div className="hidden md:grid md:grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                  <div className="col-span-5">
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-tight">
+                      <span className="font-mono text-slate-400 dark:text-slate-500 mr-1">{item.codigoItem}</span>
+                      {item.descricaoItem}
+                    </p>
+                  </div>
+                  <div className="col-span-2 text-center">
+                    <span className={`text-sm font-bold ${
+                      dispCx > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-orange-500"
+                    }`}>
+                      {dispCx.toLocaleString("pt-BR")} cx
+                    </span>
+                  </div>
+                  <div className="col-span-2 text-center">
+                    {poCx > 0 ? (
+                      <button
+                        onClick={() => setExpandedPO(isPOExpanded ? null : item.codigoItem)}
+                        className="inline-flex items-center gap-1 text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 cursor-pointer"
+                      >
+                        <Ship className="w-3 h-3" />
+                        {poCx.toLocaleString("pt-BR")} cx
+                      </button>
+                    ) : (
+                      <span className="text-xs text-slate-300">—</span>
+                    )}
+                  </div>
+                  <div className="col-span-2 text-center">
+                    <span className="text-sm font-bold text-purple-600 dark:text-purple-400">
+                      {projCx.toLocaleString("pt-BR")} cx
+                    </span>
+                  </div>
+                  <div className="col-span-1 text-center">
+                    <button
+                      className="p-1.5 rounded-md text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors cursor-pointer"
+                      title="Reservar"
+                      onClick={() => onReserve(item)}
+                    >
+                      <Bookmark className="w-3.5 h-3.5" />
+                    </button>
+                    {reservationSummary[item.codigoItem] > 0 && (
+                      <span className="text-[9px] text-amber-600 font-bold block mt-0.5">
+                        {reservationSummary[item.codigoItem]} res.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mobile row */}
+                <div className="md:hidden px-4 py-3 space-y-2">
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-200 leading-tight">
+                    <span className="font-mono text-slate-400 mr-1">{item.codigoItem}</span>
+                    {item.descricaoItem}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <ShoppingCart className="w-3 h-3 text-emerald-500" />
+                      <span className={`text-xs font-bold ${
+                        dispCx > 0 ? "text-emerald-600" : "text-orange-500"
+                      }`}>
+                        {dispCx.toLocaleString("pt-BR")} cx
+                      </span>
+                    </div>
+                    {poCx > 0 && (
+                      <button
+                        onClick={() => setExpandedPO(isPOExpanded ? null : item.codigoItem)}
+                        className="flex items-center gap-1 cursor-pointer"
+                      >
+                        <Ship className="w-3 h-3 text-blue-500" />
+                        <span className="text-xs font-bold text-blue-600">
+                          +{poCx.toLocaleString("pt-BR")} cx
+                        </span>
+                      </button>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-bold text-purple-600">
+                        = {projCx.toLocaleString("pt-BR")} cx
+                      </span>
+                    </div>
+                    <button
+                      className="ml-auto p-1 rounded text-slate-400 hover:text-teal-600 cursor-pointer"
+                      title="Reservar"
+                      onClick={() => onReserve(item)}
+                    >
+                      <Bookmark className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Detalhes da PO expandida */}
+                {isPOExpanded && item.poLotes && item.poLotes.length > 0 && (
+                  <div className="px-4 md:px-8 py-3 bg-blue-50/50 dark:bg-blue-900/10 border-t border-blue-100 dark:border-blue-900/30">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Ship className="w-3 h-3 text-blue-500" />
+                      <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase">
+                        Pedidos de Compra (POs) chegando
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {item.poLotes.map((lote, idx) => (
+                        <div key={idx} className="flex items-center gap-3 text-xs bg-white dark:bg-slate-800 rounded-md px-3 py-2 border border-blue-100 dark:border-blue-900/30">
+                          <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                            {lote.referenciaPO || lote.numeroPedido}
+                          </span>
+                          <span className="text-slate-600 dark:text-slate-300 font-medium">
+                            {lote.quantidade.toLocaleString("pt-BR")} cx
+                          </span>
+                          {lote.dataEntrega && (
+                            <span className="flex items-center gap-1 text-slate-400">
+                              <Calendar className="w-3 h-3" />
+                              {lote.dataEntrega}
+                            </span>
+                          )}
+                          {lote.fornecedor && (
+                            <span className="text-slate-400 hidden md:inline truncate max-w-[150px]">
+                              {lote.fornecedor}
+                            </span>
+                          )}
+                          {lote.tipoPO && (
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                              lote.tipoPO === "COMERCIAL"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}>
+                              {lote.tipoPO}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => onReserve(item, {
+                              referencia: lote.referenciaPO || lote.numeroPedido,
+                              dataEntrega: lote.dataEntrega,
+                              quantidade: lote.quantidade,
+                            })}
+                            className="ml-auto flex items-center gap-1 px-2 py-1 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded text-[10px] font-medium hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer"
+                          >
+                            <Bookmark className="w-3 h-3" />
+                            Reservar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * ============================================================
+ * ABA CONFIGURAÇÕES - Autorização, senha, ticagem de produtos, catálogos
+ * ============================================================
  */
 function SellerConfigPanel({ sellerId, sellerName, seller }: { sellerId: number; sellerName: string; seller: any }) {
   const toggleAuthMutation = trpc.sales.toggleSellerAuthorization.useMutation();
@@ -264,11 +689,16 @@ function SellerConfigPanel({ sellerId, sellerName, seller }: { sellerId: number;
             </div>
             <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-600 rounded-lg border border-slate-200 dark:border-slate-500">
               <Lock className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-sm font-mono text-slate-700 dark:text-slate-200">{seller.password}</span>
+              <span className="text-xs font-mono font-medium text-slate-700 dark:text-slate-200">
+                {seller.password}
+              </span>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Card de Produtos Visíveis (ticagem) */}
+      <SellerProductsPanel sellerId={sellerId} sellerName={sellerName} />
 
       {/* Card de PDFs/Catálogos */}
       <SellerCatalogsPanel sellerId={sellerId} sellerName={sellerName} />
@@ -277,7 +707,7 @@ function SellerConfigPanel({ sellerId, sellerName, seller }: { sellerId: number;
 }
 
 /**
- * Aba Estoque: configuração de produtos visíveis para o vendedor
+ * Painel de ticagem de produtos visíveis (agora na aba Configurações)
  */
 function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
   const productsQuery = trpc.sales.getSellerProducts.useQuery({ sellerId });
@@ -317,15 +747,22 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
     });
   };
 
-  const stockItems: StockItem[] = (stockQuery.data?.items || []) as StockItem[];
-  const madeiraItems = stockItems.filter((item: StockItem) =>
+  interface SimpleStockItem {
+    codigoItem: string;
+    descricaoItem: string;
+    grupo: string;
+    subgrupo: string;
+  }
+
+  const stockItems: SimpleStockItem[] = (stockQuery.data?.items || []) as SimpleStockItem[];
+  const madeiraItems = stockItems.filter((item) =>
     item.grupo === "industrializacao" && item.subgrupo === "madeira"
   );
-  const bambuItems = stockItems.filter((item: StockItem) =>
+  const bambuItems = stockItems.filter((item) =>
     item.grupo === "importacao_revenda" && item.subgrupo === "bambu"
   );
 
-  const selectAllCategory = (items: StockItem[]) => {
+  const selectAllCategory = (items: SimpleStockItem[]) => {
     setSelectedProducts(prev => {
       const next = new Set(prev);
       items.forEach(item => next.add(item.codigoItem));
@@ -333,7 +770,7 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
     });
   };
 
-  const deselectAllCategory = (items: StockItem[]) => {
+  const deselectAllCategory = (items: SimpleStockItem[]) => {
     setSelectedProducts(prev => {
       const next = new Set(prev);
       items.forEach(item => next.delete(item.codigoItem));
@@ -363,10 +800,10 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
     return false;
   })();
 
-  const countSelected = (items: StockItem[]) => items.filter(i => selectedProducts.has(i.codigoItem)).length;
+  const countSelected = (items: SimpleStockItem[]) => items.filter(i => selectedProducts.has(i.codigoItem)).length;
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-6">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-teal-200 dark:border-teal-800 shadow-sm p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-teal-600" />
@@ -391,7 +828,7 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
         <p className="text-xs text-slate-400">Carregando produtos...</p>
       ) : (
         <div className="space-y-3">
-          <CategorySection
+          <ConfigCategorySection
             title="Madeira"
             items={madeiraItems}
             selectedProducts={selectedProducts}
@@ -403,7 +840,7 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
             countSelected={countSelected(madeiraItems)}
             color="amber"
           />
-          <CategorySection
+          <ConfigCategorySection
             title="Bambu"
             items={bambuItems}
             selectedProducts={selectedProducts}
@@ -428,9 +865,9 @@ function SellerProductsPanel({ sellerId, sellerName }: { sellerId: number; selle
 }
 
 /**
- * Seção de categoria com lista de produtos e checkboxes
+ * Seção de categoria com checkboxes (para Configurações)
  */
-function CategorySection({
+function ConfigCategorySection({
   title,
   items,
   selectedProducts,
@@ -443,7 +880,7 @@ function CategorySection({
   color,
 }: {
   title: string;
-  items: StockItem[];
+  items: { codigoItem: string; descricaoItem: string }[];
   selectedProducts: Set<string>;
   isExpanded: boolean;
   onToggleExpand: () => void;
@@ -507,7 +944,7 @@ function CategorySection({
 
           {items.length > 0 ? (
             <div className="max-h-60 overflow-y-auto">
-              {items.map((item: StockItem) => (
+              {items.map((item) => (
                 <label
                   key={item.codigoItem}
                   className="flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-50 dark:border-slate-700/50 last:border-b-0"
@@ -788,6 +1225,293 @@ function SellerCatalogsPanel({ sellerId, sellerName }: { sellerId: number; selle
           Catálogos salvos com sucesso! ({selectedCatalogs.size} selecionados)
         </p>
       )}
+    </div>
+  );
+}
+
+
+/**
+ * ============================================================
+ * MODAL DE RESERVA - Permite reservar caixas de um produto
+ * ============================================================
+ */
+function ReservationModal({
+  item,
+  po,
+  sellerId,
+  sellerName,
+  onClose,
+  onSuccess,
+}: {
+  item: DashboardItem;
+  po: { referencia: string; dataEntrega: string; quantidade: number } | null;
+  sellerId: number;
+  sellerName: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [clienteNome, setClienteNome] = useState("");
+  const [clienteCnpj, setClienteCnpj] = useState("");
+  const [quantidadeCx, setQuantidadeCx] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [error, setError] = useState("");
+
+  const createMutation = trpc.sales.createReservation.useMutation();
+
+  const handleSubmit = () => {
+    setError("");
+    const qty = parseInt(quantidadeCx, 10);
+    if (!clienteNome.trim()) {
+      setError("Informe o nome do cliente");
+      return;
+    }
+    if (!qty || qty <= 0) {
+      setError("Informe uma quantidade válida");
+      return;
+    }
+
+    createMutation.mutate(
+      {
+        sellerId,
+        sellerName,
+        codigoItem: item.codigoItem,
+        descricaoItem: item.descricaoItem,
+        quantidadeCx: qty,
+        clienteNome: clienteNome.trim(),
+        clienteCnpj: clienteCnpj.trim() || undefined,
+        fonte: po ? "po" : "estoque",
+        poReferencia: po?.referencia || undefined,
+        poDataEntrega: po?.dataEntrega || undefined,
+        observacao: observacao.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          onSuccess();
+        },
+        onError: (err) => {
+          setError(err.message || "Erro ao criar reserva");
+        },
+      }
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2">
+            <Bookmark className="w-4 h-4 text-teal-600" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Nova Reserva</h3>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Produto info */}
+        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+          <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
+            <span className="font-mono text-slate-400 mr-1">{item.codigoItem}</span>
+            {item.descricaoItem}
+          </p>
+          <div className="flex items-center gap-3 mt-2">
+            <span className="text-[10px] text-emerald-600 font-medium">
+              Disponível: {(item.disponivelCx ?? 0).toLocaleString("pt-BR")} cx
+            </span>
+            {po && (
+              <span className="text-[10px] text-blue-600 font-medium">
+                PO {po.referencia}: {po.quantidade.toLocaleString("pt-BR")} cx ({po.dataEntrega})
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="p-4 space-y-3">
+          {po && (
+            <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+              <Ship className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+              <p className="text-[10px] text-blue-700 dark:text-blue-300">
+                Reservando da <strong>PO {po.referencia}</strong> (previsão: {po.dataEntrega})
+              </p>
+            </div>
+          )}
+
+          <div>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              Cliente *
+            </label>
+            <input
+              type="text"
+              placeholder="Nome do cliente"
+              value={clienteNome}
+              onChange={(e) => setClienteNome(e.target.value)}
+              className="w-full mt-1 px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              CNPJ/CPF (opcional)
+            </label>
+            <input
+              type="text"
+              placeholder="00.000.000/0000-00"
+              value={clienteCnpj}
+              onChange={(e) => setClienteCnpj(e.target.value)}
+              className="w-full mt-1 px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              Quantidade (caixas) *
+            </label>
+            <input
+              type="number"
+              placeholder="Ex: 100"
+              value={quantidadeCx}
+              onChange={(e) => setQuantidadeCx(e.target.value)}
+              min="1"
+              className="w-full mt-1 px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              Observação (opcional)
+            </label>
+            <textarea
+              placeholder="Informações adicionais..."
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+              rows={2}
+              className="w-full mt-1 px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 resize-none"
+            />
+          </div>
+
+          {error && (
+            <p className="text-xs text-red-600 font-medium">{error}</p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 p-4 border-t border-slate-200 dark:border-slate-700">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={createMutation.isPending}
+            className="px-4 py-2 text-xs font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+          >
+            {createMutation.isPending ? (
+              <>
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                Reservando...
+              </>
+            ) : (
+              <>
+                <Bookmark className="w-3 h-3" />
+                Confirmar Reserva
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ============================================================
+ * PAINEL DE RESERVAS ATIVAS
+ * ============================================================
+ */
+function ReservationsPanel({
+  reservations,
+  onCancelSuccess,
+}: {
+  reservations: any[];
+  onCancelSuccess: () => void;
+}) {
+  const cancelMutation = trpc.sales.cancelReservation.useMutation();
+
+  const handleCancel = (id: number) => {
+    if (!confirm("Cancelar esta reserva?")) return;
+    cancelMutation.mutate(
+      { id },
+      { onSuccess: onCancelSuccess }
+    );
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-amber-200 dark:border-amber-800 shadow-sm overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 dark:bg-amber-900/20">
+        <Bookmark className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
+          Reservas Ativas
+        </h3>
+        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded-full">
+          {reservations.length}
+        </span>
+      </div>
+
+      <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+        {reservations.map((r) => (
+          <div key={r.id} className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                  <span className="font-mono text-slate-400 mr-1">{r.codigoItem}</span>
+                  {r.descricaoItem}
+                </p>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className="text-xs font-bold text-teal-600">
+                    {r.quantidadeCx.toLocaleString("pt-BR")} cx
+                  </span>
+                  <span className="text-[10px] text-slate-400">→</span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                    {r.clienteNome}
+                  </span>
+                  {r.fonte === "po" && r.poReferencia && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 font-medium">
+                      PO {r.poReferencia}
+                    </span>
+                  )}
+                  {r.poDataEntrega && (
+                    <span className="text-[9px] text-slate-400 flex items-center gap-0.5">
+                      <Calendar className="w-2.5 h-2.5" />
+                      {r.poDataEntrega}
+                    </span>
+                  )}
+                </div>
+                {r.observacao && (
+                  <p className="text-[10px] text-slate-400 mt-1 italic">{r.observacao}</p>
+                )}
+              </div>
+              <button
+                onClick={() => handleCancel(r.id)}
+                disabled={cancelMutation.isPending}
+                className="flex-shrink-0 p-1.5 rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors cursor-pointer"
+                title="Cancelar reserva"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <p className="text-[9px] text-slate-300 mt-1">
+              Reservado por {r.sellerName} em {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

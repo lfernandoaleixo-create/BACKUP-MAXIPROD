@@ -3850,3 +3850,6 @@
 - [x] Migrar "Cadastro de Vendedores" da aba Vendas para a aba Gestão Comercial
 - [x] Página de detalhe do vendedor com abas: Estoque, Cadastro de Cliente, Vendas, Configurações
 - [x] Clicar no vendedor na Gestão Comercial abre a página de detalhe
+- [x] Mover ticagem de produtos para aba Configurações do vendedor
+- [x] Aba Estoque do vendedor: mostrar produtos ticados com Disponível p/ Venda e POs projetadas
+- [x] Sistema de reservas: vendedor reserva caixas de POs futuras para clientes

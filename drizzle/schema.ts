@@ -2149,3 +2149,33 @@ export const salesOrderRequestItems = mysqlTable("sales_order_request_items", {
 });
 
 export type SalesOrderRequestItem = typeof salesOrderRequestItems.$inferSelect;
+
+
+/**
+ * Reservas de estoque por vendedor
+ * - Vendedor pode reservar caixas de um produto (do estoque disponível ou de POs futuras)
+ * - A reserva fica vinculada a um cliente
+ * - Status: ativa, cancelada, convertida (virou pedido)
+ */
+export const stockReservations = mysqlTable("stock_reservations", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerId: int("seller_id").notNull(), // FK seller_permissions.id
+  sellerName: varchar("seller_name", { length: 200 }).notNull(),
+  codigoItem: varchar("codigo_item", { length: 20 }).notNull(),
+  descricaoItem: text("descricao_item").notNull(),
+  quantidadeCx: int("quantidade_cx").notNull(), // caixas reservadas
+  clienteNome: varchar("cliente_nome", { length: 300 }).notNull(), // nome do cliente
+  clienteCnpj: varchar("cliente_cnpj", { length: 20 }), // CNPJ/CPF opcional
+  // Fonte da reserva: "estoque" (do disponível) ou "po" (de uma PO futura)
+  fonte: mysqlEnum("fonte", ["estoque", "po"]).default("estoque").notNull(),
+  poReferencia: varchar("po_referencia", { length: 100 }), // ex: "PO62" - se reserva é de PO
+  poDataEntrega: varchar("po_data_entrega", { length: 30 }), // data prevista da PO
+  // Status
+  status: mysqlEnum("status_reserva", ["ativa", "cancelada", "convertida"]).default("ativa").notNull(),
+  observacao: text("observacao"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StockReservation = typeof stockReservations.$inferSelect;
+export type InsertStockReservation = typeof stockReservations.$inferInsert;

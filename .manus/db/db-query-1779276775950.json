@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `stock_reservations` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`seller_id` int NOT NULL,\n\t`seller_name` varchar(200) NOT NULL,\n\t`codigo_item` varchar(20) NOT NULL,\n\t`descricao_item` text NOT NULL,\n\t`quantidade_cx` int NOT NULL,\n\t`cliente_nome` varchar(300) NOT NULL,\n\t`cliente_cnpj` varchar(20),\n\t`fonte` enum('estoque','po') NOT NULL DEFAULT 'estoque',\n\t`po_referencia` varchar(100),\n\t`po_data_entrega` varchar(30),\n\t`status_reserva` enum('ativa','cancelada','convertida') NOT NULL DEFAULT 'ativa',\n\t`observacao` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `stock_reservations_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `stock_reservations` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`seller_id` int NOT NULL,\n\t`seller_name` varchar(200) NOT NULL,\n\t`codigo_item` varchar(20) NOT NULL,\n\t`descricao_item` text NOT NULL,\n\t`quantidade_cx` int NOT NULL,\n\t`cliente_nome` varchar(300) NOT NULL,\n\t`cliente_cnpj` varchar(20),\n\t`fonte` enum('estoque','po') NOT NULL DEFAULT 'estoque',\n\t`po_referencia` varchar(100),\n\t`po_data_entrega` varchar(30),\n\t`status_reserva` enum('ativa','cancelada','convertida') NOT NULL DEFAULT 'ativa',\n\t`observacao` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `stock_reservations_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 406
+}

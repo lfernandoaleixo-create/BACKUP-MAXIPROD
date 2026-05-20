@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -3308,5 +3308,112 @@ export const salesRouter = router({
         );
       }
       return { success: true };
+    }),
+
+  // ============================================================
+  // RESERVAS DE ESTOQUE
+  // ============================================================
+
+  /**
+   * Listar reservas ativas de um vendedor
+   */
+  listReservations: publicProcedure
+    .input(z.object({ sellerId: z.number().optional(), codigoItem: z.string().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      
+      let conditions: any[] = [eq(stockReservations.status, "ativa")];
+      if (input.sellerId) {
+        conditions.push(eq(stockReservations.sellerId, input.sellerId));
+      }
+      if (input.codigoItem) {
+        conditions.push(eq(stockReservations.codigoItem, input.codigoItem));
+      }
+      
+      const rows = await db.select().from(stockReservations)
+        .where(and(...conditions))
+        .orderBy(desc(stockReservations.createdAt));
+      return rows;
+    }),
+
+  /**
+   * Criar uma reserva de estoque
+   */
+  createReservation: publicProcedure
+    .input(z.object({
+      sellerId: z.number(),
+      sellerName: z.string(),
+      codigoItem: z.string(),
+      descricaoItem: z.string(),
+      quantidadeCx: z.number().min(1),
+      clienteNome: z.string().min(1),
+      clienteCnpj: z.string().optional(),
+      fonte: z.enum(["estoque", "po"]),
+      poReferencia: z.string().optional(),
+      poDataEntrega: z.string().optional(),
+      observacao: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      
+      await db.insert(stockReservations).values({
+        sellerId: input.sellerId,
+        sellerName: input.sellerName,
+        codigoItem: input.codigoItem,
+        descricaoItem: input.descricaoItem,
+        quantidadeCx: input.quantidadeCx,
+        clienteNome: input.clienteNome,
+        clienteCnpj: input.clienteCnpj || null,
+        fonte: input.fonte,
+        poReferencia: input.poReferencia || null,
+        poDataEntrega: input.poDataEntrega || null,
+        observacao: input.observacao || null,
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Cancelar uma reserva
+   */
+  cancelReservation: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+      
+      await db.update(stockReservations)
+        .set({ status: "cancelada" })
+        .where(eq(stockReservations.id, input.id));
+      return { success: true };
+    }),
+
+  /**
+   * Obter total de reservas ativas por produto (para mostrar no estoque)
+   */
+  getReservationSummary: publicProcedure
+    .input(z.object({ productCodes: z.array(z.string()) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return {};
+      if (input.productCodes.length === 0) return {};
+      
+      const rows = await db.select({
+        codigoItem: stockReservations.codigoItem,
+        totalCx: sql<number>`SUM(${stockReservations.quantidadeCx})`,
+      })
+        .from(stockReservations)
+        .where(and(
+          eq(stockReservations.status, "ativa"),
+          inArray(stockReservations.codigoItem, input.productCodes)
+        ))
+        .groupBy(stockReservations.codigoItem);
+      
+      const summary: Record<string, number> = {};
+      for (const row of rows) {
+        if (row.codigoItem) summary[row.codigoItem] = Number(row.totalCx) || 0;
+      }
+      return summary;
     }),
 });
