@@ -1,0 +1,16 @@
+{
+  "query": "SELECT COUNT(*) as total, MIN(dataEmissao) as primeiro, MAX(dataEmissao) as ultimo, SUM(CAST(valorTotalPedido AS DECIMAL(10,2))) as valor FROM sales_orders WHERE representante = 'LUIZ ANTONIO MATIAS';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total, MIN(dataEmissao) as primeiro, MAX(dataEmissao) as ultimo, SUM(CAST(valorTotalPedido AS DECIMAL(10,2))) as valor FROM sales_orders WHERE representante = 'LUIZ ANTONIO MATIAS';",
+  "rows": [
+    {
+      "total": "27",
+      "primeiro": "2026-03-05T12:00:00.000-03:00",
+      "ultimo": "2026-03-09T12:00:00.000-03:00",
+      "valor": "400497.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tprimeiro\tultimo\tvalor\n27\t2026-03-05T12:00:00.000-03:00\t2026-03-09T12:00:00.000-03:00\t400497.00\n",
+  "stderr": "",
+  "execution_time_ms": 289
+}

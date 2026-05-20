@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(CAST(valorTotalPedido AS DECIMAL(10,2))) as valor FROM sales_orders WHERE representante = 'LUIZ ANTONIO MATIAS' AND SUBSTRING(dataEmissao, 1, 7) = '2026-05';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total, SUM(CAST(valorTotalPedido AS DECIMAL(10,2))) as valor FROM sales_orders WHERE representante = 'LUIZ ANTONIO MATIAS' AND SUBSTRING(dataEmissao, 1, 7) = '2026-05';",
+  "rows": [
+    {
+      "total": "0",
+      "valor": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tvalor\n0\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 285
+}
