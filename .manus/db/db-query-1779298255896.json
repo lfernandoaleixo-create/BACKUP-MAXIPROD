@@ -1,0 +1,21 @@
+{
+  "query": "SELECT id, maxiprodId, estado, tipo, cliente, valorOriginal, valorLiquido, vencimentoData, referenteA FROM accounts_receivable WHERE cliente LIKE '%BANCO COOPERATIVO%' OR cliente LIKE '%SICREDI%' OR referenteA LIKE '%CHEQUE NAO%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, maxiprodId, estado, tipo, cliente, valorOriginal, valorLiquido, vencimentoData, referenteA FROM accounts_receivable WHERE cliente LIKE '%BANCO COOPERATIVO%' OR cliente LIKE '%SICREDI%' OR referenteA LIKE '%CHEQUE NAO%' LIMIT 10;",
+  "rows": [
+    {
+      "id": "6916466",
+      "maxiprodId": "409300081687671",
+      "estado": "RECEBIDO",
+      "tipo": "RECEITA",
+      "cliente": "BANCO COOPERATIVO SICREDI S.A.",
+      "valorOriginal": "2007.75",
+      "valorLiquido": "2007.75",
+      "vencimentoData": "2026-05-19T12:00:00.000-03:00",
+      "referenteA": "CHEQUE NAO INDENTIFICADO "
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tmaxiprodId\testado\ttipo\tcliente\tvalorOriginal\tvalorLiquido\tvencimentoData\treferenteA\n6916466\t409300081687671\tRECEBIDO\tRECEITA\tBANCO COOPERATIVO SICREDI S.A.\t2007.75\t2007.75\t2026-05-19T12:00:00.000-03:00\tCHEQUE NAO INDENTIFICADO \n",
+  "stderr": "",
+  "execution_time_ms": 291
+}

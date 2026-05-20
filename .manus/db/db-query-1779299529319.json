@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, estado, tipo, valorLiquido, vencimentoData FROM accounts_receivable WHERE id = '6916466';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, estado, tipo, valorLiquido, vencimentoData FROM accounts_receivable WHERE id = '6916466';",
+  "rows": [
+    {
+      "id": "6916466",
+      "estado": "RECEBIDO",
+      "tipo": "RECEITA",
+      "valorLiquido": "2007.75",
+      "vencimentoData": "2026-05-19T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\testado\ttipo\tvalorLiquido\tvencimentoData\n6916466\tRECEBIDO\tRECEITA\t2007.75\t2026-05-19T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, maxiprodId, estado, tipo, cliente, valorOriginal, valorLiquido, vencimentoData, referenteA, formaCobrancaDescricao FROM accounts_receivable WHERE cliente LIKE '%BANCO COOPERATIVO%' OR cliente LIKE '%SICREDI%' OR referenteA LIKE '%CHEQUE NAO%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, maxiprodId, estado, tipo, cliente, valorOriginal, valorLiquido, vencimentoData, referenteA, formaCobrancaDescricao FROM accounts_receivable WHERE cliente LIKE '%BANCO COOPERATIVO%' OR cliente LIKE '%SICREDI%' OR referenteA LIKE '%CHEQUE NAO%' LIMIT 10;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'formacobrancadescricao' in 'field list'"
+  ]
+}
