@@ -270,49 +270,10 @@ export default function CadastroVendedoresTab() {
                             </button>
                           )}
 
-                          {/* Botão de configurar produtos */}
-                          {perm && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedSeller(isSellerExpanded ? null : `${grupo.gestor}|${vendedor}`);
-                                setExpandedPdfSeller(null);
-                              }}
-                              className="flex flex-col items-center gap-0.5 p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
-                              title="Configurar produtos visíveis"
-                            >
-                              <span className="text-[8px] font-semibold uppercase leading-none">Estoque</span>
-                              <Package className="w-4 h-4" />
-                            </button>
-                          )}
 
-                          {/* Botão de configurar PDFs/Catálogos */}
-                          {perm && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const key = `${grupo.gestor}|${vendedor}`;
-                                setExpandedPdfSeller(expandedPdfSeller === key ? null : key);
-                                setExpandedSeller(null);
-                              }}
-                              className="flex flex-col items-center gap-0.5 p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                              title="Configurar catálogos/PDFs visíveis"
-                            >
-                              <span className="text-[8px] font-semibold uppercase leading-none">PDF</span>
-                              <FileText className="w-4 h-4" />
-                            </button>
-                          )}
                         </div>
 
-                        {/* Painel de produtos (expandido) */}
-                        {isSellerExpanded && perm && (
-                          <SellerProductsPanel sellerId={perm.id} sellerName={vendedor} />
-                        )}
 
-                        {/* Painel de PDFs/Catálogos (expandido) */}
-                        {expandedPdfSeller === `${grupo.gestor}|${vendedor}` && perm && (
-                          <SellerCatalogsPanel sellerId={perm.id} sellerName={vendedor} />
-                        )}
                       </div>
                     );
                   })}
