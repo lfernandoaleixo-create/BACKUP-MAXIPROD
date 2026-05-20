@@ -31,6 +31,7 @@ const STATUS_OPTIONS = [
   { value: "promessa", label: "Promessa de Pgto", color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
   { value: "nao_retornou", label: "Não deu retorno", color: "bg-purple-100 text-purple-700 border-purple-300" },
   { value: "nao_atendeu", label: "Não atendeu", color: "bg-pink-100 text-pink-700 border-pink-300" },
+  { value: "protesto_em_analise", label: "Protesto em Análise", color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
   { value: "protestado", label: "Protestado", color: "bg-orange-100 text-orange-700 border-orange-300" },
   { value: "juridico", label: "Jurídico", color: "bg-red-100 text-red-700 border-red-300" },
   { value: "especial_sem_cobranca", label: "Especial s/ Cobrança", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
@@ -101,7 +102,7 @@ function exportInadimplenciaPDF(
 
   const STATUS_LABELS: Record<string, string> = {
     pendente: "Pendente", contatado: "Contatado", em_negociacao: "Em Negociação",
-    promessa: "Promessa de Pgto", protestado: "Protestado", juridico: "Jurídico",
+    promessa: "Promessa de Pgto", protesto_em_analise: "Protesto em Análise", protestado: "Protestado", juridico: "Jurídico",
     especial_sem_cobranca: "Especial s/ Cobrança", cheque_compensacao: "Cheque em Compensação",
     nao_retornou: "Não Deu Retorno", nao_atendeu: "Não Atendeu",
   };
@@ -123,7 +124,7 @@ function exportInadimplenciaPDF(
 
   // ── Status counts for header ──
   const statusCounts: Record<string, { count: number; total: number }> = {};
-  for (const s of ["pendente", "contatado", "em_negociacao", "promessa", "nao_retornou", "nao_atendeu", "protestado", "juridico", "especial_sem_cobranca", "cheque_compensacao"]) {
+  for (const s of ["pendente", "contatado", "em_negociacao", "promessa", "nao_retornou", "nao_atendeu", "protesto_em_analise", "protestado", "juridico", "especial_sem_cobranca", "cheque_compensacao"]) {
     statusCounts[s] = { count: 0, total: 0 };
   }
   for (const t of sorted) {
@@ -211,6 +212,7 @@ function exportInadimplenciaPDF(
     { key: "contatado", label: "CONTATADO", bg: [219, 234, 254] as [number, number, number], text: [29, 78, 216] as [number, number, number] },
     { key: "em_negociacao", label: "EM NEGOCIAÇÃO", bg: [254, 243, 199] as [number, number, number], text: [180, 83, 9] as [number, number, number] },
     { key: "promessa", label: "PROMESSA PGTO", bg: [209, 250, 229] as [number, number, number], text: [4, 120, 87] as [number, number, number] },
+    { key: "protesto_em_analise", label: "PROTESTO ANÁLISE", bg: [254, 249, 195] as [number, number, number], text: [161, 98, 7] as [number, number, number] },
     { key: "protestado", label: "PROTESTADO", bg: [255, 237, 213] as [number, number, number], text: [194, 65, 12] as [number, number, number] },
     { key: "juridico", label: "JURÍDICO", bg: [254, 226, 226] as [number, number, number], text: [185, 28, 28] as [number, number, number] },
     { key: "especial_sem_cobranca", label: "ESPECIAL S/ COB.", bg: [207, 250, 254] as [number, number, number], text: [14, 116, 144] as [number, number, number] },
@@ -327,6 +329,9 @@ function exportInadimplenciaPDF(
           const val = data.cell.raw;
           if (val === "Protestado" || val === "Jurídico") {
             data.cell.styles.textColor = [185, 28, 28];
+            data.cell.styles.fontStyle = "bold";
+          } else if (val === "Protesto em Análise") {
+            data.cell.styles.textColor = [161, 98, 7];
             data.cell.styles.fontStyle = "bold";
           } else if (val === "Promessa de Pgto") {
             data.cell.styles.textColor = [4, 120, 87];
