@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
 
 /**
@@ -115,6 +115,35 @@ export const salesOrderRouter = router({
       const prices = await db.select().from(productMinPrices);
       const priceMap = new Map(prices.map(p => [p.codigoItem, p.precoMinimo]));
 
+      // Get pending POs (purchase orders) for these products
+      const pendingPOs = await db.select({
+        codigoItem: purchaseOrderItems.codigoItem,
+        quantidade: purchaseOrderItems.quantidade,
+        quantidadeUnEstoque: purchaseOrderItems.quantidadeUnEstoque,
+        fatorConversao: purchaseOrderItems.fatorConversao,
+        dataEntrega: purchaseOrderItems.dataEntrega,
+        referencia: purchaseOrderItems.referencia,
+        estadoItem: purchaseOrderItems.estadoItem,
+      })
+      .from(purchaseOrderItems)
+      .where(
+        sql`${purchaseOrderItems.estadoItem} NOT IN ('ATENDIDO','CANCELADO')`
+      );
+
+      // Group POs by codigoItem
+      const poMap = new Map<string, Array<{ quantidade: string; quantidadeUnEstoque: string | null; fatorConversao: string | null; dataEntrega: string | null; referencia: string | null }>>(); 
+      for (const po of pendingPOs) {
+        if (!po.codigoItem) continue;
+        if (!poMap.has(po.codigoItem)) poMap.set(po.codigoItem, []);
+        poMap.get(po.codigoItem)!.push({
+          quantidade: po.quantidade,
+          quantidadeUnEstoque: po.quantidadeUnEstoque,
+          fatorConversao: po.fatorConversao,
+          dataEntrega: po.dataEntrega,
+          referencia: po.referencia,
+        });
+      }
+
       return filteredItems.map(item => ({
         codigoItem: item.codigoItem,
         descricaoItem: item.descricaoItem,
@@ -130,6 +159,7 @@ export const salesOrderRouter = router({
         procedencia: item.procedencia,
         estado: item.estado,
         unidadeDeVendaCodigo: item.unidadeDeVendaCodigo,
+        pendingPOs: poMap.get(item.codigoItem) || [],
       }));
     }),
 

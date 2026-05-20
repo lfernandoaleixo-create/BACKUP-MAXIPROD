@@ -1,0 +1,21 @@
+{
+  "query": "SELECT codigoItem, descricaoItem, quantidade, quantidadeUnEstoque, fatorConversao, dataEntrega, estadoPedido, estadoItem, referencia FROM purchase_order_items WHERE estadoItem NOT IN ('ATENDIDO','CANCELADO') AND codigoItem IN ('00004','00032','00024','00021') LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricaoItem, quantidade, quantidadeUnEstoque, fatorConversao, dataEntrega, estadoPedido, estadoItem, referencia FROM purchase_order_items WHERE estadoItem NOT IN ('ATENDIDO','CANCELADO') AND codigoItem IN ('00004','00032','00024','00021') LIMIT 20;",
+  "rows": [
+    {
+      "codigoItem": "00021",
+      "descricaoItem": "ESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.",
+      "quantidade": "600.00000",
+      "quantidadeUnEstoque": "3000000.00000",
+      "fatorConversao": "5000.00000",
+      "dataEntrega": "2026-07-12T00:00:00.000-03:00",
+      "estadoPedido": "APROVADO",
+      "estadoItem": "A_RECEBER",
+      "referencia": "01 - PROFORMA"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tdescricaoItem\tquantidade\tquantidadeUnEstoque\tfatorConversao\tdataEntrega\testadoPedido\testadoItem\treferencia\n00021\tESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.\t600.00000\t3000000.00000\t5000.00000\t2026-07-12T00:00:00.000-03:00\tAPROVADO\tA_RECEBER\t01 - PROFORMA\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

@@ -1,0 +1,145 @@
+{
+  "query": "SELECT codigoItem, descricaoItem, descricaoComplementar, pesoBruto, unidadeDeVendaFator, unidadeMedida, quantidade FROM stock_items WHERE descricaoComplementar IS NOT NULL AND descricaoComplementar != '' LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricaoItem, descricaoComplementar, pesoBruto, unidadeDeVendaFator, unidadeMedida, quantidade FROM stock_items WHERE descricaoComplementar IS NOT NULL AND descricaoComplementar != '' LIMIT 15;",
+  "rows": [
+    {
+      "codigoItem": "00013R",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO",
+      "descricaoComplementar": "45X30X20",
+      "pesoBruto": "0.00249",
+      "unidadeDeVendaFator": "5000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00034",
+      "descricaoItem": "PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 100 X 100 UNID.  (EMB. TRANSPARENTE)",
+      "descricaoComplementar": "45X30X24",
+      "pesoBruto": "0.00102",
+      "unidadeDeVendaFator": "10000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00004",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 200 MM MEIA PONTA C/ 5 X 1.000 UNID.",
+      "descricaoComplementar": "45X22X20",
+      "pesoBruto": "0.00185",
+      "unidadeDeVendaFator": "5000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "2695000.00000"
+    },
+    {
+      "codigoItem": "00032",
+      "descricaoItem": "PALITO DE DENTE BAMBU C/ 20 X 25 X 100 UNID.",
+      "descricaoComplementar": "45X32X31",
+      "pesoBruto": "0.00018",
+      "unidadeDeVendaFator": "50000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "25050000.00000"
+    },
+    {
+      "codigoItem": "00213",
+      "descricaoItem": "PALITO DE DENTE BAMBU EMBALADO INDIVIDUALMENTE (50.000 POR CAIXA)",
+      "descricaoComplementar": "47X25X29",
+      "pesoBruto": "0.00016",
+      "unidadeDeVendaFator": "50000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "0.00000"
+    },
+    {
+      "codigoItem": "00024",
+      "descricaoItem": "ESPETO DE BAMBU 4,5 X 300 MM C/ 5 X 1.000 UNID.",
+      "descricaoComplementar": "36X32X30",
+      "pesoBruto": "0.00338",
+      "unidadeDeVendaFator": "5000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "5295000.00000"
+    },
+    {
+      "codigoItem": "00021",
+      "descricaoItem": "ESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.",
+      "descricaoComplementar": "37X30X30",
+      "pesoBruto": "0.00308",
+      "unidadeDeVendaFator": "5000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "5660000.00000"
+    },
+    {
+      "codigoItem": "00031",
+      "descricaoItem": "ESPETO DE BAMBU 5,0 X 350 MM C/ 5 X 1.000 UNID.",
+      "descricaoComplementar": "37X36X38",
+      "pesoBruto": "0.00512",
+      "unidadeDeVendaFator": "5000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "2740000.00000"
+    },
+    {
+      "codigoItem": "00005",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 220 MM  C/ 5 X 1.000 UNID.",
+      "descricaoComplementar": "45X24X20",
+      "pesoBruto": "0.00219",
+      "unidadeDeVendaFator": "5000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "3840000.00000"
+    },
+    {
+      "codigoItem": "00013",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.",
+      "descricaoComplementar": "45X30X20",
+      "pesoBruto": "0.00249",
+      "unidadeDeVendaFator": "5000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "635000.00000"
+    },
+    {
+      "codigoItem": "00054",
+      "descricaoItem": "PALITO HASHI DE BAMBU 20 CM  C/ 20 X 100 UNID.",
+      "descricaoComplementar": "48X24X22",
+      "pesoBruto": "0.00443",
+      "unidadeDeVendaFator": "2000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "106000.00000"
+    },
+    {
+      "codigoItem": "00041",
+      "descricaoItem": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 200 X 50 UNID.",
+      "descricaoComplementar": "42X41,5X29",
+      "pesoBruto": "0.00190",
+      "unidadeDeVendaFator": "10000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "200000.00000"
+    },
+    {
+      "codigoItem": "00037",
+      "descricaoItem": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 10.000 UNID.",
+      "descricaoComplementar": "51X15,5X51",
+      "pesoBruto": "0.00167",
+      "unidadeDeVendaFator": "10000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "3137600.00000"
+    },
+    {
+      "codigoItem": "00040",
+      "descricaoItem": "PALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 10.000 UNID.",
+      "descricaoComplementar": "51X17,5X51",
+      "pesoBruto": "0.00188",
+      "unidadeDeVendaFator": "10000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "4080000.00000"
+    },
+    {
+      "codigoItem": "00001",
+      "descricaoItem": "ESPETO DE BAMBU 3,5 X 180 MM C/ 10 X 1.000 UNID.",
+      "descricaoComplementar": "45X20X30",
+      "pesoBruto": "0.00133",
+      "unidadeDeVendaFator": "10000.00000",
+      "unidadeMedida": "un",
+      "quantidade": "230000.00000"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tdescricaoItem\tdescricaoComplementar\tpesoBruto\tunidadeDeVendaFator\tunidadeMedida\tquantidade\n00013R\tESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO\t45X30X20\t0.00249\t5000.00000\tun\t0.00000\n00034\tPALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 100 X 100 UNID.  (EMB. TRANSPARENTE)\t45X30X24\t0.00102\t10000.00000\tun\t0.00000\n00004\tESPETO DE BAMBU 4,0 X 200 MM MEIA PONTA C/ 5 X 1.000 UNID.\t45X22X20\t0.00185\t5000.00000\tun\t2695000.00000\n00032\tPALITO DE DENTE BAMBU C/ 20 X 25 X 100 UNID.\t45X32X31\t0.00018\t50000.00000\tun\t25050000.00000\n00213\tPALITO DE DENTE BAMBU EMBALADO INDIVIDUALMENTE (50.000 POR CAIXA)\t47X25X29\t0.00016\t50000.00000\tun\t0.00000\n00024\tESPETO DE BAMBU 4,5 X 300 MM C/ 5 X 1.000 UNID.\t36X32X30\t0.00338\t5000.00000\tun\t5295000.00000\n00021\tESPETO DE BAMBU 4,5 X 280 MM C/ 5 X 1.000 UNID.\t37X30X30\t0.00308\t5000.00000\tun\t5660000.00000\n00031\tESPETO DE BAMBU 5,0 X 350 MM C/ 5 X 1.000 UNID.\t37X36X38\t0.00512\t5000.00000\tun\t2740000.00000\n00005\tESPETO DE BAMBU 4,0 X 220 MM  C/ 5 X 1.000 UNID.\t45X24X20\t0.00219\t5000.00000\tun\t3840000.00000\n00013\tESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID.\t45X30X20\t0.00249\t5000.00000\tun\t635000.00000\n00054\tPALITO HASHI DE BAMBU 20 CM  C/ 20 X 100 UNID.\t48X24X22\t0.00443\t2000.00000\tun\t106000.00000\n00041\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 200 X 50 UNID.\t42X41,5X29\t0.00190\t10000.00000\tun\t200000.00000\n00037\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 140 MM C/ 10.000 UNID.\t51X15,5X51\t0.00167\t10000.00000\tun\t3137600.00000\n00040\tPALITO DE MANICURE DUAS PONTAS BAMBU 5,0 X 160 MM C/ 10.000 UNID.\t51X17,5X51\t0.00188\t10000.00000\tun\t4080000.00000\n00001\tESPETO DE BAMBU 3,5 X 180 MM C/ 10 X 1.000 UNID.\t45X20X30\t0.00133\t10000.00000\tun\t230000.00000\n",
+  "stderr": "",
+  "execution_time_ms": 351
+}

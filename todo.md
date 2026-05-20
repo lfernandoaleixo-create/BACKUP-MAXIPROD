@@ -3876,3 +3876,8 @@
 - [x] Exibir todas as specs do produto (medida, peso, dimensões, código de barras, unidade, grupo)
 - [x] Manter busca como filtro opcional sobre a lista completa
 - [x] Painel consolidado de métricas de vendas de TODOS os vendedores na Gestão Comercial (ranking, KPIs, filtros de período)
+- [x] Mostrar dimensões (Largura x Altura x Comprimento) com labels claros nos produtos do Novo Pedido
+- [x] Mostrar peso de forma visível e legível
+- [x] Converter disponível de unidades para caixas/kg/dúzias (dividir pelo fator de venda)
+- [x] Mostrar projeção de PO (ordens de compra pendentes: qtd chegando e data prevista)
+- [x] Adicionar caixa expansível (accordion) em cada produto com todas as informações do Maxiprod
