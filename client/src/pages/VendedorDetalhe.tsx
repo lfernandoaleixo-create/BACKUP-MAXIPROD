@@ -2928,7 +2928,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setStep("produtos")}
-                disabled={!canProceedCliente}
+                
                 className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white text-xs font-medium rounded-lg transition-colors"
               >
                 Próximo: Produtos
@@ -3050,7 +3050,7 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
               </button>
               <button
                 onClick={() => setStep("pagamento")}
-                disabled={!canProceedProdutos}
+                
                 className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white text-xs font-medium rounded-lg transition-colors"
               >
                 Próximo: Pagamento
