@@ -694,6 +694,9 @@ const VENDEDOR_NAME_ALIASES: Record<string, string> = {
   "JUVENAL": "JUVENAL TEIXEIRA",
   "JORDAO LAINE": "JORDAO",
   "CLARINDO GONCALVES DOS SANTOS NETO": "CLARINDO GONCALVES",
+  "DANIEL DA CONCEIÇÃO TAVARES": "DANIEL TAVARES",
+  "ROMERA REPRESENTACAO COMERCIAL DE PRODUTOS DESCARTAVEIS LTDA": "ROMERA REPRESENTACOES",
+  "LUIZ MATIAS DE SOUZA": "LUIZ MATIAS",
 };
 
 export function normalizeVendedorName(name: string): string {
@@ -712,6 +715,15 @@ export function normalizeVendedorName(name: string): string {
   
   // Check if name contains CLARINDO (handles "CLARINDO GONCALVES DOS SANTOS NETO")
   if (upper.includes("CLARINDO")) return "CLARINDO GONCALVES";
+  
+  // Check if name starts with DANIEL and contains TAVARES
+  if (upper.includes("DANIEL") && upper.includes("TAVARES")) return "DANIEL TAVARES";
+  
+  // Check if name starts with ROMERA
+  if (upper.startsWith("ROMERA")) return "ROMERA REPRESENTACOES";
+  
+  // Check if name starts with LUIZ MATIAS
+  if (upper.startsWith("LUIZ MATIAS")) return "LUIZ MATIAS";
   
   return trimmed;
 }
