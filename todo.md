@@ -3847,3 +3847,4 @@
 - [x] Pedido de Venda: tela da Vitória para ver pedidos aprovados e preencher no Maxiprod
 
 - [x] Aba "Gestão Comercial" vazia entre Vendas e Faturamento (acessível apenas para Fernando e Guilherme)
+- [x] Migrar "Cadastro de Vendedores" da aba Vendas para a aba Gestão Comercial
