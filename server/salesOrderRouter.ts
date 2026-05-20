@@ -95,6 +95,13 @@ export const salesOrderRouter = router({
         codigoGrupo: stockItems.codigoGrupo,
         descricaoGrupo: stockItems.descricaoGrupo,
         custoUnitario: stockItems.custoUnitario,
+        pesoLiquido: stockItems.pesoLiquido,
+        pesoBruto: stockItems.pesoBruto,
+        codigoBarras: stockItems.codigoBarras,
+        descricaoComplementar: stockItems.descricaoComplementar,
+        procedencia: stockItems.procedencia,
+        estado: stockItems.estado,
+        unidadeDeVendaCodigo: stockItems.unidadeDeVendaCodigo,
       })
       .from(stockItems)
       .where(sql`CAST(${stockItems.quantidade} AS DECIMAL) > 0`);
@@ -116,6 +123,13 @@ export const salesOrderRouter = router({
         unidadeDeVendaFator: item.unidadeDeVendaFator,
         precoMinimo: priceMap.get(item.codigoItem) || null,
         grupo: item.descricaoGrupo || item.codigoGrupo || "",
+        pesoLiquido: item.pesoLiquido,
+        pesoBruto: item.pesoBruto,
+        codigoBarras: item.codigoBarras,
+        descricaoComplementar: item.descricaoComplementar,
+        procedencia: item.procedencia,
+        estado: item.estado,
+        unidadeDeVendaCodigo: item.unidadeDeVendaCodigo,
       }));
     }),
 

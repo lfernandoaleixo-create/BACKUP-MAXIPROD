@@ -1,0 +1,9 @@
+{
+  "query": "SELECT codigoItem, descricaoItem, descricaoComplementar FROM stock_items WHERE descricaoComplementar IS NOT NULL AND descricaoComplementar != '' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricaoItem, descricaoComplementar FROM stock_items WHERE descricaoComplementar IS NOT NULL AND descricaoComplementar != '' LIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 272
+}

@@ -3872,3 +3872,6 @@
 - [x] Cards do Bradesco com mesmos filtros dos outros bancos (vencido, a vencer, cheque, depósito)
 - [x] Sync GraphQL já puxa bancoNome/contaNumero do Bradesco corretamente (títulos sem forma de cobrança são propostas/pedidos não faturados)
 - [x] Card "Limite atual da conta garantida" manual dentro do card Bradesco (similar ao "Limite troca de títulos" do Sicoob)
+- [x] Mostrar todos os produtos disponíveis na etapa Produtos do Novo Pedido (lista completa visível por padrão)
+- [x] Exibir todas as specs do produto (medida, peso, dimensões, código de barras, unidade, grupo)
+- [x] Manter busca como filtro opcional sobre a lista completa

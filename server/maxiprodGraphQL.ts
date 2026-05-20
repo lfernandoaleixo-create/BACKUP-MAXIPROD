@@ -224,6 +224,8 @@ async function fetchStock(): Promise<any[]> {
           unidadeDeVendaFatorDeConversao
           grupoId
           grupoDescricao
+          pesoBruto
+          descricaoComplementar
           unidade { codigo descricao }
           unidadeDeVenda { codigo descricao }
           grupo { codigo dentroDoGrupoId dentroDoGrupo { codigo } }
@@ -550,6 +552,14 @@ function transformStockData(graphqlItems: any[]): any[] {
       tipoDecodificado: "Próprio",
       maxiprodId: safeMaxiprodId(agg.itemId),
       unidadeDeVendaFator: i.unidadeDeVendaFatorDeConversao ? String(i.unidadeDeVendaFatorDeConversao) : null,
+      // Product specs
+      pesoLiquido: null,
+      pesoBruto: i.pesoBruto != null ? String(i.pesoBruto) : null,
+      codigoBarras: null,
+      descricaoComplementar: i.descricaoComplementar || null,
+      procedencia: null,
+      estado: null,
+      unidadeDeVendaCodigo: i.unidadeDeVenda?.codigo || null,
     };
   });
 }

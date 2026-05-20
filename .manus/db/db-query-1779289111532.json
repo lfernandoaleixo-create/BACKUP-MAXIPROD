@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `stock_items` ADD `pesoLiquido` decimal(18,5);\nALTER TABLE `stock_items` ADD `pesoBruto` decimal(18,5);\nALTER TABLE `stock_items` ADD `codigoBarras` varchar(50);\nALTER TABLE `stock_items` ADD `descricaoComplementar` text;\nALTER TABLE `stock_items` ADD `procedencia` varchar(50);\nALTER TABLE `stock_items` ADD `estado` varchar(20);\nALTER TABLE `stock_items` ADD `unidadeDeVendaCodigo` varchar(10);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute ALTER TABLE `stock_items` ADD `pesoLiquido` decimal(18,5);\nALTER TABLE `stock_items` ADD `pesoBruto` decimal(18,5);\nALTER TABLE `stock_items` ADD `codigoBarras` varchar(50);\nALTER TABLE `stock_items` ADD `descricaoComplementar` text;\nALTER TABLE `stock_items` ADD `procedencia` varchar(50);\nALTER TABLE `stock_items` ADD `estado` varchar(20);\nALTER TABLE `stock_items` ADD `unidadeDeVendaCodigo` varchar(10);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2091
+}

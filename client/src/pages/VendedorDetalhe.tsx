@@ -2775,10 +2775,12 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
       const term = productSearch.trim().toLowerCase();
       filtered = filtered.filter((p: any) =>
         p.codigoItem.toLowerCase().includes(term) ||
-        p.descricaoItem.toLowerCase().includes(term)
+        p.descricaoItem.toLowerCase().includes(term) ||
+        (p.codigoBarras && p.codigoBarras.toLowerCase().includes(term)) ||
+        (p.grupo && p.grupo.toLowerCase().includes(term))
       );
     }
-    return filtered.slice(0, 30);
+    return filtered;
   }, [productsQuery.data, items, productSearch]);
 
   const addProduct = (product: any) => {
@@ -2954,23 +2956,25 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                 className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
               />
             </div>
-            {/* Available products list */}
-            {productSearch.length > 0 && availableProducts.length > 0 && (
-              <div className="border border-slate-200 dark:border-slate-600 rounded-lg max-h-48 overflow-y-auto">
+            {/* Available products list - always visible */}
+            {availableProducts.length > 0 && (
+              <div className="border border-slate-200 dark:border-slate-600 rounded-lg max-h-64 overflow-y-auto">
                 {availableProducts.map((p: any) => (
                   <button
                     key={p.codigoItem}
                     onClick={() => addProduct(p)}
-                    className="w-full text-left px-3 py-2.5 hover:bg-teal-50 dark:hover:bg-teal-900/20 border-b border-slate-100 dark:border-slate-700 last:border-0"
+                    className="w-full text-left px-3 py-2.5 hover:bg-teal-50 dark:hover:bg-teal-900/20 border-b border-slate-100 dark:border-slate-700 last:border-0 transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">{p.descricaoItem}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                           <span className="text-[10px] text-slate-400">Cód: {p.codigoItem}</span>
                           <span className="text-[10px] text-slate-400">• {p.unidadeMedida || "CX"}</span>
                           {p.grupo && <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-500">{p.grupo}</span>}
                           {p.unidadeDeVendaFator && <span className="text-[10px] text-slate-400">• Fator: {p.unidadeDeVendaFator}</span>}
+                          {p.pesoBruto && <span className="text-[10px] text-slate-400">• Peso: {p.pesoBruto}kg</span>}
+                          {p.descricaoComplementar && <span className="text-[10px] text-orange-500 italic truncate max-w-[200px]">{p.descricaoComplementar}</span>}
                         </div>
                       </div>
                       <div className="text-right ml-2 flex-shrink-0">
@@ -2981,6 +2985,12 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                   </button>
                 ))}
               </div>
+            )}
+            {availableProducts.length === 0 && productsQuery.data && productsQuery.data.length > 0 && (
+              <p className="text-xs text-slate-400 text-center py-3">Nenhum produto encontrado para "{productSearch}"</p>
+            )}
+            {productsQuery.isLoading && (
+              <p className="text-xs text-slate-400 text-center py-3">Carregando produtos...</p>
             )}
             {/* Selected items */}
             {items.length > 0 && (

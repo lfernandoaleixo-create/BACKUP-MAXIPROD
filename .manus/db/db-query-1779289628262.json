@@ -1,0 +1,50 @@
+{
+  "query": "SELECT codigoItem, descricaoItem, pesoBruto, descricaoComplementar, unidadeDeVendaCodigo, collectedAt FROM stock_items ORDER BY collectedAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT codigoItem, descricaoItem, pesoBruto, descricaoComplementar, unidadeDeVendaCodigo, collectedAt FROM stock_items ORDER BY collectedAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "codigoItem": "00034",
+      "descricaoItem": "PALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 100 X 100 UNID.  (EMB. TRANSPARENTE)",
+      "pesoBruto": "NULL",
+      "descricaoComplementar": "NULL",
+      "unidadeDeVendaCodigo": "NULL",
+      "collectedAt": "2026-05-20 15:05:21"
+    },
+    {
+      "codigoItem": "00004",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 200 MM MEIA PONTA C/ 5 X 1.000 UNID.",
+      "pesoBruto": "NULL",
+      "descricaoComplementar": "NULL",
+      "unidadeDeVendaCodigo": "NULL",
+      "collectedAt": "2026-05-20 15:05:21"
+    },
+    {
+      "codigoItem": "00032",
+      "descricaoItem": "PALITO DE DENTE BAMBU C/ 20 X 25 X 100 UNID.",
+      "pesoBruto": "NULL",
+      "descricaoComplementar": "NULL",
+      "unidadeDeVendaCodigo": "NULL",
+      "collectedAt": "2026-05-20 15:05:21"
+    },
+    {
+      "codigoItem": "00110",
+      "descricaoItem": "VARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA",
+      "pesoBruto": "NULL",
+      "descricaoComplementar": "NULL",
+      "unidadeDeVendaCodigo": "NULL",
+      "collectedAt": "2026-05-20 15:05:21"
+    },
+    {
+      "codigoItem": "00013R",
+      "descricaoItem": "ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO",
+      "pesoBruto": "NULL",
+      "descricaoComplementar": "NULL",
+      "unidadeDeVendaCodigo": "NULL",
+      "collectedAt": "2026-05-20 15:05:21"
+    }
+  ],
+  "messages": [],
+  "stdout": "codigoItem\tdescricaoItem\tpesoBruto\tdescricaoComplementar\tunidadeDeVendaCodigo\tcollectedAt\n00034\tPALITO DE MANICURE DUAS PONTAS BAMBU 4,0 X 125 MM C/ 100 X 100 UNID.  (EMB. TRANSPARENTE)\tNULL\tNULL\tNULL\t2026-05-20 15:05:21\n00004\tESPETO DE BAMBU 4,0 X 200 MM MEIA PONTA C/ 5 X 1.000 UNID.\tNULL\tNULL\tNULL\t2026-05-20 15:05:21\n00032\tPALITO DE DENTE BAMBU C/ 20 X 25 X 100 UNID.\tNULL\tNULL\tNULL\t2026-05-20 15:05:21\n00110\tVARETA DE FIBRA PARA AROMATIZADOR DE 3,0 X 200 MM C/ 20.000 UNID. PRETA\tNULL\tNULL\tNULL\t2026-05-20 15:05:21\n00013R\tESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO\tNULL\tNULL\tNULL\t2026-05-20 15:05:21\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

@@ -40,6 +40,14 @@ export const stockItems = mysqlTable("stock_items", {
   tipoDecodificado: varchar("tipoDecodificado", { length: 50 }),
   maxiprodId: bigint("maxiprodId", { mode: "number" }),
   unidadeDeVendaFator: decimal("unidadeDeVendaFator", { precision: 18, scale: 5 }),
+  // Product specs
+  pesoLiquido: decimal("pesoLiquido", { precision: 18, scale: 5 }),
+  pesoBruto: decimal("pesoBruto", { precision: 18, scale: 5 }),
+  codigoBarras: varchar("codigoBarras", { length: 50 }),
+  descricaoComplementar: text("descricaoComplementar"),
+  procedencia: varchar("procedencia", { length: 50 }),
+  estado: varchar("estado", { length: 20 }),
+  unidadeDeVendaCodigo: varchar("unidadeDeVendaCodigo", { length: 10 }),
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 
