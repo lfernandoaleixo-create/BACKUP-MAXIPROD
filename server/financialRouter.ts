@@ -3157,7 +3157,7 @@ export const financialRouter = router({
             inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
             lte(accountsReceivable.vencimentoData, cutoffCobranca + "T23:59:59"),
             // Excluir título BANCO COOPERATIVO SICREDI (cheque não identificado) - já recebido no Maxiprod
-            ne(accountsReceivable.maxiprodId, "409300081687671")
+            ne(accountsReceivable.maxiprodId, 409300081687671)
           )
         )
         .orderBy(asc(accountsReceivable.vencimentoData));
