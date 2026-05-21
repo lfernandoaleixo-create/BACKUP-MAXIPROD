@@ -1,0 +1,90 @@
+{
+  "query": "SELECT id, cliente, centroDeCustosId, referenteA, documentoVinculadoNumero, parcela FROM accounts_receivable WHERE estado = 'EMITIDO' AND tipo = 'TITULO' LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, centroDeCustosId, referenteA, documentoVinculadoNumero, parcela FROM accounts_receivable WHERE estado = 'EMITIDO' AND tipo = 'TITULO' LIMIT 10",
+  "rows": [
+    {
+      "id": "6095808",
+      "cliente": "SUPER MIX DISTRIBUIDORA LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1584",
+      "parcela": "NULL"
+    },
+    {
+      "id": "6095809",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "2"
+    },
+    {
+      "id": "6095810",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "3"
+    },
+    {
+      "id": "6095811",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "4"
+    },
+    {
+      "id": "6095812",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "5"
+    },
+    {
+      "id": "6095813",
+      "cliente": "KEURE QUIMICA LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "1"
+    },
+    {
+      "id": "6095814",
+      "cliente": "KEURE QUIMICA LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "2"
+    },
+    {
+      "id": "6095815",
+      "cliente": "KEURE QUIMICA LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "3"
+    },
+    {
+      "id": "6095816",
+      "cliente": "KEURE QUIMICA LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "4"
+    },
+    {
+      "id": "6095817",
+      "cliente": "KEURE QUIMICA LTDA",
+      "centroDeCustosId": "NULL",
+      "referenteA": "NULL",
+      "documentoVinculadoNumero": "1656",
+      "parcela": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tcentroDeCustosId\treferenteA\tdocumentoVinculadoNumero\tparcela\n6095808\tSUPER MIX DISTRIBUIDORA LTDA\tNULL\tNULL\t1584\tNULL\n6095809\tJK COMERCIO E REPRESENTACOES LTDA\tNULL\tNULL\t1586\t2\n6095810\tJK COMERCIO E REPRESENTACOES LTDA\tNULL\tNULL\t1586\t3\n6095811\tJK COMERCIO E REPRESENTACOES LTDA\tNULL\tNULL\t1586\t4\n6095812\tJK COMERCIO E REPRESENTACOES LTDA\tNULL\tNULL\t1586\t5\n6095813\tKEURE QUIMICA LTDA\tNULL\tNULL\t1633\t1\n6095814\tKEURE QUIMICA LTDA\tNULL\tNULL\t1633\t2\n6095815\tKEURE QUIMICA LTDA\tNULL\tNULL\t1633\t3\n6095816\tKEURE QUIMICA LTDA\tNULL\tNULL\t1633\t4\n6095817\tKEURE QUIMICA LTDA\tNULL\tNULL\t1656\t1\n",
+  "stderr": "",
+  "execution_time_ms": 279
+}

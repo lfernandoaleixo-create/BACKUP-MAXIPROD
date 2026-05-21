@@ -1,0 +1,16 @@
+{
+  "query": "SELECT DISTINCT pedido FROM sales_orders WHERE pedido IN (1584, 1586, 1633, 113, 116) LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT pedido FROM sales_orders WHERE pedido IN (1584, 1586, 1633, 113, 116) LIMIT 10",
+  "rows": [
+    {
+      "pedido": "113"
+    },
+    {
+      "pedido": "116"
+    }
+  ],
+  "messages": [],
+  "stdout": "pedido\n113\n116\n",
+  "stderr": "",
+  "execution_time_ms": 314
+}

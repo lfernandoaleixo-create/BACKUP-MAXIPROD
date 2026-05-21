@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as com_doc FROM cobranca_planilha WHERE documento IS NOT NULL AND ativo = 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as com_doc FROM cobranca_planilha WHERE documento IS NOT NULL AND ativo = 1",
+  "rows": [
+    {
+      "com_doc": "42"
+    }
+  ],
+  "messages": [],
+  "stdout": "com_doc\n42\n",
+  "stderr": "",
+  "execution_time_ms": 273
+}

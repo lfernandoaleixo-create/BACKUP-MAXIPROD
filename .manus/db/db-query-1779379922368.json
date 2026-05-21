@@ -1,0 +1,70 @@
+{
+  "query": "SELECT cp.id, cp.empresa, cp.centro_custos, ar.empresaNome FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.ativo = 1 AND cp.centro_custos IS NOT NULL LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.id, cp.empresa, cp.centro_custos, ar.empresaNome FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.ativo = 1 AND cp.centro_custos IS NOT NULL LIMIT 10",
+  "rows": [
+    {
+      "id": "4",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "centro_custos": "BAMBU",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "6",
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "centro_custos": "BAMBU",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "7",
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "centro_custos": "BAMBU",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "8",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "centro_custos": "BAMBU",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "9",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centro_custos": "BAMBU",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "10",
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "centro_custos": "MADEIRA",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "11",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centro_custos": "BAMBU",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "12",
+      "empresa": "EVAFEST INDUSTRIA E COMERCIO EIRELI",
+      "centro_custos": "MADEIRA",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "13",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centro_custos": "BAMBU",
+      "empresaNome": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "14",
+      "empresa": "EVAFEST INDUSTRIA E COMERCIO EIRELI",
+      "centro_custos": "MADEIRA",
+      "empresaNome": "PALITOS INDUSTRIA"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tcentro_custos\tempresaNome\n4\tWGO COMERCIO E SERVICOS LTDA\tBAMBU\tPALITOS INDUSTRIA\n6\tM D DA SILVA ARTEFATOS DE BAMBU\tBAMBU\tPALITOS INDUSTRIA\n7\tM D DA SILVA ARTEFATOS DE BAMBU\tBAMBU\tPALITOS INDUSTRIA\n8\tWGO COMERCIO E SERVICOS LTDA\tBAMBU\tPALITOS INDUSTRIA\n9\tJK COMERCIO E REPRESENTACOES LTDA\tBAMBU\tPALITOS INDUSTRIA\n10\t59.252.539 GLAUCIENE MATEUS GOMES GERTH\tMADEIRA\tPALITOS INDUSTRIA\n11\tJK COMERCIO E REPRESENTACOES LTDA\tBAMBU\tPALITOS INDUSTRIA\n12\tEVAFEST INDUSTRIA E COMERCIO EIRELI\tMADEIRA\tPALITOS INDUSTRIA\n13\tJK COMERCIO E REPRESENTACOES LTDA\tBAMBU\tPALITOS INDUSTRIA\n14\tEVAFEST INDUSTRIA E COMERCIO EIRELI\tMADEIRA\tPALITOS INDUSTRIA\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

@@ -1,0 +1,124 @@
+{
+  "query": "SELECT ar.cliente, cp.centro_custos, so.estadoConfiguravel, COUNT(*) as cnt FROM cobranca_planilha cp INNER JOIN accounts_receivable ar ON cp.ar_id = ar.id INNER JOIN sales_orders so ON ar.cliente = so.cliente WHERE cp.ativo = 1 AND cp.centro_custos IS NOT NULL AND so.estadoConfiguravel IS NOT NULL GROUP BY ar.cliente, cp.centro_custos, so.estadoConfiguravel HAVING COUNT(*) > 1 ORDER BY ar.cliente LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.cliente, cp.centro_custos, so.estadoConfiguravel, COUNT(*) as cnt FROM cobranca_planilha cp INNER JOIN accounts_receivable ar ON cp.ar_id = ar.id INNER JOIN sales_orders so ON ar.cliente = so.cliente WHERE cp.ativo = 1 AND cp.centro_custos IS NOT NULL AND so.estadoConfiguravel IS NOT NULL GROUP BY ar.cliente, cp.centro_custos, so.estadoConfiguravel HAVING COUNT(*) > 1 ORDER BY ar.cliente LIMIT 20",
+  "rows": [
+    {
+      "cliente": "14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "10"
+    },
+    {
+      "cliente": "3B3R COMERCIO LTDA",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "2"
+    },
+    {
+      "cliente": "ESPETINHOS COROMANDEL LTDA",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "20"
+    },
+    {
+      "cliente": "EVAFEST INDUSTRIA E COMERCIO EIRELI",
+      "centro_custos": "MADEIRA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "8"
+    },
+    {
+      "cliente": "FAZENDA SANTA CRUZ",
+      "centro_custos": "SERRAGEM",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "6"
+    },
+    {
+      "cliente": "FOGOS BEIJA FLOR",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "2"
+    },
+    {
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.",
+      "centro_custos": "ROJÃO",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "4"
+    },
+    {
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "48"
+    },
+    {
+      "cliente": "KEURE QUIMICA LTDA",
+      "centro_custos": "MADEIRA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "340"
+    },
+    {
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "AMOSTRA",
+      "cnt": "8"
+    },
+    {
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "CANCELADO",
+      "cnt": "12"
+    },
+    {
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "BONIFICAÇÃO",
+      "cnt": "8"
+    },
+    {
+      "cliente": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "92"
+    },
+    {
+      "cliente": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "centro_custos": "MADEIRA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "11"
+    },
+    {
+      "cliente": "PEDRO PAULO",
+      "centro_custos": "ROJÃO",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "4"
+    },
+    {
+      "cliente": "RONALDO ANTONIO DE MOURA",
+      "centro_custos": "ROJÃO",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "16"
+    },
+    {
+      "cliente": "SUPER MIX DISTRIBUIDORA LTDA",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "10"
+    },
+    {
+      "cliente": "WGO COMERCIO E SERVICOS LTDA",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "33"
+    },
+    {
+      "cliente": "WGO COMERCIO E SERVICOS LTDA",
+      "centro_custos": "BAMBU",
+      "estadoConfiguravel": "AMOSTRA",
+      "cnt": "3"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\tcentro_custos\testadoConfiguravel\tcnt\n14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA\tBAMBU\tBAMBU\t10\n3B3R COMERCIO LTDA\tBAMBU\tBAMBU\t2\nESPETINHOS COROMANDEL LTDA\tBAMBU\tBAMBU\t20\nEVAFEST INDUSTRIA E COMERCIO EIRELI\tMADEIRA\tMADEIRA\t8\nFAZENDA SANTA CRUZ\tSERRAGEM\tMADEIRA\t6\nFOGOS BEIJA FLOR\tBAMBU\tBAMBU\t2\nINDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.\tROJÃO\tMADEIRA\t4\nJK COMERCIO E REPRESENTACOES LTDA\tBAMBU\tBAMBU\t48\nKEURE QUIMICA LTDA\tMADEIRA\tMADEIRA\t340\nM D DA SILVA ARTEFATOS DE BAMBU\tBAMBU\tAMOSTRA\t8\nM D DA SILVA ARTEFATOS DE BAMBU\tBAMBU\tCANCELADO\t12\nM D DA SILVA ARTEFATOS DE BAMBU\tBAMBU\tBONIFICAÇÃO\t8\nM D DA SILVA ARTEFATOS DE BAMBU\tBAMBU\tBAMBU\t92\nPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\tMADEIRA\tMADEIRA\t11\nPEDRO PAULO\tROJÃO\tMADEIRA\t4\nRONALDO ANTONIO DE MOURA\tROJÃO\tMADEIRA\t16\nSUPER MIX DISTRIBUIDORA LTDA\tBAMBU\tBAMBU\t10\nWGO COMERCIO E SERVICOS LTDA\tBAMBU\tBAMBU\t33\nWGO COMERCIO E SERVICOS LTDA\tBAMBU\tAMOSTRA\t3\n",
+  "stderr": "",
+  "execution_time_ms": 321
+}

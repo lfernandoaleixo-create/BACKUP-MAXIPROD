@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, empresa, documento FROM cobranca_planilha WHERE documento IS NOT NULL AND ativo = 1 LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, documento FROM cobranca_planilha WHERE documento IS NOT NULL AND ativo = 1 LIMIT 10",
+  "rows": [
+    {
+      "id": "4",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "documento": "NF 113 (2/4)"
+    },
+    {
+      "id": "8",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "documento": "NF 113 (1/4)"
+    },
+    {
+      "id": "9",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "documento": "NF 1586 (5/5)"
+    },
+    {
+      "id": "10",
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "documento": "NF 1889 (2/2)"
+    },
+    {
+      "id": "11",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "documento": "NF 1586 (4/5)"
+    },
+    {
+      "id": "13",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "documento": "NF 1586 (3/5)"
+    },
+    {
+      "id": "15",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "documento": "NF 1586 (2/5)"
+    },
+    {
+      "id": "22",
+      "empresa": "SUPER MIX DISTRIBUIDORA LTDA",
+      "documento": "NF 1584"
+    },
+    {
+      "id": "25",
+      "empresa": "FOGOS BEIJA FLOR",
+      "documento": "NF 182"
+    },
+    {
+      "id": "28",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "documento": "NF 116"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tdocumento\n4\tWGO COMERCIO E SERVICOS LTDA\tNF 113 (2/4)\n8\tWGO COMERCIO E SERVICOS LTDA\tNF 113 (1/4)\n9\tJK COMERCIO E REPRESENTACOES LTDA\tNF 1586 (5/5)\n10\t59.252.539 GLAUCIENE MATEUS GOMES GERTH\tNF 1889 (2/2)\n11\tJK COMERCIO E REPRESENTACOES LTDA\tNF 1586 (4/5)\n13\tJK COMERCIO E REPRESENTACOES LTDA\tNF 1586 (3/5)\n15\tJK COMERCIO E REPRESENTACOES LTDA\tNF 1586 (2/5)\n22\tSUPER MIX DISTRIBUIDORA LTDA\tNF 1584\n25\tFOGOS BEIJA FLOR\tNF 182\n28\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\tNF 116\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

@@ -1,0 +1,19 @@
+{
+  "query": "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND (TABLE_NAME LIKE '%invoice%' OR TABLE_NAME LIKE '%nf%' OR TABLE_NAME LIKE '%nota%') ORDER BY TABLE_NAME",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND (TABLE_NAME LIKE '%invoice%' OR TABLE_NAME LIKE '%nf%' OR TABLE_NAME LIKE '%nota%') ORDER BY TABLE_NAME",
+  "rows": [
+    {
+      "TABLE_NAME": "annotation_entries"
+    },
+    {
+      "TABLE_NAME": "receivable_protest_config"
+    },
+    {
+      "TABLE_NAME": "sales_invoice_items"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\nannotation_entries\nreceivable_protest_config\nsales_invoice_items\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

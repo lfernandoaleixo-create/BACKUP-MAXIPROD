@@ -1,0 +1,9 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sales_invoice_items' AND (COLUMN_NAME LIKE '%numero%' OR COLUMN_NAME LIKE '%estado%' OR COLUMN_NAME LIKE '%nf%' OR COLUMN_NAME LIKE '%config%') ORDER BY ORDINAL_POSITION",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sales_invoice_items' AND (COLUMN_NAME LIKE '%numero%' OR COLUMN_NAME LIKE '%estado%' OR COLUMN_NAME LIKE '%nf%' OR COLUMN_NAME LIKE '%config%') ORDER BY ORDINAL_POSITION",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 266
+}

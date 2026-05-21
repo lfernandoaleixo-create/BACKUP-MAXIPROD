@@ -378,6 +378,7 @@ export const accountsReceivable = mysqlTable("accounts_receivable", {
   formaCobranca: varchar("formaCobranca", { length: 500 }), // Descrição completa da forma de cobrança (ex: "PIX Banco Cooperativo Sicredi...")
   formaCobrancaId: bigint("formaCobrancaId", { mode: "number" }), // ID da FormaDeCobranca no Maxiprod
   anotacoes: text("anotacoes"), // Anotações do Maxiprod (tarefasEAnotacoes.descricao concatenadas)
+  estadoConfiguravel: varchar("estadoConfiguravel", { length: 100 }), // Estado configurável do título (BAMBU, MADEIRA, ROJÃO, SERRAGEM)
   decisaoCobranca: varchar("decisaoCobranca", { length: 200 }), // Decisão de cobrança do cliente (COM PROTESTO / SEM PROTESTO) - campo adicional "SITUAÇÃO" do Maxiprod
   dadosCheque: varchar("dadosCheque", { length: 500 }), // Dados do cheque do Maxiprod (ex: "SANTANDER - Nº 90 - M D DA SILVA") - campo adicional tag DadosDoCheque
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
@@ -1816,6 +1817,7 @@ export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
   uf: varchar("uf", { length: 5 }),
   pais: varchar("pais", { length: 50 }),
   centroCustos: varchar("centro_custos", { length: 50 }), // BAMBU, ROJÃO, MADEIRA, SERRAGEM
+  documento: varchar("documento", { length: 100 }), // NF + parcela (ex: "NF 1586 (3/5)")
   valor: decimal("valor", { precision: 18, scale: 2 }),
   vencimento: varchar("vencimento", { length: 10 }), // YYYY-MM-DD
   diasVencidos: int("dias_vencidos"),

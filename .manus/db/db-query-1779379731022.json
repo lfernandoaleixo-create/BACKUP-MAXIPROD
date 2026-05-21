@@ -1,0 +1,115 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sales_orders' AND ORDINAL_POSITION > 20 ORDER BY ORDINAL_POSITION",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sales_orders' AND ORDINAL_POSITION > 20 ORDER BY ORDINAL_POSITION",
+  "rows": [
+    {
+      "COLUMN_NAME": "segmento"
+    },
+    {
+      "COLUMN_NAME": "regiao"
+    },
+    {
+      "COLUMN_NAME": "collectedAt"
+    },
+    {
+      "COLUMN_NAME": "condicaoPagamento"
+    },
+    {
+      "COLUMN_NAME": "transportadora"
+    },
+    {
+      "COLUMN_NAME": "razaoSocial"
+    },
+    {
+      "COLUMN_NAME": "inscricaoEstadual"
+    },
+    {
+      "COLUMN_NAME": "enderecoLogradouro"
+    },
+    {
+      "COLUMN_NAME": "enderecoNumero"
+    },
+    {
+      "COLUMN_NAME": "enderecoComplemento"
+    },
+    {
+      "COLUMN_NAME": "enderecoBairro"
+    },
+    {
+      "COLUMN_NAME": "enderecoCep"
+    },
+    {
+      "COLUMN_NAME": "enderecoCidade"
+    },
+    {
+      "COLUMN_NAME": "valorTotalPedido"
+    },
+    {
+      "COLUMN_NAME": "estadoNotaPedido"
+    },
+    {
+      "COLUMN_NAME": "estadoConfiguravel"
+    },
+    {
+      "COLUMN_NAME": "crmSegmento"
+    },
+    {
+      "COLUMN_NAME": "codigoItem"
+    },
+    {
+      "COLUMN_NAME": "descricaoItem"
+    },
+    {
+      "COLUMN_NAME": "unidadeMedidaCodigo"
+    },
+    {
+      "COLUMN_NAME": "unidadeMedidaDescricao"
+    },
+    {
+      "COLUMN_NAME": "quantidadeUnidadeItem"
+    },
+    {
+      "COLUMN_NAME": "ncm"
+    },
+    {
+      "COLUMN_NAME": "clienteTelefone"
+    },
+    {
+      "COLUMN_NAME": "clienteEmail"
+    },
+    {
+      "COLUMN_NAME": "transportadoraRazaoSocial"
+    },
+    {
+      "COLUMN_NAME": "grupoDescricao"
+    },
+    {
+      "COLUMN_NAME": "observacoes"
+    },
+    {
+      "COLUMN_NAME": "quantidadeFaturada"
+    },
+    {
+      "COLUMN_NAME": "descontoValor"
+    },
+    {
+      "COLUMN_NAME": "descontoPercentual"
+    },
+    {
+      "COLUMN_NAME": "freteValor"
+    },
+    {
+      "COLUMN_NAME": "seguroValor"
+    },
+    {
+      "COLUMN_NAME": "outrasDespesasValor"
+    },
+    {
+      "COLUMN_NAME": "vendedorReal"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nsegmento\nregiao\ncollectedAt\ncondicaoPagamento\ntransportadora\nrazaoSocial\ninscricaoEstadual\nenderecoLogradouro\nenderecoNumero\nenderecoComplemento\nenderecoBairro\nenderecoCep\nenderecoCidade\nvalorTotalPedido\nestadoNotaPedido\nestadoConfiguravel\ncrmSegmento\ncodigoItem\ndescricaoItem\nunidadeMedidaCodigo\nunidadeMedidaDescricao\nquantidadeUnidadeItem\nncm\nclienteTelefone\nclienteEmail\ntransportadoraRazaoSocial\ngrupoDescricao\nobservacoes\nquantidadeFaturada\ndescontoValor\ndescontoPercentual\nfreteValor\nseguroValor\noutrasDespesasValor\nvendedorReal\n",
+  "stderr": "",
+  "execution_time_ms": 256
+}

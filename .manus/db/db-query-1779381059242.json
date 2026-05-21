@@ -1,0 +1,50 @@
+{
+  "query": "SELECT documento, empresa FROM cobranca_planilha WHERE ativo = 1 AND documento IS NOT NULL LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT documento, empresa FROM cobranca_planilha WHERE ativo = 1 AND documento IS NOT NULL LIMIT 10",
+  "rows": [
+    {
+      "documento": "NF 113 (2/4)",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA"
+    },
+    {
+      "documento": "NF 113 (1/4)",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA"
+    },
+    {
+      "documento": "NF 1586 (5/5)",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA"
+    },
+    {
+      "documento": "NF 1889 (2/2)",
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH"
+    },
+    {
+      "documento": "NF 1586 (4/5)",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA"
+    },
+    {
+      "documento": "NF 1586 (3/5)",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA"
+    },
+    {
+      "documento": "NF 1586 (2/5)",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA"
+    },
+    {
+      "documento": "NF 1584",
+      "empresa": "SUPER MIX DISTRIBUIDORA LTDA"
+    },
+    {
+      "documento": "NF 182",
+      "empresa": "FOGOS BEIJA FLOR"
+    },
+    {
+      "documento": "NF 116",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA"
+    }
+  ],
+  "messages": [],
+  "stdout": "documento\tempresa\nNF 113 (2/4)\tWGO COMERCIO E SERVICOS LTDA\nNF 113 (1/4)\tWGO COMERCIO E SERVICOS LTDA\nNF 1586 (5/5)\tJK COMERCIO E REPRESENTACOES LTDA\nNF 1889 (2/2)\t59.252.539 GLAUCIENE MATEUS GOMES GERTH\nNF 1586 (4/5)\tJK COMERCIO E REPRESENTACOES LTDA\nNF 1586 (3/5)\tJK COMERCIO E REPRESENTACOES LTDA\nNF 1586 (2/5)\tJK COMERCIO E REPRESENTACOES LTDA\nNF 1584\tSUPER MIX DISTRIBUIDORA LTDA\nNF 182\tFOGOS BEIJA FLOR\nNF 116\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

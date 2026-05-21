@@ -1,0 +1,60 @@
+{
+  "query": "SELECT cp.empresa, ar.documentoVinculadoNumero, ar.parcela FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.ativo = 1 AND cp.documento IS NULL LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.empresa, ar.documentoVinculadoNumero, ar.parcela FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.ativo = 1 AND cp.documento IS NULL LIMIT 10",
+  "rows": [
+    {
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "5"
+    },
+    {
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "empresa": "EVAFEST INDUSTRIA E COMERCIO EIRELI",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "empresa": "EVAFEST INDUSTRIA E COMERCIO EIRELI",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresa\tdocumentoVinculadoNumero\tparcela\nM D DA SILVA ARTEFATOS DE BAMBU\tNULL\t5\nM D DA SILVA ARTEFATOS DE BAMBU\tNULL\tNULL\nEVAFEST INDUSTRIA E COMERCIO EIRELI\tNULL\tNULL\nEVAFEST INDUSTRIA E COMERCIO EIRELI\tNULL\tNULL\nJ LEAL DISTRIBUIDORA LTDA\tNULL\tNULL\nJ LEAL DISTRIBUIDORA LTDA\tNULL\tNULL\nBOUTIQUE DO CONSTRUTOR SLU LTDA\tNULL\tNULL\nJ LEAL DISTRIBUIDORA LTDA\tNULL\tNULL\nBOUTIQUE DO CONSTRUTOR SLU LTDA\tNULL\tNULL\nJ LEAL DISTRIBUIDORA LTDA\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

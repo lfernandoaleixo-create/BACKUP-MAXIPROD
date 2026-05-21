@@ -1,0 +1,25 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' AND (COLUMN_NAME LIKE '%estado%' OR COLUMN_NAME LIKE '%config%' OR COLUMN_NAME LIKE '%documento%' OR COLUMN_NAME LIKE '%centro%' OR COLUMN_NAME LIKE '%referente%' OR COLUMN_NAME LIKE '%nota%' OR COLUMN_NAME LIKE '%nf%' OR COLUMN_NAME LIKE '%serie%') ORDER BY COLUMN_NAME",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' AND (COLUMN_NAME LIKE '%estado%' OR COLUMN_NAME LIKE '%config%' OR COLUMN_NAME LIKE '%documento%' OR COLUMN_NAME LIKE '%centro%' OR COLUMN_NAME LIKE '%referente%' OR COLUMN_NAME LIKE '%nota%' OR COLUMN_NAME LIKE '%nf%' OR COLUMN_NAME LIKE '%serie%') ORDER BY COLUMN_NAME",
+  "rows": [
+    {
+      "COLUMN_NAME": "anotacoes"
+    },
+    {
+      "COLUMN_NAME": "centroDeCustosId"
+    },
+    {
+      "COLUMN_NAME": "documentoVinculadoNumero"
+    },
+    {
+      "COLUMN_NAME": "estado"
+    },
+    {
+      "COLUMN_NAME": "referenteA"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nanotacoes\ncentroDeCustosId\ndocumentoVinculadoNumero\nestado\nreferenteA\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

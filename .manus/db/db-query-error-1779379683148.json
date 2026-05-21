@@ -1,0 +1,8 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.documentoVinculadoNumero, ar.parcela, ar.centroDeCustosId, so.estadoConfiguravel FROM accounts_receivable ar LEFT JOIN sales_orders so ON ar.documentoVinculadoNumero = so.numero WHERE ar.estado = 'EMITIDO' AND ar.tipo = 'TITULO' AND ar.vencimentoData <= '2026-05-20T23:59:59' LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.documentoVinculadoNumero, ar.parcela, ar.centroDeCustosId, so.estadoConfiguravel FROM accounts_receivable ar LEFT JOIN sales_orders so ON ar.documentoVinculadoNumero = so.numero WHERE ar.estado = 'EMITIDO' AND ar.tipo = 'TITULO' AND ar.vencimentoData <= '2026-05-20T23:59:59' LIMIT 10",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'so.numero' in 'on clause'"
+  ]
+}

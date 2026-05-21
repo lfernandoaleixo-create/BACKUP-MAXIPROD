@@ -1,0 +1,90 @@
+{
+  "query": "SELECT cp.id, cp.empresa, cp.centro_custos, cp.ar_id, ar.documentoVinculadoNumero, ar.parcela FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.ativo = 1 LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.id, cp.empresa, cp.centro_custos, cp.ar_id, ar.documentoVinculadoNumero, ar.parcela FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.ativo = 1 LIMIT 10",
+  "rows": [
+    {
+      "id": "4",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "centro_custos": "BAMBU",
+      "ar_id": "6095834",
+      "documentoVinculadoNumero": "113",
+      "parcela": "2"
+    },
+    {
+      "id": "6",
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "centro_custos": "BAMBU",
+      "ar_id": "6401348",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "5"
+    },
+    {
+      "id": "7",
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU",
+      "centro_custos": "BAMBU",
+      "ar_id": "6401356",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "id": "8",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "centro_custos": "BAMBU",
+      "ar_id": "6095833",
+      "documentoVinculadoNumero": "113",
+      "parcela": "1"
+    },
+    {
+      "id": "9",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centro_custos": "BAMBU",
+      "ar_id": "6095812",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "5"
+    },
+    {
+      "id": "10",
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "centro_custos": "MADEIRA",
+      "ar_id": "6095832",
+      "documentoVinculadoNumero": "1889",
+      "parcela": "2"
+    },
+    {
+      "id": "11",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centro_custos": "BAMBU",
+      "ar_id": "6095811",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "4"
+    },
+    {
+      "id": "12",
+      "empresa": "EVAFEST INDUSTRIA E COMERCIO EIRELI",
+      "centro_custos": "MADEIRA",
+      "ar_id": "6095843",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    },
+    {
+      "id": "13",
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "centro_custos": "BAMBU",
+      "ar_id": "6095810",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "3"
+    },
+    {
+      "id": "14",
+      "empresa": "EVAFEST INDUSTRIA E COMERCIO EIRELI",
+      "centro_custos": "MADEIRA",
+      "ar_id": "6095842",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tcentro_custos\tar_id\tdocumentoVinculadoNumero\tparcela\n4\tWGO COMERCIO E SERVICOS LTDA\tBAMBU\t6095834\t113\t2\n6\tM D DA SILVA ARTEFATOS DE BAMBU\tBAMBU\t6401348\tNULL\t5\n7\tM D DA SILVA ARTEFATOS DE BAMBU\tBAMBU\t6401356\tNULL\tNULL\n8\tWGO COMERCIO E SERVICOS LTDA\tBAMBU\t6095833\t113\t1\n9\tJK COMERCIO E REPRESENTACOES LTDA\tBAMBU\t6095812\t1586\t5\n10\t59.252.539 GLAUCIENE MATEUS GOMES GERTH\tMADEIRA\t6095832\t1889\t2\n11\tJK COMERCIO E REPRESENTACOES LTDA\tBAMBU\t6095811\t1586\t4\n12\tEVAFEST INDUSTRIA E COMERCIO EIRELI\tMADEIRA\t6095843\tNULL\tNULL\n13\tJK COMERCIO E REPRESENTACOES LTDA\tBAMBU\t6095810\t1586\t3\n14\tEVAFEST INDUSTRIA E COMERCIO EIRELI\tMADEIRA\t6095842\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

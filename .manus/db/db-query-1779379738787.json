@@ -1,0 +1,80 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.documentoVinculadoNumero, ar.parcela, so.estadoConfiguravel FROM accounts_receivable ar LEFT JOIN sales_orders so ON CAST(ar.documentoVinculadoNumero AS UNSIGNED) = so.pedido WHERE ar.estado = 'EMITIDO' AND ar.tipo = 'TITULO' AND ar.vencimentoData <= '2026-05-20T23:59:59' AND so.estadoConfiguravel IS NOT NULL LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.documentoVinculadoNumero, ar.parcela, so.estadoConfiguravel FROM accounts_receivable ar LEFT JOIN sales_orders so ON CAST(ar.documentoVinculadoNumero AS UNSIGNED) = so.pedido WHERE ar.estado = 'EMITIDO' AND ar.tipo = 'TITULO' AND ar.vencimentoData <= '2026-05-20T23:59:59' AND so.estadoConfiguravel IS NOT NULL LIMIT 10",
+  "rows": [
+    {
+      "id": "6095834",
+      "cliente": "WGO COMERCIO E SERVICOS LTDA",
+      "documentoVinculadoNumero": "113",
+      "parcela": "2",
+      "estadoConfiguravel": "MADEIRA"
+    },
+    {
+      "id": "6095833",
+      "cliente": "WGO COMERCIO E SERVICOS LTDA",
+      "documentoVinculadoNumero": "113",
+      "parcela": "1",
+      "estadoConfiguravel": "MADEIRA"
+    },
+    {
+      "id": "6401246",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "documentoVinculadoNumero": "116",
+      "parcela": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "id": "6401246",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "documentoVinculadoNumero": "116",
+      "parcela": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "id": "6401246",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "documentoVinculadoNumero": "116",
+      "parcela": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "id": "6401246",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "documentoVinculadoNumero": "116",
+      "parcela": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "id": "6401246",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "documentoVinculadoNumero": "116",
+      "parcela": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "id": "6401246",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "documentoVinculadoNumero": "116",
+      "parcela": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "id": "6401246",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "documentoVinculadoNumero": "116",
+      "parcela": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    },
+    {
+      "id": "6401246",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA",
+      "documentoVinculadoNumero": "116",
+      "parcela": "NULL",
+      "estadoConfiguravel": "BAMBU"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tdocumentoVinculadoNumero\tparcela\testadoConfiguravel\n6095834\tWGO COMERCIO E SERVICOS LTDA\t113\t2\tMADEIRA\n6095833\tWGO COMERCIO E SERVICOS LTDA\t113\t1\tMADEIRA\n6401246\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\t116\tNULL\tBAMBU\n6401246\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\t116\tNULL\tBAMBU\n6401246\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\t116\tNULL\tBAMBU\n6401246\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\t116\tNULL\tBAMBU\n6401246\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\t116\tNULL\tBAMBU\n6401246\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\t116\tNULL\tBAMBU\n6401246\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\t116\tNULL\tBAMBU\n6401246\tINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\t116\tNULL\tBAMBU\n",
+  "stderr": "",
+  "execution_time_ms": 337
+}

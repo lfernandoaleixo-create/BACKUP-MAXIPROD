@@ -1,0 +1,1 @@
+ALTER TABLE `cobranca_planilha` ADD `documento` varchar(100);

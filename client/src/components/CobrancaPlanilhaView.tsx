@@ -682,6 +682,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           item.status || "-",
           tipoLabel,
           item.centroCustos || "-",
+          item.documento || "-",
           item.vendedor || "-",
           fc.label || "-",
           (item as any).contato || "-",
@@ -691,7 +692,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
 
       autoTable(doc, {
         startY: y,
-        head: [["Empresa", "CNPJ/CPF", "Valor", "Venc.", "Dias", "Status", "Tipo", "Centro", "Vendedor", "Forma Cob.", "Contato", "Etapas"]],
+        head: [["Empresa", "CNPJ/CPF", "Valor", "Venc.", "Dias", "Status", "Tipo", "Centro", "Documento", "Vendedor", "Forma Cob.", "Contato", "Etapas"]],
         body: tableData,
         theme: "grid",
         headStyles: {
@@ -710,11 +711,12 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           4: { cellWidth: 8, halign: "center" },
           5: { cellWidth: 20, halign: "center" },
           6: { cellWidth: 20, halign: "center" },
-          7: { cellWidth: 16, halign: "center" },
-          8: { cellWidth: 24 },
-          9: { cellWidth: 14, halign: "center" },
-          10: { cellWidth: 22 },
-          11: { cellWidth: "auto" },
+          7: { cellWidth: 14, halign: "center" },
+          8: { cellWidth: 18, halign: "center" },
+          9: { cellWidth: 22 },
+          10: { cellWidth: 14, halign: "center" },
+          11: { cellWidth: 20 },
+          12: { cellWidth: "auto" },
         },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         didParseCell: (data: any) => {
@@ -1320,6 +1322,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                 </th>
                 <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[85px]">Tipo</th>
                 <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[50px]">Centro</th>
+                <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[80px]">Documento</th>
                 <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[70px]">Vendedor</th>
                 <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[55px]">Forma</th>
                 <th className="text-center px-2 py-3 font-semibold text-slate-600 min-w-[110px]">Status</th>
@@ -1333,7 +1336,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             <tbody>
               {filteredItems.length === 0 && (
                 <tr>
-                  <td colSpan={14} className="py-12 text-center text-slate-400">
+                  <td colSpan={15} className="py-12 text-center text-slate-400">
                     <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p>Nenhum título encontrado</p>
                   </td>
@@ -1405,6 +1408,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       {/* Centro */}
                       <td className="text-center px-2 py-2.5">
                         <span className="text-[10px] font-medium text-slate-600">{item.centroCustos || "-"}</span>
+                      </td>
+                      {/* Documento (NF + parcela) */}
+                      <td className="text-center px-2 py-2.5">
+                        <span className="text-[10px] font-medium text-blue-700">{item.documento || "-"}</span>
                       </td>
                       {/* Vendedor */}
                       <td className="text-center px-2 py-2.5">
@@ -1499,6 +1506,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                   { label: "Contato", field: "contato", value: (item as any).contato },
                                   { label: "Email", field: "email", value: (item as any).email },
                                   { label: "Centro", field: "centroCustos", value: item.centroCustos },
+                                  { label: "Documento", field: "documento", value: item.documento },
                                 ].map(f => (
                                   <div key={f.field} className="flex items-center gap-2">
                                     <span className="font-medium text-slate-500 w-[70px] shrink-0">{f.label}:</span>

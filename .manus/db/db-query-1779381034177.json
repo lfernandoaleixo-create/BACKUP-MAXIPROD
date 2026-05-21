@@ -1,0 +1,9 @@
+{
+  "query": "SELECT id, empresa, centro_custos, documento FROM cobranca_planilha WHERE ativo = 1 AND centro_custos IS NULL LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, centro_custos, documento FROM cobranca_planilha WHERE ativo = 1 AND centro_custos IS NULL LIMIT 5",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 272
+}

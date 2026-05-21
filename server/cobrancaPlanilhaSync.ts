@@ -13,8 +13,8 @@
  */
 
 import { getDb } from "./db";
-import { cobrancaPlanilha, accountsReceivable, collectionActions } from "../drizzle/schema";
-import { eq, and, inArray, lte } from "drizzle-orm";
+import { cobrancaPlanilha, accountsReceivable, collectionActions, salesOrders } from "../drizzle/schema";
+import { eq, and, inArray, lte, isNull, sql, desc } from "drizzle-orm";
 
 // Tipos válidos de contas a receber (mesmo filtro da inadimplência)
 const RECEIVABLE_VALID_TYPES = ["TITULO", "RECEITA", "ADIANTAMENTO"];
@@ -120,6 +120,10 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       formaCobranca: accountsReceivable.formaCobranca,
       decisaoCobranca: accountsReceivable.decisaoCobranca,
       empresaNome: accountsReceivable.empresaNome,
+      documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+      parcela: accountsReceivable.parcela,
+      parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
+      // estadoConfiguravel not available on ContaReceber in GraphQL API
     })
     .from(accountsReceivable)
     .where(
@@ -187,6 +191,23 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         tipoPlanilha = "COM PROTESTO (CARTÓRIO)";
       }
 
+      // Build documento string (NF + parcela)
+      const docNum = title.row.documentoVinculadoNumero;
+      const parcela = title.row.parcela;
+      const totalParcelas = title.row.parcelasQuantidadeTotal;
+      let documento: string | null = null;
+      if (docNum) {
+        documento = `NF ${docNum}`;
+        if (parcela && totalParcelas) {
+          documento += ` (${parcela}/${totalParcelas})`;
+        } else if (parcela) {
+          documento += ` (${parcela})`;
+        }
+      }
+
+      // Centro: will be populated from sales_orders lookup (see below)
+      const centroCustos: string | null = null; // populated after insert via batch update
+
       await db.insert(cobrancaPlanilha).values({
         arId: title.arId,
         empresa: title.empresa,
@@ -197,9 +218,48 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         tipo: tipoPlanilha,
         status: statusPlanilha,
         formaCobranca: title.row.formaCobranca || null,
+        documento,
+        centroCustos,
         updatedBy: "Auto-sync (novo título vencido)",
       });
       added++;
+    }
+  }
+
+  // 4b. Populate centroCustos for items that don't have it yet
+  // Use the most common estadoConfiguravel from sales_orders for each client
+  const itemsWithoutCentro = await db.select({ id: cobrancaPlanilha.id, empresa: cobrancaPlanilha.empresa })
+    .from(cobrancaPlanilha)
+    .where(and(eq(cobrancaPlanilha.ativo, true), isNull(cobrancaPlanilha.centroCustos)));
+  
+  if (itemsWithoutCentro.length > 0) {
+    // Get the most common estadoConfiguravel per client from sales_orders
+    const clienteNames = Array.from(new Set(itemsWithoutCentro.map(i => i.empresa)));
+    const centroMap: Record<string, string> = {};
+    
+    for (const cliente of clienteNames) {
+      const [result] = await db
+        .select({ estadoConfiguravel: salesOrders.estadoConfiguravel })
+        .from(salesOrders)
+        .where(and(
+          eq(salesOrders.cliente, cliente),
+          inArray(salesOrders.estadoConfiguravel, ['BAMBU', 'MADEIRA', 'ROJÃO', 'SERRAGEM'])
+        ))
+        .groupBy(salesOrders.estadoConfiguravel)
+        .orderBy(desc(sql`COUNT(*)`))
+        .limit(1);
+      if (result?.estadoConfiguravel) {
+        centroMap[cliente] = result.estadoConfiguravel;
+      }
+    }
+    
+    for (const item of itemsWithoutCentro) {
+      const centro = centroMap[item.empresa];
+      if (centro) {
+        await db.update(cobrancaPlanilha)
+          .set({ centroCustos: centro })
+          .where(eq(cobrancaPlanilha.id, item.id));
+      }
     }
   }
 

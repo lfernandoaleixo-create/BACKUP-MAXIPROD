@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, empresa, centro_custos FROM cobranca_planilha WHERE centro_custos IS NOT NULL AND centro_custos != '' LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, centro_custos FROM cobranca_planilha WHERE centro_custos IS NOT NULL AND centro_custos != '' LIMIT 5",
+  "rows": [
+    {
+      "id": "1",
+      "empresa": "ESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA",
+      "centro_custos": "BAMBU"
+    },
+    {
+      "id": "2",
+      "empresa": "FLAVIO JOSE DE OLIVEIRA",
+      "centro_custos": "BAMBU"
+    },
+    {
+      "id": "3",
+      "empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "centro_custos": "MADEIRA"
+    },
+    {
+      "id": "4",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "centro_custos": "BAMBU"
+    },
+    {
+      "id": "5",
+      "empresa": "AMERICAN PIROTECNIA LTDA",
+      "centro_custos": "ROJÃO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tcentro_custos\n1\tESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA\tBAMBU\n2\tFLAVIO JOSE DE OLIVEIRA\tBAMBU\n3\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\tMADEIRA\n4\tWGO COMERCIO E SERVICOS LTDA\tBAMBU\n5\tAMERICAN PIROTECNIA LTDA\tROJÃO\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

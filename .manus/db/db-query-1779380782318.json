@@ -1,0 +1,160 @@
+{
+  "query": "SELECT ar.cliente, so.estadoConfiguravel, COUNT(*) as cnt FROM accounts_receivable ar INNER JOIN sales_orders so ON ar.cliente = so.cliente WHERE ar.estado = 'EMITIDO' AND so.estadoConfiguravel IN ('BAMBU', 'MADEIRA', 'ROJÃO', 'SERRAGEM') GROUP BY ar.cliente, so.estadoConfiguravel ORDER BY ar.cliente, cnt DESC LIMIT 30",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.cliente, so.estadoConfiguravel, COUNT(*) as cnt FROM accounts_receivable ar INNER JOIN sales_orders so ON ar.cliente = so.cliente WHERE ar.estado = 'EMITIDO' AND so.estadoConfiguravel IN ('BAMBU', 'MADEIRA', 'ROJÃO', 'SERRAGEM') GROUP BY ar.cliente, so.estadoConfiguravel ORDER BY ar.cliente, cnt DESC LIMIT 30",
+  "rows": [
+    {
+      "cliente": "14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "60"
+    },
+    {
+      "cliente": "33.317.940 ALINE POLTORAK RODRIGUES",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "2"
+    },
+    {
+      "cliente": "3B3R COMERCIO LTDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "2"
+    },
+    {
+      "cliente": "44.030.214 LARITZA MARILAC BEZERRA MELO",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "4"
+    },
+    {
+      "cliente": "48.658.433 LUCAS VINICIUS DE ALMEIDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "12"
+    },
+    {
+      "cliente": "48.869.027 INGRID BERNARDES GARCIA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "14"
+    },
+    {
+      "cliente": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "1"
+    },
+    {
+      "cliente": "59.498.189 RISONEIDE ALEXANDRE TORRES GOMES",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "224"
+    },
+    {
+      "cliente": "59.781.379 TARCISIO ALVES PEREIRA MACHADO",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "12"
+    },
+    {
+      "cliente": "60.012.877 ELIANA KELLY COSTA SOZINHO",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "10"
+    },
+    {
+      "cliente": "A V MARQUES CARNES LTDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "2"
+    },
+    {
+      "cliente": "A.J COMERCIAL IMPORTAÇÃO E EXPORTAÇÃO LTDA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "24"
+    },
+    {
+      "cliente": "ACOUGUE L P DA SILVA LTDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "10"
+    },
+    {
+      "cliente": "ACOUGUE MERCEARIA E ROTISSERIA SAO MIGUEL DO VILAR LTDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "4"
+    },
+    {
+      "cliente": "AGNUS SEVEN FRAGRANCIA INDUSTRIA, COMERCIO, IMPORTACAO E EXP",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "4"
+    },
+    {
+      "cliente": "ALOP DISTRIBUIDORA DE COSMETICOS E SANEANTES LTDA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "2"
+    },
+    {
+      "cliente": "ALP DISTRIBUIDORA DE CARNES LTDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "32"
+    },
+    {
+      "cliente": "ALTOLIN INDUSTRIA E COMERCIO DE PRODUTOS DE LIMPEZA LTDA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "2"
+    },
+    {
+      "cliente": "AMAZONIA AROMATIZANTES COMERCIAL LTDA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "16"
+    },
+    {
+      "cliente": "ANA CRISTINA ARRUDA RIBEIRO GONZAGA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "1"
+    },
+    {
+      "cliente": "ANDRE LUIS FRACCAROLLI",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "12"
+    },
+    {
+      "cliente": "AROMAZIA COMERCIO DE UTILIDADES E ELETRONICOS LTDA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "12"
+    },
+    {
+      "cliente": "ARTESHOW SHOWS PIROTECNICOS LTDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "1"
+    },
+    {
+      "cliente": "ARTESHOW SHOWS PIROTECNICOS LTDA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "1"
+    },
+    {
+      "cliente": "ATELIER DIVA DECOR LTDA",
+      "estadoConfiguravel": "MADEIRA",
+      "cnt": "1"
+    },
+    {
+      "cliente": "B & C - DISTRIBUIDORA DE COSMETICOS E ACESSORIOS LTDA - ME",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "4"
+    },
+    {
+      "cliente": "BARBOSA DESCARTAVEIS E EMBALAGENS LTDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "1"
+    },
+    {
+      "cliente": "BELLA EMBALAGENS LTDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "4"
+    },
+    {
+      "cliente": "BIG PLASTIC FRIOS E DESCARTAVEIS LTDA",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "6"
+    },
+    {
+      "cliente": "BOX 81 DISTRIBUIDORA DE PRODUTOS ALIMENTICIOS LTDA - EPP",
+      "estadoConfiguravel": "BAMBU",
+      "cnt": "43"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\testadoConfiguravel\tcnt\n14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA\tBAMBU\t60\n33.317.940 ALINE POLTORAK RODRIGUES\tMADEIRA\t2\n3B3R COMERCIO LTDA\tBAMBU\t2\n44.030.214 LARITZA MARILAC BEZERRA MELO\tBAMBU\t4\n48.658.433 LUCAS VINICIUS DE ALMEIDA\tBAMBU\t12\n48.869.027 INGRID BERNARDES GARCIA\tBAMBU\t14\n59.252.539 GLAUCIENE MATEUS GOMES GERTH\tMADEIRA\t1\n59.498.189 RISONEIDE ALEXANDRE TORRES GOMES\tBAMBU\t224\n59.781.379 TARCISIO ALVES PEREIRA MACHADO\tBAMBU\t12\n60.012.877 ELIANA KELLY COSTA SOZINHO\tBAMBU\t10\nA V MARQUES CARNES LTDA\tBAMBU\t2\nA.J COMERCIAL IMPORTAÇÃO E EXPORTAÇÃO LTDA\tMADEIRA\t24\nACOUGUE L P DA SILVA LTDA\tBAMBU\t10\nACOUGUE MERCEARIA E ROTISSERIA SAO MIGUEL DO VILAR LTDA\tBAMBU\t4\nAGNUS SEVEN FRAGRANCIA INDUSTRIA, COMERCIO, IMPORTACAO E EXP\tMADEIRA\t4\nALOP DISTRIBUIDORA DE COSMETICOS E SANEANTES LTDA\tMADEIRA\t2\nALP DISTRIBUIDORA DE CARNES LTDA\tBAMBU\t32\nALTOLIN INDUSTRIA E COMERCIO DE PRODUTOS DE LIMPEZA LTDA\tMADEIRA\t2\nAMAZONIA AROMATIZANTES COMERCIAL LTDA\tMADEIRA\t16\nANA CRISTINA ARRUDA RIBEIRO GONZAGA\tMADEIRA\t1\nANDRE LUIS FRACCAROLLI\tBAMBU\t12\nAROMAZIA COMERCIO DE UTILIDADES E ELETRONICOS LTDA\tMADEIRA\t12\nARTESHOW SHOWS PIROTECNICOS LTDA\tBAMBU\t1\nARTESHOW SHOWS PIROTECNICOS LTDA\tMADEIRA\t1\nATELIER DIVA DECOR LTDA\tMADEIRA\t1\nB & C - DISTRIBUIDORA DE COSMETICOS E ACESSORIOS LTDA - ME\tBAMBU\t4\nBARBOSA DESCARTAVEIS E EMBALAGENS LTDA\tBAMBU\t1\nBELLA EMBALAGENS LTDA\tBAMBU\t4\nBIG PLASTIC FRIOS E DESCARTAVEIS LTDA\tBAMBU\t6\nBOX 81 DISTRIBUIDORA DE PRODUTOS ALIMENTICIOS LTDA - EPP\tBAMBU\t43\n",
+  "stderr": "",
+  "execution_time_ms": 315
+}

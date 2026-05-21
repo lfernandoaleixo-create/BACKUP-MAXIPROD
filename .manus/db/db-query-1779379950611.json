@@ -1,0 +1,30 @@
+{
+  "query": "SELECT cp.centro_custos, COUNT(*) as cnt FROM cobranca_planilha cp WHERE cp.ativo = 1 GROUP BY cp.centro_custos",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.centro_custos, COUNT(*) as cnt FROM cobranca_planilha cp WHERE cp.ativo = 1 GROUP BY cp.centro_custos",
+  "rows": [
+    {
+      "centro_custos": "BAMBU",
+      "cnt": "35"
+    },
+    {
+      "centro_custos": "MADEIRA",
+      "cnt": "45"
+    },
+    {
+      "centro_custos": "ROJÃO",
+      "cnt": "6"
+    },
+    {
+      "centro_custos": "NULL",
+      "cnt": "1"
+    },
+    {
+      "centro_custos": "SERRAGEM",
+      "cnt": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "centro_custos\tcnt\nBAMBU\t35\nMADEIRA\t45\nROJÃO\t6\nNULL\t1\nSERRAGEM\t2\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

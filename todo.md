@@ -3892,3 +3892,5 @@
 - [x] Fix: Planilha de Cobrança - incluir títulos vencidos até último dia útil anterior a hoje (não excluir recentes como 20/05)
 - [x] Fix: Planilha de Cobrança - remover títulos que já foram liquidados/recebidos no Maxiprod (ex: FLAVIO JOSE)
 - [x] Auto-sync Planilha de Cobrança: sincronização automática a cada 5 min (horário comercial) após sync do Maxiprod — desativa títulos pagos e adiciona novos vencidos
+- [x] Planilha de Cobrança: adicionar coluna "Centro" com Estado configurável do Contas a Receber (BAMBU, MADEIRA, ROJÃO, SERRAGEM)
+- [x] Planilha de Cobrança: adicionar coluna "Documento" com NF e parcela do Contas a Receber (ex: NF 1586)

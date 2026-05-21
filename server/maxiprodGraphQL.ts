@@ -1248,6 +1248,7 @@ function transformAccountsReceivable(items: any[]): any[] {
     empresaId: item.minhaEmpresaId || null,
     empresaNome: getCompanyName(item.minhaEmpresaId),
     anotacoes: (item.tarefasEAnotacoes || []).map((a: any) => a.descricao).filter(Boolean).join(' | ') || null,
+    estadoConfiguravel: null, // Not available on ContaReceber in GraphQL API
     decisaoCobranca: extractDecisaoCobranca(item.cliente),
     dadosCheque: extractDadosCheque(item.campoAdicionalEspecifico),
   }));
@@ -1516,6 +1517,7 @@ async function saveFinancialData(
                 anotacoes: sql`VALUES(anotacoes)`,
                 // Atualizar decisaoCobranca do Maxiprod (campo SITUAÇÃO do cliente)
                 decisaoCobranca: sql`VALUES(decisaoCobranca)`,
+                estadoConfiguravel: sql`VALUES(estadoConfiguravel)`,
                 collectedAt: sql`NOW()`,
               },
             });

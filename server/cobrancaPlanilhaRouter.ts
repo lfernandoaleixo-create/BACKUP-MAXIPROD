@@ -210,7 +210,7 @@ export const cobrancaPlanilhaRouter = router({
         'status', 'observacoes', 'promessaPgto', 'primeiraCobranca',
         'semAcao1', 'segundaCobranca', 'semAcao2', 'terceiraCobranca',
         'semAcao3', 'acaoFinal', 'tipo', 'diasVencidos',
-        'contato', 'email', 'regiao', 'municipio', 'uf', 'cnpjCpf', 'centroCustos',
+        'contato', 'email', 'regiao', 'municipio', 'uf', 'cnpjCpf', 'centroCustos', 'documento',
       ];
       
       if (!editableFields.includes(input.field)) {
@@ -237,6 +237,7 @@ export const cobrancaPlanilhaRouter = router({
         uf: 'uf',
         cnpjCpf: 'cnpj_cpf',
         centroCustos: 'centro_custos',
+        documento: 'documento',
       };
       
       const colName = fieldToColumn[input.field] || input.field;
@@ -523,6 +524,10 @@ export const cobrancaPlanilhaRouter = router({
           formaCobranca: accountsReceivable.formaCobranca,
           decisaoCobranca: accountsReceivable.decisaoCobranca,
           empresaNome: accountsReceivable.empresaNome,
+          documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+          parcela: accountsReceivable.parcela,
+          parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
+          // estadoConfiguravel not available on ContaReceber in GraphQL API
         })
         .from(accountsReceivable)
         .where(
@@ -566,6 +571,17 @@ export const cobrancaPlanilhaRouter = router({
             tipoPlanilha = "SEM PROTESTO";
           }
 
+          // Build documento string (NF + parcela)
+          let documento: string | null = null;
+          if (row.documentoVinculadoNumero) {
+            documento = `NF ${row.documentoVinculadoNumero}`;
+            if (row.parcela && row.parcelasQuantidadeTotal) {
+              documento += ` (${row.parcela}/${row.parcelasQuantidadeTotal})`;
+            } else if (row.parcela) {
+              documento += ` (${row.parcela})`;
+            }
+          }
+
           return {
             arId: row.id,
             empresa: (row.cliente || "").trim(),
@@ -576,6 +592,7 @@ export const cobrancaPlanilhaRouter = router({
             diasVencidos: businessDaysOverdue,
             tipo: tipoPlanilha,
             status: statusPlanilha,
+            documento,
           };
         })
         .filter(t => t.valorAReceber > 0)
@@ -953,6 +970,11 @@ export const cobrancaPlanilhaRouter = router({
           if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
           if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
+          // Documento: atualizar se disponível
+          if (inad.documento && !match.documento) {
+            updateData.documento = inad.documento;
+          }
+
           // Vendedor, apelido, forma de cobrança e contatos extras
           const empresaNorm2 = normalizeName(inad.empresa);
           // REGRA: Se cliente é Keure/Johnson → vendedor = "Grupo Fox"
@@ -984,7 +1006,8 @@ export const cobrancaPlanilhaRouter = router({
             municipio: clienteData.municipio || null,
             uf: clienteData.uf || null,
             pais: null,
-            centroCustos: null, // Será preenchido manualmente
+            centroCustos: null, // Will be populated from sales_orders lookup below
+            documento: inad.documento || null,
             valor: String(inad.valorAReceber),
             vencimento: inad.vencimento,
             diasVencidos: inad.diasVencidos,
@@ -1037,7 +1060,38 @@ export const cobrancaPlanilhaRouter = router({
         }
       }
 
-      // 9. Buscar planilha atualizada para retornar contagem (apenas ativos)
+      // 9. Populate centroCustos for items that don't have it yet (from sales_orders)
+      const itemsNeedCentro = await db.select({ id: cobrancaPlanilha.id, empresa: cobrancaPlanilha.empresa })
+        .from(cobrancaPlanilha)
+        .where(and(eq(cobrancaPlanilha.ativo, true), isNull(cobrancaPlanilha.centroCustos)));
+      
+      if (itemsNeedCentro.length > 0) {
+        const centroClientes = Array.from(new Set(itemsNeedCentro.map(i => i.empresa)));
+        const centroMap: Record<string, string> = {};
+        for (const cliente of centroClientes) {
+          const [result] = await db
+            .select({ ec: salesOrders.estadoConfiguravel })
+            .from(salesOrders)
+            .where(and(
+              eq(salesOrders.cliente, cliente),
+              inArray(salesOrders.estadoConfiguravel, ['BAMBU', 'MADEIRA', 'ROJ\u00c3O', 'SERRAGEM'])
+            ))
+            .groupBy(salesOrders.estadoConfiguravel)
+            .orderBy(desc(sql`COUNT(*)`))
+            .limit(1);
+          if (result?.ec) centroMap[cliente] = result.ec;
+        }
+        for (const item of itemsNeedCentro) {
+          const centro = centroMap[item.empresa];
+          if (centro) {
+            await db.update(cobrancaPlanilha)
+              .set({ centroCustos: centro })
+              .where(eq(cobrancaPlanilha.id, item.id));
+          }
+        }
+      }
+
+      // 10. Buscar planilha atualizada para retornar contagem (apenas ativos)
       const planilhaFinal = await db.select().from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
 
       return {

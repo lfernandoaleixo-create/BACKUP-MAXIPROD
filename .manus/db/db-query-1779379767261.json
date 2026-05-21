@@ -1,0 +1,45 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.documentoVinculadoNumero, ar.parcela, ar.referenteA FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.tipo = 'TITULO' AND ar.cliente = 'KEURE QUIMICA LTDA' LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.documentoVinculadoNumero, ar.parcela, ar.referenteA FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.tipo = 'TITULO' AND ar.cliente = 'KEURE QUIMICA LTDA' LIMIT 5",
+  "rows": [
+    {
+      "id": "6095813",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "1",
+      "referenteA": "NULL"
+    },
+    {
+      "id": "6095814",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "2",
+      "referenteA": "NULL"
+    },
+    {
+      "id": "6095815",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "3",
+      "referenteA": "NULL"
+    },
+    {
+      "id": "6095816",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "4",
+      "referenteA": "NULL"
+    },
+    {
+      "id": "6095817",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1656",
+      "parcela": "1",
+      "referenteA": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tdocumentoVinculadoNumero\tparcela\treferenteA\n6095813\tKEURE QUIMICA LTDA\t1633\t1\tNULL\n6095814\tKEURE QUIMICA LTDA\t1633\t2\tNULL\n6095815\tKEURE QUIMICA LTDA\t1633\t3\tNULL\n6095816\tKEURE QUIMICA LTDA\t1633\t4\tNULL\n6095817\tKEURE QUIMICA LTDA\t1656\t1\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

@@ -1,0 +1,14 @@
+{
+  "query": "SELECT estadoConfiguravel, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' GROUP BY estadoConfiguravel",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT estadoConfiguravel, COUNT(*) as cnt FROM accounts_receivable WHERE estado = 'EMITIDO' GROUP BY estadoConfiguravel",
+  "rows": [
+    {
+      "estadoConfiguravel": "NULL",
+      "cnt": "538"
+    }
+  ],
+  "messages": [],
+  "stdout": "estadoConfiguravel\tcnt\nNULL\t538\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

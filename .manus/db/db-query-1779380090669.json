@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `accounts_receivable` ADD `estadoConfiguravel` varchar(100);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute ALTER TABLE `accounts_receivable` ADD `estadoConfiguravel` varchar(100);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 532
+}

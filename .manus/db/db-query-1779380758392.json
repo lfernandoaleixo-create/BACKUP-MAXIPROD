@@ -1,0 +1,50 @@
+{
+  "query": "SELECT DISTINCT so.estadoConfiguravel, ar.documentoVinculadoNumero FROM accounts_receivable ar INNER JOIN sales_orders so ON ar.cliente = so.cliente WHERE ar.estado = 'EMITIDO' AND ar.documentoVinculadoNumero IS NOT NULL AND so.estadoConfiguravel IS NOT NULL LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT so.estadoConfiguravel, ar.documentoVinculadoNumero FROM accounts_receivable ar INNER JOIN sales_orders so ON ar.cliente = so.cliente WHERE ar.estado = 'EMITIDO' AND ar.documentoVinculadoNumero IS NOT NULL AND so.estadoConfiguravel IS NOT NULL LIMIT 10",
+  "rows": [
+    {
+      "estadoConfiguravel": "MADEIRA",
+      "documentoVinculadoNumero": "1678"
+    },
+    {
+      "estadoConfiguravel": "BAMBU",
+      "documentoVinculadoNumero": "248"
+    },
+    {
+      "estadoConfiguravel": "MADEIRA",
+      "documentoVinculadoNumero": "1107"
+    },
+    {
+      "estadoConfiguravel": "BAMBU",
+      "documentoVinculadoNumero": "113"
+    },
+    {
+      "estadoConfiguravel": "BAMBU",
+      "documentoVinculadoNumero": "2344"
+    },
+    {
+      "estadoConfiguravel": "MADEIRA",
+      "documentoVinculadoNumero": "35"
+    },
+    {
+      "estadoConfiguravel": "BAMBU",
+      "documentoVinculadoNumero": "26"
+    },
+    {
+      "estadoConfiguravel": "BAMBU",
+      "documentoVinculadoNumero": "2407"
+    },
+    {
+      "estadoConfiguravel": "BAMBU",
+      "documentoVinculadoNumero": "1138"
+    },
+    {
+      "estadoConfiguravel": "MADEIRA",
+      "documentoVinculadoNumero": "2286"
+    }
+  ],
+  "messages": [],
+  "stdout": "estadoConfiguravel\tdocumentoVinculadoNumero\nMADEIRA\t1678\nBAMBU\t248\nMADEIRA\t1107\nBAMBU\t113\nBAMBU\t2344\nMADEIRA\t35\nBAMBU\t26\nBAMBU\t2407\nBAMBU\t1138\nMADEIRA\t2286\n",
+  "stderr": "",
+  "execution_time_ms": 316
+}

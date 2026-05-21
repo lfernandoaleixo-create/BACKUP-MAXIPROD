@@ -1,0 +1,55 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'cobranca_planilha' AND ORDINAL_POSITION > 20 ORDER BY ORDINAL_POSITION",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'cobranca_planilha' AND ORDINAL_POSITION > 20 ORDER BY ORDINAL_POSITION",
+  "rows": [
+    {
+      "COLUMN_NAME": "acao_final"
+    },
+    {
+      "COLUMN_NAME": "observacoes"
+    },
+    {
+      "COLUMN_NAME": "updated_by"
+    },
+    {
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "COLUMN_NAME": "ar_id"
+    },
+    {
+      "COLUMN_NAME": "ativo"
+    },
+    {
+      "COLUMN_NAME": "contato"
+    },
+    {
+      "COLUMN_NAME": "email"
+    },
+    {
+      "COLUMN_NAME": "regiao"
+    },
+    {
+      "COLUMN_NAME": "etapas_pausadas"
+    },
+    {
+      "COLUMN_NAME": "forma_cobranca"
+    },
+    {
+      "COLUMN_NAME": "vendedor"
+    },
+    {
+      "COLUMN_NAME": "contatos_adicionais"
+    },
+    {
+      "COLUMN_NAME": "apelido"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nacao_final\nobservacoes\nupdated_by\ncreatedAt\nupdatedAt\nar_id\nativo\ncontato\nemail\nregiao\netapas_pausadas\nforma_cobranca\nvendedor\ncontatos_adicionais\napelido\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

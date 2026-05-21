@@ -1,0 +1,115 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.documentoVinculadoNumero, ar.parcela, (SELECT DISTINCT so.estadoConfiguravel FROM sales_orders so WHERE so.pedido = CAST(ar.documentoVinculadoNumero AS UNSIGNED) LIMIT 1) as centro FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.tipo = 'TITULO' AND ar.vencimentoData <= '2026-05-20T23:59:59' LIMIT 15",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.documentoVinculadoNumero, ar.parcela, (SELECT DISTINCT so.estadoConfiguravel FROM sales_orders so WHERE so.pedido = CAST(ar.documentoVinculadoNumero AS UNSIGNED) LIMIT 1) as centro FROM accounts_receivable ar WHERE ar.estado = 'EMITIDO' AND ar.tipo = 'TITULO' AND ar.vencimentoData <= '2026-05-20T23:59:59' LIMIT 15",
+  "rows": [
+    {
+      "id": "6095808",
+      "cliente": "SUPER MIX DISTRIBUIDORA LTDA",
+      "documentoVinculadoNumero": "1584",
+      "parcela": "NULL",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095809",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "2",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095810",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "3",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095811",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "4",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095812",
+      "cliente": "JK COMERCIO E REPRESENTACOES LTDA",
+      "documentoVinculadoNumero": "1586",
+      "parcela": "5",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095813",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "1",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095814",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "2",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095815",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "3",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095816",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "4",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095817",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1656",
+      "parcela": "1",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095818",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1678",
+      "parcela": "1",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095819",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1678",
+      "parcela": "2",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095820",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1678",
+      "parcela": "3",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095822",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1770",
+      "parcela": "1",
+      "centro": "NULL"
+    },
+    {
+      "id": "6095823",
+      "cliente": "KEURE QUIMICA LTDA",
+      "documentoVinculadoNumero": "1770",
+      "parcela": "3",
+      "centro": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tdocumentoVinculadoNumero\tparcela\tcentro\n6095808\tSUPER MIX DISTRIBUIDORA LTDA\t1584\tNULL\tNULL\n6095809\tJK COMERCIO E REPRESENTACOES LTDA\t1586\t2\tNULL\n6095810\tJK COMERCIO E REPRESENTACOES LTDA\t1586\t3\tNULL\n6095811\tJK COMERCIO E REPRESENTACOES LTDA\t1586\t4\tNULL\n6095812\tJK COMERCIO E REPRESENTACOES LTDA\t1586\t5\tNULL\n6095813\tKEURE QUIMICA LTDA\t1633\t1\tNULL\n6095814\tKEURE QUIMICA LTDA\t1633\t2\tNULL\n6095815\tKEURE QUIMICA LTDA\t1633\t3\tNULL\n6095816\tKEURE QUIMICA LTDA\t1633\t4\tNULL\n6095817\tKEURE QUIMICA LTDA\t1656\t1\tNULL\n6095818\tKEURE QUIMICA LTDA\t1678\t1\tNULL\n6095819\tKEURE QUIMICA LTDA\t1678\t2\tNULL\n6095820\tKEURE QUIMICA LTDA\t1678\t3\tNULL\n6095822\tKEURE QUIMICA LTDA\t1770\t1\tNULL\n6095823\tKEURE QUIMICA LTDA\t1770\t3\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 1015
+}

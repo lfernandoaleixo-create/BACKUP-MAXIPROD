@@ -1,0 +1,16 @@
+{
+  "query": "SELECT DISTINCT centroDeCustosId FROM accounts_receivable WHERE centroDeCustosId IS NOT NULL LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT centroDeCustosId FROM accounts_receivable WHERE centroDeCustosId IS NOT NULL LIMIT 20",
+  "rows": [
+    {
+      "centroDeCustosId": "409300000278378"
+    },
+    {
+      "centroDeCustosId": "409300000278377"
+    }
+  ],
+  "messages": [],
+  "stdout": "centroDeCustosId\n409300000278378\n409300000278377\n",
+  "stderr": "",
+  "execution_time_ms": 269
+}
