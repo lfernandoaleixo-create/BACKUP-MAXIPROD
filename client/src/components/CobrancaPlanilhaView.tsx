@@ -1786,7 +1786,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                         descricao: STEP_LABELS[e.etapa] || e.etapa,
                         motivo: e.data ? "Realizada" : "Pendente",
                         data: e.data || "",
-                        status: e.data ? "concluido" : "pendente",
+                        status: e.data ? "verde" : "pendente",
                       }));
                       const titleInput: DecisionPdfInput["title"] = {
                         id: planilhaItem.arId || planilhaItem.id,

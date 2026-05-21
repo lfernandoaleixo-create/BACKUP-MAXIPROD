@@ -247,26 +247,44 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
   );
 
   if (doneSteps.length > 0) {
+    // Build observações lookup from planilhaCobranca
+    const HIST_ETAPA_LABELS: Record<string, string> = {
+      primeiraCobranca: "1\u00aa Cobran\u00e7a",
+      semAcao1: "Sem A\u00e7\u00e3o 1",
+      segundaCobranca: "2\u00aa Cobran\u00e7a",
+      semAcao2: "Sem A\u00e7\u00e3o 2",
+      terceiraCobranca: "3\u00aa Cobran\u00e7a",
+      semAcao3: "Sem A\u00e7\u00e3o 3",
+      acaoFinal: "A\u00e7\u00e3o Final",
+    };
+    // Map step labels back to etapa keys for observation lookup
+    const labelToKey: Record<string, string> = {};
+    Object.entries(HIST_ETAPA_LABELS).forEach(([key, label]) => { labelToKey[label] = key; });
+    // Also handle the STEP_LABELS from CobrancaPlanilhaView (slightly different labels)
+    labelToKey["Intervalo 1"] = "semAcao1";
+    labelToKey["Intervalo 2"] = "semAcao2";
+    labelToKey["Intervalo 3"] = "semAcao3";
+
     const tableBody = doneSteps.map((step, idx) => {
-      const statusLabel = step.status === "verde" ? "Concluído" :
-        step.status === "dispensado" ? "Dispensado" :
-        step.status === "vermelho" ? "Falha" :
-        step.status === "neutro" ? "Neutro" : step.status;
+      // Find matching observações for this step
+      const etapaKey = labelToKey[step.label] || Object.entries(HIST_ETAPA_LABELS).find(([, v]) => v === step.label)?.[0] || "";
+      const obsForStep = input.planilhaCobranca?.observacoes?.filter(o => o.etapa === etapaKey) || [];
+      const obsText = obsForStep.length > 0 ? obsForStep.map(o => o.observacao).join("; ") : "\u2014";
       return [
         String(idx + 1),
         step.label,
         formatDate(step.data),
-        statusLabel,
+        obsText,
       ];
     });
 
     autoTable(doc, {
       startY: y,
-      head: [["#", "Etapa", "Data", "Status"]],
+      head: [["#", "Etapa", "Data", "Observa\u00e7\u00e3o"]],
       body: tableBody,
       margin: { left: margin, right: margin },
       styles: {
-        fontSize: 8,
+        fontSize: 7.5,
         cellPadding: 2.5,
         lineColor: [200, 200, 200],
         lineWidth: 0.1,
@@ -282,26 +300,10 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
         fillColor: COLORS.lightGreen,
       },
       columnStyles: {
-        0: { cellWidth: 10, halign: "center" },
-        1: { cellWidth: "auto" },
-        2: { cellWidth: 28, halign: "center" },
-        3: { cellWidth: 28, halign: "center" },
-      },
-      didParseCell: (data) => {
-        // Color the status column
-        if (data.section === "body" && data.column.index === 3) {
-          const val = data.cell.raw as string;
-          if (val === "Concluído") {
-            data.cell.styles.textColor = [22, 101, 75];
-            data.cell.styles.fontStyle = "bold";
-          } else if (val === "Falha") {
-            data.cell.styles.textColor = [185, 28, 28];
-            data.cell.styles.fontStyle = "bold";
-          } else if (val === "Dispensado") {
-            data.cell.styles.textColor = [180, 120, 20];
-            data.cell.styles.fontStyle = "bold";
-          }
-        }
+        0: { cellWidth: 8, halign: "center" },
+        1: { cellWidth: 28, fontStyle: "bold" },
+        2: { cellWidth: 22, halign: "center" },
+        3: { cellWidth: "auto" },
       },
     });
 
@@ -310,7 +312,7 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.mediumSlate);
-    doc.text("Nenhuma ação de cobrança registrada até o momento.", margin + 4, y + 4);
+    doc.text("Nenhuma a\u00e7\u00e3o de cobran\u00e7a registrada at\u00e9 o momento.", margin + 4, y + 4);
     y += 10;
   }
 
@@ -367,85 +369,47 @@ export async function generateDecisionPdf(input: DecisionPdfInput): Promise<{ bl
   }
 
   // ── Observações ──
-  const obs = title.cobranca?.observacoes || title.observacoesMaxiprod;
-  if (obs) {
+  // Consolidate all etapa observations into the OBSERVAÇÕES box
+  let obsText = "";
+  if (input.planilhaCobranca?.observacoes && input.planilhaCobranca.observacoes.length > 0) {
+    const ETAPA_LABELS_OBS: Record<string, string> = {
+      primeiraCobranca: "1\u00aa Cobran\u00e7a",
+      semAcao1: "Intervalo 1",
+      segundaCobranca: "2\u00aa Cobran\u00e7a",
+      semAcao2: "Intervalo 2",
+      terceiraCobranca: "3\u00aa Cobran\u00e7a",
+      semAcao3: "Intervalo 3",
+      acaoFinal: "A\u00e7\u00e3o Final",
+    };
+    obsText = input.planilhaCobranca.observacoes
+      .map(o => `[${ETAPA_LABELS_OBS[o.etapa] || o.etapa}] ${o.observacao}`)
+      .join("\n");
+  } else {
+    obsText = title.cobranca?.observacoes || title.observacoesMaxiprod || "";
+  }
+  if (obsText) {
     if (y + 20 > 280) { doc.addPage(); y = 15; }
     doc.setFillColor(...COLORS.amberLight);
     doc.setDrawColor(...COLORS.amber);
     doc.setLineWidth(0.3);
-    doc.roundedRect(margin, y, contentW, 16, 2, 2, "FD");
+    // Calculate dynamic height based on text
+    doc.setFontSize(8);
+    const obsLines = doc.splitTextToSize(obsText, contentW - 8);
+    const obsBoxH = Math.max(16, 8 + obsLines.length * 3.5);
+    if (y + obsBoxH > 280) { doc.addPage(); y = 15; }
+    doc.roundedRect(margin, y, contentW, obsBoxH, 2, 2, "FD");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
     doc.setTextColor(...COLORS.amber);
-    doc.text("OBSERVAÇÕES", margin + 4, y + 5);
+    doc.text("OBSERVA\u00c7\u00d5ES", margin + 4, y + 5);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.darkSlate);
-    const obsLines = doc.splitTextToSize(obs, contentW - 8);
-    doc.text(obsLines.slice(0, 2), margin + 4, y + 11);
-    y += 20;
+    doc.text(obsLines, margin + 4, y + 11);
+    y += obsBoxH + 4;
   }
 
-  // ── Etapas de Cobrança (dados da Planilha de Cobrança) ──
-  if (input.planilhaCobranca && input.planilhaCobranca.etapas.length > 0) {
-    const ETAPA_LABELS: Record<string, string> = {
-      primeiraCobranca: "1ª Cobrança",
-      semAcao1: "Intervalo 1",
-      segundaCobranca: "2ª Cobrança",
-      semAcao2: "Intervalo 2",
-      terceiraCobranca: "3ª Cobrança",
-      semAcao3: "Intervalo 3",
-      acaoFinal: "Ação Final",
-    };
-    const etapasComData = input.planilhaCobranca.etapas.filter(e => e.data);
-    if (etapasComData.length > 0) {
-      if (y + 12 > 270) { doc.addPage(); y = 15; }
-      doc.setFillColor(59, 130, 246); // blue-500
-      doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(255, 255, 255);
-      doc.text("ETAPAS DE COBRAN\u00C7A REALIZADAS", margin + 4, y + 5.5);
-      y += 11;
-
-      // Montar tabela com etapas + observações inline
-      const etapaBody = etapasComData.map(e => {
-        const label = ETAPA_LABELS[e.etapa] || e.etapa;
-        const obsForEtapa = input.planilhaCobranca?.observacoes?.filter(o => o.etapa === e.etapa) || [];
-        const obsText = obsForEtapa.length > 0 ? obsForEtapa.map(o => o.observacao).join("; ") : "—";
-        return [label, e.data || "—", obsText];
-      });
-
-      autoTable(doc, {
-        startY: y,
-        head: [["Etapa", "Data", "Observação"]],
-        body: etapaBody,
-        margin: { left: margin, right: margin },
-        styles: {
-          fontSize: 7.5,
-          cellPadding: 2,
-          lineColor: [200, 200, 200],
-          lineWidth: 0.1,
-          textColor: COLORS.darkSlate,
-        },
-        headStyles: {
-          fillColor: [96, 165, 250] as any, // blue-400
-          textColor: COLORS.white,
-          fontStyle: "bold",
-          fontSize: 7.5,
-        },
-        alternateRowStyles: {
-          fillColor: [239, 246, 255] as any, // blue-50
-        },
-        columnStyles: {
-          0: { cellWidth: 28, fontStyle: "bold" },
-          1: { cellWidth: 22, halign: "center" },
-          2: { cellWidth: "auto" },
-        },
-      });
-      y = (doc as any).lastAutoTable.finalY + 4;
-    }
-  }
+  // (ETAPAS DE COBRANÇA section removed — now integrated into HISTÓRICO DE AÇÕES REALIZADAS above)
 
   // ── Próximo Passo ──
   const vendorName = title.vendedor || "Vendedor responsável";
