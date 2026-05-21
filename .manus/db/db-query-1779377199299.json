@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, maxiprodId, estado, vencimentoData, valorLiquido, valorRecebidoLiquido, collectedAt, documentoVinculadoNumero FROM accounts_receivable WHERE cliente LIKE '%FLAVIO%OLIVEIRA%' ORDER BY vencimentoData DESC LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, maxiprodId, estado, vencimentoData, valorLiquido, valorRecebidoLiquido, collectedAt, documentoVinculadoNumero FROM accounts_receivable WHERE cliente LIKE '%FLAVIO%OLIVEIRA%' ORDER BY vencimentoData DESC LIMIT 10",
+  "rows": [
+    {
+      "id": "6401575",
+      "maxiprodId": "409300081103176",
+      "estado": "RECEBIDO",
+      "vencimentoData": "2026-05-12T12:00:00.000-03:00",
+      "valorLiquido": "11290.00",
+      "valorRecebidoLiquido": "9200.00",
+      "collectedAt": "2026-05-21 12:42:20",
+      "documentoVinculadoNumero": "287"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tmaxiprodId\testado\tvencimentoData\tvalorLiquido\tvalorRecebidoLiquido\tcollectedAt\tdocumentoVinculadoNumero\n6401575\t409300081103176\tRECEBIDO\t2026-05-12T12:00:00.000-03:00\t11290.00\t9200.00\t2026-05-21 12:42:20\t287\n",
+  "stderr": "",
+  "execution_time_ms": 276
+}

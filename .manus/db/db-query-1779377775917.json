@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, empresa, vencimento, valor, status, ativo FROM cobranca_planilha WHERE empresa LIKE '%FLAVIO%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, vencimento, valor, status, ativo FROM cobranca_planilha WHERE empresa LIKE '%FLAVIO%'",
+  "rows": [
+    {
+      "id": "2",
+      "empresa": "FLAVIO JOSE DE OLIVEIRA",
+      "vencimento": "2026-05-12",
+      "valor": "2090.00",
+      "status": "Promessa de Pgto",
+      "ativo": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tvencimento\tvalor\tstatus\tativo\n2\tFLAVIO JOSE DE OLIVEIRA\t2026-05-12\t2090.00\tPromessa de Pgto\t0\n",
+  "stderr": "",
+  "execution_time_ms": 285
+}

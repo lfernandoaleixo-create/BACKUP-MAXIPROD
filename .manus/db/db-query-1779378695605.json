@@ -1,0 +1,59 @@
+{
+  "query": "SELECT id, cliente, estado, tipo, vencimentoData FROM accounts_receivable WHERE cliente LIKE '%DIE%WILSON%' OR cliente LIKE '%A V MARQUES%' ORDER BY vencimentoData DESC LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, estado, tipo, vencimentoData FROM accounts_receivable WHERE cliente LIKE '%DIE%WILSON%' OR cliente LIKE '%A V MARQUES%' ORDER BY vencimentoData DESC LIMIT 10",
+  "rows": [
+    {
+      "id": "7159965",
+      "cliente": "A V MARQUES CARNES LTDA",
+      "estado": "EMITIDO",
+      "tipo": "TITULO",
+      "vencimentoData": "2026-06-19T12:00:00.000-03:00"
+    },
+    {
+      "id": "6401656",
+      "cliente": "A V MARQUES CARNES LTDA",
+      "estado": "RECEBIDO",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "vencimentoData": "2026-06-19T12:00:00.000-03:00"
+    },
+    {
+      "id": "6401655",
+      "cliente": "A V MARQUES CARNES LTDA",
+      "estado": "RECEBIDO",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "vencimentoData": "2026-06-12T12:00:00.000-03:00"
+    },
+    {
+      "id": "7159964",
+      "cliente": "A V MARQUES CARNES LTDA",
+      "estado": "EMITIDO",
+      "tipo": "TITULO",
+      "vencimentoData": "2026-06-12T12:00:00.000-03:00"
+    },
+    {
+      "id": "7159962",
+      "cliente": "DIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA",
+      "estado": "EMITIDO",
+      "tipo": "TITULO",
+      "vencimentoData": "2026-05-21T12:00:00.000-03:00"
+    },
+    {
+      "id": "6401654",
+      "cliente": "A V MARQUES CARNES LTDA",
+      "estado": "RECEBIDO",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "vencimentoData": "2026-05-15T12:00:00.000-03:00"
+    },
+    {
+      "id": "6401601",
+      "cliente": "DIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA",
+      "estado": "RECEBIDO",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\testado\ttipo\tvencimentoData\n7159965\tA V MARQUES CARNES LTDA\tEMITIDO\tTITULO\t2026-06-19T12:00:00.000-03:00\n6401656\tA V MARQUES CARNES LTDA\tRECEBIDO\tTITULO_PEDIDO_DE_VENDA\t2026-06-19T12:00:00.000-03:00\n6401655\tA V MARQUES CARNES LTDA\tRECEBIDO\tTITULO_PEDIDO_DE_VENDA\t2026-06-12T12:00:00.000-03:00\n7159964\tA V MARQUES CARNES LTDA\tEMITIDO\tTITULO\t2026-06-12T12:00:00.000-03:00\n7159962\tDIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA\tEMITIDO\tTITULO\t2026-05-21T12:00:00.000-03:00\n6401654\tA V MARQUES CARNES LTDA\tRECEBIDO\tTITULO_PEDIDO_DE_VENDA\t2026-05-15T12:00:00.000-03:00\n6401601\tDIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA\tRECEBIDO\tTITULO_PEDIDO_DE_VENDA\t2026-05-13T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

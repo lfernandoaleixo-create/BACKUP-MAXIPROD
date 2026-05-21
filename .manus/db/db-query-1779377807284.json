@@ -1,0 +1,58 @@
+{
+  "query": "SELECT id, cliente, tipo, estado, vencimentoData, valorLiquido FROM accounts_receivable WHERE cliente LIKE '%ELIANA%' OR cliente LIKE '%60.012.877%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, tipo, estado, vencimentoData, valorLiquido FROM accounts_receivable WHERE cliente LIKE '%ELIANA%' OR cliente LIKE '%60.012.877%'",
+  "rows": [
+    {
+      "id": "6401296",
+      "cliente": "60.012.877 ELIANA KELLY COSTA SOZINHO",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "estado": "EMITIDO",
+      "vencimentoData": "2026-05-18T12:00:00.000-03:00",
+      "valorLiquido": "3825.00"
+    },
+    {
+      "id": "6401297",
+      "cliente": "60.012.877 ELIANA KELLY COSTA SOZINHO",
+      "tipo": "TITULO_PROPOSTA_DE_VENDA",
+      "estado": "EMITIDO",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "valorLiquido": "3825.00"
+    },
+    {
+      "id": "6401313",
+      "cliente": "60.012.877 ELIANA KELLY COSTA SOZINHO",
+      "tipo": "TITULO",
+      "estado": "RECEBIDO",
+      "vencimentoData": "2026-05-18T12:00:00.000-03:00",
+      "valorLiquido": "765.00"
+    },
+    {
+      "id": "6401314",
+      "cliente": "60.012.877 ELIANA KELLY COSTA SOZINHO",
+      "tipo": "TITULO",
+      "estado": "EMITIDO",
+      "vencimentoData": "2026-05-25T12:00:00.000-03:00",
+      "valorLiquido": "765.00"
+    },
+    {
+      "id": "6401315",
+      "cliente": "60.012.877 ELIANA KELLY COSTA SOZINHO",
+      "tipo": "TITULO",
+      "estado": "EMITIDO",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00",
+      "valorLiquido": "765.00"
+    },
+    {
+      "id": "6401316",
+      "cliente": "60.012.877 ELIANA KELLY COSTA SOZINHO",
+      "tipo": "TITULO",
+      "estado": "EMITIDO",
+      "vencimentoData": "2026-06-08T12:00:00.000-03:00",
+      "valorLiquido": "765.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\ttipo\testado\tvencimentoData\tvalorLiquido\n6401296\t60.012.877 ELIANA KELLY COSTA SOZINHO\tTITULO_PROPOSTA_DE_VENDA\tEMITIDO\t2026-05-18T12:00:00.000-03:00\t3825.00\n6401297\t60.012.877 ELIANA KELLY COSTA SOZINHO\tTITULO_PROPOSTA_DE_VENDA\tEMITIDO\t2026-05-20T12:00:00.000-03:00\t3825.00\n6401313\t60.012.877 ELIANA KELLY COSTA SOZINHO\tTITULO\tRECEBIDO\t2026-05-18T12:00:00.000-03:00\t765.00\n6401314\t60.012.877 ELIANA KELLY COSTA SOZINHO\tTITULO\tEMITIDO\t2026-05-25T12:00:00.000-03:00\t765.00\n6401315\t60.012.877 ELIANA KELLY COSTA SOZINHO\tTITULO\tEMITIDO\t2026-06-01T12:00:00.000-03:00\t765.00\n6401316\t60.012.877 ELIANA KELLY COSTA SOZINHO\tTITULO\tEMITIDO\t2026-06-08T12:00:00.000-03:00\t765.00\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

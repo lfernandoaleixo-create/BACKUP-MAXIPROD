@@ -1,0 +1,66 @@
+{
+  "query": "SELECT id, cliente, vencimentoData, estado, valorLiquido, valorRecebidoLiquido FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData LIKE '2026-05-20%' LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, vencimentoData, estado, valorLiquido, valorRecebidoLiquido FROM accounts_receivable WHERE estado = 'EMITIDO' AND vencimentoData LIKE '2026-05-20%' LIMIT 20",
+  "rows": [
+    {
+      "id": "6401297",
+      "cliente": "60.012.877 ELIANA KELLY COSTA SOZINHO",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "estado": "EMITIDO",
+      "valorLiquido": "3825.00",
+      "valorRecebidoLiquido": "0.00"
+    },
+    {
+      "id": "6401345",
+      "cliente": "ERNANE MIGUEL FERNANDES",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "estado": "EMITIDO",
+      "valorLiquido": "1000.00",
+      "valorRecebidoLiquido": "0.00"
+    },
+    {
+      "id": "6401363",
+      "cliente": "3B3R COMERCIO LTDA",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "estado": "EMITIDO",
+      "valorLiquido": "577.50",
+      "valorRecebidoLiquido": "0.00"
+    },
+    {
+      "id": "6401446",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "estado": "EMITIDO",
+      "valorLiquido": "8000.00",
+      "valorRecebidoLiquido": "0.00"
+    },
+    {
+      "id": "6920066",
+      "cliente": "FAZENDA SANTA CRUZ",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "estado": "EMITIDO",
+      "valorLiquido": "4423.68",
+      "valorRecebidoLiquido": "0.00"
+    },
+    {
+      "id": "6955823",
+      "cliente": "DIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "estado": "EMITIDO",
+      "valorLiquido": "20000.00",
+      "valorRecebidoLiquido": "0.00"
+    },
+    {
+      "id": "6976523",
+      "cliente": "A V MARQUES CARNES LTDA",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "estado": "EMITIDO",
+      "valorLiquido": "1000.00",
+      "valorRecebidoLiquido": "0.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvencimentoData\testado\tvalorLiquido\tvalorRecebidoLiquido\n6401297\t60.012.877 ELIANA KELLY COSTA SOZINHO\t2026-05-20T12:00:00.000-03:00\tEMITIDO\t3825.00\t0.00\n6401345\tERNANE MIGUEL FERNANDES\t2026-05-20T12:00:00.000-03:00\tEMITIDO\t1000.00\t0.00\n6401363\t3B3R COMERCIO LTDA\t2026-05-20T12:00:00.000-03:00\tEMITIDO\t577.50\t0.00\n6401446\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t2026-05-20T12:00:00.000-03:00\tEMITIDO\t8000.00\t0.00\n6920066\tFAZENDA SANTA CRUZ\t2026-05-20T12:00:00.000-03:00\tEMITIDO\t4423.68\t0.00\n6955823\tDIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA\t2026-05-20T12:00:00.000-03:00\tEMITIDO\t20000.00\t0.00\n6976523\tA V MARQUES CARNES LTDA\t2026-05-20T12:00:00.000-03:00\tEMITIDO\t1000.00\t0.00\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

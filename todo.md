@@ -3889,3 +3889,6 @@
 - [x] Novo Pedido: busca de cliente letra a letra com dropdown e preenchimento automático de todos os campos ao selecionar
 - [x] Fix: busca de clientes no Novo Pedido deve incluir clientes da tabela sales_orders (Maxiprod), não apenas sales_order_requests
 - [x] Mobile: garantir responsividade completa em toda a Gestão de Vendas (Novo Pedido, Clientes, Pedidos) sem sobreposição de texto ou distorção
+- [x] Fix: Planilha de Cobrança - incluir títulos vencidos até último dia útil anterior a hoje (não excluir recentes como 20/05)
+- [x] Fix: Planilha de Cobrança - remover títulos que já foram liquidados/recebidos no Maxiprod (ex: FLAVIO JOSE)
+- [x] Auto-sync Planilha de Cobrança: sincronização automática a cada 5 min (horário comercial) após sync do Maxiprod — desativa títulos pagos e adiciona novos vencidos

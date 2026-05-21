@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, empresa, vencimento, ativo, ar_id FROM cobranca_planilha WHERE vencimento = '2026-05-20' ORDER BY ativo DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, vencimento, ativo, ar_id FROM cobranca_planilha WHERE vencimento = '2026-05-20' ORDER BY ativo DESC",
+  "rows": [
+    {
+      "id": "210001",
+      "empresa": "ERNANE MIGUEL FERNANDES",
+      "vencimento": "2026-05-20",
+      "ativo": "1",
+      "ar_id": "6401345"
+    },
+    {
+      "id": "210002",
+      "empresa": "3B3R COMERCIO LTDA",
+      "vencimento": "2026-05-20",
+      "ativo": "1",
+      "ar_id": "6401363"
+    },
+    {
+      "id": "210007",
+      "empresa": "FAZENDA SANTA CRUZ",
+      "vencimento": "2026-05-20",
+      "ativo": "1",
+      "ar_id": "7159947"
+    },
+    {
+      "id": "210003",
+      "empresa": "FAZENDA SANTA CRUZ",
+      "vencimento": "2026-05-20",
+      "ativo": "0",
+      "ar_id": "6920066"
+    },
+    {
+      "id": "210004",
+      "empresa": "DIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA",
+      "vencimento": "2026-05-20",
+      "ativo": "0",
+      "ar_id": "6955823"
+    },
+    {
+      "id": "210005",
+      "empresa": "A V MARQUES CARNES LTDA",
+      "vencimento": "2026-05-20",
+      "ativo": "0",
+      "ar_id": "6976523"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tvencimento\tativo\tar_id\n210001\tERNANE MIGUEL FERNANDES\t2026-05-20\t1\t6401345\n210002\t3B3R COMERCIO LTDA\t2026-05-20\t1\t6401363\n210007\tFAZENDA SANTA CRUZ\t2026-05-20\t1\t7159947\n210003\tFAZENDA SANTA CRUZ\t2026-05-20\t0\t6920066\n210004\tDIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA\t2026-05-20\t0\t6955823\n210005\tA V MARQUES CARNES LTDA\t2026-05-20\t0\t6976523\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

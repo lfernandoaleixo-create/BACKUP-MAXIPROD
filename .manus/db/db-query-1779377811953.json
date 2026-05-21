@@ -1,0 +1,18 @@
+{
+  "query": "SELECT id, cliente, tipo, estado, vencimentoData, valorLiquido FROM accounts_receivable WHERE cliente LIKE '%PYROFOGOS%' AND vencimentoData LIKE '2026-05-20%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, tipo, estado, vencimentoData, valorLiquido FROM accounts_receivable WHERE cliente LIKE '%PYROFOGOS%' AND vencimentoData LIKE '2026-05-20%'",
+  "rows": [
+    {
+      "id": "6401446",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "tipo": "TITULO_PEDIDO_DE_VENDA",
+      "estado": "EMITIDO",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "valorLiquido": "8000.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\ttipo\testado\tvencimentoData\tvalorLiquido\n6401446\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\tTITULO_PEDIDO_DE_VENDA\tEMITIDO\t2026-05-20T12:00:00.000-03:00\t8000.00\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

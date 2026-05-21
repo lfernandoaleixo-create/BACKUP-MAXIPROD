@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, cliente, estado, tipo, vencimentoData FROM accounts_receivable WHERE cliente LIKE '%FAZENDA SANTA CRUZ%' ORDER BY vencimentoData DESC LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, estado, tipo, vencimentoData FROM accounts_receivable WHERE cliente LIKE '%FAZENDA SANTA CRUZ%' ORDER BY vencimentoData DESC LIMIT 5",
+  "rows": [
+    {
+      "id": "7159947",
+      "cliente": "FAZENDA SANTA CRUZ",
+      "estado": "EMITIDO",
+      "tipo": "TITULO",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\testado\ttipo\tvencimentoData\n7159947\tFAZENDA SANTA CRUZ\tEMITIDO\tTITULO\t2026-05-20T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

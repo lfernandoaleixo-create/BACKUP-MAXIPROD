@@ -11,6 +11,7 @@ import { schedule, type ScheduledTask } from "node-cron";
 import { runGraphQLSync, syncBankBalances, syncPaidAccountsSnapshots } from "./maxiprodGraphQL";
 import { saveFinancialSnapshot, detectFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { resetDailyPaymentAuthorizations, checkAndResetOnStartup } from "./paymentAuthReset";
+import { syncCobrancaPlanilhaAuto } from "./cobrancaPlanilhaSync";
 
 let scheduledTask: ScheduledTask | null = null;
 let dailyResetTask: ScheduledTask | null = null;
@@ -71,6 +72,13 @@ export function startScheduler(): void {
           } catch (histErr: any) {
             console.error(`[Scheduler] Financial history sync failed: ${histErr.message}`);
           }
+        }
+        // Auto-sync Planilha de Cobrança (deactivate paid titles, add new overdue ones)
+        try {
+          const cobrancaResult = await syncCobrancaPlanilhaAuto();
+          console.log(`[Scheduler] Cobrança planilha synced: ${cobrancaResult.added} novos, ${cobrancaResult.deactivated} desativados, ${cobrancaResult.total} ativos`);
+        } catch (cobErr: any) {
+          console.error(`[Scheduler] Cobrança planilha sync failed: ${cobErr.message}`);
         }
       } else {
         console.error(`[Scheduler] Sync failed: ${result.error}`);

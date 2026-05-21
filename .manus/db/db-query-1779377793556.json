@@ -1,0 +1,26 @@
+{
+  "query": "SELECT id, empresa, vencimento, valor, ativo, ar_id FROM cobranca_planilha WHERE empresa LIKE '%ELIANA%' OR empresa LIKE '%PYROFOGOS%'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, vencimento, valor, ativo, ar_id FROM cobranca_planilha WHERE empresa LIKE '%ELIANA%' OR empresa LIKE '%PYROFOGOS%'",
+  "rows": [
+    {
+      "id": "26",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "vencimento": "2026-05-11",
+      "valor": "1600.00",
+      "ativo": "0",
+      "ar_id": "NULL"
+    },
+    {
+      "id": "27",
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "vencimento": "2026-05-11",
+      "valor": "3150.00",
+      "ativo": "0",
+      "ar_id": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tvencimento\tvalor\tativo\tar_id\n26\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t2026-05-11\t1600.00\t0\tNULL\n27\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t2026-05-11\t3150.00\t0\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}

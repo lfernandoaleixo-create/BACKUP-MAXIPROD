@@ -1,0 +1,14 @@
+{
+  "query": "SELECT MAX(collectedAt) as last_sync, COUNT(*) as total_emitido FROM accounts_receivable WHERE estado = 'EMITIDO'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT MAX(collectedAt) as last_sync, COUNT(*) as total_emitido FROM accounts_receivable WHERE estado = 'EMITIDO'",
+  "rows": [
+    {
+      "last_sync": "2026-05-21 15:25:46",
+      "total_emitido": "539"
+    }
+  ],
+  "messages": [],
+  "stdout": "last_sync\ttotal_emitido\n2026-05-21 15:25:46\t539\n",
+  "stderr": "",
+  "execution_time_ms": 311
+}
