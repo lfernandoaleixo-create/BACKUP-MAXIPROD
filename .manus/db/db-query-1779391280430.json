@@ -1,0 +1,50 @@
+{
+  "query": "SELECT formaCobranca, COUNT(*) as cnt \nFROM accounts_receivable \nWHERE estado = 'RECEBIDO' AND formaCobranca IS NOT NULL AND formaCobranca != ''\nGROUP BY formaCobranca\nORDER BY cnt DESC\nLIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT formaCobranca, COUNT(*) as cnt \nFROM accounts_receivable \nWHERE estado = 'RECEBIDO' AND formaCobranca IS NOT NULL AND formaCobranca != ''\nGROUP BY formaCobranca\nORDER BY cnt DESC\nLIMIT 30;",
+  "rows": [
+    {
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 50051 carteira 1",
+      "cnt": "32"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1",
+      "cnt": "24"
+    },
+    {
+      "formaCobranca": "PIX Sicredi conta 50051 chave 36562762000129",
+      "cnt": "13"
+    },
+    {
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 52061 carteira 1",
+      "cnt": "10"
+    },
+    {
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "cnt": "8"
+    },
+    {
+      "formaCobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95",
+      "cnt": "8"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1",
+      "cnt": "3"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1",
+      "cnt": "1"
+    },
+    {
+      "formaCobranca": "Depósito S.A. - BANCOOB ag 3140 conta 80247",
+      "cnt": "1"
+    },
+    {
+      "formaCobranca": "Dinheiro",
+      "cnt": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "formaCobranca\tcnt\nBoleto Sicredi ag 0155 conta 50051 carteira 1\t32\nBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\t24\nPIX Sicredi conta 50051 chave 36562762000129\t13\nBoleto Sicredi ag 0155 conta 52061 carteira 1\t10\nCheque CHEQUE EM FACTORING\t8\nPIX Sicredi conta 52061 chave 52.888.511/0001-95\t8\nBoleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1\t3\nBoleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1\t1\nDepósito S.A. - BANCOOB ag 3140 conta 80247\t1\nDinheiro\t1\n",
+  "stderr": "",
+  "execution_time_ms": 283
+}

@@ -1,0 +1,130 @@
+{
+  "query": "SELECT dadosCheque, formaCobranca, estado, COUNT(*) as cnt\nFROM accounts_receivable \nWHERE dadosCheque IS NOT NULL AND dadosCheque != ''\nGROUP BY dadosCheque, formaCobranca, estado\nORDER BY cnt DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT dadosCheque, formaCobranca, estado, COUNT(*) as cnt\nFROM accounts_receivable \nWHERE dadosCheque IS NOT NULL AND dadosCheque != ''\nGROUP BY dadosCheque, formaCobranca, estado\nORDER BY cnt DESC\nLIMIT 20;",
+  "rows": [
+    {
+      "dadosCheque": "SICREDI - Nº 7 - DISTRIBUIDORA M7 EMBALAGENS",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "RECEBIDO",
+      "cnt": "2"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 130 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 92 - M D DA SILVA",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SICOOB - Nº 787 - FABIANA LEOPOLDINO CORREA",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 88 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 80 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SICOOB - Nº 786 - FABIANA LEOPOLDINO CORREA DE OLIVEIRA",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 123 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 128 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 81 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 86 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 126 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "RECEBIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SICOOB - Nº 1302 - APARECIDO GARCIA DA SILVA",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 121 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 122 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 125- A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "RECEBIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 90 - M D DA SILVA",
+      "formaCobranca": "Cheque CHEQUE LINHA 11",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 84 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SANTANDER - Nº 85 - A C CLASSE A COMERCIAL",
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "dadosCheque": "SICOOB - Nº 785 - FABIANA LEOPOLDINO CORREA DE OLIVEIRA",
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "RECEBIDO",
+      "cnt": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "dadosCheque\tformaCobranca\testado\tcnt\nSICREDI - Nº 7 - DISTRIBUIDORA M7 EMBALAGENS\tCheque CHEQUE EM FACTORING\tRECEBIDO\t2\nSANTANDER - Nº 130 - A C CLASSE A COMERCIAL\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSANTANDER - Nº 92 - M D DA SILVA\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSICOOB - Nº 787 - FABIANA LEOPOLDINO CORREA\tCheque CHEQUE EM FACTORING\tEMITIDO\t1\nSANTANDER - Nº 88 - A C CLASSE A COMERCIAL\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSANTANDER - Nº 80 - A C CLASSE A COMERCIAL\tCheque CHEQUE EM FACTORING\tEMITIDO\t1\nSICOOB - Nº 786 - FABIANA LEOPOLDINO CORREA DE OLIVEIRA\tCheque CHEQUE EM FACTORING\tEMITIDO\t1\nSANTANDER - Nº 123 - A C CLASSE A COMERCIAL\tCheque CHEQUE EM FACTORING\tEMITIDO\t1\nSANTANDER - Nº 128 - A C CLASSE A COMERCIAL\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSANTANDER - Nº 81 - A C CLASSE A COMERCIAL\tCheque CHEQUE EM FACTORING\tEMITIDO\t1\nSANTANDER - Nº 86 - A C CLASSE A COMERCIAL\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSANTANDER - Nº 126 - A C CLASSE A COMERCIAL\tCheque CHEQUE EM FACTORING\tRECEBIDO\t1\nSICOOB - Nº 1302 - APARECIDO GARCIA DA SILVA\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSANTANDER - Nº 121 - A C CLASSE A COMERCIAL\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSANTANDER - Nº 122 - A C CLASSE A COMERCIAL\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSANTANDER - Nº 125- A C CLASSE A COMERCIAL\tCheque CHEQUE EM FACTORING\tRECEBIDO\t1\nSANTANDER - Nº 90 - M D DA SILVA\tCheque CHEQUE LINHA 11\tEMITIDO\t1\nSANTANDER - Nº 84 - A C CLASSE A COMERCIAL\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSANTANDER - Nº 85 - A C CLASSE A COMERCIAL\tCheque CHEQUE DISPONIVEL\tEMITIDO\t1\nSICOOB - Nº 785 - FABIANA LEOPOLDINO CORREA DE OLIVEIRA\tCheque CHEQUE EM FACTORING\tRECEBIDO\t1\n",
+  "stderr": "",
+  "execution_time_ms": 274
+}

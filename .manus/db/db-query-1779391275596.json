@@ -1,0 +1,9 @@
+{
+  "query": "SELECT estado, formaCobranca, COUNT(*) as cnt, SUM(CAST(valorOriginal AS DECIMAL(12,2))) as totalValor\nFROM accounts_receivable \nWHERE estado = 'RECEBIDO' \n  AND formaCobranca IS NOT NULL \n  AND (formaCobranca LIKE '%DESCONTADO%' OR formaCobranca LIKE '%DESCONTO%')\nGROUP BY estado, formaCobranca\nORDER BY cnt DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT estado, formaCobranca, COUNT(*) as cnt, SUM(CAST(valorOriginal AS DECIMAL(12,2))) as totalValor\nFROM accounts_receivable \nWHERE estado = 'RECEBIDO' \n  AND formaCobranca IS NOT NULL \n  AND (formaCobranca LIKE '%DESCONTADO%' OR formaCobranca LIKE '%DESCONTO%')\nGROUP BY estado, formaCobranca\nORDER BY cnt DESC\nLIMIT 20;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 332
+}

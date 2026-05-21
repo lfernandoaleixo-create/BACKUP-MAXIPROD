@@ -3900,3 +3900,4 @@
 - [x] Planilha de Cobrança: novos clientes entrando na inadimplência devem receber o campo "Apelido" preenchido automaticamente (igual aos existentes)
 - [x] Criar aba "Tabela de Preços" entre "Cadastro de Cliente" e "Pedidos de Venda" no VendedorDetalhe (placeholder - integração com Maxiprod futura)
 - [x] Adicionar status "Fundo Perdido" na Planilha de Cobrança (CobrancaPlanilhaView, InadimplenciaTab, CollectionMetricsPanel, cobrancaPlanilhaRouter, cobrancaPlanilhaSync)
+- [x] Consulta de Cliente (aba Vendas): adicionar campo "Valor a Receber" por cliente (soma de títulos em aberto + liquidados com Situação preenchida no Maxiprod)

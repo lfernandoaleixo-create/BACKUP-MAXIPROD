@@ -1,0 +1,95 @@
+{
+  "query": "SELECT DISTINCT formaCobranca, estado, COUNT(*) as cnt\nFROM accounts_receivable \nWHERE formaCobranca LIKE '%Cheque%' OR formaCobranca LIKE '%Boleto%'\nGROUP BY formaCobranca, estado\nORDER BY formaCobranca, estado;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT formaCobranca, estado, COUNT(*) as cnt\nFROM accounts_receivable \nWHERE formaCobranca LIKE '%Cheque%' OR formaCobranca LIKE '%Boleto%'\nGROUP BY formaCobranca, estado\nORDER BY formaCobranca, estado;",
+  "rows": [
+    {
+      "formaCobranca": "Boleto Bradesco ag 2469 conta 19287 carteira 2",
+      "estado": "EMITIDO",
+      "cnt": "2"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80242 carteira 1",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1",
+      "estado": "EMITIDO",
+      "cnt": "6"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1",
+      "estado": "RECEBIDO",
+      "cnt": "3"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1",
+      "estado": "EMITIDO",
+      "cnt": "209"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1",
+      "estado": "RECEBIDO",
+      "cnt": "24"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1",
+      "estado": "EMITIDO",
+      "cnt": "32"
+    },
+    {
+      "formaCobranca": "Boleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1",
+      "estado": "RECEBIDO",
+      "cnt": "1"
+    },
+    {
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 50051 carteira 1",
+      "estado": "EMITIDO",
+      "cnt": "32"
+    },
+    {
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 50051 carteira 1",
+      "estado": "RECEBIDO",
+      "cnt": "32"
+    },
+    {
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 52061 carteira 1",
+      "estado": "EMITIDO",
+      "cnt": "8"
+    },
+    {
+      "formaCobranca": "Boleto Sicredi ag 0155 conta 52061 carteira 1",
+      "estado": "RECEBIDO",
+      "cnt": "10"
+    },
+    {
+      "formaCobranca": "Cheque CHEQUE DISPONIVEL",
+      "estado": "EMITIDO",
+      "cnt": "23"
+    },
+    {
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "EMITIDO",
+      "cnt": "6"
+    },
+    {
+      "formaCobranca": "Cheque CHEQUE EM FACTORING",
+      "estado": "RECEBIDO",
+      "cnt": "8"
+    },
+    {
+      "formaCobranca": "Cheque CHEQUE LINHA 11",
+      "estado": "EMITIDO",
+      "cnt": "1"
+    },
+    {
+      "formaCobranca": "Cheque CHEQUE VOLTOU OUTROS MOTIVOS",
+      "estado": "EMITIDO",
+      "cnt": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "formaCobranca\testado\tcnt\nBoleto Bradesco ag 2469 conta 19287 carteira 2\tEMITIDO\t2\nBoleto S.A. - BANCOOB ag 3140 conta 80242 carteira 1\tEMITIDO\t1\nBoleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1\tEMITIDO\t6\nBoleto S.A. - BANCOOB ag 3140 conta 80246 carteira 1\tRECEBIDO\t3\nBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tEMITIDO\t209\nBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tRECEBIDO\t24\nBoleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1\tEMITIDO\t32\nBoleto S.A. - BANCOOB ag 3140 conta 90244 carteira 1\tRECEBIDO\t1\nBoleto Sicredi ag 0155 conta 50051 carteira 1\tEMITIDO\t32\nBoleto Sicredi ag 0155 conta 50051 carteira 1\tRECEBIDO\t32\nBoleto Sicredi ag 0155 conta 52061 carteira 1\tEMITIDO\t8\nBoleto Sicredi ag 0155 conta 52061 carteira 1\tRECEBIDO\t10\nCheque CHEQUE DISPONIVEL\tEMITIDO\t23\nCheque CHEQUE EM FACTORING\tEMITIDO\t6\nCheque CHEQUE EM FACTORING\tRECEBIDO\t8\nCheque CHEQUE LINHA 11\tEMITIDO\t1\nCheque CHEQUE VOLTOU OUTROS MOTIVOS\tEMITIDO\t2\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}
