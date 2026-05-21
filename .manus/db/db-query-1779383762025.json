@@ -1,0 +1,55 @@
+{
+  "query": "SELECT DISTINCT empresa FROM cobranca_planilha WHERE ativo = 1 AND (apelido IS NULL OR apelido = '') LIMIT 30",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT empresa FROM cobranca_planilha WHERE ativo = 1 AND (apelido IS NULL OR apelido = '') LIMIT 30",
+  "rows": [
+    {
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA"
+    },
+    {
+      "empresa": "FAZENDA SANTA CRUZ"
+    },
+    {
+      "empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA"
+    },
+    {
+      "empresa": "JB EMBALAGENS E DESCARTAVEIS LTDA"
+    },
+    {
+      "empresa": "ESPETINHOS COROMANDEL LTDA"
+    },
+    {
+      "empresa": "EVAFEST INDUSTRIA E COMERCIO EIRELI"
+    },
+    {
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA"
+    },
+    {
+      "empresa": "J LEAL DISTRIBUIDORA LTDA"
+    },
+    {
+      "empresa": "FOGOS BEIJA FLOR"
+    },
+    {
+      "empresa": "ALIMENTOS RAMOS LTDA."
+    },
+    {
+      "empresa": "ERNANE MIGUEL FERNANDES"
+    },
+    {
+      "empresa": "FERREIRA E SILVA COMERCIO DE CARNES LTDA"
+    },
+    {
+      "empresa": "MOISES MOREIRA DE AGUIAR"
+    },
+    {
+      "empresa": "RAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA"
+    },
+    {
+      "empresa": "3B3R COMERCIO LTDA"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresa\nINDUSTRIA E COMERCIO DE FOGOS IMPERIAL LTDA\nFAZENDA SANTA CRUZ\nPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\nJB EMBALAGENS E DESCARTAVEIS LTDA\nESPETINHOS COROMANDEL LTDA\nEVAFEST INDUSTRIA E COMERCIO EIRELI\nBOUTIQUE DO CONSTRUTOR SLU LTDA\nJ LEAL DISTRIBUIDORA LTDA\nFOGOS BEIJA FLOR\nALIMENTOS RAMOS LTDA.\nERNANE MIGUEL FERNANDES\nFERREIRA E SILVA COMERCIO DE CARNES LTDA\nMOISES MOREIRA DE AGUIAR\nRAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA\n3B3R COMERCIO LTDA\n",
+  "stderr": "",
+  "execution_time_ms": 280
+}

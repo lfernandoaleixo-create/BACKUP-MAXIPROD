@@ -3897,3 +3897,4 @@
 - [x] PDF Decisão de Cobrança: incluir observações da Planilha de Cobrança (histórico de observações por etapa) na seção "ETAPAS DE COBRANÇA REALIZADAS"
 - [x] PDF Decisão de Cobrança: preencher "HISTÓRICO DE AÇÕES REALIZADAS" com todas as observações das etapas de cobrança (etapa, data, texto)
 - [x] PDF Decisão de Cobrança: consolidar observações na caixa "OBSERVAÇÕES" do PDF
+- [x] Planilha de Cobrança: novos clientes entrando na inadimplência devem receber o campo "Apelido" preenchido automaticamente (igual aos existentes)

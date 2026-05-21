@@ -1,0 +1,70 @@
+{
+  "query": "SELECT DISTINCT empresa, apelido FROM cobranca_planilha WHERE ativo = 1 AND apelido IS NOT NULL AND apelido != '' LIMIT 15",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT empresa, apelido FROM cobranca_planilha WHERE ativo = 1 AND apelido IS NOT NULL AND apelido != '' LIMIT 15",
+  "rows": [
+    {
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "apelido": "GLAUCIENE MATEUS GOMES GERTH"
+    },
+    {
+      "empresa": "INDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.",
+      "apelido": "FOGOS SILVERCOLOR"
+    },
+    {
+      "empresa": "ESPETOLIN PRODUTOS ALIMENTICIOS LTDA",
+      "apelido": "ESPETOLIN"
+    },
+    {
+      "empresa": "PEDRO PAULO",
+      "apelido": "FOGOS PEDRO PAULO"
+    },
+    {
+      "empresa": "ESPETINHOS COROMANDEL LTDA",
+      "apelido": "ESPETINHOS COROMANDEL"
+    },
+    {
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "apelido": "JK COMERCIO E REPRESENTAÇÕES"
+    },
+    {
+      "empresa": "BR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA",
+      "apelido": "BOI RICO ALIMENTOS"
+    },
+    {
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "apelido": "ECO PALITOS"
+    },
+    {
+      "empresa": "EXCELENCIA CARNES E COMERCIO LTDA",
+      "apelido": "EXCELENCIA CARNES"
+    },
+    {
+      "empresa": "KEURE QUIMICA LTDA",
+      "apelido": "KEURE QUIMICA"
+    },
+    {
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "apelido": "FOGOS RONALDO"
+    },
+    {
+      "empresa": "SUPER MIX DISTRIBUIDORA LTDA",
+      "apelido": "SUPER MIX"
+    },
+    {
+      "empresa": "OURO NEGRO FERTILIZANTES LTDA",
+      "apelido": "OURO NEGRO"
+    },
+    {
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "apelido": "CARLOS HUMBERTO BUENO"
+    },
+    {
+      "empresa": "14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA",
+      "apelido": "ELIAN CARRILHO SANTIAGO DA SILVA"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresa\tapelido\n59.252.539 GLAUCIENE MATEUS GOMES GERTH\tGLAUCIENE MATEUS GOMES GERTH\nINDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.\tFOGOS SILVERCOLOR\nESPETOLIN PRODUTOS ALIMENTICIOS LTDA\tESPETOLIN\nPEDRO PAULO\tFOGOS PEDRO PAULO\nESPETINHOS COROMANDEL LTDA\tESPETINHOS COROMANDEL\nJK COMERCIO E REPRESENTACOES LTDA\tJK COMERCIO E REPRESENTAÇÕES\nBR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA\tBOI RICO ALIMENTOS\nWGO COMERCIO E SERVICOS LTDA\tECO PALITOS\nEXCELENCIA CARNES E COMERCIO LTDA\tEXCELENCIA CARNES\nKEURE QUIMICA LTDA\tKEURE QUIMICA\nRONALDO ANTONIO DE MOURA\tFOGOS RONALDO\nSUPER MIX DISTRIBUIDORA LTDA\tSUPER MIX\nOURO NEGRO FERTILIZANTES LTDA\tOURO NEGRO\n48.128.486 CARLOS HUMBERTO BUENO\tCARLOS HUMBERTO BUENO\n14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA\tELIAN CARRILHO SANTIAGO DA SILVA\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

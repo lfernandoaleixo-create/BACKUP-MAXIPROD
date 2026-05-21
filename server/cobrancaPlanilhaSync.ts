@@ -15,6 +15,17 @@
 import { getDb } from "./db";
 import { cobrancaPlanilha, accountsReceivable, collectionActions, salesOrders } from "../drizzle/schema";
 import { eq, and, inArray, lte, isNull, sql, desc } from "drizzle-orm";
+import { gql } from "./maxiprodGraphQL";
+
+// Clientes com vendedor fixo "Grupo Fox"
+const CLIENTES_GRUPO_FOX = ["JOHNSON", "KEURE", "S C JOHNSON", "SC JOHNSON", "S. C. JOHNSON"];
+function isClienteGrupoFox(empresa: string): boolean {
+  const upper = empresa.toUpperCase();
+  return CLIENTES_GRUPO_FOX.some(c => upper.includes(c));
+}
+function normalizeName(name: string): string {
+  return name.toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 
 // Tipos válidos de contas a receber (mesmo filtro da inadimplência)
 const RECEIVABLE_VALID_TYPES = ["TITULO", "RECEITA", "ADIANTAMENTO"];
@@ -226,7 +237,79 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
     }
   }
 
-  // 4b. Populate centroCustos for items that don't have it yet
+  // 4b. Populate apelido and vendedor for items that don't have them yet
+  const itemsWithoutApelido = await db.select({ id: cobrancaPlanilha.id, empresa: cobrancaPlanilha.empresa })
+    .from(cobrancaPlanilha)
+    .where(and(eq(cobrancaPlanilha.ativo, true), isNull(cobrancaPlanilha.apelido)));
+  
+  if (itemsWithoutApelido.length > 0) {
+    // Fetch apelido from Maxiprod GraphQL empresas
+    const apelidoMap: Record<string, string> = {};
+    const vendedorMap: Record<string, string> = {};
+    try {
+      const PAGE_SIZE = 200;
+      let skip = 0;
+      let total = 0;
+      do {
+        const resp = await gql<any>(`{
+          empresas(skip: ${skip}, take: ${PAGE_SIZE}, where: { cliente: { eq: true } }) {
+            totalCount
+            items {
+              nomeFantasia
+              razaoSocial
+              apelido
+              representanteOuVendedor1Preferencial { nomeFantasia razaoSocial }
+            }
+          }
+        }`);
+        if (!resp?.empresas) break;
+        total = resp.empresas.totalCount;
+        for (const emp of resp.empresas.items) {
+          const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
+          const normalizedNames = names.map((n: string) => normalizeName(n));
+          
+          // Map apelido: use apelido field if available, otherwise nomeFantasia
+          const apelidoValue = (emp.apelido || emp.nomeFantasia || "").trim();
+          if (apelidoValue) {
+            for (const normName of normalizedNames) {
+              if (!apelidoMap[normName]) apelidoMap[normName] = apelidoValue;
+            }
+          }
+          
+          // Map vendedor
+          const rep = emp.representanteOuVendedor1Preferencial;
+          if (rep) {
+            const vendedorName = rep.nomeFantasia || rep.razaoSocial || "";
+            if (vendedorName) {
+              for (const normName of normalizedNames) {
+                if (!vendedorMap[normName]) vendedorMap[normName] = vendedorName;
+              }
+            }
+          }
+        }
+        skip += PAGE_SIZE;
+      } while (skip < total);
+    } catch (e) {
+      console.error("[Auto-sync] Erro ao buscar apelidos do Maxiprod:", e);
+    }
+    
+    // Update items missing apelido/vendedor
+    for (const item of itemsWithoutApelido) {
+      const normEmp = normalizeName(item.empresa);
+      const apelido = apelidoMap[normEmp];
+      const vendedor = isClienteGrupoFox(item.empresa) ? "Grupo Fox" : vendedorMap[normEmp];
+      const updateData: Record<string, any> = {};
+      if (apelido) updateData.apelido = apelido;
+      if (vendedor) updateData.vendedor = vendedor;
+      if (Object.keys(updateData).length > 0) {
+        await db.update(cobrancaPlanilha)
+          .set(updateData)
+          .where(eq(cobrancaPlanilha.id, item.id));
+      }
+    }
+  }
+
+  // 4c. Populate centroCustos for items that don't have it yet
   // Use the most common estadoConfiguravel from sales_orders for each client
   const itemsWithoutCentro = await db.select({ id: cobrancaPlanilha.id, empresa: cobrancaPlanilha.empresa })
     .from(cobrancaPlanilha)

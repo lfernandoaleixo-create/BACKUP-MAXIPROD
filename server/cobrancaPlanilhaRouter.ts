@@ -661,17 +661,11 @@ export const cobrancaPlanilhaRouter = router({
             const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
             const normalizedNames = names.map((n: string) => normalizeName(n));
             
-            // Mapear apelido para cada nome da empresa (só se diferente do nome/razão)
-            const apelidoValue = (emp.apelido || "").trim();
+            // Mapear apelido: usar apelido se disponível, senão nomeFantasia
+            const apelidoValue = (emp.apelido || emp.nomeFantasia || "").trim();
             if (apelidoValue) {
-              const apelidoNorm = normalizeName(apelidoValue);
-              const nomeNorm = normalizeName(emp.nomeFantasia || "");
-              const razaoNorm = normalizeName(emp.razaoSocial || "");
-              // Só salvar apelido se for diferente do nome fantasia e razão social
-              if (apelidoNorm !== nomeNorm && apelidoNorm !== razaoNorm) {
-                for (const normName of normalizedNames) {
-                  if (!apelidoMap[normName]) apelidoMap[normName] = apelidoValue;
-                }
+              for (const normName of normalizedNames) {
+                if (!apelidoMap[normName]) apelidoMap[normName] = apelidoValue;
               }
             }
             
