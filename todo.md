@@ -3903,3 +3903,7 @@
 - [x] Consulta de Cliente (aba Vendas): adicionar campo "Valor a Receber" por cliente (soma de títulos em aberto + liquidados com Situação preenchida no Maxiprod)
 - [x] BUG: Valor a Receber mostrando valor incorreto (usar dados ao vivo do Maxiprod para EMITIDO em vez do banco local desatualizado)
 - [x] Títulos descontados: mostrar TODOS em painel expansível com informações completas (valor, situação, forma cobrança, vencimento)
+- [x] BUG Inadimplência: não mostra títulos vencidos ontem (20/05/2026) - precisa incluir até 1 dia útil antes de hoje (já corrigido no auto-sync)
+- [x] BUG Inadimplência: mostra títulos já liquidados no Maxiprod (ex: FLAVIO JOSE NF 287 R$2.090 12/05) - precisa confrontar com Maxiprod ao vivo (já corrigido no auto-sync)
+- [x] Valor a Receber: usar valorOriginal - valorRecebidoLiquido para calcular valor real a receber (bater com coluna 'A Receber' do Maxiprod)
+- [x] Textos escapados (T\\u00edtulos) corrigidos para UTF-8 correto

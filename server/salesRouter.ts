@@ -2052,16 +2052,19 @@ export const salesRouter = router({
             contaAReceber(skip: 0, take: 500, where: { estado: { eq: EMITIDO }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
               totalCount
               items {
-                id valorOriginal vencimentoData documentoVinculadoNumero parcela
+                id valorOriginal valorLiquido valorRecebidoLiquido vencimentoData documentoVinculadoNumero parcela
               }
             }
           }`);
           if (emitidosLiveData?.contaAReceber?.items?.length) {
             for (const item of emitidosLiveData.contaAReceber.items) {
               const valorOrig = parseFloat(item.valorOriginal || "0");
-              valorEmAbertoLive += valorOrig;
+              const valorRecebido = parseFloat(item.valorRecebidoLiquido || "0");
+              const valorAReceberTitulo = valorOrig - valorRecebido;
+              if (valorAReceberTitulo <= 0) continue; // título já pago integralmente
+              valorEmAbertoLive += valorAReceberTitulo;
               titulosEmAbertoLive.push({
-                valorOriginal: Math.round(valorOrig * 100) / 100,
+                valorOriginal: Math.round(valorAReceberTitulo * 100) / 100,
                 vencimento: item.vencimentoData || "",
                 documento: item.documentoVinculadoNumero || "",
                 parcela: item.parcela || "",

@@ -89,11 +89,11 @@ function ValorAReceberPanel({ receivables }: { receivables: any }) {
         </div>
         <div className="text-right space-y-0.5">
           <div className="text-xs text-blue-600">
-            Em aberto: {formatCurrency(valorEmAbertoLive)} ({titulosEmAberto.length} t\u00edtulos)
+            Em aberto: {formatCurrency(valorEmAbertoLive)} ({titulosEmAberto.length} títulos)
           </div>
           {valorDescontados > 0 && (
             <div className="text-xs text-purple-600">
-              Descontados: {formatCurrency(valorDescontados)} ({titulosDescontados.length} t\u00edtulos)
+              Descontados: {formatCurrency(valorDescontados)} ({titulosDescontados.length} títulos)
             </div>
           )}
         </div>
@@ -107,7 +107,7 @@ function ValorAReceberPanel({ receivables }: { receivables: any }) {
             className="flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-900 transition-colors w-full text-left"
           >
             {showEmAberto ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            T\u00edtulos em aberto ({titulosEmAberto.length})
+            Títulos em aberto ({titulosEmAberto.length})
           </button>
           {showEmAberto && (
             <div className="mt-2 max-h-60 overflow-y-auto">
@@ -116,7 +116,7 @@ function ValorAReceberPanel({ receivables }: { receivables: any }) {
                   <tr>
                     <th className="text-left px-2 py-1 text-blue-700">Doc</th>
                     <th className="text-left px-2 py-1 text-blue-700">Parcela</th>
-                    <th className="text-right px-2 py-1 text-blue-700">Valor</th>
+                    <th className="text-right px-2 py-1 text-blue-700">A Receber</th>
                     <th className="text-right px-2 py-1 text-blue-700">Vencimento</th>
                   </tr>
                 </thead>
@@ -157,7 +157,7 @@ function ValorAReceberPanel({ receivables }: { receivables: any }) {
             className="flex items-center gap-1 text-xs font-semibold text-purple-700 hover:text-purple-900 transition-colors w-full text-left"
           >
             {showDescontados ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            T\u00edtulos descontados ({titulosDescontados.length})
+            Títulos descontados ({titulosDescontados.length})
           </button>
           {showDescontados && (
             <div className="mt-2 max-h-60 overflow-y-auto">
@@ -166,10 +166,10 @@ function ValorAReceberPanel({ receivables }: { receivables: any }) {
                   <tr>
                     <th className="text-left px-2 py-1 text-purple-700">Doc</th>
                     <th className="text-left px-2 py-1 text-purple-700">Parcela</th>
-                    <th className="text-left px-2 py-1 text-purple-700">Situa\u00e7\u00e3o</th>
+                    <th className="text-left px-2 py-1 text-purple-700">Situação</th>
                     <th className="text-right px-2 py-1 text-purple-700">Valor</th>
                     <th className="text-right px-2 py-1 text-purple-700">Vencimento</th>
-                    <th className="text-right px-2 py-1 text-purple-700">Liquida\u00e7\u00e3o</th>
+                    <th className="text-right px-2 py-1 text-purple-700">Liquidação</th>
                   </tr>
                 </thead>
                 <tbody>
