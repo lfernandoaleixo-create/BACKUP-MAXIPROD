@@ -1,0 +1,314 @@
+{
+  "query": "SELECT maxiprodId, documentoVinculadoNumero, parcela, valorOriginal, vencimentoData, estado\nFROM accounts_receivable \nWHERE cliente LIKE '%KEURE%'\nORDER BY vencimentoData DESC\nLIMIT 50;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT maxiprodId, documentoVinculadoNumero, parcela, valorOriginal, vencimentoData, estado\nFROM accounts_receivable \nWHERE cliente LIKE '%KEURE%'\nORDER BY vencimentoData DESC\nLIMIT 50;",
+  "rows": [
+    {
+      "maxiprodId": "409300081281022",
+      "documentoVinculadoNumero": "1085",
+      "parcela": "4",
+      "valorOriginal": "9250.00",
+      "vencimentoData": "2026-08-12T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300081281023",
+      "documentoVinculadoNumero": "1085",
+      "parcela": "3",
+      "valorOriginal": "9250.00",
+      "vencimentoData": "2026-07-24T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300081281021",
+      "documentoVinculadoNumero": "1085",
+      "parcela": "2",
+      "valorOriginal": "9250.00",
+      "vencimentoData": "2026-07-13T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300081281020",
+      "documentoVinculadoNumero": "1085",
+      "parcela": "1",
+      "valorOriginal": "9250.00",
+      "vencimentoData": "2026-06-28T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074004953",
+      "documentoVinculadoNumero": "1886",
+      "parcela": "7",
+      "valorOriginal": "14800.00",
+      "vencimentoData": "2026-04-02T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074004951",
+      "documentoVinculadoNumero": "1886",
+      "parcela": "5",
+      "valorOriginal": "14800.00",
+      "vencimentoData": "2026-03-19T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074004949",
+      "documentoVinculadoNumero": "1886",
+      "parcela": "4",
+      "valorOriginal": "14800.00",
+      "vencimentoData": "2026-03-12T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074004948",
+      "documentoVinculadoNumero": "1886",
+      "parcela": "3",
+      "valorOriginal": "14800.00",
+      "vencimentoData": "2026-03-05T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300072027294",
+      "documentoVinculadoNumero": "1770",
+      "parcela": "4",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2026-03-04T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074004947",
+      "documentoVinculadoNumero": "1886",
+      "parcela": "2",
+      "valorOriginal": "14800.00",
+      "vencimentoData": "2026-02-26T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074004946",
+      "documentoVinculadoNumero": "1886",
+      "parcela": "1",
+      "valorOriginal": "14800.00",
+      "vencimentoData": "2026-02-19T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300072027293",
+      "documentoVinculadoNumero": "1770",
+      "parcela": "3",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2026-02-18T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300072027291",
+      "documentoVinculadoNumero": "1770",
+      "parcela": "1",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2026-02-04T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300069690665",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "4",
+      "valorOriginal": "9250.00",
+      "vencimentoData": "2026-01-27T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300070240546",
+      "documentoVinculadoNumero": "1678",
+      "parcela": "3",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2026-01-21T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300070240545",
+      "documentoVinculadoNumero": "1678",
+      "parcela": "2",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2026-01-14T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300069690664",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "3",
+      "valorOriginal": "9250.00",
+      "vencimentoData": "2026-01-13T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300070240544",
+      "documentoVinculadoNumero": "1678",
+      "parcela": "1",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2026-01-07T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074437605",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2026-01-06T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300069690663",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "2",
+      "valorOriginal": "9250.00",
+      "vencimentoData": "2026-01-06T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300069885728",
+      "documentoVinculadoNumero": "1656",
+      "parcela": "1",
+      "valorOriginal": "1225.00",
+      "vencimentoData": "2026-01-04T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300069690662",
+      "documentoVinculadoNumero": "1633",
+      "parcela": "1",
+      "valorOriginal": "9250.00",
+      "vencimentoData": "2025-12-30T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074434708",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-12-04T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436584",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-11-27T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074437621",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-11-20T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074434683",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-11-20T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074437608",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-11-13T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074434691",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-11-13T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074434672",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-11-06T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436518",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-10-23T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436500",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-10-16T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436493",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-10-09T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436487",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-10-09T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436465",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-10-02T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436453",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-10-02T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436422",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-09-25T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436396",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-09-18T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    },
+    {
+      "maxiprodId": "409300074436372",
+      "documentoVinculadoNumero": "NULL",
+      "parcela": "NULL",
+      "valorOriginal": "8750.00",
+      "vencimentoData": "2025-09-18T12:00:00.000-03:00",
+      "estado": "EMITIDO"
+    }
+  ],
+  "messages": [],
+  "stdout": "maxiprodId\tdocumentoVinculadoNumero\tparcela\tvalorOriginal\tvencimentoData\testado\n409300081281022\t1085\t4\t9250.00\t2026-08-12T12:00:00.000-03:00\tEMITIDO\n409300081281023\t1085\t3\t9250.00\t2026-07-24T12:00:00.000-03:00\tEMITIDO\n409300081281021\t1085\t2\t9250.00\t2026-07-13T12:00:00.000-03:00\tEMITIDO\n409300081281020\t1085\t1\t9250.00\t2026-06-28T12:00:00.000-03:00\tEMITIDO\n409300074004953\t1886\t7\t14800.00\t2026-04-02T12:00:00.000-03:00\tEMITIDO\n409300074004951\t1886\t5\t14800.00\t2026-03-19T12:00:00.000-03:00\tEMITIDO\n409300074004949\t1886\t4\t14800.00\t2026-03-12T12:00:00.000-03:00\tEMITIDO\n409300074004948\t1886\t3\t14800.00\t2026-03-05T12:00:00.000-03:00\tEMITIDO\n409300072027294\t1770\t4\t8750.00\t2026-03-04T12:00:00.000-03:00\tEMITIDO\n409300074004947\t1886\t2\t14800.00\t2026-02-26T12:00:00.000-03:00\tEMITIDO\n409300074004946\t1886\t1\t14800.00\t2026-02-19T12:00:00.000-03:00\tEMITIDO\n409300072027293\t1770\t3\t8750.00\t2026-02-18T12:00:00.000-03:00\tEMITIDO\n409300072027291\t1770\t1\t8750.00\t2026-02-04T12:00:00.000-03:00\tEMITIDO\n409300069690665\t1633\t4\t9250.00\t2026-01-27T12:00:00.000-03:00\tEMITIDO\n409300070240546\t1678\t3\t8750.00\t2026-01-21T12:00:00.000-03:00\tEMITIDO\n409300070240545\t1678\t2\t8750.00\t2026-01-14T12:00:00.000-03:00\tEMITIDO\n409300069690664\t1633\t3\t9250.00\t2026-01-13T12:00:00.000-03:00\tEMITIDO\n409300070240544\t1678\t1\t8750.00\t2026-01-07T12:00:00.000-03:00\tEMITIDO\n409300074437605\tNULL\tNULL\t8750.00\t2026-01-06T12:00:00.000-03:00\tEMITIDO\n409300069690663\t1633\t2\t9250.00\t2026-01-06T12:00:00.000-03:00\tEMITIDO\n409300069885728\t1656\t1\t1225.00\t2026-01-04T12:00:00.000-03:00\tEMITIDO\n409300069690662\t1633\t1\t9250.00\t2025-12-30T12:00:00.000-03:00\tEMITIDO\n409300074434708\tNULL\tNULL\t8750.00\t2025-12-04T12:00:00.000-03:00\tEMITIDO\n409300074436584\tNULL\tNULL\t8750.00\t2025-11-27T12:00:00.000-03:00\tEMITIDO\n409300074437621\tNULL\tNULL\t8750.00\t2025-11-20T12:00:00.000-03:00\tEMITIDO\n409300074434683\tNULL\tNULL\t8750.00\t2025-11-20T12:00:00.000-03:00\tEMITIDO\n409300074437608\tNULL\tNULL\t8750.00\t2025-11-13T12:00:00.000-03:00\tEMITIDO\n409300074434691\tNULL\tNULL\t8750.00\t2025-11-13T12:00:00.000-03:00\tEMITIDO\n409300074434672\tNULL\tNULL\t8750.00\t2025-11-06T12:00:00.000-03:00\tEMITIDO\n409300074436518\tNULL\tNULL\t8750.00\t2025-10-23T12:00:00.000-03:00\tEMITIDO\n409300074436500\tNULL\tNULL\t8750.00\t2025-10-16T12:00:00.000-03:00\tEMITIDO\n409300074436493\tNULL\tNULL\t8750.00\t2025-10-09T12:00:00.000-03:00\tEMITIDO\n409300074436487\tNULL\tNULL\t8750.00\t2025-10-09T12:00:00.000-03:00\tEMITIDO\n409300074436465\tNULL\tNULL\t8750.00\t2025-10-02T12:00:00.000-03:00\tEMITIDO\n409300074436453\tNULL\tNULL\t8750.00\t2025-10-02T12:00:00.000-03:00\tEMITIDO\n409300074436422\tNULL\tNULL\t8750.00\t2025-09-25T12:00:00.000-03:00\tEMITIDO\n409300074436396\tNULL\tNULL\t8750.00\t2025-09-18T12:00:00.000-03:00\tEMITIDO\n409300074436372\tNULL\tNULL\t8750.00\t2025-09-18T12:00:00.000-03:00\tEMITIDO\n",
+  "stderr": "",
+  "execution_time_ms": 287
+}

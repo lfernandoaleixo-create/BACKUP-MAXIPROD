@@ -3901,3 +3901,5 @@
 - [x] Criar aba "Tabela de Preços" entre "Cadastro de Cliente" e "Pedidos de Venda" no VendedorDetalhe (placeholder - integração com Maxiprod futura)
 - [x] Adicionar status "Fundo Perdido" na Planilha de Cobrança (CobrancaPlanilhaView, InadimplenciaTab, CollectionMetricsPanel, cobrancaPlanilhaRouter, cobrancaPlanilhaSync)
 - [x] Consulta de Cliente (aba Vendas): adicionar campo "Valor a Receber" por cliente (soma de títulos em aberto + liquidados com Situação preenchida no Maxiprod)
+- [x] BUG: Valor a Receber mostrando valor incorreto (usar dados ao vivo do Maxiprod para EMITIDO em vez do banco local desatualizado)
+- [x] Títulos descontados: mostrar TODOS em painel expansível com informações completas (valor, situação, forma cobrança, vencimento)

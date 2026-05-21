@@ -2035,25 +2035,47 @@ export const salesRouter = router({
         pedido: oi.numeroPedido || "",
       }));
 
-      // ===== VALOR A RECEBER: títulos em aberto + descontados (RECEBIDO com Situação) =====
-      // Buscar títulos RECEBIDO do Maxiprod que tenham campo "Situação" preenchido
-      // (ex: BOLETO DESCONTADO BRADESCO, CHEQUE DESCONTADO FACTORING)
-      // Esses títulos foram liquidados mas o valor ainda está "em risco"
+      // ===== VALOR A RECEBER: buscar AO VIVO do Maxiprod =====
+      // O banco local pode estar desatualizado (títulos já pagos ainda como EMITIDO)
+      // Buscar direto do Maxiprod para ter o valor correto
+      let valorEmAbertoLive = 0;
       let valorDescontados = 0;
-      let titulosDescontados: Array<{ valorOriginal: number; situacao: string; formaCobranca: string }> = [];
+      let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string }> = [];
+      let titulosDescontados: Array<{ valorOriginal: number; situacao: string; formaCobranca: string; vencimento: string; documento: string; parcela: string; liquidacao: string }> = [];
       try {
-        // Usar o apelido do cliente para buscar no Maxiprod (mesma lógica do Contas a Receber)
         const apelido = clientInfo.apelido || "";
         const razaoSocial = clientInfo.razaoSocial || cn;
-        // Buscar por apelido primeiro, depois por razaoSocial
         const searchTerm = apelido || razaoSocial;
         if (searchTerm) {
-          // Query para títulos RECEBIDO do cliente
+          // 1) Buscar títulos EMITIDO ao vivo do Maxiprod
+          const emitidosLiveData = await gql<any>(`{
+            contaAReceber(skip: 0, take: 500, where: { estado: { eq: EMITIDO }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
+              totalCount
+              items {
+                id valorOriginal vencimentoData documentoVinculadoNumero parcela
+              }
+            }
+          }`);
+          if (emitidosLiveData?.contaAReceber?.items?.length) {
+            for (const item of emitidosLiveData.contaAReceber.items) {
+              const valorOrig = parseFloat(item.valorOriginal || "0");
+              valorEmAbertoLive += valorOrig;
+              titulosEmAbertoLive.push({
+                valorOriginal: Math.round(valorOrig * 100) / 100,
+                vencimento: item.vencimentoData || "",
+                documento: item.documentoVinculadoNumero || "",
+                parcela: item.parcela || "",
+              });
+            }
+          }
+
+          // 2) Buscar títulos RECEBIDO com Situação preenchida (descontados)
           const recebidosData = await gql<any>(`{
             contaAReceber(skip: 0, take: 500, where: { estado: { eq: RECEBIDO }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
               totalCount
               items {
                 id valorOriginal valorLiquido valorRecebidoLiquido
+                vencimentoData liquidacaoData documentoVinculadoNumero parcela
                 campoAdicionalEspecifico { tag valor descricao }
                 formaDeCobranca { meioDePagamento banco { descricao } }
                 cliente { nomeFantasia razaoSocial }
@@ -2062,7 +2084,6 @@ export const salesRouter = router({
           }`);
           if (recebidosData?.contaAReceber?.items?.length) {
             for (const item of recebidosData.contaAReceber.items) {
-              // Verificar se tem campo Situacao preenchido
               const campos = item.campoAdicionalEspecifico || [];
               const situacaoCampo = campos.find((c: any) => {
                 const tag = (c.tag || '').trim();
@@ -2077,17 +2098,21 @@ export const salesRouter = router({
                   valorOriginal: Math.round(valorOrig * 100) / 100,
                   situacao: String(situacaoCampo.valor).trim(),
                   formaCobranca: `${meio} ${banco}`.trim(),
+                  vencimento: item.vencimentoData || "",
+                  documento: item.documentoVinculadoNumero || "",
+                  parcela: item.parcela || "",
+                  liquidacao: item.liquidacaoData || "",
                 });
               }
             }
           }
         }
       } catch (err: any) {
-        console.error('[getClientSummary] Error fetching descontados:', err.message);
+        console.error('[getClientSummary] Error fetching valor a receber live:', err.message);
       }
 
-      // Valor a Receber total = em aberto + descontados
-      const valorAReceber = valorEmAberto + valorDescontados;
+      // Valor a Receber total = em aberto (live) + descontados
+      const valorAReceber = valorEmAbertoLive + valorDescontados;
 
       return {
         clientInfo,
@@ -2115,10 +2140,12 @@ export const salesRouter = router({
           // Valores
           valorEmAberto: Math.round(valorEmAberto * 100) / 100,
           valorRecebido: Math.round(valorRecebido * 100) / 100,
-          // Valor a Receber = em aberto + descontados (RECEBIDO com Situação)
+          // Valor a Receber ao vivo do Maxiprod
+          valorEmAbertoLive: Math.round(valorEmAbertoLive * 100) / 100,
           valorAReceber: Math.round(valorAReceber * 100) / 100,
           valorDescontados: Math.round(valorDescontados * 100) / 100,
           titulosDescontados,
+          titulosEmAbertoLive,
           // Compat
           totalTitulos: dedupForCounts.length,
           titulosEmAberto: titulosEmitidos.length,

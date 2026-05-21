@@ -65,6 +65,140 @@ function daysUntil(dateStr: string): number | null {
 type TituloFilter = "todos" | "aberto" | "pago";
 type TituloSort = "vencimento_asc" | "vencimento_desc" | "valor_desc" | "valor_asc";
 
+/** Painel expandível de Valor a Receber com detalhes completos */
+function ValorAReceberPanel({ receivables }: { receivables: any }) {
+  const [showEmAberto, setShowEmAberto] = useState(false);
+  const [showDescontados, setShowDescontados] = useState(false);
+
+  const valorEmAbertoLive = receivables.valorEmAbertoLive || receivables.valorEmAberto || 0;
+  const valorDescontados = receivables.valorDescontados || 0;
+  const valorAReceber = receivables.valorAReceber || 0;
+  const titulosEmAberto = receivables.titulosEmAbertoLive || [];
+  const titulosDescontados = receivables.titulosDescontados || [];
+
+  return (
+    <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300 shadow-sm">
+      {/* Header com valor total */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-sm text-blue-700 font-semibold mb-1">
+            <DollarSign className="h-4 w-4 text-blue-600" />
+            Valor a Receber
+          </div>
+          <div className="text-2xl font-bold text-blue-800">{formatCurrency(valorAReceber)}</div>
+        </div>
+        <div className="text-right space-y-0.5">
+          <div className="text-xs text-blue-600">
+            Em aberto: {formatCurrency(valorEmAbertoLive)} ({titulosEmAberto.length} t\u00edtulos)
+          </div>
+          {valorDescontados > 0 && (
+            <div className="text-xs text-purple-600">
+              Descontados: {formatCurrency(valorDescontados)} ({titulosDescontados.length} t\u00edtulos)
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Seção Em Aberto - expansível */}
+      {titulosEmAberto.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-blue-200">
+          <button
+            onClick={() => setShowEmAberto(!showEmAberto)}
+            className="flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-900 transition-colors w-full text-left"
+          >
+            {showEmAberto ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            T\u00edtulos em aberto ({titulosEmAberto.length})
+          </button>
+          {showEmAberto && (
+            <div className="mt-2 max-h-60 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-blue-100 sticky top-0">
+                  <tr>
+                    <th className="text-left px-2 py-1 text-blue-700">Doc</th>
+                    <th className="text-left px-2 py-1 text-blue-700">Parcela</th>
+                    <th className="text-right px-2 py-1 text-blue-700">Valor</th>
+                    <th className="text-right px-2 py-1 text-blue-700">Vencimento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {titulosEmAberto
+                    .sort((a: any, b: any) => {
+                      const dA = a.vencimento || "";
+                      const dB = b.vencimento || "";
+                      return dA.localeCompare(dB);
+                    })
+                    .map((t: any, idx: number) => {
+                      const days = daysUntil(t.vencimento);
+                      const isOverdue = days !== null && days < 0;
+                      return (
+                        <tr key={idx} className={`border-b border-blue-100 ${isOverdue ? 'bg-red-50' : ''}`}>
+                          <td className="px-2 py-1 text-slate-700">{t.documento || "-"}</td>
+                          <td className="px-2 py-1 text-slate-700">{t.parcela || "-"}</td>
+                          <td className="px-2 py-1 text-right font-medium text-slate-800">{formatCurrency(t.valorOriginal)}</td>
+                          <td className={`px-2 py-1 text-right ${isOverdue ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
+                            {formatDate(t.vencimento)}
+                            {isOverdue && <span className="ml-1 text-[9px]">({Math.abs(days!)}d atraso)</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Seção Descontados - expansível */}
+      {titulosDescontados.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-purple-200">
+          <button
+            onClick={() => setShowDescontados(!showDescontados)}
+            className="flex items-center gap-1 text-xs font-semibold text-purple-700 hover:text-purple-900 transition-colors w-full text-left"
+          >
+            {showDescontados ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            T\u00edtulos descontados ({titulosDescontados.length})
+          </button>
+          {showDescontados && (
+            <div className="mt-2 max-h-60 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-purple-100 sticky top-0">
+                  <tr>
+                    <th className="text-left px-2 py-1 text-purple-700">Doc</th>
+                    <th className="text-left px-2 py-1 text-purple-700">Parcela</th>
+                    <th className="text-left px-2 py-1 text-purple-700">Situa\u00e7\u00e3o</th>
+                    <th className="text-right px-2 py-1 text-purple-700">Valor</th>
+                    <th className="text-right px-2 py-1 text-purple-700">Vencimento</th>
+                    <th className="text-right px-2 py-1 text-purple-700">Liquida\u00e7\u00e3o</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {titulosDescontados
+                    .sort((a: any, b: any) => {
+                      const dA = a.vencimento || "";
+                      const dB = b.vencimento || "";
+                      return dA.localeCompare(dB);
+                    })
+                    .map((t: any, idx: number) => (
+                      <tr key={idx} className="border-b border-purple-100">
+                        <td className="px-2 py-1 text-slate-700">{t.documento || "-"}</td>
+                        <td className="px-2 py-1 text-slate-700">{t.parcela || "-"}</td>
+                        <td className="px-2 py-1 text-purple-700 font-medium">{t.situacao}</td>
+                        <td className="px-2 py-1 text-right font-medium text-slate-800">{formatCurrency(t.valorOriginal)}</td>
+                        <td className="px-2 py-1 text-right text-slate-600">{formatDate(t.vencimento)}</td>
+                        <td className="px-2 py-1 text-right text-slate-600">{formatDate(t.liquidacao)}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ClientSearchCard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
@@ -414,44 +548,7 @@ export function ClientSearchCard() {
 
               {/* VALOR A RECEBER - Destaque principal */}
               {clientSummary.receivables.valorAReceber > 0 && (
-                <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 text-sm text-blue-700 font-semibold mb-1">
-                        <DollarSign className="h-4 w-4 text-blue-600" />
-                        Valor a Receber
-                      </div>
-                      <div className="text-2xl font-bold text-blue-800">{formatCurrency(clientSummary.receivables.valorAReceber)}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-blue-600">
-                        Em aberto: {formatCurrency(clientSummary.receivables.valorEmAberto)}
-                      </div>
-                      {clientSummary.receivables.valorDescontados > 0 && (
-                        <div className="text-xs text-purple-600 mt-0.5">
-                          Descontados: {formatCurrency(clientSummary.receivables.valorDescontados)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {clientSummary.receivables.titulosDescontados && clientSummary.receivables.titulosDescontados.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-blue-200">
-                      <div className="text-[10px] text-purple-600 font-medium mb-1">
-                        Títulos descontados ({clientSummary.receivables.titulosDescontados.length}):
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {clientSummary.receivables.titulosDescontados.slice(0, 5).map((t: any, idx: number) => (
-                          <span key={idx} className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
-                            {t.situacao} - {formatCurrency(t.valorOriginal)}
-                          </span>
-                        ))}
-                        {clientSummary.receivables.titulosDescontados.length > 5 && (
-                          <span className="text-[10px] text-purple-500">+{clientSummary.receivables.titulosDescontados.length - 5} mais</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <ValorAReceberPanel receivables={clientSummary.receivables} />
               )}
 
               {/* Resumo Financeiro: Títulos Em Aberto + Inadimplência */}

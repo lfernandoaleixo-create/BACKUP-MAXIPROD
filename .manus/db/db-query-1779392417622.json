@@ -1,0 +1,17 @@
+{
+  "query": "SELECT estado, COUNT(*) as cnt, \n  SUM(CAST(valorOriginal AS DECIMAL(12,2))) as totalOriginal,\n  SUM(CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as totalRecebido,\n  SUM(CAST(valorOriginal AS DECIMAL(12,2))) - SUM(CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as totalAReceber\nFROM accounts_receivable \nWHERE cliente LIKE '%KEURE%'\nGROUP BY estado;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT estado, COUNT(*) as cnt, \n  SUM(CAST(valorOriginal AS DECIMAL(12,2))) as totalOriginal,\n  SUM(CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as totalRecebido,\n  SUM(CAST(valorOriginal AS DECIMAL(12,2))) - SUM(CAST(COALESCE(valorRecebidoLiquido, '0') AS DECIMAL(12,2))) as totalAReceber\nFROM accounts_receivable \nWHERE cliente LIKE '%KEURE%'\nGROUP BY estado;",
+  "rows": [
+    {
+      "estado": "EMITIDO",
+      "cnt": "38",
+      "totalOriginal": "365275.00",
+      "totalRecebido": "0.00",
+      "totalAReceber": "365275.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "estado\tcnt\ttotalOriginal\ttotalRecebido\ttotalAReceber\nEMITIDO\t38\t365275.00\t0.00\t365275.00\n",
+  "stderr": "",
+  "execution_time_ms": 320
+}
