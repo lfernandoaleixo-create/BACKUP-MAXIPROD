@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders } from "../drizzle/schema";
+import { salesOrderRequests, salesOrderRequestItems, productMinPrices, sellerPermissions, stockItems, sellerProductVisibility, purchaseOrderItems, salesOrders, cobrancaPlanilha } from "../drizzle/schema";
 import { sql, and, eq, desc, like, or, inArray } from "drizzle-orm";
 
 /**
@@ -139,7 +139,54 @@ export const salesOrderRouter = router({
         });
       }
 
-      // 3. Merge: manual orders first (more complete data), then Maxiprod
+      // 3. Try to find CNPJ from cobranca_planilha for Maxiprod clients
+      // The cobranca_planilha table has cnpjCpf linked to empresa (razaoSocial)
+      const clientNames = maxiprodUnique.map(c => c.razaoSocial).filter(Boolean);
+      let cnpjMap = new Map<string, string>();
+      if (clientNames.length > 0) {
+        try {
+          const cobrancaRows = await db.select({
+            empresa: cobrancaPlanilha.empresa,
+            cnpjCpf: cobrancaPlanilha.cnpjCpf,
+          })
+          .from(cobrancaPlanilha)
+          .where(
+            or(
+              ...clientNames.map(name => like(cobrancaPlanilha.empresa, `%${name.substring(0, 20)}%`))
+            )
+          )
+          .limit(50);
+          
+          for (const row of cobrancaRows) {
+            if (row.cnpjCpf && row.empresa) {
+              cnpjMap.set(row.empresa.toUpperCase().trim(), row.cnpjCpf);
+            }
+          }
+        } catch (e) {
+          // Silently continue if cobranca lookup fails
+        }
+      }
+
+      // Enrich Maxiprod clients with CNPJ from cobranca_planilha
+      for (const row of maxiprodUnique) {
+        if (!row.cnpjCpf) {
+          const key = row.razaoSocial.toUpperCase().trim();
+          // Try exact match first
+          if (cnpjMap.has(key)) {
+            row.cnpjCpf = cnpjMap.get(key)!;
+          } else {
+            // Try partial match
+            for (const [empresa, cnpj] of Array.from(cnpjMap.entries())) {
+              if (empresa.includes(key) || key.includes(empresa)) {
+                row.cnpjCpf = cnpj;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // 4. Merge: manual orders first (more complete data), then Maxiprod
       const seen = new Set<string>();
       const results: typeof fromManualOrders = [];
 
