@@ -1120,18 +1120,25 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
           {Object.entries(summary.byStatus).map(([status, data]) => {
             const cfg = getStatusConfig(status);
             const isActive = statusFilter === status;
+            const isAlertStatus = (status === "Protestado" || status === "Fundo Perdido") && data.count > 0;
             return (
               <button
                 key={status}
                 onClick={() => setStatusFilter(isActive ? "todos" : status)}
-                className={`rounded-xl border p-3 text-left transition-all hover:shadow-md ${cfg.bg} ${cfg.border} ${isActive ? "ring-2 ring-blue-500 shadow-md" : ""}`}
+                className={`rounded-xl border p-3 text-left transition-all hover:shadow-md ${
+                  isAlertStatus
+                    ? status === "Protestado"
+                      ? "bg-red-100 border-2 border-red-500 shadow-lg ring-2 ring-red-300 animate-pulse"
+                      : "bg-stone-200 border-2 border-stone-600 shadow-lg ring-2 ring-stone-400 animate-pulse"
+                    : `${cfg.bg} ${cfg.border}`
+                } ${isActive ? "ring-2 ring-blue-500 shadow-md" : ""}`}
               >
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className={cfg.text}>{cfg.icon}</span>
-                  <span className={`text-[10px] font-semibold uppercase tracking-wide ${cfg.text}`}>{cfg.label}</span>
+                  <span className={isAlertStatus ? (status === "Protestado" ? "text-red-700" : "text-stone-800") : cfg.text}>{cfg.icon}</span>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wide ${isAlertStatus ? (status === "Protestado" ? "text-red-700" : "text-stone-800") : cfg.text}`}>{cfg.label}</span>
                 </div>
-                <div className={`text-xl font-bold ${cfg.text}`}>{data.count}</div>
-                <div className={`text-[10px] ${cfg.text} opacity-70`}>{formatCurrency(data.valor)}</div>
+                <div className={`text-xl font-bold ${isAlertStatus ? (status === "Protestado" ? "text-red-800" : "text-stone-900") : cfg.text}`}>{data.count}</div>
+                <div className={`text-[10px] ${isAlertStatus ? (status === "Protestado" ? "text-red-600" : "text-stone-700") : cfg.text} opacity-70`}>{formatCurrency(data.valor)}</div>
               </button>
             );
           })}

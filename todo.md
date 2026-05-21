@@ -3908,3 +3908,4 @@
 - [x] Valor a Receber: usar valorOriginal - valorRecebidoLiquido para calcular valor real a receber (bater com coluna 'A Receber' do Maxiprod)
 - [x] Textos escapados (T\\u00edtulos) corrigidos para UTF-8 correto
 - [x] Remover card antigo 'Títulos Em Aberto' (local DB, valorOriginal incorreto, 50 títulos/R$501K) e usar apenas ValorAReceberPanel (live Maxiprod, valorAReceber correto, 38 títulos/R$365K) para todos os clientes
+- [x] Planilha de Cobrança: destaque visual (pulsante, borda vermelha/escura, shadow) nos cards 'Protestado' e 'Fundo Perdido' quando houver clientes
