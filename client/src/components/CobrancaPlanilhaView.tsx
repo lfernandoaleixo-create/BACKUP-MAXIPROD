@@ -97,6 +97,13 @@ const PLANILHA_STATUS_CONFIG: Record<string, { label: string; bg: string; text: 
     border: "border-teal-300",
     icon: <CheckCircle2 className="w-3 h-3" />,
   },
+  "Fundo Perdido": {
+    label: "Fundo Perdido",
+    bg: "bg-stone-50",
+    text: "text-stone-700",
+    border: "border-stone-400",
+    icon: <Flame className="w-3 h-3" />,
+  },
 };
 
 const ALL_STATUSES = Object.keys(PLANILHA_STATUS_CONFIG);
@@ -141,6 +148,7 @@ function getStatusBarColor(status: string): string {
     case "Jurídico": return "#ef4444";
     case "Especial s/ cobrança": return "#06b6d4";
     case "Cheque em compensação": return "#14b8a6";
+    case "Fundo Perdido": return "#78716c";
     default: return "#94a3b8";
   }
 }

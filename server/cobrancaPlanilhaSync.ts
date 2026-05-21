@@ -106,6 +106,7 @@ const STATUS_MAP: Record<string, string> = {
   nao_retornou: "Não deu retorno",
   nao_atendeu: "Não atendeu",
   juridico: "Jurídico",
+  fundo_perdido: "Fundo Perdido",
 };
 
 export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deactivated: number; total: number }> {

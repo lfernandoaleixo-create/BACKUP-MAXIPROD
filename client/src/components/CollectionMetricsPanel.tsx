@@ -47,6 +47,7 @@ const STATUS_LABELS: Record<string, string> = {
   juridico: "Jurídico",
   especial_sem_cobranca: "Especial S/ Cobrança",
   cheque_compensacao: "Cheque em Compensação",
+  fundo_perdido: "Fundo Perdido",
 };
 const STATUS_COLORS: Record<string, string> = {
   pendente: "#94a3b8",
@@ -60,6 +61,7 @@ const STATUS_COLORS: Record<string, string> = {
   juridico: "#ef4444",
   especial_sem_cobranca: "#06b6d4",
   cheque_compensacao: "#84cc16",
+  fundo_perdido: "#78716c",
 };
 
 const ACTION_COLORS: Record<string, string> = {

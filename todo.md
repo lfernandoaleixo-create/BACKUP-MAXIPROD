@@ -3899,3 +3899,4 @@
 - [x] PDF Decisão de Cobrança: consolidar observações na caixa "OBSERVAÇÕES" do PDF
 - [x] Planilha de Cobrança: novos clientes entrando na inadimplência devem receber o campo "Apelido" preenchido automaticamente (igual aos existentes)
 - [x] Criar aba "Tabela de Preços" entre "Cadastro de Cliente" e "Pedidos de Venda" no VendedorDetalhe (placeholder - integração com Maxiprod futura)
+- [x] Adicionar status "Fundo Perdido" na Planilha de Cobrança (CobrancaPlanilhaView, InadimplenciaTab, CollectionMetricsPanel, cobrancaPlanilhaRouter, cobrancaPlanilhaSync)

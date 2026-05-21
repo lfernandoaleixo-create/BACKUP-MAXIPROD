@@ -42,6 +42,7 @@ const STATUS_MAP: Record<string, string> = {
   nao_retornou: "Não deu retorno",
   nao_atendeu: "Não atendeu",
   juridico: "Jurídico",
+  fundo_perdido: "Fundo Perdido",
 };
 
 /** Retorna a data de hoje em Brasília como string YYYY-MM-DD */

@@ -36,6 +36,7 @@ const STATUS_OPTIONS = [
   { value: "juridico", label: "Jurídico", color: "bg-red-100 text-red-700 border-red-300" },
   { value: "especial_sem_cobranca", label: "Especial s/ Cobrança", color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
   { value: "cheque_compensacao", label: "Cheque em Compensação", color: "bg-teal-100 text-teal-700 border-teal-300" },
+  { value: "fundo_perdido", label: "Fundo Perdido", color: "bg-stone-100 text-stone-700 border-stone-400" },
 ];
 
 const CONTATO_TIPOS = [
@@ -104,7 +105,7 @@ function exportInadimplenciaPDF(
     pendente: "Pendente", contatado: "Contatado", em_negociacao: "Em Negociação",
     promessa: "Promessa de Pgto", protesto_em_analise: "Protesto em Análise", protestado: "Protestado", juridico: "Jurídico",
     especial_sem_cobranca: "Especial s/ Cobrança", cheque_compensacao: "Cheque em Compensação",
-    nao_retornou: "Não Deu Retorno", nao_atendeu: "Não Atendeu",
+    nao_retornou: "Não Deu Retorno", nao_atendeu: "Não Atendeu", fundo_perdido: "Fundo Perdido",
   };
 
   // Sort by diasAtraso descending (oldest first)
