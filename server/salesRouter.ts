@@ -1933,7 +1933,11 @@ export const salesRouter = router({
       }
 
       const groupedReceivables = Array.from(tituloGroupMap.entries()).map(([groupKey, titulos]) => {
-        const valorTotalGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorOriginal || "0"), 0);
+        const valorTotalGrupo = titulos.reduce((s, r) => {
+          const orig = parseFloat(r.valorOriginal || "0");
+          const receb = parseFloat(r.valorRecebidoLiquido || "0");
+          return s + (orig - receb);
+        }, 0);
         const valorRecebidoGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
         const docNumClean = groupKey.startsWith("solo_") ? "" : groupKey;
         // Verificar se o groupKey é um número de pedido
@@ -1965,7 +1969,7 @@ export const salesRouter = router({
             emissao: r.emissaoData || "",
             vencimento: r.vencimentoData || "",
             liquidacao: r.liquidacaoData || "",
-            valorOriginal: Math.round(parseFloat(r.valorOriginal || "0") * 100) / 100,
+            valorOriginal: Math.round((parseFloat(r.valorOriginal || "0") - parseFloat(r.valorRecebidoLiquido || "0")) * 100) / 100,
             valorRecebido: Math.round(parseFloat(r.valorRecebidoLiquido || "0") * 100) / 100,
             estado: r.estado,
             parcela: r.parcela,
@@ -2016,7 +2020,7 @@ export const salesRouter = router({
         emissao: r.emissaoData || "",
         vencimento: r.vencimentoData || "",
         liquidacao: r.liquidacaoData || "",
-        valorOriginal: Math.round(parseFloat(r.valorOriginal || "0") * 100) / 100,
+        valorOriginal: Math.round((parseFloat(r.valorOriginal || "0") - parseFloat(r.valorRecebidoLiquido || "0")) * 100) / 100,
         valorRecebido: Math.round(parseFloat(r.valorRecebidoLiquido || "0") * 100) / 100,
         estado: r.estado,
         parcela: r.parcela,
