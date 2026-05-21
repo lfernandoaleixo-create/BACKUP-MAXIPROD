@@ -3898,3 +3898,4 @@
 - [x] PDF Decisão de Cobrança: preencher "HISTÓRICO DE AÇÕES REALIZADAS" com todas as observações das etapas de cobrança (etapa, data, texto)
 - [x] PDF Decisão de Cobrança: consolidar observações na caixa "OBSERVAÇÕES" do PDF
 - [x] Planilha de Cobrança: novos clientes entrando na inadimplência devem receber o campo "Apelido" preenchido automaticamente (igual aos existentes)
+- [x] Criar aba "Tabela de Preços" entre "Cadastro de Cliente" e "Pedidos de Venda" no VendedorDetalhe (placeholder - integração com Maxiprod futura)

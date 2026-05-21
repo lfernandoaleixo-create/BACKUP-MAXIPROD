@@ -50,10 +50,11 @@ import {
   Building2,
   FileCheck,
   ChevronLeft,
+  Tag,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-type TabType = "estoque" | "clientes" | "pedidos" | "vendas" | "configuracoes";
+type TabType = "estoque" | "clientes" | "tabela_precos" | "pedidos" | "vendas" | "configuracoes";
 
 interface DashboardItem {
   codigoItem: string;
@@ -134,6 +135,7 @@ export default function VendedorDetalhe() {
   const tabs: { id: TabType; label: string; icon: typeof Package }[] = [
     { id: "estoque", label: "Estoque", icon: Package },
     { id: "clientes", label: "Cadastro de Cliente", icon: UserPlus },
+    { id: "tabela_precos", label: "Tabela de Preços", icon: Tag },
     { id: "pedidos", label: "Pedidos de Venda", icon: ShoppingCart },
     { id: "vendas", label: "Métrica de Vendas", icon: BarChart3 },
     { id: "configuracoes", label: "Configurações", icon: Settings },
@@ -214,6 +216,10 @@ export default function VendedorDetalhe() {
 
         {activeTab === "clientes" && (
           <SellerClientsView sellerId={sellerId} sellerName={seller.sellerName} />
+        )}
+
+        {activeTab === "tabela_precos" && (
+          <TabelaPrecosView sellerId={sellerId} sellerName={seller.sellerName} />
         )}
 
         {activeTab === "pedidos" && (
@@ -3585,6 +3591,48 @@ function SellerSalesView({ sellerName }: { sellerName: string }) {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+
+/**
+ * ============================================================
+ * ABA TABELA DE PREÇOS - Preços dos produtos do vendedor
+ * Dados virão do Maxiprod (tabela de vendas) - integração futura
+ * ============================================================
+ */
+function TabelaPrecosView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="px-4 md:px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Tag className="w-5 h-5 text-teal-600" />
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            Tabela de Preços
+          </h3>
+        </div>
+        <span className="text-xs text-slate-400">
+          {sellerName}
+        </span>
+      </div>
+
+      {/* Placeholder content */}
+      <div className="p-8 md:p-12">
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center mb-4">
+            <Tag className="w-7 h-7 text-teal-500 dark:text-teal-400" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">
+            Tabela de Preços
+          </h3>
+          <p className="text-sm text-slate-400 dark:text-slate-500 max-w-sm">
+            Em breve: tabela de preços dos produtos sincronizada com o Maxiprod.
+            Os preços serão carregados automaticamente da tabela de vendas do ERP.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
