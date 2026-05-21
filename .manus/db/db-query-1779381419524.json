@@ -1,0 +1,80 @@
+{
+  "query": "SELECT o.planilha_id, o.etapa, o.observacao, o.registrado_por, p.empresa FROM cobranca_etapa_obs o JOIN cobranca_planilha p ON o.planilha_id = p.id WHERE o.registrado_por != 'Test' ORDER BY o.created_at DESC LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT o.planilha_id, o.etapa, o.observacao, o.registrado_por, p.empresa FROM cobranca_etapa_obs o JOIN cobranca_planilha p ON o.planilha_id = p.id WHERE o.registrado_por != 'Test' ORDER BY o.created_at DESC LIMIT 10",
+  "rows": [
+    {
+      "planilha_id": "7",
+      "etapa": "acaoFinal",
+      "observacao": "Foi decidido pelo Fernando/Pedro o envio do boleto para protesto.",
+      "registrado_por": "Thiago",
+      "empresa": "M D DA SILVA ARTEFATOS DE BAMBU"
+    },
+    {
+      "planilha_id": "35",
+      "etapa": "acaoFinal",
+      "observacao": "Valor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise",
+      "registrado_por": "Thiago",
+      "empresa": "ALIMENTOS RAMOS LTDA."
+    },
+    {
+      "planilha_id": "38",
+      "etapa": "acaoFinal",
+      "observacao": "Valor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise",
+      "registrado_por": "Thiago",
+      "empresa": "ALMEIDA PATURI COMERCIO DE CARNES LTDA"
+    },
+    {
+      "planilha_id": "75",
+      "etapa": "acaoFinal",
+      "observacao": "Valor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise",
+      "registrado_por": "Thiago",
+      "empresa": "FERREIRA E SILVA COMERCIO DE CARNES LTDA"
+    },
+    {
+      "planilha_id": "77",
+      "etapa": "acaoFinal",
+      "observacao": "Valor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise",
+      "registrado_por": "Thiago",
+      "empresa": "FERREIRA E SILVA COMERCIO DE CARNES LTDA"
+    },
+    {
+      "planilha_id": "79",
+      "etapa": "acaoFinal",
+      "observacao": "Valor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise",
+      "registrado_por": "Thiago",
+      "empresa": "ESPETOLIN PRODUTOS ALIMENTICIOS LTDA"
+    },
+    {
+      "planilha_id": "10",
+      "etapa": "primeiraCobranca",
+      "observacao": "Cobrança ainda paralisada pelo Financeiro, vendedora Paula informou que cliente pagará restante até dia 23/05/2026",
+      "registrado_por": "Thiago",
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH"
+    },
+    {
+      "planilha_id": "2",
+      "etapa": "segundaCobranca",
+      "observacao": "Ligação efetuada no whatsapp 31 9188-4700. Cliente prometeu pagamento até dia 21/05/2026",
+      "registrado_por": "Thiago",
+      "empresa": "FLAVIO JOSE DE OLIVEIRA"
+    },
+    {
+      "planilha_id": "30001",
+      "etapa": "terceiraCobranca",
+      "observacao": "Mensagem enviada no WhatsApp no n° (34) 9804-3898 e e-mail:renatakarinerodrigues@gmail.com.",
+      "registrado_por": "Thalita",
+      "empresa": "ESPETINHOS COROMANDEL LTDA"
+    },
+    {
+      "planilha_id": "8",
+      "etapa": "segundaCobranca",
+      "observacao": "Ligação efetuada no whatsapp 21 97039-5501. Cliente prometeu pagar a parcela mais antiga até dia 22/05/2026",
+      "registrado_por": "Thiago",
+      "empresa": "WGO COMERCIO E SERVICOS LTDA"
+    }
+  ],
+  "messages": [],
+  "stdout": "planilha_id\tetapa\tobservacao\tregistrado_por\tempresa\n7\tacaoFinal\tFoi decidido pelo Fernando/Pedro o envio do boleto para protesto.\tThiago\tM D DA SILVA ARTEFATOS DE BAMBU\n35\tacaoFinal\tValor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise\tThiago\tALIMENTOS RAMOS LTDA.\n38\tacaoFinal\tValor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise\tThiago\tALMEIDA PATURI COMERCIO DE CARNES LTDA\n75\tacaoFinal\tValor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise\tThiago\tFERREIRA E SILVA COMERCIO DE CARNES LTDA\n77\tacaoFinal\tValor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise\tThiago\tFERREIRA E SILVA COMERCIO DE CARNES LTDA\n79\tacaoFinal\tValor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise\tThiago\tESPETOLIN PRODUTOS ALIMENTICIOS LTDA\n10\tprimeiraCobranca\tCobrança ainda paralisada pelo Financeiro, vendedora Paula informou que cliente pagará restante até dia 23/05/2026\tThiago\t59.252.539 GLAUCIENE MATEUS GOMES GERTH\n2\tsegundaCobranca\tLigação efetuada no whatsapp 31 9188-4700. Cliente prometeu pagamento até dia 21/05/2026\tThiago\tFLAVIO JOSE DE OLIVEIRA\n30001\tterceiraCobranca\tMensagem enviada no WhatsApp no n° (34) 9804-3898 e e-mail:renatakarinerodrigues@gmail.com.\tThalita\tESPETINHOS COROMANDEL LTDA\n8\tsegundaCobranca\tLigação efetuada no whatsapp 21 97039-5501. Cliente prometeu pagar a parcela mais antiga até dia 22/05/2026\tThiago\tWGO COMERCIO E SERVICOS LTDA\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

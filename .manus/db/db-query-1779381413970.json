@@ -1,0 +1,45 @@
+{
+  "query": "SELECT o.planilha_id, o.etapa, o.observacao, o.registrado_por, p.empresa FROM cobranca_etapa_obs o JOIN cobranca_planilha p ON o.planilha_id = p.id ORDER BY o.created_at DESC LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT o.planilha_id, o.etapa, o.observacao, o.registrado_por, p.empresa FROM cobranca_etapa_obs o JOIN cobranca_planilha p ON o.planilha_id = p.id ORDER BY o.created_at DESC LIMIT 5",
+  "rows": [
+    {
+      "planilha_id": "88",
+      "etapa": "primeiraCobranca",
+      "observacao": "Teste vitest obs etapa",
+      "registrado_por": "Test",
+      "empresa": "RAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA"
+    },
+    {
+      "planilha_id": "88",
+      "etapa": "primeiraCobranca",
+      "observacao": "Teste vitest obs etapa",
+      "registrado_por": "Test",
+      "empresa": "RAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA"
+    },
+    {
+      "planilha_id": "88",
+      "etapa": "primeiraCobranca",
+      "observacao": "Teste vitest obs etapa",
+      "registrado_por": "Test",
+      "empresa": "RAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA"
+    },
+    {
+      "planilha_id": "88",
+      "etapa": "primeiraCobranca",
+      "observacao": "Teste vitest obs etapa",
+      "registrado_por": "Test",
+      "empresa": "RAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA"
+    },
+    {
+      "planilha_id": "88",
+      "etapa": "primeiraCobranca",
+      "observacao": "Teste vitest obs etapa",
+      "registrado_por": "Test",
+      "empresa": "RAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA"
+    }
+  ],
+  "messages": [],
+  "stdout": "planilha_id\tetapa\tobservacao\tregistrado_por\tempresa\n88\tprimeiraCobranca\tTeste vitest obs etapa\tTest\tRAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA\n88\tprimeiraCobranca\tTeste vitest obs etapa\tTest\tRAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA\n88\tprimeiraCobranca\tTeste vitest obs etapa\tTest\tRAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA\n88\tprimeiraCobranca\tTeste vitest obs etapa\tTest\tRAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA\n88\tprimeiraCobranca\tTeste vitest obs etapa\tTest\tRAINHA DA BELEZA ATACADO DE MAQUIAGEM LTDA\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

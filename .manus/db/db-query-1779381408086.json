@@ -1,0 +1,28 @@
+{
+  "query": "SELECT DISTINCT etapa FROM cobranca_etapa_obs LIMIT 20",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT DISTINCT etapa FROM cobranca_etapa_obs LIMIT 20",
+  "rows": [
+    {
+      "etapa": "primeiraCobranca"
+    },
+    {
+      "etapa": "acaoFinal"
+    },
+    {
+      "etapa": "segundaCobranca"
+    },
+    {
+      "etapa": "terceiraCobranca"
+    },
+    {
+      "etapa": "semAcao3"
+    },
+    {
+      "etapa": "semAcao1"
+    }
+  ],
+  "messages": [],
+  "stdout": "etapa\nprimeiraCobranca\nacaoFinal\nsegundaCobranca\nterceiraCobranca\nsemAcao3\nsemAcao1\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

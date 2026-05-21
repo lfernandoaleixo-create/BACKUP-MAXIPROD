@@ -1,0 +1,43 @@
+{
+  "query": "SELECT o.planilha_id, o.etapa, o.observacao, o.registrado_por, o.created_at FROM cobranca_etapa_obs o WHERE o.planilha_id IN (75, 77) ORDER BY o.created_at DESC",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT o.planilha_id, o.etapa, o.observacao, o.registrado_por, o.created_at FROM cobranca_etapa_obs o WHERE o.planilha_id IN (75, 77) ORDER BY o.created_at DESC",
+  "rows": [
+    {
+      "planilha_id": "75",
+      "etapa": "acaoFinal",
+      "observacao": "Valor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-20 19:24:17"
+    },
+    {
+      "planilha_id": "77",
+      "etapa": "acaoFinal",
+      "observacao": "Valor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-20 19:24:08"
+    },
+    {
+      "planilha_id": "77",
+      "etapa": "acaoFinal",
+      "observacao": "Após várias tentativas de recebimento, hoje encerramos a cobrança. Estamos enviando o valor em aberto para protesto. Hoje não foi possível buscar as informações no arquivo, mas amanhã, dia 20/05/2026, separaremos todos os documentos para análise do envio a protesto.",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-19 19:03:31"
+    },
+    {
+      "planilha_id": "75",
+      "etapa": "terceiraCobranca",
+      "observacao": "Ligações sem retorno.",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 19:01:01"
+    }
+  ],
+  "messages": [
+    "75\tacaoFinal\tApós várias tentativas de recebimento, hoje encerramos a cobrança. Estamos enviando o valor em aberto para protesto. Hoje não foi possível buscar as informações no arquivo, mas amanhã, dia 20/05/2026, separaremos todos os documentos para análise do envio a protesto.",
+    "\tThiago\t2026-05-19 19:04:32",
+    "77\tterceiraCobranca\tLigações sem retorno.",
+    "\tThiago\t2026-05-15 19:00:46"
+  ],
+  "stdout": "planilha_id\tetapa\tobservacao\tregistrado_por\tcreated_at\n75\tacaoFinal\tValor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise\tThiago\t2026-05-20 19:24:17\n77\tacaoFinal\tValor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer/Fernando para análise\tThiago\t2026-05-20 19:24:08\n75\tacaoFinal\tApós várias tentativas de recebimento, hoje encerramos a cobrança. Estamos enviando o valor em aberto para protesto. Hoje não foi possível buscar as informações no arquivo, mas amanhã, dia 20/05/2026, separaremos todos os documentos para análise do envio a protesto.\n\n\tThiago\t2026-05-19 19:04:32\n77\tacaoFinal\tApós várias tentativas de recebimento, hoje encerramos a cobrança. Estamos enviando o valor em aberto para protesto. Hoje não foi possível buscar as informações no arquivo, mas amanhã, dia 20/05/2026, separaremos todos os documentos para análise do envio a protesto.\tThiago\t2026-05-19 19:03:31\n75\tterceiraCobranca\tLigações sem retorno.\tThiago\t2026-05-15 19:01:01\n77\tterceiraCobranca\tLigações sem retorno.\n\tThiago\t2026-05-15 19:00:46\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

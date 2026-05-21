@@ -1796,7 +1796,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                         vencimento: planilhaItem.vencimento || "",
                         diasAtraso: planilhaItem.diasVencidos || 0,
                         referenteA: planilhaItem.descricao || "",
-                        documento: "",
+                        documento: planilhaItem.documento || "",
                         parcela: "",
                         empresa: planilhaItem.centroCustos || "",
                         decisaoCobranca: planilhaItem.tipo || "",
@@ -1811,13 +1811,28 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                           cobrancaStartedAt: null,
                         },
                       };
+                      // Buscar observações de etapa do banco
+                      let etapaObservacoes: Array<{ etapa: string; observacao: string; registradoPor: string; createdAt: string }> = [];
+                      try {
+                        const obsData = await utils.cobrancaPlanilha.getAllEtapaObs.fetch({ planilhaId: planilhaItem.id });
+                        if (obsData) {
+                          etapaObservacoes = obsData.map(o => ({
+                            etapa: o.etapa,
+                            observacao: o.observacao,
+                            registradoPor: o.registradoPor || "",
+                            createdAt: String(o.createdAt || ""),
+                          }));
+                        }
+                      } catch (e) {
+                        console.warn("Não foi possível buscar observações de etapa:", e);
+                      }
                       const pdfResult = await generateDecisionPdf({
                         title: titleInput,
                         checklistSteps,
                         operatorName: operator?.name || "Operador",
                         planilhaCobranca: {
-                          etapas: etapas.map(e => ({ etapa: STEP_LABELS[e.etapa] || e.etapa, data: e.data || null })),
-                          observacoes: [],
+                          etapas: etapas.map(e => ({ etapa: e.etapa, data: e.data || null })),
+                          observacoes: etapaObservacoes,
                           contato: planilhaItem.contato || null,
                           email: planilhaItem.email || null,
                         },
