@@ -3919,3 +3919,6 @@
 - [x] Backend: creditCardRouter com CRUD de cartões e lançamentos
 - [x] Frontend: CreditCardTab com planilha editável, colunas de meses, cálculo de parcelas
 - [x] Testes vitest para controle de acesso e cálculo de parcelas
+- [x] Automatizar cálculo de mesInicio baseado na data de compra e dia de fechamento do cartão
+- [x] Remover campo manual de mesInicio e calcular automaticamente no backend
+- [x] Permitir quantos lançamentos quiser dentro de cada cartão

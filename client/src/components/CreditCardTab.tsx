@@ -136,10 +136,13 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew }: {
     valorTotal: entry.valorTotal ? parseFloat(entry.valorTotal).toString() : "",
     quantParcelas: entry.quantParcelas?.toString() || "1",
     valorParcela: entry.valorParcela ? parseFloat(entry.valorParcela).toString() : "",
-    mesInicio: entry.mesInicio || "",
   });
 
   const handleSave = () => {
+    if (!form.dataCompra) {
+      toast.error("Informe a data da compra");
+      return;
+    }
     const valorTotal = parseFloat(form.valorTotal) || 0;
     const quantParcelas = parseInt(form.quantParcelas) || 1;
     const valorParcela = parseFloat(form.valorParcela) || (valorTotal / quantParcelas);
@@ -148,7 +151,6 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew }: {
       valorTotal,
       quantParcelas,
       valorParcela,
-      mesInicio: form.mesInicio || undefined,
     });
     setEditing(false);
   };
@@ -218,14 +220,7 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew }: {
         {monthColumns.map((m) => (
           <td key={m} className="px-2 py-1.5 text-center text-xs text-slate-400">—</td>
         ))}
-        <td className="px-2 py-1.5">
-          <Input
-            type="month"
-            value={form.mesInicio}
-            onChange={(e) => setForm({ ...form, mesInicio: e.target.value })}
-            className="h-7 text-xs w-32"
-          />
-        </td>
+        <td className="px-2 py-1.5 text-xs text-slate-400 italic">Auto</td>
         <td className="px-2 py-1.5">
           <div className="flex gap-1">
             <button onClick={handleSave} className="p-1 rounded hover:bg-green-100 text-green-600">
@@ -355,14 +350,13 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
     createEntryMut.mutate({
       operatorName,
       cardId: card.id,
-      dataCompra: data.dataCompra || undefined,
+      dataCompra: data.dataCompra,
       estabelecimento: data.estabelecimento || undefined,
       descricaoDespesa: data.descricaoDespesa || undefined,
       centroDeCusto: data.centroDeCusto || undefined,
       valorTotal: data.valorTotal,
       quantParcelas: data.quantParcelas,
       valorParcela: data.valorParcela,
-      mesInicio: data.mesInicio || undefined,
     });
   };
 
@@ -377,7 +371,6 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
       valorTotal: data.valorTotal,
       quantParcelas: data.quantParcelas,
       valorParcela: data.valorParcela,
-      mesInicio: data.mesInicio || null,
     });
   };
 

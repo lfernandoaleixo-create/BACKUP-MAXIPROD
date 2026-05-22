@@ -137,19 +137,21 @@ export const creditCardRouter = router({
 
   /**
    * Create a new entry (despesa parcelada)
+   * mesInicio é calculado automaticamente:
+   * - Se dataCompra <= dia de fechamento do cartão → parcela começa no mês da compra
+   * - Se dataCompra > dia de fechamento → parcela começa no mês seguinte
    */
   createEntry: publicProcedure
     .input(z.object({
       operatorName: z.string(),
       cardId: z.number(),
-      dataCompra: z.string().optional(),
+      dataCompra: z.string().min(1), // YYYY-MM-DD obrigatório para calcular mesInicio
       estabelecimento: z.string().max(200).optional(),
       descricaoDespesa: z.string().max(500).optional(),
       centroDeCusto: z.string().max(200).optional(),
       valorTotal: z.number().min(0),
       quantParcelas: z.number().int().min(1).default(1),
       valorParcela: z.number().min(0).optional(),
-      mesInicio: z.string().regex(/^\d{4}-\d{2}$/).optional(), // YYYY-MM
     }))
     .mutation(async ({ input }) => {
       if (!CREDIT_CARD_ALLOWED.includes(input.operatorName)) {
@@ -157,23 +159,43 @@ export const creditCardRouter = router({
       }
       const db = await getDb();
       if (!db) return { success: false, error: "DB unavailable" };
+      
+      // Buscar dados do cartão para pegar fechamentoFatura
+      const [card] = await db.select().from(creditCards).where(eq(creditCards.id, input.cardId));
+      if (!card) return { success: false, error: "Cartão não encontrado" };
+      
+      // Calcular mesInicio automaticamente
+      const fechamento = card.fechamentoFatura || 1; // dia de fechamento (default: dia 1)
+      const [year, month, day] = input.dataCompra.split("-").map(Number);
+      let mesInicio: string;
+      if (day <= fechamento) {
+        // Compra antes ou no dia do fechamento → entra na fatura desse mês
+        mesInicio = `${year}-${String(month).padStart(2, "0")}`;
+      } else {
+        // Compra depois do fechamento → entra na fatura do mês seguinte
+        const nextMonth = month === 12 ? 1 : month + 1;
+        const nextYear = month === 12 ? year + 1 : year;
+        mesInicio = `${nextYear}-${String(nextMonth).padStart(2, "0")}`;
+      }
+      
       const valorParcela = input.valorParcela ?? (input.valorTotal / input.quantParcelas);
       const result = await db.insert(creditCardEntries).values({
         cardId: input.cardId,
-        dataCompra: input.dataCompra || null,
+        dataCompra: input.dataCompra,
         estabelecimento: input.estabelecimento?.trim() || null,
         descricaoDespesa: input.descricaoDespesa?.trim() || null,
         centroDeCusto: input.centroDeCusto?.trim() || null,
         valorTotal: input.valorTotal.toString(),
         quantParcelas: input.quantParcelas,
         valorParcela: valorParcela.toString(),
-        mesInicio: input.mesInicio || null,
+        mesInicio,
       });
       return { success: true, id: Number(result[0].insertId) };
     }),
 
   /**
    * Update an entry
+   * mesInicio é recalculado automaticamente quando dataCompra muda
    */
   updateEntry: publicProcedure
     .input(z.object({
@@ -186,7 +208,6 @@ export const creditCardRouter = router({
       valorTotal: z.number().min(0).optional(),
       quantParcelas: z.number().int().min(1).optional(),
       valorParcela: z.number().min(0).optional(),
-      mesInicio: z.string().regex(/^\d{4}-\d{2}$/).nullable().optional(),
     }))
     .mutation(async ({ input }) => {
       if (!CREDIT_CARD_ALLOWED.includes(input.operatorName)) {
@@ -194,6 +215,11 @@ export const creditCardRouter = router({
       }
       const db = await getDb();
       if (!db) return { success: false, error: "DB unavailable" };
+      
+      // Buscar o entry atual para pegar o cardId
+      const [currentEntry] = await db.select().from(creditCardEntries).where(eq(creditCardEntries.id, input.id));
+      if (!currentEntry) return { success: false, error: "Lançamento não encontrado" };
+      
       const updates: Record<string, any> = {};
       if (input.dataCompra !== undefined) updates.dataCompra = input.dataCompra;
       if (input.estabelecimento !== undefined) updates.estabelecimento = input.estabelecimento?.trim() || null;
@@ -202,7 +228,24 @@ export const creditCardRouter = router({
       if (input.valorTotal !== undefined) updates.valorTotal = input.valorTotal.toString();
       if (input.quantParcelas !== undefined) updates.quantParcelas = input.quantParcelas;
       if (input.valorParcela !== undefined) updates.valorParcela = input.valorParcela.toString();
-      if (input.mesInicio !== undefined) updates.mesInicio = input.mesInicio;
+      
+      // Recalcular mesInicio se dataCompra mudou
+      const finalDataCompra = input.dataCompra !== undefined ? input.dataCompra : currentEntry.dataCompra;
+      if (finalDataCompra) {
+        const [card] = await db.select().from(creditCards).where(eq(creditCards.id, currentEntry.cardId));
+        if (card) {
+          const fechamento = card.fechamentoFatura || 1;
+          const [year, month, day] = finalDataCompra.split("-").map(Number);
+          if (day <= fechamento) {
+            updates.mesInicio = `${year}-${String(month).padStart(2, "0")}`;
+          } else {
+            const nextMonth = month === 12 ? 1 : month + 1;
+            const nextYear = month === 12 ? year + 1 : year;
+            updates.mesInicio = `${nextYear}-${String(nextMonth).padStart(2, "0")}`;
+          }
+        }
+      }
+      
       await db.update(creditCardEntries).set(updates).where(eq(creditCardEntries.id, input.id));
       return { success: true };
     }),

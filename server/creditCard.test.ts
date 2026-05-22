@@ -24,6 +24,50 @@ describe("Credit Card Planilha - Access Control", () => {
   });
 });
 
+describe("Credit Card Planilha - Auto mesInicio Calculation", () => {
+  function calcMesInicio(dataCompra: string, fechamentoFatura: number): string {
+    const [year, month, day] = dataCompra.split("-").map(Number);
+    if (day <= fechamentoFatura) {
+      return `${year}-${String(month).padStart(2, "0")}`;
+    } else {
+      const nextMonth = month === 12 ? 1 : month + 1;
+      const nextYear = month === 12 ? year + 1 : year;
+      return `${nextYear}-${String(nextMonth).padStart(2, "0")}`;
+    }
+  }
+
+  it("compra antes do fechamento entra na fatura do mesmo mês", () => {
+    // Fechamento dia 2, compra dia 1 de maio → fatura maio
+    expect(calcMesInicio("2026-05-01", 2)).toBe("2026-05");
+  });
+
+  it("compra no dia do fechamento entra na fatura do mesmo mês", () => {
+    // Fechamento dia 2, compra dia 2 de maio → fatura maio
+    expect(calcMesInicio("2026-05-02", 2)).toBe("2026-05");
+  });
+
+  it("compra depois do fechamento entra na fatura do mês seguinte", () => {
+    // Fechamento dia 2, compra dia 3 de maio → fatura junho
+    expect(calcMesInicio("2026-05-03", 2)).toBe("2026-06");
+  });
+
+  it("compra em dezembro depois do fechamento vai para janeiro do próximo ano", () => {
+    expect(calcMesInicio("2026-12-15", 10)).toBe("2027-01");
+  });
+
+  it("compra em dezembro antes do fechamento fica em dezembro", () => {
+    expect(calcMesInicio("2026-12-05", 10)).toBe("2026-12");
+  });
+
+  it("fechamento dia 25, compra dia 20 → mesmo mês", () => {
+    expect(calcMesInicio("2026-03-20", 25)).toBe("2026-03");
+  });
+
+  it("fechamento dia 25, compra dia 26 → mês seguinte", () => {
+    expect(calcMesInicio("2026-03-26", 25)).toBe("2026-04");
+  });
+});
+
 describe("Credit Card Planilha - Parcel Calculation", () => {
   function getParcelValueForMonth(entry: { mesInicio?: string; quantParcelas?: number; valorParcela?: string }, targetMonth: string): number {
     if (!entry.mesInicio || !entry.quantParcelas) return 0;
