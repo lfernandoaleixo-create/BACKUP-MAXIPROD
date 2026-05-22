@@ -249,7 +249,7 @@ function InadimplenciaPanel({ inadimplencia, overdue }: { inadimplencia: any; ov
             hasCritical ? "text-red-700" : "text-orange-700"
           }`}>
             <AlertTriangle className={`h-4 w-4 ${hasCritical ? "text-red-600" : "text-orange-600"}`} />
-            Inadimplência (Planilha de Cobrança)
+            Inadimplência
           </div>
           <div className={`text-2xl font-bold ${hasCritical ? "text-red-800" : "text-orange-800"}`}>
             {formatCurrency(inadimplencia.totalValor)}
