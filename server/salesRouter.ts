@@ -1932,13 +1932,23 @@ export const salesRouter = router({
         pedidoEstadoMap.set(p.pedido, p.estadoNotaPedido);
       }
 
-      const groupedReceivables = Array.from(tituloGroupMap.entries()).map(([groupKey, titulos]) => {
-        const valorTotalGrupo = titulos.reduce((s, r) => {
+      const groupedReceivablesRaw = Array.from(tituloGroupMap.entries()).map(([groupKey, titulos]) => {
+        // Filtrar apenas títulos EMITIDO com saldo > 0 para a seção "Em Aberto"
+        // Títulos RECEBIDO são mantidos para a aba "Pagos"
+        const titulosComSaldo = titulos.filter(r => {
           const orig = parseFloat(r.valorOriginal || "0");
           const receb = parseFloat(r.valorRecebidoLiquido || "0");
+          // Manter RECEBIDO (para aba Pagos) e EMITIDO com saldo > 0
+          return r.estado === "RECEBIDO" || (orig - receb) > 0.01;
+        });
+        const valorTotalGrupo = titulosComSaldo.reduce((s, r) => {
+          const orig = parseFloat(r.valorOriginal || "0");
+          const receb = parseFloat(r.valorRecebidoLiquido || "0");
+          // Para RECEBIDO, valor a receber é 0 (já pago)
+          if (r.estado === "RECEBIDO") return s;
           return s + (orig - receb);
         }, 0);
-        const valorRecebidoGrupo = titulos.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
+        const valorRecebidoGrupo = titulosComSaldo.reduce((s, r) => s + parseFloat(r.valorRecebidoLiquido || "0"), 0);
         const docNumClean = groupKey.startsWith("solo_") ? "" : groupKey;
         // Verificar se o groupKey é um número de pedido
         const isPedido = allPedidoNumbers.has(docNumClean);
@@ -1961,8 +1971,8 @@ export const salesRouter = router({
           nfVinculada,
           valorTotalGrupo: Math.round(valorTotalGrupo * 100) / 100,
           valorRecebidoGrupo: Math.round(valorRecebidoGrupo * 100) / 100,
-          parcelas: titulos.length,
-          titulos: titulos.map(r => ({
+          parcelas: titulosComSaldo.length,
+          titulos: titulosComSaldo.map(r => ({
             id: r.id,
             documento: r.documentoVinculadoNumero || "",
             nfNumero: r.documentoVinculadoNumero || "",
@@ -1979,6 +1989,8 @@ export const salesRouter = router({
           })),
         };
       });
+      // Filtrar grupos com valor a receber <= 0 (já totalmente pagos)
+      const groupedReceivables = groupedReceivablesRaw.filter(g => g.valorTotalGrupo > 0.01);
       // Calcular KPIs de títulos APÓS filtrar títulos antigos de pedidos com NF
       // Usar dedupForCountsRaw filtrado (excluir títulos de pedidos que já têm NF)
       const dedupForCounts = dedupForCountsRaw.filter(r => {
