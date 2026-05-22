@@ -81,7 +81,7 @@ function CardHeader({ card, onEdit, onDelete, isExpanded, onToggle }: {
             <div className="flex items-center gap-3 text-xs text-slate-300 mt-0.5">
               {card.vencimentoFatura && <span>Venc. dia {card.vencimentoFatura}</span>}
               {card.fechamentoFatura && <span>Fech. dia {card.fechamentoFatura}</span>}
-              {card.previsaoPagamento && <span className="text-sky-300">Prev. Pgto: {new Date(card.previsaoPagamento + "T12:00:00").toLocaleDateString("pt-BR")}</span>}
+              {card.previsaoPagamento && <span className="text-sky-300">Prev. Pgto: {card.previsaoPagamento}</span>}
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@ function CardHeader({ card, onEdit, onDelete, isExpanded, onToggle }: {
         </div>
         <div>
           <p className="text-[10px] text-slate-400 uppercase tracking-wider">Previsão Pagamento</p>
-          <p className="text-sm font-semibold text-sky-300">{card.previsaoPagamento ? new Date(card.previsaoPagamento + "T12:00:00").toLocaleDateString("pt-BR") : "—"}</p>
+          <p className="text-sm font-semibold text-sky-300">{card.previsaoPagamento || "—"}</p>
         </div>
       </div>
     </div>
