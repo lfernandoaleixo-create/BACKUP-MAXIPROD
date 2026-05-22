@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Button } from "@/components/ui/button";
@@ -324,7 +324,8 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew, fechamentoFatu
 function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: string }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [editingHeader, setEditingHeader] = useState(false);
-  const [addingEntryKey, setAddingEntryKey] = useState(0); // 0 = hidden, >0 = showing (key for re-mount)
+  const [newEntryKeys, setNewEntryKeys] = useState<number[]>([]); // array of keys for multiple new rows
+  const nextKeyRef = useRef(1);
   const [headerForm, setHeaderForm] = useState({
     titularCartao: card.titularCartao,
     vencimentoFatura: card.vencimentoFatura?.toString() || "",
@@ -518,17 +519,17 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
                     fechamentoFatura={card.fechamentoFatura ? parseInt(card.fechamentoFatura) : undefined}
                   />
                 ))}
-                {addingEntryKey > 0 && (
+                {newEntryKeys.map((k) => (
                   <EntryRow
-                    key={`new-${addingEntryKey}`}
+                    key={`new-${k}`}
                     entry={{}}
                     monthColumns={monthColumns}
-                    onSave={handleSaveEntry}
-                    onDelete={() => setAddingEntryKey(0)}
+                    onSave={(data) => { handleSaveEntry(data); setNewEntryKeys(keys => keys.filter(x => x !== k)); }}
+                    onDelete={() => setNewEntryKeys(keys => keys.filter(x => x !== k))}
                     isNew
                     fechamentoFatura={card.fechamentoFatura ? parseInt(card.fechamentoFatura) : undefined}
                   />
-                )}
+                ))}
               </tbody>
               {/* Totals row */}
               <tfoot>
@@ -551,7 +552,7 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setAddingEntryKey(k => k + 1)}
+              onClick={() => { setNewEntryKeys(keys => [...keys, nextKeyRef.current]); nextKeyRef.current++; }}
               className="text-xs"
             >
               <Plus className="w-3.5 h-3.5 mr-1" /> Novo Lançamento
