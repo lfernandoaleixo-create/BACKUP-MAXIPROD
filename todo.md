@@ -3929,3 +3929,4 @@
 - [x] Backend: gerenciar visibilidade por vendedor (checkbox)
 - [x] Frontend: gestor vê todos os catálogos com checkboxes por vendedor
 - [x] Frontend: vendedor vê apenas catálogos liberados para ele
+- [x] Planilha de Cobrança: puxar TODAS as informações do Maxiprod para clientes novos (CNPJ/CPF, Município, UF, Contato, Email, Telefones) igual aos clientes antigos

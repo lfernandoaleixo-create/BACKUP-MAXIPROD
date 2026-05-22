@@ -635,10 +635,14 @@ export const cobrancaPlanilhaRouter = router({
         }
       }
 
-      // 4c. Buscar vendedor, apelido e email NF-e de cada cliente via GraphQL
+      // 4c. Buscar vendedor, apelido, email NF-e, CNPJ/CPF, município e UF de cada cliente via GraphQL
       const vendedorMap: Record<string, string> = {};
       const apelidoMap: Record<string, string> = {};
       const emailNfeMap: Record<string, string> = {};
+      const cnpjCpfMap: Record<string, string> = {};
+      const municipioGqlMap: Record<string, string> = {};
+      const ufGqlMap: Record<string, string> = {};
+      const contatoGqlMap: Record<string, string> = {};
       try {
         const PAGE_SIZE = 200;
         let skip = 0;
@@ -651,8 +655,10 @@ export const cobrancaPlanilhaRouter = router({
                 nomeFantasia
                 razaoSocial
                 apelido
+                cnpjOuCpf
                 emailParaEnvioDeDocumentosFiscais
                 representanteOuVendedor1Preferencial { nomeFantasia razaoSocial }
+                endereco { telefone1 municipio { descricao uf { sigla } } }
               }
             }
           }`);
@@ -667,6 +673,37 @@ export const cobrancaPlanilhaRouter = router({
             if (apelidoValue) {
               for (const normName of normalizedNames) {
                 if (!apelidoMap[normName]) apelidoMap[normName] = apelidoValue;
+              }
+            }
+            
+            // Mapear CNPJ/CPF
+            const cnpjVal = (emp.cnpjOuCpf || "").trim();
+            if (cnpjVal) {
+              for (const normName of normalizedNames) {
+                if (!cnpjCpfMap[normName]) cnpjCpfMap[normName] = cnpjVal;
+              }
+            }
+            
+            // Mapear município e UF do endereço principal
+            const endPrincipal = emp.endereco;
+            if (endPrincipal) {
+              const mun = endPrincipal.municipio?.descricao || "";
+              const ufSigla = endPrincipal.municipio?.uf?.sigla || "";
+              const tel1 = (endPrincipal.telefone1 || "").trim();
+              if (mun) {
+                for (const normName of normalizedNames) {
+                  if (!municipioGqlMap[normName]) municipioGqlMap[normName] = mun;
+                }
+              }
+              if (ufSigla) {
+                for (const normName of normalizedNames) {
+                  if (!ufGqlMap[normName]) ufGqlMap[normName] = ufSigla;
+                }
+              }
+              if (tel1 && tel1.length >= 8) {
+                for (const normName of normalizedNames) {
+                  if (!contatoGqlMap[normName]) contatoGqlMap[normName] = tel1;
+                }
               }
             }
             
@@ -851,7 +888,15 @@ export const cobrancaPlanilhaRouter = router({
         // Enriquecer dados de contato se ainda não preenchidos
         const clienteData = clienteDataMap[inad.empresa] || {};
         const empresaNorm = normalizeName(inad.empresa);
-        if (!match.contato && clienteData.contato) updateData.contato = clienteData.contato;
+        // CNPJ/CPF: sempre atualizar do GraphQL (fonte mais confiável)
+        const cnpjVal = cnpjCpfMap[empresaNorm];
+        if (cnpjVal) updateData.cnpjCpf = cnpjVal;
+        // Contato: prioridade GraphQL > sales_orders
+        if (!match.contato) {
+          const contatoGql = contatoGqlMap[empresaNorm];
+          if (contatoGql) updateData.contato = contatoGql;
+          else if (clienteData.contato) updateData.contato = clienteData.contato;
+        }
         // Email: combinar emailParaEnvioDeDocumentosFiscais + email do endereço (ambos quando existirem)
         {
           const nfeEmail = emailNfeMap[empresaNorm] || "";
@@ -864,8 +909,17 @@ export const cobrancaPlanilhaRouter = router({
           const combinedEmail = Array.from(allEmails).join(' / ');
           if (combinedEmail) updateData.email = combinedEmail;
         }
-        if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
-        if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
+        // Município e UF: prioridade GraphQL > sales_orders
+        if (!match.municipio) {
+          const munGql = municipioGqlMap[empresaNorm];
+          if (munGql) updateData.municipio = munGql;
+          else if (clienteData.municipio) updateData.municipio = clienteData.municipio;
+        }
+        if (!match.uf) {
+          const ufGql = ufGqlMap[empresaNorm];
+          if (ufGql) updateData.uf = ufGql;
+          else if (clienteData.uf) updateData.uf = clienteData.uf;
+        }
         if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
         // Vendedor, apelido, forma de cobrança e contatos extras (sempre atualizar)
@@ -948,7 +1002,15 @@ export const cobrancaPlanilhaRouter = router({
           // Enriquecer dados de contato se ainda não preenchidos
           const clienteData = clienteDataMap[inad.empresa] || {};
           const empresaNormFb = normalizeName(inad.empresa);
-          if (!match.contato && clienteData.contato) updateData.contato = clienteData.contato;
+          // CNPJ/CPF: sempre atualizar do GraphQL (fonte mais confiável)
+          const cnpjValFb = cnpjCpfMap[empresaNormFb];
+          if (cnpjValFb) updateData.cnpjCpf = cnpjValFb;
+          // Contato: prioridade GraphQL > sales_orders
+          if (!match.contato) {
+            const contatoGql = contatoGqlMap[empresaNormFb];
+            if (contatoGql) updateData.contato = contatoGql;
+            else if (clienteData.contato) updateData.contato = clienteData.contato;
+          }
           // Email: combinar emailParaEnvioDeDocumentosFiscais + email do endereço (ambos quando existirem)
           {
             const nfeEmail = emailNfeMap[empresaNormFb] || "";
@@ -961,8 +1023,17 @@ export const cobrancaPlanilhaRouter = router({
             const combinedEmail = Array.from(allEmails).join(' / ');
             if (combinedEmail) updateData.email = combinedEmail;
           }
-          if (!match.municipio && clienteData.municipio) updateData.municipio = clienteData.municipio;
-          if (!match.uf && clienteData.uf) updateData.uf = clienteData.uf;
+          // Município e UF: prioridade GraphQL > sales_orders
+          if (!match.municipio) {
+            const munGql = municipioGqlMap[empresaNormFb];
+            if (munGql) updateData.municipio = munGql;
+            else if (clienteData.municipio) updateData.municipio = clienteData.municipio;
+          }
+          if (!match.uf) {
+            const ufGql = ufGqlMap[empresaNormFb];
+            if (ufGql) updateData.uf = ufGql;
+            else if (clienteData.uf) updateData.uf = clienteData.uf;
+          }
           if (!match.regiao && clienteData.regiao) updateData.regiao = clienteData.regiao;
 
           // Documento: atualizar se disponível
@@ -990,16 +1061,17 @@ export const cobrancaPlanilhaRouter = router({
           // NOVO título — adicionar à planilha
           matchedInadArIds.add(inad.arId);
           
-          // Enriquecer com dados de contato do cliente
+          // Enriquecer com dados de contato do cliente (GraphQL + sales_orders)
           const clienteData = clienteDataMap[inad.empresa] || {};
+          const normEmpNew = normalizeName(inad.empresa);
           
           await db.insert(cobrancaPlanilha).values({
             arId: inad.arId,
             empresa: inad.empresa,
             descricao: inad.descricao || null,
-            cnpjCpf: null,
-            municipio: clienteData.municipio || null,
-            uf: clienteData.uf || null,
+            cnpjCpf: cnpjCpfMap[normEmpNew] || null,
+            municipio: municipioGqlMap[normEmpNew] || clienteData.municipio || null,
+            uf: ufGqlMap[normEmpNew] || clienteData.uf || null,
             pais: null,
             centroCustos: null, // Will be populated from sales_orders lookup below
             documento: inad.documento || null,
@@ -1008,11 +1080,10 @@ export const cobrancaPlanilhaRouter = router({
             diasVencidos: inad.diasVencidos,
             tipo: inad.tipo,
             status: inad.status,
-            contato: clienteData.contato || null,
+            contato: contatoGqlMap[normEmpNew] || clienteData.contato || null,
             email: (() => {
-              const normEmp = normalizeName(inad.empresa);
-              const nfe = emailNfeMap[normEmp] || "";
-              const end = emailEnderecoMap[normEmp] || "";
+              const nfe = emailNfeMap[normEmpNew] || "";
+              const end = emailEnderecoMap[normEmpNew] || "";
               const ped = clienteData.email || "";
               const set = new Set<string>();
               if (nfe) set.add(nfe.toLowerCase());
@@ -1021,10 +1092,10 @@ export const cobrancaPlanilhaRouter = router({
               return set.size > 0 ? Array.from(set).join(' / ') : null;
             })(),
             regiao: clienteData.regiao || null,
-            apelido: apelidoMap[normalizeName(inad.empresa)] || null,
-            vendedor: isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : (vendedorMap[normalizeName(inad.empresa)] || null),
+            apelido: apelidoMap[normEmpNew] || null,
+            vendedor: isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : (vendedorMap[normEmpNew] || null),
             formaCobranca: formaCobrancaMap[inad.arId] || null,
-            contatosAdicionais: contatosExtrasMap[normalizeName(inad.empresa)] || [],
+            contatosAdicionais: contatosExtrasMap[normEmpNew] || [],
             updatedBy: `Sync: ${input.updatedBy}`,
           });
           added++;
