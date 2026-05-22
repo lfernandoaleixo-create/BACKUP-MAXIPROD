@@ -2066,7 +2066,7 @@ export const salesRouter = router({
       // 3) Valor a Receber total = Títulos em aberto + Títulos descontados
       let valorEmAbertoLive = 0;
       let valorDescontados = 0;
-      let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string; tipo: string }> = [];
+      let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string; tipo: string; situacao: string }> = [];
       let titulosDescontados: Array<{ valorOriginal: number; situacao: string; formaCobranca: string; vencimento: string; documento: string; parcela: string; liquidacao: string; tipo: string }> = [];
       try {
         const apelido = clientInfo.apelido || "";
@@ -2081,6 +2081,7 @@ export const salesRouter = router({
               totalCount
               items {
                 id valorOriginal valorLiquido valorRecebidoLiquido vencimentoData documentoVinculadoNumero parcela tipo
+                campoAdicionalEspecifico { tag valor }
               }
             }
           }`);
@@ -2091,12 +2092,18 @@ export const salesRouter = router({
               const valorAReceberTitulo = valorLiq - valorRecebido;
               if (valorAReceberTitulo <= 0) continue; // título já pago integralmente
               valorEmAbertoLive += valorAReceberTitulo;
+              const camposEmitido = item.campoAdicionalEspecifico || [];
+              const situacaoCampoEmitido = camposEmitido.find((c: any) => {
+                const tag = (c.tag || '').trim().toLowerCase();
+                return tag === 'situacao';
+              });
               titulosEmAbertoLive.push({
                 valorOriginal: Math.round(valorAReceberTitulo * 100) / 100,
                 vencimento: item.vencimentoData || "",
                 documento: item.documentoVinculadoNumero || "",
                 parcela: item.parcela || "",
                 tipo: item.tipo || "",
+                situacao: situacaoCampoEmitido?.valor ? String(situacaoCampoEmitido.valor).trim() : "",
               });
             }
           }

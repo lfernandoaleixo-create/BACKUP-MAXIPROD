@@ -3939,3 +3939,4 @@
 - [x] Consulta Cliente: usar coluna "Valor a receber" do Maxiprod (valorLiquido - valorRecebidoLiquido) para calcular totais
 - [x] Consulta Cliente: valor muda conforme filtros de tipo são marcados/desmarcados
 - [x] Consulta Cliente: mostrar status de inadimplência em tempo real (dados da Planilha de Cobrança)
+- [x] Consulta Cliente: mostrar coluna Situação nos títulos em aberto e descontados (Factoring, Bradesco, Sicoob, etc.)

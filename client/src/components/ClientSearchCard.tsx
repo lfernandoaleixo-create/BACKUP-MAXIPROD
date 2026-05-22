@@ -116,6 +116,7 @@ function ValorAReceberPanel({ receivables }: { receivables: any }) {
                   <tr>
                     <th className="text-left px-2 py-1 text-blue-700">Doc</th>
                     <th className="text-left px-2 py-1 text-blue-700">Parcela</th>
+                    <th className="text-left px-2 py-1 text-blue-700">Situação</th>
                     <th className="text-right px-2 py-1 text-blue-700">A Receber</th>
                     <th className="text-right px-2 py-1 text-blue-700">Vencimento</th>
                   </tr>
@@ -134,6 +135,7 @@ function ValorAReceberPanel({ receivables }: { receivables: any }) {
                         <tr key={idx} className={`border-b border-blue-100 ${isOverdue ? 'bg-red-50' : ''}`}>
                           <td className="px-2 py-1 text-slate-700">{t.documento || "-"}</td>
                           <td className="px-2 py-1 text-slate-700">{t.parcela || "-"}</td>
+                          <td className="px-2 py-1 text-blue-600 font-medium text-xs">{t.situacao || "-"}</td>
                           <td className="px-2 py-1 text-right font-medium text-slate-800">{formatCurrency(t.valorOriginal)}</td>
                           <td className={`px-2 py-1 text-right ${isOverdue ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
                             {formatDate(t.vencimento)}
