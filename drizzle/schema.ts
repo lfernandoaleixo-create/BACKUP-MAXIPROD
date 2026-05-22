@@ -381,6 +381,7 @@ export const accountsReceivable = mysqlTable("accounts_receivable", {
   estadoConfiguravel: varchar("estadoConfiguravel", { length: 100 }), // Estado configurável do título (BAMBU, MADEIRA, ROJÃO, SERRAGEM)
   decisaoCobranca: varchar("decisaoCobranca", { length: 200 }), // Decisão de cobrança do cliente (COM PROTESTO / SEM PROTESTO) - campo adicional "SITUAÇÃO" do Maxiprod
   dadosCheque: varchar("dadosCheque", { length: 500 }), // Dados do cheque do Maxiprod (ex: "SANTANDER - Nº 90 - M D DA SILVA") - campo adicional tag DadosDoCheque
+  situacaoTitulo: varchar("situacaoTitulo", { length: 200 }), // Situação do TÍTULO (não do cliente) - ex: BOLETO DESCONTADO SICOOB, BOLETO DESCONTADO BRADESCO, FACTORING - campo adicional tag "Situacao" do contaAReceber
   collectedAt: timestamp("collectedAt").defaultNow().notNull(),
 });
 

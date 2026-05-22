@@ -3942,3 +3942,6 @@
 - [x] Consulta Cliente: mostrar coluna Situação nos títulos em aberto e descontados (Factoring, Bradesco, Sicoob, etc.)
 - [x] Consulta Cliente: usar banco local (accounts_receivable) como fonte primária para Valor a Receber em vez de busca GraphQL por nomeFantasia (funciona para TODOS os clientes)
 - [x] Consulta Cliente: incluir TITULO_PROPOSTA_DE_VENDA nos filtros de tipo
+- [x] Consulta Cliente: campo situacaoTitulo (BOLETO DESCONTADO SICOOB, etc.) extraído do campoAdicionalEspecifico tag "Situacao" do título
+- [x] Sync: buscar títulos RECEBIDO do GraphQL para preencher situacaoTitulo nos registros locais
+- [x] Consulta Cliente: títulos descontados detectados por situacaoTitulo não-vazio (em vez de decisaoCobranca)

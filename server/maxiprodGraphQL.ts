@@ -1134,8 +1134,50 @@ async function fetchAccountsReceivable(): Promise<any[]> {
     }
   }`);
 
-  updateProgress({ percent: 98, details: `${items.length} contas a receber coletadas` });
-  return items;
+  updateProgress({ percent: 98, details: `${items.length} contas a receber coletadas (EMITIDO)` });
+
+  // Also fetch RECEBIDO titles to get their situacaoTitulo (BOLETO DESCONTADO SICOOB, etc.)
+  // This is needed because when titles are marked RECEBIDO locally, we lose the campoAdicionalEspecifico
+  try {
+    const recebidoItems = await fetchAllPages("contaAReceber", (skip, take) => `{
+      contaAReceber(skip: ${skip}, take: ${take}, where: { estado: { eq: RECEBIDO } }) {
+        totalCount
+        items {
+          id
+          estado
+          tipo
+          valorOriginal
+          valorLiquido
+          valorRetido
+          valorDeDesconto
+          valorDeAcrescimo
+          valorRecebidoLiquido
+          emissaoData
+          vencimentoData
+          vencimentoOriginalData
+          liquidacaoData
+          referenteA
+          parcela
+          parcelasQuantidadeTotal
+          observacoes
+          documentoVinculadoNumero
+          bloqueado
+          cliente { nomeFantasia razaoSocial campoAdicionalEspecifico { descricao valor } }
+          centroDeCustos { id }
+          conta { id descricao }
+          formaDeCobranca { id meioDePagamento banco { descricao } contaNumero agenciaCodigo pixChave carteira }
+          minhaEmpresaId
+          tarefasEAnotacoes { descricao }
+          campoAdicionalEspecifico { descricao valor tag }
+        }
+      }
+    }`);
+    updateProgress({ percent: 98, details: `${items.length} EMITIDO + ${recebidoItems.length} RECEBIDO coletadas` });
+    return [...items, ...recebidoItems];
+  } catch (err: any) {
+    console.warn('[GraphQL Sync] Failed to fetch RECEBIDO titles for situacaoTitulo:', err.message);
+    return items;
+  }
 }
 
 /**
@@ -1251,8 +1293,27 @@ function transformAccountsReceivable(items: any[]): any[] {
     estadoConfiguravel: null, // Not available on ContaReceber in GraphQL API
     decisaoCobranca: extractDecisaoCobranca(item.cliente),
     dadosCheque: extractDadosCheque(item.campoAdicionalEspecifico),
+    situacaoTitulo: extractSituacaoTitulo(item.campoAdicionalEspecifico),
   }));
   return result;
+}
+
+/**
+ * Extrai a SITUAÇÃO do TÍTULO (não do cliente) do campoAdicionalEspecifico.
+ * Tag: "Situacao" ou "situacao"
+ * Valores possíveis: BOLETO DESCONTADO BRADESCO, BOLETO DESCONTADO FACTORING,
+ * BOLETO DESCONTADO SICOOB, BOLETO DESCONTADO SICREDI, CHEQUE DESCONTADO FACTORING
+ * Este campo indica que o título foi descontado em banco e o cliente ainda deve.
+ */
+function extractSituacaoTitulo(campos: any[] | null | undefined): string | null {
+  if (!campos || !Array.isArray(campos)) return null;
+  const situacaoCampo = campos.find((c: any) => {
+    const tag = (c.tag || '').trim().toLowerCase();
+    return tag === 'situacao';
+  });
+  if (!situacaoCampo) return null;
+  const valor = (situacaoCampo.valor || '').trim();
+  return valor || null;
 }
 
 /**
@@ -1326,7 +1387,11 @@ async function saveFinancialData(
   };
 
   const uniquePayable = deduplicateByMaxiprodId(payableData);
-  const uniqueReceivable = deduplicateByMaxiprodId(receivableData);
+  const allReceivableDeduped = deduplicateByMaxiprodId(receivableData);
+  // Separate EMITIDO from RECEBIDO: EMITIDO is used for disappeared detection,
+  // RECEBIDO is used to update situacaoTitulo on existing records
+  const uniqueReceivable = allReceivableDeduped.filter(r => r.estado === 'EMITIDO');
+  const recebidoFromApi = allReceivableDeduped.filter(r => r.estado === 'RECEBIDO');
 
   // Validação: não salvar se os dados parecem incompletos (proteção contra falha parcial da API)
   // Se já temos dados no banco, exigir pelo menos 50% do volume anterior
@@ -1518,15 +1583,44 @@ async function saveFinancialData(
                 // Atualizar decisaoCobranca do Maxiprod (campo SITUAÇÃO do cliente)
                 decisaoCobranca: sql`VALUES(decisaoCobranca)`,
                 estadoConfiguravel: sql`VALUES(estadoConfiguravel)`,
+                // Situação do TÍTULO (BOLETO DESCONTADO SICOOB, etc.)
+                situacaoTitulo: sql`VALUES(situacaoTitulo)`,
                 collectedAt: sql`NOW()`,
               },
             });
         }
       }
       
-      // 3. Deletar EMITIDO que não vieram mais da API (já marcados como RECEBIDO acima)
-      // Não precisamos deletar nada — os disappeared já foram marcados como RECEBIDO
-      // e os que vieram da API foram atualizados via upsert
+      // 3. Upsert RECEBIDO titles from API to update situacaoTitulo (BOLETO DESCONTADO SICOOB, etc.)
+      // These already exist in local DB (marked RECEBIDO when they disappeared from EMITIDO)
+      // We just need to update their situacaoTitulo and other fields from the fresh API data
+      if (recebidoFromApi.length > 0) {
+        for (let i = 0; i < recebidoFromApi.length; i += 200) {
+          const batch = recebidoFromApi.slice(i, i + 200);
+          await tx.insert(accountsReceivable).values(batch)
+            .onDuplicateKeyUpdate({
+              set: {
+                estado: sql`VALUES(estado)`,
+                tipo: sql`VALUES(tipo)`,
+                valorOriginal: sql`VALUES(valorOriginal)`,
+                valorLiquido: sql`VALUES(valorLiquido)`,
+                valorRetido: sql`VALUES(valorRetido)`,
+                valorDeDesconto: sql`VALUES(valorDeDesconto)`,
+                valorDeAcrescimo: sql`VALUES(valorDeAcrescimo)`,
+                valorRecebidoLiquido: sql`VALUES(valorRecebidoLiquido)`,
+                liquidacaoData: sql`VALUES(liquidacaoData)`,
+                cliente: sql`VALUES(cliente)`,
+                formaCobranca: sql`VALUES(formaCobranca)`,
+                formaCobrancaId: sql`VALUES(formaCobrancaId)`,
+                decisaoCobranca: sql`VALUES(decisaoCobranca)`,
+                situacaoTitulo: sql`VALUES(situacaoTitulo)`,
+                dadosCheque: sql`VALUES(dadosCheque)`,
+                collectedAt: sql`NOW()`,
+              },
+            });
+        }
+        console.log(`[GraphQL Sync] ${recebidoFromApi.length} títulos RECEBIDO atualizados com situaçãoTitulo da API`);
+      }
 
       // === CHEQUE SYNC HISTORY: detectar cheques que entraram/saíram ===
       try {
@@ -1614,7 +1708,7 @@ async function saveFinancialData(
     }
   });
 
-  console.log(`[GraphQL Sync] Dados financeiros salvos: ${uniquePayable.length} pagar (EMITIDO), ${uniqueReceivable.length} receber (EMITIDO). Histórico de PAGO/RECEBIDO preservado.`);
+  console.log(`[GraphQL Sync] Dados financeiros salvos: ${uniquePayable.length} pagar (EMITIDO), ${uniqueReceivable.length} receber (EMITIDO), ${recebidoFromApi.length} receber (RECEBIDO c/ situaçãoTitulo). Histórico preservado.`);
 }
 
 // ============================================================

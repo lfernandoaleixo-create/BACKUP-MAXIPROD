@@ -2085,25 +2085,23 @@ export const salesRouter = router({
             documento: r.documentoVinculadoNumero || "",
             parcela: r.parcela ? String(r.parcela) : "",
             tipo: r.tipo || "",
-            situacao: r.decisaoCobranca || "",
+            situacao: r.situacaoTitulo || "",
           });
         }
 
         // 2) Títulos descontados (RECEBIDO com situação de desconto preenchida)
-        //    decisaoCobranca contém: BOLETO DESCONTADO BRADESCO, BOLETO DESCONTADO FACTORING, etc.
-        //    Se vazio ou apenas COM/SEM PROTESTO → cliente realmente pagou → ignorar
-        const SITUACOES_DESCONTO = ['BOLETO DESCONTADO', 'CHEQUE DESCONTADO', 'FACTORING'];
+        //    situacaoTitulo contém: BOLETO DESCONTADO BRADESCO, BOLETO DESCONTADO FACTORING, etc.
+        //    Se situacaoTitulo vazio → cliente realmente pagou → ignorar
         const recebidosLocal = allReceivables.filter(r => r.estado === "RECEBIDO");
         for (const r of recebidosLocal) {
-          const situacao = (r.decisaoCobranca || "").trim().toUpperCase();
-          // Verificar se é uma situação de desconto (não vazio, não apenas COM/SEM PROTESTO)
-          const isDesconto = situacao && SITUACOES_DESCONTO.some(s => situacao.includes(s));
-          if (!isDesconto) continue;
+          const situacao = (r.situacaoTitulo || "").trim();
+          // Se situacaoTitulo está vazio, o cliente realmente pagou - ignorar
+          if (!situacao) continue;
           const valorLiq = parseFloat(r.valorLiquido || r.valorOriginal || "0");
           valorDescontados += valorLiq;
           titulosDescontados.push({
             valorOriginal: Math.round(valorLiq * 100) / 100,
-            situacao: r.decisaoCobranca || "",
+            situacao: situacao,
             formaCobranca: r.formaCobranca || "",
             vencimento: r.vencimentoData || "",
             documento: r.documentoVinculadoNumero || "",
