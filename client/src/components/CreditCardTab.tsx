@@ -185,7 +185,19 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew, fechamentoFatu
       quantParcelas,
       valorParcela: computedValorParcela,
     });
-    setEditing(false);
+    if (isNew) {
+      // Reset form for next entry - keep adding
+      setForm({
+        dataCompra: "",
+        estabelecimento: "",
+        descricaoDespesa: "",
+        centroDeCusto: "",
+        valorTotal: "",
+        quantParcelas: "1",
+      });
+    } else {
+      setEditing(false);
+    }
   };
 
   if (editing) {
@@ -334,7 +346,7 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
     onError: (e) => toast.error(e.message),
   });
   const createEntryMut = trpc.creditCard.createEntry.useMutation({
-    onSuccess: () => { utils.creditCard.listEntries.invalidate(); toast.success("Lançamento adicionado"); setAddingEntry(false); },
+    onSuccess: () => { utils.creditCard.listEntries.invalidate(); toast.success("Lançamento adicionado"); },
     onError: (e) => toast.error(e.message),
   });
   const updateEntryMut = trpc.creditCard.updateEntry.useMutation({
@@ -528,13 +540,12 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
               </tfoot>
             </table>
           </div>
-          {/* Add entry button */}
+          {/* Add entry button - always visible */}
           <div className="p-3 border-t border-slate-100">
             <Button
               size="sm"
               variant="outline"
               onClick={() => setAddingEntry(true)}
-              disabled={addingEntry}
               className="text-xs"
             >
               <Plus className="w-3.5 h-3.5 mr-1" /> Novo Lançamento
