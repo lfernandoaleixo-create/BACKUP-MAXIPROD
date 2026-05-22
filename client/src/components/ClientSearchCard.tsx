@@ -356,7 +356,7 @@ export function ClientSearchCard() {
   );
 
   const tiposFilterStable = useMemo(() => tiposFilter, [tiposFilter.join(",")]);
-  const { data: clientSummary, isLoading: isLoadingSummary } = trpc.sales.getClientSummary.useQuery(
+  const { data: clientSummary, isLoading: isLoadingSummary, isFetching: isFetchingSummary } = trpc.sales.getClientSummary.useQuery(
     { clienteName: selectedClient || "", tiposFilter: tiposFilterStable as any },
     { enabled: !!selectedClient }
   );
@@ -711,19 +711,27 @@ export function ClientSearchCard() {
                       <span className="text-xs text-slate-600">{label}</span>
                     </label>
                   ))}
+                  {isFetchingSummary && !isLoadingSummary && (
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+                      <span className="text-[10px] text-blue-500 font-medium">Atualizando...</span>
+                    </div>
+                  )}
                 </div>
 
-                {clientSummary.receivables.valorAReceber > 0 && (
-                  <ValorAReceberPanel receivables={clientSummary.receivables} />
-                )}
-                {clientSummary.receivables.valorAReceber === 0 && (
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                    <div className="flex items-center gap-2 text-sm text-green-700 font-semibold">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      Nenhum valor a receber para os tipos selecionados
+                <div className={`relative transition-opacity duration-200 ${isFetchingSummary && !isLoadingSummary ? 'opacity-50' : 'opacity-100'}`}>
+                  {clientSummary.receivables.valorAReceber > 0 && (
+                    <ValorAReceberPanel receivables={clientSummary.receivables} />
+                  )}
+                  {clientSummary.receivables.valorAReceber === 0 && (
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                      <div className="flex items-center gap-2 text-sm text-green-700 font-semibold">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        Nenhum valor a receber para os tipos selecionados
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* Inadimplência - dados da Planilha de Cobrança */}
