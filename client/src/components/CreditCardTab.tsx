@@ -81,6 +81,7 @@ function CardHeader({ card, onEdit, onDelete, isExpanded, onToggle }: {
             <div className="flex items-center gap-3 text-xs text-slate-300 mt-0.5">
               {card.vencimentoFatura && <span>Venc. dia {card.vencimentoFatura}</span>}
               {card.fechamentoFatura && <span>Fech. dia {card.fechamentoFatura}</span>}
+              {card.previsaoPagamento && <span className="text-sky-300">Prev. Pgto: {new Date(card.previsaoPagamento + "T12:00:00").toLocaleDateString("pt-BR")}</span>}
             </div>
           </div>
         </div>
@@ -101,7 +102,7 @@ function CardHeader({ card, onEdit, onDelete, isExpanded, onToggle }: {
         </div>
       </div>
       {/* Limite info */}
-      <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-white/10">
+      <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-white/10">
         <div>
           <p className="text-[10px] text-slate-400 uppercase tracking-wider">Limite Total</p>
           <p className="text-sm font-semibold text-white">{card.limiteTotal ? formatCurrency(card.limiteTotal) : "—"}</p>
@@ -113,6 +114,10 @@ function CardHeader({ card, onEdit, onDelete, isExpanded, onToggle }: {
         <div>
           <p className="text-[10px] text-slate-400 uppercase tracking-wider">Disponível</p>
           <p className="text-sm font-semibold text-emerald-400">{card.limiteDisponivel ? formatCurrency(card.limiteDisponivel) : "—"}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-slate-400 uppercase tracking-wider">Previsão Pagamento</p>
+          <p className="text-sm font-semibold text-sky-300">{card.previsaoPagamento ? new Date(card.previsaoPagamento + "T12:00:00").toLocaleDateString("pt-BR") : "—"}</p>
         </div>
       </div>
     </div>
