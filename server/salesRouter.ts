@@ -2059,22 +2059,20 @@ export const salesRouter = router({
       // ===== VALOR A RECEBER: usar dados do banco local (sincronizado do Maxiprod) =====
       // Fonte: tabela accounts_receivable, campo 'cliente' = razaoSocial (exato)
       // Isso funciona para TODOS os clientes, sem depender de busca por nomeFantasia no GraphQL
-      // LÓGICA VALOR A RECEBER:
-      //    Tudo vem do estado EMITIDO (= "A Receber" no Maxiprod)
-      //    Títulos RECEBIDO não entram em nada (cliente já pagou)
-      // LÓGICA:
-      //   - Títulos em aberto: EMITIDO com situacaoTitulo VAZIO (sem desconto)
-      //   - Títulos descontados: EMITIDO com situacaoTitulo PREENCHIDO (BOLETO DESCONTADO SICOOB, etc.)
-      //     Esses títulos o banco já nos pagou, mas o cliente ainda deve ao banco
-      //     Para nós, o valor já foi recebido, mas é importante saber que existem
-      //   - Valor a Receber = somente títulos em aberto SEM desconto (o que o cliente deve diretamente a nós)
-      //   - Títulos descontados são mostrados separadamente para informação
+      // LÓGICA VALOR A RECEBER (CORRETA - CONFIRMADA COM MAXIPROD):
+      //   - Títulos em aberto: estado EMITIDO (= "A Receber" no Maxiprod)
+      //     No Maxiprod, títulos EMITIDO NUNCA têm campo Situação preenchido
+      //   - Títulos descontados: estado RECEBIDO com situacaoTitulo PREENCHIDO
+      //     (BOLETO DESCONTADO SICOOB, BRADESCO, FACTORING, SICREDI, CHEQUE DESCONTADO FACTORING)
+      //     O banco nos pagou (por isso está RECEBIDO), mas o cliente ainda deve ao banco
+      //   - Títulos RECEBIDO com situacaoTitulo VAZIO = cliente realmente pagou → IGNORAR
+      //   - Valor a Receber = em aberto (EMITIDO) + descontados (RECEBIDO com situação)
       let valorEmAbertoLive = 0;
       let valorDescontados = 0;
       let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string; tipo: string; situacao: string }> = [];
       let titulosDescontados: Array<{ valorOriginal: number; situacao: string; formaCobranca: string; vencimento: string; documento: string; parcela: string; liquidacao: string; tipo: string }> = [];
       try {
-        // Somente EMITIDO (= "A Receber" no Maxiprod)
+        // 1. Títulos em aberto: estado EMITIDO (= "A Receber" no Maxiprod)
         const emitidosLocal = allReceivables.filter(r => r.estado === "EMITIDO");
         for (const r of emitidosLocal) {
           const valorLiq = parseFloat(r.valorLiquido || r.valorOriginal || "0");
@@ -2082,40 +2080,48 @@ export const salesRouter = router({
           const saldo = valorLiq - valorRecebido;
           if (saldo <= 0) continue;
           
+          valorEmAbertoLive += saldo;
+          titulosEmAbertoLive.push({
+            valorOriginal: Math.round(saldo * 100) / 100,
+            vencimento: r.vencimentoData || "",
+            documento: r.documentoVinculadoNumero || "",
+            parcela: r.parcela ? String(r.parcela) : "",
+            tipo: r.tipo || "",
+            situacao: (r.situacaoTitulo || "").trim(),
+          });
+        }
+
+        // 2. Títulos descontados: estado RECEBIDO com situacaoTitulo PREENCHIDO
+        //    Se situacaoTitulo está vazio, o cliente realmente pagou → ignorar
+        const recebidosLocal = allReceivables.filter(r => r.estado === "RECEBIDO");
+        for (const r of recebidosLocal) {
           const situacao = (r.situacaoTitulo || "").trim();
+          if (!situacao) continue; // Vazio = cliente pagou de verdade, ignorar
           
-          if (situacao) {
-            // Título descontado: tem situação preenchida (BOLETO DESCONTADO SICOOB, etc.)
-            // O banco já nos pagou, mas o cliente ainda deve ao banco
-            valorDescontados += saldo;
-            titulosDescontados.push({
-              valorOriginal: Math.round(saldo * 100) / 100,
-              situacao: situacao,
-              formaCobranca: r.formaCobranca || "",
-              vencimento: r.vencimentoData || "",
-              documento: r.documentoVinculadoNumero || "",
-              parcela: r.parcela ? String(r.parcela) : "",
-              liquidacao: r.liquidacaoData || "",
-              tipo: r.tipo || "",
-            });
-          } else {
-            // Título em aberto normal: cliente deve diretamente a nós
-            valorEmAbertoLive += saldo;
-            titulosEmAbertoLive.push({
-              valorOriginal: Math.round(saldo * 100) / 100,
-              vencimento: r.vencimentoData || "",
-              documento: r.documentoVinculadoNumero || "",
-              parcela: r.parcela ? String(r.parcela) : "",
-              tipo: r.tipo || "",
-              situacao: "",
-            });
-          }
+          const valorLiq = parseFloat(r.valorLiquido || r.valorOriginal || "0");
+          const valorRecebido = parseFloat(r.valorRecebidoLiquido || "0");
+          // Para descontados, usar valorLiquido como valor do título
+          // (valorRecebidoLiquido geralmente = valorLiquido pois o banco nos pagou)
+          const saldo = valorLiq;
+          if (saldo <= 0) continue;
+          
+          valorDescontados += saldo;
+          titulosDescontados.push({
+            valorOriginal: Math.round(saldo * 100) / 100,
+            situacao: situacao,
+            formaCobranca: r.formaCobranca || "",
+            vencimento: r.vencimentoData || "",
+            documento: r.documentoVinculadoNumero || "",
+            parcela: r.parcela ? String(r.parcela) : "",
+            liquidacao: r.liquidacaoData || "",
+            tipo: r.tipo || "",
+          });
         }
       } catch (err: any) {
         console.error('[getClientSummary] Error computing valor a receber from local DB:', err.message);
       }
 
-      // Valor a Receber total = em aberto + descontados
+      // Valor a Receber total = em aberto (EMITIDO) + descontados (RECEBIDO com situação)
       // Descontados: o banco nos pagou, mas o cliente deve ao banco. Para fins de crédito,
       // o cliente ainda tem dívida pendente (com o banco, não conosco diretamente)
       const valorAReceber = valorEmAbertoLive + valorDescontados;
