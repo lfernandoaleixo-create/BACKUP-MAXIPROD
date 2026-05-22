@@ -319,7 +319,7 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew, fechamentoFatu
 function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: string }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [editingHeader, setEditingHeader] = useState(false);
-  const [addingEntry, setAddingEntry] = useState(false);
+  const [addingEntryKey, setAddingEntryKey] = useState(0); // 0 = hidden, >0 = showing (key for re-mount)
   const [headerForm, setHeaderForm] = useState({
     titularCartao: card.titularCartao,
     vencimentoFatura: card.vencimentoFatura?.toString() || "",
@@ -513,12 +513,13 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
                     fechamentoFatura={card.fechamentoFatura ? parseInt(card.fechamentoFatura) : undefined}
                   />
                 ))}
-                {addingEntry && (
+                {addingEntryKey > 0 && (
                   <EntryRow
+                    key={`new-${addingEntryKey}`}
                     entry={{}}
                     monthColumns={monthColumns}
                     onSave={handleSaveEntry}
-                    onDelete={() => setAddingEntry(false)}
+                    onDelete={() => setAddingEntryKey(0)}
                     isNew
                     fechamentoFatura={card.fechamentoFatura ? parseInt(card.fechamentoFatura) : undefined}
                   />
@@ -545,7 +546,7 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setAddingEntry(true)}
+              onClick={() => setAddingEntryKey(k => k + 1)}
               className="text-xs"
             >
               <Plus className="w-3.5 h-3.5 mr-1" /> Novo Lançamento
