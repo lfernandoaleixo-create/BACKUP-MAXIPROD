@@ -2235,3 +2235,46 @@ export const vendorClients = mysqlTable("vendor_clients", {
 export type VendorClient = typeof vendorClients.$inferSelect;
 export type InsertVendorClient = typeof vendorClients.$inferInsert;
 
+
+/**
+ * Cartões de crédito - cabeçalho do cartão
+ * Cada cartão tem titular, vencimento, fechamento, limite
+ */
+export const creditCards = mysqlTable("credit_cards", {
+  id: int("id").autoincrement().primaryKey(),
+  titularCartao: varchar("titular_cartao", { length: 200 }).notNull(),
+  vencimentoFatura: tinyint("vencimento_fatura"), // dia do mês
+  fechamentoFatura: tinyint("fechamento_fatura"), // dia do mês
+  previsaoPagamento: varchar("previsao_pagamento", { length: 100 }),
+  limiteTotal: decimal("limite_total", { precision: 18, scale: 2 }),
+  limiteUtilizado: decimal("limite_utilizado", { precision: 18, scale: 2 }),
+  limiteDisponivel: decimal("limite_disponivel", { precision: 18, scale: 2 }),
+  automatizar: boolean("automatizar").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CreditCard = typeof creditCards.$inferSelect;
+export type InsertCreditCard = typeof creditCards.$inferInsert;
+
+/**
+ * Lançamentos de cartão de crédito (despesas parceladas)
+ * Cada lançamento pertence a um cartão e pode ter parcelas distribuídas em meses futuros
+ */
+export const creditCardEntries = mysqlTable("credit_card_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  cardId: int("card_id").notNull(), // FK para credit_cards.id
+  dataCompra: varchar("data_compra", { length: 20 }), // data da compra (YYYY-MM-DD)
+  estabelecimento: varchar("estabelecimento", { length: 200 }),
+  descricaoDespesa: varchar("descricao_despesa", { length: 500 }),
+  centroDeCusto: varchar("centro_de_custo", { length: 200 }),
+  valorTotal: decimal("valor_total", { precision: 18, scale: 2 }),
+  quantParcelas: int("quant_parcelas").default(1),
+  valorParcela: decimal("valor_parcela", { precision: 18, scale: 2 }),
+  mesInicio: varchar("mes_inicio", { length: 7 }), // YYYY-MM (primeiro mês da parcela)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CreditCardEntry = typeof creditCardEntries.$inferSelect;
+export type InsertCreditCardEntry = typeof creditCardEntries.$inferInsert;

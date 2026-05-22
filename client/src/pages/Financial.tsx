@@ -70,6 +70,7 @@ import InadimplenciaTab from "@/components/InadimplenciaTab";
 import ReceivablesTab from "@/components/ReceivablesTab";
 import EcommerceTab from "@/components/EcommerceTab";
 import SerragemRojaoTab from "@/components/SerragemRojaoTab";
+import CreditCardTab from "@/components/CreditCardTab";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -2139,7 +2140,9 @@ export default function Financial() {
   // Pedro só pode ver E-commerce, não tem acesso a Visão Geral, Inadimplência e Recebíveis
   const ECOMMERCE_ONLY_OPERATORS = ["Pedro"];
   const isEcommerceOnly = operator && ECOMMERCE_ONLY_OPERATORS.includes(operator.name);
-  const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce" | "serragem-rojao">(isEcommerceOnly ? "ecommerce" : "visao-geral");
+  const CREDIT_CARD_OPERATORS = ["Guilherme", "Flavio"];
+  const canSeeCreditCards = operator && CREDIT_CARD_OPERATORS.includes(operator.name);
+  const [activeTab, setActiveTab] = useState<"visao-geral" | "inadimplencia" | "recebiveis" | "ecommerce" | "serragem-rojao" | "cartoes">(isEcommerceOnly ? "ecommerce" : "visao-geral");
   let discountAlerts: ReturnType<typeof useDiscountAlerts> | null = null;
   try { discountAlerts = useDiscountAlerts(); } catch { /* not in provider */ }
   const recebiveisBlinking = discountAlerts?.isAlertOperator && discountAlerts.blinkLevel === "recebiveis-tab" && discountAlerts.unreadCount > 0;
@@ -2289,6 +2292,19 @@ export default function Financial() {
               <span>Análise Serragem/Rojão</span>
             </button>
           )}
+          {canSeeCreditCards && (
+            <button
+              onClick={() => setActiveTab("cartoes")}
+              className={`flex items-center justify-center gap-0.5 md:gap-1.5 px-2 md:px-5 py-1.5 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === "cartoes"
+                  ? "bg-purple-600 text-white shadow-md"
+                  : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+              }`}
+            >
+              <Wallet className="hidden md:block w-4 h-4 shrink-0" />
+              <span>Cartões de Crédito</span>
+            </button>
+          )}
         </div>
 
         {/* Tab: Inadimplência */}
@@ -2302,6 +2318,9 @@ export default function Financial() {
 
         {/* Tab: Análise Serragem/Rojão */}
         {activeTab === "serragem-rojao" && canSeeSerragemRojao && <SerragemRojaoTab />}
+
+        {/* Tab: Cartões de Crédito */}
+        {activeTab === "cartoes" && canSeeCreditCards && <CreditCardTab />}
 
         {/* Tab: Visão Geral */}
         {activeTab === "visao-geral" && !isEcommerceOnly && (

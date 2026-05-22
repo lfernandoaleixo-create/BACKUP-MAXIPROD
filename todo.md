@@ -3910,3 +3910,12 @@
 - [x] Remover card antigo 'Títulos Em Aberto' (local DB, valorOriginal incorreto, 50 títulos/R$501K) e usar apenas ValorAReceberPanel (live Maxiprod, valorAReceber correto, 38 títulos/R$365K) para todos os clientes
 - [x] Planilha de Cobrança: destaque visual (pulsante, borda vermelha/escura, shadow) nos cards 'Protestado' e 'Fundo Perdido' quando houver clientes
 - [x] Seção "Títulos (Contas a Receber)": corrigir valores para usar valorAReceber E filtrar títulos com saldo 0 (pagos) para alinhar com Maxiprod (38 títulos / R$ 365K)
+- [ ] Criar aba "Planilha de Cartões de Crédito" ao lado de Inadimplência
+- [ ] Schema DB: tabelas para cartões e lançamentos (despesas parceladas)
+- [ ] Backend tRPC: CRUD para cartões e lançamentos com controle de acesso (Guilherme/Flávio)
+- [ ] Frontend: planilha editável moderna com colunas de meses futuros (parcelas)
+- [ ] Controle de acesso: restringir apenas Guilherme e Flávio
+- [x] Criar aba 'Planilha de Cartões de Crédito' ao lado da aba Inadimplência (acesso restrito Guilherme e Flávio)
+- [x] Backend: creditCardRouter com CRUD de cartões e lançamentos
+- [x] Frontend: CreditCardTab com planilha editável, colunas de meses, cálculo de parcelas
+- [x] Testes vitest para controle de acesso e cálculo de parcelas

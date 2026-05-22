@@ -27,6 +27,7 @@ import { salesMetricsRouter } from "./salesMetricsRouter";
 import { serragemRojaoRouter } from "./serragemRojaoRouter";
 import { cobrancaPlanilhaRouter } from "./cobrancaPlanilhaRouter";
 import { salesOrderRouter } from "./salesOrderRouter";
+import { creditCardRouter } from "./creditCardRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -44,6 +45,7 @@ export const appRouter = router({
   serragemRojao: serragemRojaoRouter,
   cobrancaPlanilha: cobrancaPlanilhaRouter,
   salesOrders: salesOrderRouter,
+  creditCard: creditCardRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
