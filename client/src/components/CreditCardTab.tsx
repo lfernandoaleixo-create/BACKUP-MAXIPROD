@@ -120,12 +120,13 @@ function CardHeader({ card, onEdit, onDelete, isExpanded, onToggle }: {
 }
 
 // Inline edit row component
-function EntryRow({ entry, monthColumns, onSave, onDelete, isNew }: {
+function EntryRow({ entry, monthColumns, onSave, onDelete, isNew, fechamentoFatura }: {
   entry: any;
   monthColumns: string[];
   onSave: (data: any) => void;
   onDelete: () => void;
   isNew?: boolean;
+  fechamentoFatura?: number;
 }) {
   const [editing, setEditing] = useState(isNew || false);
   const [form, setForm] = useState({
@@ -135,8 +136,41 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew }: {
     centroDeCusto: entry.centroDeCusto || "",
     valorTotal: entry.valorTotal ? parseFloat(entry.valorTotal).toString() : "",
     quantParcelas: entry.quantParcelas?.toString() || "1",
-    valorParcela: entry.valorParcela ? parseFloat(entry.valorParcela).toString() : "",
   });
+
+  // Auto-calculate valor parcela in real time
+  const computedValorParcela = useMemo(() => {
+    const total = parseFloat(form.valorTotal) || 0;
+    const parcelas = parseInt(form.quantParcelas) || 1;
+    if (total <= 0) return 0;
+    return total / parcelas;
+  }, [form.valorTotal, form.quantParcelas]);
+
+  // Auto-calculate mesInicio for preview
+  const computedMesInicio = useMemo(() => {
+    if (!form.dataCompra) return null;
+    const fech = fechamentoFatura || 1;
+    const [year, month, day] = form.dataCompra.split("-").map(Number);
+    if (!year || !month || !day) return null;
+    if (day <= fech) {
+      return `${year}-${String(month).padStart(2, "0")}`;
+    } else {
+      const nextMonth = month === 12 ? 1 : month + 1;
+      const nextYear = month === 12 ? year + 1 : year;
+      return `${nextYear}-${String(nextMonth).padStart(2, "0")}`;
+    }
+  }, [form.dataCompra, fechamentoFatura]);
+
+  // Preview parcel distribution in months
+  function getPreviewValueForMonth(targetMonth: string): number {
+    if (!computedMesInicio || computedValorParcela <= 0) return 0;
+    const parcelas = parseInt(form.quantParcelas) || 1;
+    const [startY, startM] = computedMesInicio.split("-").map(Number);
+    const [targetY, targetM] = targetMonth.split("-").map(Number);
+    const diff = (targetY - startY) * 12 + (targetM - startM);
+    if (diff < 0 || diff >= parcelas) return 0;
+    return computedValorParcela;
+  }
 
   const handleSave = () => {
     if (!form.dataCompra) {
@@ -145,12 +179,11 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew }: {
     }
     const valorTotal = parseFloat(form.valorTotal) || 0;
     const quantParcelas = parseInt(form.quantParcelas) || 1;
-    const valorParcela = parseFloat(form.valorParcela) || (valorTotal / quantParcelas);
     onSave({
       ...form,
       valorTotal,
       quantParcelas,
-      valorParcela,
+      valorParcela: computedValorParcela,
     });
     setEditing(false);
   };
@@ -163,7 +196,7 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew }: {
             type="date"
             value={form.dataCompra}
             onChange={(e) => setForm({ ...form, dataCompra: e.target.value })}
-            className="h-7 text-xs w-28"
+            className="h-7 text-xs w-36"
           />
         </td>
         <td className="px-2 py-1.5">
@@ -208,19 +241,20 @@ function EntryRow({ entry, monthColumns, onSave, onDelete, isNew }: {
             min="1"
           />
         </td>
-        <td className="px-2 py-1.5">
-          <Input
-            type="number"
-            value={form.valorParcela}
-            onChange={(e) => setForm({ ...form, valorParcela: e.target.value })}
-            className="h-7 text-xs w-24"
-            placeholder="Auto"
-          />
+        <td className="px-2 py-1.5 text-xs font-semibold text-slate-700 text-right whitespace-nowrap">
+          {computedValorParcela > 0 ? formatCurrency(computedValorParcela) : "—"}
         </td>
-        {monthColumns.map((m) => (
-          <td key={m} className="px-2 py-1.5 text-center text-xs text-slate-400">—</td>
-        ))}
-        <td className="px-2 py-1.5 text-xs text-slate-400 italic">Auto</td>
+        {monthColumns.map((m) => {
+          const val = getPreviewValueForMonth(m);
+          return (
+            <td key={m} className={`px-2 py-1.5 text-xs text-right ${val > 0 ? "font-semibold text-green-700 bg-green-50/60" : "text-slate-300"}`}>
+              {val > 0 ? formatCurrency(val) : "—"}
+            </td>
+          );
+        })}
+        <td className="px-2 py-1.5 text-xs text-slate-500 italic whitespace-nowrap">
+          {computedMesInicio ? formatMonthLabel(computedMesInicio) : "Auto"}
+        </td>
         <td className="px-2 py-1.5">
           <div className="flex gap-1">
             <button onClick={handleSave} className="p-1 rounded hover:bg-green-100 text-green-600">
@@ -464,6 +498,7 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
                     monthColumns={monthColumns}
                     onSave={(data) => handleUpdateEntry(entry.id, data)}
                     onDelete={() => handleDeleteEntry(entry.id)}
+                    fechamentoFatura={card.fechamentoFatura ? parseInt(card.fechamentoFatura) : undefined}
                   />
                 ))}
                 {addingEntry && (
@@ -473,6 +508,7 @@ function CardSpreadsheet({ card, operatorName }: { card: any; operatorName: stri
                     onSave={handleSaveEntry}
                     onDelete={() => setAddingEntry(false)}
                     isNew
+                    fechamentoFatura={card.fechamentoFatura ? parseInt(card.fechamentoFatura) : undefined}
                   />
                 )}
               </tbody>
