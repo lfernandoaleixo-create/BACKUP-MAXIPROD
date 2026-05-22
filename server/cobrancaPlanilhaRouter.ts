@@ -2,7 +2,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders } from "../drizzle/schema";
-import { eq, desc, sql, and, inArray, lte, asc, isNull, like } from "drizzle-orm";
+import { eq, desc, sql, and, inArray, lte, asc, isNull, like, or } from "drizzle-orm";
 import { gql, normalizeVendedorName } from "./maxiprodGraphQL";
 
 /**
@@ -727,6 +727,7 @@ export const cobrancaPlanilhaRouter = router({
           }
           skip += PAGE_SIZE;
         } while (skip < total);
+        console.log(`[Sync] Empresas GraphQL: ${total} total, ${Object.keys(cnpjCpfMap).length} no cnpjMap, ${Object.keys(municipioGqlMap).length} no municipioMap`);
       } catch (e) {
         console.error("[Sync] Erro ao buscar vendedores:", e);
       }
@@ -1124,6 +1125,118 @@ export const cobrancaPlanilhaRouter = router({
             .set({ ativo: true })
             .where(eq(cobrancaPlanilha.id, item.id));
         }
+      }
+
+      // 8c. BACKFILL: Preencher dados faltantes (CNPJ, Município, UF, Contato, Email) para itens ativos
+      // Isso garante que mesmo títulos que entraram antes da correção ou cujo match por nome falhou
+      // sejam enriquecidos buscando diretamente do GraphQL por nome parcial
+      try {
+        const itemsMissingData = await db.select({
+          id: cobrancaPlanilha.id,
+          empresa: cobrancaPlanilha.empresa,
+          cnpjCpf: cobrancaPlanilha.cnpjCpf,
+          municipio: cobrancaPlanilha.municipio,
+          uf: cobrancaPlanilha.uf,
+          contato: cobrancaPlanilha.contato,
+          email: cobrancaPlanilha.email,
+        }).from(cobrancaPlanilha).where(
+          and(
+            eq(cobrancaPlanilha.ativo, true),
+            or(
+              isNull(cobrancaPlanilha.cnpjCpf),
+              eq(cobrancaPlanilha.cnpjCpf, ''),
+              isNull(cobrancaPlanilha.municipio),
+              eq(cobrancaPlanilha.municipio, ''),
+              isNull(cobrancaPlanilha.contato),
+              eq(cobrancaPlanilha.contato, '')
+            )
+          )
+        );
+
+        if (itemsMissingData.length > 0) {
+          // Agrupar por empresa para evitar queries duplicadas
+          const empresasToFetch = Array.from(new Set(itemsMissingData.map(i => i.empresa)));
+          const backfillDataMap: Record<string, { cnpj?: string; municipio?: string; uf?: string; contato?: string; email?: string }> = {};
+
+          for (const empresa of empresasToFetch) {
+            // Primeiro tentar match exato nos mapas já carregados
+            const normEmp = normalizeName(empresa);
+            const existingCnpj = cnpjCpfMap[normEmp];
+            const existingMun = municipioGqlMap[normEmp];
+            const existingUf = ufGqlMap[normEmp];
+            const existingContato = contatoGqlMap[normEmp];
+            const existingEmail = emailNfeMap[normEmp] || emailEnderecoMap[normEmp];
+
+            if (existingCnpj || existingMun || existingContato) {
+              backfillDataMap[empresa] = {
+                cnpj: existingCnpj || undefined,
+                municipio: existingMun || undefined,
+                uf: existingUf || undefined,
+                contato: existingContato || undefined,
+                email: existingEmail || undefined,
+              };
+            } else {
+              // Se não encontrou nos mapas, buscar diretamente do GraphQL por nome parcial
+              // Usar a primeira palavra significativa do nome (ignorar artigos e preposições)
+              const words = empresa.split(/\s+/).filter(w => w.length > 2 && !['LTDA', 'EIRELI', 'EPP', 'MEI', 'COMERCIO', 'INDUSTRIA', 'DISTRIBUIDORA'].includes(w.toUpperCase()));
+              const searchTerm = words.slice(0, 2).join(' ');
+              if (searchTerm.length >= 3) {
+                try {
+                  const gqlResp = await gql<any>(`{
+                    empresas(where: { razaoSocial: { contains: "${searchTerm.replace(/"/g, '')}" } }, take: 5) {
+                      items {
+                        razaoSocial
+                        nomeFantasia
+                        apelido
+                        cnpjOuCpf
+                        emailParaEnvioDeDocumentosFiscais
+                        endereco { telefone1 email municipio { descricao uf { sigla } } }
+                      }
+                    }
+                  }`);
+                  if (gqlResp?.empresas?.items?.length) {
+                    // Encontrar o melhor match
+                    const bestMatch = gqlResp.empresas.items.find((e: any) => {
+                      const names = [e.razaoSocial, e.nomeFantasia, e.apelido].filter(Boolean);
+                      return names.some((n: string) => normalizeName(n) === normEmp);
+                    }) || gqlResp.empresas.items[0];
+
+                    const data: any = {};
+                    if (bestMatch.cnpjOuCpf) data.cnpj = bestMatch.cnpjOuCpf.trim();
+                    if (bestMatch.endereco?.municipio?.descricao) data.municipio = bestMatch.endereco.municipio.descricao;
+                    if (bestMatch.endereco?.municipio?.uf?.sigla) data.uf = bestMatch.endereco.municipio.uf.sigla;
+                    if (bestMatch.endereco?.telefone1) data.contato = bestMatch.endereco.telefone1.trim();
+                    const emailVal = bestMatch.emailParaEnvioDeDocumentosFiscais || bestMatch.endereco?.email || '';
+                    if (emailVal) data.email = emailVal.trim();
+                    if (Object.keys(data).length > 0) backfillDataMap[empresa] = data;
+                  }
+                } catch (e) {
+                  // Ignorar erros de busca individual
+                }
+              }
+            }
+          }
+
+          // Aplicar backfill
+          for (const item of itemsMissingData) {
+            const data = backfillDataMap[item.empresa];
+            if (!data) continue;
+            const updates: any = {};
+            if (!item.cnpjCpf && data.cnpj) updates.cnpjCpf = data.cnpj;
+            if (!item.municipio && data.municipio) updates.municipio = data.municipio;
+            if (!item.uf && data.uf) updates.uf = data.uf;
+            if (!item.contato && data.contato) updates.contato = data.contato;
+            if (!item.email && data.email) updates.email = data.email;
+            if (Object.keys(updates).length > 0) {
+              await db.update(cobrancaPlanilha)
+                .set(updates)
+                .where(eq(cobrancaPlanilha.id, item.id));
+            }
+          }
+          console.log(`[Sync] Backfill: ${Object.keys(backfillDataMap).length}/${empresasToFetch.length} empresas enriquecidas`);
+        }
+      } catch (e) {
+        console.error('[Sync] Erro no backfill de dados:', e);
       }
 
       // 9. Populate centroCustos for items that don't have it yet (from sales_orders)

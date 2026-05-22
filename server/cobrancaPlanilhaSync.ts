@@ -14,7 +14,7 @@
 
 import { getDb } from "./db";
 import { cobrancaPlanilha, accountsReceivable, collectionActions, salesOrders } from "../drizzle/schema";
-import { eq, and, inArray, lte, isNull, sql, desc } from "drizzle-orm";
+import { eq, and, inArray, lte, isNull, sql, desc, or } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
 // Clientes com vendedor fixo "Grupo Fox"
@@ -345,6 +345,123 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
           .where(eq(cobrancaPlanilha.id, item.id));
       }
     }
+  }
+
+  // 4d. BACKFILL: Preencher dados faltantes (CNPJ, Município, UF, Contato, Email) para itens ativos
+  // Garante que títulos adicionados pelo auto-sync também recebam dados de contato do GraphQL
+  try {
+    const itemsMissingContact = await db.select({
+      id: cobrancaPlanilha.id,
+      empresa: cobrancaPlanilha.empresa,
+      cnpjCpf: cobrancaPlanilha.cnpjCpf,
+      municipio: cobrancaPlanilha.municipio,
+      uf: cobrancaPlanilha.uf,
+      contato: cobrancaPlanilha.contato,
+      email: cobrancaPlanilha.email,
+    }).from(cobrancaPlanilha).where(
+      and(
+        eq(cobrancaPlanilha.ativo, true),
+        or(
+          isNull(cobrancaPlanilha.cnpjCpf),
+          eq(cobrancaPlanilha.cnpjCpf, ''),
+          isNull(cobrancaPlanilha.municipio),
+          eq(cobrancaPlanilha.municipio, ''),
+          isNull(cobrancaPlanilha.contato),
+          eq(cobrancaPlanilha.contato, '')
+        )
+      )
+    );
+
+    if (itemsMissingContact.length > 0) {
+      // Agrupar por empresa para evitar queries duplicadas
+      const empresasToFetch = Array.from(new Set(itemsMissingContact.map(i => i.empresa)));
+      const contactDataMap: Record<string, { cnpj?: string; municipio?: string; uf?: string; contato?: string; email?: string }> = {};
+
+      // Buscar dados de todas as empresas do GraphQL (paginado)
+      const cnpjMap: Record<string, string> = {};
+      const munMap: Record<string, string> = {};
+      const ufMap: Record<string, string> = {};
+      const telMap: Record<string, string> = {};
+      const emailMap: Record<string, string> = {};
+
+      const PAGE_SIZE = 200;
+      let skip = 0;
+      let total = 0;
+      do {
+        const resp = await gql<any>(`{
+          empresas(skip: ${skip}, take: ${PAGE_SIZE}, where: { cliente: { eq: true } }) {
+            totalCount
+            items {
+              nomeFantasia
+              razaoSocial
+              apelido
+              cnpjOuCpf
+              emailParaEnvioDeDocumentosFiscais
+              endereco { telefone1 email municipio { descricao uf { sigla } } }
+            }
+          }
+        }`);
+        if (!resp?.empresas) break;
+        total = resp.empresas.totalCount;
+        for (const emp of resp.empresas.items) {
+          const names = [emp.nomeFantasia, emp.razaoSocial, emp.apelido].filter(Boolean);
+          const normalizedNames = names.map((n: string) => normalizeName(n));
+          const cnpjVal = (emp.cnpjOuCpf || "").trim();
+          const endPrincipal = emp.endereco;
+          const mun = endPrincipal?.municipio?.descricao || "";
+          const ufSigla = endPrincipal?.municipio?.uf?.sigla || "";
+          const tel1 = (endPrincipal?.telefone1 || "").trim();
+          const emailNfe = (emp.emailParaEnvioDeDocumentosFiscais || "").trim();
+          const emailEnd = (endPrincipal?.email || "").trim();
+
+          for (const normName of normalizedNames) {
+            if (cnpjVal && !cnpjMap[normName]) cnpjMap[normName] = cnpjVal;
+            if (mun && !munMap[normName]) munMap[normName] = mun;
+            if (ufSigla && !ufMap[normName]) ufMap[normName] = ufSigla;
+            if (tel1 && tel1.length >= 8 && !telMap[normName]) telMap[normName] = tel1;
+            const bestEmail = emailNfe || emailEnd;
+            if (bestEmail && !emailMap[normName]) emailMap[normName] = bestEmail;
+          }
+        }
+        skip += PAGE_SIZE;
+      } while (skip < total);
+
+      // Mapear dados para cada empresa que precisa
+      for (const empresa of empresasToFetch) {
+        const normEmp = normalizeName(empresa);
+        const data: any = {};
+        if (cnpjMap[normEmp]) data.cnpj = cnpjMap[normEmp];
+        if (munMap[normEmp]) data.municipio = munMap[normEmp];
+        if (ufMap[normEmp]) data.uf = ufMap[normEmp];
+        if (telMap[normEmp]) data.contato = telMap[normEmp];
+        if (emailMap[normEmp]) data.email = emailMap[normEmp];
+        if (Object.keys(data).length > 0) contactDataMap[empresa] = data;
+      }
+
+      // Aplicar backfill
+      let backfilled = 0;
+      for (const item of itemsMissingContact) {
+        const data = contactDataMap[item.empresa];
+        if (!data) continue;
+        const updates: Record<string, any> = {};
+        if (!item.cnpjCpf && data.cnpj) updates.cnpjCpf = data.cnpj;
+        if (!item.municipio && data.municipio) updates.municipio = data.municipio;
+        if (!item.uf && data.uf) updates.uf = data.uf;
+        if (!item.contato && data.contato) updates.contato = data.contato;
+        if (!item.email && data.email) updates.email = data.email;
+        if (Object.keys(updates).length > 0) {
+          await db.update(cobrancaPlanilha)
+            .set(updates)
+            .where(eq(cobrancaPlanilha.id, item.id));
+          backfilled++;
+        }
+      }
+      if (backfilled > 0) {
+        console.log(`[Auto-sync] Backfill contato: ${backfilled}/${itemsMissingContact.length} itens atualizados`);
+      }
+    }
+  } catch (e) {
+    console.error('[Auto-sync] Erro no backfill de dados de contato:', e);
   }
 
   // 5. REACTIVATE: titles that were deactivated but are now back in overdue

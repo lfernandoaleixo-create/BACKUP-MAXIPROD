@@ -3934,3 +3934,4 @@
 - [x] Consulta Cliente: Títulos em aberto = mesmo valor que Valor a Receber base (Contas a Receber estado A_RECEBER)
 - [x] Consulta Cliente: Títulos descontados = Contas a Receber estado RECEBIDOS tipo Títulos com situação preenchida (BOLETO DESCONTADO BRADESCO/FACTORING/SICOOB/SICREDI, CHEQUE DESCONTADO FACTORING)
 - [x] Consulta Cliente: Valor a Receber total = Títulos em aberto + Títulos descontados
+- [x] Planilha de Cobrança: garantir que TODOS os títulos (novos e antigos) do mesmo cliente tenham dados preenchidos (CNPJ, Município, UF, Contato, Email) - backfill + sync fix
