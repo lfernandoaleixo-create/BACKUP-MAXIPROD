@@ -9,6 +9,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Search,
   User,
@@ -198,6 +199,136 @@ function ValorAReceberPanel({ receivables }: { receivables: any }) {
   );
 }
 
+/** Status colors for cobranca_planilha statuses */
+const COBRANCA_STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  "Pendente": { bg: "bg-slate-100", text: "text-slate-700", border: "border-slate-300" },
+  "Contatado": { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" },
+  "Em negociação": { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300" },
+  "Promessa de Pgto": { bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-300" },
+  "Não deu retorno": { bg: "bg-purple-100", text: "text-purple-700", border: "border-purple-300" },
+  "Não atendeu": { bg: "bg-pink-100", text: "text-pink-700", border: "border-pink-300" },
+  "Protesto em Análise": { bg: "bg-yellow-100", text: "text-yellow-700", border: "border-yellow-300" },
+  "Protestado": { bg: "bg-orange-100", text: "text-orange-700", border: "border-orange-300" },
+  "Jurídico": { bg: "bg-red-100", text: "text-red-700", border: "border-red-300" },
+  "Especial s/ cobrança": { bg: "bg-cyan-100", text: "text-cyan-700", border: "border-cyan-300" },
+  "Cheque em compensação": { bg: "bg-teal-100", text: "text-teal-700", border: "border-teal-300" },
+  "Fundo Perdido": { bg: "bg-stone-200", text: "text-stone-700", border: "border-stone-400" },
+};
+
+function getCobrancaStatusStyle(status: string) {
+  return COBRANCA_STATUS_COLORS[status] || { bg: "bg-slate-100", text: "text-slate-600", border: "border-slate-300" };
+}
+
+/** Painel de Inadimplência com dados da Planilha de Cobrança */
+function InadimplenciaPanel({ inadimplencia, overdue }: { inadimplencia: any; overdue: any }) {
+  const [showDetails, setShowDetails] = useState(false);
+
+  // Aggregate statuses
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const t of inadimplencia.titulos || []) {
+      const s = t.status || "Pendente";
+      counts[s] = (counts[s] || 0) + 1;
+    }
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  }, [inadimplencia.titulos]);
+
+  // Check for critical statuses
+  const hasCritical = inadimplencia.titulos?.some((t: any) =>
+    ["Protestado", "Jurídico", "Fundo Perdido"].includes(t.status)
+  );
+
+  return (
+    <div className={`rounded-lg p-4 border-2 shadow-sm ${
+      hasCritical ? "bg-red-50 border-red-400" : "bg-orange-50 border-orange-300"
+    }`}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className={`flex items-center gap-2 text-sm font-semibold mb-1 ${
+            hasCritical ? "text-red-700" : "text-orange-700"
+          }`}>
+            <AlertTriangle className={`h-4 w-4 ${hasCritical ? "text-red-600" : "text-orange-600"}`} />
+            Inadimplência (Planilha de Cobrança)
+          </div>
+          <div className={`text-2xl font-bold ${hasCritical ? "text-red-800" : "text-orange-800"}`}>
+            {formatCurrency(inadimplencia.totalValor)}
+          </div>
+          <div className={`text-xs mt-0.5 ${hasCritical ? "text-red-600" : "text-orange-600"}`}>
+            {inadimplencia.totalTitulos} título{inadimplencia.totalTitulos !== 1 ? 's' : ''} na cobrança
+          </div>
+        </div>
+        <div className="text-right space-y-1">
+          {overdue.diasAtrasoMedio > 0 && (
+            <div className="text-[10px] text-slate-500">
+              Atraso médio: {overdue.diasAtrasoMedio}d | Máx: {overdue.diasAtrasoMax}d
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Status badges */}
+      <div className="flex flex-wrap gap-1.5 mt-3">
+        {statusCounts.map(([status, count]) => {
+          const style = getCobrancaStatusStyle(status);
+          return (
+            <span
+              key={status}
+              className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${style.bg} ${style.text} ${style.border}`}
+            >
+              {status} ({count})
+            </span>
+          );
+        })}
+      </div>
+
+      {/* Expandable details */}
+      <div className="mt-3 pt-2 border-t border-orange-200">
+        <button
+          onClick={() => setShowDetails(!showDetails)}
+          className="flex items-center gap-1 text-xs font-semibold text-orange-700 hover:text-orange-900 transition-colors"
+        >
+          {showDetails ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          Detalhes dos títulos ({inadimplencia.totalTitulos})
+        </button>
+        {showDetails && (
+          <div className="mt-2 max-h-48 overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-orange-100 sticky top-0">
+                <tr>
+                  <th className="text-left px-2 py-1 text-orange-700">Documento</th>
+                  <th className="text-right px-2 py-1 text-orange-700">Valor</th>
+                  <th className="text-right px-2 py-1 text-orange-700">Vencimento</th>
+                  <th className="text-right px-2 py-1 text-orange-700">Dias</th>
+                  <th className="text-left px-2 py-1 text-orange-700">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(inadimplencia.titulos || []).sort((a: any, b: any) => (b.diasVencidos || 0) - (a.diasVencidos || 0)).map((t: any, idx: number) => {
+                  const style = getCobrancaStatusStyle(t.status);
+                  return (
+                    <tr key={idx} className="border-b border-orange-100">
+                      <td className="px-2 py-1 text-slate-700">{t.documento || "-"}</td>
+                      <td className="px-2 py-1 text-right font-medium text-slate-800">{formatCurrency(t.valor)}</td>
+                      <td className="px-2 py-1 text-right text-slate-600">{formatDate(t.vencimento)}</td>
+                      <td className="px-2 py-1 text-right text-red-600 font-medium">{t.diasVencidos}d</td>
+                      <td className="px-2 py-1">
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${style.bg} ${style.text}`}>
+                          {t.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function ClientSearchCard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
@@ -205,6 +336,8 @@ export function ClientSearchCard() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [tituloFilter, setTituloFilter] = useState<TituloFilter>("todos");
   const [tituloSort, setTituloSort] = useState<TituloSort>("vencimento_asc");
+  // Tipo filters for Valor a Receber
+  const [tiposFilter, setTiposFilter] = useState<string[]>(["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"]);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     orders: true,
     receivables: true,
@@ -222,8 +355,9 @@ export function ClientSearchCard() {
     { enabled: searchQuery.length >= 1 }
   );
 
+  const tiposFilterStable = useMemo(() => tiposFilter, [tiposFilter.join(",")]);
   const { data: clientSummary, isLoading: isLoadingSummary } = trpc.sales.getClientSummary.useQuery(
-    { clienteName: selectedClient || "" },
+    { clienteName: selectedClient || "", tiposFilter: tiposFilterStable as any },
     { enabled: !!selectedClient }
   );
 
@@ -247,6 +381,18 @@ export function ClientSearchCard() {
     setExpanded(false);
     setTituloFilter("todos");
     setTituloSort("vencimento_asc");
+    setTiposFilter(["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"]);
+  };
+
+  const toggleTipoFilter = (tipo: string) => {
+    setTiposFilter(prev => {
+      if (prev.includes(tipo)) {
+        // Don't allow unchecking all
+        if (prev.length === 1) return prev;
+        return prev.filter(t => t !== tipo);
+      }
+      return [...prev, tipo];
+    });
   };
 
   const handleSelectClient = (clientName: string) => {
@@ -545,17 +691,49 @@ export function ClientSearchCard() {
                 </div>
               </div>
 
-              {/* VALOR A RECEBER - Destaque principal */}
-              {clientSummary.receivables.valorAReceber > 0 && (
-                <ValorAReceberPanel receivables={clientSummary.receivables} />
-              )}
+              {/* VALOR A RECEBER - Destaque principal com filtros de tipo */}
+              <div className="space-y-2">
+                {/* Tipo Filter Checkboxes */}
+                <div className="flex items-center gap-4 flex-wrap bg-slate-50 rounded-lg px-4 py-2 border border-slate-200">
+                  <span className="text-xs font-semibold text-slate-600 mr-1">Filtrar tipos:</span>
+                  {[
+                    { key: "TITULO", label: "Títulos" },
+                    { key: "RECEITA", label: "Receitas" },
+                    { key: "ADIANTAMENTO", label: "Adiantamentos" },
+                    { key: "TITULO_PEDIDO_DE_VENDA", label: "Pedidos de Venda" },
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-1.5 cursor-pointer">
+                      <Checkbox
+                        checked={tiposFilter.includes(key)}
+                        onCheckedChange={() => toggleTipoFilter(key)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span className="text-xs text-slate-600">{label}</span>
+                    </label>
+                  ))}
+                </div>
 
-              {/* Inadimplência */}
-              {clientSummary.overdue.titulosVencidos > 0 ? (
+                {clientSummary.receivables.valorAReceber > 0 && (
+                  <ValorAReceberPanel receivables={clientSummary.receivables} />
+                )}
+                {clientSummary.receivables.valorAReceber === 0 && (
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <div className="flex items-center gap-2 text-sm text-green-700 font-semibold">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      Nenhum valor a receber para os tipos selecionados
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Inadimplência - dados da Planilha de Cobrança */}
+              {clientSummary.inadimplencia?.isInadimplente ? (
+                <InadimplenciaPanel inadimplencia={clientSummary.inadimplencia} overdue={clientSummary.overdue} />
+              ) : clientSummary.overdue.titulosVencidos > 0 ? (
                 <div className="bg-red-100 rounded-lg p-3 border-2 border-red-400 shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs text-red-700 font-semibold mb-1">
                     <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
-                    Inadimplência
+                    Títulos Vencidos
                   </div>
                   <div className="text-xl font-bold text-red-800">{formatCurrency(clientSummary.overdue.valorVencido)}</div>
                   <div className="text-xs text-red-600 mt-0.5">

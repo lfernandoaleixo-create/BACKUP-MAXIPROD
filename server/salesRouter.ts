@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -1500,11 +1500,16 @@ export const salesRouter = router({
     }),
 
   getClientSummary: publicProcedure
-    .input(z.object({ clienteName: z.string() }))
+    .input(z.object({
+      clienteName: z.string(),
+      tiposFilter: z.array(z.enum(["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"])).optional(),
+    }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return null;
       const cn = input.clienteName;
+      // Filtro de tipos: se não fornecido, buscar todos
+      const tiposFilter = input.tiposFilter || ["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"];
 
       const allOrders = await db.select().from(salesOrders)
         .where(eq(salesOrders.cliente, cn))
@@ -2061,17 +2066,18 @@ export const salesRouter = router({
       // 3) Valor a Receber total = Títulos em aberto + Títulos descontados
       let valorEmAbertoLive = 0;
       let valorDescontados = 0;
-      let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string }> = [];
-      let titulosDescontados: Array<{ valorOriginal: number; situacao: string; formaCobranca: string; vencimento: string; documento: string; parcela: string; liquidacao: string }> = [];
+      let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string; tipo: string }> = [];
+      let titulosDescontados: Array<{ valorOriginal: number; situacao: string; formaCobranca: string; vencimento: string; documento: string; parcela: string; liquidacao: string; tipo: string }> = [];
       try {
         const apelido = clientInfo.apelido || "";
         const razaoSocial = clientInfo.razaoSocial || cn;
         const searchTerm = apelido || razaoSocial;
         if (searchTerm) {
-          // 1) Buscar TODOS os títulos EMITIDO do cliente (sem filtro de tipo)
-          //    No Maxiprod, "marcar apenas Títulos" no filtro mostra TITULO + RECEITA + TITULO_PEDIDO_DE_VENDA
+          // 1) Buscar TODOS os títulos EMITIDO do cliente
+          //    Aplicar filtro de tipo via GraphQL enum: tipo: { in: [TITULO, RECEITA, ...] }
+          const tipoFilterStr = tiposFilter.join(", ");
           const emitidosLiveData = await gql<any>(`{
-            contaAReceber(skip: 0, take: 500, where: { estado: { eq: EMITIDO }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
+            contaAReceber(skip: 0, take: 500, where: { estado: { eq: EMITIDO }, tipo: { in: [${tipoFilterStr}] }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
               totalCount
               items {
                 id valorOriginal valorLiquido valorRecebidoLiquido vencimentoData documentoVinculadoNumero parcela tipo
@@ -2080,9 +2086,9 @@ export const salesRouter = router({
           }`);
           if (emitidosLiveData?.contaAReceber?.items?.length) {
             for (const item of emitidosLiveData.contaAReceber.items) {
-              const valorOrig = parseFloat(item.valorOriginal || "0");
+              const valorLiq = parseFloat(item.valorLiquido || item.valorOriginal || "0");
               const valorRecebido = parseFloat(item.valorRecebidoLiquido || "0");
-              const valorAReceberTitulo = valorOrig - valorRecebido;
+              const valorAReceberTitulo = valorLiq - valorRecebido;
               if (valorAReceberTitulo <= 0) continue; // título já pago integralmente
               valorEmAbertoLive += valorAReceberTitulo;
               titulosEmAbertoLive.push({
@@ -2090,6 +2096,7 @@ export const salesRouter = router({
                 vencimento: item.vencimentoData || "",
                 documento: item.documentoVinculadoNumero || "",
                 parcela: item.parcela || "",
+                tipo: item.tipo || "",
               });
             }
           }
@@ -2099,11 +2106,11 @@ export const salesRouter = router({
           //    BOLETO DESCONTADO SICOOB, BOLETO DESCONTADO SICREDI, CHEQUE DESCONTADO FACTORING
           //    Situação VAZIA = cliente realmente pagou → NÃO contar
           const recebidosData = await gql<any>(`{
-            contaAReceber(skip: 0, take: 500, where: { estado: { eq: RECEBIDO }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
+            contaAReceber(skip: 0, take: 500, where: { estado: { eq: RECEBIDO }, tipo: { in: [${tipoFilterStr}] }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
               totalCount
               items {
                 id valorOriginal valorLiquido valorRecebidoLiquido
-                vencimentoData liquidacaoData documentoVinculadoNumero parcela
+                vencimentoData liquidacaoData documentoVinculadoNumero parcela tipo
                 campoAdicionalEspecifico { tag valor descricao }
                 formaDeCobranca { meioDePagamento banco { descricao } }
               }
@@ -2119,18 +2126,19 @@ export const salesRouter = router({
               // Apenas contar como descontado se situação está preenchida
               // (BOLETO DESCONTADO BRADESCO/FACTORING/SICOOB/SICREDI, CHEQUE DESCONTADO FACTORING)
               if (situacaoCampo && situacaoCampo.valor && String(situacaoCampo.valor).trim()) {
-                const valorOrig = parseFloat(item.valorOriginal || "0");
-                valorDescontados += valorOrig;
+                const valorLiq = parseFloat(item.valorLiquido || item.valorOriginal || "0");
+                valorDescontados += valorLiq;
                 const banco = item.formaDeCobranca?.banco?.descricao || "";
                 const meio = item.formaDeCobranca?.meioDePagamento || "";
                 titulosDescontados.push({
-                  valorOriginal: Math.round(valorOrig * 100) / 100,
+                  valorOriginal: Math.round(valorLiq * 100) / 100,
                   situacao: String(situacaoCampo.valor).trim(),
                   formaCobranca: `${meio} ${banco}`.trim(),
                   vencimento: item.vencimentoData || "",
                   documento: item.documentoVinculadoNumero || "",
                   parcela: item.parcela || "",
                   liquidacao: item.liquidacaoData || "",
+                  tipo: item.tipo || "",
                 });
               }
               // Se situação vazia → cliente pagou de verdade → não contar
@@ -2229,8 +2237,40 @@ export const salesRouter = router({
         valorEmAberto = valorEmAbertoLive;
       }
 
+      // ===== INADIMPLÊNCIA: buscar status da Planilha de Cobrança =====
+      let inadimplencia: { isInadimplente: boolean; titulos: Array<{ documento: string; valor: number; vencimento: string; diasVencidos: number; status: string; tipo: string | null }>; totalValor: number; totalTitulos: number } = {
+        isInadimplente: false,
+        titulos: [],
+        totalValor: 0,
+        totalTitulos: 0,
+      };
+      try {
+        // Buscar na cobranca_planilha por nome da empresa (case-insensitive via LIKE)
+        const cobrancaRows = await db.select().from(cobrancaPlanilha)
+          .where(and(
+            eq(cobrancaPlanilha.ativo, true),
+            like(cobrancaPlanilha.empresa, `%${cn}%`)
+          ));
+        if (cobrancaRows.length > 0) {
+          inadimplencia.isInadimplente = true;
+          inadimplencia.totalTitulos = cobrancaRows.length;
+          inadimplencia.totalValor = cobrancaRows.reduce((s, r) => s + parseFloat(String(r.valor || "0")), 0);
+          inadimplencia.titulos = cobrancaRows.map(r => ({
+            documento: r.documento || "",
+            valor: parseFloat(String(r.valor || "0")),
+            vencimento: r.vencimento || "",
+            diasVencidos: r.diasVencidos || 0,
+            status: r.status || "Pendente",
+            tipo: r.tipo || null,
+          }));
+        }
+      } catch (err: any) {
+        console.error('[getClientSummary] Error fetching inadimplência:', err.message);
+      }
+
       return {
         clientInfo,
+        inadimplencia,
         orders: {
           totalPedidos,
           valorTotalPedidos: Math.round(valorTotalPedidos * 100) / 100,

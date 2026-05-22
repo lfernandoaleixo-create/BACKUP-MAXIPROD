@@ -190,4 +190,58 @@ describe("sales.getClientSummary", () => {
       await db.delete(accountsReceivable).where(eq(accountsReceivable.cliente, testClient));
     }
   }, 15000);
+
+  it("accepts optional tiposFilter parameter without error", async () => {
+    const result = await caller.sales.getClientSummary({
+      clienteName: "CLIENTE_INEXISTENTE_XYZ_12345",
+      tiposFilter: ["TITULO"],
+    });
+    expect(result).toBeDefined();
+    if (result) {
+      expect(result.orders.totalPedidos).toBe(0);
+      // Should still have receivables structure
+      expect(result.receivables).toBeDefined();
+      expect(result.receivables.valorAReceber).toBeDefined();
+    }
+  }, 15000);
+
+  it("accepts all tipo filter values", async () => {
+    const result = await caller.sales.getClientSummary({
+      clienteName: "CLIENTE_INEXISTENTE_XYZ_12345",
+      tiposFilter: ["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"],
+    });
+    expect(result).toBeDefined();
+    if (result) {
+      expect(result.receivables).toBeDefined();
+      expect(result.receivables.valorEmAbertoLive).toBeDefined();
+      expect(result.receivables.valorDescontados).toBeDefined();
+    }
+  }, 15000);
+
+  it("returns inadimplencia field in response", async () => {
+    const result = await caller.sales.getClientSummary({
+      clienteName: "CLIENTE_INEXISTENTE_XYZ_12345",
+    });
+    expect(result).toBeDefined();
+    if (result) {
+      // inadimplencia should always be present
+      expect(result.inadimplencia).toBeDefined();
+      expect(result.inadimplencia.isInadimplente).toBe(false);
+      expect(result.inadimplencia.titulos).toEqual([]);
+      expect(result.inadimplencia.totalValor).toBe(0);
+      expect(result.inadimplencia.totalTitulos).toBe(0);
+    }
+  }, 15000);
+
+  it("works without tiposFilter (backward compatible)", async () => {
+    const result = await caller.sales.getClientSummary({
+      clienteName: "CLIENTE_INEXISTENTE_XYZ_12345",
+    });
+    expect(result).toBeDefined();
+    if (result) {
+      expect(result.orders).toBeDefined();
+      expect(result.receivables).toBeDefined();
+      expect(result.inadimplencia).toBeDefined();
+    }
+  }, 15000);
 });
