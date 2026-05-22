@@ -2059,62 +2059,65 @@ export const salesRouter = router({
       // ===== VALOR A RECEBER: usar dados do banco local (sincronizado do Maxiprod) =====
       // Fonte: tabela accounts_receivable, campo 'cliente' = razaoSocial (exato)
       // Isso funciona para TODOS os clientes, sem depender de busca por nomeFantasia no GraphQL
-      // Lógica:
-      // 1) Títulos em aberto = estado EMITIDO, todos os tipos, com saldo > 0
-      //    Valor = valorLiquido - valorRecebidoLiquido
-      // 2) Títulos descontados = estado RECEBIDO, com campo decisaoCobranca preenchido
-      //    (BOLETO DESCONTADO BRADESCO/FACTORING/SICOOB/SICREDI, CHEQUE DESCONTADO FACTORING)
-      //    decisaoCobranca VAZIA ou tipo "SEM PROTESTO"/"COM PROTESTO" = realmente pagos → ignorar
-      // 3) Valor a Receber total = Títulos em aberto + Títulos descontados
+      // LÓGICA VALOR A RECEBER:
+      //    Tudo vem do estado EMITIDO (= "A Receber" no Maxiprod)
+      //    Títulos RECEBIDO não entram em nada (cliente já pagou)
+      // LÓGICA:
+      //   - Títulos em aberto: EMITIDO com situacaoTitulo VAZIO (sem desconto)
+      //   - Títulos descontados: EMITIDO com situacaoTitulo PREENCHIDO (BOLETO DESCONTADO SICOOB, etc.)
+      //     Esses títulos o banco já nos pagou, mas o cliente ainda deve ao banco
+      //     Para nós, o valor já foi recebido, mas é importante saber que existem
+      //   - Valor a Receber = somente títulos em aberto SEM desconto (o que o cliente deve diretamente a nós)
+      //   - Títulos descontados são mostrados separadamente para informação
       let valorEmAbertoLive = 0;
       let valorDescontados = 0;
       let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string; tipo: string; situacao: string }> = [];
       let titulosDescontados: Array<{ valorOriginal: number; situacao: string; formaCobranca: string; vencimento: string; documento: string; parcela: string; liquidacao: string; tipo: string }> = [];
       try {
-        // 1) Títulos em aberto (EMITIDO) do banco local
+        // Somente EMITIDO (= "A Receber" no Maxiprod)
         const emitidosLocal = allReceivables.filter(r => r.estado === "EMITIDO");
         for (const r of emitidosLocal) {
           const valorLiq = parseFloat(r.valorLiquido || r.valorOriginal || "0");
           const valorRecebido = parseFloat(r.valorRecebidoLiquido || "0");
           const saldo = valorLiq - valorRecebido;
           if (saldo <= 0) continue;
-          valorEmAbertoLive += saldo;
-          titulosEmAbertoLive.push({
-            valorOriginal: Math.round(saldo * 100) / 100,
-            vencimento: r.vencimentoData || "",
-            documento: r.documentoVinculadoNumero || "",
-            parcela: r.parcela ? String(r.parcela) : "",
-            tipo: r.tipo || "",
-            situacao: r.situacaoTitulo || "",
-          });
-        }
-
-        // 2) Títulos descontados (RECEBIDO com situação de desconto preenchida)
-        //    situacaoTitulo contém: BOLETO DESCONTADO BRADESCO, BOLETO DESCONTADO FACTORING, etc.
-        //    Se situacaoTitulo vazio → cliente realmente pagou → ignorar
-        const recebidosLocal = allReceivables.filter(r => r.estado === "RECEBIDO");
-        for (const r of recebidosLocal) {
+          
           const situacao = (r.situacaoTitulo || "").trim();
-          // Se situacaoTitulo está vazio, o cliente realmente pagou - ignorar
-          if (!situacao) continue;
-          const valorLiq = parseFloat(r.valorLiquido || r.valorOriginal || "0");
-          valorDescontados += valorLiq;
-          titulosDescontados.push({
-            valorOriginal: Math.round(valorLiq * 100) / 100,
-            situacao: situacao,
-            formaCobranca: r.formaCobranca || "",
-            vencimento: r.vencimentoData || "",
-            documento: r.documentoVinculadoNumero || "",
-            parcela: r.parcela ? String(r.parcela) : "",
-            liquidacao: r.liquidacaoData || "",
-            tipo: r.tipo || "",
-          });
+          
+          if (situacao) {
+            // Título descontado: tem situação preenchida (BOLETO DESCONTADO SICOOB, etc.)
+            // O banco já nos pagou, mas o cliente ainda deve ao banco
+            valorDescontados += saldo;
+            titulosDescontados.push({
+              valorOriginal: Math.round(saldo * 100) / 100,
+              situacao: situacao,
+              formaCobranca: r.formaCobranca || "",
+              vencimento: r.vencimentoData || "",
+              documento: r.documentoVinculadoNumero || "",
+              parcela: r.parcela ? String(r.parcela) : "",
+              liquidacao: r.liquidacaoData || "",
+              tipo: r.tipo || "",
+            });
+          } else {
+            // Título em aberto normal: cliente deve diretamente a nós
+            valorEmAbertoLive += saldo;
+            titulosEmAbertoLive.push({
+              valorOriginal: Math.round(saldo * 100) / 100,
+              vencimento: r.vencimentoData || "",
+              documento: r.documentoVinculadoNumero || "",
+              parcela: r.parcela ? String(r.parcela) : "",
+              tipo: r.tipo || "",
+              situacao: "",
+            });
+          }
         }
       } catch (err: any) {
         console.error('[getClientSummary] Error computing valor a receber from local DB:', err.message);
       }
 
       // Valor a Receber total = em aberto + descontados
+      // Descontados: o banco nos pagou, mas o cliente deve ao banco. Para fins de crédito,
+      // o cliente ainda tem dívida pendente (com o banco, não conosco diretamente)
       const valorAReceber = valorEmAbertoLive + valorDescontados;
 
       // ===== RECONSTRUIR groupedReceivables a partir dos dados LIVE =====

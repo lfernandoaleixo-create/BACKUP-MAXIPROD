@@ -3945,3 +3945,5 @@
 - [x] Consulta Cliente: campo situacaoTitulo (BOLETO DESCONTADO SICOOB, etc.) extraído do campoAdicionalEspecifico tag "Situacao" do título
 - [x] Sync: buscar títulos RECEBIDO do GraphQL para preencher situacaoTitulo nos registros locais
 - [x] Consulta Cliente: títulos descontados detectados por situacaoTitulo não-vazio (em vez de decisaoCobranca)
+- [x] Consulta Cliente: corrigir lógica - títulos descontados vêm de EMITIDO com situacaoTitulo preenchido (não de RECEBIDO)
+- [x] Consulta Cliente: RECEBIDO não entra em nenhum cálculo (cliente já pagou)
