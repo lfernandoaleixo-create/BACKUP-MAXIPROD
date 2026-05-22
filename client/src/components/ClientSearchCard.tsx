@@ -267,8 +267,8 @@ export function ClientSearchCard() {
     // Filter
     if (tituloFilter === "aberto") {
       groups = groups.filter(g => {
-        const allRecebido = g.titulos.every(t => t.estado === "RECEBIDO");
-        return !allRecebido; // Keep groups that have at least one non-RECEBIDO
+        // Manter grupos que têm pelo menos um título EMITIDO ou DESCONTADO (ainda a receber)
+        return g.titulos.some(t => t.estado === "EMITIDO" || t.estado === "DESCONTADO");
       });
     } else if (tituloFilter === "pago") {
       groups = groups.filter(g => {
@@ -308,7 +308,7 @@ export function ClientSearchCard() {
   const filterCounts = useMemo(() => {
     if (!clientSummary?.groupedReceivables) return { todos: 0, aberto: 0, pago: 0 };
     const all = clientSummary.groupedReceivables;
-    const aberto = all.filter(g => !g.titulos.every(t => t.estado === "RECEBIDO")).length;
+    const aberto = all.filter(g => g.titulos.some(t => t.estado === "EMITIDO" || t.estado === "DESCONTADO")).length;
     const pago = all.filter(g => g.titulos.every(t => t.estado === "RECEBIDO") && g.isFaturado).length;
     return { todos: all.length, aberto, pago };
   }, [clientSummary?.groupedReceivables]);
@@ -954,12 +954,16 @@ function TituloGroupCard({ group }: {
   const [expanded, setExpanded] = useState(false);
 
   // Determine overall status of the group
+  // DESCONTADO = título que foi descontado em banco mas ainda é dívida do cliente
   const allRecebido = group.titulos.every(t => t.estado === "RECEBIDO");
-  const someEmitido = group.titulos.some(t => t.estado === "EMITIDO");
+  const someEmitido = group.titulos.some(t => t.estado === "EMITIDO" || t.estado === "DESCONTADO");
   const pedidoFaturado = group.isFaturado === true;
+  const hasDescontado = group.titulos.some(t => t.estado === "DESCONTADO");
   
-  let groupStatus: "RECEBIDO" | "EMITIDO" | "MISTO";
-  if (!pedidoFaturado) {
+  let groupStatus: "RECEBIDO" | "EMITIDO" | "DESCONTADO" | "MISTO";
+  if (hasDescontado && !group.titulos.some(t => t.estado === "EMITIDO")) {
+    groupStatus = "DESCONTADO";
+  } else if (!pedidoFaturado || someEmitido) {
     groupStatus = "EMITIDO";
   } else {
     groupStatus = allRecebido ? "RECEBIDO" : someEmitido ? "EMITIDO" : "MISTO";
@@ -970,7 +974,7 @@ function TituloGroupCard({ group }: {
 
   // Get earliest vencimento for "days until" badge
   const earliestVenc = group.titulos
-    .filter(t => t.estado === "EMITIDO" && t.vencimento)
+    .filter(t => (t.estado === "EMITIDO" || t.estado === "DESCONTADO") && t.vencimento)
     .map(t => t.vencimento)
     .sort()[0];
   const daysUntilVenc = earliestVenc ? daysUntil(earliestVenc) : null;
@@ -978,18 +982,24 @@ function TituloGroupCard({ group }: {
   // Colors based on status
   const statusColor = groupStatus === "RECEBIDO"
     ? "border-emerald-200 bg-emerald-50/50"
+    : groupStatus === "DESCONTADO"
+    ? "border-purple-200 bg-purple-50/50"
     : groupStatus === "EMITIDO"
     ? "border-amber-200 bg-amber-50/50"
     : "border-slate-200 bg-slate-50/50";
 
   const statusBadgeColor = groupStatus === "RECEBIDO"
     ? "bg-emerald-100 text-emerald-700"
+    : groupStatus === "DESCONTADO"
+    ? "bg-purple-100 text-purple-700"
     : groupStatus === "EMITIDO"
     ? "bg-amber-100 text-amber-700"
     : "bg-slate-100 text-slate-600";
 
   const statusLabel = groupStatus === "RECEBIDO"
     ? "Pago"
+    : groupStatus === "DESCONTADO"
+    ? "Descontado"
     : groupStatus === "EMITIDO"
     ? "Em Aberto"
     : "Parcial";
@@ -1130,7 +1140,7 @@ function TituloGroupCard({ group }: {
                 {group.titulos
                   .sort((a, b) => (a.vencimento || "").localeCompare(b.vencimento || ""))
                   .map((t, tIdx) => {
-                    const days = t.estado === "EMITIDO" ? daysUntil(t.vencimento) : null;
+                    const days = (t.estado === "EMITIDO" || t.estado === "DESCONTADO") ? daysUntil(t.vencimento) : null;
                     return (
                       <tr key={tIdx} className={`border-b border-slate-100 last:border-0 ${
                         t.estado === "RECEBIDO" ? "bg-emerald-50/30 hover:bg-emerald-50" : "hover:bg-slate-50"
@@ -1164,12 +1174,15 @@ function TituloGroupCard({ group }: {
                             (!pedidoFaturado)
                               ? "bg-amber-100 text-amber-700"
                               : t.estado === "RECEBIDO" ? "bg-emerald-100 text-emerald-700"
+                              : t.estado === "DESCONTADO" ? "bg-purple-100 text-purple-700"
                               : t.estado === "EMITIDO" ? "bg-amber-100 text-amber-700"
                               : "bg-red-100 text-red-700"
                           }`}>
                             {(!pedidoFaturado)
                               ? "Em Aberto"
-                              : t.estado === "RECEBIDO" ? "Pago" : t.estado === "EMITIDO" ? "Em Aberto" : t.estado}
+                              : t.estado === "RECEBIDO" ? "Pago" 
+                              : t.estado === "DESCONTADO" ? "Descontado"
+                              : t.estado === "EMITIDO" ? "Em Aberto" : t.estado}
                           </span>
                         </td>
                       </tr>

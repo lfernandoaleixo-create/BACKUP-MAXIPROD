@@ -3930,3 +3930,7 @@
 - [x] Frontend: gestor vê todos os catálogos com checkboxes por vendedor
 - [x] Frontend: vendedor vê apenas catálogos liberados para ele
 - [x] Planilha de Cobrança: puxar TODAS as informações do Maxiprod para clientes novos (CNPJ/CPF, Município, UF, Contato, Email, Telefones) igual aos clientes antigos
+- [x] Consulta Cliente: corrigir Valor a Receber - buscar de Contas a Receber estado A_RECEBER tipo Títulos (não mais de sales_orders)
+- [x] Consulta Cliente: Títulos em aberto = mesmo valor que Valor a Receber base (Contas a Receber estado A_RECEBER)
+- [x] Consulta Cliente: Títulos descontados = Contas a Receber estado RECEBIDOS tipo Títulos com situação preenchida (BOLETO DESCONTADO BRADESCO/FACTORING/SICOOB/SICREDI, CHEQUE DESCONTADO FACTORING)
+- [x] Consulta Cliente: Valor a Receber total = Títulos em aberto + Títulos descontados

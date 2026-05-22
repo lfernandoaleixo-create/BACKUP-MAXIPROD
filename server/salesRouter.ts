@@ -2052,8 +2052,13 @@ export const salesRouter = router({
       }));
 
       // ===== VALOR A RECEBER: buscar AO VIVO do Maxiprod =====
-      // O banco local pode estar desatualizado (títulos já pagos ainda como EMITIDO)
-      // Buscar direto do Maxiprod para ter o valor correto
+      // Lógica correta conforme Maxiprod:
+      // 1) Títulos em aberto = Contas a Receber, estado EMITIDO (todos os tipos: TITULO, RECEITA, TITULO_PEDIDO_DE_VENDA)
+      //    Valor = valorOriginal - valorRecebidoLiquido (para cada título com saldo > 0)
+      // 2) Títulos descontados = Contas a Receber, estado RECEBIDO, com campo "Situação" preenchido
+      //    (BOLETO DESCONTADO BRADESCO/FACTORING/SICOOB/SICREDI, CHEQUE DESCONTADO FACTORING)
+      //    Títulos RECEBIDO com situação VAZIA = realmente pagos pelo cliente → ignorar
+      // 3) Valor a Receber total = Títulos em aberto + Títulos descontados
       let valorEmAbertoLive = 0;
       let valorDescontados = 0;
       let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string }> = [];
@@ -2063,12 +2068,13 @@ export const salesRouter = router({
         const razaoSocial = clientInfo.razaoSocial || cn;
         const searchTerm = apelido || razaoSocial;
         if (searchTerm) {
-          // 1) Buscar títulos EMITIDO ao vivo do Maxiprod
+          // 1) Buscar TODOS os títulos EMITIDO do cliente (sem filtro de tipo)
+          //    No Maxiprod, "marcar apenas Títulos" no filtro mostra TITULO + RECEITA + TITULO_PEDIDO_DE_VENDA
           const emitidosLiveData = await gql<any>(`{
             contaAReceber(skip: 0, take: 500, where: { estado: { eq: EMITIDO }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
               totalCount
               items {
-                id valorOriginal valorLiquido valorRecebidoLiquido vencimentoData documentoVinculadoNumero parcela
+                id valorOriginal valorLiquido valorRecebidoLiquido vencimentoData documentoVinculadoNumero parcela tipo
               }
             }
           }`);
@@ -2088,7 +2094,10 @@ export const salesRouter = router({
             }
           }
 
-          // 2) Buscar títulos RECEBIDO com Situação preenchida (descontados)
+          // 2) Buscar títulos RECEBIDO e filtrar apenas os com Situação preenchida (descontados)
+          //    Situações válidas: BOLETO DESCONTADO BRADESCO, BOLETO DESCONTADO FACTORING,
+          //    BOLETO DESCONTADO SICOOB, BOLETO DESCONTADO SICREDI, CHEQUE DESCONTADO FACTORING
+          //    Situação VAZIA = cliente realmente pagou → NÃO contar
           const recebidosData = await gql<any>(`{
             contaAReceber(skip: 0, take: 500, where: { estado: { eq: RECEBIDO }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
               totalCount
@@ -2097,7 +2106,6 @@ export const salesRouter = router({
                 vencimentoData liquidacaoData documentoVinculadoNumero parcela
                 campoAdicionalEspecifico { tag valor descricao }
                 formaDeCobranca { meioDePagamento banco { descricao } }
-                cliente { nomeFantasia razaoSocial }
               }
             }
           }`);
@@ -2105,9 +2113,11 @@ export const salesRouter = router({
             for (const item of recebidosData.contaAReceber.items) {
               const campos = item.campoAdicionalEspecifico || [];
               const situacaoCampo = campos.find((c: any) => {
-                const tag = (c.tag || '').trim();
-                return tag === 'Situacao' || tag === 'situacao' || tag === 'SITUACAO';
+                const tag = (c.tag || '').trim().toLowerCase();
+                return tag === 'situacao';
               });
+              // Apenas contar como descontado se situação está preenchida
+              // (BOLETO DESCONTADO BRADESCO/FACTORING/SICOOB/SICREDI, CHEQUE DESCONTADO FACTORING)
               if (situacaoCampo && situacaoCampo.valor && String(situacaoCampo.valor).trim()) {
                 const valorOrig = parseFloat(item.valorOriginal || "0");
                 valorDescontados += valorOrig;
@@ -2123,6 +2133,7 @@ export const salesRouter = router({
                   liquidacao: item.liquidacaoData || "",
                 });
               }
+              // Se situação vazia → cliente pagou de verdade → não contar
             }
           }
         }
@@ -2130,8 +2141,93 @@ export const salesRouter = router({
         console.error('[getClientSummary] Error fetching valor a receber live:', err.message);
       }
 
-      // Valor a Receber total = em aberto (live) + descontados
+      // Valor a Receber total = em aberto + descontados
       const valorAReceber = valorEmAbertoLive + valorDescontados;
+
+      // ===== RECONSTRUIR groupedReceivables a partir dos dados LIVE =====
+      // O groupedReceivables antigo (baseado em NFs de pedidos) pode ter dados inconsistentes.
+      // Usar os dados live (EMITIDO direto por cliente) para garantir que "Títulos em aberto" = "Valor a Receber"
+      if (titulosEmAbertoLive.length > 0 || titulosDescontados.length > 0) {
+        // Reconstruir groupedReceivables a partir dos títulos live
+        const liveGroupMap = new Map<string, Array<{ documento: string; parcela: string; valorOriginal: number; vencimento: string; estado: string; liquidacao?: string; situacao?: string; formaCobranca?: string }>>(); 
+        
+        // Adicionar títulos EMITIDO (em aberto)
+        for (const t of titulosEmAbertoLive) {
+          const key = t.documento || `solo_${Math.random().toString(36).slice(2)}`;
+          const existing = liveGroupMap.get(key) || [];
+          existing.push({
+            documento: t.documento,
+            parcela: t.parcela,
+            valorOriginal: t.valorOriginal,
+            vencimento: t.vencimento,
+            estado: "EMITIDO",
+          });
+          liveGroupMap.set(key, existing);
+        }
+        
+        // Adicionar títulos descontados (RECEBIDO com situação)
+        for (const t of titulosDescontados) {
+          const key = t.documento || `solo_desc_${Math.random().toString(36).slice(2)}`;
+          const existing = liveGroupMap.get(key) || [];
+          existing.push({
+            documento: t.documento,
+            parcela: t.parcela,
+            valorOriginal: t.valorOriginal,
+            vencimento: t.vencimento,
+            estado: "DESCONTADO",
+            liquidacao: t.liquidacao,
+            situacao: t.situacao,
+            formaCobranca: t.formaCobranca,
+          });
+          liveGroupMap.set(key, existing);
+        }
+        
+        // Reconstruir groupedReceivables com os dados live
+        const liveGroupedReceivables = Array.from(liveGroupMap.entries()).map(([groupKey, titulos]) => {
+          const valorTotalGrupo = titulos.reduce((s, t) => s + t.valorOriginal, 0);
+          const docNumClean = groupKey.startsWith("solo_") ? "" : groupKey;
+          // Verificar se é um pedido
+          const isPedido = allPedidoNumbers.has(docNumClean);
+          const pedidoOrigem = nfNumToPedidoNum.get(docNumClean);
+          const pedidoNum = isPedido ? docNumClean : (pedidoOrigem || "");
+          const estadoPedido = pedidoNum ? (pedidoEstadoMap.get(pedidoNum) || "") : "";
+          const isFaturado = estadoPedido === "Faturado";
+          const nfVinculada = isPedido ? (pedidoToNf.get(docNumClean) || []) : [];
+          return {
+            documento: docNumClean,
+            isPedido: isPedido || !!pedidoOrigem,
+            pedidoNumero: pedidoNum,
+            estadoPedido,
+            isFaturado,
+            nfVinculada,
+            valorTotalGrupo: Math.round(valorTotalGrupo * 100) / 100,
+            valorRecebidoGrupo: 0,
+            parcelas: titulos.length,
+            titulos: titulos.map((t, idx) => ({
+              id: idx,
+              documento: t.documento,
+              nfNumero: t.documento,
+              emissao: "",
+              vencimento: t.vencimento,
+              liquidacao: t.liquidacao || "",
+              valorOriginal: t.valorOriginal,
+              valorRecebido: 0,
+              estado: t.estado,
+              parcela: t.parcela ? parseInt(t.parcela) || null : null,
+              totalParcelas: null as number | null,
+              referente: "",
+              bancoNome: t.formaCobranca || "",
+            })),
+          };
+        }).filter(g => g.valorTotalGrupo > 0.01);
+        
+        // Substituir groupedReceivables pelos dados live
+        groupedReceivables.length = 0;
+        groupedReceivables.push(...liveGroupedReceivables);
+        
+        // Atualizar valorEmAberto para bater com valorEmAbertoLive
+        valorEmAberto = valorEmAbertoLive;
+      }
 
       return {
         clientInfo,
