@@ -1502,14 +1502,14 @@ export const salesRouter = router({
   getClientSummary: publicProcedure
     .input(z.object({
       clienteName: z.string(),
-      tiposFilter: z.array(z.enum(["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"])).optional(),
+      tiposFilter: z.array(z.string()).optional(), // kept for backward compat, filtering done on frontend
     }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return null;
       const cn = input.clienteName;
-      // Sempre buscar TODOS os tipos - filtragem é feita no frontend para ser instantânea
-      const tiposFilter = ["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"];
+      // Filtragem de tipos é feita no frontend para ser instantânea
+      // Backend retorna TODOS os tipos do banco local
 
       const allOrders = await db.select().from(salesOrders)
         .where(eq(salesOrders.cliente, cn))
@@ -2056,104 +2056,64 @@ export const salesRouter = router({
         pedido: oi.numeroPedido || "",
       }));
 
-      // ===== VALOR A RECEBER: buscar AO VIVO do Maxiprod =====
-      // Lógica correta conforme Maxiprod:
-      // 1) Títulos em aberto = Contas a Receber, estado EMITIDO (todos os tipos: TITULO, RECEITA, TITULO_PEDIDO_DE_VENDA)
-      //    Valor = valorOriginal - valorRecebidoLiquido (para cada título com saldo > 0)
-      // 2) Títulos descontados = Contas a Receber, estado RECEBIDO, com campo "Situação" preenchido
+      // ===== VALOR A RECEBER: usar dados do banco local (sincronizado do Maxiprod) =====
+      // Fonte: tabela accounts_receivable, campo 'cliente' = razaoSocial (exato)
+      // Isso funciona para TODOS os clientes, sem depender de busca por nomeFantasia no GraphQL
+      // Lógica:
+      // 1) Títulos em aberto = estado EMITIDO, todos os tipos, com saldo > 0
+      //    Valor = valorLiquido - valorRecebidoLiquido
+      // 2) Títulos descontados = estado RECEBIDO, com campo decisaoCobranca preenchido
       //    (BOLETO DESCONTADO BRADESCO/FACTORING/SICOOB/SICREDI, CHEQUE DESCONTADO FACTORING)
-      //    Títulos RECEBIDO com situação VAZIA = realmente pagos pelo cliente → ignorar
+      //    decisaoCobranca VAZIA ou tipo "SEM PROTESTO"/"COM PROTESTO" = realmente pagos → ignorar
       // 3) Valor a Receber total = Títulos em aberto + Títulos descontados
       let valorEmAbertoLive = 0;
       let valorDescontados = 0;
       let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string; tipo: string; situacao: string }> = [];
       let titulosDescontados: Array<{ valorOriginal: number; situacao: string; formaCobranca: string; vencimento: string; documento: string; parcela: string; liquidacao: string; tipo: string }> = [];
       try {
-        const apelido = clientInfo.apelido || "";
-        const razaoSocial = clientInfo.razaoSocial || cn;
-        const searchTerm = apelido || razaoSocial;
-        if (searchTerm) {
-          // 1) Buscar TODOS os títulos EMITIDO do cliente
-          //    Aplicar filtro de tipo via GraphQL enum: tipo: { in: [TITULO, RECEITA, ...] }
-          const tipoFilterStr = tiposFilter.join(", ");
-          const emitidosLiveData = await gql<any>(`{
-            contaAReceber(skip: 0, take: 500, where: { estado: { eq: EMITIDO }, tipo: { in: [${tipoFilterStr}] }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
-              totalCount
-              items {
-                id valorOriginal valorLiquido valorRecebidoLiquido vencimentoData documentoVinculadoNumero parcela tipo
-                campoAdicionalEspecifico { tag valor }
-              }
-            }
-          }`);
-          if (emitidosLiveData?.contaAReceber?.items?.length) {
-            for (const item of emitidosLiveData.contaAReceber.items) {
-              const valorLiq = parseFloat(item.valorLiquido || item.valorOriginal || "0");
-              const valorRecebido = parseFloat(item.valorRecebidoLiquido || "0");
-              const valorAReceberTitulo = valorLiq - valorRecebido;
-              if (valorAReceberTitulo <= 0) continue; // título já pago integralmente
-              valorEmAbertoLive += valorAReceberTitulo;
-              const camposEmitido = item.campoAdicionalEspecifico || [];
-              const situacaoCampoEmitido = camposEmitido.find((c: any) => {
-                const tag = (c.tag || '').trim().toLowerCase();
-                return tag === 'situacao';
-              });
-              titulosEmAbertoLive.push({
-                valorOriginal: Math.round(valorAReceberTitulo * 100) / 100,
-                vencimento: item.vencimentoData || "",
-                documento: item.documentoVinculadoNumero || "",
-                parcela: item.parcela || "",
-                tipo: item.tipo || "",
-                situacao: situacaoCampoEmitido?.valor ? String(situacaoCampoEmitido.valor).trim() : "",
-              });
-            }
-          }
+        // 1) Títulos em aberto (EMITIDO) do banco local
+        const emitidosLocal = allReceivables.filter(r => r.estado === "EMITIDO");
+        for (const r of emitidosLocal) {
+          const valorLiq = parseFloat(r.valorLiquido || r.valorOriginal || "0");
+          const valorRecebido = parseFloat(r.valorRecebidoLiquido || "0");
+          const saldo = valorLiq - valorRecebido;
+          if (saldo <= 0) continue;
+          valorEmAbertoLive += saldo;
+          titulosEmAbertoLive.push({
+            valorOriginal: Math.round(saldo * 100) / 100,
+            vencimento: r.vencimentoData || "",
+            documento: r.documentoVinculadoNumero || "",
+            parcela: r.parcela ? String(r.parcela) : "",
+            tipo: r.tipo || "",
+            situacao: r.decisaoCobranca || "",
+          });
+        }
 
-          // 2) Buscar títulos RECEBIDO e filtrar apenas os com Situação preenchida (descontados)
-          //    Situações válidas: BOLETO DESCONTADO BRADESCO, BOLETO DESCONTADO FACTORING,
-          //    BOLETO DESCONTADO SICOOB, BOLETO DESCONTADO SICREDI, CHEQUE DESCONTADO FACTORING
-          //    Situação VAZIA = cliente realmente pagou → NÃO contar
-          const recebidosData = await gql<any>(`{
-            contaAReceber(skip: 0, take: 500, where: { estado: { eq: RECEBIDO }, tipo: { in: [${tipoFilterStr}] }, cliente: { nomeFantasia: { contains: "${searchTerm.replace(/"/g, '\\"')}" } } }) {
-              totalCount
-              items {
-                id valorOriginal valorLiquido valorRecebidoLiquido
-                vencimentoData liquidacaoData documentoVinculadoNumero parcela tipo
-                campoAdicionalEspecifico { tag valor descricao }
-                formaDeCobranca { meioDePagamento banco { descricao } }
-              }
-            }
-          }`);
-          if (recebidosData?.contaAReceber?.items?.length) {
-            for (const item of recebidosData.contaAReceber.items) {
-              const campos = item.campoAdicionalEspecifico || [];
-              const situacaoCampo = campos.find((c: any) => {
-                const tag = (c.tag || '').trim().toLowerCase();
-                return tag === 'situacao';
-              });
-              // Apenas contar como descontado se situação está preenchida
-              // (BOLETO DESCONTADO BRADESCO/FACTORING/SICOOB/SICREDI, CHEQUE DESCONTADO FACTORING)
-              if (situacaoCampo && situacaoCampo.valor && String(situacaoCampo.valor).trim()) {
-                const valorLiq = parseFloat(item.valorLiquido || item.valorOriginal || "0");
-                valorDescontados += valorLiq;
-                const banco = item.formaDeCobranca?.banco?.descricao || "";
-                const meio = item.formaDeCobranca?.meioDePagamento || "";
-                titulosDescontados.push({
-                  valorOriginal: Math.round(valorLiq * 100) / 100,
-                  situacao: String(situacaoCampo.valor).trim(),
-                  formaCobranca: `${meio} ${banco}`.trim(),
-                  vencimento: item.vencimentoData || "",
-                  documento: item.documentoVinculadoNumero || "",
-                  parcela: item.parcela || "",
-                  liquidacao: item.liquidacaoData || "",
-                  tipo: item.tipo || "",
-                });
-              }
-              // Se situação vazia → cliente pagou de verdade → não contar
-            }
-          }
+        // 2) Títulos descontados (RECEBIDO com situação de desconto preenchida)
+        //    decisaoCobranca contém: BOLETO DESCONTADO BRADESCO, BOLETO DESCONTADO FACTORING, etc.
+        //    Se vazio ou apenas COM/SEM PROTESTO → cliente realmente pagou → ignorar
+        const SITUACOES_DESCONTO = ['BOLETO DESCONTADO', 'CHEQUE DESCONTADO', 'FACTORING'];
+        const recebidosLocal = allReceivables.filter(r => r.estado === "RECEBIDO");
+        for (const r of recebidosLocal) {
+          const situacao = (r.decisaoCobranca || "").trim().toUpperCase();
+          // Verificar se é uma situação de desconto (não vazio, não apenas COM/SEM PROTESTO)
+          const isDesconto = situacao && SITUACOES_DESCONTO.some(s => situacao.includes(s));
+          if (!isDesconto) continue;
+          const valorLiq = parseFloat(r.valorLiquido || r.valorOriginal || "0");
+          valorDescontados += valorLiq;
+          titulosDescontados.push({
+            valorOriginal: Math.round(valorLiq * 100) / 100,
+            situacao: r.decisaoCobranca || "",
+            formaCobranca: r.formaCobranca || "",
+            vencimento: r.vencimentoData || "",
+            documento: r.documentoVinculadoNumero || "",
+            parcela: r.parcela ? String(r.parcela) : "",
+            liquidacao: r.liquidacaoData || "",
+            tipo: r.tipo || "",
+          });
         }
       } catch (err: any) {
-        console.error('[getClientSummary] Error fetching valor a receber live:', err.message);
+        console.error('[getClientSummary] Error computing valor a receber from local DB:', err.message);
       }
 
       // Valor a Receber total = em aberto + descontados

@@ -3940,3 +3940,5 @@
 - [x] Consulta Cliente: valor muda conforme filtros de tipo são marcados/desmarcados
 - [x] Consulta Cliente: mostrar status de inadimplência em tempo real (dados da Planilha de Cobrança)
 - [x] Consulta Cliente: mostrar coluna Situação nos títulos em aberto e descontados (Factoring, Bradesco, Sicoob, etc.)
+- [x] Consulta Cliente: usar banco local (accounts_receivable) como fonte primária para Valor a Receber em vez de busca GraphQL por nomeFantasia (funciona para TODOS os clientes)
+- [x] Consulta Cliente: incluir TITULO_PROPOSTA_DE_VENDA nos filtros de tipo
