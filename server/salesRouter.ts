@@ -1508,8 +1508,8 @@ export const salesRouter = router({
       const db = await getDb();
       if (!db) return null;
       const cn = input.clienteName;
-      // Filtro de tipos: se não fornecido, buscar todos
-      const tiposFilter = input.tiposFilter || ["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"];
+      // Sempre buscar TODOS os tipos - filtragem é feita no frontend para ser instantânea
+      const tiposFilter = ["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"];
 
       const allOrders = await db.select().from(salesOrders)
         .where(eq(salesOrders.cliente, cn))
