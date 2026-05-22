@@ -2278,3 +2278,4 @@ export const creditCardEntries = mysqlTable("credit_card_entries", {
 
 export type CreditCardEntry = typeof creditCardEntries.$inferSelect;
 export type InsertCreditCardEntry = typeof creditCardEntries.$inferInsert;
+

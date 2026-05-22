@@ -54,7 +54,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-type TabType = "estoque" | "clientes" | "tabela_precos" | "pedidos" | "vendas" | "configuracoes";
+type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes";
 
 interface DashboardItem {
   codigoItem: string;
@@ -136,6 +136,7 @@ export default function VendedorDetalhe() {
     { id: "estoque", label: "Estoque", icon: Package },
     { id: "clientes", label: "Cadastro de Cliente", icon: UserPlus },
     { id: "tabela_precos", label: "Tabela de Preços", icon: Tag },
+    { id: "catalogos", label: "Catálogos", icon: FolderOpen },
     { id: "pedidos", label: "Pedidos de Venda", icon: ShoppingCart },
     { id: "vendas", label: "Métrica de Vendas", icon: BarChart3 },
     { id: "configuracoes", label: "Configurações", icon: Settings },
@@ -220,6 +221,10 @@ export default function VendedorDetalhe() {
 
         {activeTab === "tabela_precos" && (
           <TabelaPrecosView sellerId={sellerId} sellerName={seller.sellerName} />
+        )}
+
+        {activeTab === "catalogos" && (
+          <SellerCatalogosView sellerId={sellerId} sellerName={seller.sellerName} />
         )}
 
         {activeTab === "pedidos" && (
@@ -1216,6 +1221,96 @@ function SellerCatalogsPanel({ sellerId, sellerName }: { sellerId: number; selle
           Catálogos salvos com sucesso! ({selectedCatalogs.size} selecionados)
         </p>
       )}
+    </div>
+  );
+}
+
+
+/**
+ * ============================================================
+ * ABA CATÁLOGOS - Mostra apenas os catálogos que o gestor liberou
+ * ============================================================
+ */
+function SellerCatalogosView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
+  const catalogsQuery = trpc.sales.listCatalogs.useQuery();
+  const sellerCatalogsQuery = trpc.sales.getSellerCatalogs.useQuery({ sellerId });
+
+  const visibleCatalogs = useMemo(() => {
+    if (!catalogsQuery.data || !sellerCatalogsQuery.data) return [];
+    const allowedIds = new Set(sellerCatalogsQuery.data);
+    return catalogsQuery.data.filter(c => allowedIds.has(c.id));
+  }, [catalogsQuery.data, sellerCatalogsQuery.data]);
+
+  const folders = useMemo(() => {
+    return Array.from(new Set(visibleCatalogs.map(c => c.folder)));
+  }, [visibleCatalogs]);
+
+  if (catalogsQuery.isLoading || sellerCatalogsQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <RefreshCw className="w-6 h-6 text-teal-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (visibleCatalogs.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8 text-center">
+        <FolderOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+        <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Nenhum catálogo disponível</h3>
+        <p className="text-xs text-slate-400">O gestor ainda não liberou catálogos para você. Entre em contato com seu gestor.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FolderOpen className="w-5 h-5 text-teal-600" />
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Catálogos</h2>
+          <span className="text-xs text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+            {visibleCatalogs.length} {visibleCatalogs.length === 1 ? 'arquivo' : 'arquivos'}
+          </span>
+        </div>
+      </div>
+
+      {folders.map(folder => (
+        <div key={folder} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 border-b border-slate-100 dark:border-slate-700">
+            <FolderOpen className="w-4 h-4 text-teal-600" />
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{folder}</span>
+            <span className="text-[10px] text-slate-400">
+              ({visibleCatalogs.filter(c => c.folder === folder).length} arquivos)
+            </span>
+          </div>
+          <div className="divide-y divide-slate-50 dark:divide-slate-700/50">
+            {visibleCatalogs.filter(c => c.folder === folder).map(catalog => (
+              <div
+                key={catalog.id}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+              >
+                <div className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-4.5 h-4.5 text-red-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{catalog.name}</p>
+                  <p className="text-[10px] text-slate-400">PDF • Catálogo de produtos</p>
+                </div>
+                <a
+                  href={catalog.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-xs font-medium rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-colors"
+                >
+                  <FileCheck className="w-3.5 h-3.5" />
+                  Abrir PDF
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

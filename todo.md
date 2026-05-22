@@ -3910,11 +3910,11 @@
 - [x] Remover card antigo 'Títulos Em Aberto' (local DB, valorOriginal incorreto, 50 títulos/R$501K) e usar apenas ValorAReceberPanel (live Maxiprod, valorAReceber correto, 38 títulos/R$365K) para todos os clientes
 - [x] Planilha de Cobrança: destaque visual (pulsante, borda vermelha/escura, shadow) nos cards 'Protestado' e 'Fundo Perdido' quando houver clientes
 - [x] Seção "Títulos (Contas a Receber)": corrigir valores para usar valorAReceber E filtrar títulos com saldo 0 (pagos) para alinhar com Maxiprod (38 títulos / R$ 365K)
-- [ ] Criar aba "Planilha de Cartões de Crédito" ao lado de Inadimplência
-- [ ] Schema DB: tabelas para cartões e lançamentos (despesas parceladas)
-- [ ] Backend tRPC: CRUD para cartões e lançamentos com controle de acesso (Guilherme/Flávio)
-- [ ] Frontend: planilha editável moderna com colunas de meses futuros (parcelas)
-- [ ] Controle de acesso: restringir apenas Guilherme e Flávio
+- [x] Criar aba "Planilha de Cartões de Crédito" ao lado de Inadimplência
+- [x] Schema DB: tabelas para cartões e lançamentos (despesas parceladas)
+- [x] Backend tRPC: CRUD para cartões e lançamentos com controle de acesso (Guilherme/Flávio)
+- [x] Frontend: planilha editável moderna com colunas de meses futuros (parcelas)
+- [x] Controle de acesso: restringir apenas Guilherme e Flávio
 - [x] Criar aba 'Planilha de Cartões de Crédito' ao lado da aba Inadimplência (acesso restrito Guilherme e Flávio)
 - [x] Backend: creditCardRouter com CRUD de cartões e lançamentos
 - [x] Frontend: CreditCardTab com planilha editável, colunas de meses, cálculo de parcelas
@@ -3922,3 +3922,10 @@
 - [x] Automatizar cálculo de mesInicio baseado na data de compra e dia de fechamento do cartão
 - [x] Remover campo manual de mesInicio e calcular automaticamente no backend
 - [x] Permitir quantos lançamentos quiser dentro de cada cartão
+- [x] Criar aba 'Catálogos' entre 'Tabela de Preços' e 'Pedidos de Venda'
+- [x] Schema: tabela catalogs (id, nome, fileUrl, fileKey, uploadedBy, createdAt)
+- [x] Schema: tabela catalog_seller_access (catalogId, sellerName, visible)
+- [x] Backend: CRUD catálogos (upload PDF, listar, deletar)
+- [x] Backend: gerenciar visibilidade por vendedor (checkbox)
+- [x] Frontend: gestor vê todos os catálogos com checkboxes por vendedor
+- [x] Frontend: vendedor vê apenas catálogos liberados para ele
