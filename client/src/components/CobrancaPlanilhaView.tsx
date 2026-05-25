@@ -894,19 +894,21 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
             <FileDown className="w-3.5 h-3.5" />
             Exportar PDF
           </button>
-          <button
-            onClick={handleSyncFromInadimplencia}
-            disabled={syncFromInadimplencia.isPending}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
-            title="Sincronizar títulos, valores, status e dias vencidos com a inadimplência (preserva marcações manuais)"
-          >
-            {syncFromInadimplencia.isPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5" />
-            )}
-            {syncFromInadimplencia.isPending ? "Sincronizando..." : "Sincronizar c/ Inadimplência"}
-          </button>
+          {operator?.name === "Guilherme" && (
+            <button
+              onClick={handleSyncFromInadimplencia}
+              disabled={syncFromInadimplencia.isPending}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+              title="Sincronizar títulos, valores, status e dias vencidos com a inadimplência (preserva marcações manuais)"
+            >
+              {syncFromInadimplencia.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
+              {syncFromInadimplencia.isPending ? "Sincronizando..." : "Sincronizar c/ Inadimplência"}
+            </button>
+          )}
           <button
             onClick={() => setShowBackupInfo(!showBackupInfo)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 text-xs font-medium transition-colors"
