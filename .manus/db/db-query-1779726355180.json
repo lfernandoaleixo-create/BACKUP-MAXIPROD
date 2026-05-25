@@ -1,0 +1,122 @@
+{
+  "query": "SELECT o.id, o.planilha_id, o.etapa, o.observacao, o.registrado_por, o.created_at\nFROM cobranca_etapa_obs o \nWHERE o.planilha_id IN (16, 17, 19, 23, 24, 31, 270038, 270039, 270040, 270041, 270042, 270043)\nORDER BY o.created_at;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT o.id, o.planilha_id, o.etapa, o.observacao, o.registrado_por, o.created_at\nFROM cobranca_etapa_obs o \nWHERE o.planilha_id IN (16, 17, 19, 23, 24, 31, 270038, 270039, 270040, 270041, 270042, 270043)\nORDER BY o.created_at;",
+  "rows": [
+    {
+      "id": "300015",
+      "planilha_id": "270038",
+      "etapa": "acaoFinal",
+      "observacao": "Cliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 18:33:45"
+    },
+    {
+      "id": "30040",
+      "planilha_id": "16",
+      "etapa": "acaoFinal",
+      "observacao": "Cliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 18:33:45"
+    },
+    {
+      "id": "30041",
+      "planilha_id": "17",
+      "etapa": "acaoFinal",
+      "observacao": "Cliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 18:34:47"
+    },
+    {
+      "id": "30042",
+      "planilha_id": "19",
+      "etapa": "acaoFinal",
+      "observacao": "Cliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 18:35:18"
+    },
+    {
+      "id": "30043",
+      "planilha_id": "23",
+      "etapa": "acaoFinal",
+      "observacao": "Cliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 18:36:42"
+    },
+    {
+      "id": "30044",
+      "planilha_id": "24",
+      "etapa": "acaoFinal",
+      "observacao": "Cliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 18:37:19"
+    },
+    {
+      "id": "30045",
+      "planilha_id": "31",
+      "etapa": "acaoFinal",
+      "observacao": "Cliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 18:38:16"
+    },
+    {
+      "id": "210004",
+      "planilha_id": "31",
+      "etapa": "acaoFinal",
+      "observacao": "Luana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-21 17:31:47"
+    },
+    {
+      "id": "300047",
+      "planilha_id": "270038",
+      "etapa": "acaoFinal",
+      "observacao": "Luana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-21 17:31:47"
+    },
+    {
+      "id": "210005",
+      "planilha_id": "24",
+      "etapa": "acaoFinal",
+      "observacao": "Luana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-21 17:31:58"
+    },
+    {
+      "id": "210006",
+      "planilha_id": "23",
+      "etapa": "acaoFinal",
+      "observacao": "Luana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-21 17:32:12"
+    },
+    {
+      "id": "210007",
+      "planilha_id": "19",
+      "etapa": "acaoFinal",
+      "observacao": "Luana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-21 17:32:22"
+    },
+    {
+      "id": "210008",
+      "planilha_id": "17",
+      "etapa": "acaoFinal",
+      "observacao": "Luana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-21 17:32:35"
+    },
+    {
+      "id": "210009",
+      "planilha_id": "16",
+      "etapa": "acaoFinal",
+      "observacao": "Luana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-21 17:32:48"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplanilha_id\tetapa\tobservacao\tregistrado_por\tcreated_at\n300015\t270038\tacaoFinal\tCliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox\tThiago\t2026-05-15 18:33:45\n30040\t16\tacaoFinal\tCliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox\tThiago\t2026-05-15 18:33:45\n30041\t17\tacaoFinal\tCliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox\tThiago\t2026-05-15 18:34:47\n30042\t19\tacaoFinal\tCliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox\tThiago\t2026-05-15 18:35:18\n30043\t23\tacaoFinal\tCliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox\tThiago\t2026-05-15 18:36:42\n30044\t24\tacaoFinal\tCliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox\tThiago\t2026-05-15 18:37:19\n30045\t31\tacaoFinal\tCliente respondeu dizendo que enviará até dia 15/05/2026 proposta de parcelamento para análise pelo Grupo Fox\tThiago\t2026-05-15 18:38:16\n210004\t31\tacaoFinal\tLuana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança\tThiago\t2026-05-21 17:31:47\n300047\t270038\tacaoFinal\tLuana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança\tThiago\t2026-05-21 17:31:47\n210005\t24\tacaoFinal\tLuana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança\tThiago\t2026-05-21 17:31:58\n210006\t23\tacaoFinal\tLuana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança\tThiago\t2026-05-21 17:32:12\n210007\t19\tacaoFinal\tLuana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança\tThiago\t2026-05-21 17:32:22\n210008\t17\tacaoFinal\tLuana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança\tThiago\t2026-05-21 17:32:35\n210009\t16\tacaoFinal\tLuana do Financeiro da J LEAL ainda não enviou a proposta de renegociação, vamos aguardar até dia 22/05/2026 para emissão do relatório da decisão de cobrança\tThiago\t2026-05-21 17:32:48\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

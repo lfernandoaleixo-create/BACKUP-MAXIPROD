@@ -1,0 +1,130 @@
+{
+  "query": "SELECT p.id, p.empresa, p.ativo, p.status, p.observacoes, p.primeira_cobranca, p.segunda_cobranca, p.terceira_cobranca\nFROM cobranca_planilha p \nWHERE p.empresa LIKE '%J LEAL%' OR p.empresa LIKE '%J. LEAL%' OR p.empresa LIKE '%LEAL%'\nORDER BY p.id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT p.id, p.empresa, p.ativo, p.status, p.observacoes, p.primeira_cobranca, p.segunda_cobranca, p.terceira_cobranca\nFROM cobranca_planilha p \nWHERE p.empresa LIKE '%J LEAL%' OR p.empresa LIKE '%J. LEAL%' OR p.empresa LIKE '%LEAL%'\nORDER BY p.id;",
+  "rows": [
+    {
+      "id": "16",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "0",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    },
+    {
+      "id": "17",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "0",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    },
+    {
+      "id": "19",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "0",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-11"
+    },
+    {
+      "id": "23",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "0",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    },
+    {
+      "id": "24",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "0",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    },
+    {
+      "id": "31",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "0",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    },
+    {
+      "id": "270038",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "1",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    },
+    {
+      "id": "270039",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "1",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    },
+    {
+      "id": "270040",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "1",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    },
+    {
+      "id": "270041",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "1",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-11"
+    },
+    {
+      "id": "270042",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "1",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    },
+    {
+      "id": "270043",
+      "empresa": "J LEAL DISTRIBUIDORA LTDA",
+      "ativo": "1",
+      "status": "Em negociação",
+      "observacoes": "NULL",
+      "primeira_cobranca": "2026-04-29",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-08"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tativo\tstatus\tobservacoes\tprimeira_cobranca\tsegunda_cobranca\tterceira_cobranca\n16\tJ LEAL DISTRIBUIDORA LTDA\t0\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n17\tJ LEAL DISTRIBUIDORA LTDA\t0\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n19\tJ LEAL DISTRIBUIDORA LTDA\t0\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-11\n23\tJ LEAL DISTRIBUIDORA LTDA\t0\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n24\tJ LEAL DISTRIBUIDORA LTDA\t0\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n31\tJ LEAL DISTRIBUIDORA LTDA\t0\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n270038\tJ LEAL DISTRIBUIDORA LTDA\t1\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n270039\tJ LEAL DISTRIBUIDORA LTDA\t1\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n270040\tJ LEAL DISTRIBUIDORA LTDA\t1\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n270041\tJ LEAL DISTRIBUIDORA LTDA\t1\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-11\n270042\tJ LEAL DISTRIBUIDORA LTDA\t1\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n270043\tJ LEAL DISTRIBUIDORA LTDA\t1\tEm negociação\tNULL\t2026-04-29\t2026-05-06\t2026-05-08\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

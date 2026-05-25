@@ -1306,7 +1306,7 @@ export const cobrancaPlanilhaRouter = router({
   // ==================== OBSERVAÇÕES POR ETAPA ====================
 
   /** Adicionar observação a uma etapa específica */
-  addEtapaObs: protectedProcedure
+  addEtapaObs: publicProcedure
     .input(z.object({
       planilhaId: z.number(),
       etapa: z.string(),
@@ -1326,7 +1326,7 @@ export const cobrancaPlanilhaRouter = router({
     }),
 
   /** Listar observações de uma etapa específica de um título */
-  getEtapaObs: protectedProcedure
+  getEtapaObs: publicProcedure
     .input(z.object({
       planilhaId: z.number(),
       etapa: z.string().optional(), // se não informar, retorna todas as etapas
@@ -1364,7 +1364,7 @@ export const cobrancaPlanilhaRouter = router({
     }),
 
   /** Listar TODAS as observações de um título (para o balãozinho de histórico) */
-  getAllEtapaObs: protectedProcedure
+  getAllEtapaObs: publicProcedure
     .input(z.object({ planilhaId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -1397,7 +1397,7 @@ export const cobrancaPlanilhaRouter = router({
     }),
 
   /** Editar uma observação existente */
-  updateEtapaObs: protectedProcedure
+  updateEtapaObs: publicProcedure
     .input(z.object({
       id: z.number(),
       observacao: z.string().min(1),
@@ -1412,7 +1412,7 @@ export const cobrancaPlanilhaRouter = router({
     }),
 
   /** Excluir uma observação */
-  deleteEtapaObs: protectedProcedure
+  deleteEtapaObs: publicProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -1423,7 +1423,7 @@ export const cobrancaPlanilhaRouter = router({
     }),
 
   /** Contar observações por título (para badge no balãozinho) */
-  countEtapaObs: protectedProcedure
+  countEtapaObs: publicProcedure
     .input(z.object({ planilhaIds: z.array(z.number()) }))
     .query(async ({ input }) => {
       if (input.planilhaIds.length === 0) return {};
@@ -1443,7 +1443,7 @@ export const cobrancaPlanilhaRouter = router({
     }),
 
   /** Buscar dados da planilha de cobrança por nome de empresa (para enriquecer PDF) */
-  getByEmpresa: protectedProcedure
+  getByEmpresa: publicProcedure
     .input(z.object({ empresa: z.string() }))
     .query(async ({ input }) => {
       const db = await getDb();
