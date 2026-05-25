@@ -233,6 +233,14 @@ export const billingRouter = router({
       // Helper to format ISO date to DD/MM/YYYY
       const formatDate = (d: string | null): string => {
         if (!d) return "";
+        // Extract date directly from ISO string to avoid timezone conversion issues
+        // e.g. '2026-05-07T00:00:00.000-03:00' -> '07/05/2026'
+        const isoMatch = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch) {
+          return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+        }
+        // Already in dd/mm/yyyy format
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) return d;
         try {
           const date = new Date(d);
           if (isNaN(date.getTime())) return d;
@@ -1140,6 +1148,14 @@ export const billingRouter = router({
       // Helper to format ISO date to DD/MM/YYYY (same as getOpenOrders)
       const formatDate = (d: string | null): string => {
         if (!d) return "";
+        // Extract date directly from ISO string to avoid timezone conversion issues
+        // e.g. '2026-05-07T00:00:00.000-03:00' -> '07/05/2026'
+        const isoMatch = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch) {
+          return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+        }
+        // Already in dd/mm/yyyy format
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) return d;
         try {
           const date = new Date(d);
           if (isNaN(date.getTime())) return d;

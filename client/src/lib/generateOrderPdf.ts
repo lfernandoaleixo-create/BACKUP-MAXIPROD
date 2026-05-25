@@ -72,8 +72,13 @@ type OrderForPdf = {
 
 function formatDateBR(d: string): string {
   if (!d) return "";
-  // If already in dd/mm/yyyy format, return as-is (avoid re-parsing which inverts day/month)
+  // If already in dd/mm/yyyy format, return as-is
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) return d;
+  // Extract date from ISO string directly to avoid timezone conversion issues
+  const isoMatch = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+  }
   try {
     const date = new Date(d);
     if (isNaN(date.getTime())) return d;
