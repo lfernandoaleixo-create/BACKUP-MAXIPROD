@@ -1,0 +1,130 @@
+{
+  "query": "SELECT cliente, valorAReceber, diasAtrasoNaResolucao, resolvedAt, empresa, statusCobranca FROM resolved_receivables WHERE resolvedAt >= '2026-05-15' ORDER BY resolvedAt DESC LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cliente, valorAReceber, diasAtrasoNaResolucao, resolvedAt, empresa, statusCobranca FROM resolved_receivables WHERE resolvedAt >= '2026-05-15' ORDER BY resolvedAt DESC LIMIT 15;",
+  "rows": [
+    {
+      "cliente": "ARTESHOW SHOWS PIROTECNICOS LTDA",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "3",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "POLVORA TIGRE LTDA",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "3",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "ESPETINHOS COROMANDEL LTDA",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "12",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "RAIANE PEREIRA DA SILVA - ALIMENTOS",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "3",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "3",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "GIOVANA CARDOSO DE SOUZA",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "4",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "7",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "5",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "CENTRO DE DISTRIBUICAO LUCK BELLA LTDA",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "3",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "RITA DE CASSIA DOMICIANO NOGUEIRA",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "4",
+      "resolvedAt": "2026-05-25 15:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "CLIENTE TESTE COBRANCA",
+      "valorAReceber": "1000.00",
+      "diasAtrasoNaResolucao": "85",
+      "resolvedAt": "2026-05-25 13:22:02",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "contatado"
+    },
+    {
+      "cliente": "POLVORA TIGRE LTDA",
+      "valorAReceber": "3200.00",
+      "diasAtrasoNaResolucao": "3",
+      "resolvedAt": "2026-05-25 00:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "BANCO COOPERATIVO SICREDI S.A.",
+      "valorAReceber": "1002.67",
+      "diasAtrasoNaResolucao": "3",
+      "resolvedAt": "2026-05-25 00:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "Pendente"
+    },
+    {
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorAReceber": "8000.00",
+      "diasAtrasoNaResolucao": "5",
+      "resolvedAt": "2026-05-25 00:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    },
+    {
+      "cliente": "RITA DE CASSIA DOMICIANO NOGUEIRA",
+      "valorAReceber": "200.00",
+      "diasAtrasoNaResolucao": "4",
+      "resolvedAt": "2026-05-25 00:00:00",
+      "empresa": "PALITOS INDUSTRIA",
+      "statusCobranca": "pendente"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\tvalorAReceber\tdiasAtrasoNaResolucao\tresolvedAt\tempresa\tstatusCobranca\nARTESHOW SHOWS PIROTECNICOS LTDA\t0.00\t3\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\nPOLVORA TIGRE LTDA\t0.00\t3\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\nESPETINHOS COROMANDEL LTDA\t0.00\t12\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\nRAIANE PEREIRA DA SILVA - ALIMENTOS\t0.00\t3\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\nINDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.\t0.00\t3\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\nGIOVANA CARDOSO DE SOUZA\t0.00\t4\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\n14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA\t0.00\t7\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\nINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t0.00\t5\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\nCENTRO DE DISTRIBUICAO LUCK BELLA LTDA\t0.00\t3\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\nRITA DE CASSIA DOMICIANO NOGUEIRA\t0.00\t4\t2026-05-25 15:00:00\tPALITOS INDUSTRIA\tpendente\nCLIENTE TESTE COBRANCA\t1000.00\t85\t2026-05-25 13:22:02\tPALITOS INDUSTRIA\tcontatado\nPOLVORA TIGRE LTDA\t3200.00\t3\t2026-05-25 00:00:00\tPALITOS INDUSTRIA\tpendente\nBANCO COOPERATIVO SICREDI S.A.\t1002.67\t3\t2026-05-25 00:00:00\tPALITOS INDUSTRIA\tPendente\nINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t8000.00\t5\t2026-05-25 00:00:00\tPALITOS INDUSTRIA\tpendente\nRITA DE CASSIA DOMICIANO NOGUEIRA\t200.00\t4\t2026-05-25 00:00:00\tPALITOS INDUSTRIA\tpendente\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

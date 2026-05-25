@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE resolved_receivables SET valorAReceber = valorOriginal WHERE resolvedAt >= '2026-05-15' AND valorAReceber = '0.00';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute UPDATE resolved_receivables SET valorAReceber = valorOriginal WHERE resolvedAt >= '2026-05-15' AND valorAReceber = '0.00';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 265
+}

@@ -3955,3 +3955,4 @@
 - [x] Faturamento: corrigir inversão de data no PDF (07/05 virava 05/07 por re-parsing de dd/mm como mm/dd)
 - [x] Cobrança: corrigir Histórico de Observações para buscar por empresa (todos IDs) em vez de só planilhaId
 - [x] Cobrança: proteger sync para herdar campos manuais (status, obs, datas cobrança) de itens existentes da mesma empresa
+- [x] Fix "Pagos/Resolvidos" card not updating since 14/05/2026 - clients who had 3+ days overdue and resolved their debt must appear

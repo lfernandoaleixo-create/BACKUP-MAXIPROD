@@ -1,0 +1,130 @@
+{
+  "query": "SELECT id, cliente, valorAReceber, diasAtrasoNaResolucao, resolvedAt, empresa FROM resolved_receivables ORDER BY resolvedAt DESC LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, valorAReceber, diasAtrasoNaResolucao, resolvedAt, empresa FROM resolved_receivables ORDER BY resolvedAt DESC LIMIT 15;",
+  "rows": [
+    {
+      "id": "930001",
+      "cliente": "CLIENTE TESTE COBRANCA",
+      "valorAReceber": "1000.00",
+      "diasAtrasoNaResolucao": "85",
+      "resolvedAt": "2026-05-25 13:22:02",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "870001",
+      "cliente": "CLIENTE TESTE COBRANCA",
+      "valorAReceber": "1000.00",
+      "diasAtrasoNaResolucao": "81",
+      "resolvedAt": "2026-05-21 15:46:54",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "750003",
+      "cliente": "ESPETINHOS SABORES E COMPANHIA LTDA",
+      "valorAReceber": "1276.00",
+      "diasAtrasoNaResolucao": "2",
+      "resolvedAt": "2026-05-15 12:01:35",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "750002",
+      "cliente": "ESPETINHOS SABORES E COMPANHIA LTDA",
+      "valorAReceber": "1276.00",
+      "diasAtrasoNaResolucao": "2",
+      "resolvedAt": "2026-05-15 12:01:25",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "750001",
+      "cliente": "L C CAVALCANTE LTDA",
+      "valorAReceber": "5850.00",
+      "diasAtrasoNaResolucao": "0",
+      "resolvedAt": "2026-05-15 10:55:43",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "720004",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorAReceber": "3150.00",
+      "diasAtrasoNaResolucao": "0",
+      "resolvedAt": "2026-05-14 13:47:44",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "720003",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorAReceber": "1600.00",
+      "diasAtrasoNaResolucao": "3",
+      "resolvedAt": "2026-05-14 12:16:23",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "720002",
+      "cliente": "AMERICAN PIROTECNIA LTDA",
+      "valorAReceber": "9000.00",
+      "diasAtrasoNaResolucao": "3",
+      "resolvedAt": "2026-05-14 12:10:33",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "720001",
+      "cliente": "FAZENDA SANTA CRUZ",
+      "valorAReceber": "3686.40",
+      "diasAtrasoNaResolucao": "34",
+      "resolvedAt": "2026-05-14 12:10:33",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "690004",
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "valorAReceber": "238.00",
+      "diasAtrasoNaResolucao": "583",
+      "resolvedAt": "2026-05-14 10:51:04",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "690003",
+      "cliente": "48.128.486 CARLOS HUMBERTO BUENO",
+      "valorAReceber": "238.00",
+      "diasAtrasoNaResolucao": "583",
+      "resolvedAt": "2026-05-14 10:50:53",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "690002",
+      "cliente": "DOCE FESTA INDUSTRIA E COMERCIO EIRELI - EPP",
+      "valorAReceber": "600.00",
+      "diasAtrasoNaResolucao": "0",
+      "resolvedAt": "2026-05-14 10:30:29",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "690001",
+      "cliente": "DOCE FESTA INDUSTRIA E COMERCIO EIRELI - EPP",
+      "valorAReceber": "600.00",
+      "diasAtrasoNaResolucao": "0",
+      "resolvedAt": "2026-05-14 10:30:29",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "660001",
+      "cliente": "CLIENTE TESTE COBRANCA",
+      "valorAReceber": "1000.00",
+      "diasAtrasoNaResolucao": "73",
+      "resolvedAt": "2026-05-13 11:09:07",
+      "empresa": "PALITOS INDUSTRIA"
+    },
+    {
+      "id": "630012",
+      "cliente": "VALE DA PEDRA FOODS LTDA.",
+      "valorAReceber": "1660.00",
+      "diasAtrasoNaResolucao": "0",
+      "resolvedAt": "2026-05-12 13:10:28",
+      "empresa": "PALITOS INDUSTRIA"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorAReceber\tdiasAtrasoNaResolucao\tresolvedAt\tempresa\n930001\tCLIENTE TESTE COBRANCA\t1000.00\t85\t2026-05-25 13:22:02\tPALITOS INDUSTRIA\n870001\tCLIENTE TESTE COBRANCA\t1000.00\t81\t2026-05-21 15:46:54\tPALITOS INDUSTRIA\n750003\tESPETINHOS SABORES E COMPANHIA LTDA\t1276.00\t2\t2026-05-15 12:01:35\tPALITOS INDUSTRIA\n750002\tESPETINHOS SABORES E COMPANHIA LTDA\t1276.00\t2\t2026-05-15 12:01:25\tPALITOS INDUSTRIA\n750001\tL C CAVALCANTE LTDA\t5850.00\t0\t2026-05-15 10:55:43\tPALITOS INDUSTRIA\n720004\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t3150.00\t0\t2026-05-14 13:47:44\tPALITOS INDUSTRIA\n720003\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t1600.00\t3\t2026-05-14 12:16:23\tPALITOS INDUSTRIA\n720002\tAMERICAN PIROTECNIA LTDA\t9000.00\t3\t2026-05-14 12:10:33\tPALITOS INDUSTRIA\n720001\tFAZENDA SANTA CRUZ\t3686.40\t34\t2026-05-14 12:10:33\tPALITOS INDUSTRIA\n690004\t48.128.486 CARLOS HUMBERTO BUENO\t238.00\t583\t2026-05-14 10:51:04\tPALITOS INDUSTRIA\n690003\t48.128.486 CARLOS HUMBERTO BUENO\t238.00\t583\t2026-05-14 10:50:53\tPALITOS INDUSTRIA\n690002\tDOCE FESTA INDUSTRIA E COMERCIO EIRELI - EPP\t600.00\t0\t2026-05-14 10:30:29\tPALITOS INDUSTRIA\n690001\tDOCE FESTA INDUSTRIA E COMERCIO EIRELI - EPP\t600.00\t0\t2026-05-14 10:30:29\tPALITOS INDUSTRIA\n660001\tCLIENTE TESTE COBRANCA\t1000.00\t73\t2026-05-13 11:09:07\tPALITOS INDUSTRIA\n630012\tVALE DA PEDRA FOODS LTDA.\t1660.00\t0\t2026-05-12 13:10:28\tPALITOS INDUSTRIA\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

@@ -1,0 +1,45 @@
+{
+  "query": "SELECT receivableId, cliente, valorOriginal, valorAReceber, diasAtrasoNaResolucao FROM resolved_receivables WHERE resolvedAt >= '2026-05-25 15:00:00' AND valorAReceber = '0.00' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT receivableId, cliente, valorOriginal, valorAReceber, diasAtrasoNaResolucao FROM resolved_receivables WHERE resolvedAt >= '2026-05-25 15:00:00' AND valorAReceber = '0.00' LIMIT 5;",
+  "rows": [
+    {
+      "receivableId": "7991352",
+      "cliente": "ESPETINHOS COROMANDEL LTDA",
+      "valorOriginal": "506.67",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "12"
+    },
+    {
+      "receivableId": "7991557",
+      "cliente": "14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA",
+      "valorOriginal": "1500.00",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "7"
+    },
+    {
+      "receivableId": "7991751",
+      "cliente": "RAIANE PEREIRA DA SILVA - ALIMENTOS",
+      "valorOriginal": "667.00",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "3"
+    },
+    {
+      "receivableId": "7992457",
+      "cliente": "GIOVANA CARDOSO DE SOUZA",
+      "valorOriginal": "1250.00",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "4"
+    },
+    {
+      "receivableId": "7992466",
+      "cliente": "CENTRO DE DISTRIBUICAO LUCK BELLA LTDA",
+      "valorOriginal": "2300.00",
+      "valorAReceber": "0.00",
+      "diasAtrasoNaResolucao": "3"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivableId\tcliente\tvalorOriginal\tvalorAReceber\tdiasAtrasoNaResolucao\n7991352\tESPETINHOS COROMANDEL LTDA\t506.67\t0.00\t12\n7991557\t14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA\t1500.00\t0.00\t7\n7991751\tRAIANE PEREIRA DA SILVA - ALIMENTOS\t667.00\t0.00\t3\n7992457\tGIOVANA CARDOSO DE SOUZA\t1250.00\t0.00\t4\n7992466\tCENTRO DE DISTRIBUICAO LUCK BELLA LTDA\t2300.00\t0.00\t3\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

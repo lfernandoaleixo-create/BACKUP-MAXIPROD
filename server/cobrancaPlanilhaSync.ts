@@ -13,7 +13,7 @@
  */
 
 import { getDb } from "./db";
-import { cobrancaPlanilha, accountsReceivable, collectionActions, salesOrders } from "../drizzle/schema";
+import { cobrancaPlanilha, accountsReceivable, collectionActions, resolvedReceivables, salesOrders } from "../drizzle/schema";
 import { eq, and, inArray, lte, isNull, sql, desc, or } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -161,7 +161,9 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
   const validOverdueArIds = new Set(validOverdue.map(t => t.arId));
 
   // 3. DEACTIVATE: planilha items whose arId is no longer in the overdue list
+  //    AND save to resolved_receivables if title had 3+ days overdue
   let deactivated = 0;
+  const arIdsToResolve: number[] = [];
   for (const item of activePlanilha) {
     if (item.arId && !validOverdueArIds.has(item.arId)) {
       // The underlying title is no longer EMITIDO or no longer overdue → deactivate
@@ -169,6 +171,54 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         .set({ ativo: false, updatedBy: "Auto-sync (título pago/resolvido)" })
         .where(eq(cobrancaPlanilha.id, item.id));
       deactivated++;
+      arIdsToResolve.push(item.arId);
+    }
+  }
+
+  // 3b. Save deactivated titles with 3+ days overdue to resolved_receivables
+  if (arIdsToResolve.length > 0) {
+    const titlesToResolve = await db.select()
+      .from(accountsReceivable)
+      .where(inArray(accountsReceivable.id, arIdsToResolve));
+    
+    for (const title of titlesToResolve) {
+      const vencDate = (title.vencimentoData || "").split("T")[0];
+      const diasAtraso = Math.floor((new Date(todayStr).getTime() - new Date(vencDate).getTime()) / 86400000);
+      
+      // REGRA: Só salvar se tinha 3+ dias de atraso
+      if (diasAtraso >= 3) {
+        // Check if already exists to prevent duplicates
+        const existingRows = await db.select({ id: resolvedReceivables.id })
+          .from(resolvedReceivables)
+          .where(eq(resolvedReceivables.receivableId, title.id))
+          .limit(1);
+        if (existingRows.length > 0) continue;
+        
+        const valorOriginal = Number(title.valorLiquido) || 0;
+        // NOTA: Quando o título sai da inadimplência (foi pago), o Maxiprod já atualizou
+        // valorRecebidoLiquido = valorLiquido. O valor que ERA a receber é o próprio valorOriginal.
+        const valorAReceber = valorOriginal;
+        
+        // Get status from planilha
+        const planilhaItem = activePlanilha.find(p => p.arId === title.id);
+        const statusCobranca = planilhaItem?.status || "pendente";
+        
+        await db.insert(resolvedReceivables).values({
+          receivableId: title.id,
+          maxiprodId: title.maxiprodId,
+          cliente: title.cliente || "Sem nome",
+          valorOriginal: String(valorOriginal),
+          valorAReceber: String(valorAReceber),
+          vencimentoData: vencDate,
+          documento: title.documentoVinculadoNumero || null,
+          empresa: title.empresaNome || null,
+          vendedor: null,
+          diasAtrasoNaResolucao: Math.max(0, diasAtraso),
+          statusCobranca,
+          totalContatos: 0,
+        });
+        console.log(`[Auto-sync] Título RESOLVIDO salvo: ${title.cliente} - R$ ${valorAReceber.toFixed(2)} (${diasAtraso} dias atraso)`);
+      }
     }
   }
 

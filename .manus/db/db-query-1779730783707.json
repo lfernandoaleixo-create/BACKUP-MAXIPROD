@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) as total, SUM(CASE WHEN ar_id IS NOT NULL THEN 1 ELSE 0 END) as with_ar_id FROM cobranca_planilha;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total, SUM(CASE WHEN ar_id IS NOT NULL THEN 1 ELSE 0 END) as with_ar_id FROM cobranca_planilha;",
+  "rows": [
+    {
+      "total": "219",
+      "with_ar_id": "214"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\twith_ar_id\n219\t214\n",
+  "stderr": "",
+  "execution_time_ms": 253
+}

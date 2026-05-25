@@ -1,0 +1,79 @@
+{
+  "query": "SHOW TABLES LIKE '%collection%'; DESCRIBE collection_actions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SHOW TABLES LIKE '%collection%'; DESCRIBE collection_actions;",
+  "rows": [
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "collection_action_edits"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "collection_actions"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "collection_daily_actions"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "collection_documents"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "collection_manual_tick_history"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "collection_manual_ticks"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "collection_status"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "collection_step_overrides"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "Field\tType\tNull\tKey\tDefault\tExtra"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "id\tint\tNO\tPRI\tNULL\tauto_increment"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "receivableId\tint\tNO\t\tNULL\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "status\tvarchar(30)\tNO\t\tpendente\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "promessaData\tvarchar(30)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "promessaValor\tdecimal(18,2)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "lembreteData\tvarchar(30)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "observacoes\ttext\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "contatoHistorico\tjson\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "updatedBy\tvarchar(200)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "createdAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "updatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "cobrancaStartedAt\tvarchar(10)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "phoneMutedBy\tvarchar(200)\tYES\t\tNULL\t"
+    },
+    {
+      "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)": "phoneMutedAt\tbigint\tYES\t\tNULL\t"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_TMh5HqmzfeBw9KakgJtjjo (%collection%)\ncollection_action_edits\ncollection_actions\ncollection_daily_actions\ncollection_documents\ncollection_manual_tick_history\ncollection_manual_ticks\ncollection_status\ncollection_step_overrides\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nreceivableId\tint\tNO\t\tNULL\t\nstatus\tvarchar(30)\tNO\t\tpendente\t\npromessaData\tvarchar(30)\tYES\t\tNULL\t\npromessaValor\tdecimal(18,2)\tYES\t\tNULL\t\nlembreteData\tvarchar(30)\tYES\t\tNULL\t\nobservacoes\ttext\tYES\t\tNULL\t\ncontatoHistorico\tjson\tYES\t\tNULL\t\nupdatedBy\tvarchar(200)\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\ncobrancaStartedAt\tvarchar(10)\tYES\t\tNULL\t\nphoneMutedBy\tvarchar(200)\tYES\t\tNULL\t\nphoneMutedAt\tbigint\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

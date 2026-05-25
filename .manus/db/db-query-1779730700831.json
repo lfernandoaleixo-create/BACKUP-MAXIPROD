@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as total_emitido FROM accounts_receivable WHERE estado = 'EMITIDO'; SELECT COUNT(*) as total_recebido FROM accounts_receivable WHERE estado = 'RECEBIDO';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_emitido FROM accounts_receivable WHERE estado = 'EMITIDO'; SELECT COUNT(*) as total_recebido FROM accounts_receivable WHERE estado = 'RECEBIDO';",
+  "rows": [
+    {
+      "total_emitido": "526"
+    },
+    {
+      "total_emitido": "total_recebido"
+    },
+    {
+      "total_emitido": "3932"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_emitido\n526\ntotal_recebido\n3932\n",
+  "stderr": "",
+  "execution_time_ms": 271
+}

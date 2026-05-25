@@ -1,0 +1,150 @@
+{
+  "query": "SELECT ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.liquidacaoData, ar.estado FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-14' ORDER BY ar.liquidacaoData DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.liquidacaoData, ar.estado FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-14' ORDER BY ar.liquidacaoData DESC LIMIT 20;",
+  "rows": [
+    {
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS CINELLI LTDA",
+      "valorLiquido": "4500.00",
+      "vencimentoData": "2026-05-25T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "FONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP",
+      "valorLiquido": "4275.00",
+      "vencimentoData": "2026-06-29T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "FOGOS SUL-AMERICANA",
+      "valorLiquido": "3200.00",
+      "vencimentoData": "2026-05-25T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "AVIZ ALIMENTOS LTDA",
+      "valorLiquido": "6300.00",
+      "vencimentoData": "2026-06-21T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "FONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP",
+      "valorLiquido": "4275.00",
+      "vencimentoData": "2026-06-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "PAULYNELLE SILVA",
+      "valorLiquido": "7280.00",
+      "vencimentoData": "2026-05-28T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "8000.00",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "COVABRA SUPERMERCADOS LTDA",
+      "valorLiquido": "1620.00",
+      "vencimentoData": "2026-06-24T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "FONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP",
+      "valorLiquido": "4275.00",
+      "vencimentoData": "2026-07-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "ESPETINHOS COROMANDEL LTDA",
+      "valorLiquido": "506.67",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "CENTRO DE DISTRIBUICAO LUCK BELLA LTDA",
+      "valorLiquido": "2300.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "GIOVANA CARDOSO DE SOUZA",
+      "valorLiquido": "1250.00",
+      "vencimentoData": "2026-05-21T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "RAIANE PEREIRA DA SILVA - ALIMENTOS",
+      "valorLiquido": "667.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA",
+      "valorLiquido": "1500.00",
+      "vencimentoData": "2026-05-18T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "ARTESHOW SHOWS PIROTECNICOS LTDA",
+      "valorLiquido": "3200.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "COOPERATIVA DE CREDITO CREDPLUS LTDA. - SICOOB CREDPLUS",
+      "valorLiquido": "1.33",
+      "vencimentoData": "2026-05-25T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "MANDA BRASA ESPETOS LTDA",
+      "valorLiquido": "511.00",
+      "vencimentoData": "2026-06-06T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "MANDA BRASA ESPETOS LTDA",
+      "valorLiquido": "511.00",
+      "vencimentoData": "2026-06-09T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "FONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP",
+      "valorLiquido": "4275.00",
+      "vencimentoData": "2026-07-12T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    },
+    {
+      "cliente": "FOGOS SUL-AMERICANA",
+      "valorLiquido": "3200.00",
+      "vencimentoData": "2026-05-25T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "estado": "RECEBIDO"
+    }
+  ],
+  "messages": [],
+  "stdout": "cliente\tvalorLiquido\tvencimentoData\tliquidacaoData\testado\nINDUSTRIA E COMERCIO DE FOGOS CINELLI LTDA\t4500.00\t2026-05-25T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nFONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP\t4275.00\t2026-06-29T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nFOGOS SUL-AMERICANA\t3200.00\t2026-05-25T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nAVIZ ALIMENTOS LTDA\t6300.00\t2026-06-21T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nFONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP\t4275.00\t2026-06-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nPAULYNELLE SILVA\t7280.00\t2026-05-28T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t8000.00\t2026-05-20T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nCOVABRA SUPERMERCADOS LTDA\t1620.00\t2026-06-24T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nFONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP\t4275.00\t2026-07-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nESPETINHOS COROMANDEL LTDA\t506.67\t2026-05-13T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nCENTRO DE DISTRIBUICAO LUCK BELLA LTDA\t2300.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nGIOVANA CARDOSO DE SOUZA\t1250.00\t2026-05-21T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nRAIANE PEREIRA DA SILVA - ALIMENTOS\t667.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\n14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA\t1500.00\t2026-05-18T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nARTESHOW SHOWS PIROTECNICOS LTDA\t3200.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nCOOPERATIVA DE CREDITO CREDPLUS LTDA. - SICOOB CREDPLUS\t1.33\t2026-05-25T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nMANDA BRASA ESPETOS LTDA\t511.00\t2026-06-06T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nMANDA BRASA ESPETOS LTDA\t511.00\t2026-06-09T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nFONTE DAS ESSENCIAS - COM DE ART DE PERFUMARIA LTDA - EPP\t4275.00\t2026-07-12T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\nFOGOS SUL-AMERICANA\t3200.00\t2026-05-25T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\tRECEBIDO\n",
+  "stderr": "",
+  "execution_time_ms": 281
+}

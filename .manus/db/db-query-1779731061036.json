@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, cliente, valorLiquido, valorRecebidoLiquido FROM accounts_receivable WHERE id IN (7991352, 7991557, 7991751, 7992457, 7992466);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, cliente, valorLiquido, valorRecebidoLiquido FROM accounts_receivable WHERE id IN (7991352, 7991557, 7991751, 7992457, 7992466);",
+  "rows": [
+    {
+      "id": "7991352",
+      "cliente": "ESPETINHOS COROMANDEL LTDA",
+      "valorLiquido": "506.67",
+      "valorRecebidoLiquido": "506.67"
+    },
+    {
+      "id": "7991557",
+      "cliente": "14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA",
+      "valorLiquido": "1500.00",
+      "valorRecebidoLiquido": "1500.00"
+    },
+    {
+      "id": "7991751",
+      "cliente": "RAIANE PEREIRA DA SILVA - ALIMENTOS",
+      "valorLiquido": "667.00",
+      "valorRecebidoLiquido": "667.00"
+    },
+    {
+      "id": "7992457",
+      "cliente": "GIOVANA CARDOSO DE SOUZA",
+      "valorLiquido": "1250.00",
+      "valorRecebidoLiquido": "1250.00"
+    },
+    {
+      "id": "7992466",
+      "cliente": "CENTRO DE DISTRIBUICAO LUCK BELLA LTDA",
+      "valorLiquido": "2300.00",
+      "valorRecebidoLiquido": "2300.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvalorRecebidoLiquido\n7991352\tESPETINHOS COROMANDEL LTDA\t506.67\t506.67\n7991557\t14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA\t1500.00\t1500.00\n7991751\tRAIANE PEREIRA DA SILVA - ALIMENTOS\t667.00\t667.00\n7992457\tGIOVANA CARDOSO DE SOUZA\t1250.00\t1250.00\n7992466\tCENTRO DE DISTRIBUICAO LUCK BELLA LTDA\t2300.00\t2300.00\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

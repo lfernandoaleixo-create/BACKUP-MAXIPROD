@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total_with_actions FROM collection_actions ca JOIN accounts_receivable ar ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_with_actions FROM collection_actions ca JOIN accounts_receivable ar ON ca.receivableId = ar.id WHERE ar.estado = 'EMITIDO';",
+  "rows": [
+    {
+      "total_with_actions": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_with_actions\n0\n",
+  "stderr": "",
+  "execution_time_ms": 272
+}

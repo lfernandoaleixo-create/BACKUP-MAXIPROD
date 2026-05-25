@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as missing_from_resolved FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-15' AND DATEDIFF(ar.liquidacaoData, ar.vencimentoData) >= 3 AND ar.id NOT IN (SELECT receivableId FROM resolved_receivables);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as missing_from_resolved FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-15' AND DATEDIFF(ar.liquidacaoData, ar.vencimentoData) >= 3 AND ar.id NOT IN (SELECT receivableId FROM resolved_receivables);",
+  "rows": [
+    {
+      "missing_from_resolved": "32"
+    }
+  ],
+  "messages": [],
+  "stdout": "missing_from_resolved\n32\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}

@@ -1,0 +1,40 @@
+{
+  "query": "SELECT receivableId, cliente, valorOriginal, valorAReceber FROM resolved_receivables WHERE resolvedAt >= '2026-05-25 15:00:00' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT receivableId, cliente, valorOriginal, valorAReceber FROM resolved_receivables WHERE resolvedAt >= '2026-05-25 15:00:00' LIMIT 5;",
+  "rows": [
+    {
+      "receivableId": "7991352",
+      "cliente": "ESPETINHOS COROMANDEL LTDA",
+      "valorOriginal": "506.67",
+      "valorAReceber": "506.67"
+    },
+    {
+      "receivableId": "7991557",
+      "cliente": "14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA",
+      "valorOriginal": "1500.00",
+      "valorAReceber": "1500.00"
+    },
+    {
+      "receivableId": "7991751",
+      "cliente": "RAIANE PEREIRA DA SILVA - ALIMENTOS",
+      "valorOriginal": "667.00",
+      "valorAReceber": "667.00"
+    },
+    {
+      "receivableId": "7992457",
+      "cliente": "GIOVANA CARDOSO DE SOUZA",
+      "valorOriginal": "1250.00",
+      "valorAReceber": "1250.00"
+    },
+    {
+      "receivableId": "7992466",
+      "cliente": "CENTRO DE DISTRIBUICAO LUCK BELLA LTDA",
+      "valorOriginal": "2300.00",
+      "valorAReceber": "2300.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "receivableId\tcliente\tvalorOriginal\tvalorAReceber\n7991352\tESPETINHOS COROMANDEL LTDA\t506.67\t506.67\n7991557\t14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA\t1500.00\t1500.00\n7991751\tRAIANE PEREIRA DA SILVA - ALIMENTOS\t667.00\t667.00\n7992457\tGIOVANA CARDOSO DE SOUZA\t1250.00\t1250.00\n7992466\tCENTRO DE DISTRIBUICAO LUCK BELLA LTDA\t2300.00\t2300.00\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

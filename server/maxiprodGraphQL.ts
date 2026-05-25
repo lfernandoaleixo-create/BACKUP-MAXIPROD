@@ -26,6 +26,7 @@ import {
   stockEditHistory,
   collectionActions,
   resolvedReceivables,
+  cobrancaPlanilha,
   orderCancellations,
   chequeSyncChanges,
 } from "../drizzle/schema";
@@ -1470,8 +1471,10 @@ async function saveFinancialData(
         .filter(id => !newReceivableIds.has(id));
       
       if (disappearedRecIds.length > 0) {
-        // === REGRA: Salvar títulos com cobrança registrada em resolved_receivables ===
-        // Buscar os títulos que vão desaparecer e verificar se têm collectionActions
+        // === REGRA: Salvar títulos com 3+ dias de atraso em resolved_receivables ===
+        // NOVA LÓGICA: Qualquer título com 3+ dias de atraso que desapareceu da API (foi pago)
+        // deve ir para o card "Pagos/Resolvidos". Não depende mais de collectionActions.
+        // Também verifica cobranca_planilha para herdar status de cobrança.
         for (let i = 0; i < disappearedRecIds.length; i += 200) {
           const batch = disappearedRecIds.slice(i, i + 200);
           
@@ -1480,53 +1483,67 @@ async function saveFinancialData(
             .from(accountsReceivable)
             .where(inArray(accountsReceivable.maxiprodId, batch));
           
-          // Buscar IDs dos títulos que têm collectionActions
+          // Buscar dados da planilha de cobrança para esses títulos (para herdar status)
           const titleIds = disappearedTitles.map(t => t.id);
+          let planilhaMap = new Map<number, { status: string; totalContatos: number }>();
           if (titleIds.length > 0) {
+            const planilhaItems = await tx.select({
+              arId: cobrancaPlanilha.arId,
+              status: cobrancaPlanilha.status,
+            }).from(cobrancaPlanilha).where(inArray(cobrancaPlanilha.arId, titleIds));
+            for (const p of planilhaItems) {
+              if (p.arId) planilhaMap.set(p.arId, { status: p.status || "pendente", totalContatos: 0 });
+            }
+            
+            // Also check legacy collectionActions (for historical data)
             const actionsForTitles = await tx.select()
               .from(collectionActions)
               .where(inArray(collectionActions.receivableId, titleIds));
-            
-            const actionsMap = new Map<number, typeof actionsForTitles[0]>();
             for (const a of actionsForTitles) {
-              actionsMap.set(a.receivableId, a);
-            }
-            
-            // Para cada título com cobrança registrada, salvar em resolved_receivables (com dedup)
-            for (const title of disappearedTitles) {
-              const action = actionsMap.get(title.id);
-              if (action) {
-                // Check if already exists to prevent duplicates
-                const existingResult = await tx.execute(sql`SELECT id FROM resolved_receivables WHERE receivableId = ${title.id} LIMIT 1`);
-                const existingRows = (existingResult as any)[0] || existingResult;
-                const hasExisting = Array.isArray(existingRows) && existingRows.length > 0 && existingRows[0]?.id;
-                if (hasExisting) {
-                  console.log(`[GraphQL Sync] Título já registrado como resolvido (receivableId=${title.id}), pulando duplicata`);
-                  continue;
-                }
-                const valorOriginal = Number(title.valorLiquido) || 0;
-                const valorPago = Number(title.valorRecebidoLiquido) || 0;
-                const valorAReceber = valorOriginal - valorPago;
-                const vencDate = (title.vencimentoData || "").split("T")[0];
-                const diasAtraso = Math.floor((new Date(today).getTime() - new Date(vencDate).getTime()) / 86400000);
-                const contatos = (action.contatoHistorico as any[] || []);
-                
-                await tx.insert(resolvedReceivables).values({
-                  receivableId: title.id,
-                  maxiprodId: title.maxiprodId,
-                  cliente: title.cliente || "Sem nome",
-                  valorOriginal: String(valorOriginal),
-                  valorAReceber: String(valorAReceber),
-                  vencimentoData: vencDate,
-                  documento: title.documentoVinculadoNumero || null,
-                  empresa: title.empresaNome || null,
-                  vendedor: null, // vendedor será preenchido depois se necessário
-                  diasAtrasoNaResolucao: Math.max(0, diasAtraso),
-                  statusCobranca: action.status,
-                  totalContatos: contatos.length,
-                });
-                console.log(`[GraphQL Sync] Título RESOLVIDO salvo: ${title.cliente} - R$ ${valorAReceber.toFixed(2)} (${diasAtraso} dias atraso)`);
+              if (!planilhaMap.has(a.receivableId)) {
+                const contatos = (a.contatoHistorico as any[] || []);
+                planilhaMap.set(a.receivableId, { status: a.status, totalContatos: contatos.length });
               }
+            }
+          }
+          
+          // Para cada título com 3+ dias de atraso, salvar em resolved_receivables
+          for (const title of disappearedTitles) {
+            const vencDate = (title.vencimentoData || "").split("T")[0];
+            const diasAtraso = Math.floor((new Date(today).getTime() - new Date(vencDate).getTime()) / 86400000);
+            
+            // REGRA: Só salvar se tinha 3+ dias de atraso (requisito do usuário)
+            if (diasAtraso >= 3) {
+              // Check if already exists to prevent duplicates
+              const existingResult = await tx.execute(sql`SELECT id FROM resolved_receivables WHERE receivableId = ${title.id} LIMIT 1`);
+              const existingRows = (existingResult as any)[0] || existingResult;
+              const hasExisting = Array.isArray(existingRows) && existingRows.length > 0 && existingRows[0]?.id;
+              if (hasExisting) {
+                console.log(`[GraphQL Sync] Título já registrado como resolvido (receivableId=${title.id}), pulando duplicata`);
+                continue;
+              }
+              const valorOriginal = Number(title.valorLiquido) || 0;
+              // NOTA: Quando o título desaparece da API (foi pago), o Maxiprod já atualizou
+              // valorRecebidoLiquido = valorLiquido. Portanto, o valor que ERA a receber
+              // é o próprio valorOriginal (o que o cliente devia antes de pagar).
+              const valorAReceber = valorOriginal;
+              const planilhaInfo = planilhaMap.get(title.id);
+              
+              await tx.insert(resolvedReceivables).values({
+                receivableId: title.id,
+                maxiprodId: title.maxiprodId,
+                cliente: title.cliente || "Sem nome",
+                valorOriginal: String(valorOriginal),
+                valorAReceber: String(valorAReceber),
+                vencimentoData: vencDate,
+                documento: title.documentoVinculadoNumero || null,
+                empresa: title.empresaNome || null,
+                vendedor: null,
+                diasAtrasoNaResolucao: Math.max(0, diasAtraso),
+                statusCobranca: planilhaInfo?.status || "pendente",
+                totalContatos: planilhaInfo?.totalContatos || 0,
+              });
+              console.log(`[GraphQL Sync] Título RESOLVIDO salvo: ${title.cliente} - R$ ${valorAReceber.toFixed(2)} (${diasAtraso} dias atraso)`);
             }
           }
           

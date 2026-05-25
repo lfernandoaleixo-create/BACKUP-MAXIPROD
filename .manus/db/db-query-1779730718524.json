@@ -1,0 +1,170 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.liquidacaoData, DATEDIFF(ar.liquidacaoData, ar.vencimentoData) as dias_atraso FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-15' AND DATEDIFF(ar.liquidacaoData, ar.vencimentoData) >= 3 AND ar.id NOT IN (SELECT receivableId FROM resolved_receivables) ORDER BY ar.liquidacaoData DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.liquidacaoData, DATEDIFF(ar.liquidacaoData, ar.vencimentoData) as dias_atraso FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-15' AND DATEDIFF(ar.liquidacaoData, ar.vencimentoData) >= 3 AND ar.id NOT IN (SELECT receivableId FROM resolved_receivables) ORDER BY ar.liquidacaoData DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "7991557",
+      "cliente": "14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA",
+      "valorLiquido": "1500.00",
+      "vencimentoData": "2026-05-18T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "7"
+    },
+    {
+      "id": "8070878",
+      "cliente": "POLVORA TIGRE LTDA",
+      "valorLiquido": "3200.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7991352",
+      "cliente": "ESPETINHOS COROMANDEL LTDA",
+      "valorLiquido": "506.67",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "12"
+    },
+    {
+      "id": "7992466",
+      "cliente": "CENTRO DE DISTRIBUICAO LUCK BELLA LTDA",
+      "valorLiquido": "2300.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7991751",
+      "cliente": "RAIANE PEREIRA DA SILVA - ALIMENTOS",
+      "valorLiquido": "667.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7992457",
+      "cliente": "GIOVANA CARDOSO DE SOUZA",
+      "valorLiquido": "1250.00",
+      "vencimentoData": "2026-05-21T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "4"
+    },
+    {
+      "id": "8014473",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "8000.00",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "5"
+    },
+    {
+      "id": "8345901",
+      "cliente": "RITA DE CASSIA DOMICIANO NOGUEIRA",
+      "valorLiquido": "1002.67",
+      "vencimentoData": "2026-05-21T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "4"
+    },
+    {
+      "id": "8005673",
+      "cliente": "ARTESHOW SHOWS PIROTECNICOS LTDA",
+      "valorLiquido": "3200.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "8070879",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.",
+      "valorLiquido": "4500.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7988518",
+      "cliente": "POLVORA TIGRE LTDA",
+      "valorLiquido": "3200.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "8093424",
+      "cliente": "RITA DE CASSIA DOMICIANO NOGUEIRA",
+      "valorLiquido": "1002.67",
+      "vencimentoData": "2026-05-21T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25",
+      "dias_atraso": "4"
+    },
+    {
+      "id": "8080211",
+      "cliente": "RITA DE CASSIA DOMICIANO NOGUEIRA",
+      "valorLiquido": "1002.66",
+      "vencimentoData": "2026-05-21T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25",
+      "dias_atraso": "4"
+    },
+    {
+      "id": "7988598",
+      "cliente": "RITA DE CASSIA DOMICIANO NOGUEIRA",
+      "valorLiquido": "200.00",
+      "vencimentoData": "2026-05-21T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25",
+      "dias_atraso": "4"
+    },
+    {
+      "id": "7988559",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "8000.00",
+      "vencimentoData": "2026-05-20T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25",
+      "dias_atraso": "5"
+    },
+    {
+      "id": "7988478",
+      "cliente": "ARTESHOW SHOWS PIROTECNICOS LTDA",
+      "valorLiquido": "3200.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7988474",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.",
+      "valorLiquido": "4500.00",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7992478",
+      "cliente": "BANCO COOPERATIVO SICREDI S.A.",
+      "valorLiquido": "1002.67",
+      "vencimentoData": "2026-05-22T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7992081",
+      "cliente": "JB EMBALAGENS E DESCARTAVEIS LTDA",
+      "valorLiquido": "2250.00",
+      "vencimentoData": "2026-05-19T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-22T12:00:00.000-03:00",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7992432",
+      "cliente": "PAULYNELLE SILVA",
+      "valorLiquido": "2670.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-21T12:00:00.000-03:00",
+      "dias_atraso": "8"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvencimentoData\tliquidacaoData\tdias_atraso\n7991557\t14.755.448 ELIAN CARRILHO SANTIAGO DA SILVA\t1500.00\t2026-05-18T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t7\n8070878\tPOLVORA TIGRE LTDA\t3200.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t3\n7991352\tESPETINHOS COROMANDEL LTDA\t506.67\t2026-05-13T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t12\n7992466\tCENTRO DE DISTRIBUICAO LUCK BELLA LTDA\t2300.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t3\n7991751\tRAIANE PEREIRA DA SILVA - ALIMENTOS\t667.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t3\n7992457\tGIOVANA CARDOSO DE SOUZA\t1250.00\t2026-05-21T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t4\n8014473\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t8000.00\t2026-05-20T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t5\n8345901\tRITA DE CASSIA DOMICIANO NOGUEIRA\t1002.67\t2026-05-21T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t4\n8005673\tARTESHOW SHOWS PIROTECNICOS LTDA\t3200.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t3\n8070879\tINDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.\t4500.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t3\n7988518\tPOLVORA TIGRE LTDA\t3200.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25\t3\n8093424\tRITA DE CASSIA DOMICIANO NOGUEIRA\t1002.67\t2026-05-21T12:00:00.000-03:00\t2026-05-25\t4\n8080211\tRITA DE CASSIA DOMICIANO NOGUEIRA\t1002.66\t2026-05-21T12:00:00.000-03:00\t2026-05-25\t4\n7988598\tRITA DE CASSIA DOMICIANO NOGUEIRA\t200.00\t2026-05-21T12:00:00.000-03:00\t2026-05-25\t4\n7988559\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t8000.00\t2026-05-20T12:00:00.000-03:00\t2026-05-25\t5\n7988478\tARTESHOW SHOWS PIROTECNICOS LTDA\t3200.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25\t3\n7988474\tINDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.\t4500.00\t2026-05-22T12:00:00.000-03:00\t2026-05-25\t3\n7992478\tBANCO COOPERATIVO SICREDI S.A.\t1002.67\t2026-05-22T12:00:00.000-03:00\t2026-05-25\t3\n7992081\tJB EMBALAGENS E DESCARTAVEIS LTDA\t2250.00\t2026-05-19T12:00:00.000-03:00\t2026-05-22T12:00:00.000-03:00\t3\n7992432\tPAULYNELLE SILVA\t2670.00\t2026-05-13T12:00:00.000-03:00\t2026-05-21T12:00:00.000-03:00\t8\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

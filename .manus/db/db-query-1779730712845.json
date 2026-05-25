@@ -1,0 +1,138 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.liquidacaoData, DATEDIFF(ar.liquidacaoData, ar.vencimentoData) as dias_atraso FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-14' AND ar.vencimentoData < '2026-05-14' ORDER BY ar.liquidacaoData DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.valorLiquido, ar.vencimentoData, ar.liquidacaoData, DATEDIFF(ar.liquidacaoData, ar.vencimentoData) as dias_atraso FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-14' AND ar.vencimentoData < '2026-05-14' ORDER BY ar.liquidacaoData DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "7991352",
+      "cliente": "ESPETINHOS COROMANDEL LTDA",
+      "valorLiquido": "506.67",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-25T12:00:00.000-03:00",
+      "dias_atraso": "12"
+    },
+    {
+      "id": "7992252",
+      "cliente": "FLAVIO JOSE DE OLIVEIRA",
+      "valorLiquido": "11290.00",
+      "vencimentoData": "2026-05-12T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-21T12:00:00.000-03:00",
+      "dias_atraso": "9"
+    },
+    {
+      "id": "7992432",
+      "cliente": "PAULYNELLE SILVA",
+      "valorLiquido": "2670.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-21T12:00:00.000-03:00",
+      "dias_atraso": "8"
+    },
+    {
+      "id": "7992417",
+      "cliente": "DIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA",
+      "valorLiquido": "20000.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-20T12:00:00.000-03:00",
+      "dias_atraso": "7"
+    },
+    {
+      "id": "7992128",
+      "cliente": "LUIZ EDUARDO SILVA DE ABREU",
+      "valorLiquido": "3686.40",
+      "vencimentoData": "2026-05-07T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-20T12:00:00.000-03:00",
+      "dias_atraso": "13"
+    },
+    {
+      "id": "7990856",
+      "cliente": "ESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA",
+      "valorLiquido": "1575.00",
+      "vencimentoData": "2026-05-12T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-19T12:00:00.000-03:00",
+      "dias_atraso": "7"
+    },
+    {
+      "id": "7991326",
+      "cliente": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "valorLiquido": "642.60",
+      "vencimentoData": "2026-05-12T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-18T12:00:00.000-03:00",
+      "dias_atraso": "6"
+    },
+    {
+      "id": "7991634",
+      "cliente": "ESPETINHOS SABORES E COMPANHIA LTDA",
+      "valorLiquido": "1276.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-15T12:00:00.000-03:00",
+      "dias_atraso": "2"
+    },
+    {
+      "id": "7992335",
+      "cliente": "INDUSTRIA DE FOGOS DE ARTIFICIO APOLLO LTDA",
+      "valorLiquido": "4500.00",
+      "vencimentoData": "2026-04-28T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-14T12:00:00.000-03:00",
+      "dias_atraso": "16"
+    },
+    {
+      "id": "7992331",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "3150.00",
+      "vencimentoData": "2026-05-11T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-14T12:00:00.000-03:00",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7992330",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "1600.00",
+      "vencimentoData": "2026-05-11T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-14T12:00:00.000-03:00",
+      "dias_atraso": "3"
+    },
+    {
+      "id": "7991898",
+      "cliente": "BEMDITA CARNES ESPECIAIS INDÚSTRIA E COMÉRCIO LTDA",
+      "valorLiquido": "170.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-14T12:00:00.000-03:00",
+      "dias_atraso": "1"
+    },
+    {
+      "id": "7991519",
+      "cliente": "FAZENDA SANTA CRUZ",
+      "valorLiquido": "3686.40",
+      "vencimentoData": "2026-04-10T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-14T12:00:00.000-03:00",
+      "dias_atraso": "34"
+    },
+    {
+      "id": "7991393",
+      "cliente": "ANAJU BANGU PAPELARIA E DESCARTAVEIS LTDA",
+      "valorLiquido": "345.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-14T12:00:00.000-03:00",
+      "dias_atraso": "1"
+    },
+    {
+      "id": "7991580",
+      "cliente": "CLASSE A COMERCIAL LTDA",
+      "valorLiquido": "17750.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-14T12:00:00.000-03:00",
+      "dias_atraso": "1"
+    },
+    {
+      "id": "7991901",
+      "cliente": "AMAZONIA AROMATIZANTES COMERCIAL LTDA",
+      "valorLiquido": "12000.00",
+      "vencimentoData": "2026-05-13T12:00:00.000-03:00",
+      "liquidacaoData": "2026-05-14T12:00:00.000-03:00",
+      "dias_atraso": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvencimentoData\tliquidacaoData\tdias_atraso\n7991352\tESPETINHOS COROMANDEL LTDA\t506.67\t2026-05-13T12:00:00.000-03:00\t2026-05-25T12:00:00.000-03:00\t12\n7992252\tFLAVIO JOSE DE OLIVEIRA\t11290.00\t2026-05-12T12:00:00.000-03:00\t2026-05-21T12:00:00.000-03:00\t9\n7992432\tPAULYNELLE SILVA\t2670.00\t2026-05-13T12:00:00.000-03:00\t2026-05-21T12:00:00.000-03:00\t8\n7992417\tDIE & WILSON INDUSTRIA E COMERCIO DE MADEIRAS LTDA\t20000.00\t2026-05-13T12:00:00.000-03:00\t2026-05-20T12:00:00.000-03:00\t7\n7992128\tLUIZ EDUARDO SILVA DE ABREU\t3686.40\t2026-05-07T12:00:00.000-03:00\t2026-05-20T12:00:00.000-03:00\t13\n7990856\tESPETINHOS XURRASCO COMERCIO DE CARNES E BEBIDAS LTDA\t1575.00\t2026-05-12T12:00:00.000-03:00\t2026-05-19T12:00:00.000-03:00\t7\n7991326\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\t642.60\t2026-05-12T12:00:00.000-03:00\t2026-05-18T12:00:00.000-03:00\t6\n7991634\tESPETINHOS SABORES E COMPANHIA LTDA\t1276.00\t2026-05-13T12:00:00.000-03:00\t2026-05-15T12:00:00.000-03:00\t2\n7992335\tINDUSTRIA DE FOGOS DE ARTIFICIO APOLLO LTDA\t4500.00\t2026-04-28T12:00:00.000-03:00\t2026-05-14T12:00:00.000-03:00\t16\n7992331\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t3150.00\t2026-05-11T12:00:00.000-03:00\t2026-05-14T12:00:00.000-03:00\t3\n7992330\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t1600.00\t2026-05-11T12:00:00.000-03:00\t2026-05-14T12:00:00.000-03:00\t3\n7991898\tBEMDITA CARNES ESPECIAIS INDÚSTRIA E COMÉRCIO LTDA\t170.00\t2026-05-13T12:00:00.000-03:00\t2026-05-14T12:00:00.000-03:00\t1\n7991519\tFAZENDA SANTA CRUZ\t3686.40\t2026-04-10T12:00:00.000-03:00\t2026-05-14T12:00:00.000-03:00\t34\n7991393\tANAJU BANGU PAPELARIA E DESCARTAVEIS LTDA\t345.00\t2026-05-13T12:00:00.000-03:00\t2026-05-14T12:00:00.000-03:00\t1\n7991580\tCLASSE A COMERCIAL LTDA\t17750.00\t2026-05-13T12:00:00.000-03:00\t2026-05-14T12:00:00.000-03:00\t1\n7991901\tAMAZONIA AROMATIZANTES COMERCIAL LTDA\t12000.00\t2026-05-13T12:00:00.000-03:00\t2026-05-14T12:00:00.000-03:00\t1\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

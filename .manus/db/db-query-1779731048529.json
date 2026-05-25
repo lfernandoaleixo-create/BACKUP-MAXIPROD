@@ -1,0 +1,45 @@
+{
+  "query": "SELECT ar.id, ar.cliente, ar.valorLiquido, ar.valorRecebidoLiquido, CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2)) as calc_valor FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-25' AND DATEDIFF(ar.liquidacaoData, ar.vencimentoData) >= 3 LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ar.id, ar.cliente, ar.valorLiquido, ar.valorRecebidoLiquido, CAST(ar.valorLiquido AS DECIMAL(18,2)) - CAST(COALESCE(ar.valorRecebidoLiquido, 0) AS DECIMAL(18,2)) as calc_valor FROM accounts_receivable ar WHERE ar.estado = 'RECEBIDO' AND ar.liquidacaoData >= '2026-05-25' AND DATEDIFF(ar.liquidacaoData, ar.vencimentoData) >= 3 LIMIT 5;",
+  "rows": [
+    {
+      "id": "7988474",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.",
+      "valorLiquido": "4500.00",
+      "valorRecebidoLiquido": "0.00",
+      "calc_valor": "4500.00"
+    },
+    {
+      "id": "7988478",
+      "cliente": "ARTESHOW SHOWS PIROTECNICOS LTDA",
+      "valorLiquido": "3200.00",
+      "valorRecebidoLiquido": "0.00",
+      "calc_valor": "3200.00"
+    },
+    {
+      "id": "7988518",
+      "cliente": "POLVORA TIGRE LTDA",
+      "valorLiquido": "3200.00",
+      "valorRecebidoLiquido": "0.00",
+      "calc_valor": "3200.00"
+    },
+    {
+      "id": "7988559",
+      "cliente": "INDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA",
+      "valorLiquido": "8000.00",
+      "valorRecebidoLiquido": "0.00",
+      "calc_valor": "8000.00"
+    },
+    {
+      "id": "7988598",
+      "cliente": "RITA DE CASSIA DOMICIANO NOGUEIRA",
+      "valorLiquido": "200.00",
+      "valorRecebidoLiquido": "0.00",
+      "calc_valor": "200.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcliente\tvalorLiquido\tvalorRecebidoLiquido\tcalc_valor\n7988474\tINDUSTRIA E COMERCIO DE FOGOS SILVERCOLOR LTDA.\t4500.00\t0.00\t4500.00\n7988478\tARTESHOW SHOWS PIROTECNICOS LTDA\t3200.00\t0.00\t3200.00\n7988518\tPOLVORA TIGRE LTDA\t3200.00\t0.00\t3200.00\n7988559\tINDUSTRIA E COMERCIO DE FOGOS BRASIL PYROFOGOS LTDA\t8000.00\t0.00\t8000.00\n7988598\tRITA DE CASSIA DOMICIANO NOGUEIRA\t200.00\t0.00\t200.00\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}
