@@ -244,4 +244,108 @@ describe("sales.getClientSummary", () => {
       expect(result.inadimplencia).toBeDefined();
     }
   }, 15000);
+
+  it("TITULO_PROPOSTA_DE_VENDA never counts as debt (regression)", async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+
+    const testClient = "__TEST_PROPOSTA_EXCLUSION__";
+
+    // Clean up any previous test data
+    await db.delete(salesOrders).where(eq(salesOrders.cliente, testClient));
+    await db.delete(accountsReceivable).where(eq(accountsReceivable.cliente, testClient));
+
+    // Insert a real TITULO (should count as debt)
+    await db.insert(accountsReceivable).values([
+      {
+        maxiprodId: 88801,
+        cliente: testClient,
+        documentoVinculadoNumero: "NF200",
+        estado: "EMITIDO",
+        tipo: "TITULO",
+        valorOriginal: "5000.00",
+        valorLiquido: "5000.00",
+        valorRecebidoLiquido: "0",
+        vencimentoData: "2026-04-15",
+        emissaoData: "2026-03-15",
+        parcela: 1,
+        parcelasQuantidadeTotal: 1,
+      },
+      // Insert TITULO_PROPOSTA_DE_VENDA (should NEVER count as debt)
+      {
+        maxiprodId: 88802,
+        cliente: testClient,
+        documentoVinculadoNumero: "PROP001",
+        estado: "EMITIDO",
+        tipo: "TITULO_PROPOSTA_DE_VENDA",
+        valorOriginal: "48000.00",
+        valorLiquido: "48000.00",
+        valorRecebidoLiquido: "0",
+        vencimentoData: "2026-04-20",
+        emissaoData: "2026-03-20",
+        parcela: 1,
+        parcelasQuantidadeTotal: 1,
+      },
+      {
+        maxiprodId: 88803,
+        cliente: testClient,
+        documentoVinculadoNumero: "PROP002",
+        estado: "EMITIDO",
+        tipo: "TITULO_PROPOSTA_DE_VENDA",
+        valorOriginal: "10000.00",
+        valorLiquido: "10000.00",
+        valorRecebidoLiquido: "0",
+        vencimentoData: "2026-05-01",
+        emissaoData: "2026-04-01",
+        parcela: 1,
+        parcelasQuantidadeTotal: 1,
+      },
+    ]);
+
+    // Also insert a minimal order so the client is found
+    await db.insert(salesOrders).values([{
+      pedido: "TP001",
+      cliente: testClient,
+      dataEmissao: "2026-03-15",
+      estadoNota: "Faturado",
+      estadoItem: "Faturado",
+      valorTotal: "5000.00",
+      valorTotalPedido: "5000.00",
+      quantidade: "10",
+      descricao: "Produto Test",
+    }]);
+
+    try {
+      const result = await caller.sales.getClientSummary({
+        clienteName: testClient,
+      });
+
+      expect(result).not.toBeNull();
+      if (!result) return;
+
+      // Valor a Receber should be ONLY R$ 5000 (the real TITULO)
+      // The R$ 48000 + R$ 10000 from TITULO_PROPOSTA_DE_VENDA must NOT count
+      expect(result.receivables.valorAReceber).toBe(5000);
+      expect(result.receivables.valorEmAbertoLive).toBe(5000);
+
+      // titulosEmAbertoLive should NOT contain any PROPOSTA entries
+      const propostas = result.receivables.titulosEmAbertoLive.filter(
+        (t: any) => t.tipo === "TITULO_PROPOSTA_DE_VENDA"
+      );
+      expect(propostas.length).toBe(0);
+
+      // groupedReceivables should NOT contain PROPOSTA documents
+      const propostaGroups = result.groupedReceivables.filter(
+        (g: any) => g.documento === "PROP001" || g.documento === "PROP002"
+      );
+      expect(propostaGroups.length).toBe(0);
+
+      // KPI counts should reflect only the real titulo
+      expect(result.receivables.parcelasEmAberto).toBe(1);
+    } finally {
+      // Cleanup
+      await db.delete(salesOrders).where(eq(salesOrders.cliente, testClient));
+      await db.delete(accountsReceivable).where(eq(accountsReceivable.cliente, testClient));
+    }
+  }, 15000);
 });

@@ -1638,7 +1638,8 @@ export const salesRouter = router({
           dedupMap.set(key, r);
         }
       }
-      let deduplicatedReceivables = Array.from(dedupMap.values());
+      let deduplicatedReceivables = Array.from(dedupMap.values())
+        .filter(r => r.tipo !== "TITULO_PROPOSTA_DE_VENDA"); // Propostas NUNCA são dívida real
 
       // ===== VINCULAR NF AO PEDIDO VIA GRAPHQL DO MAXIPROD =====
       // Buscar TODAS as NFs de saída e mapear NF→Pedido via itensDasNotasFiscais
@@ -1998,7 +1999,9 @@ export const salesRouter = router({
       const groupedReceivables = groupedReceivablesRaw.filter(g => g.valorTotalGrupo > 0.01);
       // Calcular KPIs de títulos APÓS filtrar títulos antigos de pedidos com NF
       // Usar dedupForCountsRaw filtrado (excluir títulos de pedidos que já têm NF)
+      // REGRA: TITULO_PROPOSTA_DE_VENDA NUNCA conta como dívida real
       const dedupForCounts = dedupForCountsRaw.filter(r => {
+        if (r.tipo === "TITULO_PROPOSTA_DE_VENDA") return false; // Propostas não são dívida
         const doc = r.documentoVinculadoNumero || '';
         // Excluir títulos cujo doc é um número de pedido que já tem NF vinculada
         return !pedidosComNf.has(doc);
@@ -2072,8 +2075,11 @@ export const salesRouter = router({
       let titulosEmAbertoLive: Array<{ valorOriginal: number; vencimento: string; documento: string; parcela: string; tipo: string; situacao: string }> = [];
       let titulosDescontados: Array<{ valorOriginal: number; situacao: string; formaCobranca: string; vencimento: string; documento: string; parcela: string; liquidacao: string; tipo: string }> = [];
       try {
+        // REGRA: TITULO_PROPOSTA_DE_VENDA NUNCA conta como dívida real (são apenas projeções/orçamentos)
+        const receivablesExcluindoPropostas = allReceivables.filter(r => r.tipo !== "TITULO_PROPOSTA_DE_VENDA");
+
         // 1. Títulos em aberto: estado EMITIDO (= "A Receber" no Maxiprod)
-        const emitidosLocal = allReceivables.filter(r => r.estado === "EMITIDO");
+        const emitidosLocal = receivablesExcluindoPropostas.filter(r => r.estado === "EMITIDO");
         for (const r of emitidosLocal) {
           const valorLiq = parseFloat(r.valorLiquido || r.valorOriginal || "0");
           const valorRecebido = parseFloat(r.valorRecebidoLiquido || "0");
@@ -2093,7 +2099,7 @@ export const salesRouter = router({
 
         // 2. Títulos descontados: estado RECEBIDO com situacaoTitulo PREENCHIDO
         //    Se situacaoTitulo está vazio, o cliente realmente pagou → ignorar
-        const recebidosLocal = allReceivables.filter(r => r.estado === "RECEBIDO");
+        const recebidosLocal = receivablesExcluindoPropostas.filter(r => r.estado === "RECEBIDO");
         for (const r of recebidosLocal) {
           const situacao = (r.situacaoTitulo || "").trim();
           if (!situacao) continue; // Vazio = cliente pagou de verdade, ignorar

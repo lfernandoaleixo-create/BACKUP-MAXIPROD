@@ -339,7 +339,7 @@ export function ClientSearchCard() {
   const [tituloFilter, setTituloFilter] = useState<TituloFilter>("todos");
   const [tituloSort, setTituloSort] = useState<TituloSort>("vencimento_asc");
   // Tipo filters for Valor a Receber
-  const [tiposFilter, setTiposFilter] = useState<string[]>(["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA", "TITULO_PROPOSTA_DE_VENDA"]);
+  const [tiposFilter, setTiposFilter] = useState<string[]>(["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"]);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     orders: true,
     receivables: true,
@@ -401,7 +401,7 @@ export function ClientSearchCard() {
     setExpanded(false);
     setTituloFilter("todos");
     setTituloSort("vencimento_asc");
-    setTiposFilter(["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA", "TITULO_PROPOSTA_DE_VENDA"]);
+    setTiposFilter(["TITULO", "RECEITA", "ADIANTAMENTO", "TITULO_PEDIDO_DE_VENDA"]);
   };
 
   const toggleTipoFilter = (tipo: string) => {
@@ -721,7 +721,6 @@ export function ClientSearchCard() {
                     { key: "RECEITA", label: "Receitas" },
                     { key: "ADIANTAMENTO", label: "Adiantamentos" },
                     { key: "TITULO_PEDIDO_DE_VENDA", label: "Pedidos de Venda" },
-                    { key: "TITULO_PROPOSTA_DE_VENDA", label: "Propostas de Venda" },
                   ].map(({ key, label }) => (
                     <label key={key} className="flex items-center gap-1.5 cursor-pointer">
                       <Checkbox
