@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) as total, MAX(ticked_at) as ultimo_tick, MIN(ticked_at) as primeiro_tick FROM payment_calendar_ticks;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total, MAX(ticked_at) as ultimo_tick, MIN(ticked_at) as primeiro_tick FROM payment_calendar_ticks;",
+  "rows": [
+    {
+      "total": "5",
+      "ultimo_tick": "1779449801687",
+      "primeiro_tick": "1779449789924"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tultimo_tick\tprimeiro_tick\n5\t1779449801687\t1779449789924\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

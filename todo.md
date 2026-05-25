@@ -3951,3 +3951,4 @@
 - [x] Produção: botão de exportar PDF no frontend com seletor de período
 - [x] Consulta Cliente: excluir TITULO_PROPOSTA_DE_VENDA de todo cálculo de Valor a Receber (propostas não são dívida real)
 - [x] Consulta Cliente: remover checkbox "Propostas de Venda" do filtro de tipos no frontend
+- [x] Financeiro: exportar PDF das contas a pagar ticadas pelo Fernando

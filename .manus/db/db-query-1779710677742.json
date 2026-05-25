@@ -1,0 +1,210 @@
+{
+  "query": "SELECT cmt.id, cmt.receivable_id, cmt.step, cmt.ticked, cmt.ticked_by, cmt.ticked_at, cmt.tick_status, cmt.created_at FROM collection_manual_ticks cmt WHERE cmt.ticked = 1 ORDER BY cmt.ticked_at DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cmt.id, cmt.receivable_id, cmt.step, cmt.ticked, cmt.ticked_by, cmt.ticked_at, cmt.tick_status, cmt.created_at FROM collection_manual_ticks cmt WHERE cmt.ticked = 1 ORDER BY cmt.ticked_at DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "690010",
+      "receivable_id": "5473733",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581753038",
+      "tick_status": "blue",
+      "created_at": "1778581753038"
+    },
+    {
+      "id": "300053",
+      "receivable_id": "5473730",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581709400",
+      "tick_status": "blue",
+      "created_at": "1777404104615"
+    },
+    {
+      "id": "690009",
+      "receivable_id": "5473734",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581700879",
+      "tick_status": "blue",
+      "created_at": "1778581700879"
+    },
+    {
+      "id": "270053",
+      "receivable_id": "5473731",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581697433",
+      "tick_status": "blue",
+      "created_at": "1777321205053"
+    },
+    {
+      "id": "690008",
+      "receivable_id": "5473732",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581686186",
+      "tick_status": "blue",
+      "created_at": "1778581686186"
+    },
+    {
+      "id": "390022",
+      "receivable_id": "5473739",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581675563",
+      "tick_status": "blue",
+      "created_at": "1777570498245"
+    },
+    {
+      "id": "390015",
+      "receivable_id": "5473742",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581642890",
+      "tick_status": "blue",
+      "created_at": "1777558820945"
+    },
+    {
+      "id": "390017",
+      "receivable_id": "5473743",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581628630",
+      "tick_status": "blue",
+      "created_at": "1777559112457"
+    },
+    {
+      "id": "360061",
+      "receivable_id": "5473740",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581598352",
+      "tick_status": "blue",
+      "created_at": "1777485824491"
+    },
+    {
+      "id": "360068",
+      "receivable_id": "5473747",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581580859",
+      "tick_status": "blue",
+      "created_at": "1777488942732"
+    },
+    {
+      "id": "360069",
+      "receivable_id": "5473746",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581574718",
+      "tick_status": "blue",
+      "created_at": "1777488946782"
+    },
+    {
+      "id": "360070",
+      "receivable_id": "5473745",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581568223",
+      "tick_status": "blue",
+      "created_at": "1777488950270"
+    },
+    {
+      "id": "330001",
+      "receivable_id": "5473744",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581565833",
+      "tick_status": "blue",
+      "created_at": "1777419892514"
+    },
+    {
+      "id": "690007",
+      "receivable_id": "5473729",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581452454",
+      "tick_status": "blue",
+      "created_at": "1778581452454"
+    },
+    {
+      "id": "360075",
+      "receivable_id": "5473756",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581448857",
+      "tick_status": "blue",
+      "created_at": "1777489481203"
+    },
+    {
+      "id": "690006",
+      "receivable_id": "5473789",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581382496",
+      "tick_status": "blue",
+      "created_at": "1778581382497"
+    },
+    {
+      "id": "690005",
+      "receivable_id": "5473754",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581374943",
+      "tick_status": "blue",
+      "created_at": "1778581374943"
+    },
+    {
+      "id": "690004",
+      "receivable_id": "5473794",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581372374",
+      "tick_status": "blue",
+      "created_at": "1778581372374"
+    },
+    {
+      "id": "390018",
+      "receivable_id": "5473753",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581367793",
+      "tick_status": "blue",
+      "created_at": "1777561150526"
+    },
+    {
+      "id": "270036",
+      "receivable_id": "5473786",
+      "step": "1",
+      "ticked": "1",
+      "ticked_by": "Guilherme",
+      "ticked_at": "1778581335927",
+      "tick_status": "blue",
+      "created_at": "1777321205053"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\treceivable_id\tstep\tticked\tticked_by\tticked_at\ttick_status\tcreated_at\n690010\t5473733\t1\t1\tGuilherme\t1778581753038\tblue\t1778581753038\n300053\t5473730\t1\t1\tGuilherme\t1778581709400\tblue\t1777404104615\n690009\t5473734\t1\t1\tGuilherme\t1778581700879\tblue\t1778581700879\n270053\t5473731\t1\t1\tGuilherme\t1778581697433\tblue\t1777321205053\n690008\t5473732\t1\t1\tGuilherme\t1778581686186\tblue\t1778581686186\n390022\t5473739\t1\t1\tGuilherme\t1778581675563\tblue\t1777570498245\n390015\t5473742\t1\t1\tGuilherme\t1778581642890\tblue\t1777558820945\n390017\t5473743\t1\t1\tGuilherme\t1778581628630\tblue\t1777559112457\n360061\t5473740\t1\t1\tGuilherme\t1778581598352\tblue\t1777485824491\n360068\t5473747\t1\t1\tGuilherme\t1778581580859\tblue\t1777488942732\n360069\t5473746\t1\t1\tGuilherme\t1778581574718\tblue\t1777488946782\n360070\t5473745\t1\t1\tGuilherme\t1778581568223\tblue\t1777488950270\n330001\t5473744\t1\t1\tGuilherme\t1778581565833\tblue\t1777419892514\n690007\t5473729\t1\t1\tGuilherme\t1778581452454\tblue\t1778581452454\n360075\t5473756\t1\t1\tGuilherme\t1778581448857\tblue\t1777489481203\n690006\t5473789\t1\t1\tGuilherme\t1778581382496\tblue\t1778581382497\n690005\t5473754\t1\t1\tGuilherme\t1778581374943\tblue\t1778581374943\n690004\t5473794\t1\t1\tGuilherme\t1778581372374\tblue\t1778581372374\n390018\t5473753\t1\t1\tGuilherme\t1778581367793\tblue\t1777561150526\n270036\t5473786\t1\t1\tGuilherme\t1778581335927\tblue\t1777321205053\n",
+  "stderr": "",
+  "execution_time_ms": 273
+}

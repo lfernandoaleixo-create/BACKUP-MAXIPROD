@@ -1,0 +1,60 @@
+{
+  "query": "SELECT pct.id, pct.maxiprod_id, pct.ticked_by, FROM_UNIXTIME(pct.ticked_at/1000) as ticked_date, ap.fornecedor, ap.referenteA, ap.valorLiquido, ap.vencimentoData FROM payment_calendar_ticks pct LEFT JOIN accounts_payable ap ON ap.maxiprodId = pct.maxiprod_id ORDER BY pct.ticked_at DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pct.id, pct.maxiprod_id, pct.ticked_by, FROM_UNIXTIME(pct.ticked_at/1000) as ticked_date, ap.fornecedor, ap.referenteA, ap.valorLiquido, ap.vencimentoData FROM payment_calendar_ticks pct LEFT JOIN accounts_payable ap ON ap.maxiprodId = pct.maxiprod_id ORDER BY pct.ticked_at DESC;",
+  "rows": [
+    {
+      "id": "60005",
+      "maxiprod_id": "409300075331615",
+      "ticked_by": "Fernando",
+      "ticked_date": "2026-05-22 11:36:41.6870",
+      "fornecedor": "GILSON ALEIXO",
+      "referenteA": "DEVOLUÇÃO TOTAL DO CAPITAL EMPRESTADO DE R$ 450.000,00",
+      "valorLiquido": "450000.00",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    },
+    {
+      "id": "60004",
+      "maxiprod_id": "409300075041512",
+      "ticked_by": "Fernando",
+      "ticked_date": "2026-05-22 11:36:37.0130",
+      "fornecedor": "GILSON ALEIXO",
+      "referenteA": "DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    },
+    {
+      "id": "60003",
+      "maxiprod_id": "409300075041511",
+      "ticked_by": "Fernando",
+      "ticked_date": "2026-05-22 11:36:35.7150",
+      "fornecedor": "GILSON ALEIXO",
+      "referenteA": " DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    },
+    {
+      "id": "60002",
+      "maxiprod_id": "409300075041453",
+      "ticked_by": "Fernando",
+      "ticked_date": "2026-05-22 11:36:31.0200",
+      "fornecedor": "BRUNO HENRIQUE ALEIXO",
+      "referenteA": "DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE BRUNO",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    },
+    {
+      "id": "60001",
+      "maxiprod_id": "409300075041452",
+      "ticked_by": "Fernando",
+      "ticked_date": "2026-05-22 11:36:29.9240",
+      "fornecedor": "BRUNO HENRIQUE ALEIXO",
+      "referenteA": "DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA  - PARTE BRUNO",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tmaxiprod_id\tticked_by\tticked_date\tfornecedor\treferenteA\tvalorLiquido\tvencimentoData\n60005\t409300075331615\tFernando\t2026-05-22 11:36:41.6870\tGILSON ALEIXO\tDEVOLUÇÃO TOTAL DO CAPITAL EMPRESTADO DE R$ 450.000,00\t450000.00\t2026-06-01T12:00:00.000-03:00\n60004\t409300075041512\tFernando\t2026-05-22 11:36:37.0130\tGILSON ALEIXO\tDEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON\t17850.00\t2026-06-01T12:00:00.000-03:00\n60003\t409300075041511\tFernando\t2026-05-22 11:36:35.7150\tGILSON ALEIXO\t DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON\t17850.00\t2026-06-01T12:00:00.000-03:00\n60002\t409300075041453\tFernando\t2026-05-22 11:36:31.0200\tBRUNO HENRIQUE ALEIXO\tDEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE BRUNO\t17850.00\t2026-06-01T12:00:00.000-03:00\n60001\t409300075041452\tFernando\t2026-05-22 11:36:29.9240\tBRUNO HENRIQUE ALEIXO\tDEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA  - PARTE BRUNO\t17850.00\t2026-06-01T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 303
+}

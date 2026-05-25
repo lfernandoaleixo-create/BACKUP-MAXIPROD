@@ -1,0 +1,45 @@
+{
+  "query": "SELECT pct.maxiprod_id, CASE WHEN ap.id IS NOT NULL THEN 'EXISTS' ELSE 'MISSING' END as status, ap.estado, ap.fornecedor, ap.vencimentoData FROM payment_calendar_ticks pct LEFT JOIN accounts_payable ap ON ap.maxiprodId = pct.maxiprod_id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT pct.maxiprod_id, CASE WHEN ap.id IS NOT NULL THEN 'EXISTS' ELSE 'MISSING' END as status, ap.estado, ap.fornecedor, ap.vencimentoData FROM payment_calendar_ticks pct LEFT JOIN accounts_payable ap ON ap.maxiprodId = pct.maxiprod_id;",
+  "rows": [
+    {
+      "maxiprod_id": "409300075041452",
+      "status": "EXISTS",
+      "estado": "EMITIDO",
+      "fornecedor": "BRUNO HENRIQUE ALEIXO",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    },
+    {
+      "maxiprod_id": "409300075041453",
+      "status": "EXISTS",
+      "estado": "EMITIDO",
+      "fornecedor": "BRUNO HENRIQUE ALEIXO",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    },
+    {
+      "maxiprod_id": "409300075041511",
+      "status": "EXISTS",
+      "estado": "EMITIDO",
+      "fornecedor": "GILSON ALEIXO",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    },
+    {
+      "maxiprod_id": "409300075041512",
+      "status": "EXISTS",
+      "estado": "EMITIDO",
+      "fornecedor": "GILSON ALEIXO",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    },
+    {
+      "maxiprod_id": "409300075331615",
+      "status": "EXISTS",
+      "estado": "EMITIDO",
+      "fornecedor": "GILSON ALEIXO",
+      "vencimentoData": "2026-06-01T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "maxiprod_id\tstatus\testado\tfornecedor\tvencimentoData\n409300075041452\tEXISTS\tEMITIDO\tBRUNO HENRIQUE ALEIXO\t2026-06-01T12:00:00.000-03:00\n409300075041453\tEXISTS\tEMITIDO\tBRUNO HENRIQUE ALEIXO\t2026-06-01T12:00:00.000-03:00\n409300075041511\tEXISTS\tEMITIDO\tGILSON ALEIXO\t2026-06-01T12:00:00.000-03:00\n409300075041512\tEXISTS\tEMITIDO\tGILSON ALEIXO\t2026-06-01T12:00:00.000-03:00\n409300075331615\tEXISTS\tEMITIDO\tGILSON ALEIXO\t2026-06-01T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 282
+}

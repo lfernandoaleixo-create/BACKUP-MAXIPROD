@@ -74,7 +74,8 @@ import CreditCardTab from "@/components/CreditCardTab";
 import MaxiprodAutoVerifier from "@/components/MaxiprodAutoVerifier";
 import { useOperator } from "@/contexts/OperatorContext";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calculator, History, ShoppingCart } from "lucide-react";
+import { Calculator, History, ShoppingCart, FileDown } from "lucide-react";
+import { generateTickedPaymentsPdf, type TickedPaymentItem } from "@/lib/paymentTickedPdfExport";
 import FinancialHistoryPanel, { WeekHistoryPanel } from "@/components/FinancialHistoryPanel";
 import { useDiscountAlerts } from "@/contexts/DiscountAlertContext";
 
@@ -767,6 +768,29 @@ function BucketCard({ bucket, colorClass, textColorClass, isPagar, canAuthorize 
               >
                 <Calculator className="w-4.5 h-4.5" />
               </button>
+              {/* PDF export for ticked items */}
+              {isPagar && tickedIds.size > 0 && (
+                <button
+                  onClick={() => {
+                    const tickedItems: TickedPaymentItem[] = bucket.items
+                      .filter((item: any) => item.maxiprodId && tickedIds.has(item.maxiprodId))
+                      .map((item: any) => ({
+                        fornecedor: item.fornecedor || "",
+                        referenteA: item.referenteA || "",
+                        vencimento: item.vencimento || "",
+                        valor: item.valor || 0,
+                        maxiprodId: item.maxiprodId,
+                      }));
+                    if (tickedItems.length > 0) {
+                      generateTickedPaymentsPdf(tickedItems, operator?.name || "Fernando");
+                    }
+                  }}
+                  className="p-1 rounded transition-colors cursor-pointer text-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                  title={`Exportar PDF das ${tickedIds.size} contas selecionadas`}
+                >
+                  <FileDown className="w-4 h-4" />
+                </button>
+              )}
             </div>
           )}
         </div>

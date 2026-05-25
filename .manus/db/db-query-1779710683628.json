@@ -1,0 +1,46 @@
+{
+  "query": "SELECT ticked_by, COUNT(*) as total, SUM(CASE WHEN ticked = 1 THEN 1 ELSE 0 END) as ticados, SUM(CASE WHEN ticked = 0 THEN 1 ELSE 0 END) as desmarcados FROM collection_manual_ticks GROUP BY ticked_by ORDER BY total DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT ticked_by, COUNT(*) as total, SUM(CASE WHEN ticked = 1 THEN 1 ELSE 0 END) as ticados, SUM(CASE WHEN ticked = 0 THEN 1 ELSE 0 END) as desmarcados FROM collection_manual_ticks GROUP BY ticked_by ORDER BY total DESC;",
+  "rows": [
+    {
+      "ticked_by": "Thiago",
+      "total": "337",
+      "ticados": "337",
+      "desmarcados": "0"
+    },
+    {
+      "ticked_by": "Guilherme",
+      "total": "105",
+      "ticados": "105",
+      "desmarcados": "0"
+    },
+    {
+      "ticked_by": "NULL",
+      "total": "98",
+      "ticados": "0",
+      "desmarcados": "98"
+    },
+    {
+      "ticked_by": "Thalita",
+      "total": "42",
+      "ticados": "42",
+      "desmarcados": "0"
+    },
+    {
+      "ticked_by": "SYNC",
+      "total": "8",
+      "ticados": "8",
+      "desmarcados": "0"
+    },
+    {
+      "ticked_by": "SISTEMA",
+      "total": "5",
+      "ticados": "5",
+      "desmarcados": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "ticked_by\ttotal\tticados\tdesmarcados\nThiago\t337\t337\t0\nGuilherme\t105\t105\t0\nNULL\t98\t0\t98\nThalita\t42\t42\t0\nSYNC\t8\t8\t0\nSISTEMA\t5\t5\t0\n",
+  "stderr": "",
+  "execution_time_ms": 257
+}
