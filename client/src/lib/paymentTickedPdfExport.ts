@@ -78,7 +78,7 @@ export async function generateTickedPaymentsPdf(items: TickedPaymentItem[], tick
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(30, 30, 30);
-  doc.text("CONTAS SELECIONADAS PARA PAGAMENTO", margin + 22, y + 8);
+  doc.text("CONTAS SELECIONADAS PARA ADIAMENTO", margin + 22, y + 8);
 
   // Subtitle with date
   doc.setFontSize(9);
@@ -155,7 +155,7 @@ export async function generateTickedPaymentsPdf(items: TickedPaymentItem[], tick
       // Date header row
       const groupTotal = groupItems.reduce((s, i) => s + i.valor, 0);
       tableBody.push([
-        { content: `📅 Vencimento: ${dateKey}  —  Subtotal: ${formatCurrency(groupTotal)}`, colSpan: 3, styles: { fillColor: [245, 240, 225], fontStyle: "bold", fontSize: 8.5, textColor: [100, 70, 0] } },
+        { content: `Vencimento: ${dateKey}  -  Subtotal: ${formatCurrency(groupTotal)}`, colSpan: 3, styles: { fillColor: [245, 240, 225], fontStyle: "bold", fontSize: 8.5, textColor: [100, 70, 0] } },
       ]);
 
       // Item rows
@@ -211,10 +211,10 @@ export async function generateTickedPaymentsPdf(items: TickedPaymentItem[], tick
     const pageHeight = doc.internal.pageSize.getHeight();
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Grupo Fox — Contas Selecionadas | Página ${i}/${totalPages}`, pageWidth / 2, pageHeight - 6, { align: "center" });
+    doc.text(`Grupo Fox - Contas Selecionadas para Adiamento | Pagina ${i}/${totalPages}`, pageWidth / 2, pageHeight - 6, { align: "center" });
   }
 
   // Save
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  doc.save(`Contas_Selecionadas_${dateStr}.pdf`);
+  doc.save(`Contas_Adiamento_${dateStr}.pdf`);
 }
