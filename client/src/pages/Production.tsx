@@ -20,6 +20,7 @@ import {
   FileDown, TrendingUp,
 } from "lucide-react";
 import { generateDailyPdf, generateWeeklyPdf, generateMonthlyPdf } from "@/lib/productionPdfExport";
+import { generateDailyPdf as generatePiroDailyPdf, generateWeeklyPdf as generatePiroWeeklyPdf, generateMonthlyPdf as generatePiroMonthlyPdf } from "@/lib/pirografiaPdfExport";
 import { generateAnnotationPdf } from "@/lib/annotationPdfExport";
 import ProductionCharts from "@/components/ProductionCharts";
 import {
@@ -2828,6 +2829,8 @@ function PirografiaHistoryView() {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const [dataInicio, setDataInicio] = useState(thirtyDaysAgo);
   const [dataFim, setDataFim] = useState(today);
+  const [piroExporting, setPiroExporting] = useState(false);
+  const [showPiroExportMenu, setShowPiroExportMenu] = useState(false);
 
   const { data, isLoading } = trpc.production.getPirografiaHistory.useQuery({
     dataInicio,
@@ -2842,6 +2845,30 @@ function PirografiaHistoryView() {
     const start = new Date(Date.now() - days * 86400000);
     setDataInicio(start.toISOString().slice(0, 10));
     setDataFim(end.toISOString().slice(0, 10));
+  };
+
+  // PDF export handlers
+  const handlePiroExport = async (type: "diario" | "semanal" | "mensal") => {
+    if (!data) return;
+    setPiroExporting(true);
+    setShowPiroExportMenu(false);
+    try {
+      if (type === "diario") {
+        await generatePiroDailyPdf(data, dataFim);
+      } else if (type === "semanal") {
+        await generatePiroWeeklyPdf(data, dataInicio, dataFim);
+      } else {
+        // Mensal: use the month of dataInicio
+        const yearMonth = dataInicio.slice(0, 7);
+        await generatePiroMonthlyPdf(data, yearMonth);
+      }
+      toast.success("PDF gerado com sucesso!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setPiroExporting(false);
+    }
   };
 
   return (
@@ -2863,16 +2890,45 @@ function PirografiaHistoryView() {
             <button onClick={() => setPreset(365)} className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">1 ano</button>
           </div>
         </div>
-        <div className="flex items-center gap-3 mt-4">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-slate-500">De:</label>
-            <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        <div className="flex items-center justify-between gap-3 mt-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-slate-500">De:</label>
+              <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+                className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-slate-500">Até:</label>
+              <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+                className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-slate-500">Até:</label>
-            <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          {/* PDF Export Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowPiroExportMenu(!showPiroExportMenu)}
+              disabled={!data || isLoading || piroExporting}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {piroExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+              Exportar PDF
+            </button>
+            {showPiroExportMenu && (
+              <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 min-w-[160px]">
+                <button onClick={() => handlePiroExport("diario")} className="w-full text-left px-3 py-2 text-xs hover:bg-orange-50 transition-colors flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5 text-orange-500" />
+                  Diário ({dataFim.split("-").reverse().join("/")})
+                </button>
+                <button onClick={() => handlePiroExport("semanal")} className="w-full text-left px-3 py-2 text-xs hover:bg-orange-50 transition-colors flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                  Período Selecionado
+                </button>
+                <button onClick={() => handlePiroExport("mensal")} className="w-full text-left px-3 py-2 text-xs hover:bg-orange-50 transition-colors flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5 text-purple-500" />
+                  Mensal ({dataInicio.slice(0, 7).split("-").reverse().join("/")})
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

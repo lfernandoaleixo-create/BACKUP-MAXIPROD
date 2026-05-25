@@ -3947,3 +3947,5 @@
 - [x] Consulta Cliente: títulos descontados detectados por situacaoTitulo não-vazio (em vez de decisaoCobranca)
 - [x] Consulta Cliente: corrigir lógica - títulos descontados vêm de EMITIDO com situacaoTitulo preenchido (não de RECEBIDO)
 - [x] Consulta Cliente: RECEBIDO não entra em nenhum cálculo (cliente já pagou)
+- [x] Produção: exportar PDF do Histórico de Pirografia com opções de período (diário, semanal, mensal)
+- [x] Produção: botão de exportar PDF no frontend com seletor de período
