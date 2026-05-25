@@ -1066,6 +1066,12 @@ export const cobrancaPlanilhaRouter = router({
           const clienteData = clienteDataMap[inad.empresa] || {};
           const normEmpNew = normalizeName(inad.empresa);
           
+          // PROTEÇÃO: Herdar campos manuais de itens existentes da mesma empresa
+          // (status, observacoes, datas de cobrança, etapa pausada, forma de cobrança)
+          const existingOfSameEmpresa = planilhaAtual.find(
+            p => p.empresa === inad.empresa && (p.status || p.observacoes || p.primeiraCobranca)
+          );
+          
           await db.insert(cobrancaPlanilha).values({
             arId: inad.arId,
             empresa: inad.empresa,
@@ -1080,7 +1086,8 @@ export const cobrancaPlanilhaRouter = router({
             vencimento: inad.vencimento,
             diasVencidos: inad.diasVencidos,
             tipo: inad.tipo,
-            status: inad.status,
+            // HERDAR status manual se existir item da mesma empresa com status definido
+            status: existingOfSameEmpresa?.status || inad.status,
             contato: contatoGqlMap[normEmpNew] || clienteData.contato || null,
             email: (() => {
               const nfe = emailNfeMap[normEmpNew] || "";
@@ -1095,8 +1102,15 @@ export const cobrancaPlanilhaRouter = router({
             regiao: clienteData.regiao || null,
             apelido: apelidoMap[normEmpNew] || null,
             vendedor: isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : (vendedorMap[normEmpNew] || null),
-            formaCobranca: formaCobrancaMap[inad.arId] || null,
+            formaCobranca: formaCobrancaMap[inad.arId] || existingOfSameEmpresa?.formaCobranca || null,
             contatosAdicionais: contatosExtrasMap[normEmpNew] || [],
+            // HERDAR campos manuais de cobrança da mesma empresa
+            observacoes: existingOfSameEmpresa?.observacoes || null,
+            primeiraCobranca: existingOfSameEmpresa?.primeiraCobranca || null,
+            segundaCobranca: existingOfSameEmpresa?.segundaCobranca || null,
+            terceiraCobranca: existingOfSameEmpresa?.terceiraCobranca || null,
+            acaoFinal: existingOfSameEmpresa?.acaoFinal || null,
+            etapasPausadas: existingOfSameEmpresa?.etapasPausadas || null,
             updatedBy: `Sync: ${input.updatedBy}`,
           });
           added++;
@@ -1320,14 +1334,33 @@ export const cobrancaPlanilhaRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      const conditions = [eq(cobrancaEtapaObs.planilhaId, input.planilhaId)];
+      // Buscar a empresa do item clicado para pegar obs de todos os IDs da mesma empresa
+      const [item] = await db.select({ empresa: cobrancaPlanilha.empresa })
+        .from(cobrancaPlanilha)
+        .where(eq(cobrancaPlanilha.id, input.planilhaId))
+        .limit(1);
+      if (!item) return [];
+      const allIds = await db.select({ id: cobrancaPlanilha.id })
+        .from(cobrancaPlanilha)
+        .where(eq(cobrancaPlanilha.empresa, item.empresa));
+      const idList = allIds.map(r => r.id);
+      if (idList.length === 0) return [];
+      const conditions: any[] = [inArray(cobrancaEtapaObs.planilhaId, idList)];
       if (input.etapa) {
         conditions.push(eq(cobrancaEtapaObs.etapa, input.etapa));
       }
       const rows = await db.select().from(cobrancaEtapaObs)
         .where(and(...conditions))
         .orderBy(desc(cobrancaEtapaObs.createdAt));
-      return rows;
+      // Deduplicar por conteúdo
+      const seen = new Set<string>();
+      const deduped = rows.filter(r => {
+        const key = `${r.etapa}|${r.observacao}|${r.createdAt}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return deduped;
     }),
 
   /** Listar TODAS as observações de um título (para o balãozinho de histórico) */
@@ -1336,10 +1369,31 @@ export const cobrancaPlanilhaRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      // Buscar a empresa do item clicado
+      const [item] = await db.select({ empresa: cobrancaPlanilha.empresa })
+        .from(cobrancaPlanilha)
+        .where(eq(cobrancaPlanilha.id, input.planilhaId))
+        .limit(1);
+      if (!item) return [];
+      // Buscar TODOS os IDs da mesma empresa (ativos e inativos) para mostrar histórico completo
+      const allIds = await db.select({ id: cobrancaPlanilha.id })
+        .from(cobrancaPlanilha)
+        .where(eq(cobrancaPlanilha.empresa, item.empresa));
+      const idList = allIds.map(r => r.id);
+      if (idList.length === 0) return [];
+      // Buscar todas as observações de todos os IDs dessa empresa (sem duplicatas)
       const rows = await db.select().from(cobrancaEtapaObs)
-        .where(eq(cobrancaEtapaObs.planilhaId, input.planilhaId))
+        .where(inArray(cobrancaEtapaObs.planilhaId, idList))
         .orderBy(desc(cobrancaEtapaObs.createdAt));
-      return rows;
+      // Deduplicar por conteúdo (mesma etapa + mesma observação + mesmo timestamp)
+      const seen = new Set<string>();
+      const deduped = rows.filter(r => {
+        const key = `${r.etapa}|${r.observacao}|${r.createdAt}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return deduped;
     }),
 
   /** Editar uma observação existente */

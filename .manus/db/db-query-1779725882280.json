@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) as total_obs, COUNT(DISTINCT p.empresa) as distinct_empresas \nFROM cobranca_etapa_obs o \nJOIN cobranca_planilha p ON o.planilha_id = p.id \nWHERE p.ativo = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COUNT(*) as total_obs, COUNT(DISTINCT p.empresa) as distinct_empresas \nFROM cobranca_etapa_obs o \nJOIN cobranca_planilha p ON o.planilha_id = p.id \nWHERE p.ativo = 1;",
+  "rows": [
+    {
+      "total_obs": "56",
+      "distinct_empresas": "23"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_obs\tdistinct_empresas\n56\t23\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

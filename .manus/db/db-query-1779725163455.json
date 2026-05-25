@@ -1,0 +1,9 @@
+{
+  "query": "SELECT empresa, primeira_cobranca, segunda_cobranca, terceira_cobranca FROM cobranca_planilha WHERE ativo = 1 AND primeira_cobranca IS NOT NULL AND primeira_cobranca != 'NULL' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT empresa, primeira_cobranca, segunda_cobranca, terceira_cobranca FROM cobranca_planilha WHERE ativo = 1 AND primeira_cobranca IS NOT NULL AND primeira_cobranca != 'NULL' LIMIT 5;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 260
+}

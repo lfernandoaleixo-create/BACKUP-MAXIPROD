@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, totalItems, createdBy, createdAt FROM cobranca_planilha_backup ORDER BY createdAt ASC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, totalItems, createdBy, createdAt FROM cobranca_planilha_backup ORDER BY createdAt ASC LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "totalItems": "88",
+      "createdBy": "Auto-backup (sync por test-vitest)",
+      "createdAt": "2026-05-14 16:40:56"
+    },
+    {
+      "id": "2",
+      "totalItems": "93",
+      "createdBy": "Auto-backup (sync por test-vitest)",
+      "createdAt": "2026-05-14 16:40:58"
+    },
+    {
+      "id": "3",
+      "totalItems": "93",
+      "createdBy": "Auto-backup (sync por Guilherme)",
+      "createdAt": "2026-05-14 16:42:56"
+    },
+    {
+      "id": "4",
+      "totalItems": "93",
+      "createdBy": "Auto-backup (sync por test-vitest)",
+      "createdAt": "2026-05-14 17:03:33"
+    },
+    {
+      "id": "5",
+      "totalItems": "93",
+      "createdBy": "Auto-backup (sync por test-vitest)",
+      "createdAt": "2026-05-14 17:03:34"
+    },
+    {
+      "id": "6",
+      "totalItems": "93",
+      "createdBy": "Auto-backup (sync por test-vitest)",
+      "createdAt": "2026-05-14 17:04:47"
+    },
+    {
+      "id": "7",
+      "totalItems": "93",
+      "createdBy": "Auto-backup (sync por test-vitest)",
+      "createdAt": "2026-05-14 17:04:48"
+    },
+    {
+      "id": "8",
+      "totalItems": "93",
+      "createdBy": "Auto-backup (sync por Guilherme)",
+      "createdAt": "2026-05-14 17:23:29"
+    },
+    {
+      "id": "9",
+      "totalItems": "93",
+      "createdBy": "Auto-backup (sync por Guilherme)",
+      "createdAt": "2026-05-14 17:42:09"
+    },
+    {
+      "id": "10",
+      "totalItems": "93",
+      "createdBy": "Auto-backup (sync por test-vitest)",
+      "createdAt": "2026-05-14 17:53:06"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttotalItems\tcreatedBy\tcreatedAt\n1\t88\tAuto-backup (sync por test-vitest)\t2026-05-14 16:40:56\n2\t93\tAuto-backup (sync por test-vitest)\t2026-05-14 16:40:58\n3\t93\tAuto-backup (sync por Guilherme)\t2026-05-14 16:42:56\n4\t93\tAuto-backup (sync por test-vitest)\t2026-05-14 17:03:33\n5\t93\tAuto-backup (sync por test-vitest)\t2026-05-14 17:03:34\n6\t93\tAuto-backup (sync por test-vitest)\t2026-05-14 17:04:47\n7\t93\tAuto-backup (sync por test-vitest)\t2026-05-14 17:04:48\n8\t93\tAuto-backup (sync por Guilherme)\t2026-05-14 17:23:29\n9\t93\tAuto-backup (sync por Guilherme)\t2026-05-14 17:42:09\n10\t93\tAuto-backup (sync por test-vitest)\t2026-05-14 17:53:06\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

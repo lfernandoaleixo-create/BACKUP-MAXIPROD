@@ -1,0 +1,8 @@
+{
+  "query": "SELECT JSON_UNQUOTE(JSON_EXTRACT(j.item, '$.status')) as status, COUNT(*) as total FROM cobranca_planilha_backup b, JSON_TABLE(b.dataJson, '$[*]' COLUMNS (item JSON PATH '$')) j WHERE b.id = 300011 GROUP BY status ORDER BY total DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT JSON_UNQUOTE(JSON_EXTRACT(j.item, '$.status')) as status, COUNT(*) as total FROM cobranca_planilha_backup b, JSON_TABLE(b.dataJson, '$[*]' COLUMNS (item JSON PATH '$')) j WHERE b.id = 300011 GROUP BY status ORDER BY total DESC;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 1 column 127 near \"(b.dataJson, '$[*]' COLUMNS (item JSON PATH '$')) j WHERE b.id = 300011 GROUP BY status ORDER BY total DESC\""
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "query": "SELECT p.empresa, o.etapa, LEFT(o.observacao, 80) as obs_preview, o.registrado_por, o.created_at \nFROM cobranca_etapa_obs o \nJOIN cobranca_planilha p ON o.planilha_id = p.id \nWHERE p.ativo = 1 \nORDER BY p.empresa, o.created_at DESC \nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT p.empresa, o.etapa, LEFT(o.observacao, 80) as obs_preview, o.registrado_por, o.created_at \nFROM cobranca_etapa_obs o \nJOIN cobranca_planilha p ON o.planilha_id = p.id \nWHERE p.ativo = 1 \nORDER BY p.empresa, o.created_at DESC \nLIMIT 20;",
+  "rows": [
+    {
+      "empresa": "3B3R COMERCIO LTDA",
+      "etapa": "primeiraCobranca",
+      "obs_preview": "Mensagem enviada no email ernanemiguelfernandes@gmail.com e whatsapp  61 9954-04",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-21 17:20:14"
+    },
+    {
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "etapa": "acaoFinal",
+      "obs_preview": "Envio a protesto paralisado, cliente efetuou pagamento parcial do valor vencido,",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-18 16:43:57"
+    },
+    {
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "etapa": "primeiraCobranca",
+      "obs_preview": "Cobrança ainda paralisada pelo Financeiro, vendedora Paula informou que cliente ",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-20 17:49:22"
+    },
+    {
+      "empresa": "59.252.539 GLAUCIENE MATEUS GOMES GERTH",
+      "etapa": "primeiraCobranca",
+      "obs_preview": "Cliente pagou metade da parcela, restante (R$ 550,00) ficou de pagar até dia 15/",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 18:31:04"
+    },
+    {
+      "empresa": "ALIMENTOS RAMOS LTDA.",
+      "etapa": "acaoFinal",
+      "obs_preview": "Valor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-20 19:25:09"
+    },
+    {
+      "empresa": "ALIMENTOS RAMOS LTDA.",
+      "etapa": "acaoFinal",
+      "obs_preview": "Após várias tentativas de recebimento, hoje encerramos a cobrança. Estamos envia",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-19 14:33:08"
+    },
+    {
+      "empresa": "ALMEIDA PATURI COMERCIO DE CARNES LTDA",
+      "etapa": "acaoFinal",
+      "obs_preview": "Valor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-20 19:24:48"
+    },
+    {
+      "empresa": "ALMEIDA PATURI COMERCIO DE CARNES LTDA",
+      "etapa": "acaoFinal",
+      "obs_preview": "Após várias tentativas de recebimento, hoje encerramos a cobrança. Estamos envia",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-19 19:06:42"
+    },
+    {
+      "empresa": "ALMEIDA PATURI COMERCIO DE CARNES LTDA",
+      "etapa": "terceiraCobranca",
+      "obs_preview": "Ligações sem retorno.",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    },
+    {
+      "empresa": "BOUTIQUE DO CONSTRUTOR SLU LTDA",
+      "etapa": "acaoFinal",
+      "obs_preview": "Após várias tentativas de recebimento, hoje encerramos a cobrança",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-20 14:48:47"
+    },
+    {
+      "empresa": "BR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA",
+      "etapa": "semAcao3",
+      "obs_preview": "Vendedor Clarindo está tentando contanto presencial, caso não tenhamos retorno a",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-19 14:01:41"
+    },
+    {
+      "empresa": "BR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA",
+      "etapa": "terceiraCobranca",
+      "obs_preview": "2  ligações não atendidas e 3°cobrança feita",
+      "registrado_por": "Thiago (importado do Excel)",
+      "created_at": "2026-05-15 10:56:35"
+    },
+    {
+      "empresa": "COMPAPEL DISTRIBUIDORA DE PAPEIS E UTILIDADES LTDA",
+      "etapa": "acaoFinal",
+      "obs_preview": "Após várias tentativas de recebimento, hoje encerramos a cobrança. Estamos envia",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-19 14:27:13"
+    },
+    {
+      "empresa": "ESPETINHOS COROMANDEL LTDA",
+      "etapa": "acaoFinal",
+      "obs_preview": "cliente enviou comprovante de pagamento ",
+      "registrado_por": "Thalita",
+      "created_at": "2026-05-22 17:58:03"
+    },
+    {
+      "empresa": "ESPETINHOS COROMANDEL LTDA",
+      "etapa": "primeiraCobranca",
+      "obs_preview": "Mensagem enviada no email renatakarinerodrigues@gmail.com e whatsapp 34 9804-389",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-21 17:38:52"
+    },
+    {
+      "empresa": "ESPETINHOS COROMANDEL LTDA",
+      "etapa": "terceiraCobranca",
+      "obs_preview": "Mensagem enviada no WhatsApp no n° (34) 9804-3898 e e-mail:renatakarinerodrigues",
+      "registrado_por": "Thalita",
+      "created_at": "2026-05-20 17:44:18"
+    },
+    {
+      "empresa": "ESPETINHOS COROMANDEL LTDA",
+      "etapa": "primeiraCobranca",
+      "obs_preview": "Mensagem enviada no WhatsApp no n° (34) 9804-3898 e e-mail:renatakarinerodrigues",
+      "registrado_por": "Thalita",
+      "created_at": "2026-05-20 17:29:00"
+    },
+    {
+      "empresa": "ESPETINHOS COROMANDEL LTDA",
+      "etapa": "segundaCobranca",
+      "obs_preview": "Enviado mensagem no email renatakarinerodrigues@gmail.com e ligação no whatsapp ",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-18 14:35:24"
+    },
+    {
+      "empresa": "ESPETINHOS COROMANDEL LTDA",
+      "etapa": "primeiraCobranca",
+      "obs_preview": "Enviado mensagem no email renatakarinerodrigues@gmail.com e whatsapp 34 9804-389",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-15 18:25:01"
+    }
+  ],
+  "messages": [
+    "ESPETINHOS COROMANDEL LTDA\tterceiraCobranca\tcliente retornou com promessa de pagamento ate dia 29/05/2026",
+    "\tThalita\t2026-05-22 17:58:54"
+  ],
+  "stdout": "empresa\tetapa\tobs_preview\tregistrado_por\tcreated_at\n3B3R COMERCIO LTDA\tprimeiraCobranca\tMensagem enviada no email ernanemiguelfernandes@gmail.com e whatsapp  61 9954-04\tThiago\t2026-05-21 17:20:14\n48.128.486 CARLOS HUMBERTO BUENO\tacaoFinal\tEnvio a protesto paralisado, cliente efetuou pagamento parcial do valor vencido,\tThiago\t2026-05-18 16:43:57\n59.252.539 GLAUCIENE MATEUS GOMES GERTH\tprimeiraCobranca\tCobrança ainda paralisada pelo Financeiro, vendedora Paula informou que cliente \tThiago\t2026-05-20 17:49:22\n59.252.539 GLAUCIENE MATEUS GOMES GERTH\tprimeiraCobranca\tCliente pagou metade da parcela, restante (R$ 550,00) ficou de pagar até dia 15/\tThiago\t2026-05-15 18:31:04\nALIMENTOS RAMOS LTDA.\tacaoFinal\tValor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer\tThiago\t2026-05-20 19:25:09\nALIMENTOS RAMOS LTDA.\tacaoFinal\tApós várias tentativas de recebimento, hoje encerramos a cobrança. Estamos envia\tThiago\t2026-05-19 14:33:08\nALMEIDA PATURI COMERCIO DE CARNES LTDA\tacaoFinal\tValor vencido não tem NF e boleto emitido, documentação entregue para Guilhermer\tThiago\t2026-05-20 19:24:48\nALMEIDA PATURI COMERCIO DE CARNES LTDA\tacaoFinal\tApós várias tentativas de recebimento, hoje encerramos a cobrança. Estamos envia\tThiago\t2026-05-19 19:06:42\nALMEIDA PATURI COMERCIO DE CARNES LTDA\tterceiraCobranca\tLigações sem retorno.\tThiago (importado do Excel)\t2026-05-15 10:56:35\nBOUTIQUE DO CONSTRUTOR SLU LTDA\tacaoFinal\tApós várias tentativas de recebimento, hoje encerramos a cobrança\tThiago\t2026-05-20 14:48:47\nBR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA\tsemAcao3\tVendedor Clarindo está tentando contanto presencial, caso não tenhamos retorno a\tThiago\t2026-05-19 14:01:41\nBR DISTRIBUIDORA DE CARNES E SERVIÇOS LTDA\tterceiraCobranca\t2  ligações não atendidas e 3°cobrança feita\tThiago (importado do Excel)\t2026-05-15 10:56:35\nCOMPAPEL DISTRIBUIDORA DE PAPEIS E UTILIDADES LTDA\tacaoFinal\tApós várias tentativas de recebimento, hoje encerramos a cobrança. Estamos envia\tThiago\t2026-05-19 14:27:13\nESPETINHOS COROMANDEL LTDA\tterceiraCobranca\tcliente retornou com promessa de pagamento ate dia 29/05/2026\n\tThalita\t2026-05-22 17:58:54\nESPETINHOS COROMANDEL LTDA\tacaoFinal\tcliente enviou comprovante de pagamento \tThalita\t2026-05-22 17:58:03\nESPETINHOS COROMANDEL LTDA\tprimeiraCobranca\tMensagem enviada no email renatakarinerodrigues@gmail.com e whatsapp 34 9804-389\tThiago\t2026-05-21 17:38:52\nESPETINHOS COROMANDEL LTDA\tterceiraCobranca\tMensagem enviada no WhatsApp no n° (34) 9804-3898 e e-mail:renatakarinerodrigues\tThalita\t2026-05-20 17:44:18\nESPETINHOS COROMANDEL LTDA\tprimeiraCobranca\tMensagem enviada no WhatsApp no n° (34) 9804-3898 e e-mail:renatakarinerodrigues\tThalita\t2026-05-20 17:29:00\nESPETINHOS COROMANDEL LTDA\tsegundaCobranca\tEnviado mensagem no email renatakarinerodrigues@gmail.com e ligação no whatsapp \tThiago\t2026-05-18 14:35:24\nESPETINHOS COROMANDEL LTDA\tprimeiraCobranca\tEnviado mensagem no email renatakarinerodrigues@gmail.com e whatsapp 34 9804-389\tThiago\t2026-05-15 18:25:01\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

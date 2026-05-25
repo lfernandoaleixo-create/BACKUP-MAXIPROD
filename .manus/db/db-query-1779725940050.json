@@ -1,0 +1,45 @@
+{
+  "query": "SELECT p.id, p.empresa, p.ativo, p.observacoes, \n  (SELECT COUNT(*) FROM cobranca_etapa_obs o WHERE o.planilha_id = p.id) as obs_count\nFROM cobranca_planilha p \nWHERE p.empresa LIKE '%PANTANAL%' \nORDER BY p.ativo DESC, p.id DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT p.id, p.empresa, p.ativo, p.observacoes, \n  (SELECT COUNT(*) FROM cobranca_etapa_obs o WHERE o.planilha_id = p.id) as obs_count\nFROM cobranca_planilha p \nWHERE p.empresa LIKE '%PANTANAL%' \nORDER BY p.ativo DESC, p.id DESC;",
+  "rows": [
+    {
+      "id": "270085",
+      "empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "ativo": "1",
+      "observacoes": "NULL",
+      "obs_count": "0"
+    },
+    {
+      "id": "270078",
+      "empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "ativo": "1",
+      "observacoes": "[1ª Cobrança] 1ª cobrança: mensagem enviada no email adm@pantanalaromas.com.br e whatsapps 11 99938-4231 e 11 98821-7207",
+      "obs_count": "6"
+    },
+    {
+      "id": "240004",
+      "empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "ativo": "0",
+      "observacoes": "NULL",
+      "obs_count": "2"
+    },
+    {
+      "id": "180002",
+      "empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "ativo": "0",
+      "observacoes": "NULL",
+      "obs_count": "3"
+    },
+    {
+      "id": "3",
+      "empresa": "PANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA",
+      "ativo": "0",
+      "observacoes": "[1ª Cobrança] 1ª cobrança: mensagem enviada no email adm@pantanalaromas.com.br e whatsapps 11 99938-4231 e 11 98821-7207",
+      "obs_count": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tativo\tobservacoes\tobs_count\n270085\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\t1\tNULL\t0\n270078\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\t1\t[1ª Cobrança] 1ª cobrança: mensagem enviada no email adm@pantanalaromas.com.br e whatsapps 11 99938-4231 e 11 98821-7207\t6\n240004\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\t0\tNULL\t2\n180002\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\t0\tNULL\t3\n3\tPANTANAL AROMAS DISTRIBUIDORA DE AROMATIZANTES LTDA\t0\t[1ª Cobrança] 1ª cobrança: mensagem enviada no email adm@pantanalaromas.com.br e whatsapps 11 99938-4231 e 11 98821-7207\t1\n",
+  "stderr": "",
+  "execution_time_ms": 258
+}

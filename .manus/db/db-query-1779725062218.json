@@ -1,0 +1,42 @@
+{
+  "query": "SELECT status, COUNT(*) as total FROM cobranca_planilha WHERE ativo = 1 GROUP BY status ORDER BY total DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT status, COUNT(*) as total FROM cobranca_planilha WHERE ativo = 1 GROUP BY status ORDER BY total DESC;",
+  "rows": [
+    {
+      "status": "Especial s/ cobrança",
+      "total": "44"
+    },
+    {
+      "status": "Em negociação",
+      "total": "21"
+    },
+    {
+      "status": "Protestado",
+      "total": "11"
+    },
+    {
+      "status": "Promessa de Pgto",
+      "total": "5"
+    },
+    {
+      "status": "Fundo Perdido",
+      "total": "4"
+    },
+    {
+      "status": "Contatado",
+      "total": "1"
+    },
+    {
+      "status": "Pendente",
+      "total": "1"
+    },
+    {
+      "status": "Protesto em Análise",
+      "total": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\ttotal\nEspecial s/ cobrança\t44\nEm negociação\t21\nProtestado\t11\nPromessa de Pgto\t5\nFundo Perdido\t4\nContatado\t1\nPendente\t1\nProtesto em Análise\t1\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

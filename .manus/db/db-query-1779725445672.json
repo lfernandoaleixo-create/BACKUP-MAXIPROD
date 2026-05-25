@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, empresa, ar_id, ativo FROM cobranca_planilha WHERE empresa LIKE '%CARLOS HUMBERTO%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, empresa, ar_id, ativo FROM cobranca_planilha WHERE empresa LIKE '%CARLOS HUMBERTO%';",
+  "rows": [
+    {
+      "id": "86",
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "ar_id": "6401242",
+      "ativo": "0"
+    },
+    {
+      "id": "87",
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "ar_id": "5473791",
+      "ativo": "0"
+    },
+    {
+      "id": "270066",
+      "empresa": "48.128.486 CARLOS HUMBERTO BUENO",
+      "ar_id": "7988144",
+      "ativo": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tar_id\tativo\n86\t48.128.486 CARLOS HUMBERTO BUENO\t6401242\t0\n87\t48.128.486 CARLOS HUMBERTO BUENO\t5473791\t0\n270066\t48.128.486 CARLOS HUMBERTO BUENO\t7988144\t1\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

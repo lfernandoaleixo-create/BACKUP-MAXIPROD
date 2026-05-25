@@ -1,0 +1,30 @@
+{
+  "query": "SELECT empresa, status, tipo, observacoes, primeira_cobranca, segunda_cobranca, terceira_cobranca, forma_cobranca, promessa_pgto FROM cobranca_planilha WHERE ativo = 1 AND (observacoes IS NOT NULL AND observacoes != '' OR primeira_cobranca IS NOT NULL) LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT empresa, status, tipo, observacoes, primeira_cobranca, segunda_cobranca, terceira_cobranca, forma_cobranca, promessa_pgto FROM cobranca_planilha WHERE ativo = 1 AND (observacoes IS NOT NULL AND observacoes != '' OR primeira_cobranca IS NOT NULL) LIMIT 5;",
+  "rows": [
+    {
+      "empresa": "WGO COMERCIO E SERVICOS LTDA",
+      "status": "Em negociação",
+      "tipo": "SEM PROTESTO",
+      "observacoes": "[1ª Cobrança] Trata-se cliente Gustavo do Rio, ele está pagando parcialmente os valores em aberto, ficou de enviar nova remessa de pagamento até dia 15/05/2026",
+      "primeira_cobranca": "NULL",
+      "segunda_cobranca": "NULL",
+      "terceira_cobranca": "NULL",
+      "forma_cobranca": "PIX Sicredi conta 52061 chave 52.888.511/0001-95",
+      "promessa_pgto": "NULL"
+    }
+  ],
+  "messages": [
+    "JK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04",
+    "/05/2026\tNULL\tNULL\tNULL\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tNULL",
+    "JK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04",
+    "/05/2026\tNULL\tNULL\tNULL\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tNULL",
+    "JK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04",
+    "/05/2026\tNULL\tNULL\tNULL\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tNULL",
+    "JK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04",
+    "/05/2026\tNULL\tNULL\tNULL\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tNULL"
+  ],
+  "stdout": "empresa\tstatus\ttipo\tobservacoes\tprimeira_cobranca\tsegunda_cobranca\tterceira_cobranca\tforma_cobranca\tpromessa_pgto\nJK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04\n/05/2026\tNULL\tNULL\tNULL\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tNULL\nJK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04\n/05/2026\tNULL\tNULL\tNULL\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tNULL\nJK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04\n/05/2026\tNULL\tNULL\tNULL\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tNULL\nJK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04\n/05/2026\tNULL\tNULL\tNULL\tBoleto S.A. - BANCOOB ag 3140 conta 80247 carteira 1\tNULL\nWGO COMERCIO E SERVICOS LTDA\tEm negociação\tSEM PROTESTO\t[1ª Cobrança] Trata-se cliente Gustavo do Rio, ele está pagando parcialmente os valores em aberto, ficou de enviar nova remessa de pagamento até dia 15/05/2026\tNULL\tNULL\tNULL\tPIX Sicredi conta 52061 chave 52.888.511/0001-95\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 263
+}

@@ -1,0 +1,40 @@
+{
+  "query": "SELECT empresa, status, tipo, primeira_cobranca, segunda_cobranca, terceira_cobranca, observacoes FROM cobranca_planilha WHERE ativo = 1 AND primeira_cobranca IS NOT NULL LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT empresa, status, tipo, primeira_cobranca, segunda_cobranca, terceira_cobranca, observacoes FROM cobranca_planilha WHERE ativo = 1 AND primeira_cobranca IS NOT NULL LIMIT 3;",
+  "rows": [
+    {
+      "empresa": "SUPER MIX DISTRIBUIDORA LTDA",
+      "status": "Protesto em Análise",
+      "tipo": "COM PROTESTO (CARTÓRIO)",
+      "primeira_cobranca": "2026-04-30",
+      "segunda_cobranca": "2026-05-06",
+      "terceira_cobranca": "2026-05-19",
+      "observacoes": "NULL"
+    },
+    {
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "status": "Em negociação",
+      "tipo": "COM PROTESTO (CARTÓRIO)",
+      "primeira_cobranca": "2026-04-30",
+      "segunda_cobranca": "NULL",
+      "terceira_cobranca": "NULL",
+      "observacoes": "[Sem ação] Cliente está negociando devolução com Juvenal dia 04"
+    },
+    {
+      "empresa": "JK COMERCIO E REPRESENTACOES LTDA",
+      "status": "Em negociação",
+      "tipo": "COM PROTESTO (CARTÓRIO)",
+      "primeira_cobranca": "2026-04-30",
+      "segunda_cobranca": "NULL",
+      "terceira_cobranca": "NULL",
+      "observacoes": "[Sem ação] Cliente está negociando devolução com Juvenal dia 04"
+    }
+  ],
+  "messages": [
+    "/05/2026",
+    "/05/2026"
+  ],
+  "stdout": "empresa\tstatus\ttipo\tprimeira_cobranca\tsegunda_cobranca\tterceira_cobranca\tobservacoes\nSUPER MIX DISTRIBUIDORA LTDA\tProtesto em Análise\tCOM PROTESTO (CARTÓRIO)\t2026-04-30\t2026-05-06\t2026-05-19\tNULL\nJK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t2026-04-30\tNULL\tNULL\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04\n/05/2026\nJK COMERCIO E REPRESENTACOES LTDA\tEm negociação\tCOM PROTESTO (CARTÓRIO)\t2026-04-30\tNULL\tNULL\t[Sem ação] Cliente está negociando devolução com Juvenal dia 04\n/05/2026\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

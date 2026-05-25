@@ -1,0 +1,14 @@
+{
+  "query": "SELECT status, COUNT(*) as total FROM cobranca_planilha WHERE ativo = 1 GROUP BY status ORDER BY total DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT status, COUNT(*) as total FROM cobranca_planilha WHERE ativo = 1 GROUP BY status ORDER BY total DESC;",
+  "rows": [
+    {
+      "status": "Pendente",
+      "total": "89"
+    }
+  ],
+  "messages": [],
+  "stdout": "status\ttotal\nPendente\t89\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

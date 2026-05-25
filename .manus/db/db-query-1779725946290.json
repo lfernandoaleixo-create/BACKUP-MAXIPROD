@@ -1,0 +1,24 @@
+{
+  "query": "SELECT id, ar_id, valor, vencimento, ativo FROM cobranca_planilha WHERE empresa LIKE '%PANTANAL%' AND ativo = 1 ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, ar_id, valor, vencimento, ativo FROM cobranca_planilha WHERE empresa LIKE '%PANTANAL%' AND ativo = 1 ORDER BY id;",
+  "rows": [
+    {
+      "id": "270078",
+      "ar_id": "7988198",
+      "valor": "642.60",
+      "vencimento": "2026-05-19",
+      "ativo": "1"
+    },
+    {
+      "id": "270085",
+      "ar_id": "7988274",
+      "valor": "714.00",
+      "vencimento": "2026-05-21",
+      "ativo": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tar_id\tvalor\tvencimento\tativo\n270078\t7988198\t642.60\t2026-05-19\t1\n270085\t7988274\t714.00\t2026-05-21\t1\n",
+  "stderr": "",
+  "execution_time_ms": 259
+}

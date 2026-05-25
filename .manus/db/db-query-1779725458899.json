@@ -1,0 +1,14 @@
+{
+  "query": "SELECT \n  CASE WHEN p.ativo = 1 THEN 'active' ELSE 'inactive' END as item_status,\n  COUNT(*) as obs_count\nFROM cobranca_etapa_obs o\nJOIN cobranca_planilha p ON o.planilha_id = p.id\nGROUP BY item_status;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT \n  CASE WHEN p.ativo = 1 THEN 'active' ELSE 'inactive' END as item_status,\n  COUNT(*) as obs_count\nFROM cobranca_etapa_obs o\nJOIN cobranca_planilha p ON o.planilha_id = p.id\nGROUP BY item_status;",
+  "rows": [
+    {
+      "item_status": "inactive",
+      "obs_count": "105"
+    }
+  ],
+  "messages": [],
+  "stdout": "item_status\tobs_count\ninactive\t105\n",
+  "stderr": "",
+  "execution_time_ms": 257
+}

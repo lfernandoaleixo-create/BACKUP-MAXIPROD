@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, totalItems, createdBy, createdAt FROM cobranca_planilha_backup WHERE totalItems >= 100 ORDER BY createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, totalItems, createdBy, createdAt FROM cobranca_planilha_backup WHERE totalItems >= 100 ORDER BY createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "300013",
+      "totalItems": "219",
+      "createdBy": "Thiago",
+      "createdAt": "2026-05-25 16:15:43"
+    },
+    {
+      "id": "300012",
+      "totalItems": "219",
+      "createdBy": "Guilherme",
+      "createdAt": "2026-05-25 16:15:27"
+    },
+    {
+      "id": "300011",
+      "totalItems": "219",
+      "createdBy": "Guilherme",
+      "createdAt": "2026-05-25 15:58:12"
+    },
+    {
+      "id": "300010",
+      "totalItems": "130",
+      "createdBy": "Auto-backup (sync por test-new-fields)",
+      "createdAt": "2026-05-25 13:20:58"
+    },
+    {
+      "id": "300009",
+      "totalItems": "130",
+      "createdBy": "Auto-backup (sync por test-enrichment)",
+      "createdAt": "2026-05-25 13:20:34"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttotalItems\tcreatedBy\tcreatedAt\n300013\t219\tThiago\t2026-05-25 16:15:43\n300012\t219\tGuilherme\t2026-05-25 16:15:27\n300011\t219\tGuilherme\t2026-05-25 15:58:12\n300010\t130\tAuto-backup (sync por test-new-fields)\t2026-05-25 13:20:58\n300009\t130\tAuto-backup (sync por test-enrichment)\t2026-05-25 13:20:34\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}

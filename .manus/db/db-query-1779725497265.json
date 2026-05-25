@@ -1,0 +1,18 @@
+{
+  "query": "SELECT o.* FROM cobranca_etapa_obs o WHERE o.planilha_id = 270066;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT o.* FROM cobranca_etapa_obs o WHERE o.planilha_id = 270066;",
+  "rows": [
+    {
+      "id": "300022",
+      "planilha_id": "270066",
+      "etapa": "acaoFinal",
+      "observacao": "Envio a protesto paralisado, cliente efetuou pagamento parcial do valor vencido, o restante enviará até dia 31/05/2026",
+      "registrado_por": "Thiago",
+      "created_at": "2026-05-18 16:43:57"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplanilha_id\tetapa\tobservacao\tregistrado_por\tcreated_at\n300022\t270066\tacaoFinal\tEnvio a protesto paralisado, cliente efetuou pagamento parcial do valor vencido, o restante enviará até dia 31/05/2026\tThiago\t2026-05-18 16:43:57\n",
+  "stderr": "",
+  "execution_time_ms": 269
+}

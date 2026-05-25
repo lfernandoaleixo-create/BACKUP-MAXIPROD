@@ -3953,3 +3953,5 @@
 - [x] Consulta Cliente: remover checkbox "Propostas de Venda" do filtro de tipos no frontend
 - [x] Financeiro: exportar PDF das contas a pagar ticadas pelo Fernando
 - [x] Faturamento: corrigir inversão de data no PDF (07/05 virava 05/07 por re-parsing de dd/mm como mm/dd)
+- [x] Cobrança: corrigir Histórico de Observações para buscar por empresa (todos IDs) em vez de só planilhaId
+- [x] Cobrança: proteger sync para herdar campos manuais (status, obs, datas cobrança) de itens existentes da mesma empresa
