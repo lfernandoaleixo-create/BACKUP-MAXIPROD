@@ -1,0 +1,65 @@
+{
+  "query": "SELECT id, maxiprodId, estado, tipo, valorOriginal, valorLiquido, vencimentoData, vencimentoOriginalData, referenteA FROM accounts_payable WHERE vencimentoData LIKE '%2050%' ORDER BY id DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, maxiprodId, estado, tipo, valorOriginal, valorLiquido, vencimentoData, vencimentoOriginalData, referenteA FROM accounts_payable WHERE vencimentoData LIKE '%2050%' ORDER BY id DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "22367368",
+      "maxiprodId": "409300075331615",
+      "estado": "EMITIDO",
+      "tipo": "DESPESA",
+      "valorOriginal": "450000.00",
+      "valorLiquido": "450000.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-04-30T12:00:00.000-03:00",
+      "referenteA": "DEVOLUÇÃO TOTAL DO CAPITAL EMPRESTADO DE R$ 450.000,00"
+    },
+    {
+      "id": "22366907",
+      "maxiprodId": "409300075041512",
+      "estado": "EMITIDO",
+      "tipo": "DESPESA",
+      "valorOriginal": "17850.00",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-04-15T12:00:00.000-03:00",
+      "referenteA": "DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON"
+    },
+    {
+      "id": "22366906",
+      "maxiprodId": "409300075041511",
+      "estado": "EMITIDO",
+      "tipo": "DESPESA",
+      "valorOriginal": "17850.00",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-03-15T12:00:00.000-03:00",
+      "referenteA": " DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON"
+    },
+    {
+      "id": "22366887",
+      "maxiprodId": "409300075041453",
+      "estado": "EMITIDO",
+      "tipo": "DESPESA",
+      "valorOriginal": "17850.00",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-04-15T12:00:00.000-03:00",
+      "referenteA": "DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE BRUNO"
+    },
+    {
+      "id": "22366886",
+      "maxiprodId": "409300075041452",
+      "estado": "EMITIDO",
+      "tipo": "DESPESA",
+      "valorOriginal": "17850.00",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-03-15T12:00:00.000-03:00",
+      "referenteA": "DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA  - PARTE BRUNO"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tmaxiprodId\testado\ttipo\tvalorOriginal\tvalorLiquido\tvencimentoData\tvencimentoOriginalData\treferenteA\n22367368\t409300075331615\tEMITIDO\tDESPESA\t450000.00\t450000.00\t2050-12-31T12:00:00.000-03:00\t2026-04-30T12:00:00.000-03:00\tDEVOLUÇÃO TOTAL DO CAPITAL EMPRESTADO DE R$ 450.000,00\n22366907\t409300075041512\tEMITIDO\tDESPESA\t17850.00\t17850.00\t2050-12-31T12:00:00.000-03:00\t2026-04-15T12:00:00.000-03:00\tDEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON\n22366906\t409300075041511\tEMITIDO\tDESPESA\t17850.00\t17850.00\t2050-12-31T12:00:00.000-03:00\t2026-03-15T12:00:00.000-03:00\t DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON\n22366887\t409300075041453\tEMITIDO\tDESPESA\t17850.00\t17850.00\t2050-12-31T12:00:00.000-03:00\t2026-04-15T12:00:00.000-03:00\tDEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE BRUNO\n22366886\t409300075041452\tEMITIDO\tDESPESA\t17850.00\t17850.00\t2050-12-31T12:00:00.000-03:00\t2026-03-15T12:00:00.000-03:00\tDEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA  - PARTE BRUNO\n",
+  "stderr": "",
+  "execution_time_ms": 273
+}

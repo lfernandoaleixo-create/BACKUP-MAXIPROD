@@ -1753,6 +1753,74 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
 }
 
 /* ---- Cash Flow Chart Card ---- */
+function DeferredPaymentsCard() {
+  const { data, isLoading } = trpc.financial.getDeferredPayments.useQuery(undefined, { refetchInterval: 60000 });
+  const [expanded, setExpanded] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-amber-200 dark:border-amber-700 shadow-sm p-6">
+        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-amber-400" /></div>
+      </div>
+    );
+  }
+
+  if (!data || data.payments.length === 0) return null;
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-amber-200 dark:border-amber-700 shadow-sm overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
+      >
+        <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300 flex items-center gap-2">
+          <Clock className="w-4 h-4" />
+          Pagamentos Adiados
+          <span className="text-xs font-normal text-amber-500">({data.stats.count} t\u00edtulos)</span>
+          {expanded ? <ChevronUp className="w-4 h-4 text-amber-600" /> : <ChevronDown className="w-4 h-4 text-amber-600" />}
+        </h3>
+        <span className="text-sm font-bold text-amber-800 dark:text-amber-200">
+          Total: {formatCurrency(data.stats.valorTotal)}
+        </span>
+      </button>
+      {expanded && (
+        <div className="p-4">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-amber-100 dark:border-amber-800">
+                  <th className="text-left py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Fornecedor</th>
+                  <th className="text-left py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Referente</th>
+                  <th className="text-left py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Empresa</th>
+                  <th className="text-left py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Venc. Original</th>
+                  <th className="text-right py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.payments.map((p) => (
+                  <tr key={p.id} className="border-b border-amber-50 dark:border-amber-900/30 hover:bg-amber-50/50 dark:hover:bg-amber-900/20">
+                    <td className="py-2 px-2 font-medium text-slate-700 dark:text-slate-200">{p.fornecedor}</td>
+                    <td className="py-2 px-2 text-slate-600 dark:text-slate-300 max-w-[250px] truncate" title={p.referenteA}>{p.referenteA}</td>
+                    <td className="py-2 px-2 text-slate-500 dark:text-slate-400">{p.empresaNome}</td>
+                    <td className="py-2 px-2 text-slate-500 dark:text-slate-400">{formatDate(p.vencimentoOriginal)}</td>
+                    <td className="py-2 px-2 text-right font-bold text-amber-700 dark:text-amber-300">{formatCurrency(p.valorLiquido)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-amber-200 dark:border-amber-700">
+                  <td colSpan={4} className="py-2 px-2 font-bold text-slate-700 dark:text-slate-200">Total</td>
+                  <td className="py-2 px-2 text-right font-bold text-amber-800 dark:text-amber-200 text-sm">{formatCurrency(data.stats.valorTotal)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CashFlowCard() {
   const { data, isLoading } = trpc.financial.getCashFlowChart.useQuery();
   const [collapsed, setCollapsed] = useState(true);
@@ -2559,6 +2627,9 @@ export default function Financial() {
 
             {/* Fluxo de Caixa */}
             {hasGranularAccess("fin.verFluxoCaixa") && <CashFlowCard />}
+
+            {/* Pagamentos Adiados */}
+            {hasGranularAccess("fin.verContasPagar") && <DeferredPaymentsCard />}
 
             {/* Inadimplência */}
             {hasGranularAccess("fin.verInadimplencia") && summary!.receber.vencidas.count > 0 && (

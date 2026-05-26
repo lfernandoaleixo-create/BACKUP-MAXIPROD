@@ -1,0 +1,22 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'accounts_payable' AND COLUMN_NAME LIKE '%forn%' OR (TABLE_NAME = 'accounts_payable' AND COLUMN_NAME LIKE '%empresa%') OR (TABLE_NAME = 'accounts_payable' AND COLUMN_NAME LIKE '%nome%');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'accounts_payable' AND COLUMN_NAME LIKE '%forn%' OR (TABLE_NAME = 'accounts_payable' AND COLUMN_NAME LIKE '%empresa%') OR (TABLE_NAME = 'accounts_payable' AND COLUMN_NAME LIKE '%nome%');",
+  "rows": [
+    {
+      "COLUMN_NAME": "fornecedor"
+    },
+    {
+      "COLUMN_NAME": "empresaId"
+    },
+    {
+      "COLUMN_NAME": "empresaNome"
+    },
+    {
+      "COLUMN_NAME": "fornecedorApelido"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nfornecedor\nempresaId\nempresaNome\nfornecedorApelido\n",
+  "stderr": "",
+  "execution_time_ms": 341
+}

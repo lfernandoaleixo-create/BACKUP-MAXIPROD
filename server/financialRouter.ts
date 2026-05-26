@@ -7205,4 +7205,47 @@ ${acoesTexto}
         totalCount: rows.length,
       };
     }),
+
+  /**
+   * Pagamentos Adiados - Títulos "ticados" pelo Fernando no Maxiprod
+   * São contas a pagar com vencimento jogado para 31/12/2050 (reorganizadas)
+   * Estado EMITIDO, tipos: TITULO, DESPESA, ADIANTAMENTO
+   */
+  getDeferredPayments: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return { payments: [], stats: { count: 0, valorTotal: 0 } };
+
+      const rows = await db
+        .select()
+        .from(accountsPayable)
+        .where(
+          and(
+            sql`${accountsPayable.vencimentoData} LIKE '%2050%'`,
+            eq(accountsPayable.estado, 'EMITIDO'),
+            inArray(accountsPayable.tipo, ['TITULO', 'DESPESA', 'ADIANTAMENTO'])
+          )
+        )
+        .orderBy(desc(accountsPayable.valorLiquido));
+
+      let valorTotal = 0;
+      const payments = rows.map((row) => {
+        const valor = Number(row.valorLiquido) || 0;
+        valorTotal += valor;
+        return {
+          id: row.id,
+          fornecedor: row.fornecedor || '',
+          empresaNome: row.empresaNome || '',
+          referenteA: (row.referenteA || '').trim(),
+          valorLiquido: valor,
+          vencimentoOriginal: (row.vencimentoOriginalData || '').split('T')[0],
+          tipo: row.tipo || '',
+        };
+      });
+
+      return {
+        payments,
+        stats: { count: payments.length, valorTotal },
+      };
+    }),
 });

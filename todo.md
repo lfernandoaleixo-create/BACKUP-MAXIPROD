@@ -3957,3 +3957,4 @@
 - [x] Cobrança: proteger sync para herdar campos manuais (status, obs, datas cobrança) de itens existentes da mesma empresa
 - [x] Fix "Pagos/Resolvidos" card not updating since 14/05/2026 - clients who had 3+ days overdue and resolved their debt must appear
 - [x] Cobrança: botão "Sincronizar c/ Inadimplência" visível apenas para operador GUILHERME
+- [x] Financeiro > Visão Geral: card "Pagamentos Adiados" mostrando títulos com vencimento 31/12/2050 (ticados pelo Fernando)

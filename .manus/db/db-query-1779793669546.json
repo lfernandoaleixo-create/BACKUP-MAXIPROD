@@ -1,0 +1,55 @@
+{
+  "query": "SELECT id, fornecedor, empresaNome, referenteA, valorLiquido, vencimentoData, vencimentoOriginalData FROM accounts_payable WHERE vencimentoData LIKE '%2050%' ORDER BY id DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, fornecedor, empresaNome, referenteA, valorLiquido, vencimentoData, vencimentoOriginalData FROM accounts_payable WHERE vencimentoData LIKE '%2050%' ORDER BY id DESC;",
+  "rows": [
+    {
+      "id": "22367368",
+      "fornecedor": "GILSON ALEIXO",
+      "empresaNome": "MESA INDUSTRIA",
+      "referenteA": "DEVOLUÇÃO TOTAL DO CAPITAL EMPRESTADO DE R$ 450.000,00",
+      "valorLiquido": "450000.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-04-30T12:00:00.000-03:00"
+    },
+    {
+      "id": "22366907",
+      "fornecedor": "GILSON ALEIXO",
+      "empresaNome": "MESA INDUSTRIA",
+      "referenteA": "DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-04-15T12:00:00.000-03:00"
+    },
+    {
+      "id": "22366906",
+      "fornecedor": "GILSON ALEIXO",
+      "empresaNome": "MESA INDUSTRIA",
+      "referenteA": " DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-03-15T12:00:00.000-03:00"
+    },
+    {
+      "id": "22366887",
+      "fornecedor": "BRUNO HENRIQUE ALEIXO",
+      "empresaNome": "ESPETOS INDUSTRIA",
+      "referenteA": "DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE BRUNO",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-04-15T12:00:00.000-03:00"
+    },
+    {
+      "id": "22366886",
+      "fornecedor": "BRUNO HENRIQUE ALEIXO",
+      "empresaNome": "ESPETOS INDUSTRIA",
+      "referenteA": "DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA  - PARTE BRUNO",
+      "valorLiquido": "17850.00",
+      "vencimentoData": "2050-12-31T12:00:00.000-03:00",
+      "vencimentoOriginalData": "2026-03-15T12:00:00.000-03:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfornecedor\tempresaNome\treferenteA\tvalorLiquido\tvencimentoData\tvencimentoOriginalData\n22367368\tGILSON ALEIXO\tMESA INDUSTRIA\tDEVOLUÇÃO TOTAL DO CAPITAL EMPRESTADO DE R$ 450.000,00\t450000.00\t2050-12-31T12:00:00.000-03:00\t2026-04-30T12:00:00.000-03:00\n22366907\tGILSON ALEIXO\tMESA INDUSTRIA\tDEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON\t17850.00\t2050-12-31T12:00:00.000-03:00\t2026-04-15T12:00:00.000-03:00\n22366906\tGILSON ALEIXO\tMESA INDUSTRIA\t DEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE GILSON\t17850.00\t2050-12-31T12:00:00.000-03:00\t2026-03-15T12:00:00.000-03:00\n22366887\tBRUNO HENRIQUE ALEIXO\tESPETOS INDUSTRIA\tDEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA - PARTE BRUNO\t17850.00\t2050-12-31T12:00:00.000-03:00\t2026-04-15T12:00:00.000-03:00\n22366886\tBRUNO HENRIQUE ALEIXO\tESPETOS INDUSTRIA\tDEVOLUÇÃO DO APORTE INVESTIDO NA BAMBUSA  - PARTE BRUNO\t17850.00\t2050-12-31T12:00:00.000-03:00\t2026-03-15T12:00:00.000-03:00\n",
+  "stderr": "",
+  "execution_time_ms": 276
+}
