@@ -2295,3 +2295,43 @@ export const deferredPaymentNotes = mysqlTable("deferred_payment_notes", {
 });
 export type DeferredPaymentNote = typeof deferredPaymentNotes.$inferSelect;
 export type InsertDeferredPaymentNote = typeof deferredPaymentNotes.$inferInsert;
+
+
+/**
+ * Tabelas de preço do Maxiprod (Vendas > Tabela de Preço)
+ * Cada tabela pertence a um vendedor (ex: Daniel, Romera, Clarindo...)
+ * Sincronizada automaticamente via GraphQL a cada 5 minutos.
+ */
+export const priceTables = mysqlTable("price_tables", {
+  id: int("id").autoincrement().primaryKey(),
+  maxiprodId: bigint("maxiprod_id", { mode: "number" }).notNull().unique(),
+  codigo: varchar("codigo", { length: 20 }).notNull(),
+  descricao: varchar("descricao", { length: 500 }).notNull(), // Nome do vendedor/representante
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type PriceTable = typeof priceTables.$inferSelect;
+export type InsertPriceTable = typeof priceTables.$inferInsert;
+
+/**
+ * Itens das tabelas de preço (produtos com preço, desconto máximo, comissão)
+ * O "preço mínimo de venda" é calculado: preco * (1 - descontoMaximo / 100)
+ */
+export const priceTableItems = mysqlTable("price_table_items", {
+  id: int("id").autoincrement().primaryKey(),
+  maxiprodId: bigint("maxiprod_id", { mode: "number" }).notNull().unique(),
+  priceTableId: int("price_table_id").notNull(), // FK para price_tables.id
+  priceTableMaxiprodId: bigint("price_table_maxiprod_id", { mode: "number" }).notNull(),
+  itemId: bigint("item_id", { mode: "number" }).notNull(), // ID do item no Maxiprod
+  itemCodigo: varchar("item_codigo", { length: 30 }).notNull(),
+  itemDescricao: varchar("item_descricao", { length: 500 }).notNull(),
+  itemUnidade: varchar("item_unidade", { length: 20 }),
+  preco: decimal("preco", { precision: 18, scale: 2 }).notNull(),
+  descontoEmPercentual: decimal("desconto_em_percentual", { precision: 8, scale: 2 }),
+  descontoMaximoEmPercentual: decimal("desconto_maximo_em_percentual", { precision: 8, scale: 2 }),
+  comissaoEmPercentual: decimal("comissao_em_percentual", { precision: 8, scale: 2 }),
+  precoTipo: varchar("preco_tipo", { length: 30 }),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type PriceTableItem = typeof priceTableItems.$inferSelect;
+export type InsertPriceTableItem = typeof priceTableItems.$inferInsert;

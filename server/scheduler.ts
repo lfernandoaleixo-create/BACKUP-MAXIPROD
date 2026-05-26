@@ -12,6 +12,7 @@ import { runGraphQLSync, syncBankBalances, syncPaidAccountsSnapshots } from "./m
 import { saveFinancialSnapshot, detectFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { resetDailyPaymentAuthorizations, checkAndResetOnStartup } from "./paymentAuthReset";
 import { syncCobrancaPlanilhaAuto } from "./cobrancaPlanilhaSync";
+import { syncPriceTables } from "./priceTableSync";
 
 let scheduledTask: ScheduledTask | null = null;
 let dailyResetTask: ScheduledTask | null = null;
@@ -79,6 +80,13 @@ export function startScheduler(): void {
           console.log(`[Scheduler] Cobrança planilha synced: ${cobrancaResult.added} novos, ${cobrancaResult.deactivated} desativados, ${cobrancaResult.total} ativos`);
         } catch (cobErr: any) {
           console.error(`[Scheduler] Cobrança planilha sync failed: ${cobErr.message}`);
+        }
+        // Sync price tables (tabelas de preço por vendedor) + auto-update product visibility
+        try {
+          const priceResult = await syncPriceTables();
+          console.log(`[Scheduler] Price tables synced: ${priceResult.tables} tabelas, ${priceResult.items} itens`);
+        } catch (priceErr: any) {
+          console.error(`[Scheduler] Price table sync failed: ${priceErr.message}`);
         }
       } else {
         console.error(`[Scheduler] Sync failed: ${result.error}`);

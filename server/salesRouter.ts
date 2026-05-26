@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha } from "../drizzle/schema";
+import { salesOrders, orderItems, accountsReceivable, orderCancellations, sellerAdmissions, productVariants, salesManagers, fieldSellers, sellerPermissions, sellerProductVisibility, catalogs, sellerCatalogVisibility, stockReservations, vendorClients, cobrancaPlanilha, priceTables, priceTableItems } from "../drizzle/schema";
 import { sql, and, gte, lte, like, or, eq, desc, inArray } from "drizzle-orm";
 import { gql } from "./maxiprodGraphQL";
 
@@ -3769,4 +3769,88 @@ export const salesRouter = router({
       await db.delete(vendorClients).where(eq(vendorClients.id, input.id));
       return { success: true };
     }),
+
+  // ============================================================
+  // TABELA DE PREÇOS - Dados sincronizados do Maxiprod
+  // ============================================================
+
+  /**
+   * Listar todas as tabelas de preço disponíveis
+   */
+  listPriceTables: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB not available");
+    return await db.select().from(priceTables);
+  }),
+
+  /**
+   * Obter itens de uma tabela de preço específica (por vendedor)
+   * Retorna produtos com preço, desconto máximo e preço mínimo calculado
+   */
+  getPriceTableItems: publicProcedure
+    .input(z.object({
+      sellerId: z.number().optional(),
+      priceTableId: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB not available");
+
+      // If sellerId is provided, find the matching price table
+      let tableId = input.priceTableId;
+      
+      if (input.sellerId && !tableId) {
+        // Get seller name
+        const sellers = await db.select().from(sellerPermissions)
+          .where(eq(sellerPermissions.id, input.sellerId));
+        if (sellers.length === 0) return { items: [], priceTable: null };
+        
+        const sellerName = sellers[0].sellerName;
+        
+        // Find matching price table by seller name
+        const allTables = await db.select().from(priceTables);
+        const matchedTable = allTables.find(t => {
+          const desc = t.descricao.toUpperCase();
+          const nameParts = sellerName.toUpperCase().split(' ');
+          // Match if first name or last name appears in the table description
+          return nameParts.some(part => part.length > 3 && desc.includes(part));
+        });
+        
+        if (!matchedTable) return { items: [], priceTable: null };
+        tableId = matchedTable.id;
+      }
+
+      if (!tableId) return { items: [], priceTable: null };
+
+      const table = await db.select().from(priceTables)
+        .where(eq(priceTables.id, tableId));
+      
+      const items = await db.select().from(priceTableItems)
+        .where(eq(priceTableItems.priceTableId, tableId));
+
+      // Calculate preço mínimo for each item
+      const itemsWithMinPrice = items.map(item => {
+        const preco = parseFloat(item.preco);
+        const descontoMax = item.descontoMaximoEmPercentual ? parseFloat(item.descontoMaximoEmPercentual) : 0;
+        const precoMinimo = preco * (1 - descontoMax / 100);
+        return {
+          ...item,
+          precoMinimo: precoMinimo.toFixed(2),
+        };
+      });
+
+      return {
+        items: itemsWithMinPrice,
+        priceTable: table[0] || null,
+      };
+    }),
+
+  /**
+   * Trigger manual sync of price tables from Maxiprod
+   */
+  syncPriceTables: publicProcedure.mutation(async () => {
+    const { syncPriceTables } = await import("./priceTableSync");
+    const result = await syncPriceTables();
+    return { success: true, ...result };
+  }),
 });

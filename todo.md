@@ -3961,3 +3961,12 @@
 - [x] Fix unicode encoding bug in Pagamentos Adiados card header ("t\u00edtulos" → "títulos")
 - [x] Add annotation/notes feature per deferred payment for Fernando to reprogramar datas
 - [x] Fix Planilha de Cobrança to use valorAReceber (reflecting partial payments) instead of valorOriginal for display and segment totals
+
+## Gestão Comercial - Tabelas de Preço
+- [x] Explorar API GraphQL do Maxiprod para encontrar tabelas de preço por vendedor
+- [x] Criar schema no banco para armazenar tabelas de preço (produto, preço, desconto máximo, vendedor)
+- [x] Implementar sync automático das tabelas de preço do Maxiprod (a cada 5 min)
+- [x] Calcular e exibir coluna "Preço Mínimo de Venda" (preço - desconto máximo %)
+- [x] Criar tela Gestão Comercial no frontend com visualização por vendedor
+- [x] Testes automatizados para o módulo
+- [x] Auto-ticar produtos visíveis do vendedor com base na tabela de preço do Maxiprod (se produto está na tabela de preço, fica visível no estoque do vendedor)

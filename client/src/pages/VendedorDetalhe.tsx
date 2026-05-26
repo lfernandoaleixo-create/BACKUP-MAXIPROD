@@ -3694,38 +3694,157 @@ function SellerSalesView({ sellerName }: { sellerName: string }) {
 /**
  * ============================================================
  * ABA TABELA DE PREÇOS - Preços dos produtos do vendedor
- * Dados virão do Maxiprod (tabela de vendas) - integração futura
+ * Dados sincronizados do Maxiprod (tabela de vendas)
+ * Mostra: Código, Produto, Preço, Desc.Máx%, Preço Mínimo
  * ============================================================
  */
 function TabelaPrecosView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data, isLoading, error } = trpc.sales.getPriceTableItems.useQuery({ sellerId });
+  const syncMutation = trpc.sales.syncPriceTables.useMutation({
+    onSuccess: () => {
+      // Refetch after sync
+      window.location.reload();
+    },
+  });
+
+  const filteredItems = useMemo(() => {
+    if (!data?.items) return [];
+    if (!searchTerm) return data.items;
+    const term = searchTerm.toLowerCase();
+    return data.items.filter((item: any) =>
+      item.itemCodigo.toLowerCase().includes(term) ||
+      item.itemDescricao.toLowerCase().includes(term)
+    );
+  }, [data?.items, searchTerm]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-8">
+        <div className="flex items-center justify-center gap-2 text-slate-400">
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          <span className="text-sm">Carregando tabela de preços...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data?.priceTable || data.items.length === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="px-4 md:px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Tag className="w-5 h-5 text-teal-600" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Tabela de Preços</h3>
+          </div>
+          <span className="text-xs text-slate-400">{sellerName}</span>
+        </div>
+        <div className="p-8 md:p-12">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center mb-4">
+              <Tag className="w-7 h-7 text-amber-500 dark:text-amber-400" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">Sem Tabela de Preços</h3>
+            <p className="text-sm text-slate-400 dark:text-slate-500 max-w-sm">
+              Este vendedor ainda não possui uma tabela de preços cadastrada no Maxiprod.
+              Quando o gestor criar a tabela, ela aparecerá aqui automaticamente.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="px-4 md:px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Tag className="w-5 h-5 text-teal-600" />
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-            Tabela de Preços
-          </h3>
+      <div className="px-4 md:px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Tag className="w-5 h-5 text-teal-600" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Tabela de Preços</h3>
+            <span className="text-xs bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded-full font-medium">
+              {data.items.length} produtos
+            </span>
+          </div>
+          <span className="text-xs text-slate-400">{data.priceTable.descricao}</span>
         </div>
-        <span className="text-xs text-slate-400">
-          {sellerName}
-        </span>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por código ou descrição..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+          />
+        </div>
       </div>
 
-      {/* Placeholder content */}
-      <div className="p-8 md:p-12">
-        <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-14 h-14 rounded-2xl bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center mb-4">
-            <Tag className="w-7 h-7 text-teal-500 dark:text-teal-400" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">
-            Tabela de Preços
-          </h3>
-          <p className="text-sm text-slate-400 dark:text-slate-500 max-w-sm">
-            Em breve: tabela de preços dos produtos sincronizada com o Maxiprod.
-            Os preços serão carregados automaticamente da tabela de vendas do ERP.
-          </p>
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-700/50">
+              <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Código</th>
+              <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Produto</th>
+              <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Preço</th>
+              <th className="px-4 py-2.5 text-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Desc. Máx.</th>
+              <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Preço Mínimo</th>
+              <th className="px-4 py-2.5 text-center text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Comissão</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+            {filteredItems.map((item: any) => (
+              <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                <td className="px-4 py-2.5">
+                  <span className="font-mono text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">
+                    {item.itemCodigo}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5">
+                  <span className="text-xs text-slate-700 dark:text-slate-200 line-clamp-1">
+                    {item.itemDescricao}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    R$ {parseFloat(item.preco).toFixed(2)}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5 text-center">
+                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
+                    {item.descontoMaximoEmPercentual ? `${parseFloat(item.descontoMaximoEmPercentual)}%` : "—"}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    R$ {parseFloat(item.precoMinimo).toFixed(2)}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5 text-center">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {item.comissaoEmPercentual ? `${parseFloat(item.comissaoEmPercentual)}%` : "—"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer with summary */}
+      <div className="px-4 md:px-6 py-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-700/20">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-slate-400">
+            {filteredItems.length === data.items.length
+              ? `${data.items.length} produtos na tabela`
+              : `${filteredItems.length} de ${data.items.length} produtos`}
+          </span>
+          <span className="text-[10px] text-slate-400">
+            Sincronizado automaticamente do Maxiprod
+          </span>
         </div>
       </div>
     </div>

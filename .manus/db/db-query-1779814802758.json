@@ -1,0 +1,9 @@
+{
+  "query": "SELECT seller_id, COUNT(*) as cnt FROM seller_product_visibility GROUP BY seller_id",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT seller_id, COUNT(*) as cnt FROM seller_product_visibility GROUP BY seller_id",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 268
+}
