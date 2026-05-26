@@ -3958,3 +3958,5 @@
 - [x] Fix "Pagos/Resolvidos" card not updating since 14/05/2026 - clients who had 3+ days overdue and resolved their debt must appear
 - [x] Cobrança: botão "Sincronizar c/ Inadimplência" visível apenas para operador GUILHERME
 - [x] Financeiro > Visão Geral: card "Pagamentos Adiados" mostrando títulos com vencimento 31/12/2050 (ticados pelo Fernando)
+- [x] Fix unicode encoding bug in Pagamentos Adiados card header ("t\u00edtulos" → "títulos")
+- [x] Add annotation/notes feature per deferred payment for Fernando to reprogramar datas

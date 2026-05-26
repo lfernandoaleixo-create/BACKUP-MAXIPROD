@@ -5,7 +5,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges, paymentCalendarTicks } from "../drizzle/schema";
+import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges, paymentCalendarTicks, deferredPaymentNotes } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
 import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
@@ -7243,9 +7243,71 @@ ${acoesTexto}
         };
       });
 
+      // Fetch notes for these payments
+      const paymentIds = payments.map(p => p.id);
+      let notesMap: Record<number, { note: string | null; reprogramDate: string | null }> = {};
+      if (paymentIds.length > 0) {
+        const notes = await db
+          .select()
+          .from(deferredPaymentNotes)
+          .where(inArray(deferredPaymentNotes.accountPayableId, paymentIds));
+        for (const n of notes) {
+          notesMap[n.accountPayableId] = { note: n.note, reprogramDate: n.reprogramDate };
+        }
+      }
+
+      const paymentsWithNotes = payments.map(p => ({
+        ...p,
+        note: notesMap[p.id]?.note || null,
+        reprogramDate: notesMap[p.id]?.reprogramDate || null,
+      }));
+
       return {
-        payments,
-        stats: { count: payments.length, valorTotal },
+        payments: paymentsWithNotes,
+        stats: { count: paymentsWithNotes.length, valorTotal },
       };
+    }),
+
+  /**
+   * Salvar anotação em um pagamento adiado (Fernando reprograma datas)
+   */
+  saveDeferredPaymentNote: publicProcedure
+    .input(z.object({
+      accountPayableId: z.number(),
+      note: z.string().nullable(),
+      reprogramDate: z.string().nullable(), // YYYY-MM-DD
+      createdBy: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+
+      // Upsert: check if note exists for this payment
+      const existing = await db
+        .select()
+        .from(deferredPaymentNotes)
+        .where(eq(deferredPaymentNotes.accountPayableId, input.accountPayableId));
+
+      if (existing.length > 0) {
+        await db
+          .update(deferredPaymentNotes)
+          .set({
+            note: input.note,
+            reprogramDate: input.reprogramDate,
+            createdBy: input.createdBy || null,
+          })
+          .where(eq(deferredPaymentNotes.accountPayableId, input.accountPayableId));
+      } else {
+        await db
+          .insert(deferredPaymentNotes)
+          .values({
+            accountPayableId: input.accountPayableId,
+            note: input.note,
+            reprogramDate: input.reprogramDate,
+            createdBy: input.createdBy || null,
+          });
+      }
+
+      return { success: true };
     }),
 });

@@ -1,0 +1,8 @@
+{
+  "query": "CREATE TABLE `deferred_payment_notes` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`account_payable_id` bigint NOT NULL,\n\t`note` text,\n\t`reprogram_date` varchar(10),\n\t`created_by` varchar(100),\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\t`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `deferred_payment_notes_id` PRIMARY KEY(`id`)\n);\nALTER TABLE `accounts_receivable` ADD `situacaoTitulo` varchar(200);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute CREATE TABLE `deferred_payment_notes` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`account_payable_id` bigint NOT NULL,\n\t`note` text,\n\t`reprogram_date` varchar(10),\n\t`created_by` varchar(100),\n\t`created_at` timestamp NOT NULL DEFAULT (now()),\n\t`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `deferred_payment_notes_id` PRIMARY KEY(`id`)\n);\nALTER TABLE `accounts_receivable` ADD `situacaoTitulo` varchar(200);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 11: Duplicate column name 'situacaoTitulo'"
+  ]
+}

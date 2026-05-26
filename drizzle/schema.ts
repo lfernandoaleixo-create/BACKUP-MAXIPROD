@@ -2280,3 +2280,18 @@ export const creditCardEntries = mysqlTable("credit_card_entries", {
 export type CreditCardEntry = typeof creditCardEntries.$inferSelect;
 export type InsertCreditCardEntry = typeof creditCardEntries.$inferInsert;
 
+
+/**
+ * Anotações dos pagamentos adiados (Fernando reprograma datas)
+ */
+export const deferredPaymentNotes = mysqlTable("deferred_payment_notes", {
+  id: int("id").autoincrement().primaryKey(),
+  accountPayableId: bigint("account_payable_id", { mode: "number" }).notNull(),
+  note: text("note"),
+  reprogramDate: varchar("reprogram_date", { length: 10 }), // YYYY-MM-DD
+  createdBy: varchar("created_by", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type DeferredPaymentNote = typeof deferredPaymentNotes.$inferSelect;
+export type InsertDeferredPaymentNote = typeof deferredPaymentNotes.$inferInsert;

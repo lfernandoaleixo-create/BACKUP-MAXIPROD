@@ -1754,8 +1754,39 @@ function BankBalanceCard({ startDate, endDate }: { startDate?: string; endDate?:
 
 /* ---- Cash Flow Chart Card ---- */
 function DeferredPaymentsCard() {
+  const { operator } = useOperator();
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.financial.getDeferredPayments.useQuery(undefined, { refetchInterval: 60000 });
   const [expanded, setExpanded] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editNote, setEditNote] = useState("");
+  const [editDate, setEditDate] = useState("");
+
+  const saveNoteMut = trpc.financial.saveDeferredPaymentNote.useMutation({
+    onSuccess: () => {
+      utils.financial.getDeferredPayments.invalidate();
+      setEditingId(null);
+      setEditNote("");
+      setEditDate("");
+    },
+  });
+
+  const canAnnotate = operator && ["Fernando", "Guilherme"].includes(operator.name);
+
+  const startEditing = (p: any) => {
+    setEditingId(p.id);
+    setEditNote(p.note || "");
+    setEditDate(p.reprogramDate || "");
+  };
+
+  const saveNote = (accountPayableId: number) => {
+    saveNoteMut.mutate({
+      accountPayableId,
+      note: editNote || null,
+      reprogramDate: editDate || null,
+      createdBy: operator?.name || "Fernando",
+    });
+  };
 
   if (isLoading) {
     return (
@@ -1776,7 +1807,7 @@ function DeferredPaymentsCard() {
         <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300 flex items-center gap-2">
           <Clock className="w-4 h-4" />
           Pagamentos Adiados
-          <span className="text-xs font-normal text-amber-500">({data.stats.count} t\u00edtulos)</span>
+          <span className="text-xs font-normal text-amber-500">({data.stats.count} {data.stats.count === 1 ? "título" : "títulos"})</span>
           {expanded ? <ChevronUp className="w-4 h-4 text-amber-600" /> : <ChevronDown className="w-4 h-4 text-amber-600" />}
         </h3>
         <span className="text-sm font-bold text-amber-800 dark:text-amber-200">
@@ -1794,23 +1825,93 @@ function DeferredPaymentsCard() {
                   <th className="text-left py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Empresa</th>
                   <th className="text-left py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Venc. Original</th>
                   <th className="text-right py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Valor</th>
+                  <th className="text-left py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Reprogramar p/</th>
+                  <th className="text-left py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold">Anotação</th>
+                  {canAnnotate && <th className="text-center py-2 px-2 text-amber-700 dark:text-amber-300 font-semibold w-10"></th>}
                 </tr>
               </thead>
               <tbody>
                 {data.payments.map((p) => (
-                  <tr key={p.id} className="border-b border-amber-50 dark:border-amber-900/30 hover:bg-amber-50/50 dark:hover:bg-amber-900/20">
-                    <td className="py-2 px-2 font-medium text-slate-700 dark:text-slate-200">{p.fornecedor}</td>
-                    <td className="py-2 px-2 text-slate-600 dark:text-slate-300 max-w-[250px] truncate" title={p.referenteA}>{p.referenteA}</td>
-                    <td className="py-2 px-2 text-slate-500 dark:text-slate-400">{p.empresaNome}</td>
-                    <td className="py-2 px-2 text-slate-500 dark:text-slate-400">{formatDate(p.vencimentoOriginal)}</td>
-                    <td className="py-2 px-2 text-right font-bold text-amber-700 dark:text-amber-300">{formatCurrency(p.valorLiquido)}</td>
-                  </tr>
+                  <React.Fragment key={p.id}>
+                    <tr className="border-b border-amber-50 dark:border-amber-900/30 hover:bg-amber-50/50 dark:hover:bg-amber-900/20">
+                      <td className="py-2 px-2 font-medium text-slate-700 dark:text-slate-200">{p.fornecedor}</td>
+                      <td className="py-2 px-2 text-slate-600 dark:text-slate-300 max-w-[200px] truncate" title={p.referenteA}>{p.referenteA}</td>
+                      <td className="py-2 px-2 text-slate-500 dark:text-slate-400">{p.empresaNome}</td>
+                      <td className="py-2 px-2 text-slate-500 dark:text-slate-400">{formatDate(p.vencimentoOriginal)}</td>
+                      <td className="py-2 px-2 text-right font-bold text-amber-700 dark:text-amber-300">{formatCurrency(p.valorLiquido)}</td>
+                      <td className="py-2 px-2 text-slate-600 dark:text-slate-300">
+                        {editingId === p.id ? (
+                          <input
+                            type="date"
+                            value={editDate}
+                            onChange={(e) => setEditDate(e.target.value)}
+                            className="w-full px-1 py-0.5 text-xs border border-amber-300 rounded bg-white dark:bg-slate-700 dark:text-slate-200"
+                          />
+                        ) : (
+                          p.reprogramDate ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-medium">{formatDate(p.reprogramDate)}</span>
+                          ) : (
+                            <span className="text-slate-400 italic">-</span>
+                          )
+                        )}
+                      </td>
+                      <td className="py-2 px-2 text-slate-600 dark:text-slate-300">
+                        {editingId === p.id ? (
+                          <input
+                            type="text"
+                            value={editNote}
+                            onChange={(e) => setEditNote(e.target.value)}
+                            placeholder="Anotação..."
+                            className="w-full px-1 py-0.5 text-xs border border-amber-300 rounded bg-white dark:bg-slate-700 dark:text-slate-200"
+                          />
+                        ) : (
+                          p.note ? (
+                            <span className="text-slate-600 dark:text-slate-300">{p.note}</span>
+                          ) : (
+                            <span className="text-slate-400 italic">-</span>
+                          )
+                        )}
+                      </td>
+                      {canAnnotate && (
+                        <td className="py-2 px-2 text-center">
+                          {editingId === p.id ? (
+                            <div className="flex gap-1 justify-center">
+                              <button
+                                onClick={() => saveNote(p.id)}
+                                disabled={saveNoteMut.isPending}
+                                className="p-1 rounded bg-emerald-100 hover:bg-emerald-200 text-emerald-700 transition-colors"
+                                title="Salvar"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                title="Cancelar"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => startEditing(p)}
+                              className="p-1 rounded hover:bg-amber-100 text-amber-600 transition-colors"
+                              title="Editar anotação"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  </React.Fragment>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-amber-200 dark:border-amber-700">
                   <td colSpan={4} className="py-2 px-2 font-bold text-slate-700 dark:text-slate-200">Total</td>
                   <td className="py-2 px-2 text-right font-bold text-amber-800 dark:text-amber-200 text-sm">{formatCurrency(data.stats.valorTotal)}</td>
+                  <td colSpan={canAnnotate ? 3 : 2}></td>
                 </tr>
               </tfoot>
             </table>
