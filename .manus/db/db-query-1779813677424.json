@@ -1,0 +1,28 @@
+{
+  "query": "SELECT cp.id, cp.empresa, cp.valor, cp.ar_id FROM cobranca_planilha cp WHERE cp.empresa LIKE '%RONALDO%' AND cp.ativo = 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.id, cp.empresa, cp.valor, cp.ar_id FROM cobranca_planilha cp WHERE cp.empresa LIKE '%RONALDO%' AND cp.ativo = 1",
+  "rows": [
+    {
+      "id": "270072",
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "valor": "537.55",
+      "ar_id": "7988173"
+    },
+    {
+      "id": "270075",
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "valor": "512.50",
+      "ar_id": "7988180"
+    },
+    {
+      "id": "270086",
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "valor": "2250.00",
+      "ar_id": "7988304"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tvalor\tar_id\n270072\tRONALDO ANTONIO DE MOURA\t537.55\t7988173\n270075\tRONALDO ANTONIO DE MOURA\t512.50\t7988180\n270086\tRONALDO ANTONIO DE MOURA\t2250.00\t7988304\n",
+  "stderr": "",
+  "execution_time_ms": 273
+}

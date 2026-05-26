@@ -523,8 +523,48 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
     }
   }
 
-  // 6. Update diasVencidos for all active items
+  // 6. Update valor (valorAReceber) for active items when partial payments occur
+  // This ensures the planilha always reflects the current amount owed after partial payments
   const updatedActive = await db.select().from(cobrancaPlanilha).where(eq(cobrancaPlanilha.ativo, true));
+  const activeArIds = updatedActive.filter(i => i.arId).map(i => i.arId!) as number[];
+  
+  if (activeArIds.length > 0) {
+    // Fetch current valorAReceber from accounts_receivable for all active items
+    const arRows = await db.select({
+      id: accountsReceivable.id,
+      valorLiquido: accountsReceivable.valorLiquido,
+      valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+    }).from(accountsReceivable).where(inArray(accountsReceivable.id, activeArIds));
+    
+    const arValorMap: Record<number, number> = {};
+    for (const ar of arRows) {
+      const valorLiq = Number(ar.valorLiquido) || 0;
+      const valorPago = Number(ar.valorRecebidoLiquido) || 0;
+      arValorMap[ar.id] = valorLiq - valorPago;
+    }
+    
+    // Update planilha items where valor differs from current valorAReceber
+    let valorUpdated = 0;
+    for (const item of updatedActive) {
+      if (item.arId && arValorMap[item.arId] !== undefined) {
+        const currentValorAReceber = arValorMap[item.arId];
+        const planilhaValor = Number(item.valor) || 0;
+        // Only update if there's a meaningful difference (> 0.01)
+        if (Math.abs(currentValorAReceber - planilhaValor) > 0.01) {
+          await db.update(cobrancaPlanilha)
+            .set({ valor: String(currentValorAReceber) })
+            .where(eq(cobrancaPlanilha.id, item.id));
+          valorUpdated++;
+          console.log(`[Auto-sync] Valor atualizado: ${item.empresa} - R$ ${planilhaValor.toFixed(2)} → R$ ${currentValorAReceber.toFixed(2)} (pagamento parcial)`);
+        }
+      }
+    }
+    if (valorUpdated > 0) {
+      console.log(`[Auto-sync] ${valorUpdated} títulos com valor atualizado (pagamentos parciais)`);
+    }
+  }
+
+  // 7. Update diasVencidos for all active items
   for (const item of updatedActive) {
     if (item.vencimento) {
       const diasAtrasoRaw = Math.floor((new Date(todayStr).getTime() - new Date(item.vencimento).getTime()) / 86400000);

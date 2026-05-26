@@ -1,0 +1,8 @@
+{
+  "query": "SELECT cp.id, cp.empresa, cp.valor, cp.arId, ar.valorLiquido, ar.valorRecebidoLiquido, (CAST(ar.valorLiquido AS DECIMAL(12,2)) - CAST(ar.valorRecebidoLiquido AS DECIMAL(12,2))) AS valorAReceber FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.arId = ar.id WHERE cp.empresa LIKE '%RONALDO%' AND cp.ativo = 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.id, cp.empresa, cp.valor, cp.arId, ar.valorLiquido, ar.valorRecebidoLiquido, (CAST(ar.valorLiquido AS DECIMAL(12,2)) - CAST(ar.valorRecebidoLiquido AS DECIMAL(12,2))) AS valorAReceber FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.arId = ar.id WHERE cp.empresa LIKE '%RONALDO%' AND cp.ativo = 1",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'cp.arid' in 'on clause'"
+  ]
+}

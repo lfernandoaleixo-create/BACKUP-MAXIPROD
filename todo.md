@@ -3960,3 +3960,4 @@
 - [x] Financeiro > Visão Geral: card "Pagamentos Adiados" mostrando títulos com vencimento 31/12/2050 (ticados pelo Fernando)
 - [x] Fix unicode encoding bug in Pagamentos Adiados card header ("t\u00edtulos" → "títulos")
 - [x] Add annotation/notes feature per deferred payment for Fernando to reprogramar datas
+- [x] Fix Planilha de Cobrança to use valorAReceber (reflecting partial payments) instead of valorOriginal for display and segment totals

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT cp.id, cp.empresa, cp.valor, cp.ar_id, ar.valor_liquido, ar.valor_recebido_liquido, (CAST(ar.valor_liquido AS DECIMAL(12,2)) - CAST(ar.valor_recebido_liquido AS DECIMAL(12,2))) AS valorAReceber FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.empresa LIKE '%RONALDO%' AND cp.ativo = 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.id, cp.empresa, cp.valor, cp.ar_id, ar.valor_liquido, ar.valor_recebido_liquido, (CAST(ar.valor_liquido AS DECIMAL(12,2)) - CAST(ar.valor_recebido_liquido AS DECIMAL(12,2))) AS valorAReceber FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.empresa LIKE '%RONALDO%' AND cp.ativo = 1",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'ar.valor_liquido' in 'field list'"
+  ]
+}

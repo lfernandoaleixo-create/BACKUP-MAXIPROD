@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, valorOriginal, valorLiquido, valorRecebidoLiquido FROM accounts_receivable WHERE id IN ('6401284', '7988180') LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, valorOriginal, valorLiquido, valorRecebidoLiquido FROM accounts_receivable WHERE id IN ('6401284', '7988180') LIMIT 5;",
+  "rows": [
+    {
+      "id": "7988180",
+      "valorOriginal": "2250.00",
+      "valorLiquido": "2250.00",
+      "valorRecebidoLiquido": "1737.50"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tvalorOriginal\tvalorLiquido\tvalorRecebidoLiquido\n7988180\t2250.00\t2250.00\t1737.50\n",
+  "stderr": "",
+  "execution_time_ms": 270
+}

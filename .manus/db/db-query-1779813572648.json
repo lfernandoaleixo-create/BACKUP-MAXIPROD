@@ -1,0 +1,28 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' AND (COLUMN_NAME LIKE '%valor%' OR COLUMN_NAME LIKE '%liquido%' OR COLUMN_NAME LIKE '%recebido%')",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'accounts_receivable' AND (COLUMN_NAME LIKE '%valor%' OR COLUMN_NAME LIKE '%liquido%' OR COLUMN_NAME LIKE '%recebido%')",
+  "rows": [
+    {
+      "COLUMN_NAME": "valorOriginal"
+    },
+    {
+      "COLUMN_NAME": "valorLiquido"
+    },
+    {
+      "COLUMN_NAME": "valorRetido"
+    },
+    {
+      "COLUMN_NAME": "valorDeDesconto"
+    },
+    {
+      "COLUMN_NAME": "valorDeAcrescimo"
+    },
+    {
+      "COLUMN_NAME": "valorRecebidoLiquido"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nvalorOriginal\nvalorLiquido\nvalorRetido\nvalorDeDesconto\nvalorDeAcrescimo\nvalorRecebidoLiquido\n",
+  "stderr": "",
+  "execution_time_ms": 267
+}

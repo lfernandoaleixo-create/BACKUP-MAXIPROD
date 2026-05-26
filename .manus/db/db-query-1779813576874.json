@@ -1,0 +1,37 @@
+{
+  "query": "SELECT cp.id, cp.empresa, cp.valor, cp.ar_id, ar.valorLiquido, ar.valorRecebidoLiquido, (CAST(ar.valorLiquido AS DECIMAL(12,2)) - CAST(ar.valorRecebidoLiquido AS DECIMAL(12,2))) AS valorAReceber FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.empresa LIKE '%RONALDO%' AND cp.ativo = 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT cp.id, cp.empresa, cp.valor, cp.ar_id, ar.valorLiquido, ar.valorRecebidoLiquido, (CAST(ar.valorLiquido AS DECIMAL(12,2)) - CAST(ar.valorRecebidoLiquido AS DECIMAL(12,2))) AS valorAReceber FROM cobranca_planilha cp LEFT JOIN accounts_receivable ar ON cp.ar_id = ar.id WHERE cp.empresa LIKE '%RONALDO%' AND cp.ativo = 1",
+  "rows": [
+    {
+      "id": "270072",
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "valor": "537.55",
+      "ar_id": "7988173",
+      "valorLiquido": "2250.00",
+      "valorRecebidoLiquido": "1712.45",
+      "valorAReceber": "537.55"
+    },
+    {
+      "id": "270075",
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "valor": "862.50",
+      "ar_id": "7988180",
+      "valorLiquido": "2250.00",
+      "valorRecebidoLiquido": "1737.50",
+      "valorAReceber": "512.50"
+    },
+    {
+      "id": "270086",
+      "empresa": "RONALDO ANTONIO DE MOURA",
+      "valor": "2250.00",
+      "ar_id": "7988304",
+      "valorLiquido": "2250.00",
+      "valorRecebidoLiquido": "0.00",
+      "valorAReceber": "2250.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tempresa\tvalor\tar_id\tvalorLiquido\tvalorRecebidoLiquido\tvalorAReceber\n270072\tRONALDO ANTONIO DE MOURA\t537.55\t7988173\t2250.00\t1712.45\t537.55\n270075\tRONALDO ANTONIO DE MOURA\t862.50\t7988180\t2250.00\t1737.50\t512.50\n270086\tRONALDO ANTONIO DE MOURA\t2250.00\t7988304\t2250.00\t0.00\t2250.00\n",
+  "stderr": "",
+  "execution_time_ms": 264
+}
