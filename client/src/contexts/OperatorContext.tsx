@@ -117,7 +117,7 @@ export function OperatorProvider({ children }: { children: ReactNode }) {
       case "gestao-comercial": return operator.name === "Fernando" || operator.name === "Guilherme";
       case "faturamento": return operator.accessFaturamento;
       case "financeiro": return operator.accessFinanceiro;
-      case "importacao": return operator.accessFinanceiro;
+      case "importacao": return operator.name === "Fernando" || operator.name === "Guilherme" || operator.name === "Larissa";
       case "producao": return operator.accessProducao;
       case "configuracoes": return operator.accessConfiguracoes || (granularPermissions["cfg.produtos"] === true);
       case "valorizacao": return operator.accessValorizacao;
