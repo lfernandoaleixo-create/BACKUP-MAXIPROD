@@ -17,6 +17,7 @@ import SettingsPage from "./pages/SettingsPage";
 import SellerApp from "./pages/SellerApp";
 import GestaoComercial from "./pages/GestaoComercial";
 import VendedorDetalhe from "./pages/VendedorDetalhe";
+import Importacao from "./pages/Importacao";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -28,6 +29,7 @@ function Router() {
       <Route path={"/gestao-comercial/vendedor/:sellerId"} component={VendedorDetalhe} />
       <Route path={"/faturamento"} component={Billing} />
       <Route path={"/financeiro"} component={Financial} />
+      <Route path={"/importacao"} component={Importacao} />
       <Route path={"/producao"} component={Production} />
       <Route path={"/configuracoes"} component={SettingsPage} />
       <Route path={"/404"} component={NotFound} />
