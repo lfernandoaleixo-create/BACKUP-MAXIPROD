@@ -18,7 +18,19 @@ interface SellerSession {
 }
 
 export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean }) {
-  const [session, setSession] = useState<SellerSession | null>(null);
+  const [session, setSession] = useState<SellerSession | null>(() => {
+    // Recover session from sessionStorage (set by LoginScreen when seller logs in from main page)
+    try {
+      const stored = sessionStorage.getItem("sellerSession");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.id && parsed.name) {
+          return parsed as SellerSession;
+        }
+      }
+    } catch {}
+    return null;
+  });
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -68,9 +80,12 @@ export default function SellerApp({ gestorMode = false }: { gestorMode?: boolean
       window.location.href = "/";
       return;
     }
+    sessionStorage.removeItem("sellerSession");
     setSession(null);
     setPassword("");
     setError("");
+    // Redirect back to main login
+    window.location.href = "/";
   };
 
   // Modo gestor: pula login e mostra tudo

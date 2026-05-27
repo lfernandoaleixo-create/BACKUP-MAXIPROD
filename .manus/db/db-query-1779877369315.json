@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, seller_name, password, authorized FROM seller_permissions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, seller_name, password, authorized FROM seller_permissions;",
+  "rows": [
+    {
+      "id": "1",
+      "seller_name": "DANIEL TAVARES",
+      "password": "Daniel",
+      "authorized": "0"
+    },
+    {
+      "id": "2",
+      "seller_name": "CLARINDO GONCALVES",
+      "password": "Clarindo",
+      "authorized": "1"
+    },
+    {
+      "id": "3",
+      "seller_name": "ROMERA REPRESENTACOES",
+      "password": "Romera",
+      "authorized": "0"
+    },
+    {
+      "id": "4",
+      "seller_name": "PEDRO AUGUSTO",
+      "password": "Pedro",
+      "authorized": "0"
+    },
+    {
+      "id": "5",
+      "seller_name": "LUIZ MATIAS",
+      "password": "Luiz",
+      "authorized": "0"
+    },
+    {
+      "id": "6",
+      "seller_name": "ANA PAULA ALEIXO",
+      "password": "Ana",
+      "authorized": "0"
+    },
+    {
+      "id": "130000",
+      "seller_name": "FRANCISCO JOSEANY ALBUQUERQUE FERREIRA",
+      "password": "Francisco",
+      "authorized": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tseller_name\tpassword\tauthorized\n1\tDANIEL TAVARES\tDaniel\t0\n2\tCLARINDO GONCALVES\tClarindo\t1\n3\tROMERA REPRESENTACOES\tRomera\t0\n4\tPEDRO AUGUSTO\tPedro\t0\n5\tLUIZ MATIAS\tLuiz\t0\n6\tANA PAULA ALEIXO\tAna\t0\n130000\tFRANCISCO JOSEANY ALBUQUERQUE FERREIRA\tFrancisco\t0\n",
+  "stderr": "",
+  "execution_time_ms": 261
+}

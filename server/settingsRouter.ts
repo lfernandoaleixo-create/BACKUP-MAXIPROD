@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { appSettings, salesTargets, productSegmentOverrides, salesOrders, dashboardData, productVisibility, productClassification, productPricing, productVariants, operators, operatorGranularPermissions, madeiraVisibility, sicoobCardMessages } from "../drizzle/schema";
+import { appSettings, salesTargets, productSegmentOverrides, salesOrders, dashboardData, productVisibility, productClassification, productPricing, productVariants, operators, operatorGranularPermissions, madeiraVisibility, sicoobCardMessages, sellerPermissions, sellerProductVisibility, sellerCatalogVisibility, catalogs } from "../drizzle/schema";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 
 // Default admin password (can be changed via settings)
@@ -783,32 +783,74 @@ export const settingsRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("DB not available");
+      // 1) Try operator login first
       const rows = await db.select().from(operators)
         .where(and(eq(operators.password, input.password), eq(operators.active, true)));
-      if (rows.length === 0) return { success: false, operator: null, granularPermissions: {} as Record<string, boolean> };
-      const op = rows[0];
-      // Also fetch granular permissions
-      const granPerms = await db.select().from(operatorGranularPermissions)
-        .where(eq(operatorGranularPermissions.operatorId, op.id));
-      const granularMap: Record<string, boolean> = {};
-      for (const gp of granPerms) {
-        granularMap[gp.permissionKey] = !!gp.enabled;
+      if (rows.length > 0) {
+        const op = rows[0];
+        // Also fetch granular permissions
+        const granPerms = await db.select().from(operatorGranularPermissions)
+          .where(eq(operatorGranularPermissions.operatorId, op.id));
+        const granularMap: Record<string, boolean> = {};
+        for (const gp of granPerms) {
+          granularMap[gp.permissionKey] = !!gp.enabled;
+        }
+        return {
+          success: true,
+          loginType: "operator" as const,
+          operator: {
+            id: op.id,
+            name: op.name,
+            accessEstoque: op.accessEstoque,
+            accessVendas: op.accessVendas,
+            accessFaturamento: op.accessFaturamento,
+            accessFinanceiro: op.accessFinanceiro,
+            accessConfiguracoes: op.accessConfiguracoes,
+            accessValorizacao: op.accessValorizacao,
+            accessProducao: op.accessProducao,
+          },
+          granularPermissions: granularMap,
+          seller: null,
+        };
       }
-      return {
-        success: true,
-        operator: {
-          id: op.id,
-          name: op.name,
-          accessEstoque: op.accessEstoque,
-          accessVendas: op.accessVendas,
-          accessFaturamento: op.accessFaturamento,
-          accessFinanceiro: op.accessFinanceiro,
-          accessConfiguracoes: op.accessConfiguracoes,
-          accessValorizacao: op.accessValorizacao,
-          accessProducao: op.accessProducao,
-        },
-        granularPermissions: granularMap,
-      };
+
+      // 2) Try seller login
+      const sellers = await db.select().from(sellerPermissions)
+        .where(eq(sellerPermissions.password, input.password));
+      if (sellers.length > 0) {
+        const seller = sellers[0];
+        if (!seller.authorized) {
+          return { success: false, loginType: "seller" as const, operator: null, granularPermissions: {} as Record<string, boolean>, seller: null, error: "Acesso não autorizado. Aguarde liberação do gestor." };
+        }
+        // Fetch visible products
+        const products = await db.select().from(sellerProductVisibility)
+          .where(eq(sellerProductVisibility.sellerId, seller.id));
+        // Fetch visible catalogs
+        const visibleCatalogs = await db.select().from(sellerCatalogVisibility)
+          .where(eq(sellerCatalogVisibility.sellerId, seller.id));
+        const catalogIds = visibleCatalogs.map(c => c.catalogId);
+        let sellerCatalogs: any[] = [];
+        if (catalogIds.length > 0) {
+          sellerCatalogs = await db.select().from(catalogs)
+            .where(and(eq(catalogs.active, true), inArray(catalogs.id, catalogIds)));
+        }
+        return {
+          success: true,
+          loginType: "seller" as const,
+          operator: null,
+          granularPermissions: {} as Record<string, boolean>,
+          seller: {
+            id: seller.id,
+            name: seller.sellerName,
+            gestor: seller.gestorName,
+            visibleProducts: products.map(p => p.productCode),
+            catalogs: sellerCatalogs.map((c: any) => ({ id: c.id, name: c.name, folder: c.folder, url: c.url })),
+          },
+        };
+      }
+
+      // 3) No match
+      return { success: false, loginType: null, operator: null, granularPermissions: {} as Record<string, boolean>, seller: null };
     }),
 
   // ─── Feature Toggles ──────────────────────────────────────

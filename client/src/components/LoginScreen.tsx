@@ -119,9 +119,17 @@ export default function LoginScreen() {
     }
     try {
       const result = await validateMutation.mutateAsync({ password: password.trim() });
-      if (result.success && result.operator) {
+      if (result.success && result.loginType === "operator" && result.operator) {
         login(result.operator, result.granularPermissions || {});
         toast.success(`Bem-vindo, ${result.operator.name}!`);
+      } else if (result.success && result.loginType === "seller" && result.seller) {
+        // Seller login - store session and redirect to seller area
+        sessionStorage.setItem("sellerSession", JSON.stringify(result.seller));
+        toast.success(`Bem-vindo, ${result.seller.name}!`);
+        window.location.href = "/vendedor";
+      } else if (result.error) {
+        toast.error(result.error);
+        setPassword("");
       } else {
         toast.error("Senha incorreta");
         setPassword("");

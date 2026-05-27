@@ -3970,3 +3970,4 @@
 - [x] Criar tela Gestão Comercial no frontend com visualização por vendedor
 - [x] Testes automatizados para o módulo
 - [x] Auto-ticar produtos visíveis do vendedor com base na tabela de preço do Maxiprod (se produto está na tabela de preço, fica visível no estoque do vendedor)
+- [x] Login do vendedor pela tela principal: aceitar senha do vendedor além da senha admin, redirecionar direto para a área do vendedor
