@@ -34,7 +34,7 @@ const navItems = [
   { href: "/gestao-comercial", label: "Gestão", desktopLabel: "Gestão Comercial", icon: Briefcase, section: "gestao-comercial" },
   { href: "/faturamento", label: "Faturamento", icon: FileCheck, section: "faturamento" },
   { href: "/financeiro", label: "Financeiro", icon: DollarSign, section: "financeiro" },
-  { href: "/importacao", label: "Importação", icon: Ship, section: "importacao" },
+  { href: "/importacao", label: "Import.", desktopLabel: "Importação", icon: Ship, section: "importacao" },
   { href: "/producao", label: "Produção", icon: Factory, section: "producao" },
   { href: "/configuracoes", label: "Config", desktopLabel: "Configuração", icon: Settings, section: "configuracoes" },
 ];
