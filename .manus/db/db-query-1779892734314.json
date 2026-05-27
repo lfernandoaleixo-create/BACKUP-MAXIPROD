@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO product_variants (parentCode, childCode, conversionFactor) VALUES ('00086', '00541', 1.00000) ON DUPLICATE KEY UPDATE parentCode = '00086', conversionFactor = 1.00000;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute INSERT INTO product_variants (parentCode, childCode, conversionFactor) VALUES ('00086', '00541', 1.00000) ON DUPLICATE KEY UPDATE parentCode = '00086', conversionFactor = 1.00000;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 370
+}
