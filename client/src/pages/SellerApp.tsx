@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { Package, LogOut, Lock, AlertCircle, Search, RefreshCw, FileText, FolderOpen, ShoppingCart, ClipboardList } from "lucide-react";
+import { Package, LogOut, Lock, AlertCircle, Search, RefreshCw, FileText, FolderOpen, ShoppingCart, ClipboardList, Users, Tag, BarChart3 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import SalesOrderForm from "@/components/SalesOrderForm";
 
@@ -176,7 +176,7 @@ function SellerMainView({
   onLogout: () => void;
   gestorMode?: boolean;
 }) {
-  const [activeTab, setActiveTab] = useState<"estoque" | "pdfs" | "pedidos">("estoque");
+  const [activeTab, setActiveTab] = useState<"estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "metricas">("estoque");
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
@@ -198,11 +198,11 @@ function SellerMainView({
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-slate-100">
+        {/* Tabs - scrollable */}
+        <div className="flex overflow-x-auto border-b border-slate-100 scrollbar-hide">
           <button
             onClick={() => setActiveTab("estoque")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
+            className={`flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === "estoque"
                 ? "text-teal-600 border-b-2 border-teal-600"
                 : "text-slate-400 hover:text-slate-600"
@@ -212,20 +212,31 @@ function SellerMainView({
             Estoque
           </button>
           <button
-            onClick={() => setActiveTab("pedidos")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
-              activeTab === "pedidos"
-                ? "text-blue-600 border-b-2 border-blue-600"
+            onClick={() => setActiveTab("clientes")}
+            className={`flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === "clientes"
+                ? "text-purple-600 border-b-2 border-purple-600"
                 : "text-slate-400 hover:text-slate-600"
             }`}
           >
-            <ClipboardList className="w-3.5 h-3.5" />
-            Pedidos
+            <Users className="w-3.5 h-3.5" />
+            Cadastro de Cliente
           </button>
           <button
-            onClick={() => setActiveTab("pdfs")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
-              activeTab === "pdfs"
+            onClick={() => setActiveTab("tabela_precos")}
+            className={`flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === "tabela_precos"
+                ? "text-amber-600 border-b-2 border-amber-600"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <Tag className="w-3.5 h-3.5" />
+            Tabela de Preços
+          </button>
+          <button
+            onClick={() => setActiveTab("catalogos")}
+            className={`flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === "catalogos"
                 ? "text-rose-600 border-b-2 border-rose-600"
                 : "text-slate-400 hover:text-slate-600"
             }`}
@@ -237,6 +248,28 @@ function SellerMainView({
                 {session.catalogs.length}
               </span>
             )}
+          </button>
+          <button
+            onClick={() => setActiveTab("pedidos")}
+            className={`flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === "pedidos"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <ShoppingCart className="w-3.5 h-3.5" />
+            Pedidos de Venda
+          </button>
+          <button
+            onClick={() => setActiveTab("metricas")}
+            className={`flex items-center justify-center gap-1 px-3 py-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === "metricas"
+                ? "text-indigo-600 border-b-2 border-indigo-600"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            Métrica de Vendas
           </button>
         </div>
 
@@ -260,11 +293,17 @@ function SellerMainView({
       {/* Content */}
       {activeTab === "estoque" ? (
         <StockTab session={session} search={search} />
+      ) : activeTab === "clientes" ? (
+        <ClientesTab sellerId={session.id} />
+      ) : activeTab === "tabela_precos" ? (
+        <TabelaPrecosTab sellerId={session.id} />
+      ) : activeTab === "catalogos" ? (
+        <CatalogsTab catalogs={session.catalogs} />
       ) : activeTab === "pedidos" ? (
         <OrdersTab session={session} showOrderForm={showOrderForm} setShowOrderForm={setShowOrderForm} orderSuccess={orderSuccess} setOrderSuccess={setOrderSuccess} />
-      ) : (
-        <CatalogsTab catalogs={session.catalogs} />
-      )}
+      ) : activeTab === "metricas" ? (
+        <MetricasTab sellerId={session.id} />
+      ) : null}
     </div>
   );
 }
@@ -286,7 +325,7 @@ function StockTab({ session, search }: { session: SellerSession; search: string 
       filtered = filtered.filter(
         (item: any) =>
           (item.codigoItem || "").toLowerCase().includes(term) ||
-          (item.descricao || "").toLowerCase().includes(term)
+          (item.descricaoItem || "").toLowerCase().includes(term)
       );
     }
     return filtered;
@@ -314,7 +353,7 @@ function StockTab({ session, search }: { session: SellerSession; search: string 
         <div className="space-y-2">
           <p className="text-xs text-slate-400 mb-3">{items.length} produto{items.length !== 1 ? "s" : ""}</p>
           {items.map((item: any) => {
-            const isKg = item.isKgProduct || (item.descricao || "").toLowerCase().includes("kg");
+            const isKg = item.isKgProduct || (item.descricaoItem || "").toLowerCase().includes("kg");
             const qty = item.disponivelCx != null ? item.disponivelCx : item.disponivel || 0;
             const unit = isKg ? "kg" : "cx";
             const color = qty <= 0 ? "text-orange-500" : "text-emerald-700";
@@ -323,7 +362,7 @@ function StockTab({ session, search }: { session: SellerSession; search: string 
                 key={item.codigoItem}
                 className="bg-white rounded-xl border border-slate-100 px-4 py-3 flex items-center justify-between gap-3"
               >
-                <p className="text-sm font-medium text-slate-800 truncate flex-1 min-w-0">{item.descricao}</p>
+                <p className="text-sm font-medium text-slate-800 truncate flex-1 min-w-0">{item.descricaoItem}</p>
                 <p className={`text-base font-bold ${color} whitespace-nowrap`}>
                   {qty} <span className="text-xs font-semibold">{unit}</span>
                 </p>
@@ -482,6 +521,100 @@ function CatalogsTab({ catalogs }: { catalogs: { id: number; name: string; folde
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ClientesTab({ sellerId }: { sellerId: number }) {
+  const clientsQuery = trpc.salesOrders.getSellerOrders.useQuery({ sellerId });
+
+  return (
+    <div className="p-4">
+      <div className="text-center py-12">
+        <Users className="w-10 h-10 text-purple-300 mx-auto mb-3" />
+        <p className="text-sm text-slate-500 font-medium">Cadastro de Clientes</p>
+        <p className="text-xs text-slate-400 mt-1">Em breve: cadastre e gerencie seus clientes aqui.</p>
+      </div>
+    </div>
+  );
+}
+
+function TabelaPrecosTab({ sellerId }: { sellerId: number }) {
+  const priceQuery = trpc.sales.getPriceTableItems.useQuery({ sellerId });
+
+  if (priceQuery.isLoading) {
+    return (
+      <div className="p-4 text-center py-12">
+        <RefreshCw className="w-6 h-6 text-amber-500 animate-spin mx-auto mb-3" />
+        <p className="text-sm text-slate-500">Carregando tabela de preços...</p>
+      </div>
+    );
+  }
+
+  const items = priceQuery.data?.items || [];
+  const priceTable = priceQuery.data?.priceTable;
+
+  if (items.length === 0) {
+    return (
+      <div className="p-4 text-center py-12">
+        <Tag className="w-10 h-10 text-amber-300 mx-auto mb-3" />
+        <p className="text-sm text-slate-500 font-medium">Nenhuma tabela de preços</p>
+        <p className="text-xs text-slate-400 mt-1">Aguarde seu gestor configurar sua tabela de preços.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4">
+      <p className="text-xs text-slate-400 mb-3">
+        {priceTable?.descricao || "Tabela de Preços"} — {items.length} produto{items.length !== 1 ? "s" : ""}
+      </p>
+      <div className="space-y-2">
+        {items.map((item: any) => {
+          const price = parseFloat(item.price || item.preco || 0);
+          const maxDiscount = parseFloat(item.maxDiscount || item.descontoMaximo || 0);
+          const precoMin = parseFloat(item.precoMinimo || (price * (1 - maxDiscount / 100)).toFixed(2));
+          return (
+            <div
+              key={item.id}
+              className="bg-white rounded-xl border border-slate-100 px-4 py-3"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-slate-800 truncate">{item.itemDescricao || item.productName}</p>
+                  <p className="text-[10px] text-slate-400">{item.itemCodigo || item.productCode}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+                <div>
+                  <p className="text-[10px] text-slate-400">Preço</p>
+                  <p className="text-sm font-bold text-slate-700">R$ {price.toFixed(2)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-400">Desc. Máx.</p>
+                  <p className="text-sm font-bold text-amber-600">{maxDiscount}%</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-400">Preço Mín.</p>
+                  <p className="text-sm font-bold text-emerald-700">R$ {precoMin.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MetricasTab({ sellerId }: { sellerId: number }) {
+  return (
+    <div className="p-4">
+      <div className="text-center py-12">
+        <BarChart3 className="w-10 h-10 text-indigo-300 mx-auto mb-3" />
+        <p className="text-sm text-slate-500 font-medium">Métrica de Vendas</p>
+        <p className="text-xs text-slate-400 mt-1">Em breve: acompanhe suas métricas de vendas aqui.</p>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,40 @@
+{
+  "query": "SELECT product_code FROM seller_product_visibility WHERE seller_id = 1 LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT product_code FROM seller_product_visibility WHERE seller_id = 1 LIMIT 10;",
+  "rows": [
+    {
+      "product_code": "00001"
+    },
+    {
+      "product_code": "00002"
+    },
+    {
+      "product_code": "00406"
+    },
+    {
+      "product_code": "00407"
+    },
+    {
+      "product_code": "00408"
+    },
+    {
+      "product_code": "00003"
+    },
+    {
+      "product_code": "00004"
+    },
+    {
+      "product_code": "00005"
+    },
+    {
+      "product_code": "00006"
+    },
+    {
+      "product_code": "00007B"
+    }
+  ],
+  "messages": [],
+  "stdout": "product_code\n00001\n00002\n00406\n00407\n00408\n00003\n00004\n00005\n00006\n00007B\n",
+  "stderr": "",
+  "execution_time_ms": 316
+}

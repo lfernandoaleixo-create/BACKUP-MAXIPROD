@@ -3971,3 +3971,5 @@
 - [x] Testes automatizados para o módulo
 - [x] Auto-ticar produtos visíveis do vendedor com base na tabela de preço do Maxiprod (se produto está na tabela de preço, fica visível no estoque do vendedor)
 - [x] Login do vendedor pela tela principal: aceitar senha do vendedor além da senha admin, redirecionar direto para a área do vendedor
+- [x] Bug: nomes dos produtos não aparecem na aba Estoque do vendedor (só mostra quantidade)
+- [x] Adicionar abas no app do vendedor: Cadastro de Cliente, Tabela de Preços, Pedidos de Venda, Métrica de Vendas (exceto Configurações)
