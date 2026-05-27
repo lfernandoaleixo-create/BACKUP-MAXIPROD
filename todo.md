@@ -3973,3 +3973,4 @@
 - [x] Login do vendedor pela tela principal: aceitar senha do vendedor além da senha admin, redirecionar direto para a área do vendedor
 - [x] Bug: nomes dos produtos não aparecem na aba Estoque do vendedor (só mostra quantidade)
 - [x] Adicionar abas no app do vendedor: Cadastro de Cliente, Tabela de Preços, Pedidos de Venda, Métrica de Vendas (exceto Configurações)
+- [x] Refatorar SellerApp para reutilizar os mesmos componentes do VendedorDetalhe (idêntico ao gestor, exceto aba Configurações)

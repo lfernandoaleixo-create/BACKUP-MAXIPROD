@@ -87,10 +87,18 @@ interface DashboardItem {
   isKgProduct: boolean;
 }
 
-export default function VendedorDetalhe() {
+export interface VendedorDetalheProps {
+  sellerMode?: boolean;
+  externalSellerId?: number;
+  onLogout?: () => void;
+  [key: string]: any;
+}
+
+export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
+  const { sellerMode = false, externalSellerId, onLogout } = props;
   const params = useParams<{ sellerId: string }>();
   const [, setLocation] = useLocation();
-  const sellerId = parseInt(params.sellerId || "0", 10);
+  const sellerId = externalSellerId || parseInt(params.sellerId || "0", 10);
   const [activeTab, setActiveTab] = useState<TabType>("estoque");
 
   // Buscar dados do vendedor
@@ -132,7 +140,7 @@ export default function VendedorDetalhe() {
     );
   }
 
-  const tabs: { id: TabType; label: string; icon: typeof Package }[] = [
+  const allTabs: { id: TabType; label: string; icon: typeof Package }[] = [
     { id: "estoque", label: "Estoque", icon: Package },
     { id: "clientes", label: "Cadastro de Cliente", icon: UserPlus },
     { id: "tabela_precos", label: "Tabela de Preços", icon: Tag },
@@ -142,21 +150,26 @@ export default function VendedorDetalhe() {
     { id: "configuracoes", label: "Configurações", icon: Settings },
   ];
 
+  // No modo vendedor, esconde a aba Configurações
+  const tabs = sellerMode ? allTabs.filter(t => t.id !== "configuracoes") : allTabs;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
-      <TopNav />
+      {!sellerMode && <TopNav />}
 
       <main className="container py-4 md:py-6 space-y-4 pb-20 md:pb-6">
         {/* Header com botão voltar e info do vendedor */}
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-5">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setLocation("/gestao-comercial")}
-              className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors"
-              title="Voltar"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
+            {!sellerMode ? (
+              <button
+                onClick={() => setLocation("/gestao-comercial")}
+                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors"
+                title="Voltar"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            ) : null}
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
               {seller.sellerName.charAt(0).toUpperCase()}
             </div>
@@ -185,6 +198,15 @@ export default function VendedorDetalhe() {
                 </>
               )}
             </div>
+            {sellerMode && onLogout && (
+              <button
+                onClick={onLogout}
+                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors ml-2"
+                title="Sair"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
