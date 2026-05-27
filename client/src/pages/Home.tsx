@@ -4365,7 +4365,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     return parentOnlyMadeira.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
   }, [parentOnlyMadeira]);
 
-  const madeiraPedidosCx = useMemo(() => madeiraItems.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0), [madeiraItems]);
+  const madeiraPedidosCx = useMemo(() => parentOnlyMadeira.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0), [parentOnlyMadeira]);
   const madeiraDisponivelCx = madeiraEstoqueCx - madeiraPedidosCx;
   const madeiraPOCx = useMemo(() => madeiraItems.reduce((sum, i) => sum + (i.poCx ?? 0), 0), [madeiraItems]);
   const madeiraProjetadoCx = madeiraDisponivelCx + madeiraPOCx;
@@ -4402,10 +4402,10 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       .reduce((sum, i) => sum + (madeiraStockMapKPI.get(i.codigoItem) || 0), 0);
   }, [parentOnlyMadeira, madeiraStockMapKPI]);
   const pedidosCaixas = useMemo(() => {
-    return madeiraItems
+    return parentOnlyMadeira
       .filter(i => i.codigoItem !== ROJAO_CODE && i.codigoItem !== VARETA_APITO_CODE && !i.isKgProduct)
       .reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
-  }, [madeiraItems]);
+  }, [parentOnlyMadeira]);
 
   // Alertas: produtos com estoque < pedidos dos últimos 30 dias
   const [showAlertasPanel, setShowAlertasPanel] = useState(false);

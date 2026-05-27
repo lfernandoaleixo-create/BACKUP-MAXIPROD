@@ -3975,3 +3975,4 @@
 - [x] Adicionar abas no app do vendedor: Cadastro de Cliente, Tabela de Preços, Pedidos de Venda, Métrica de Vendas (exceto Configurações)
 - [x] Refatorar SellerApp para reutilizar os mesmos componentes do VendedorDetalhe (idêntico ao gestor, exceto aba Configurações)
 - [x] Bug: produtos MADEIRA não mostram pedidos de venda (pedidosCx zerado) - corrigir para mostrar pedidos mas não abater do disponível/projetado
+- [x] Bug: KPI card "Pedidos (Venda)" contava pedidos de filhos+pais (double-count) - corrigido para usar apenas parentOnlyMadeira
