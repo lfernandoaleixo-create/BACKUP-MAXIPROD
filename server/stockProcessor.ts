@@ -681,16 +681,18 @@ export async function processStockData(): Promise<void> {
       }
     }
     
-    // ─── CORREÇÃO DUPLICIDADE DE BAIXA (19/05/2026) ───
-    // Para itens MADEIRA/MADEIRA CONTABILIZADO, os pedidos NÃO devem reservar estoque.
-    // A baixa desses itens já acontece automaticamente no faturamento via processIndustrializedBaixa.
-    // Se descontássemos aqui também, teríamos duplo desconto.
+    // ─── CORREÇÃO DUPLICIDADE DE BAIXA (19/05/2026 - atualizada 27/05/2026) ───
+    // Para itens MADEIRA/MADEIRA CONTABILIZADO:
+    // - Pedidos de venda DEVEM aparecer (informativo para o vendedor/gestor)
+    // - Mas NÃO devem subtrair do disponível/projetado (baixa só no faturamento)
     // IMPORTANTE: Isso NÃO afeta importação (BAMBU, FIBRA, MADEIRA IMPORTADA) — apenas industrializados.
     const isMadeiraIndustrializado = estadoConfPredominante && 
       (estadoConfPredominante.toUpperCase() === 'MADEIRA' || estadoConfPredominante.toUpperCase() === 'MADEIRA CONTABILIZADO');
-    const pedidosUn = isMadeiraIndustrializado ? 0 : (orderData?.totalUn || 0);
+    const pedidosUn = orderData?.totalUn || 0;
     
-    const disponivelUn = itemUn - pedidosUn;
+    // Para MADEIRA industrializado: disponível = estoque (não desconta pedidos)
+    // Para outros: disponível = estoque - pedidos
+    const disponivelUn = isMadeiraIndustrializado ? itemUn : (itemUn - pedidosUn);
     const projetadoUn = disponivelUn + poUn;
     
     // isKg: produtos vendidos em kg (ex: PCT 20KG)
@@ -701,8 +703,10 @@ export async function processStockData(): Promise<void> {
           ? Math.ceil(pedidosUn / unitsPerBox)
           : Math.ceil(orderData.totalCx))
       : null;
-    // Disponível = Estoque - Pedidos (em caixas)
-    const disponivelCxVal = estoqueCxVal !== null ? estoqueCxVal - (pedidosCxVal ?? 0) : null;
+    // Disponível em caixas: para MADEIRA industrializado, não desconta pedidos
+    const disponivelCxVal = estoqueCxVal !== null 
+      ? (isMadeiraIndustrializado ? estoqueCxVal : estoqueCxVal - (pedidosCxVal ?? 0)) 
+      : null;
     // Para produtos kg (ex: Vareta Apito PCT 20KG): PO na tabela de estoque deve ser em kg
     // (150 cx × 30kg = 4500 kg) para somar com estoque/disponível que já está em kg.
     // Os poLotes mantêm quantidade em caixas (como chega da China) para a seção POs.
@@ -800,12 +804,15 @@ export async function processStockData(): Promise<void> {
       if (count > maxCountPO) { maxCountPO = count; estadoConfPredominantePO = ec; }
     }
     
-    // CORREÇÃO DUPLICIDADE DE BAIXA (19/05/2026): mesma regra da seção principal
+    // CORREÇÃO DUPLICIDADE DE BAIXA (19/05/2026 - atualizada 27/05/2026): mesma regra da seção principal
+    // Pedidos APARECEM mas não subtraem do disponível para MADEIRA industrializado
     const isMadeiraIndustrializadoPO = estadoConfPredominantePO && 
       (estadoConfPredominantePO.toUpperCase() === 'MADEIRA' || estadoConfPredominantePO.toUpperCase() === 'MADEIRA CONTABILIZADO');
-    const pedidosUn = isMadeiraIndustrializadoPO ? 0 : (orderData?.totalUn || 0);
+    const pedidosUn = orderData?.totalUn || 0;
     
-    const disponivelUn = 0 - pedidosUn; // estoque 0 - pedidos
+    // Para MADEIRA: disponível = 0 (sem estoque, sem desconto de pedidos)
+    // Para outros: disponível = 0 - pedidos (negativo = comprometido sem estoque)
+    const disponivelUn = isMadeiraIndustrializadoPO ? 0 : (0 - pedidosUn);
     const projetadoUn = disponivelUn + poUn;
     
     processed.push({
@@ -828,6 +835,7 @@ export async function processStockData(): Promise<void> {
       pedidosPorCliente,
       disponivelUn,
       disponivelCx: (() => {
+        if (isMadeiraIndustrializadoPO) return unitsPerBox ? 0 : null;
         if (!orderData) return unitsPerBox ? Math.floor(disponivelUn / unitsPerBox) : null;
         const pedCx = unitsPerBox && unitsPerBox !== 1 ? Math.ceil(pedidosUn / unitsPerBox) : Math.ceil(orderData.totalCx);
         return Math.floor(0 - pedCx);
@@ -839,6 +847,7 @@ export async function processStockData(): Promise<void> {
       poLotes: aggregateLotes(poData.lotes),
       projetadoUn,
       projetadoCx: (() => {
+        if (isMadeiraIndustrializadoPO) return unitsPerBox ? (0 + (poCx || 0)) : null;
         if (!orderData) return unitsPerBox ? (Math.floor(disponivelUn / unitsPerBox) + (poCx || 0)) : null;
         const pedCx = unitsPerBox && unitsPerBox !== 1 ? Math.ceil(pedidosUn / unitsPerBox) : Math.ceil(orderData.totalCx);
         return Math.floor(0 - pedCx) + (poCx || 0);
@@ -938,18 +947,36 @@ export async function processStockData(): Promise<void> {
     }
     
     // Ajustar disponível do pai: descontar apenas pedidos de variações que devem ser debitadas
+    // EXCEÇÃO: para MADEIRA industrializado, pedidos são informativos — NÃO subtraem do disponível
+    const parentIsMadeira = parent.estadoConfiguravel && 
+      (parent.estadoConfiguravel.toUpperCase() === 'MADEIRA' || parent.estadoConfiguravel.toUpperCase() === 'MADEIRA CONTABILIZADO');
     if (extraPedidosUn > 0) {
       parent.pedidosUn += extraPedidosUn;
-      parent.disponivelUn = parent.estoqueUn - parent.pedidosUn;
-      if (parent.unidadesPorCaixa) {
-        parent.pedidosCx = Math.ceil(parent.pedidosUn / parent.unidadesPorCaixa);
-        parent.disponivelCx = Math.floor(parent.disponivelUn / parent.unidadesPorCaixa);
-        parent.projetadoUn = parent.disponivelUn + parent.poUn;
-        // Para isKgProduct, projetadoCx = disponivelCx + poUn (tudo em kg)
-        if (parent.isKgProduct) {
-          parent.projetadoCx = parent.disponivelCx !== null ? parent.disponivelCx + parent.poUn : null;
-        } else {
-          parent.projetadoCx = (parent.disponivelCx ?? 0) + (parent.poCx ?? 0);
+      if (parentIsMadeira) {
+        // MADEIRA: disponível = estoque (não desconta pedidos)
+        parent.disponivelUn = parent.estoqueUn;
+        if (parent.unidadesPorCaixa) {
+          parent.pedidosCx = Math.ceil(parent.pedidosUn / parent.unidadesPorCaixa);
+          parent.disponivelCx = Math.floor(parent.estoqueUn / parent.unidadesPorCaixa);
+          parent.projetadoUn = parent.disponivelUn + parent.poUn;
+          if (parent.isKgProduct) {
+            parent.projetadoCx = parent.disponivelCx !== null ? parent.disponivelCx + parent.poUn : null;
+          } else {
+            parent.projetadoCx = (parent.disponivelCx ?? 0) + (parent.poCx ?? 0);
+          }
+        }
+      } else {
+        // Outros: disponível = estoque - pedidos
+        parent.disponivelUn = parent.estoqueUn - parent.pedidosUn;
+        if (parent.unidadesPorCaixa) {
+          parent.pedidosCx = Math.ceil(parent.pedidosUn / parent.unidadesPorCaixa);
+          parent.disponivelCx = Math.floor(parent.disponivelUn / parent.unidadesPorCaixa);
+          parent.projetadoUn = parent.disponivelUn + parent.poUn;
+          if (parent.isKgProduct) {
+            parent.projetadoCx = parent.disponivelCx !== null ? parent.disponivelCx + parent.poUn : null;
+          } else {
+            parent.projetadoCx = (parent.disponivelCx ?? 0) + (parent.poCx ?? 0);
+          }
         }
       }
     }

@@ -1,0 +1,15 @@
+{
+  "query": "SELECT empresa, JSON_LENGTH(dataJson) as total_items, SUBSTRING(dataJson, 1, 500) as sample FROM dashboard_data WHERE empresa = 'TODAS' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT empresa, JSON_LENGTH(dataJson) as total_items, SUBSTRING(dataJson, 1, 500) as sample FROM dashboard_data WHERE empresa = 'TODAS' LIMIT 1;",
+  "rows": [
+    {
+      "empresa": "TODAS",
+      "total_items": "1",
+      "sample": "\"[{\\\"codigoItem\\\":\\\"00013R\\\",\\\"descricaoItem\\\":\\\"ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO\\\",\\\"unidadeMedida\\\":\\\"un\\\",\\\"grupoCodigo\\\":\\\"20\\\",\\\"superGrupoCodigo\\\":\\\"12\\\",\\\"descricaoGrupo\\\":\\\"ESPETO\\\",\\\"empresaDona\\\":\\\"PALITOS INDUSTRIA\\\",\\\"estoqueUn\\\":0,\\\"estoqueCx\\\":0,\\\"unidadesPorCaixa\\\":5000,\\\"pedidosUn\\\":0,\\\"pedidosCx\\\":null,\\\"pedidosPorCliente\\\":[],\\\"disponivelUn\\\":0,\\\"disponivelCx\\\":0,\\\"poCx\\\":null,\\\"poUn\\\":0,\\\"poEntregas\\\":[],\\\"poFornecedores\\\":[],\\\"poLotes\\\":[],\\\"projetadoUn\\"
+    }
+  ],
+  "messages": [],
+  "stdout": "empresa\ttotal_items\tsample\nTODAS\t1\t\"[{\\\"codigoItem\\\":\\\"00013R\\\",\\\"descricaoItem\\\":\\\"ESPETO DE BAMBU 4,0 X 280 MM C/ 5 X 1.000 UNID. REFUGO\\\",\\\"unidadeMedida\\\":\\\"un\\\",\\\"grupoCodigo\\\":\\\"20\\\",\\\"superGrupoCodigo\\\":\\\"12\\\",\\\"descricaoGrupo\\\":\\\"ESPETO\\\",\\\"empresaDona\\\":\\\"PALITOS INDUSTRIA\\\",\\\"estoqueUn\\\":0,\\\"estoqueCx\\\":0,\\\"unidadesPorCaixa\\\":5000,\\\"pedidosUn\\\":0,\\\"pedidosCx\\\":null,\\\"pedidosPorCliente\\\":[],\\\"disponivelUn\\\":0,\\\"disponivelCx\\\":0,\\\"poCx\\\":null,\\\"poUn\\\":0,\\\"poEntregas\\\":[],\\\"poFornecedores\\\":[],\\\"poLotes\\\":[],\\\"projetadoUn\\\n",
+  "stderr": "",
+  "execution_time_ms": 260
+}
