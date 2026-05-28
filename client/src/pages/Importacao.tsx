@@ -144,31 +144,33 @@ function PagamentosFornecedores() {
   return (
     <div className="space-y-4">
       {/* Toolbar: PDF Export + Currency Conversion */}
-      <div className="flex items-center justify-end gap-3 flex-wrap">
-        <button
-          onClick={handleExportPdf}
-          disabled={exportingPdf}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all shadow-sm bg-red-50 border-red-300 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {exportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-          Exportar PDF
-        </button>
-        {exchangeData && (
-          <span className="text-xs text-slate-500">
-            Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-          </span>
-        )}
-        <button
-          onClick={() => setCurrency(prev => prev === "USD" ? "BRL" : "USD")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all shadow-sm ${
-            currency === "BRL"
-              ? "bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
-              : "bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
-          }`}
-        >
-          <ArrowLeftRight className="w-4 h-4" />
-          {currency === "USD" ? "USD → BRL" : "BRL → USD"}
-        </button>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <button
+            onClick={handleExportPdf}
+            disabled={exportingPdf}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-all shadow-sm bg-red-50 border-red-300 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {exportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            Exportar PDF
+          </button>
+          {exchangeData && (
+            <span className="text-[10px] sm:text-xs text-slate-500">
+              Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </span>
+          )}
+          <button
+            onClick={() => setCurrency(prev => prev === "USD" ? "BRL" : "USD")}
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-all shadow-sm ${
+              currency === "BRL"
+                ? "bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+                : "bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+            }`}
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+            {currency === "USD" ? "USD → BRL" : "BRL → USD"}
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -514,7 +516,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
           ))}
 
           {/* Actions footer */}
-          <div className="px-4 py-3 border-t border-slate-100 flex flex-wrap items-center gap-3">
+          <div className="px-3 sm:px-4 py-3 border-t border-slate-100 flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={() => { setShowAddSection(true); setNewSectionSupplierName(supplier.name); }}
               className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors"
@@ -664,7 +666,7 @@ function SectionTable({
         // Hide if there's only a single section (no need for sub-section header when there's only one)
         if (totalSections <= 1) return null;
         return (
-          <div className="group/section bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 flex items-center gap-3 border-b border-blue-100">
+          <div className="group/section bg-gradient-to-r from-slate-50 to-blue-50 px-3 sm:px-4 py-3 flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 border-b border-blue-100">
             <div className="p-2 rounded-lg bg-blue-100">
               <Layers className="w-4 h-4 text-blue-700" />
             </div>
@@ -738,7 +740,7 @@ function SectionTable({
                   onRemoveSection?.(sectionTitle!);
                 }
               }}
-              className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors border border-red-200"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 transition-colors border border-red-200 whitespace-nowrap"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Remover Sub-seção
@@ -747,44 +749,30 @@ function SectionTable({
         );
       })()}
 
-      {/* Table - compact, no overflow-x-auto */}
-      <table className="w-full text-[11px] table-fixed">
-        <colgroup>
-          <col className="w-[12%]" />
-          <col className="w-[8%]" />
-          <col className="w-[4%]" />
-          <col className="w-[9%]" />
-          <col className="w-[7%]" />
-          <col className="w-[8%]" />
-          <col className="w-[8%]" />
-          <col className="w-[8%]" />
-          <col className="w-[8%]" />
-          <col className="w-[8%]" />
-          <col className="w-[9%]" />
-          <col className="w-[7%]" />
-          <col className="w-[4%]" />
-        </colgroup>
+      {/* Table - scrollable on mobile */}
+      <div className="overflow-x-auto -mx-2 px-2 pb-1">
+      <table className="min-w-[950px] w-full text-[11px] border-collapse">
         <thead>
           <tr>
             <th colSpan={5} className="bg-white"></th>
-            <th colSpan={3} className="bg-green-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-green-700 border-b-2 border-green-400">O que pagou</th>
-            <th colSpan={3} className="bg-red-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-red-600 border-b-2 border-red-400">O que falta pagar</th>
+            <th colSpan={3} className="bg-green-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-green-700 border-b-2 border-green-400 whitespace-nowrap">O que pagou</th>
+            <th colSpan={3} className="bg-red-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-red-600 border-b-2 border-red-400 whitespace-nowrap">O que falta pagar</th>
             <th colSpan={2} className="bg-white"></th>
           </tr>
           <tr className="bg-slate-50 text-slate-500 uppercase text-[10px]">
-            <th className="px-2 py-2 text-left font-semibold">Status</th>
-            <th className="px-2 py-2 text-left font-semibold">Pedido</th>
-            <th className="px-2 py-2 text-center font-semibold">Doc</th>
-            <th className="px-2 py-2 text-right font-semibold">Total USD</th>
-            <th className="px-2 py-2 text-right font-semibold">50%</th>
-            <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Brasil</th>
-            <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Paraguai</th>
-            <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Total</th>
-            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Brasil</th>
-            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Paraguai</th>
-            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Total</th>
-            <th className="px-2 py-2 text-left font-semibold">Rastreio</th>
-            <th className="px-1 py-2 text-center font-semibold"></th>
+            <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[80px]">Status</th>
+            <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[70px]">Pedido</th>
+            <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[35px]">Doc</th>
+            <th className="px-2 py-2 text-right font-semibold whitespace-nowrap min-w-[80px]">Total USD</th>
+            <th className="px-2 py-2 text-right font-semibold whitespace-nowrap min-w-[65px]">50%</th>
+            <th className="px-2 py-2 text-right font-semibold bg-green-50/50 whitespace-nowrap min-w-[75px]">Brasil</th>
+            <th className="px-2 py-2 text-right font-semibold bg-green-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
+            <th className="px-2 py-2 text-right font-semibold bg-green-50/50 whitespace-nowrap min-w-[70px]">Total</th>
+            <th className="px-2 py-2 text-right font-semibold bg-red-50/50 whitespace-nowrap min-w-[75px]">Brasil</th>
+            <th className="px-2 py-2 text-right font-semibold bg-red-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
+            <th className="px-2 py-2 text-right font-semibold bg-red-50/50 whitespace-nowrap min-w-[70px]">Total</th>
+            <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[70px]">Rastreio</th>
+            <th className="px-1 py-2 text-center font-semibold min-w-[30px]"></th>
           </tr>
         </thead>
         <tbody>
@@ -830,6 +818,7 @@ function SectionTable({
           )}
         </tbody>
       </table>
+      </div>
       {/* Add button below table */}
       {!showAddRow && (
         <div className="px-4 py-2 border-t border-slate-50">
@@ -885,19 +874,19 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
           {payment.status}
         </span>
       </td>
-      <td className="px-2 py-2 font-mono font-medium text-slate-700 text-[11px]">{payment.pedido}</td>
+      <td className="px-2 py-2 font-mono font-medium text-slate-700 text-[11px] whitespace-nowrap">{payment.pedido}</td>
       <td className="px-2 py-2 text-center">
         <span className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-medium text-[10px]">{payment.doc}</span>
       </td>
-      <td className="px-2 py-2 text-right font-medium text-slate-800">{fmtUsd(payment.totalUsd)}</td>
-      <td className="px-2 py-2 text-right text-slate-500">{fmtUsd(payment.halfValue)}</td>
-      <td className="px-2 py-2 text-right text-slate-700 bg-green-50/30">{fmtUsd(payment.brasilUsd)}</td>
-      <td className="px-2 py-2 text-right text-slate-700 bg-green-50/30">{fmtUsd(payment.paraguaiUsd)}</td>
-      <td className="px-2 py-2 text-right font-medium text-green-700 bg-green-50/30">{fmtUsd(payment.totalPago)}</td>
-      <td className={`px-2 py-2 text-right bg-red-50/30 ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtUsd(payment.saldoDevedorBrasil)}</td>
-      <td className={`px-2 py-2 text-right bg-red-50/30 ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtUsd(payment.saldoDevedorParaguai)}</td>
-      <td className={`px-2 py-2 text-right font-medium bg-red-50/30 ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtUsd(payment.saldoDevedorTotal)}</td>
-      <td className="px-2 py-2 text-slate-600 font-mono text-[10px]">{payment.rastreio || <span className="text-slate-300">-</span>}</td>
+      <td className="px-2 py-2 text-right font-medium text-slate-800 whitespace-nowrap">{fmtUsd(payment.totalUsd)}</td>
+      <td className="px-2 py-2 text-right text-slate-500 whitespace-nowrap">{fmtUsd(payment.halfValue)}</td>
+      <td className="px-2 py-2 text-right text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.brasilUsd)}</td>
+      <td className="px-2 py-2 text-right text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.paraguaiUsd)}</td>
+      <td className="px-2 py-2 text-right font-medium text-green-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.totalPago)}</td>
+      <td className={`px-2 py-2 text-right bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtUsd(payment.saldoDevedorBrasil)}</td>
+      <td className={`px-2 py-2 text-right bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtUsd(payment.saldoDevedorParaguai)}</td>
+      <td className={`px-2 py-2 text-right font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtUsd(payment.saldoDevedorTotal)}</td>
+      <td className="px-2 py-2 text-slate-600 font-mono text-[10px] whitespace-nowrap">{payment.rastreio || <span className="text-slate-300">-</span>}</td>
       <td className="px-1 py-2 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button onClick={onEdit} className="p-1 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors">
