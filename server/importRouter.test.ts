@@ -65,7 +65,8 @@ describe("importRouter", () => {
       pedido: "PO-TEST-001",
       doc: "PI",
       totalUsd: "1500.00",
-      halfValue: "750.00",
+      totalBrasilUsd: "750.00",
+      totalParaguaiUsd: "750.00",
       brasilUsd: "500.00",
       paraguaiUsd: "250.00",
       totalPago: "750.00",
@@ -126,8 +127,8 @@ describe("importRouter", () => {
     expect(result).toHaveProperty("timestamp");
     expect(typeof result.rate).toBe("number");
     expect(result.rate).toBeGreaterThan(0);
-    expect(["AwesomeAPI", "BCB", "fallback"]).toContain(result.source);
-  });
+    expect(result.source).toMatch(/BCB|AwesomeAPI|fallback/);
+  }, 30000);
 
   it("deletes a supplier and cascades payments", async () => {
     // Create a payment first

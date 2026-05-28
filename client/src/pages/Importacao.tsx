@@ -3,6 +3,9 @@
  * Sub-abas:
  * 1. Relação de Pagamentos com Fornecedores Chineses
  * 2. Custo da Mercadoria
+ * 
+ * REGRA: TODOS os campos são 100% manuais. NENHUM auto-cálculo.
+ * Larissa pode atualizar qualquer campo a qualquer momento e salvar.
  */
 
 import { useState } from "react";
@@ -133,7 +136,7 @@ function PagamentosFornecedores() {
 
   // Calculate grand totals
   const grandTotals = (fullData || []).reduce((acc, supplier) => {
-    supplier.payments.forEach(p => {
+    supplier.payments.forEach((p: any) => {
       acc.totalUsd += parseFloat(String(p.totalUsd)) || 0;
       acc.totalPago += parseFloat(String(p.totalPago)) || 0;
       acc.saldoTotal += parseFloat(String(p.saldoDevedorTotal)) || 0;
@@ -215,7 +218,7 @@ function PagamentosFornecedores() {
       </div>
 
       {/* Supplier Sections */}
-      {(fullData || []).map(supplier => (
+      {(fullData || []).map((supplier: any) => (
         <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} />
       ))}
 
@@ -281,7 +284,8 @@ interface PaymentData {
   pedido: string;
   doc: string;
   totalUsd: string;
-  halfValue: string | null;
+  totalBrasilUsd: string;
+  totalParaguaiUsd: string;
   brasilUsd: string;
   paraguaiUsd: string;
   totalPago: string;
@@ -573,7 +577,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
-                  <span className="text-slate-400 font-bold mt-4">–</span>
+                  <span className="text-slate-400 font-bold mt-4">\u2013</span>
                   <div className="flex-1">
                     <label className="text-[10px] text-slate-500 uppercase font-medium mb-0.5 block">Subtítulo (Categoria)</label>
                     <input
@@ -592,7 +596,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
                       const title = newSectionSupplierName.trim().toUpperCase();
                       const subtitle = newSectionTitle.trim().toUpperCase();
                       if (title && subtitle) {
-                        const sectionName = `${title} – ${subtitle}`;
+                        const sectionName = `${title} \u2013 ${subtitle}`;
                         setEmptySections(prev => [...prev, sectionName]);
                         setShowAddSection(false);
                         setNewSectionTitle("");
@@ -616,7 +620,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
                   </button>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1.5">A sub-seção aparecerá como: <strong>{newSectionSupplierName.trim().toUpperCase() || "..."} – {newSectionTitle.trim().toUpperCase() || "..."}</strong></p>
+              <p className="text-[10px] text-slate-400 mt-1.5">A sub-seção aparecerá como: <strong>{newSectionSupplierName.trim().toUpperCase() || "..."} \u2013 {newSectionTitle.trim().toUpperCase() || "..."}</strong></p>
             </div>
           )}
         </div>
@@ -625,7 +629,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
   );
 }
 
-// ===== SECTION TABLE (no horizontal scroll) =====
+// ===== SECTION TABLE =====
 
 function SectionTable({
   sectionTitle,
@@ -662,17 +666,20 @@ function SectionTable({
   const [editingSectionTitle, setEditingSectionTitle] = useState(false);
   const [editSectionName, setEditSectionName] = useState("");
   const [editSectionSubtitle, setEditSectionSubtitle] = useState("");
-  // Section totals
+
+  // Section totals (all manual values, just summed for display)
   const sectionTotals = payments.reduce((acc, p) => {
     acc.totalUsd += parseFloat(String(p.totalUsd)) || 0;
+    acc.totalBrasilUsd += parseFloat(String(p.totalBrasilUsd)) || 0;
+    acc.totalParaguaiUsd += parseFloat(String(p.totalParaguaiUsd)) || 0;
+    acc.brasilUsd += parseFloat(String(p.brasilUsd)) || 0;
+    acc.paraguaiUsd += parseFloat(String(p.paraguaiUsd)) || 0;
     acc.totalPago += parseFloat(String(p.totalPago)) || 0;
     acc.saldoDevedorBrasil += parseFloat(String(p.saldoDevedorBrasil)) || 0;
     acc.saldoDevedorParaguai += parseFloat(String(p.saldoDevedorParaguai)) || 0;
     acc.saldoDevedorTotal += parseFloat(String(p.saldoDevedorTotal)) || 0;
     return acc;
-  }, { totalUsd: 0, totalPago: 0, saldoDevedorBrasil: 0, saldoDevedorParaguai: 0, saldoDevedorTotal: 0 });
-
-  const displayTitle = sectionTitle || `${supplierName}${supplierCategory ? ` - ${supplierCategory}` : ""}`;
+  }, { totalUsd: 0, totalBrasilUsd: 0, totalParaguaiUsd: 0, brasilUsd: 0, paraguaiUsd: 0, totalPago: 0, saldoDevedorBrasil: 0, saldoDevedorParaguai: 0, saldoDevedorTotal: 0 });
 
   return (
     <div className="border-b border-slate-100 last:border-b-0">
@@ -698,7 +705,7 @@ function SectionTable({
                   placeholder="Título"
                   autoFocus
                 />
-                <span className="text-slate-400 font-bold">–</span>
+                <span className="text-slate-400 font-bold">\u2013</span>
                 <input
                   type="text"
                   value={editSectionSubtitle}
@@ -824,15 +831,15 @@ function SectionTable({
           {payments.length > 0 && (
             <tr className="bg-slate-50 font-semibold border-t border-slate-200">
               <td className="px-2 py-2 text-slate-700" colSpan={3}>TOTAIS</td>
-              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2"></td>
-              <td className="px-2 py-2"></td>
-              <td className="px-2 py-2"></td>
-              <td className="px-2 py-2"></td>
-              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorBrasil).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorParaguai).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-center text-red-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalBrasilUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalBrasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalParaguaiUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalParaguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.brasilUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.brasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.paraguaiUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.paraguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.totalPago ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{sectionTotals.saldoDevedorBrasil ? `${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorBrasil).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{sectionTotals.saldoDevedorParaguai ? `${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorParaguai).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-red-700 whitespace-nowrap">{sectionTotals.saldoDevedorTotal ? `${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
               <td className="px-2 py-2"></td>
               <td className="px-1 py-2"></td>
             </tr>
@@ -856,7 +863,7 @@ function SectionTable({
   );
 }
 
-// ===== PAYMENT ROW =====
+// ===== PAYMENT ROW (display only - all fields manual) =====
 
 function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
@@ -899,12 +906,15 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
       <td className="px-2 py-2 text-center">
         <span className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-medium text-[10px]">{payment.doc}</span>
       </td>
+      {/* BLUE SECTION: Total a pagar (Total, Brasil, Paraguai) - ALL INDEPENDENT */}
       <td className="px-2 py-2 text-center font-medium text-slate-800 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.totalUsd)}</td>
-      <td className="px-2 py-2 text-center text-slate-700 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.halfValue)}</td>
-      <td className="px-2 py-2 text-center text-slate-700 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.halfValue)}</td>
+      <td className="px-2 py-2 text-center text-slate-700 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.totalBrasilUsd)}</td>
+      <td className="px-2 py-2 text-center text-slate-700 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.totalParaguaiUsd)}</td>
+      {/* GREEN SECTION: O que pagou (Brasil, Paraguai, Total) - ALL INDEPENDENT */}
       <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.brasilUsd)}</td>
       <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.paraguaiUsd)}</td>
       <td className="px-2 py-2 text-center font-medium text-green-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.totalPago)}</td>
+      {/* RED SECTION: O que falta pagar (Brasil, Paraguai, Total) - ALL INDEPENDENT */}
       <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtUsd(payment.saldoDevedorBrasil)}</td>
       <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtUsd(payment.saldoDevedorParaguai)}</td>
       <td className={`px-2 py-2 text-center font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtUsd(payment.saldoDevedorTotal)}</td>
@@ -926,7 +936,7 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
   );
 }
 
-// ===== EDIT PAYMENT ROW (all fields manual) =====
+// ===== EDIT PAYMENT ROW (all fields 100% manual, no auto-calculation) =====
 
 function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData; onCancel: () => void; onRefetch: () => void }) {
   const [form, setForm] = useState({
@@ -934,7 +944,8 @@ function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData
     pedido: payment.pedido,
     doc: payment.doc,
     totalUsd: String(payment.totalUsd),
-    halfValue: String(payment.halfValue || "0"),
+    totalBrasilUsd: String(payment.totalBrasilUsd || "0"),
+    totalParaguaiUsd: String(payment.totalParaguaiUsd || "0"),
     brasilUsd: String(payment.brasilUsd),
     paraguaiUsd: String(payment.paraguaiUsd),
     totalPago: String(payment.totalPago),
@@ -966,12 +977,17 @@ function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData
           <option value="CI">CI</option>
         </select>
       </td>
+      {/* BLUE: Total a pagar */}
       <td className="px-1 py-1.5">
         <input type="number" step="0.01" value={form.totalUsd} onChange={e => setForm({ ...form, totalUsd: e.target.value })} className={`${inputClass} text-right`} />
       </td>
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.halfValue} onChange={e => setForm({ ...form, halfValue: e.target.value })} className={`${inputClass} text-right`} />
+        <input type="number" step="0.01" value={form.totalBrasilUsd} onChange={e => setForm({ ...form, totalBrasilUsd: e.target.value })} className={`${inputClass} text-right`} />
       </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.totalParaguaiUsd} onChange={e => setForm({ ...form, totalParaguaiUsd: e.target.value })} className={`${inputClass} text-right`} />
+      </td>
+      {/* GREEN: O que pagou */}
       <td className="px-1 py-1.5">
         <input type="number" step="0.01" value={form.brasilUsd} onChange={e => setForm({ ...form, brasilUsd: e.target.value })} className={`${inputClass} text-right`} />
       </td>
@@ -981,6 +997,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData
       <td className="px-1 py-1.5">
         <input type="number" step="0.01" value={form.totalPago} onChange={e => setForm({ ...form, totalPago: e.target.value })} className={`${inputClass} text-right`} />
       </td>
+      {/* RED: O que falta pagar */}
       <td className="px-1 py-1.5">
         <input type="number" step="0.01" value={form.saldoDevedorBrasil} onChange={e => setForm({ ...form, saldoDevedorBrasil: e.target.value })} className={`${inputClass} text-right`} />
       </td>
@@ -1010,7 +1027,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData
   );
 }
 
-// ===== INLINE ADD PAYMENT ROW (matches table structure) =====
+// ===== INLINE ADD PAYMENT ROW (all fields 100% manual) =====
 
 function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: { supplierId: number; sectionTitle: string | null; onCancel: () => void; onRefetch: () => void }) {
   const [form, setForm] = useState({
@@ -1018,7 +1035,8 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: 
     pedido: "",
     doc: "PI",
     totalUsd: "",
-    halfValue: "",
+    totalBrasilUsd: "0",
+    totalParaguaiUsd: "0",
     brasilUsd: "0",
     paraguaiUsd: "0",
     totalPago: "0",
@@ -1049,12 +1067,17 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: 
           <option value="CI">CI</option>
         </select>
       </td>
+      {/* BLUE: Total a pagar */}
       <td className="px-1 py-1.5">
         <input type="number" step="0.01" value={form.totalUsd} onChange={e => setForm({ ...form, totalUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0.00" />
       </td>
       <td className="px-1 py-1.5">
-        <input type="number" step="0.01" value={form.halfValue} onChange={e => setForm({ ...form, halfValue: e.target.value })} className={`${inputClass} text-right`} placeholder="0.00" />
+        <input type="number" step="0.01" value={form.totalBrasilUsd} onChange={e => setForm({ ...form, totalBrasilUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.totalParaguaiUsd} onChange={e => setForm({ ...form, totalParaguaiUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+      </td>
+      {/* GREEN: O que pagou */}
       <td className="px-1 py-1.5">
         <input type="number" step="0.01" value={form.brasilUsd} onChange={e => setForm({ ...form, brasilUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
@@ -1064,6 +1087,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: 
       <td className="px-1 py-1.5">
         <input type="number" step="0.01" value={form.totalPago} onChange={e => setForm({ ...form, totalPago: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
+      {/* RED: O que falta pagar */}
       <td className="px-1 py-1.5">
         <input type="number" step="0.01" value={form.saldoDevedorBrasil} onChange={e => setForm({ ...form, saldoDevedorBrasil: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
@@ -1091,7 +1115,8 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: 
                 pedido: form.pedido,
                 doc: form.doc,
                 totalUsd: form.totalUsd,
-                halfValue: form.halfValue || undefined,
+                totalBrasilUsd: form.totalBrasilUsd || undefined,
+                totalParaguaiUsd: form.totalParaguaiUsd || undefined,
                 brasilUsd: form.brasilUsd || undefined,
                 paraguaiUsd: form.paraguaiUsd || undefined,
                 totalPago: form.totalPago || undefined,

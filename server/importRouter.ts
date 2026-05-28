@@ -58,7 +58,7 @@ export const importRouter = router({
       return { success: true };
     }),
 
-  // ===== PAYMENTS (all fields manual, no auto-calculation) =====
+  // ===== PAYMENTS (all fields 100% manual, no auto-calculation) =====
   createPayment: publicProcedure
     .input(z.object({
       supplierId: z.number(),
@@ -67,7 +67,8 @@ export const importRouter = router({
       pedido: z.string().min(1),
       doc: z.string().min(1),
       totalUsd: z.string(),
-      halfValue: z.string().optional(),
+      totalBrasilUsd: z.string().optional(),
+      totalParaguaiUsd: z.string().optional(),
       brasilUsd: z.string().optional(),
       paraguaiUsd: z.string().optional(),
       totalPago: z.string().optional(),
@@ -87,7 +88,8 @@ export const importRouter = router({
         pedido: input.pedido,
         doc: input.doc,
         totalUsd: input.totalUsd || "0.00",
-        halfValue: input.halfValue || "0.00",
+        totalBrasilUsd: input.totalBrasilUsd || "0.00",
+        totalParaguaiUsd: input.totalParaguaiUsd || "0.00",
         brasilUsd: input.brasilUsd || "0.00",
         paraguaiUsd: input.paraguaiUsd || "0.00",
         totalPago: input.totalPago || "0.00",
@@ -107,7 +109,8 @@ export const importRouter = router({
       pedido: z.string().optional(),
       doc: z.string().optional(),
       totalUsd: z.string().optional(),
-      halfValue: z.string().optional(),
+      totalBrasilUsd: z.string().optional(),
+      totalParaguaiUsd: z.string().optional(),
       brasilUsd: z.string().optional(),
       paraguaiUsd: z.string().optional(),
       totalPago: z.string().optional(),
@@ -127,7 +130,8 @@ export const importRouter = router({
       if (rawData.pedido !== undefined) updateData.pedido = rawData.pedido;
       if (rawData.doc !== undefined) updateData.doc = rawData.doc;
       if (rawData.totalUsd !== undefined) updateData.totalUsd = rawData.totalUsd;
-      if (rawData.halfValue !== undefined) updateData.halfValue = rawData.halfValue;
+      if (rawData.totalBrasilUsd !== undefined) updateData.totalBrasilUsd = rawData.totalBrasilUsd;
+      if (rawData.totalParaguaiUsd !== undefined) updateData.totalParaguaiUsd = rawData.totalParaguaiUsd;
       if (rawData.brasilUsd !== undefined) updateData.brasilUsd = rawData.brasilUsd;
       if (rawData.paraguaiUsd !== undefined) updateData.paraguaiUsd = rawData.paraguaiUsd;
       if (rawData.totalPago !== undefined) updateData.totalPago = rawData.totalPago;

@@ -4015,3 +4015,9 @@
 - [x] FIX: Proteção contra reset de status na sincronização automática (herdar status manual de registros existentes da mesma empresa)
 - [x] Importação: buscar cotação USD/BRL em tempo real (BCB PTAX, cache 30min, fallback AwesomeAPI)
 - [x] Importação: corrigir layout mobile - tabela com colunas sobrepostas e texto ilegível no celular (scroll horizontal + whitespace-nowrap + min-widths)
+- [x] REGRA: TODOS os campos da aba Importação devem ser manuais - NENHUM preenchimento automático
+- [x] FIX: Separar campos Brasil/Paraguai como campos independentes editáveis (sem auto-cálculo)
+- [x] FIX: Separar campos Brasil/Paraguai como campos independentes editáveis em TODAS as seções (Total a pagar, O que pagou, O que falta pagar) — sem auto-cálculo
+- [x] Adicionar colunas total_brasil_usd e total_paraguai_usd no banco (seção azul independente)
+- [x] Atualizar backend router para aceitar todos os campos independentes
+- [x] Atualizar frontend: cada campo é editável individualmente, sem nenhum auto-cálculo

@@ -61,9 +61,10 @@ export async function importPdfExportHandler(req: Request, res: Response) {
       { key: "pedido", label: "Pedido", width: 60 },
       { key: "doc", label: "Doc", width: 28 },
       { key: "totalUsd", label: "Total USD", width: 62 },
-      { key: "halfValue", label: "50%", width: 55 },
-      { key: "brasilUsd", label: "Brasil", width: 55 },
-      { key: "paraguaiUsd", label: "Paraguai", width: 55 },
+      { key: "totalBrasilUsd", label: "Brasil", width: 55 },
+      { key: "totalParaguaiUsd", label: "Paraguai", width: 55 },
+      { key: "brasilUsd", label: "Pago BR", width: 55 },
+      { key: "paraguaiUsd", label: "Pago PY", width: 55 },
       { key: "totalPago", label: "Total Pago", width: 62 },
       { key: "saldoDevedorBrasil", label: "Saldo BR", width: 55 },
       { key: "saldoDevedorParaguai", label: "Saldo PY", width: 55 },
@@ -202,6 +203,8 @@ export async function importPdfExportHandler(req: Request, res: Response) {
 
         // Payment rows
         let totalTotalUsd = 0;
+        let totalBlueBrasil = 0;
+        let totalBlueParaguai = 0;
         let totalBrasil = 0;
         let totalParaguai = 0;
         let totalPago = 0;
@@ -219,7 +222,8 @@ export async function importPdfExportHandler(req: Request, res: Response) {
             p.pedido,
             p.doc,
             formatMoney(p.totalUsd),
-            formatMoney(p.halfValue),
+            formatMoney((p as any).totalBrasilUsd),
+            formatMoney((p as any).totalParaguaiUsd),
             formatMoney(p.brasilUsd),
             formatMoney(p.paraguaiUsd),
             formatMoney(p.totalPago),
@@ -234,6 +238,8 @@ export async function importPdfExportHandler(req: Request, res: Response) {
 
           // Accumulate totals
           totalTotalUsd += parseFloat(p.totalUsd || "0");
+          totalBlueBrasil += parseFloat((p as any).totalBrasilUsd || "0");
+          totalBlueParaguai += parseFloat((p as any).totalParaguaiUsd || "0");
           totalBrasil += parseFloat(p.brasilUsd || "0");
           totalParaguai += parseFloat(p.paraguaiUsd || "0");
           totalPago += parseFloat(p.totalPago || "0");
@@ -249,7 +255,8 @@ export async function importPdfExportHandler(req: Request, res: Response) {
           "",
           "",
           formatMoney(totalTotalUsd.toFixed(2)),
-          "",
+          formatMoney(totalBlueBrasil.toFixed(2)),
+          formatMoney(totalBlueParaguai.toFixed(2)),
           formatMoney(totalBrasil.toFixed(2)),
           formatMoney(totalParaguai.toFixed(2)),
           formatMoney(totalPago.toFixed(2)),

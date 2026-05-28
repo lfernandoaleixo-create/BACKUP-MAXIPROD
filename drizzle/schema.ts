@@ -2361,9 +2361,11 @@ export const importPayments = mysqlTable("import_payments", {
   pedido: varchar("pedido", { length: 100 }).notNull(), // código do pedido (PO062, ZYZ2026-018, etc.)
   doc: varchar("doc", { length: 20 }).notNull(), // CI = Commercial Invoice, PI = Proforma Invoice
   totalUsd: decimal("total_usd", { precision: 18, scale: 2 }).notNull(),
-  halfValue: decimal("half_value", { precision: 18, scale: 2 }), // 50% do total (referência split)
-  brasilUsd: decimal("brasil_usd", { precision: 18, scale: 2 }).default("0").notNull(), // pago via Brasil
-  paraguaiUsd: decimal("paraguai_usd", { precision: 18, scale: 2 }).default("0").notNull(), // pago via Paraguai
+  halfValue: decimal("half_value", { precision: 18, scale: 2 }), // DEPRECATED - mantido por compatibilidade
+  totalBrasilUsd: decimal("total_brasil_usd", { precision: 18, scale: 2 }).default("0").notNull(), // Brasil na seção "Total a pagar" (azul)
+  totalParaguaiUsd: decimal("total_paraguai_usd", { precision: 18, scale: 2 }).default("0").notNull(), // Paraguai na seção "Total a pagar" (azul)
+  brasilUsd: decimal("brasil_usd", { precision: 18, scale: 2 }).default("0").notNull(), // Brasil na seção "O que pagou" (verde)
+  paraguaiUsd: decimal("paraguai_usd", { precision: 18, scale: 2 }).default("0").notNull(), // Paraguai na seção "O que pagou" (verde)
   totalPago: decimal("total_pago", { precision: 18, scale: 2 }).default("0").notNull(),
   saldoDevedorBrasil: decimal("saldo_devedor_brasil", { precision: 18, scale: 2 }).default("0").notNull(),
   saldoDevedorParaguai: decimal("saldo_devedor_paraguai", { precision: 18, scale: 2 }).default("0").notNull(),
