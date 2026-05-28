@@ -486,6 +486,12 @@ function SectionTable({
       {/* Table - compact, no overflow-x-auto */}
       <table className="w-full text-[11px]">
         <thead>
+          <tr className="bg-slate-50/50 text-slate-400">
+            <th colSpan={5}></th>
+            <th colSpan={3} className="px-2 py-1 text-center font-semibold text-[10px] uppercase tracking-wider text-green-700 border-b border-green-200">O que pagou</th>
+            <th colSpan={3} className="px-2 py-1 text-center font-semibold text-[10px] uppercase tracking-wider text-red-600 border-b border-red-200">O que falta pagar</th>
+            <th colSpan={2}></th>
+          </tr>
           <tr className="bg-slate-50/80 text-slate-500 uppercase">
             <th className="px-2 py-2 text-left font-medium w-[13%]">Status</th>
             <th className="px-2 py-2 text-left font-medium w-[9%]">Pedido</th>
