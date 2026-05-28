@@ -661,12 +661,8 @@ function SectionTable({
         const parts = sectionTitle.split(/ [\u2013\u002D] /);
         const title = parts[0];
         const subtitle = parts.length > 1 ? parts.slice(1).join(" - ") : null;
-        // Hide only if there's a single section AND it matches the supplier card header
-        const matchesCard = (
-          sectionTitle.replace(/ \u2013 /g, ' - ').toLowerCase() === `${supplierName} - ${supplierCategory || ''}`.toLowerCase() ||
-          (title.toLowerCase() === supplierName.toLowerCase() && subtitle?.toLowerCase() === supplierCategory?.toLowerCase())
-        );
-        if (totalSections <= 1 && matchesCard) return null;
+        // Hide if there's only a single section (no need for sub-section header when there's only one)
+        if (totalSections <= 1) return null;
         return (
           <div className="group/section bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 flex items-center gap-3 border-b border-blue-100">
             <div className="p-2 rounded-lg bg-blue-100">
@@ -679,16 +675,16 @@ function SectionTable({
                   value={editSectionName}
                   onChange={e => setEditSectionName(e.target.value)}
                   className="px-2 py-1 border border-slate-300 rounded text-sm font-bold text-slate-800 w-32 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  placeholder="T\u00edtulo"
+                  placeholder="Título"
                   autoFocus
                 />
-                <span className="text-slate-400 font-bold">\u2013</span>
+                <span className="text-slate-400 font-bold">–</span>
                 <input
                   type="text"
                   value={editSectionSubtitle}
                   onChange={e => setEditSectionSubtitle(e.target.value)}
                   className="px-2 py-1 border border-slate-300 rounded text-xs text-slate-600 w-28 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  placeholder="Subt\u00edtulo"
+                  placeholder="Subtítulo"
                 />
                 <button
                   onClick={() => {
@@ -730,7 +726,7 @@ function SectionTable({
                     setEditingSectionTitle(true);
                   }}
                   className="p-1 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors opacity-0 group-hover/section:opacity-100"
-                  title="Editar t\u00edtulo da sub-se\u00e7\u00e3o"
+                  title="Editar título da sub-seção"
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
@@ -738,14 +734,14 @@ function SectionTable({
             )}
             <button
               onClick={() => {
-                if (confirm(`Remover sub-se\u00e7\u00e3o "${sectionTitle}" e todos os seus pedidos?`)) {
+                if (confirm(`Remover sub-seção "${sectionTitle}" e todos os seus pedidos?`)) {
                   onRemoveSection?.(sectionTitle!);
                 }
               }}
               className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors border border-red-200"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Remover Sub-se\u00e7\u00e3o
+              Remover Sub-seção
             </button>
           </div>
         );

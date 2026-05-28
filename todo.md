@@ -4001,3 +4001,12 @@
 - [x] Botão Exportar PDF na aba Importação com todas as informações de fornecedores e pedidos
 - [x] Importação: unificar header da sub-seção (título = nome fornecedor, subtítulo = categoria) sem duplicação
 - [x] Importação: permitir edição manual dos títulos e subtítulos das sub-seções diretamente no header
+- [x] BUG: Linha azul da sub-seção WINNIE-HARBIN ainda aparece (deveria ser ocultada quando há apenas 1 seção)
+- [x] BUG: Texto "Sub-se\u00e7\u00e3o" aparece com unicode escapado em vez de "Sub-seção"
+
+## REGRA FUNDAMENTAL (a partir de 28/05/2026)
+> Os dados da aba Importação são SAGRADOS e NUNCA devem ser apagados ou resetados.
+> Isso inclui: import_suppliers, import_payments e qualquer dado adicionado pela Larissa.
+> Nenhuma operação do sistema (sync, reset, migração, publicação, teste) pode deletar ou sobrescrever esses dados.
+> Após uma nova publicação ou sincronização, JAMAIS remover informações que a Larissa adicionou na aba Importação.
+> Em caso de dúvida, PERGUNTAR ao usuário antes de qualquer operação destrutiva.
