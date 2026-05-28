@@ -5,6 +5,9 @@ import { importSuppliers, importPayments } from "../drizzle/schema";
 import { eq, asc, and } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 
+// Cache de cotação USD/BRL em memória (TTL: 30 minutos)
+let exchangeRateCache: { data: { rate: number; source: string; timestamp: string }; timestamp: number } | null = null;
+
 export const importRouter = router({
   // ===== SUPPLIERS =====
   getSuppliers: publicProcedure.query(async () => {
@@ -186,31 +189,77 @@ export const importRouter = router({
 
   // ===== EXCHANGE RATE (USD/BRL) =====
   getExchangeRate: publicProcedure.query(async () => {
-    try {
-      // Try AwesomeAPI (free, no key needed)
-      const res = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL");
-      if (res.ok) {
-        const data = await res.json();
-        const rate = parseFloat(data.USDBRL.bid);
-        return { rate, source: "AwesomeAPI", timestamp: data.USDBRL.create_date };
-      }
-    } catch (e) {
-      // fallback
+    // Cache em memória para evitar chamadas excessivas (TTL: 30 minutos)
+    const now = Date.now();
+    if (exchangeRateCache && now - exchangeRateCache.timestamp < 30 * 60 * 1000) {
+      return exchangeRateCache.data;
     }
+
+    // 1. Banco Central do Brasil (PTAX) - fonte oficial, formato MM-DD-YYYY
     try {
-      // Fallback: Banco Central do Brasil
-      const res = await fetch("https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao=%27" + new Date().toISOString().split("T")[0].split("-").reverse().join("-") + "%27&$top=1&$format=json");
+      const today = new Date();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const yyyy = today.getFullYear();
+      const dateStr = `${mm}-${dd}-${yyyy}`;
+      const url = `https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao=%27${dateStr}%27&$top=1&$orderby=dataHoraCotacao%20desc&$format=json`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
       if (res.ok) {
         const data = await res.json();
         if (data.value && data.value.length > 0) {
-          return { rate: data.value[0].cotacaoCompra, source: "BCB", timestamp: new Date().toISOString() };
+          const result = { rate: data.value[0].cotacaoVenda, source: "BCB PTAX", timestamp: data.value[0].dataHoraCotacao };
+          exchangeRateCache = { data: result, timestamp: now };
+          return result;
         }
       }
     } catch (e) {
-      // fallback
+      console.log("[ExchangeRate] BCB failed:", (e as Error).message);
     }
+
+    // 2. BCB dia anterior (caso hoje não tenha cotação ainda - fim de semana/feriado)
+    try {
+      const yesterday = new Date(Date.now() - 86400000);
+      const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+      const dd = String(yesterday.getDate()).padStart(2, '0');
+      const yyyy = yesterday.getFullYear();
+      const dateStr = `${mm}-${dd}-${yyyy}`;
+      const url = `https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao=%27${dateStr}%27&$top=1&$orderby=dataHoraCotacao%20desc&$format=json`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.value && data.value.length > 0) {
+          const result = { rate: data.value[0].cotacaoVenda, source: "BCB PTAX (D-1)", timestamp: data.value[0].dataHoraCotacao };
+          exchangeRateCache = { data: result, timestamp: now };
+          return result;
+        }
+      }
+    } catch (e) {
+      console.log("[ExchangeRate] BCB D-1 failed:", (e as Error).message);
+    }
+
+    // 3. AwesomeAPI (free, no key needed) - pode ter rate limit
+    try {
+      const res = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL", { signal: AbortSignal.timeout(8000) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.USDBRL) {
+          const rate = parseFloat(data.USDBRL.bid);
+          const result = { rate, source: "AwesomeAPI", timestamp: data.USDBRL.create_date };
+          exchangeRateCache = { data: result, timestamp: now };
+          return result;
+        }
+      }
+    } catch (e) {
+      console.log("[ExchangeRate] AwesomeAPI failed:", (e as Error).message);
+    }
+
+    // 4. Usar cache antigo se disponível (melhor que fallback fixo)
+    if (exchangeRateCache) {
+      return { ...exchangeRateCache.data, source: exchangeRateCache.data.source + " (cache)" };
+    }
+
     // Last resort fallback
-    return { rate: 5.50, source: "fallback", timestamp: new Date().toISOString() };
+    return { rate: 5.04, source: "fallback", timestamp: new Date().toISOString() };
   }),
 
   // ===== FULL DATA (suppliers + payments grouped by section) =====

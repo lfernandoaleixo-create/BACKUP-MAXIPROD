@@ -4013,3 +4013,4 @@
 - [x] BUG: Status de inadimplência desmarcados - restaurar ação de cobrança (contatado, promessa de pagamento, fundo perdido), observações e históricos
 - [x] BUG: Card verde "Pagos/Resolvidos" - CONFIRMADO: lógica já estava correta (filtra 3+ dias de atraso). Valor é legítimo.
 - [x] FIX: Proteção contra reset de status na sincronização automática (herdar status manual de registros existentes da mesma empresa)
+- [x] Importação: buscar cotação USD/BRL em tempo real (BCB PTAX, cache 30min, fallback AwesomeAPI)
