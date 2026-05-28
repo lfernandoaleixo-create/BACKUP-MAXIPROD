@@ -159,6 +159,16 @@ function PagamentosFornecedores() {
               Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
             </span>
           )}
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
+            currency === "USD"
+              ? "bg-blue-100 border-blue-400 text-blue-800"
+              : "bg-green-100 border-green-400 text-green-800"
+          }`}>
+            <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${
+              currency === "USD" ? "bg-blue-500" : "bg-green-500"
+            }`}></span>
+            {currency === "USD" ? "DÓLAR (USD)" : "REAL (BRL)"}
+          </div>
           <button
             onClick={() => setCurrency(prev => prev === "USD" ? "BRL" : "USD")}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-all shadow-sm ${
@@ -764,7 +774,7 @@ function SectionTable({
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[80px]">Status</th>
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[70px]">Pedido</th>
             <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[35px]">Doc</th>
-            <th className="px-2 py-2 text-center font-semibold bg-blue-50/50 whitespace-nowrap min-w-[80px]">Total USD</th>
+            <th className="px-2 py-2 text-center font-semibold bg-blue-50/50 whitespace-nowrap min-w-[80px]">Total</th>
             <th className="px-2 py-2 text-center font-semibold bg-blue-50/50 whitespace-nowrap min-w-[75px]">Brasil (50%)</th>
             <th className="px-2 py-2 text-center font-semibold bg-blue-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
             <th className="px-2 py-2 text-center font-semibold bg-green-50/50 whitespace-nowrap min-w-[75px]">Brasil</th>
