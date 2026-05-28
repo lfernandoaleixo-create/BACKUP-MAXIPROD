@@ -451,6 +451,14 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <div className={`hidden sm:flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold border ${
+            currency === "USD"
+              ? "bg-blue-50 border-blue-300 text-blue-700"
+              : "bg-green-50 border-green-300 text-green-700"
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${currency === "USD" ? "bg-blue-500" : "bg-green-500"}`}></span>
+            {currency === "USD" ? "USD" : "BRL"}
+          </div>
           <div className="hidden sm:flex items-center gap-4 text-xs">
             <div className="text-right">
               <span className="text-slate-400">Total</span>
