@@ -857,6 +857,7 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
 
   const fmtUsd = (v: string | null) => {
     const n = parseFloat(String(v || "0"));
+    if (n === 0) return null;
     const converted = convertValue(n);
     return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{"\u00A0"}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
   };
