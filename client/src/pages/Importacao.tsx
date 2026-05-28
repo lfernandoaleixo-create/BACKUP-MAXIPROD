@@ -234,6 +234,7 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
   const [showAddSection, setShowAddSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [emptySections, setEmptySections] = useState<string[]>([]);
 
   const deleteSupplier = trpc.import.deleteSupplier.useMutation({
     onSuccess: () => { onRefetch(); toast.success("Fornecedor removido"); },
@@ -264,6 +265,12 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
   }
   sectionMap.forEach((payments, title) => {
     sections.push({ title, payments });
+  });
+  // Add empty sections that were just created
+  emptySections.forEach(title => {
+    if (!sectionMap.has(title)) {
+      sections.push({ title, payments: [] });
+    }
   });
 
   // Totals for this supplier (all payments)
@@ -394,7 +401,7 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
           {showAddPayment && (
             <AddPaymentForm
               supplierId={supplier.id}
-              sections={Array.from(sectionMap.keys())}
+              sections={[...Array.from(sectionMap.keys()), ...emptySections.filter(s => !sectionMap.has(s))]}
               onCancel={() => setShowAddPayment(false)}
               onRefetch={onRefetch}
             />
@@ -434,10 +441,10 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
                     onClick={() => {
                       if (newSectionTitle.trim()) {
                         const sectionName = `${supplier.name} - ${newSectionTitle.trim().toUpperCase()}`;
+                        setEmptySections(prev => [...prev, sectionName]);
                         setShowAddSection(false);
-                        setShowAddPayment(true);
                         setNewSectionTitle("");
-                        toast.info(`Seção "${sectionName}" criada! Adicione o primeiro pedido.`);
+                        toast.success(`Seção "${sectionName}" criada!`);
                       }
                     }}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 whitespace-nowrap"
@@ -553,8 +560,9 @@ function SectionTable({
           ))}
           {payments.length === 0 && (
             <tr>
-              <td colSpan={13} className="px-3 py-6 text-center text-slate-400 text-xs">
-                Nenhum pedido nesta seção
+              <td colSpan={13} className="px-3 py-8 text-center">
+                <p className="text-slate-400 text-xs mb-2">Nenhum pedido nesta seção</p>
+                <p className="text-[10px] text-slate-300">Use o botão "Adicionar Pedido" abaixo e selecione esta sub-seção</p>
               </td>
             </tr>
           )}

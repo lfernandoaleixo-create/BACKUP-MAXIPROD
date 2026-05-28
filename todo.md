@@ -3987,3 +3987,8 @@
 - [x] Remover cálculos automáticos da aba Importação - todos os campos preenchidos manualmente
 - [x] Eliminar scroll horizontal da tabela - tudo visível na tela sem rolar pro lado
 - [x] Sub-seções dentro do mesmo fornecedor (ex: BETTY - BAMBU e BETTY - DIVERSOS)
+- [x] Sub-seção vazia aparece imediatamente ao criar (sem precisar adicionar pedido primeiro)
+- [x] Cabeçalhos agrupados: "O que pagou" (verde) e "O que falta pagar" (vermelho) acima das colunas
+- [x] Alinhamento numérico perfeito: tabular-nums, font-mono, backgrounds coloridos nas colunas de grupo
+- [x] Formatação monetária: $ com non-breaking space para não quebrar linha
+- [x] AddPaymentForm inclui seções vazias no dropdown de seleção de sub-seção
