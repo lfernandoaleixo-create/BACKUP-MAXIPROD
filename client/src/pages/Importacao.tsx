@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -72,9 +72,16 @@ export default function Importacao() {
 
 function PagamentosFornecedores() {
   const { data: fullData, isLoading, refetch } = trpc.import.getFullData.useQuery();
+  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [newSupplierName, setNewSupplierName] = useState("");
   const [newSupplierCategory, setNewSupplierCategory] = useState("");
+  const [currency, setCurrency] = useState<"USD" | "BRL">("USD");
+
+  const exchangeRate = exchangeData?.rate || 5.50;
+  const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
+  const currencySymbol = currency === "USD" ? "$" : "R$";
+  const currencyLabel = currency === "USD" ? "USD" : "BRL";
 
   const createSupplier = trpc.import.createSupplier.useMutation({
     onSuccess: () => {
@@ -112,40 +119,61 @@ function PagamentosFornecedores() {
 
   return (
     <div className="space-y-4">
+      {/* Currency Conversion Button */}
+      <div className="flex items-center justify-end gap-3">
+        {exchangeData && (
+          <span className="text-xs text-slate-500">
+            Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toFixed(4)}</strong>
+            <span className="text-slate-400 ml-1">({exchangeData.source})</span>
+          </span>
+        )}
+        <button
+          onClick={() => setCurrency(prev => prev === "USD" ? "BRL" : "USD")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all shadow-sm ${
+            currency === "BRL"
+              ? "bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+              : "bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+          }`}
+        >
+          <ArrowLeftRight className="w-4 h-4" />
+          {currency === "USD" ? "USD → BRL" : "BRL → USD"}
+        </button>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center gap-2 mb-1">
             <DollarSign className="w-4 h-4 text-slate-400" />
-            <span className="text-xs text-slate-500 uppercase font-medium">Total Pedidos</span>
+            <span className="text-xs text-slate-500 uppercase font-medium">Total Pedidos ({currencyLabel})</span>
           </div>
           <p className="text-xl font-bold text-slate-800 whitespace-nowrap">
-            ${"\u00A0"}{grandTotals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            {currencySymbol}{"\u00A0"}{convertValue(grandTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center gap-2 mb-1">
             <Check className="w-4 h-4 text-green-500" />
-            <span className="text-xs text-slate-500 uppercase font-medium">Total Pago</span>
+            <span className="text-xs text-slate-500 uppercase font-medium">Total Pago ({currencyLabel})</span>
           </div>
           <p className="text-xl font-bold text-green-700 whitespace-nowrap">
-            ${"\u00A0"}{grandTotals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            {currencySymbol}{"\u00A0"}{convertValue(grandTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center gap-2 mb-1">
             <AlertCircle className="w-4 h-4 text-red-500" />
-            <span className="text-xs text-slate-500 uppercase font-medium">Saldo Devedor</span>
+            <span className="text-xs text-slate-500 uppercase font-medium">Saldo Devedor ({currencyLabel})</span>
           </div>
           <p className="text-xl font-bold text-red-700 whitespace-nowrap">
-            ${"\u00A0"}{grandTotals.saldoTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            {currencySymbol}{"\u00A0"}{convertValue(grandTotals.saldoTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
 
       {/* Supplier Sections */}
       {(fullData || []).map(supplier => (
-        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} />
+        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} />
       ))}
 
       {/* Add Supplier */}
@@ -228,11 +256,13 @@ interface SupplierData {
   payments: PaymentData[];
 }
 
-function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRefetch: () => void }) {
+function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number }) {
+  const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
+  const currencySymbol = currency === "USD" ? "$" : "R$";
   const [expanded, setExpanded] = useState(true);
-  const [showAddPayment, setShowAddPayment] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
+  const [newSectionSupplierName, setNewSectionSupplierName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [emptySections, setEmptySections] = useState<string[]>([]);
 
@@ -316,15 +346,15 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
           <div className="hidden sm:flex items-center gap-4 text-xs">
             <div className="text-right">
               <span className="text-slate-400">Total</span>
-              <p className="font-semibold text-slate-700 whitespace-nowrap">${"\u00A0"}{totals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold text-slate-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="text-right">
               <span className="text-slate-400">Pago</span>
-              <p className="font-semibold text-green-600 whitespace-nowrap">${"\u00A0"}{totals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold text-green-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="text-right">
               <span className="text-slate-400">Saldo Devedor</span>
-              <p className="font-semibold text-red-600 whitespace-nowrap">${"\u00A0"}{totals.saldoDevedorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
           {expanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
@@ -336,15 +366,15 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
         <div className="sm:hidden grid grid-cols-3 gap-2 px-4 pb-3">
           <div className="text-center bg-slate-50 rounded-lg p-2">
             <span className="text-[10px] text-slate-400 block">Total</span>
-            <p className="text-xs font-semibold text-slate-700 whitespace-nowrap">${"\u00A0"}{totals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs font-semibold text-slate-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="text-center bg-green-50 rounded-lg p-2">
             <span className="text-[10px] text-slate-400 block">Pago</span>
-            <p className="text-xs font-semibold text-green-600 whitespace-nowrap">${"\u00A0"}{totals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs font-semibold text-green-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="text-center bg-red-50 rounded-lg p-2">
             <span className="text-[10px] text-slate-400 block">Devedor</span>
-            <p className="text-xs font-semibold text-red-600 whitespace-nowrap">${"\u00A0"}{totals.saldoDevedorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs font-semibold text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
       )}
@@ -363,20 +393,15 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
               editingId={editingId}
               setEditingId={setEditingId}
               onRefetch={onRefetch}
+              currency={currency}
+              exchangeRate={exchangeRate}
             />
           ))}
 
           {/* Actions footer */}
           <div className="px-4 py-3 border-t border-slate-100 flex flex-wrap items-center gap-3">
             <button
-              onClick={() => setShowAddPayment(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Adicionar Pedido
-            </button>
-            <button
-              onClick={() => setShowAddSection(true)}
+              onClick={() => { setShowAddSection(true); setNewSectionSupplierName(supplier.name); }}
               className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -397,16 +422,6 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
             </div>
           </div>
 
-          {/* Add Payment Form */}
-          {showAddPayment && (
-            <AddPaymentForm
-              supplierId={supplier.id}
-              sections={[...Array.from(sectionMap.keys()), ...emptySections.filter(s => !sectionMap.has(s))]}
-              onCancel={() => setShowAddPayment(false)}
-              onRefetch={onRefetch}
-            />
-          )}
-
           {/* Add Section Form */}
           {showAddSection && (
             <div className="px-4 py-3 border-t border-purple-100 bg-purple-50/30">
@@ -417,13 +432,13 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
                     <label className="text-[10px] text-slate-500 uppercase font-medium mb-0.5 block">Título (Fornecedor)</label>
                     <input
                       type="text"
-                      placeholder="Ex: Betty"
-                      value={supplier.name}
-                      disabled
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500"
+                      placeholder="Ex: Betty, Betty 1..."
+                      value={newSectionSupplierName}
+                      onChange={e => setNewSectionSupplierName(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
-                  <span className="text-slate-400 font-bold mt-4">-</span>
+                  <span className="text-slate-400 font-bold mt-4">–</span>
                   <div className="flex-1">
                     <label className="text-[10px] text-slate-500 uppercase font-medium mb-0.5 block">Subtítulo (Categoria)</label>
                     <input
@@ -439,12 +454,19 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
                 <div className="flex items-end gap-2">
                   <button
                     onClick={() => {
-                      if (newSectionTitle.trim()) {
-                        const sectionName = `${supplier.name} - ${newSectionTitle.trim().toUpperCase()}`;
+                      const title = newSectionSupplierName.trim().toUpperCase();
+                      const subtitle = newSectionTitle.trim().toUpperCase();
+                      if (title && subtitle) {
+                        const sectionName = `${title} – ${subtitle}`;
                         setEmptySections(prev => [...prev, sectionName]);
                         setShowAddSection(false);
                         setNewSectionTitle("");
+                        setNewSectionSupplierName("");
                         toast.success(`Seção "${sectionName}" criada!`);
+                      } else if (!title) {
+                        toast.error("Preencha o título (fornecedor)");
+                      } else {
+                        toast.error("Preencha o subtítulo (categoria)");
                       }
                     }}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 whitespace-nowrap"
@@ -452,14 +474,14 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
                     Criar Seção
                   </button>
                   <button
-                    onClick={() => { setShowAddSection(false); setNewSectionTitle(""); }}
+                    onClick={() => { setShowAddSection(false); setNewSectionTitle(""); setNewSectionSupplierName(""); }}
                     className="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200"
                   >
                     Cancelar
                   </button>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1.5">A sub-seção aparecerá como: <strong>{supplier.name} - {newSectionTitle.trim().toUpperCase() || "..."}</strong></p>
+              <p className="text-[10px] text-slate-400 mt-1.5">A sub-seção aparecerá como: <strong>{newSectionSupplierName.trim().toUpperCase() || "..."} – {newSectionTitle.trim().toUpperCase() || "..."}</strong></p>
             </div>
           )}
         </div>
@@ -479,6 +501,8 @@ function SectionTable({
   editingId,
   setEditingId,
   onRefetch,
+  currency,
+  exchangeRate,
 }: {
   sectionTitle: string | null;
   supplierName: string;
@@ -488,7 +512,12 @@ function SectionTable({
   editingId: number | null;
   setEditingId: (id: number | null) => void;
   onRefetch: () => void;
+  currency: "USD" | "BRL";
+  exchangeRate: number;
 }) {
+  const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
+  const currencySymbol = currency === "USD" ? "$" : "R$";
+  const [showAddRow, setShowAddRow] = useState(false);
   // Section totals
   const sectionTotals = payments.reduce((acc, p) => {
     acc.totalUsd += parseFloat(String(p.totalUsd)) || 0;
@@ -505,8 +534,18 @@ function SectionTable({
     <div className="border-b border-slate-100 last:border-b-0">
       {/* Section title bar */}
       {sectionTitle && (
-        <div className="bg-blue-100/60 px-4 py-2 text-center">
-          <span className="text-xs font-bold text-blue-800 uppercase tracking-wide">{sectionTitle}</span>
+        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 flex items-center gap-3 border-b border-blue-100">
+          <div className="p-2 rounded-lg bg-blue-100">
+            <Layers className="w-4 h-4 text-blue-700" />
+          </div>
+          <div>
+            <h4 className="font-bold text-slate-800 text-sm">{sectionTitle.split(' – ')[0] || sectionTitle.split(' - ')[0]}</h4>
+            {(sectionTitle.includes(' – ') || sectionTitle.includes(' - ')) && (
+              <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border bg-blue-50 border-blue-200 text-blue-700">
+                {sectionTitle.split(/ [–-] /)[1]}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -555,7 +594,7 @@ function SectionTable({
             editingId === payment.id ? (
               <EditPaymentRow key={payment.id} payment={payment} onCancel={() => setEditingId(null)} onRefetch={onRefetch} />
             ) : (
-              <PaymentRow key={payment.id} payment={payment} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} />
+              <PaymentRow key={payment.id} payment={payment} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} currency={currency} exchangeRate={exchangeRate} />
             )
           ))}
           {payments.length === 0 && (
@@ -566,31 +605,55 @@ function SectionTable({
               </td>
             </tr>
           )}
+          {/* Inline add row */}
+          {showAddRow && (
+            <InlineAddPaymentRow
+              supplierId={supplierId}
+              sectionTitle={sectionTitle}
+              onCancel={() => setShowAddRow(false)}
+              onRefetch={onRefetch}
+            />
+          )}
           {/* Totals row */}
           {payments.length > 0 && (
             <tr className="bg-slate-50 font-semibold border-t border-slate-200">
               <td className="px-2 py-2 text-slate-700" colSpan={3}>TOTAIS</td>
-              <td className="px-2 py-2 text-right text-slate-700 whitespace-nowrap">${"\u00A0"}{sectionTotals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-slate-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
               <td className="px-2 py-2"></td>
               <td className="px-2 py-2"></td>
               <td className="px-2 py-2"></td>
-              <td className="px-2 py-2 text-right text-green-700 whitespace-nowrap">${"\u00A0"}{sectionTotals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-right text-red-600 whitespace-nowrap">${"\u00A0"}{sectionTotals.saldoDevedorBrasil.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-right text-red-600 whitespace-nowrap">${"\u00A0"}{sectionTotals.saldoDevedorParaguai.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-right text-red-700 whitespace-nowrap">${"\u00A0"}{sectionTotals.saldoDevedorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-green-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorBrasil).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorParaguai).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-red-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
               <td className="px-2 py-2"></td>
               <td className="px-1 py-2"></td>
             </tr>
           )}
         </tbody>
       </table>
+      {/* Add button below table */}
+      {!showAddRow && (
+        <div className="px-4 py-2 border-t border-slate-50">
+          <button
+            onClick={() => setShowAddRow(true)}
+            className="flex items-center gap-1.5 text-[11px] font-medium text-green-600 hover:text-green-700 transition-colors"
+          >
+            <Plus className="w-3 h-3" />
+            Adicionar Pedido
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 // ===== PAYMENT ROW =====
 
-function PaymentRow({ payment, onEdit, onRefetch }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void }) {
+function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number }) {
+  const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
+  const currencySymbol = currency === "USD" ? "$" : "R$";
+
   const deletePayment = trpc.import.deletePayment.useMutation({
     onSuccess: () => { onRefetch(); toast.success("Pedido removido"); },
     onError: () => toast.error("Erro ao remover"),
@@ -608,7 +671,8 @@ function PaymentRow({ payment, onEdit, onRefetch }: { payment: PaymentData; onEd
   const fmtUsd = (v: string | null) => {
     const n = parseFloat(String(v || "0"));
     if (n === 0) return <span className="text-slate-300">-</span>;
-    return <span className="whitespace-nowrap font-mono tabular-nums">${"\u00A0"}{n.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
+    const converted = convertValue(n);
+    return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{"\u00A0"}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
   };
 
   const saldoColor = (v: string) => {
@@ -737,9 +801,9 @@ function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData
   );
 }
 
-// ===== ADD PAYMENT FORM (all fields manual) =====
+// ===== INLINE ADD PAYMENT ROW (matches table structure) =====
 
-function AddPaymentForm({ supplierId, sections, onCancel, onRefetch }: { supplierId: number; sections: string[]; onCancel: () => void; onRefetch: () => void }) {
+function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: { supplierId: number; sectionTitle: string | null; onCancel: () => void; onRefetch: () => void }) {
   const [form, setForm] = useState({
     status: "",
     pedido: "",
@@ -753,7 +817,6 @@ function AddPaymentForm({ supplierId, sections, onCancel, onRefetch }: { supplie
     saldoDevedorParaguai: "0",
     saldoDevedorTotal: "0",
     rastreio: "",
-    sectionTitle: "",
   });
 
   const createPayment = trpc.import.createPayment.useMutation({
@@ -761,108 +824,85 @@ function AddPaymentForm({ supplierId, sections, onCancel, onRefetch }: { supplie
     onError: () => toast.error("Erro ao adicionar"),
   });
 
+  const inputClass = "w-full px-1.5 py-1 border border-green-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-green-400 bg-green-50/30";
+
   return (
-    <div className="px-4 py-4 border-t border-blue-100 bg-blue-50/20">
-      <h4 className="text-xs font-semibold text-slate-700 mb-3">Novo Pedido</h4>
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 mb-3">
-        {sections.length > 0 && (
-          <div className="col-span-2">
-            <label className="text-[10px] text-slate-500 block mb-0.5">Sub-seção (opcional)</label>
-            <select
-              value={form.sectionTitle}
-              onChange={e => setForm({ ...form, sectionTitle: e.target.value })}
-              className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="">Principal</option>
-              {sections.map((s: string) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-        )}
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Status *</label>
-          <input value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} placeholder="Ex: Produção" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+    <tr className="border-t border-green-200 bg-green-50/20 animate-pulse-once">
+      <td className="px-1 py-1.5">
+        <input value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className={inputClass} placeholder="Status" autoFocus />
+      </td>
+      <td className="px-1 py-1.5">
+        <input value={form.pedido} onChange={e => setForm({ ...form, pedido: e.target.value })} className={inputClass} placeholder="PO..." />
+      </td>
+      <td className="px-1 py-1.5">
+        <select value={form.doc} onChange={e => setForm({ ...form, doc: e.target.value })} className={`${inputClass} text-center`}>
+          <option value="PI">PI</option>
+          <option value="CI">CI</option>
+        </select>
+      </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.totalUsd} onChange={e => setForm({ ...form, totalUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0.00" />
+      </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.halfValue} onChange={e => setForm({ ...form, halfValue: e.target.value })} className={`${inputClass} text-right`} placeholder="0.00" />
+      </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.brasilUsd} onChange={e => setForm({ ...form, brasilUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+      </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.paraguaiUsd} onChange={e => setForm({ ...form, paraguaiUsd: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+      </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.totalPago} onChange={e => setForm({ ...form, totalPago: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+      </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.saldoDevedorBrasil} onChange={e => setForm({ ...form, saldoDevedorBrasil: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+      </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.saldoDevedorParaguai} onChange={e => setForm({ ...form, saldoDevedorParaguai: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+      </td>
+      <td className="px-1 py-1.5">
+        <input type="number" step="0.01" value={form.saldoDevedorTotal} onChange={e => setForm({ ...form, saldoDevedorTotal: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
+      </td>
+      <td className="px-1 py-1.5">
+        <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} className={inputClass} placeholder="Container" />
+      </td>
+      <td className="px-1 py-1.5 text-center">
+        <div className="flex items-center justify-center gap-0.5">
+          <button
+            onClick={() => {
+              if (!form.status || !form.pedido || !form.totalUsd) {
+                toast.error("Preencha Status, Pedido e Total USD");
+                return;
+              }
+              createPayment.mutate({
+                supplierId,
+                sectionTitle: sectionTitle || undefined,
+                status: form.status,
+                pedido: form.pedido,
+                doc: form.doc,
+                totalUsd: form.totalUsd,
+                halfValue: form.halfValue || undefined,
+                brasilUsd: form.brasilUsd || undefined,
+                paraguaiUsd: form.paraguaiUsd || undefined,
+                totalPago: form.totalPago || undefined,
+                saldoDevedorBrasil: form.saldoDevedorBrasil || undefined,
+                saldoDevedorParaguai: form.saldoDevedorParaguai || undefined,
+                saldoDevedorTotal: form.saldoDevedorTotal || undefined,
+                rastreio: form.rastreio || undefined,
+              });
+            }}
+            className="p-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors"
+            title="Salvar"
+          >
+            <Check className="w-3 h-3" />
+          </button>
+          <button onClick={onCancel} className="p-1 rounded bg-slate-200 text-slate-600 hover:bg-slate-300 transition-colors" title="Cancelar">
+            <X className="w-3 h-3" />
+          </button>
         </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Pedido *</label>
-          <input value={form.pedido} onChange={e => setForm({ ...form, pedido: e.target.value })} placeholder="Ex: PO062" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Doc</label>
-          <select value={form.doc} onChange={e => setForm({ ...form, doc: e.target.value })} className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <option value="PI">PI - Proforma Invoice</option>
-            <option value="CI">CI - Commercial Invoice</option>
-          </select>
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Total USD *</label>
-          <input type="number" step="0.01" value={form.totalUsd} onChange={e => setForm({ ...form, totalUsd: e.target.value })} placeholder="0.00" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">50%</label>
-          <input type="number" step="0.01" value={form.halfValue} onChange={e => setForm({ ...form, halfValue: e.target.value })} placeholder="0.00" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Brasil USD</label>
-          <input type="number" step="0.01" value={form.brasilUsd} onChange={e => setForm({ ...form, brasilUsd: e.target.value })} placeholder="0.00" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Paraguai USD</label>
-          <input type="number" step="0.01" value={form.paraguaiUsd} onChange={e => setForm({ ...form, paraguaiUsd: e.target.value })} placeholder="0.00" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Total Pago</label>
-          <input type="number" step="0.01" value={form.totalPago} onChange={e => setForm({ ...form, totalPago: e.target.value })} placeholder="0.00" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Saldo BR</label>
-          <input type="number" step="0.01" value={form.saldoDevedorBrasil} onChange={e => setForm({ ...form, saldoDevedorBrasil: e.target.value })} placeholder="0.00" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Saldo PY</label>
-          <input type="number" step="0.01" value={form.saldoDevedorParaguai} onChange={e => setForm({ ...form, saldoDevedorParaguai: e.target.value })} placeholder="0.00" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Saldo Total</label>
-          <input type="number" step="0.01" value={form.saldoDevedorTotal} onChange={e => setForm({ ...form, saldoDevedorTotal: e.target.value })} placeholder="0.00" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="text-[10px] text-slate-500 block mb-0.5">Rastreio</label>
-          <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} placeholder="Container" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={() => {
-            if (!form.status || !form.pedido || !form.totalUsd) {
-              toast.error("Preencha Status, Pedido e Total USD");
-              return;
-            }
-            createPayment.mutate({
-              supplierId,
-              sectionTitle: form.sectionTitle || undefined,
-              status: form.status,
-              pedido: form.pedido,
-              doc: form.doc,
-              totalUsd: form.totalUsd,
-              halfValue: form.halfValue || undefined,
-              brasilUsd: form.brasilUsd || undefined,
-              paraguaiUsd: form.paraguaiUsd || undefined,
-              totalPago: form.totalPago || undefined,
-              saldoDevedorBrasil: form.saldoDevedorBrasil || undefined,
-              saldoDevedorParaguai: form.saldoDevedorParaguai || undefined,
-              saldoDevedorTotal: form.saldoDevedorTotal || undefined,
-              rastreio: form.rastreio || undefined,
-            });
-          }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
-        >
-          Salvar Pedido
-        </button>
-        <button onClick={onCancel} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-200 transition-colors">
-          Cancelar
-        </button>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { importSuppliers, importPayments } from "../drizzle/schema";
 import { eq, asc } from "drizzle-orm";
+import { callDataApi } from "./_core/dataApi";
 
 export const importRouter = router({
   // ===== SUPPLIERS =====
@@ -146,6 +147,35 @@ export const importRouter = router({
       await db.delete(importPayments).where(eq(importPayments.id, input.id));
       return { success: true };
     }),
+
+  // ===== EXCHANGE RATE (USD/BRL) =====
+  getExchangeRate: publicProcedure.query(async () => {
+    try {
+      // Try AwesomeAPI (free, no key needed)
+      const res = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL");
+      if (res.ok) {
+        const data = await res.json();
+        const rate = parseFloat(data.USDBRL.bid);
+        return { rate, source: "AwesomeAPI", timestamp: data.USDBRL.create_date };
+      }
+    } catch (e) {
+      // fallback
+    }
+    try {
+      // Fallback: Banco Central do Brasil
+      const res = await fetch("https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao=%27" + new Date().toISOString().split("T")[0].split("-").reverse().join("-") + "%27&$top=1&$format=json");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.value && data.value.length > 0) {
+          return { rate: data.value[0].cotacaoCompra, source: "BCB", timestamp: new Date().toISOString() };
+        }
+      }
+    } catch (e) {
+      // fallback
+    }
+    // Last resort fallback
+    return { rate: 5.50, source: "fallback", timestamp: new Date().toISOString() };
+  }),
 
   // ===== FULL DATA (suppliers + payments grouped by section) =====
   getFullData: publicProcedure.query(async () => {

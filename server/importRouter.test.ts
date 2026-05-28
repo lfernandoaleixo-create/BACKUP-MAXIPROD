@@ -119,6 +119,16 @@ describe("importRouter", () => {
     expect(supplier!.payments).toHaveLength(0);
   });
 
+  it("getExchangeRate returns a valid rate", async () => {
+    const result = await caller.import.getExchangeRate();
+    expect(result).toHaveProperty("rate");
+    expect(result).toHaveProperty("source");
+    expect(result).toHaveProperty("timestamp");
+    expect(typeof result.rate).toBe("number");
+    expect(result.rate).toBeGreaterThan(0);
+    expect(["AwesomeAPI", "BCB", "fallback"]).toContain(result.source);
+  });
+
   it("deletes a supplier and cascades payments", async () => {
     // Create a payment first
     await caller.import.createPayment({

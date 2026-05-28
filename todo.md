@@ -3992,3 +3992,9 @@
 - [x] Alinhamento numérico perfeito: tabular-nums, font-mono, backgrounds coloridos nas colunas de grupo
 - [x] Formatação monetária: $ com non-breaking space para não quebrar linha
 - [x] AddPaymentForm inclui seções vazias no dropdown de seleção de sub-seção
+- [x] Sub-seção header: visual bonito com ícone + nome bold + badge categoria (igual ao card principal do fornecedor)
+- [x] Criar sub-seção: campo Título (Fornecedor) editável (ex: BETTY 1, BETTY 2)
+- [x] Adicionar Pedido: abrir nova linha editável inline na tabela em vez de card separado
+- [x] Botão conversão USD ↔ BRL no canto superior direito da aba Importação com cotação do dia visível
+- [x] Ao clicar no botão, converter todos os valores monetários da tela instantaneamente
+- [x] Mostrar valor da cotação atual explicitamente junto ao botão
