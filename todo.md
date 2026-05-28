@@ -3984,3 +3984,6 @@
 - [x] Backend: procedures tRPC CRUD para fornecedores e pagamentos
 - [x] Frontend: UI moderna da sub-aba Pagamentos Fornecedores Chineses (tabela por fornecedor, totais, formulário de cadastro)
 - [x] Importar dados existentes da planilha Excel para o banco
+- [x] Remover cálculos automáticos da aba Importação - todos os campos preenchidos manualmente
+- [x] Eliminar scroll horizontal da tabela - tudo visível na tela sem rolar pro lado
+- [x] Sub-seções dentro do mesmo fornecedor (ex: BETTY - BAMBU e BETTY - DIVERSOS)

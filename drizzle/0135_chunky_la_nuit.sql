@@ -1,0 +1,1 @@
+ALTER TABLE `import_payments` ADD `section_title` varchar(200);

@@ -2356,6 +2356,7 @@ export type InsertImportSupplier = typeof importSuppliers.$inferInsert;
 export const importPayments = mysqlTable("import_payments", {
   id: int("id").autoincrement().primaryKey(),
   supplierId: int("supplier_id").notNull(), // FK para import_suppliers.id
+  sectionTitle: varchar("section_title", { length: 200 }), // sub-seção dentro do fornecedor (ex: "BETTY - DIVERSOS")
   status: varchar("status", { length: 200 }).notNull(), // "Doc ok - navegando", "Produção", "Aguardando Pagamento", etc.
   pedido: varchar("pedido", { length: 100 }).notNull(), // código do pedido (PO062, ZYZ2026-018, etc.)
   doc: varchar("doc", { length: 20 }).notNull(), // CI = Commercial Invoice, PI = Proforma Invoice
