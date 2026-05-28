@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -77,6 +77,30 @@ function PagamentosFornecedores() {
   const [newSupplierName, setNewSupplierName] = useState("");
   const [newSupplierCategory, setNewSupplierCategory] = useState("");
   const [currency, setCurrency] = useState<"USD" | "BRL">("USD");
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const response = await fetch("/api/import/export-pdf");
+      if (!response.ok) throw new Error("Erro ao gerar PDF");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const dateStr = new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
+      a.download = `Importacao_Grupo_Fox_${dateStr}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("PDF exportado com sucesso!");
+    } catch (err) {
+      toast.error("Erro ao exportar PDF. Tente novamente.");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const exchangeRate = exchangeData?.rate || 5.50;
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
@@ -119,8 +143,16 @@ function PagamentosFornecedores() {
 
   return (
     <div className="space-y-4">
-      {/* Currency Conversion Button */}
-      <div className="flex items-center justify-end gap-3">
+      {/* Toolbar: PDF Export + Currency Conversion */}
+      <div className="flex items-center justify-end gap-3 flex-wrap">
+        <button
+          onClick={handleExportPdf}
+          disabled={exportingPdf}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all shadow-sm bg-red-50 border-red-300 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {exportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+          Exportar PDF
+        </button>
         {exchangeData && (
           <span className="text-xs text-slate-500">
             Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
@@ -270,6 +302,11 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
     onError: () => toast.error("Erro ao remover"),
   });
 
+  const deleteSectionMut = trpc.import.deleteSection.useMutation({
+    onSuccess: () => { onRefetch(); toast.success("Sub-seção removida"); },
+    onError: () => toast.error("Erro ao remover sub-seção"),
+  });
+
   // Group payments by sectionTitle
   const sections: { title: string | null; payments: PaymentData[] }[] = [];
   const defaultSection: PaymentData[] = [];
@@ -395,6 +432,15 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
               currency={currency}
               exchangeRate={exchangeRate}
               totalSections={sections.length}
+              onRemoveSection={(title) => {
+                // If it's an empty local section, just remove from state
+                if (emptySections.includes(title)) {
+                  setEmptySections(prev => prev.filter(s => s !== title));
+                } else {
+                  // Has payments in DB - call deleteSection mutation
+                  deleteSectionMut.mutate({ supplierId: supplier.id, sectionTitle: title });
+                }
+              }}
             />
           ))}
 
@@ -504,6 +550,7 @@ function SectionTable({
   currency,
   exchangeRate,
   totalSections,
+  onRemoveSection,
 }: {
   sectionTitle: string | null;
   supplierName: string;
@@ -516,6 +563,7 @@ function SectionTable({
   currency: "USD" | "BRL";
   exchangeRate: number;
   totalSections: number;
+  onRemoveSection?: (sectionTitle: string) => void;
 }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
@@ -539,19 +587,18 @@ function SectionTable({
         const parts = sectionTitle.split(/ [\u2013-] /);
         const title = parts[0];
         const subtitle = parts.length > 1 ? parts[1] : null;
-        // Hide if only one section (redundant with card header) or if it matches supplier name + category
-        const isDefaultSection = (
-          totalSections <= 1 ||
+        // Hide only if there's a single section AND it matches the supplier card header
+        const matchesCard = (
           sectionTitle.replace(/ \u2013 /g, ' - ').toLowerCase() === `${supplierName} - ${supplierCategory || ''}`.toLowerCase() ||
           (title.toLowerCase() === supplierName.toLowerCase() && subtitle?.toLowerCase() === supplierCategory?.toLowerCase())
         );
-        if (isDefaultSection) return null;
+        if (totalSections <= 1 && matchesCard) return null;
         return (
           <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 flex items-center gap-3 border-b border-blue-100">
             <div className="p-2 rounded-lg bg-blue-100">
               <Layers className="w-4 h-4 text-blue-700" />
             </div>
-            <div>
+            <div className="flex-1">
               <h4 className="font-bold text-slate-800 text-sm">{title}</h4>
               {subtitle && (
                 <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border bg-emerald-50 border-emerald-200 text-emerald-700">
@@ -559,6 +606,17 @@ function SectionTable({
                 </span>
               )}
             </div>
+            <button
+              onClick={() => {
+                if (confirm(`Remover sub-seção "${sectionTitle}" e todos os seus pedidos?`)) {
+                  onRemoveSection?.(sectionTitle!);
+                }
+              }}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors border border-red-200"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Remover Sub-seção
+            </button>
           </div>
         );
       })()}

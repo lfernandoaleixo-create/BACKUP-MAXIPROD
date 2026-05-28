@@ -2,7 +2,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { importSuppliers, importPayments } from "../drizzle/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 
 export const importRouter = router({
@@ -145,6 +145,21 @@ export const importRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       await db.delete(importPayments).where(eq(importPayments.id, input.id));
+      return { success: true };
+    }),
+
+  // ===== DELETE SECTION (all payments in a section) =====
+  deleteSection: publicProcedure
+    .input(z.object({ supplierId: z.number(), sectionTitle: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.delete(importPayments).where(
+        and(
+          eq(importPayments.supplierId, input.supplierId),
+          eq(importPayments.sectionTitle, input.sectionTitle)
+        )
+      );
       return { success: true };
     }),
 

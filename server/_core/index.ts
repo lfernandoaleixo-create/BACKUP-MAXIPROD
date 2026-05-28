@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { startScraper } from "../maxiprodScraper";
 import { startScheduler } from "../scheduler";
 import { inadimplenciaBackupCronHandler } from "../inadimplenciaBackupHandler";
+import { importPdfExportHandler } from "../importPdfExport";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -40,6 +41,8 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Scheduled endpoints (Heartbeat cron)
   app.post("/api/scheduled/inadimplencia-backup", inadimplenciaBackupCronHandler);
+  // PDF export endpoint
+  app.get("/api/import/export-pdf", importPdfExportHandler);
 
   // tRPC API
   app.use(

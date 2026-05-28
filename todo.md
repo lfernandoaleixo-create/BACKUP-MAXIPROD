@@ -3998,3 +3998,4 @@
 - [x] Botão conversão USD ↔ BRL no canto superior direito da aba Importação com cotação do dia visível
 - [x] Ao clicar no botão, converter todos os valores monetários da tela instantaneamente
 - [x] Mostrar valor da cotação atual explicitamente junto ao botão
+- [x] Botão Exportar PDF na aba Importação com todas as informações de fornecedores e pedidos
