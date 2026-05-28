@@ -119,8 +119,8 @@ function PagamentosFornecedores() {
             <DollarSign className="w-4 h-4 text-slate-400" />
             <span className="text-xs text-slate-500 uppercase font-medium">Total Pedidos</span>
           </div>
-          <p className="text-xl font-bold text-slate-800">
-            $ {grandTotals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          <p className="text-xl font-bold text-slate-800 whitespace-nowrap">
+            ${"\u00A0"}{grandTotals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -128,8 +128,8 @@ function PagamentosFornecedores() {
             <Check className="w-4 h-4 text-green-500" />
             <span className="text-xs text-slate-500 uppercase font-medium">Total Pago</span>
           </div>
-          <p className="text-xl font-bold text-green-700">
-            $ {grandTotals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          <p className="text-xl font-bold text-green-700 whitespace-nowrap">
+            ${"\u00A0"}{grandTotals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -137,8 +137,8 @@ function PagamentosFornecedores() {
             <AlertCircle className="w-4 h-4 text-red-500" />
             <span className="text-xs text-slate-500 uppercase font-medium">Saldo Devedor</span>
           </div>
-          <p className="text-xl font-bold text-red-700">
-            $ {grandTotals.saldoTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          <p className="text-xl font-bold text-red-700 whitespace-nowrap">
+            ${"\u00A0"}{grandTotals.saldoTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
@@ -309,15 +309,15 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
           <div className="hidden sm:flex items-center gap-4 text-xs">
             <div className="text-right">
               <span className="text-slate-400">Total</span>
-              <p className="font-semibold text-slate-700">$ {totals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold text-slate-700 whitespace-nowrap">${"\u00A0"}{totals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="text-right">
               <span className="text-slate-400">Pago</span>
-              <p className="font-semibold text-green-600">$ {totals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold text-green-600 whitespace-nowrap">${"\u00A0"}{totals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="text-right">
               <span className="text-slate-400">Saldo Devedor</span>
-              <p className="font-semibold text-red-600">$ {totals.saldoDevedorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+              <p className="font-semibold text-red-600 whitespace-nowrap">${"\u00A0"}{totals.saldoDevedorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
           {expanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
@@ -329,15 +329,15 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
         <div className="sm:hidden grid grid-cols-3 gap-2 px-4 pb-3">
           <div className="text-center bg-slate-50 rounded-lg p-2">
             <span className="text-[10px] text-slate-400 block">Total</span>
-            <p className="text-xs font-semibold text-slate-700">$ {totals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs font-semibold text-slate-700 whitespace-nowrap">${"\u00A0"}{totals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="text-center bg-green-50 rounded-lg p-2">
             <span className="text-[10px] text-slate-400 block">Pago</span>
-            <p className="text-xs font-semibold text-green-600">$ {totals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs font-semibold text-green-600 whitespace-nowrap">${"\u00A0"}{totals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
           <div className="text-center bg-red-50 rounded-lg p-2">
             <span className="text-[10px] text-slate-400 block">Devedor</span>
-            <p className="text-xs font-semibold text-red-600">$ {totals.saldoDevedorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs font-semibold text-red-600 whitespace-nowrap">${"\u00A0"}{totals.saldoDevedorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
       )}
@@ -527,14 +527,14 @@ function SectionTable({
           {payments.length > 0 && (
             <tr className="bg-slate-50 font-semibold border-t border-slate-200">
               <td className="px-2 py-2 text-slate-700" colSpan={3}>TOTAIS</td>
-              <td className="px-2 py-2 text-right text-slate-700">$ {sectionTotals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-slate-700 whitespace-nowrap">${"\u00A0"}{sectionTotals.totalUsd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
               <td className="px-2 py-2"></td>
               <td className="px-2 py-2"></td>
               <td className="px-2 py-2"></td>
-              <td className="px-2 py-2 text-right text-green-700">$ {sectionTotals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-right text-red-600">$ {sectionTotals.saldoDevedorBrasil.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-right text-red-600">$ {sectionTotals.saldoDevedorParaguai.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-right text-red-700">$ {sectionTotals.saldoDevedorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-green-700 whitespace-nowrap">${"\u00A0"}{sectionTotals.totalPago.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-red-600 whitespace-nowrap">${"\u00A0"}{sectionTotals.saldoDevedorBrasil.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-red-600 whitespace-nowrap">${"\u00A0"}{sectionTotals.saldoDevedorParaguai.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-right text-red-700 whitespace-nowrap">${"\u00A0"}{sectionTotals.saldoDevedorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
               <td className="px-2 py-2"></td>
               <td className="px-1 py-2"></td>
             </tr>
@@ -565,7 +565,7 @@ function PaymentRow({ payment, onEdit, onRefetch }: { payment: PaymentData; onEd
   const fmtUsd = (v: string | null) => {
     const n = parseFloat(String(v || "0"));
     if (n === 0) return <span className="text-slate-300">-</span>;
-    return <span>$ {n.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
+    return <span className="whitespace-nowrap">${"\u00A0"}{n.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
   };
 
   const saldoColor = (v: string) => {
