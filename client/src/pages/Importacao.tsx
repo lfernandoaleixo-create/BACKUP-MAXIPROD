@@ -751,10 +751,11 @@ function SectionTable({
 
       {/* Table - scrollable on mobile */}
       <div className="overflow-x-auto -mx-2 px-2 pb-1">
-      <table className="min-w-[950px] w-full text-[11px] border-collapse">
+      <table className="min-w-[1050px] w-full text-[11px] border-collapse">
         <thead>
           <tr>
-            <th colSpan={5} className="bg-white"></th>
+            <th colSpan={3} className="bg-white"></th>
+            <th colSpan={3} className="bg-blue-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-blue-700 border-b-2 border-blue-400 whitespace-nowrap">Total a pagar</th>
             <th colSpan={3} className="bg-green-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-green-700 border-b-2 border-green-400 whitespace-nowrap">O que pagou</th>
             <th colSpan={3} className="bg-red-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-red-600 border-b-2 border-red-400 whitespace-nowrap">O que falta pagar</th>
             <th colSpan={2} className="bg-white"></th>
@@ -763,8 +764,9 @@ function SectionTable({
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[80px]">Status</th>
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[70px]">Pedido</th>
             <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[35px]">Doc</th>
-            <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[80px]">Total USD</th>
-            <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[65px]">50%</th>
+            <th className="px-2 py-2 text-center font-semibold bg-blue-50/50 whitespace-nowrap min-w-[80px]">Total USD</th>
+            <th className="px-2 py-2 text-center font-semibold bg-blue-50/50 whitespace-nowrap min-w-[75px]">Brasil (50%)</th>
+            <th className="px-2 py-2 text-center font-semibold bg-blue-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
             <th className="px-2 py-2 text-center font-semibold bg-green-50/50 whitespace-nowrap min-w-[75px]">Brasil</th>
             <th className="px-2 py-2 text-center font-semibold bg-green-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
             <th className="px-2 py-2 text-center font-semibold bg-green-50/50 whitespace-nowrap min-w-[70px]">Total</th>
@@ -785,7 +787,7 @@ function SectionTable({
           ))}
           {payments.length === 0 && (
             <tr>
-              <td colSpan={13} className="px-3 py-8 text-center">
+              <td colSpan={14} className="px-3 py-8 text-center">
                 <p className="text-slate-400 text-xs mb-2">Nenhum pedido nesta seção</p>
                 <p className="text-[10px] text-slate-300">Use o botão "Adicionar Pedido" abaixo e selecione esta sub-seção</p>
               </td>
@@ -804,7 +806,8 @@ function SectionTable({
           {payments.length > 0 && (
             <tr className="bg-slate-50 font-semibold border-t border-slate-200">
               <td className="px-2 py-2 text-slate-700" colSpan={3}>TOTAIS</td>
-              <td className="px-2 py-2 text-center text-slate-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2"></td>
               <td className="px-2 py-2"></td>
               <td className="px-2 py-2"></td>
               <td className="px-2 py-2"></td>
@@ -878,8 +881,9 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
       <td className="px-2 py-2 text-center">
         <span className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-medium text-[10px]">{payment.doc}</span>
       </td>
-      <td className="px-2 py-2 text-center font-medium text-slate-800 whitespace-nowrap">{fmtUsd(payment.totalUsd)}</td>
-      <td className="px-2 py-2 text-center text-slate-500 whitespace-nowrap">{fmtUsd(payment.halfValue)}</td>
+      <td className="px-2 py-2 text-center font-medium text-slate-800 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.totalUsd)}</td>
+      <td className="px-2 py-2 text-center text-slate-700 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.halfValue)}</td>
+      <td className="px-2 py-2 text-center text-slate-700 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.halfValue)}</td>
       <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.brasilUsd)}</td>
       <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.paraguaiUsd)}</td>
       <td className="px-2 py-2 text-center font-medium text-green-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.totalPago)}</td>
