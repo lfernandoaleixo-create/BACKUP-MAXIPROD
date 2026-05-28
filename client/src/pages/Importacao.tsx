@@ -763,14 +763,14 @@ function SectionTable({
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[80px]">Status</th>
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[70px]">Pedido</th>
             <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[35px]">Doc</th>
-            <th className="px-2 py-2 text-right font-semibold whitespace-nowrap min-w-[80px]">Total USD</th>
-            <th className="px-2 py-2 text-right font-semibold whitespace-nowrap min-w-[65px]">50%</th>
-            <th className="px-2 py-2 text-right font-semibold bg-green-50/50 whitespace-nowrap min-w-[75px]">Brasil</th>
-            <th className="px-2 py-2 text-right font-semibold bg-green-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
-            <th className="px-2 py-2 text-right font-semibold bg-green-50/50 whitespace-nowrap min-w-[70px]">Total</th>
-            <th className="px-2 py-2 text-right font-semibold bg-red-50/50 whitespace-nowrap min-w-[75px]">Brasil</th>
-            <th className="px-2 py-2 text-right font-semibold bg-red-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
-            <th className="px-2 py-2 text-right font-semibold bg-red-50/50 whitespace-nowrap min-w-[70px]">Total</th>
+            <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[80px]">Total USD</th>
+            <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[65px]">50%</th>
+            <th className="px-2 py-2 text-center font-semibold bg-green-50/50 whitespace-nowrap min-w-[75px]">Brasil</th>
+            <th className="px-2 py-2 text-center font-semibold bg-green-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
+            <th className="px-2 py-2 text-center font-semibold bg-green-50/50 whitespace-nowrap min-w-[70px]">Total</th>
+            <th className="px-2 py-2 text-center font-semibold bg-red-50/50 whitespace-nowrap min-w-[75px]">Brasil</th>
+            <th className="px-2 py-2 text-center font-semibold bg-red-50/50 whitespace-nowrap min-w-[75px]">Paraguai</th>
+            <th className="px-2 py-2 text-center font-semibold bg-red-50/50 whitespace-nowrap min-w-[70px]">Total</th>
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[70px]">Rastreio</th>
             <th className="px-1 py-2 text-center font-semibold min-w-[30px]"></th>
           </tr>
@@ -804,14 +804,14 @@ function SectionTable({
           {payments.length > 0 && (
             <tr className="bg-slate-50 font-semibold border-t border-slate-200">
               <td className="px-2 py-2 text-slate-700" colSpan={3}>TOTAIS</td>
-              <td className="px-2 py-2 text-right text-slate-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-center text-slate-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
               <td className="px-2 py-2"></td>
               <td className="px-2 py-2"></td>
               <td className="px-2 py-2"></td>
-              <td className="px-2 py-2 text-right text-green-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-right text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorBrasil).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-right text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorParaguai).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-              <td className="px-2 py-2 text-right text-red-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorBrasil).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorParaguai).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+              <td className="px-2 py-2 text-center text-red-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(sectionTotals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
               <td className="px-2 py-2"></td>
               <td className="px-1 py-2"></td>
             </tr>
@@ -857,7 +857,6 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
 
   const fmtUsd = (v: string | null) => {
     const n = parseFloat(String(v || "0"));
-    if (n === 0) return <span className="text-slate-300">-</span>;
     const converted = convertValue(n);
     return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{"\u00A0"}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
   };
@@ -878,14 +877,14 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
       <td className="px-2 py-2 text-center">
         <span className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-medium text-[10px]">{payment.doc}</span>
       </td>
-      <td className="px-2 py-2 text-right font-medium text-slate-800 whitespace-nowrap">{fmtUsd(payment.totalUsd)}</td>
-      <td className="px-2 py-2 text-right text-slate-500 whitespace-nowrap">{fmtUsd(payment.halfValue)}</td>
-      <td className="px-2 py-2 text-right text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.brasilUsd)}</td>
-      <td className="px-2 py-2 text-right text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.paraguaiUsd)}</td>
-      <td className="px-2 py-2 text-right font-medium text-green-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.totalPago)}</td>
-      <td className={`px-2 py-2 text-right bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtUsd(payment.saldoDevedorBrasil)}</td>
-      <td className={`px-2 py-2 text-right bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtUsd(payment.saldoDevedorParaguai)}</td>
-      <td className={`px-2 py-2 text-right font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtUsd(payment.saldoDevedorTotal)}</td>
+      <td className="px-2 py-2 text-center font-medium text-slate-800 whitespace-nowrap">{fmtUsd(payment.totalUsd)}</td>
+      <td className="px-2 py-2 text-center text-slate-500 whitespace-nowrap">{fmtUsd(payment.halfValue)}</td>
+      <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.brasilUsd)}</td>
+      <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.paraguaiUsd)}</td>
+      <td className="px-2 py-2 text-center font-medium text-green-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.totalPago)}</td>
+      <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtUsd(payment.saldoDevedorBrasil)}</td>
+      <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtUsd(payment.saldoDevedorParaguai)}</td>
+      <td className={`px-2 py-2 text-center font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtUsd(payment.saldoDevedorTotal)}</td>
       <td className="px-2 py-2 text-slate-600 font-mono text-[10px] whitespace-nowrap">{payment.rastreio || <span className="text-slate-300">-</span>}</td>
       <td className="px-1 py-2 text-center">
         <div className="flex items-center justify-center gap-0.5">
