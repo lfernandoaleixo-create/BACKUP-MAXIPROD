@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, supplier_id, section_title, pedido, total_usd FROM import_payments WHERE supplier_id IN (4, 7);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, supplier_id, section_title, pedido, total_usd FROM import_payments WHERE supplier_id IN (4, 7);",
+  "rows": [
+    {
+      "id": "13",
+      "supplier_id": "7",
+      "section_title": "BANNY - MÁQUINAS",
+      "pedido": "BA260508",
+      "total_usd": "31240.00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsupplier_id\tsection_title\tpedido\ttotal_usd\n13\t7\tBANNY - MÁQUINAS\tBA260508\t31240.00\n",
+  "stderr": "",
+  "execution_time_ms": 257
+}

@@ -1,0 +1,42 @@
+{
+  "query": "SELECT s.id, s.name, s.category, p.id as payment_id, p.section_title, p.pedido FROM import_suppliers s LEFT JOIN import_payments p ON p.supplier_id = s.id ORDER BY s.display_order, p.id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT s.id, s.name, s.category, p.id as payment_id, p.section_title, p.pedido FROM import_suppliers s LEFT JOIN import_payments p ON p.supplier_id = s.id ORDER BY s.display_order, p.id;",
+  "rows": [
+    {
+      "id": "8",
+      "name": "BETTY",
+      "category": "BAMBU",
+      "payment_id": "NULL",
+      "section_title": "NULL",
+      "pedido": "NULL"
+    },
+    {
+      "id": "9",
+      "name": "WINNIE",
+      "category": "BAMBU",
+      "payment_id": "NULL",
+      "section_title": "NULL",
+      "pedido": "NULL"
+    },
+    {
+      "id": "3",
+      "name": "HANK - CARRY",
+      "category": "BAMBU",
+      "payment_id": "8",
+      "section_title": "NULL",
+      "pedido": "PCIE202601"
+    },
+    {
+      "id": "4",
+      "name": "BANNY",
+      "category": "MÁQUINAS",
+      "payment_id": "13",
+      "section_title": "BANNY - MÁQUINAS",
+      "pedido": "BA260508"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategory\tpayment_id\tsection_title\tpedido\n8\tBETTY\tBAMBU\tNULL\tNULL\tNULL\n9\tWINNIE\tBAMBU\tNULL\tNULL\tNULL\n3\tHANK - CARRY\tBAMBU\t8\tNULL\tPCIE202601\n4\tBANNY\tMÁQUINAS\t13\tBANNY - MÁQUINAS\tBA260508\n",
+  "stderr": "",
+  "execution_time_ms": 327
+}

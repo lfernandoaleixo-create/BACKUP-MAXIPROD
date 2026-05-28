@@ -1,0 +1,22 @@
+{
+  "query": "SELECT s.id, s.name, s.category, COUNT(p.id) as payment_count FROM import_suppliers s LEFT JOIN import_payments p ON p.supplier_id = s.id GROUP BY s.id ORDER BY s.display_order;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT s.id, s.name, s.category, COUNT(p.id) as payment_count FROM import_suppliers s LEFT JOIN import_payments p ON p.supplier_id = s.id GROUP BY s.id ORDER BY s.display_order;",
+  "rows": [
+    {
+      "id": "3",
+      "name": "HANK - CARRY",
+      "category": "BAMBU",
+      "payment_count": "1"
+    },
+    {
+      "id": "4",
+      "name": "BANNY",
+      "category": "MÁQUINAS",
+      "payment_count": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategory\tpayment_count\n3\tHANK - CARRY\tBAMBU\t1\n4\tBANNY\tMÁQUINAS\t1\n",
+  "stderr": "",
+  "execution_time_ms": 266
+}

@@ -1,0 +1,64 @@
+{
+  "query": "SELECT id, supplier_id, section_title, pedido FROM import_payments ORDER BY supplier_id, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, supplier_id, section_title, pedido FROM import_payments ORDER BY supplier_id, id;",
+  "rows": [
+    {
+      "id": "8",
+      "supplier_id": "3",
+      "section_title": "HANK CARRY - BAMBU",
+      "pedido": "PCIE202601"
+    },
+    {
+      "id": "13",
+      "supplier_id": "4",
+      "section_title": "BANNY - MÁQUINAS",
+      "pedido": "BA260508"
+    },
+    {
+      "id": "14",
+      "supplier_id": "8",
+      "section_title": "BETTY - BAMBU",
+      "pedido": "PO062"
+    },
+    {
+      "id": "15",
+      "supplier_id": "8",
+      "section_title": "BETTY - BAMBU",
+      "pedido": "01PH202603"
+    },
+    {
+      "id": "16",
+      "supplier_id": "9",
+      "section_title": "WINNIE - HARBIN",
+      "pedido": "ZYZ2026-018"
+    },
+    {
+      "id": "17",
+      "supplier_id": "9",
+      "section_title": "WINNIE - HARBIN",
+      "pedido": "ZYZ2026-027"
+    },
+    {
+      "id": "18",
+      "supplier_id": "9",
+      "section_title": "WINNIE - HARBIN",
+      "pedido": "ZYZ2026-045"
+    },
+    {
+      "id": "19",
+      "supplier_id": "9",
+      "section_title": "WINNIE - HARBIN",
+      "pedido": "ZYZ2026-046"
+    },
+    {
+      "id": "20",
+      "supplier_id": "9",
+      "section_title": "WINNIE - HARBIN",
+      "pedido": "ZYZ2026-047"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsupplier_id\tsection_title\tpedido\n8\t3\tHANK CARRY - BAMBU\tPCIE202601\n13\t4\tBANNY - MÁQUINAS\tBA260508\n14\t8\tBETTY - BAMBU\tPO062\n15\t8\tBETTY - BAMBU\t01PH202603\n16\t9\tWINNIE - HARBIN\tZYZ2026-018\n17\t9\tWINNIE - HARBIN\tZYZ2026-027\n18\t9\tWINNIE - HARBIN\tZYZ2026-045\n19\t9\tWINNIE - HARBIN\tZYZ2026-046\n20\t9\tWINNIE - HARBIN\tZYZ2026-047\n",
+  "stderr": "",
+  "execution_time_ms": 257
+}

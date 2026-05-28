@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name, category FROM import_suppliers ORDER BY display_order;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user MZwFTif4w4VnzQT.root --database TMh5HqmzfeBw9KakgJtjjo --execute SELECT id, name, category FROM import_suppliers ORDER BY display_order;",
+  "rows": [
+    {
+      "id": "8",
+      "name": "BETTY",
+      "category": "BAMBU"
+    },
+    {
+      "id": "9",
+      "name": "WINNIE",
+      "category": "MADEIRA"
+    },
+    {
+      "id": "3",
+      "name": "HANK - CARRY",
+      "category": "BAMBU"
+    },
+    {
+      "id": "4",
+      "name": "BANNY",
+      "category": "MÁQUINAS"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategory\n8\tBETTY\tBAMBU\n9\tWINNIE\tMADEIRA\n3\tHANK - CARRY\tBAMBU\n4\tBANNY\tMÁQUINAS\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}

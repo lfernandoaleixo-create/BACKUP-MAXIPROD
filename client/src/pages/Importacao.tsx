@@ -123,8 +123,7 @@ function PagamentosFornecedores() {
       <div className="flex items-center justify-end gap-3">
         {exchangeData && (
           <span className="text-xs text-slate-500">
-            Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toFixed(4)}</strong>
-            <span className="text-slate-400 ml-1">({exchangeData.source})</span>
+            Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
           </span>
         )}
         <button
@@ -395,6 +394,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
               onRefetch={onRefetch}
               currency={currency}
               exchangeRate={exchangeRate}
+              totalSections={sections.length}
             />
           ))}
 
@@ -503,6 +503,7 @@ function SectionTable({
   onRefetch,
   currency,
   exchangeRate,
+  totalSections,
 }: {
   sectionTitle: string | null;
   supplierName: string;
@@ -514,6 +515,7 @@ function SectionTable({
   onRefetch: () => void;
   currency: "USD" | "BRL";
   exchangeRate: number;
+  totalSections: number;
 }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
@@ -532,22 +534,34 @@ function SectionTable({
 
   return (
     <div className="border-b border-slate-100 last:border-b-0">
-      {/* Section title bar */}
-      {sectionTitle && (
-        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 flex items-center gap-3 border-b border-blue-100">
-          <div className="p-2 rounded-lg bg-blue-100">
-            <Layers className="w-4 h-4 text-blue-700" />
+      {/* Section title bar - only show if it's a different sub-section from the main supplier */}
+      {sectionTitle && (() => {
+        const parts = sectionTitle.split(/ [\u2013-] /);
+        const title = parts[0];
+        const subtitle = parts.length > 1 ? parts[1] : null;
+        // Hide if only one section (redundant with card header) or if it matches supplier name + category
+        const isDefaultSection = (
+          totalSections <= 1 ||
+          sectionTitle.replace(/ \u2013 /g, ' - ').toLowerCase() === `${supplierName} - ${supplierCategory || ''}`.toLowerCase() ||
+          (title.toLowerCase() === supplierName.toLowerCase() && subtitle?.toLowerCase() === supplierCategory?.toLowerCase())
+        );
+        if (isDefaultSection) return null;
+        return (
+          <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 flex items-center gap-3 border-b border-blue-100">
+            <div className="p-2 rounded-lg bg-blue-100">
+              <Layers className="w-4 h-4 text-blue-700" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-800 text-sm">{title}</h4>
+              {subtitle && (
+                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border bg-emerald-50 border-emerald-200 text-emerald-700">
+                  {subtitle}
+                </span>
+              )}
+            </div>
           </div>
-          <div>
-            <h4 className="font-bold text-slate-800 text-sm">{sectionTitle.split(' – ')[0] || sectionTitle.split(' - ')[0]}</h4>
-            {(sectionTitle.includes(' – ') || sectionTitle.includes(' - ')) && (
-              <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border bg-blue-50 border-blue-200 text-blue-700">
-                {sectionTitle.split(/ [–-] /)[1]}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Table - compact, no overflow-x-auto */}
       <table className="w-full text-[11px] table-fixed">
