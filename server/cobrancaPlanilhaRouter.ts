@@ -1068,8 +1068,11 @@ export const cobrancaPlanilhaRouter = router({
           
           // PROTEÇÃO: Herdar campos manuais de itens existentes da mesma empresa
           // (status, observacoes, datas de cobrança, etapa pausada, forma de cobrança)
+          // REGRA: Priorizar registros com status NÃO-Pendente (marcações manuais)
           const existingOfSameEmpresa = planilhaAtual.find(
-            p => p.empresa === inad.empresa && (p.status || p.observacoes || p.primeiraCobranca)
+            p => p.empresa === inad.empresa && p.status && p.status !== 'Pendente'
+          ) || planilhaAtual.find(
+            p => p.empresa === inad.empresa && (p.observacoes || p.primeiraCobranca || p.segundaCobranca || p.terceiraCobranca || p.acaoFinal)
           );
           
           await db.insert(cobrancaPlanilha).values({

@@ -235,6 +235,9 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
     actionsMap[a.receivableId] = a;
   }
 
+  // Pre-fetch ALL planilha records (including inactive) to inherit manual status from same empresa
+  const allPlanilhaRecords = await db.select().from(cobrancaPlanilha);
+
   let added = 0;
   for (const title of validOverdue) {
     if (!allPlanilhaArIds.has(title.arId)) {
@@ -244,7 +247,16 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       const businessDaysOverdue = diasAtrasoRaw > 0 ? countBusinessDays(vencDate, todayStr) : 0;
       const action = actionsMap[title.arId];
       const statusInad = action?.status || "pendente";
-      const statusPlanilha = STATUS_MAP[statusInad] || "Pendente";
+      let statusPlanilha = STATUS_MAP[statusInad] || "Pendente";
+
+      // PROTEÇÃO: Herdar status manual de registros existentes (ativos ou inativos) da mesma empresa
+      // Priorizar registros com status NÃO-Pendente (marcações manuais da Larissa/Thiago/Thalita)
+      const existingOfSameEmpresa = allPlanilhaRecords.find(
+        p => p.empresa === title.empresa && p.status && p.status !== 'Pendente'
+      );
+      if (existingOfSameEmpresa?.status) {
+        statusPlanilha = existingOfSameEmpresa.status;
+      }
 
       // Determine tipo (protesto)
       const decisao = (title.row.decisaoCobranca || "").toUpperCase();
