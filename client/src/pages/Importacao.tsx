@@ -402,37 +402,57 @@ function SupplierSection({ supplier, onRefetch }: { supplier: SupplierData; onRe
 
           {/* Add Section Form */}
           {showAddSection && (
-            <div className="px-4 py-3 border-t border-blue-100 bg-purple-50/30">
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Nome da sub-seção (ex: BETTY - DIVERSOS)"
-                  value={newSectionTitle}
-                  onChange={e => setNewSectionTitle(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  autoFocus
-                />
-                <button
-                  onClick={() => {
-                    if (newSectionTitle.trim()) {
-                      // Create a placeholder payment with the section title
-                      setShowAddSection(false);
-                      setShowAddPayment(true);
-                      setNewSectionTitle("");
-                      toast.info(`Agora adicione o primeiro pedido da seção "${newSectionTitle.trim()}"`);
-                    }
-                  }}
-                  className="px-3 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700"
-                >
-                  Criar
-                </button>
-                <button
-                  onClick={() => { setShowAddSection(false); setNewSectionTitle(""); }}
-                  className="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200"
-                >
-                  Cancelar
-                </button>
+            <div className="px-4 py-3 border-t border-purple-100 bg-purple-50/30">
+              <p className="text-xs font-medium text-purple-700 mb-2">Nova Sub-seção</p>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="flex-1 flex items-center gap-2">
+                  <div className="flex-1">
+                    <label className="text-[10px] text-slate-500 uppercase font-medium mb-0.5 block">Título (Fornecedor)</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Betty"
+                      value={supplier.name}
+                      disabled
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-100 text-slate-500"
+                    />
+                  </div>
+                  <span className="text-slate-400 font-bold mt-4">-</span>
+                  <div className="flex-1">
+                    <label className="text-[10px] text-slate-500 uppercase font-medium mb-0.5 block">Subtítulo (Categoria)</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Diversos, Bambu, Plástico..."
+                      value={newSectionTitle}
+                      onChange={e => setNewSectionTitle(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                <div className="flex items-end gap-2">
+                  <button
+                    onClick={() => {
+                      if (newSectionTitle.trim()) {
+                        const sectionName = `${supplier.name} - ${newSectionTitle.trim().toUpperCase()}`;
+                        setShowAddSection(false);
+                        setShowAddPayment(true);
+                        setNewSectionTitle("");
+                        toast.info(`Seção "${sectionName}" criada! Adicione o primeiro pedido.`);
+                      }
+                    }}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 whitespace-nowrap"
+                  >
+                    Criar Seção
+                  </button>
+                  <button
+                    onClick={() => { setShowAddSection(false); setNewSectionTitle(""); }}
+                    className="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
+              <p className="text-[10px] text-slate-400 mt-1.5">A sub-seção aparecerá como: <strong>{supplier.name} - {newSectionTitle.trim().toUpperCase() || "..."}</strong></p>
             </div>
           )}
         </div>
@@ -484,28 +504,43 @@ function SectionTable({
       )}
 
       {/* Table - compact, no overflow-x-auto */}
-      <table className="w-full text-[11px]">
+      <table className="w-full text-[11px] table-fixed">
+        <colgroup>
+          <col className="w-[12%]" />
+          <col className="w-[8%]" />
+          <col className="w-[4%]" />
+          <col className="w-[9%]" />
+          <col className="w-[7%]" />
+          <col className="w-[8%]" />
+          <col className="w-[8%]" />
+          <col className="w-[8%]" />
+          <col className="w-[8%]" />
+          <col className="w-[8%]" />
+          <col className="w-[9%]" />
+          <col className="w-[7%]" />
+          <col className="w-[4%]" />
+        </colgroup>
         <thead>
-          <tr className="bg-slate-50/50 text-slate-400">
-            <th colSpan={5}></th>
-            <th colSpan={3} className="px-2 py-1 text-center font-semibold text-[10px] uppercase tracking-wider text-green-700 border-b border-green-200">O que pagou</th>
-            <th colSpan={3} className="px-2 py-1 text-center font-semibold text-[10px] uppercase tracking-wider text-red-600 border-b border-red-200">O que falta pagar</th>
-            <th colSpan={2}></th>
+          <tr>
+            <th colSpan={5} className="bg-white"></th>
+            <th colSpan={3} className="bg-green-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-green-700 border-b-2 border-green-400">O que pagou</th>
+            <th colSpan={3} className="bg-red-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-red-600 border-b-2 border-red-400">O que falta pagar</th>
+            <th colSpan={2} className="bg-white"></th>
           </tr>
-          <tr className="bg-slate-50/80 text-slate-500 uppercase">
-            <th className="px-2 py-2 text-left font-medium w-[13%]">Status</th>
-            <th className="px-2 py-2 text-left font-medium w-[9%]">Pedido</th>
-            <th className="px-2 py-2 text-center font-medium w-[4%]">Doc</th>
-            <th className="px-2 py-2 text-right font-medium w-[9%]">Total USD</th>
-            <th className="px-2 py-2 text-right font-medium w-[8%]">50%</th>
-            <th className="px-2 py-2 text-right font-medium w-[8%]">Brasil</th>
-            <th className="px-2 py-2 text-right font-medium w-[8%]">Paraguai</th>
-            <th className="px-2 py-2 text-right font-medium w-[8%]">Pago</th>
-            <th className="px-2 py-2 text-right font-medium w-[8%]">Saldo BR</th>
-            <th className="px-2 py-2 text-right font-medium w-[8%]">Saldo PY</th>
-            <th className="px-2 py-2 text-right font-medium w-[9%]">Saldo Total</th>
-            <th className="px-2 py-2 text-left font-medium w-[8%]">Rastreio</th>
-            <th className="px-1 py-2 text-center font-medium w-[4%]"></th>
+          <tr className="bg-slate-50 text-slate-500 uppercase text-[10px]">
+            <th className="px-2 py-2 text-left font-semibold">Status</th>
+            <th className="px-2 py-2 text-left font-semibold">Pedido</th>
+            <th className="px-2 py-2 text-center font-semibold">Doc</th>
+            <th className="px-2 py-2 text-right font-semibold">Total USD</th>
+            <th className="px-2 py-2 text-right font-semibold">50%</th>
+            <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Brasil</th>
+            <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Paraguai</th>
+            <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Pago</th>
+            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Saldo BR</th>
+            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Saldo PY</th>
+            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Saldo Total</th>
+            <th className="px-2 py-2 text-left font-semibold">Rastreio</th>
+            <th className="px-1 py-2 text-center font-semibold"></th>
           </tr>
         </thead>
         <tbody>
@@ -565,7 +600,7 @@ function PaymentRow({ payment, onEdit, onRefetch }: { payment: PaymentData; onEd
   const fmtUsd = (v: string | null) => {
     const n = parseFloat(String(v || "0"));
     if (n === 0) return <span className="text-slate-300">-</span>;
-    return <span className="whitespace-nowrap">${"\u00A0"}{n.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
+    return <span className="whitespace-nowrap font-mono tabular-nums">${"\u00A0"}{n.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
   };
 
   const saldoColor = (v: string) => {
@@ -574,7 +609,7 @@ function PaymentRow({ payment, onEdit, onRefetch }: { payment: PaymentData; onEd
   };
 
   return (
-    <tr className="border-t border-slate-50 hover:bg-slate-50/50 transition-colors">
+    <tr className="border-t border-slate-100 hover:bg-slate-50/50 transition-colors">
       <td className="px-2 py-2">
         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium border leading-tight ${statusColor(payment.status)}`}>
           {payment.status}
@@ -586,12 +621,12 @@ function PaymentRow({ payment, onEdit, onRefetch }: { payment: PaymentData; onEd
       </td>
       <td className="px-2 py-2 text-right font-medium text-slate-800">{fmtUsd(payment.totalUsd)}</td>
       <td className="px-2 py-2 text-right text-slate-500">{fmtUsd(payment.halfValue)}</td>
-      <td className="px-2 py-2 text-right text-slate-700">{fmtUsd(payment.brasilUsd)}</td>
-      <td className="px-2 py-2 text-right text-slate-700">{fmtUsd(payment.paraguaiUsd)}</td>
-      <td className="px-2 py-2 text-right font-medium text-green-700">{fmtUsd(payment.totalPago)}</td>
-      <td className={`px-2 py-2 text-right ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtUsd(payment.saldoDevedorBrasil)}</td>
-      <td className={`px-2 py-2 text-right ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtUsd(payment.saldoDevedorParaguai)}</td>
-      <td className={`px-2 py-2 text-right font-medium ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtUsd(payment.saldoDevedorTotal)}</td>
+      <td className="px-2 py-2 text-right text-slate-700 bg-green-50/30">{fmtUsd(payment.brasilUsd)}</td>
+      <td className="px-2 py-2 text-right text-slate-700 bg-green-50/30">{fmtUsd(payment.paraguaiUsd)}</td>
+      <td className="px-2 py-2 text-right font-medium text-green-700 bg-green-50/30">{fmtUsd(payment.totalPago)}</td>
+      <td className={`px-2 py-2 text-right bg-red-50/30 ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtUsd(payment.saldoDevedorBrasil)}</td>
+      <td className={`px-2 py-2 text-right bg-red-50/30 ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtUsd(payment.saldoDevedorParaguai)}</td>
+      <td className={`px-2 py-2 text-right font-medium bg-red-50/30 ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtUsd(payment.saldoDevedorTotal)}</td>
       <td className="px-2 py-2 text-slate-600 font-mono text-[10px]">{payment.rastreio || <span className="text-slate-300">-</span>}</td>
       <td className="px-1 py-2 text-center">
         <div className="flex items-center justify-center gap-0.5">
