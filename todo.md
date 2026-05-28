@@ -3980,3 +3980,7 @@
 - [x] Criar aba "Importação" no menu principal (entre Financeiro e Produção)
 - [x] Sub-aba "Relação de Pagamentos com Fornecedores Chineses"
 - [x] Sub-aba "Custo da Mercadoria"
+- [x] Schema DB: tabelas fornecedores_importacao e pagamentos_importacao
+- [x] Backend: procedures tRPC CRUD para fornecedores e pagamentos
+- [x] Frontend: UI moderna da sub-aba Pagamentos Fornecedores Chineses (tabela por fornecedor, totais, formulário de cadastro)
+- [x] Importar dados existentes da planilha Excel para o banco

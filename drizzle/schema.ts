@@ -2335,3 +2335,41 @@ export const priceTableItems = mysqlTable("price_table_items", {
 });
 export type PriceTableItem = typeof priceTableItems.$inferSelect;
 export type InsertPriceTableItem = typeof priceTableItems.$inferInsert;
+
+/**
+ * Fornecedores de importação (chineses)
+ */
+export const importSuppliers = mysqlTable("import_suppliers", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(), // ex: "BETTY", "WINNIE - HARBIN", "HANK - CARRY", "BANNY"
+  category: varchar("category", { length: 100 }), // ex: "BAMBU", "MADEIRA", "MÁQUINAS"
+  displayOrder: int("display_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ImportSupplier = typeof importSuppliers.$inferSelect;
+export type InsertImportSupplier = typeof importSuppliers.$inferInsert;
+
+/**
+ * Pagamentos de importação - cada linha é um pedido/invoice de um fornecedor
+ */
+export const importPayments = mysqlTable("import_payments", {
+  id: int("id").autoincrement().primaryKey(),
+  supplierId: int("supplier_id").notNull(), // FK para import_suppliers.id
+  status: varchar("status", { length: 200 }).notNull(), // "Doc ok - navegando", "Produção", "Aguardando Pagamento", etc.
+  pedido: varchar("pedido", { length: 100 }).notNull(), // código do pedido (PO062, ZYZ2026-018, etc.)
+  doc: varchar("doc", { length: 20 }).notNull(), // CI = Commercial Invoice, PI = Proforma Invoice
+  totalUsd: decimal("total_usd", { precision: 18, scale: 2 }).notNull(),
+  halfValue: decimal("half_value", { precision: 18, scale: 2 }), // 50% do total (referência split)
+  brasilUsd: decimal("brasil_usd", { precision: 18, scale: 2 }).default("0").notNull(), // pago via Brasil
+  paraguaiUsd: decimal("paraguai_usd", { precision: 18, scale: 2 }).default("0").notNull(), // pago via Paraguai
+  totalPago: decimal("total_pago", { precision: 18, scale: 2 }).default("0").notNull(),
+  saldoDevedorBrasil: decimal("saldo_devedor_brasil", { precision: 18, scale: 2 }).default("0").notNull(),
+  saldoDevedorParaguai: decimal("saldo_devedor_paraguai", { precision: 18, scale: 2 }).default("0").notNull(),
+  saldoDevedorTotal: decimal("saldo_devedor_total", { precision: 18, scale: 2 }).default("0").notNull(),
+  rastreio: varchar("rastreio", { length: 200 }), // código de rastreio do container
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ImportPayment = typeof importPayments.$inferSelect;
+export type InsertImportPayment = typeof importPayments.$inferInsert;
