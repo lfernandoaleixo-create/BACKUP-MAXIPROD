@@ -779,10 +779,10 @@ function SectionTable({
             <th className="px-2 py-2 text-right font-semibold">50%</th>
             <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Brasil</th>
             <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Paraguai</th>
-            <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Pago</th>
-            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Saldo BR</th>
-            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Saldo PY</th>
-            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Saldo Total</th>
+            <th className="px-2 py-2 text-right font-semibold bg-green-50/50">Total</th>
+            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Brasil</th>
+            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Paraguai</th>
+            <th className="px-2 py-2 text-right font-semibold bg-red-50/50">Total</th>
             <th className="px-2 py-2 text-left font-semibold">Rastreio</th>
             <th className="px-1 py-2 text-center font-semibold"></th>
           </tr>
