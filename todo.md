@@ -3999,3 +3999,5 @@
 - [x] Ao clicar no botão, converter todos os valores monetários da tela instantaneamente
 - [x] Mostrar valor da cotação atual explicitamente junto ao botão
 - [x] Botão Exportar PDF na aba Importação com todas as informações de fornecedores e pedidos
+- [x] Importação: unificar header da sub-seção (título = nome fornecedor, subtítulo = categoria) sem duplicação
+- [x] Importação: permitir edição manual dos títulos e subtítulos das sub-seções diretamente no header

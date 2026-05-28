@@ -163,6 +163,27 @@ export const importRouter = router({
       return { success: true };
     }),
 
+  // ===== RENAME SECTION (update sectionTitle for all payments in a section) =====
+  renameSection: publicProcedure
+    .input(z.object({
+      supplierId: z.number(),
+      oldSectionTitle: z.string(),
+      newSectionTitle: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(importPayments)
+        .set({ sectionTitle: input.newSectionTitle })
+        .where(
+          and(
+            eq(importPayments.supplierId, input.supplierId),
+            eq(importPayments.sectionTitle, input.oldSectionTitle)
+          )
+        );
+      return { success: true };
+    }),
+
   // ===== EXCHANGE RATE (USD/BRL) =====
   getExchangeRate: publicProcedure.query(async () => {
     try {

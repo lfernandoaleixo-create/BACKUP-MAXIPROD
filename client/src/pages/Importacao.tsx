@@ -296,6 +296,10 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
   const [newSectionSupplierName, setNewSectionSupplierName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [emptySections, setEmptySections] = useState<string[]>([]);
+  // Inline editing state for supplier card header
+  const [editingHeader, setEditingHeader] = useState(false);
+  const [editName, setEditName] = useState(supplier.name);
+  const [editCategory, setEditCategory] = useState(supplier.category || "");
 
   const deleteSupplier = trpc.import.deleteSupplier.useMutation({
     onSuccess: () => { onRefetch(); toast.success("Fornecedor removido"); },
@@ -305,6 +309,16 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
   const deleteSectionMut = trpc.import.deleteSection.useMutation({
     onSuccess: () => { onRefetch(); toast.success("Sub-seção removida"); },
     onError: () => toast.error("Erro ao remover sub-seção"),
+  });
+
+  const renameSectionMut = trpc.import.renameSection.useMutation({
+    onSuccess: () => { onRefetch(); toast.success("Título atualizado"); },
+    onError: () => toast.error("Erro ao renomear sub-seção"),
+  });
+
+  const updateSupplierMut = trpc.import.updateSupplier.useMutation({
+    onSuccess: () => { onRefetch(); toast.success("Fornecedor atualizado"); setEditingHeader(false); },
+    onError: () => toast.error("Erro ao atualizar"),
   });
 
   // Group payments by sectionTitle
@@ -362,19 +376,65 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 sm:px-6 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
-        onClick={() => setExpanded(!expanded)}
+        className="group/header flex items-center justify-between px-4 sm:px-6 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
+        onClick={() => !editingHeader && setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${categoryColor === "emerald" ? "bg-emerald-100" : categoryColor === "amber" ? "bg-amber-100" : categoryColor === "purple" ? "bg-purple-100" : "bg-blue-100"}`}>
             <Package className={`w-5 h-5 ${categoryColor === "emerald" ? "text-emerald-700" : categoryColor === "amber" ? "text-amber-700" : categoryColor === "purple" ? "text-purple-700" : "text-blue-700"}`} />
           </div>
           <div>
-            <h3 className="font-bold text-slate-800 text-sm sm:text-base">{supplier.name}</h3>
-            {supplier.category && (
-              <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${colorMap[categoryColor]}`}>
-                {supplier.category}
-              </span>
+            {editingHeader ? (
+              <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  className="px-2 py-1 border border-slate-300 rounded text-sm font-bold text-slate-800 w-32 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  autoFocus
+                />
+                <input
+                  type="text"
+                  value={editCategory}
+                  onChange={e => setEditCategory(e.target.value)}
+                  placeholder="Categoria"
+                  className="px-2 py-1 border border-slate-300 rounded text-xs text-slate-600 w-28 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <button
+                  onClick={() => {
+                    if (editName.trim()) {
+                      updateSupplierMut.mutate({ id: supplier.id, name: editName.trim().toUpperCase(), category: editCategory.trim().toUpperCase() || undefined });
+                    }
+                  }}
+                  className="p-1 text-green-600 hover:bg-green-50 rounded"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => { setEditingHeader(false); setEditName(supplier.name); setEditCategory(supplier.category || ""); }}
+                  className="p-1 text-slate-400 hover:bg-slate-100 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm sm:text-base">{supplier.name}</h3>
+                  {supplier.category && (
+                    <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${colorMap[categoryColor]}`}>
+                      {supplier.category}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={e => { e.stopPropagation(); setEditingHeader(true); }}
+                  className="p-1 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors opacity-0 group-hover/header:opacity-100"
+                  title="Editar título"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -439,6 +499,15 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
                 } else {
                   // Has payments in DB - call deleteSection mutation
                   deleteSectionMut.mutate({ supplierId: supplier.id, sectionTitle: title });
+                }
+              }}
+              onRenameSection={(oldTitle, newTitle) => {
+                // If it's an empty local section, just rename in state
+                if (emptySections.includes(oldTitle)) {
+                  setEmptySections(prev => prev.map(s => s === oldTitle ? newTitle : s));
+                } else {
+                  // Has payments in DB - call renameSection mutation
+                  renameSectionMut.mutate({ supplierId: supplier.id, oldSectionTitle: oldTitle, newSectionTitle: newTitle });
                 }
               }}
             />
@@ -551,6 +620,7 @@ function SectionTable({
   exchangeRate,
   totalSections,
   onRemoveSection,
+  onRenameSection,
 }: {
   sectionTitle: string | null;
   supplierName: string;
@@ -564,10 +634,14 @@ function SectionTable({
   exchangeRate: number;
   totalSections: number;
   onRemoveSection?: (sectionTitle: string) => void;
+  onRenameSection?: (oldTitle: string, newTitle: string) => void;
 }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
   const [showAddRow, setShowAddRow] = useState(false);
+  const [editingSectionTitle, setEditingSectionTitle] = useState(false);
+  const [editSectionName, setEditSectionName] = useState("");
+  const [editSectionSubtitle, setEditSectionSubtitle] = useState("");
   // Section totals
   const sectionTotals = payments.reduce((acc, p) => {
     acc.totalUsd += parseFloat(String(p.totalUsd)) || 0;
@@ -584,9 +658,9 @@ function SectionTable({
     <div className="border-b border-slate-100 last:border-b-0">
       {/* Section title bar - only show if it's a different sub-section from the main supplier */}
       {sectionTitle && (() => {
-        const parts = sectionTitle.split(/ [\u2013-] /);
+        const parts = sectionTitle.split(/ [\u2013\u002D] /);
         const title = parts[0];
-        const subtitle = parts.length > 1 ? parts[1] : null;
+        const subtitle = parts.length > 1 ? parts.slice(1).join(" - ") : null;
         // Hide only if there's a single section AND it matches the supplier card header
         const matchesCard = (
           sectionTitle.replace(/ \u2013 /g, ' - ').toLowerCase() === `${supplierName} - ${supplierCategory || ''}`.toLowerCase() ||
@@ -594,28 +668,84 @@ function SectionTable({
         );
         if (totalSections <= 1 && matchesCard) return null;
         return (
-          <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 flex items-center gap-3 border-b border-blue-100">
+          <div className="group/section bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 flex items-center gap-3 border-b border-blue-100">
             <div className="p-2 rounded-lg bg-blue-100">
               <Layers className="w-4 h-4 text-blue-700" />
             </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-800 text-sm">{title}</h4>
-              {subtitle && (
-                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border bg-emerald-50 border-emerald-200 text-emerald-700">
-                  {subtitle}
-                </span>
-              )}
-            </div>
+            {editingSectionTitle ? (
+              <div className="flex-1 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editSectionName}
+                  onChange={e => setEditSectionName(e.target.value)}
+                  className="px-2 py-1 border border-slate-300 rounded text-sm font-bold text-slate-800 w-32 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="T\u00edtulo"
+                  autoFocus
+                />
+                <span className="text-slate-400 font-bold">\u2013</span>
+                <input
+                  type="text"
+                  value={editSectionSubtitle}
+                  onChange={e => setEditSectionSubtitle(e.target.value)}
+                  className="px-2 py-1 border border-slate-300 rounded text-xs text-slate-600 w-28 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="Subt\u00edtulo"
+                />
+                <button
+                  onClick={() => {
+                    const newName = editSectionName.trim().toUpperCase();
+                    const newSub = editSectionSubtitle.trim().toUpperCase();
+                    if (newName) {
+                      const newTitle = newSub ? `${newName} \u2013 ${newSub}` : newName;
+                      if (newTitle !== sectionTitle) {
+                        onRenameSection?.(sectionTitle!, newTitle);
+                      }
+                      setEditingSectionTitle(false);
+                    }
+                  }}
+                  className="p-1 text-green-600 hover:bg-green-50 rounded"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setEditingSectionTitle(false)}
+                  className="p-1 text-slate-400 hover:bg-slate-100 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center gap-2">
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">{title}</h4>
+                  {subtitle && (
+                    <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border bg-emerald-50 border-emerald-200 text-emerald-700">
+                      {subtitle}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setEditSectionName(title);
+                    setEditSectionSubtitle(subtitle || "");
+                    setEditingSectionTitle(true);
+                  }}
+                  className="p-1 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors opacity-0 group-hover/section:opacity-100"
+                  title="Editar t\u00edtulo da sub-se\u00e7\u00e3o"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             <button
               onClick={() => {
-                if (confirm(`Remover sub-seção "${sectionTitle}" e todos os seus pedidos?`)) {
+                if (confirm(`Remover sub-se\u00e7\u00e3o "${sectionTitle}" e todos os seus pedidos?`)) {
                   onRemoveSection?.(sectionTitle!);
                 }
               }}
               className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors border border-red-200"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Remover Sub-seção
+              Remover Sub-se\u00e7\u00e3o
             </button>
           </div>
         );
