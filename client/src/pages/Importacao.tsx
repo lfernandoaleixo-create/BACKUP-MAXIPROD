@@ -581,7 +581,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
-                  <span className="text-slate-400 font-bold mt-4">\u2013</span>
+                  <span className="text-slate-400 font-bold mt-4">–</span>
                   <div className="flex-1">
                     <label className="text-[10px] text-slate-500 uppercase font-medium mb-0.5 block">Subtítulo (Categoria)</label>
                     <input
@@ -600,7 +600,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
                       const title = newSectionSupplierName.trim().toUpperCase();
                       const subtitle = newSectionTitle.trim().toUpperCase();
                       if (title && subtitle) {
-                        const sectionName = `${title} \u2013 ${subtitle}`;
+                        const sectionName = `${title} – ${subtitle}`;
                         setEmptySections(prev => [...prev, sectionName]);
                         setShowAddSection(false);
                         setNewSectionTitle("");
@@ -624,7 +624,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
                   </button>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1.5">A sub-seção aparecerá como: <strong>{newSectionSupplierName.trim().toUpperCase() || "..."} \u2013 {newSectionTitle.trim().toUpperCase() || "..."}</strong></p>
+              <p className="text-[10px] text-slate-400 mt-1.5">A sub-seção aparecerá como: <strong>{newSectionSupplierName.trim().toUpperCase() || "..."} – {newSectionTitle.trim().toUpperCase() || "..."}</strong></p>
             </div>
           )}
         </div>
@@ -709,7 +709,7 @@ function SectionTable({
                   placeholder="Título"
                   autoFocus
                 />
-                <span className="text-slate-400 font-bold">\u2013</span>
+                <span className="text-slate-400 font-bold">–</span>
                 <input
                   type="text"
                   value={editSectionSubtitle}
@@ -722,7 +722,7 @@ function SectionTable({
                     const newName = editSectionName.trim().toUpperCase();
                     const newSub = editSectionSubtitle.trim().toUpperCase();
                     if (newName) {
-                      const newTitle = newSub ? `${newName} \u2013 ${newSub}` : newName;
+                      const newTitle = newSub ? `${newName} – ${newSub}` : newName;
                       if (newTitle !== sectionTitle) {
                         onRenameSection?.(sectionTitle!, newTitle);
                       }
