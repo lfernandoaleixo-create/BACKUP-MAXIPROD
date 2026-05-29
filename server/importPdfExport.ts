@@ -4,12 +4,13 @@ import { getDb } from "./db";
 import { importSuppliers, importPayments } from "../drizzle/schema";
 import { asc } from "drizzle-orm";
 
-// Helper: format monetary value
-const formatMoney = (val: string | null | undefined): string => {
+// Helper: format monetary value with currency symbol
+const formatMoney = (val: string | null | undefined, symbol: string, rate: number): string => {
   if (!val || val === "0" || val === "0.00") return "-";
   const num = parseFloat(val);
   if (isNaN(num) || num === 0) return "-";
-  return `$ ${num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const converted = num * rate;
+  return `${symbol} ${converted.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 /**
@@ -44,6 +45,13 @@ export async function importPdfExportHandler(req: Request, res: Response) {
       layout: "landscape",
       margins: { top: 40, bottom: 40, left: 25, right: 25 },
     });
+
+    // Currency configuration from query params
+    const currency = (req.query.currency as string || "USD").toUpperCase() as "USD" | "BRL";
+    const exchangeRate = parseFloat(req.query.rate as string) || 5.50;
+    const conversionRate = currency === "BRL" ? exchangeRate : 1;
+    const currencySymbol = currency === "USD" ? "$" : "R$";
+    const currencyLabel = currency === "USD" ? "D\u00F3lar (USD)" : "Real (BRL)";
 
     // Set response headers for PDF download
     const dateStr = new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
@@ -81,10 +89,16 @@ export async function importPdfExportHandler(req: Request, res: Response) {
     const tableStartX = doc.page.margins.left + (pageWidth - tableWidth) / 2;
 
     // ===== HEADER =====
-    doc.fontSize(14).font("Helvetica-Bold").text("GRUPO FOX - Relação de Pagamentos com Fornecedores", { align: "center" });
+    doc.fontSize(14).font("Helvetica-Bold").text("GRUPO FOX - Rela\u00E7\u00E3o de Pagamentos com Fornecedores", { align: "center" });
     doc.moveDown(0.3);
     doc.fontSize(8).font("Helvetica").text(`Exportado em: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}`, { align: "center" });
-    doc.moveDown(1);
+    doc.moveDown(0.2);
+    // Currency indicator
+    doc.fontSize(9).font("Helvetica-Bold");
+    const currencyColor = currency === "USD" ? "#1e40af" : "#166534";
+    doc.fillColor(currencyColor).text(`Valores em: ${currencyLabel}${currency === "BRL" ? ` (cota\u00E7\u00E3o: 1 USD = R$ ${exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})` : ""}`, { align: "center" });
+    doc.fillColor("#1a1a1a");
+    doc.moveDown(0.8);
 
     // Helper: draw a data row with column-specific background colors
     const drawRow = (y: number, values: string[], options?: { bold?: boolean; bg?: string; fontSize?: number; isTotal?: boolean }): number => {
@@ -271,17 +285,17 @@ export async function importPdfExportHandler(req: Request, res: Response) {
             p.pedido,
             p.doc,
             // Blue: Total a pagar
-            formatMoney(p.totalUsd),
-            formatMoney((p as any).totalBrasilUsd),
-            formatMoney((p as any).totalParaguaiUsd),
+            formatMoney(p.totalUsd, currencySymbol, conversionRate),
+            formatMoney((p as any).totalBrasilUsd, currencySymbol, conversionRate),
+            formatMoney((p as any).totalParaguaiUsd, currencySymbol, conversionRate),
             // Green: O que pagou
-            formatMoney(p.brasilUsd),
-            formatMoney(p.paraguaiUsd),
-            formatMoney(p.totalPago),
+            formatMoney(p.brasilUsd, currencySymbol, conversionRate),
+            formatMoney(p.paraguaiUsd, currencySymbol, conversionRate),
+            formatMoney(p.totalPago, currencySymbol, conversionRate),
             // Red: O que falta pagar
-            formatMoney(p.saldoDevedorBrasil),
-            formatMoney(p.saldoDevedorParaguai),
-            formatMoney(p.saldoDevedorTotal),
+            formatMoney(p.saldoDevedorBrasil, currencySymbol, conversionRate),
+            formatMoney(p.saldoDevedorParaguai, currencySymbol, conversionRate),
+            formatMoney(p.saldoDevedorTotal, currencySymbol, conversionRate),
             // Rastreio
             p.rastreio || "-",
           ];
@@ -307,15 +321,15 @@ export async function importPdfExportHandler(req: Request, res: Response) {
           "TOTAL",
           "",
           "",
-          formatMoney(totalTotalUsd.toFixed(2)),
-          formatMoney(totalBlueBrasil.toFixed(2)),
-          formatMoney(totalBlueParaguai.toFixed(2)),
-          formatMoney(totalGreenBrasil.toFixed(2)),
-          formatMoney(totalGreenParaguai.toFixed(2)),
-          formatMoney(totalPago.toFixed(2)),
-          formatMoney(totalSaldoBR.toFixed(2)),
-          formatMoney(totalSaldoPY.toFixed(2)),
-          formatMoney(totalSaldoTotal.toFixed(2)),
+          formatMoney(totalTotalUsd.toFixed(2), currencySymbol, conversionRate),
+          formatMoney(totalBlueBrasil.toFixed(2), currencySymbol, conversionRate),
+          formatMoney(totalBlueParaguai.toFixed(2), currencySymbol, conversionRate),
+          formatMoney(totalGreenBrasil.toFixed(2), currencySymbol, conversionRate),
+          formatMoney(totalGreenParaguai.toFixed(2), currencySymbol, conversionRate),
+          formatMoney(totalPago.toFixed(2), currencySymbol, conversionRate),
+          formatMoney(totalSaldoBR.toFixed(2), currencySymbol, conversionRate),
+          formatMoney(totalSaldoPY.toFixed(2), currencySymbol, conversionRate),
+          formatMoney(totalSaldoTotal.toFixed(2), currencySymbol, conversionRate),
           "",
         ];
         drawRow(currentY, totalsValues, { bold: true, bg: "#e5e7eb", fontSize: 6.5, isTotal: true });

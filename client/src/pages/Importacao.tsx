@@ -85,7 +85,8 @@ function PagamentosFornecedores() {
   const handleExportPdf = async () => {
     setExportingPdf(true);
     try {
-      const response = await fetch("/api/import/export-pdf");
+      const params = new URLSearchParams({ currency, rate: String(exchangeRate) });
+      const response = await fetch(`/api/import/export-pdf?${params}`);
       if (!response.ok) throw new Error("Erro ao gerar PDF");
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
