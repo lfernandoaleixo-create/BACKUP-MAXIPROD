@@ -4027,3 +4027,14 @@
 - [x] Layout: Reorganizar header - logo Fox à esquerda do texto "Dashboard" (maior), data/horário e modo noturno à direita, tudo descido do topo para liberar espaço para as abas
 - [x] Logo: Trocar para logo colorida (verde/laranja) com fundo transparente, sem contraste com fundo da página
 - [x] Importação: Adicionar coluna "Data de Chegada" ao lado de "Pedido" apenas para a Winnie
+
+## Relatório de Vendas (Aba na Gestão Comercial / Vendedores)
+- [x] Criar tabela sales_visit_reports no banco (vendedor, cliente, data, resultado, motivos, observações)
+- [x] Criar backend router (salesVisitRouter) com CRUD de relatórios de visita
+- [x] Adicionar aba "Relatório de Vendas" no VendedorDetalhe.tsx (entre Pedidos e Métricas)
+- [x] Formulário de registro de visita: data, cliente, resultado (Pedido/Sem Pedido/Agendou Retorno/Cliente Ausente)
+- [x] Sistema de tags/motivos de não-compra: Estoque Alto, Preço Alto, Sem Verba, Preferência Concorrente, etc.
+- [x] Listagem de visitas registradas com filtros (período, cliente, resultado)
+- [x] Métricas por cliente: % de cada motivo de não-compra sobre total de visitas
+- [x] Métricas gerais: total visitas, taxa conversão, motivos mais frequentes
+- [x] Testes automatizados para salesVisitRouter

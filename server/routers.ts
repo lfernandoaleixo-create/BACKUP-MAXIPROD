@@ -29,6 +29,7 @@ import { cobrancaPlanilhaRouter } from "./cobrancaPlanilhaRouter";
 import { salesOrderRouter } from "./salesOrderRouter";
 import { creditCardRouter } from "./creditCardRouter";
 import { importRouter } from "./importRouter";
+import { salesVisitRouter } from "./salesVisitRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -48,6 +49,7 @@ export const appRouter = router({
   salesOrders: salesOrderRouter,
   creditCard: creditCardRouter,
   import: importRouter,
+  salesVisit: salesVisitRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

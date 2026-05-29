@@ -53,8 +53,9 @@ import {
   Tag,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import SellerVisitReportTab from "@/components/SellerVisitReportTab";
 
-type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "vendas" | "configuracoes";
+type TabType = "estoque" | "clientes" | "tabela_precos" | "catalogos" | "pedidos" | "relatorio_vendas" | "vendas" | "configuracoes";
 
 interface DashboardItem {
   codigoItem: string;
@@ -146,6 +147,7 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
     { id: "tabela_precos", label: "Tabela de Preços", icon: Tag },
     { id: "catalogos", label: "Catálogos", icon: FolderOpen },
     { id: "pedidos", label: "Pedidos de Venda", icon: ShoppingCart },
+    { id: "relatorio_vendas", label: "Relatório de Vendas", icon: FileCheck },
     { id: "vendas", label: "Métrica de Vendas", icon: BarChart3 },
     { id: "configuracoes", label: "Configurações", icon: Settings },
   ];
@@ -251,6 +253,10 @@ export default function VendedorDetalhe(props: VendedorDetalheProps = {}) {
 
         {activeTab === "pedidos" && (
           <SellerOrdersView sellerId={sellerId} sellerName={seller.sellerName} />
+        )}
+
+        {activeTab === "relatorio_vendas" && (
+          <SellerVisitReportTab sellerId={sellerId} sellerName={seller.sellerName} />
         )}
 
         {activeTab === "vendas" && (

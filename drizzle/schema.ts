@@ -2377,3 +2377,47 @@ export const importPayments = mysqlTable("import_payments", {
 });
 export type ImportPayment = typeof importPayments.$inferSelect;
 export type InsertImportPayment = typeof importPayments.$inferInsert;
+
+
+/**
+ * Relatórios de Visita Comercial
+ * Registra cada visita de um vendedor a um cliente com resultado e motivos de não-compra.
+ * Permite métricas de conversão e análise de objeções por cliente.
+ */
+export const salesVisitReports = mysqlTable("sales_visit_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerId: int("seller_id").notNull(), // FK para seller_permissions.id
+  sellerName: varchar("seller_name", { length: 200 }).notNull(),
+  
+  // Cliente visitado
+  clientId: int("client_id"), // FK para vendor_clients.id (opcional se cliente não cadastrado)
+  clientName: varchar("client_name", { length: 300 }).notNull(), // nome do cliente (razão social ou fantasia)
+  clientCity: varchar("client_city", { length: 200 }), // cidade do cliente
+  clientUf: varchar("client_uf", { length: 2 }), // UF do cliente
+  
+  // Data e contexto da visita
+  visitDate: timestamp("visit_date").notNull(), // data/hora da visita
+  visitType: varchar("visit_type", { length: 50 }).notNull(), // PRIMEIRA_VISITA, ROTINA, NEGOCIACAO, APRESENTACAO, POS_VENDA
+  
+  // Resultado da visita
+  outcome: varchar("outcome", { length: 50 }).notNull(), // PEDIDO_REALIZADO, PEDIDO_PARCIAL, SEM_PEDIDO, AGENDOU_RETORNO, CLIENTE_AUSENTE
+  
+  // Motivos de não-compra (JSON array de strings) - preenchido quando outcome != PEDIDO_REALIZADO
+  noSaleReasons: json("no_sale_reasons").$type<string[]>(), // ["ESTOQUE_ALTO", "PRECO_ALTO", ...]
+  
+  // Valor do pedido (quando houve venda)
+  orderValue: decimal("order_value", { precision: 18, scale: 2 }),
+  
+  // Observações livres
+  notes: text("notes"),
+  
+  // Próximos passos
+  nextSteps: text("next_steps"),
+  nextVisitDate: timestamp("next_visit_date"), // data agendada para retorno
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SalesVisitReport = typeof salesVisitReports.$inferSelect;
+export type InsertSalesVisitReport = typeof salesVisitReports.$inferInsert;
