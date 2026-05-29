@@ -147,6 +147,8 @@ function PagamentosFornecedores() {
 
   return (
     <div className="space-y-4">
+      {/* Sticky: Toolbar + Summary Cards */}
+      <div className="sticky top-0 z-30 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm -mx-4 px-4 pt-2 pb-3 space-y-3 border-b border-slate-200/50 dark:border-slate-700/50 shadow-sm">
       {/* Toolbar: PDF Export + Currency Conversion */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -216,6 +218,7 @@ function PagamentosFornecedores() {
             {currencySymbol}{"\u00A0"}{convertValue(grandTotals.saldoTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
+      </div>
       </div>
 
       {/* Supplier Sections */}
