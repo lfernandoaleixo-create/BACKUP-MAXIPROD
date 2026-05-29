@@ -7,7 +7,7 @@ import { useOperator } from "@/contexts/OperatorContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "sonner";
 
-const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_ai_transparent_7e0dd68e.png";
+const LOGO_URL = "/manus-storage/grupo-fox-logo-colorida-transparent_d34e971e.png";
 const LOGO_GOLD_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark_6da0c96d.png";
 const APP_VERSION = "V.2.1.1";
 
@@ -198,7 +198,7 @@ export default function LoginScreen() {
         <img
           src={isDark ? LOGO_GOLD_URL : LOGO_URL}
           alt="Grupo Fox"
-          className={`h-auto block ${isDark ? '' : 'login-logo'}`}
+          className={`h-auto block ${isDark ? '' : 'login-logo mix-blend-multiply'}`}
           style={{
             width: isDark ? "min(340px, 75vw)" : "min(320px, 70vw)",
             transform: "perspective(800px) rotateX(2deg)",

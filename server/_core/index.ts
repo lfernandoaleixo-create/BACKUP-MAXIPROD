@@ -11,6 +11,7 @@ import { startScraper } from "../maxiprodScraper";
 import { startScheduler } from "../scheduler";
 import { inadimplenciaBackupCronHandler } from "../inadimplenciaBackupHandler";
 import { importPdfExportHandler } from "../importPdfExport";
+import { registerStorageProxy } from "./storageProxy";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -37,6 +38,8 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Storage proxy for /manus-storage/* paths
+  registerStorageProxy(app);
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // Scheduled endpoints (Heartbeat cron)

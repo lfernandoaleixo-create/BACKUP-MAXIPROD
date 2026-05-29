@@ -5948,9 +5948,9 @@ export default function Home() {
           {/* Left: Logo + Title */}
           <div className="flex items-center gap-3 md:gap-4">
             <img
-              src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark-dashbg_cde22bd2.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
+              src="/manus-storage/grupo-fox-logo-colorida-transparent_d34e971e.png"
               alt="Grupo Fox"
-              className="h-14 md:h-20 w-auto object-contain"
+              className="h-14 md:h-20 w-auto object-contain mix-blend-multiply dark:mix-blend-screen rounded-lg"
             />
             <div>
               <h2 className="text-lg md:text-3xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
