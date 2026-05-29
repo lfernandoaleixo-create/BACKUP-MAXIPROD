@@ -467,16 +467,16 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
             <span className={`w-2.5 h-2.5 rounded-full ${currency === "USD" ? "bg-blue-500" : "bg-green-500"}`}></span>
             {currency === "USD" ? "DÓLAR (USD)" : "REAL (BRL)"}
           </div>
-          <div className="hidden sm:flex items-center gap-4 text-xs">
-            <div className="text-right">
+          <div className="hidden sm:flex items-center gap-0 text-xs">
+            <div className="text-right w-[140px]">
               <span className="text-slate-400">Total</span>
               <p className="font-semibold text-slate-700 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
-            <div className="text-right">
+            <div className="text-right w-[120px]">
               <span className="text-slate-400">Pago</span>
               <p className="font-semibold text-green-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
-            <div className="text-right">
+            <div className="text-right w-[140px]">
               <span className="text-slate-400">Saldo Devedor</span>
               <p className="font-semibold text-red-600 whitespace-nowrap">{currencySymbol}{"\u00A0"}{convertValue(totals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
