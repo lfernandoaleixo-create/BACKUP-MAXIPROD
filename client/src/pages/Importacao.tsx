@@ -838,12 +838,12 @@ function SectionTable({
               <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
               <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalBrasilUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalBrasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
               <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalParaguaiUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalParaguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
-              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.brasilUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.brasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
-              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.paraguaiUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.paraguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
-              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.totalPago ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
-              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{sectionTotals.saldoDevedorBrasil ? `${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorBrasil).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
-              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{sectionTotals.saldoDevedorParaguai ? `${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorParaguai).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
-              <td className="px-2 py-2 text-center text-red-700 whitespace-nowrap">{sectionTotals.saldoDevedorTotal ? `${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.brasilUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.brasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.paraguaiUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.paraguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</td>
+              <td className="px-2 py-2 text-center text-green-700 whitespace-nowrap">{sectionTotals.totalPago ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalPago).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}</td>
+              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{`${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorBrasil || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</td>
+              <td className="px-2 py-2 text-center text-red-600 whitespace-nowrap">{`${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorParaguai || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</td>
+              <td className="px-2 py-2 text-center text-red-700 whitespace-nowrap">{`${currencySymbol}\u00A0${convertValue(sectionTotals.saldoDevedorTotal || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}</td>
               <td className="px-2 py-2"></td>
               <td className="px-1 py-2"></td>
             </tr>
@@ -894,6 +894,21 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
     return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{"\u00A0"}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
   };
 
+  // Green section: show "-" when empty/zero
+  const fmtGreen = (v: string | null) => {
+    const n = parseFloat(String(v || "0"));
+    if (n === 0) return <span className="text-slate-300">-</span>;
+    const converted = convertValue(n);
+    return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{"\u00A0"}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
+  };
+
+  // Red section: show "$ 0,00" when empty/zero
+  const fmtRed = (v: string | null) => {
+    const n = parseFloat(String(v || "0"));
+    const converted = convertValue(n);
+    return <span className="whitespace-nowrap font-mono tabular-nums">{currencySymbol}{"\u00A0"}{converted.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>;
+  };
+
   const saldoColor = (v: string) => {
     const n = parseFloat(String(v));
     return n > 0 ? "text-red-600 font-medium" : "text-green-600";
@@ -915,13 +930,13 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
       <td className="px-2 py-2 text-center text-slate-700 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.totalBrasilUsd)}</td>
       <td className="px-2 py-2 text-center text-slate-700 bg-blue-50/30 whitespace-nowrap">{fmtUsd(payment.totalParaguaiUsd)}</td>
       {/* GREEN SECTION: O que pagou (Brasil, Paraguai, Total) - ALL INDEPENDENT */}
-      <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.brasilUsd)}</td>
-      <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.paraguaiUsd)}</td>
-      <td className="px-2 py-2 text-center font-medium text-green-700 bg-green-50/30 whitespace-nowrap">{fmtUsd(payment.totalPago)}</td>
+      <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtGreen(payment.brasilUsd)}</td>
+      <td className="px-2 py-2 text-center text-slate-700 bg-green-50/30 whitespace-nowrap">{fmtGreen(payment.paraguaiUsd)}</td>
+      <td className="px-2 py-2 text-center font-medium text-green-700 bg-green-50/30 whitespace-nowrap">{fmtGreen(payment.totalPago)}</td>
       {/* RED SECTION: O que falta pagar (Brasil, Paraguai, Total) - ALL INDEPENDENT */}
-      <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtUsd(payment.saldoDevedorBrasil)}</td>
-      <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtUsd(payment.saldoDevedorParaguai)}</td>
-      <td className={`px-2 py-2 text-center font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtUsd(payment.saldoDevedorTotal)}</td>
+      <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtRed(payment.saldoDevedorBrasil)}</td>
+      <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtRed(payment.saldoDevedorParaguai)}</td>
+      <td className={`px-2 py-2 text-center font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtRed(payment.saldoDevedorTotal)}</td>
       <td className="px-2 py-2 text-slate-600 font-mono text-[10px] whitespace-nowrap">{payment.rastreio || <span className="text-slate-300">-</span>}</td>
       <td className="px-1 py-2 text-center">
         <div className="flex items-center justify-center gap-0.5">
