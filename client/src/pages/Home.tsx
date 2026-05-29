@@ -5943,16 +5943,16 @@ export default function Home() {
 
       {/* Main */}
       <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
-        {/* Header section: Logo + Title left | Date + Dark mode right */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4 py-2 md:py-3">
-          {/* Left: Logo + Title */}
+        {/* Header section: Logo + Title centered */}
+        <div className="flex flex-col items-center gap-2 py-2 md:py-3">
+          {/* Center: Logo + Title */}
           <div className="flex items-center gap-3 md:gap-4">
             <img
               src="/manus-storage/grupo-fox-logo-colorida-transparent_d34e971e.png"
               alt="Grupo Fox"
               className="h-14 md:h-20 w-auto object-contain mix-blend-multiply dark:mix-blend-screen rounded-lg"
             />
-            <div>
+            <div className="text-center">
               <h2 className="text-lg md:text-3xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
                 <span className="text-slate-700 dark:text-slate-200">Dashboard de Estoque</span>
                 <span className="text-teal-600 ml-1 md:ml-2">Grupo Fox</span>
@@ -5960,9 +5960,9 @@ export default function Home() {
               <p className="text-[9px] md:text-xs text-slate-400 mt-0.5 tracking-widest uppercase">Controle de Produtos e Pedidos de Compra</p>
             </div>
           </div>
-          {/* Right: Date + Dark mode */}
+          {/* Date + Dark mode below */}
           <div className="flex items-center gap-3 md:gap-4">
-            <div className="text-right text-xs text-slate-400 dark:text-slate-500">
+            <div className="text-xs text-slate-400 dark:text-slate-500">
               {data?.lastSync ? (
                 <span>Dados de {new Date(data.lastSync).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
               ) : (
