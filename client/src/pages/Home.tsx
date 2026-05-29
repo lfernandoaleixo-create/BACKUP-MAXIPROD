@@ -72,6 +72,8 @@ import {
   Calendar,
   Bookmark,
   User,
+  Sun,
+  Moon,
 } from "lucide-react";
 import {
   Dialog,
@@ -84,6 +86,7 @@ import { trpc } from "@/lib/trpc";
 import { generateEcommerceExtractPdf } from "@/lib/ecommerceExtractPdf";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Types matching the NEW backend ProcessedItem (espelho fiel)
 interface POLote {
@@ -5918,6 +5921,7 @@ function EcommerceHistoryMadeiraDialog({ open, onClose }: { open: boolean; onClo
 /* --- Main Page --- */
 export default function Home() {
   const operatorCtx = useOperator();
+  const { theme, toggleTheme } = useTheme();
   const { data, isLoading } = trpc.dashboard.getData.useQuery(undefined, {
     refetchInterval: 30000,
   });
@@ -5935,24 +5939,45 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <TopNav rightContent={
-        <div className="text-right text-xs text-slate-400">
-          {data?.lastSync ? (
-            <span>Dados de {new Date(data.lastSync).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-          ) : (
-            <span>Carregando...</span>
-          )}
-        </div>
-      } />
+      <TopNav />
 
       {/* Main */}
       <main className="container py-4 md:py-6 space-y-4 md:space-y-5 pb-20 md:pb-6">
-        <div className="text-center py-1 md:py-2">
-          <h2 className="text-xl md:text-4xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-            <span className="text-slate-700">Dashboard de Estoque</span>
-            <span className="text-teal-600 ml-1 md:ml-2">Grupo Fox</span>
-          </h2>
-          <p className="text-[10px] md:text-sm text-slate-400 mt-1 md:mt-1.5 tracking-widest uppercase">Controle de Produtos e Pedidos de Compra</p>
+        {/* Header section: Logo + Title left | Date + Dark mode right */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4 py-2 md:py-3">
+          {/* Left: Logo + Title */}
+          <div className="flex items-center gap-3 md:gap-4">
+            <img
+              src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark-dashbg_cde22bd2.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
+              alt="Grupo Fox"
+              className="h-14 md:h-20 w-auto object-contain"
+            />
+            <div>
+              <h2 className="text-lg md:text-3xl font-semibold tracking-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                <span className="text-slate-700 dark:text-slate-200">Dashboard de Estoque</span>
+                <span className="text-teal-600 ml-1 md:ml-2">Grupo Fox</span>
+              </h2>
+              <p className="text-[9px] md:text-xs text-slate-400 mt-0.5 tracking-widest uppercase">Controle de Produtos e Pedidos de Compra</p>
+            </div>
+          </div>
+          {/* Right: Date + Dark mode */}
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="text-right text-xs text-slate-400 dark:text-slate-500">
+              {data?.lastSync ? (
+                <span>Dados de {new Date(data.lastSync).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+              ) : (
+                <span>Carregando...</span>
+              )}
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-amber-400 hover:text-teal-600 dark:hover:text-amber-300 transition-colors text-[11px] font-medium whitespace-nowrap border border-slate-200 dark:border-slate-700"
+              title={theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
+            >
+              {theme === "dark" ? <Sun className="w-3.5 h-3.5 shrink-0" /> : <Moon className="w-3.5 h-3.5 shrink-0" />}
+              <span className="hidden md:inline">{theme === "dark" ? "Modo claro" : "Modo noturno"}</span>
+            </button>
+          </div>
         </div>
 
         <ConnectionStatusCard />

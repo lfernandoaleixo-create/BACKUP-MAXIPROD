@@ -4024,3 +4024,4 @@
 - [x] PDF Export: reescrever para ficar fielmente igual à tabela do frontend (3 seções coloridas: Total a pagar azul, O que pagou verde, O que falta pagar vermelho)
 - [x] PDF Export: exportar em USD ou BRL dependendo da configuração selecionada, com indicação clara da moeda no cabeçalho
 - [x] PDF Export: nunca dividir um fornecedor entre duas páginas (forçar page break se seção não couber inteira)
+- [x] Layout: Reorganizar header - logo Fox à esquerda do texto "Dashboard" (maior), data/horário e modo noturno à direita, tudo descido do topo para liberar espaço para as abas

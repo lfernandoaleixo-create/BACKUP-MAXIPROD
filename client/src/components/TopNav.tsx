@@ -214,18 +214,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-700/80 sticky top-0 z-50">
       <div className="container py-0">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo / Brand */}
-          <Link href="/">
-            <div className="flex items-center cursor-pointer group">
-              <img
-                src={theme === "dark" ? "https://d2xsxph8kpxj0f.cloudfront.net/310519663487476806/TMh5HqmzfeBw9KakgJtjjo/grupo-fox-gold-dark-dashbg_cde22bd2.png" : "https://d2xsxph8kpxj0f.cloudfront.net/310519663411930072/4HdUM8rZGtZWDcoLipqmEj/grupo_fox_logo_bw_39ba6f54.png"}
-                alt="Grupo Fox"
-                className="h-12 w-auto object-contain group-hover:opacity-80 transition-opacity"
-              />
-            </div>
-          </Link>
-
+        <div className="flex items-center justify-between h-12">
           {/* Navigation Tabs */}
           <nav className="flex items-center h-full">
             {navItems.map((item) => {
@@ -250,7 +239,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                     handleNavClick(e, item.href, item.section, item.label);
                   }}
                   className={`
-                    relative flex items-center gap-1.5 px-2.5 h-16 text-xs font-medium transition-colors whitespace-nowrap
+                    relative flex items-center gap-1.5 px-2.5 h-12 text-xs font-medium transition-colors whitespace-nowrap
                     ${active
                       ? "text-teal-700"
                       : allowed
@@ -279,19 +268,8 @@ export default function TopNav({ rightContent }: TopNavProps) {
             })}
           </nav>
 
-          {/* Right content: theme toggle + notification bell + operator info + logout */}
+          {/* Right: notification bell + operator info + logout */}
           <div className="flex items-center gap-3">
-            {rightContent}
-            {toggleTheme && (
-              <button
-                onClick={toggleTheme}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-slate-500 dark:text-amber-400 hover:text-teal-600 dark:hover:text-amber-300 transition-colors text-[11px] font-medium whitespace-nowrap"
-                title={theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
-              >
-                {theme === "dark" ? <Sun className="w-3.5 h-3.5 shrink-0" /> : <Moon className="w-3.5 h-3.5 shrink-0" />}
-                <span>{theme === "dark" ? "Modo claro" : "Modo noturno"}</span>
-              </button>
-            )}
             {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (
               <NotificationBell />
             )}
