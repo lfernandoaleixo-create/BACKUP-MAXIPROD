@@ -236,8 +236,17 @@ export async function importPdfExportHandler(req: Request, res: Response) {
       const sectionEntries = Object.entries(sectionsMap);
 
       for (const [sectionTitle, sectionPayments] of sectionEntries) {
-        // Check if we have enough space for header + at least 2 rows
-        currentY = checkPageBreak(currentY, 70);
+        // Calculate total height needed for this entire section
+        // Header (18+2) + group headers (13) + col headers (13) + rows (15 each) + totals (15) + spacing (12)
+        const sectionTotalHeight = 20 + 13 + 13 + (sectionPayments.length * 15) + 15 + 12;
+        const maxY = doc.page.height - doc.page.margins.bottom;
+        const remainingSpace = maxY - currentY;
+
+        // If the section doesn't fit on the current page, start a new page
+        if (sectionTotalHeight > remainingSpace && currentY > doc.page.margins.top + 50) {
+          doc.addPage();
+          currentY = doc.page.margins.top;
+        }
 
         // Section header (dark blue bar with white text - matches frontend supplier card)
         doc.save();
