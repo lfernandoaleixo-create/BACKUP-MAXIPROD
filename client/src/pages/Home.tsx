@@ -5972,11 +5972,11 @@ export default function Home() {
             </div>
             <button
               onClick={toggleTheme}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-amber-400 hover:text-teal-600 dark:hover:text-amber-300 transition-colors text-[11px] font-medium whitespace-nowrap border border-slate-200 dark:border-slate-700"
+              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-amber-400 hover:text-teal-600 dark:hover:text-amber-300 transition-colors text-[11px] font-medium whitespace-nowrap border border-slate-200 dark:border-slate-700"
               title={theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
             >
               {theme === "dark" ? <Sun className="w-3.5 h-3.5 shrink-0" /> : <Moon className="w-3.5 h-3.5 shrink-0" />}
-              <span className="hidden md:inline">{theme === "dark" ? "Modo claro" : "Modo noturno"}</span>
+              <span>{theme === "dark" ? "Modo claro" : "Modo noturno"}</span>
             </button>
           </div>
         </div>
