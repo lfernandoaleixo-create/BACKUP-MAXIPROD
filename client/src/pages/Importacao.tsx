@@ -297,6 +297,7 @@ interface PaymentData {
   saldoDevedorParaguai: string;
   saldoDevedorTotal: string;
   rastreio: string | null;
+  arrivalDate: string | null;
 }
 
 interface SupplierData {
@@ -520,6 +521,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
               currency={currency}
               exchangeRate={exchangeRate}
               totalSections={sections.length}
+              isWinnie={supplier.name.toUpperCase().includes("WINNIE")}
               onRemoveSection={(title) => {
                 // If it's an empty local section, just remove from state
                 if (emptySections.includes(title)) {
@@ -649,6 +651,7 @@ function SectionTable({
   totalSections,
   onRemoveSection,
   onRenameSection,
+  isWinnie = false,
 }: {
   sectionTitle: string | null;
   supplierName: string;
@@ -663,6 +666,7 @@ function SectionTable({
   totalSections: number;
   onRemoveSection?: (sectionTitle: string) => void;
   onRenameSection?: (oldTitle: string, newTitle: string) => void;
+  isWinnie?: boolean;
 }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
@@ -780,10 +784,10 @@ function SectionTable({
 
       {/* Table - scrollable on mobile */}
       <div className="overflow-x-auto -mx-2 px-2 pb-1">
-      <table className="min-w-[1050px] w-full text-[11px] border-collapse">
+      <table className={`${isWinnie ? 'min-w-[1150px]' : 'min-w-[1050px]'} w-full text-[11px] border-collapse`}>
         <thead>
           <tr>
-            <th colSpan={3} className="bg-white"></th>
+            <th colSpan={isWinnie ? 4 : 3} className="bg-white"></th>
             <th colSpan={3} className="bg-blue-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-blue-700 border-b-2 border-blue-400 whitespace-nowrap">Total a pagar</th>
             <th colSpan={3} className="bg-green-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-green-700 border-b-2 border-green-400 whitespace-nowrap">O que pagou</th>
             <th colSpan={3} className="bg-red-50 px-2 py-1.5 text-center font-bold text-[11px] uppercase tracking-wider text-red-600 border-b-2 border-red-400 whitespace-nowrap">O que falta pagar</th>
@@ -792,6 +796,7 @@ function SectionTable({
           <tr className="bg-slate-50 text-slate-500 uppercase text-[10px]">
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[80px]">Status</th>
             <th className="px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[70px]">Pedido</th>
+            {isWinnie && <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[85px]">Data Chegada</th>}
             <th className="px-2 py-2 text-center font-semibold whitespace-nowrap min-w-[35px]">Doc</th>
             <th className="px-2 py-2 text-center font-semibold bg-blue-50/50 whitespace-nowrap min-w-[80px]">Total</th>
             <th className="px-2 py-2 text-center font-semibold bg-blue-50/50 whitespace-nowrap min-w-[75px]">Brasil</th>
@@ -809,14 +814,14 @@ function SectionTable({
         <tbody>
           {payments.map(payment => (
             editingId === payment.id ? (
-              <EditPaymentRow key={payment.id} payment={payment} onCancel={() => setEditingId(null)} onRefetch={onRefetch} />
+              <EditPaymentRow key={payment.id} payment={payment} onCancel={() => setEditingId(null)} onRefetch={onRefetch} isWinnie={isWinnie} />
             ) : (
-              <PaymentRow key={payment.id} payment={payment} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} currency={currency} exchangeRate={exchangeRate} />
+              <PaymentRow key={payment.id} payment={payment} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} currency={currency} exchangeRate={exchangeRate} isWinnie={isWinnie} />
             )
           ))}
           {payments.length === 0 && (
             <tr>
-              <td colSpan={14} className="px-3 py-8 text-center">
+              <td colSpan={isWinnie ? 15 : 14} className="px-3 py-8 text-center">
                 <p className="text-slate-400 text-xs mb-2">Nenhum pedido nesta seção</p>
                 <p className="text-[10px] text-slate-300">Use o botão "Adicionar Pedido" abaixo e selecione esta sub-seção</p>
               </td>
@@ -829,12 +834,13 @@ function SectionTable({
               sectionTitle={sectionTitle}
               onCancel={() => setShowAddRow(false)}
               onRefetch={onRefetch}
+              isWinnie={isWinnie}
             />
           )}
           {/* Totals row */}
           {payments.length > 0 && (
             <tr className="bg-slate-50 font-semibold border-t border-slate-200">
-              <td className="px-2 py-2 text-slate-700" colSpan={3}>TOTAIS</td>
+              <td className="px-2 py-2 text-slate-700" colSpan={isWinnie ? 4 : 3}>TOTAIS</td>
               <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
               <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalBrasilUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalBrasilUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
               <td className="px-2 py-2 text-center text-blue-700 whitespace-nowrap">{sectionTotals.totalParaguaiUsd ? `${currencySymbol}\u00A0${convertValue(sectionTotals.totalParaguaiUsd).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""}</td>
@@ -869,7 +875,7 @@ function SectionTable({
 
 // ===== PAYMENT ROW (display only - all fields manual) =====
 
-function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number }) {
+function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
 
@@ -922,6 +928,7 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
         </span>
       </td>
       <td className="px-2 py-2 font-mono font-medium text-slate-700 text-[11px] whitespace-nowrap">{payment.pedido}</td>
+      {isWinnie && <td className="px-2 py-2 text-center text-slate-600 text-[10px] whitespace-nowrap">{payment.arrivalDate || <span className="text-slate-300">-</span>}</td>}
       <td className="px-2 py-2 text-center">
         <span className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-medium text-[10px]">{payment.doc}</span>
       </td>
@@ -957,7 +964,7 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate }: { pa
 
 // ===== EDIT PAYMENT ROW (all fields 100% manual, no auto-calculation) =====
 
-function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData; onCancel: () => void; onRefetch: () => void }) {
+function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false }: { payment: PaymentData; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean }) {
   const [form, setForm] = useState({
     status: payment.status,
     pedido: payment.pedido,
@@ -972,6 +979,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData
     saldoDevedorParaguai: String(payment.saldoDevedorParaguai),
     saldoDevedorTotal: String(payment.saldoDevedorTotal),
     rastreio: payment.rastreio || "",
+    arrivalDate: payment.arrivalDate || "",
     sectionTitle: payment.sectionTitle || "",
   });
 
@@ -990,6 +998,9 @@ function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData
       <td className="px-1 py-1.5">
         <input value={form.pedido} onChange={e => setForm({ ...form, pedido: e.target.value })} className={inputClass} />
       </td>
+      {isWinnie && <td className="px-1 py-1.5">
+        <input value={form.arrivalDate} onChange={e => setForm({ ...form, arrivalDate: e.target.value })} className={inputClass} placeholder="dd/mm/aaaa" />
+      </td>}
       <td className="px-1 py-1.5">
         <select value={form.doc} onChange={e => setForm({ ...form, doc: e.target.value })} className={`${inputClass} text-center`}>
           <option value="PI">PI</option>
@@ -1032,7 +1043,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData
       <td className="px-1 py-1.5 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button
-            onClick={() => updatePayment.mutate({ id: payment.id, ...form, sectionTitle: form.sectionTitle || undefined })}
+            onClick={() => updatePayment.mutate({ id: payment.id, ...form, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined })}
             className="p-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
             <Check className="w-3 h-3" />
@@ -1048,7 +1059,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch }: { payment: PaymentData
 
 // ===== INLINE ADD PAYMENT ROW (all fields 100% manual) =====
 
-function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: { supplierId: number; sectionTitle: string | null; onCancel: () => void; onRefetch: () => void }) {
+function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, isWinnie = false }: { supplierId: number; sectionTitle: string | null; onCancel: () => void; onRefetch: () => void; isWinnie?: boolean }) {
   const [form, setForm] = useState({
     status: "",
     pedido: "",
@@ -1063,6 +1074,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: 
     saldoDevedorParaguai: "0",
     saldoDevedorTotal: "0",
     rastreio: "",
+    arrivalDate: "",
   });
 
   const createPayment = trpc.import.createPayment.useMutation({
@@ -1080,6 +1092,9 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: 
       <td className="px-1 py-1.5">
         <input value={form.pedido} onChange={e => setForm({ ...form, pedido: e.target.value })} className={inputClass} placeholder="PO..." />
       </td>
+      {isWinnie && <td className="px-1 py-1.5">
+        <input value={form.arrivalDate} onChange={e => setForm({ ...form, arrivalDate: e.target.value })} className={inputClass} placeholder="dd/mm/aaaa" />
+      </td>}
       <td className="px-1 py-1.5">
         <select value={form.doc} onChange={e => setForm({ ...form, doc: e.target.value })} className={`${inputClass} text-center`}>
           <option value="PI">PI</option>
@@ -1143,6 +1158,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch }: 
                 saldoDevedorParaguai: form.saldoDevedorParaguai || undefined,
                 saldoDevedorTotal: form.saldoDevedorTotal || undefined,
                 rastreio: form.rastreio || undefined,
+                arrivalDate: form.arrivalDate || undefined,
               });
             }}
             className="p-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors"

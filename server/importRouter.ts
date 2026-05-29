@@ -76,6 +76,7 @@ export const importRouter = router({
       saldoDevedorParaguai: z.string().optional(),
       saldoDevedorTotal: z.string().optional(),
       rastreio: z.string().optional(),
+      arrivalDate: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -97,6 +98,7 @@ export const importRouter = router({
         saldoDevedorParaguai: input.saldoDevedorParaguai || "0.00",
         saldoDevedorTotal: input.saldoDevedorTotal || "0.00",
         rastreio: input.rastreio || null,
+        arrivalDate: input.arrivalDate || null,
       });
       return { id: result.insertId };
     }),
@@ -118,6 +120,7 @@ export const importRouter = router({
       saldoDevedorParaguai: z.string().optional(),
       saldoDevedorTotal: z.string().optional(),
       rastreio: z.string().optional(),
+      arrivalDate: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -139,6 +142,7 @@ export const importRouter = router({
       if (rawData.saldoDevedorParaguai !== undefined) updateData.saldoDevedorParaguai = rawData.saldoDevedorParaguai;
       if (rawData.saldoDevedorTotal !== undefined) updateData.saldoDevedorTotal = rawData.saldoDevedorTotal;
       if (rawData.rastreio !== undefined) updateData.rastreio = rawData.rastreio || null;
+      if (rawData.arrivalDate !== undefined) updateData.arrivalDate = rawData.arrivalDate || null;
 
       if (Object.keys(updateData).length > 0) {
         await db.update(importPayments).set(updateData).where(eq(importPayments.id, id));
