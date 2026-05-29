@@ -310,7 +310,7 @@ interface SupplierData {
 function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionSupplierName, setNewSectionSupplierName] = useState("");
