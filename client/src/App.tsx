@@ -7,6 +7,8 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { OperatorProvider, useOperator } from "./contexts/OperatorContext";
 import { DiscountAlertProvider } from "./contexts/DiscountAlertContext";
 import { useSessionRefresh } from "./hooks/useSessionRefresh";
+import { useTheme } from "./contexts/ThemeContext";
+import { Sun, Moon } from "lucide-react";
 import LoginScreen from "./components/LoginScreen";
 import Home from "./pages/Home";
 import Sales from "./pages/Sales";
@@ -38,6 +40,20 @@ function Router() {
   );
 }
 
+function FloatingThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <button
+      onClick={toggleTheme}
+      className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-[60] flex items-center gap-2 px-3 py-2 rounded-full bg-white dark:bg-slate-800 border border-teal-200 dark:border-amber-600/40 shadow-lg hover:shadow-xl text-slate-600 dark:text-amber-400 hover:text-teal-600 dark:hover:text-amber-300 transition-all text-xs font-medium"
+      title={theme === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
+    >
+      {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      <span className="hidden md:inline">{theme === "dark" ? "Modo claro" : "Modo noturno"}</span>
+    </button>
+  );
+}
+
 function AppContent() {
   const { isLoggedIn } = useOperator();
 
@@ -64,6 +80,7 @@ function AppContent() {
   return (
     <DiscountAlertProvider>
       <Router />
+      <FloatingThemeToggle />
     </DiscountAlertProvider>
   );
 }
