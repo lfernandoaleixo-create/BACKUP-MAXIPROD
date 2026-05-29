@@ -14,6 +14,11 @@ const formatMoney = (val: string | null | undefined): string => {
 
 /**
  * Generates a PDF report of all import suppliers and payments.
+ * Layout matches the frontend table EXACTLY:
+ * 
+ * Columns:
+ * Status | Pedido | Doc | [Total a pagar: Total | Brasil | Paraguai] | [O que pagou: Brasil | Paraguai | Total] | [O que falta pagar: Brasil | Paraguai | Total] | Rastreio
+ * 
  * GET /api/import/export-pdf
  */
 export async function importPdfExportHandler(req: Request, res: Response) {
@@ -37,7 +42,7 @@ export async function importPdfExportHandler(req: Request, res: Response) {
     const doc = new PDFDocument({
       size: "A4",
       layout: "landscape",
-      margins: { top: 40, bottom: 40, left: 30, right: 30 },
+      margins: { top: 40, bottom: 40, left: 25, right: 25 },
     });
 
     // Set response headers for PDF download
@@ -49,41 +54,64 @@ export async function importPdfExportHandler(req: Request, res: Response) {
     // Pipe PDF to response
     doc.pipe(res);
 
-    // ===== HEADER =====
-    doc.fontSize(16).font("Helvetica-Bold").text("GRUPO FOX - Relação de Pagamentos com Fornecedores", { align: "center" });
-    doc.moveDown(0.3);
-    doc.fontSize(9).font("Helvetica").text(`Exportado em: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}`, { align: "center" });
-    doc.moveDown(1);
-
-    // ===== TABLE COLUMNS =====
+    // ===== COLUMN DEFINITIONS (matching frontend exactly) =====
+    // Frontend columns: Status | Pedido | Doc | [Total a pagar: Total | Brasil | Paraguai] | [O que pagou: Brasil | Paraguai | Total] | [O que falta pagar: Brasil | Paraguai | Total] | Rastreio
     const columns = [
-      { key: "status", label: "Status", width: 95 },
-      { key: "pedido", label: "Pedido", width: 60 },
-      { key: "doc", label: "Doc", width: 28 },
-      { key: "totalUsd", label: "Total USD", width: 62 },
-      { key: "totalBrasilUsd", label: "Brasil", width: 55 },
-      { key: "totalParaguaiUsd", label: "Paraguai", width: 55 },
-      { key: "brasilUsd", label: "Pago BR", width: 55 },
-      { key: "paraguaiUsd", label: "Pago PY", width: 55 },
-      { key: "totalPago", label: "Total Pago", width: 62 },
-      { key: "saldoDevedorBrasil", label: "Saldo BR", width: 55 },
-      { key: "saldoDevedorParaguai", label: "Saldo PY", width: 55 },
-      { key: "saldoDevedorTotal", label: "Saldo Total", width: 62 },
-      { key: "rastreio", label: "Rastreio", width: 78 },
+      { key: "status", label: "Status", width: 88, group: "info" },
+      { key: "pedido", label: "Pedido", width: 62, group: "info" },
+      { key: "doc", label: "Doc", width: 26, group: "info" },
+      // Blue section: Total a pagar
+      { key: "totalUsd", label: "Total", width: 58, group: "blue" },
+      { key: "totalBrasilUsd", label: "Brasil", width: 55, group: "blue" },
+      { key: "totalParaguaiUsd", label: "Paraguai", width: 55, group: "blue" },
+      // Green section: O que pagou
+      { key: "brasilUsd", label: "Brasil", width: 55, group: "green" },
+      { key: "paraguaiUsd", label: "Paraguai", width: 55, group: "green" },
+      { key: "totalPago", label: "Total", width: 55, group: "green" },
+      // Red section: O que falta pagar
+      { key: "saldoDevedorBrasil", label: "Brasil", width: 55, group: "red" },
+      { key: "saldoDevedorParaguai", label: "Paraguai", width: 55, group: "red" },
+      { key: "saldoDevedorTotal", label: "Total", width: 55, group: "red" },
+      // Rastreio
+      { key: "rastreio", label: "Rastreio", width: 78, group: "info" },
     ];
 
     const tableWidth = columns.reduce((sum, col) => sum + col.width, 0);
     const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
     const tableStartX = doc.page.margins.left + (pageWidth - tableWidth) / 2;
 
-    // Helper: draw a row
-    const drawRow = (y: number, values: string[], options?: { bold?: boolean; bg?: string; fontSize?: number }): number => {
-      const fontSize = options?.fontSize || 7;
-      const rowHeight = 16;
+    // ===== HEADER =====
+    doc.fontSize(14).font("Helvetica-Bold").text("GRUPO FOX - Relação de Pagamentos com Fornecedores", { align: "center" });
+    doc.moveDown(0.3);
+    doc.fontSize(8).font("Helvetica").text(`Exportado em: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}`, { align: "center" });
+    doc.moveDown(1);
 
+    // Helper: draw a data row with column-specific background colors
+    const drawRow = (y: number, values: string[], options?: { bold?: boolean; bg?: string; fontSize?: number; isTotal?: boolean }): number => {
+      const fontSize = options?.fontSize || 6.5;
+      const rowHeight = 15;
+
+      // Draw full row background if specified
       if (options?.bg) {
         doc.save();
         doc.rect(tableStartX, y, tableWidth, rowHeight).fill(options.bg);
+        doc.restore();
+      }
+
+      // Draw column-group backgrounds for data rows (subtle tint)
+      if (!options?.isTotal && !options?.bg) {
+        doc.save();
+        let x = tableStartX;
+        columns.forEach((col) => {
+          if (col.group === "blue") {
+            doc.rect(x, y, col.width, rowHeight).fill("#eff6ff"); // very light blue
+          } else if (col.group === "green") {
+            doc.rect(x, y, col.width, rowHeight).fill("#f0fdf4"); // very light green
+          } else if (col.group === "red") {
+            doc.rect(x, y, col.width, rowHeight).fill("#fef2f2"); // very light red
+          }
+          x += col.width;
+        });
         doc.restore();
       }
 
@@ -92,8 +120,15 @@ export async function importPdfExportHandler(req: Request, res: Response) {
       let x = tableStartX;
       columns.forEach((col, i) => {
         const text = values[i] || "";
-        doc.fillColor("#1a1a1a").text(text, x + 3, y + 4, {
-          width: col.width - 6,
+        // Determine text color based on group for totals row
+        let textColor = "#1a1a1a";
+        if (options?.isTotal) {
+          if (col.group === "blue") textColor = "#1e40af";
+          else if (col.group === "green") textColor = "#166534";
+          else if (col.group === "red") textColor = "#991b1b";
+        }
+        doc.fillColor(textColor).text(text, x + 2, y + 4, {
+          width: col.width - 4,
           height: rowHeight - 4,
           ellipsis: true,
           lineBreak: false,
@@ -101,48 +136,63 @@ export async function importPdfExportHandler(req: Request, res: Response) {
         x += col.width;
       });
 
+      // Draw subtle grid lines
+      doc.save();
+      doc.strokeColor("#e5e7eb").lineWidth(0.3);
+      doc.moveTo(tableStartX, y + rowHeight).lineTo(tableStartX + tableWidth, y + rowHeight).stroke();
+      doc.restore();
+
       return rowHeight;
     };
 
-    // Helper: draw table header
+    // Helper: draw table header (2 rows: group headers + column headers)
     const drawTableHeader = (y: number): number => {
-      const headerHeight = 14;
+      const groupHeaderHeight = 13;
+      const colHeaderHeight = 13;
 
-      // Group headers row
+      // ===== ROW 1: Group headers (colored bands) =====
       doc.save();
       let x = tableStartX;
-      // Skip first 5 columns (Status, Pedido, Doc, Total USD, 50%)
-      const skipWidth = columns.slice(0, 5).reduce((s, c) => s + c.width, 0);
-      x += skipWidth;
 
-      // "O que pagou" group (Brasil, Paraguai, Total Pago)
-      const paidWidth = columns[5].width + columns[6].width + columns[7].width;
-      doc.rect(x, y, paidWidth, headerHeight).fill("#dcfce7");
+      // Info columns (Status, Pedido, Doc) - no group header, just blank
+      const infoWidth = columns.filter(c => c.group === "info" && columns.indexOf(c) < 3).reduce((s, c) => s + c.width, 0);
+      x += infoWidth;
+
+      // BLUE: "Total a pagar"
+      const blueWidth = columns.filter(c => c.group === "blue").reduce((s, c) => s + c.width, 0);
+      doc.rect(x, y, blueWidth, groupHeaderHeight).fill("#dbeafe");
+      doc.fillColor("#1e40af").fontSize(6.5).font("Helvetica-Bold")
+        .text("Total a pagar", x, y + 3.5, { width: blueWidth, align: "center" });
+      x += blueWidth;
+
+      // GREEN: "O que pagou"
+      const greenWidth = columns.filter(c => c.group === "green").reduce((s, c) => s + c.width, 0);
+      doc.rect(x, y, greenWidth, groupHeaderHeight).fill("#dcfce7");
       doc.fillColor("#166534").fontSize(6.5).font("Helvetica-Bold")
-        .text("O que pagou", x, y + 4, { width: paidWidth, align: "center" });
-      x += paidWidth;
+        .text("O que pagou", x, y + 3.5, { width: greenWidth, align: "center" });
+      x += greenWidth;
 
-      // "O que falta pagar" group (Saldo BR, Saldo PY, Saldo Total)
-      const oweWidth = columns[8].width + columns[9].width + columns[10].width;
-      doc.rect(x, y, oweWidth, headerHeight).fill("#fecaca");
+      // RED: "O que falta pagar"
+      const redWidth = columns.filter(c => c.group === "red").reduce((s, c) => s + c.width, 0);
+      doc.rect(x, y, redWidth, groupHeaderHeight).fill("#fecaca");
       doc.fillColor("#991b1b").fontSize(6.5).font("Helvetica-Bold")
-        .text("O que falta pagar", x, y + 4, { width: oweWidth, align: "center" });
+        .text("O que falta pagar", x, y + 3.5, { width: redWidth, align: "center" });
 
       doc.restore();
-      y += headerHeight;
+      y += groupHeaderHeight;
 
-      // Column headers
+      // ===== ROW 2: Column headers (dark background) =====
       doc.save();
-      doc.rect(tableStartX, y, tableWidth, headerHeight).fill("#374151");
-      doc.fillColor("#ffffff").fontSize(6.5).font("Helvetica-Bold");
+      doc.rect(tableStartX, y, tableWidth, colHeaderHeight).fill("#374151");
+      doc.fillColor("#ffffff").fontSize(6).font("Helvetica-Bold");
       x = tableStartX;
       columns.forEach((col) => {
-        doc.text(col.label, x + 3, y + 4, { width: col.width - 6, lineBreak: false });
+        doc.text(col.label, x + 2, y + 4, { width: col.width - 4, lineBreak: false });
         x += col.width;
       });
       doc.restore();
 
-      return headerHeight * 2;
+      return groupHeaderHeight + colHeaderHeight;
     };
 
     // Helper: check if we need a new page
@@ -175,29 +225,29 @@ export async function importPdfExportHandler(req: Request, res: Response) {
         // Check if we have enough space for header + at least 2 rows
         currentY = checkPageBreak(currentY, 70);
 
-        // Section header
+        // Section header (dark blue bar with white text - matches frontend supplier card)
         doc.save();
         doc.rect(tableStartX, currentY, tableWidth, 18).fill("#1e40af");
         doc.fillColor("#ffffff").fontSize(9).font("Helvetica-Bold");
 
         let headerText = supplier.name;
         if (sectionEntries.length > 1 && sectionTitle !== supplier.name) {
-          // Show the section subtitle
-          const parts = sectionTitle.split(" - ");
+          // Show the section subtitle with em-dash separator (matching frontend)
+          const parts = sectionTitle.split(/ [\u2013\u002D] /);
           if (parts.length > 1) {
-            headerText = `${parts[0]} — ${parts.slice(1).join(" - ")}`;
+            headerText = `${parts[0]} \u2014 ${parts.slice(1).join(" - ")}`;
           } else {
             headerText = sectionTitle;
           }
         } else if (supplier.category) {
-          headerText = `${supplier.name} — ${supplier.category}`;
+          headerText = `${supplier.name} \u2014 ${supplier.category}`;
         }
 
         doc.text(headerText, tableStartX + 8, currentY + 5, { width: tableWidth - 16 });
         doc.restore();
         currentY += 20;
 
-        // Table header
+        // Table header (group headers + column headers)
         const headerH = drawTableHeader(currentY);
         currentY += headerH;
 
@@ -205,51 +255,54 @@ export async function importPdfExportHandler(req: Request, res: Response) {
         let totalTotalUsd = 0;
         let totalBlueBrasil = 0;
         let totalBlueParaguai = 0;
-        let totalBrasil = 0;
-        let totalParaguai = 0;
+        let totalGreenBrasil = 0;
+        let totalGreenParaguai = 0;
         let totalPago = 0;
         let totalSaldoBR = 0;
         let totalSaldoPY = 0;
         let totalSaldoTotal = 0;
 
         for (let i = 0; i < sectionPayments.length; i++) {
-          currentY = checkPageBreak(currentY, 20);
+          currentY = checkPageBreak(currentY, 18);
           const p = sectionPayments[i];
-          const bg = i % 2 === 0 ? "#f9fafb" : "#ffffff";
 
           const values = [
             p.status,
             p.pedido,
             p.doc,
+            // Blue: Total a pagar
             formatMoney(p.totalUsd),
             formatMoney((p as any).totalBrasilUsd),
             formatMoney((p as any).totalParaguaiUsd),
+            // Green: O que pagou
             formatMoney(p.brasilUsd),
             formatMoney(p.paraguaiUsd),
             formatMoney(p.totalPago),
+            // Red: O que falta pagar
             formatMoney(p.saldoDevedorBrasil),
             formatMoney(p.saldoDevedorParaguai),
             formatMoney(p.saldoDevedorTotal),
+            // Rastreio
             p.rastreio || "-",
           ];
 
-          const rowH = drawRow(currentY, values, { bg });
+          const rowH = drawRow(currentY, values, { bg: i % 2 === 0 ? undefined : "#f9fafb" });
           currentY += rowH;
 
           // Accumulate totals
           totalTotalUsd += parseFloat(p.totalUsd || "0");
           totalBlueBrasil += parseFloat((p as any).totalBrasilUsd || "0");
           totalBlueParaguai += parseFloat((p as any).totalParaguaiUsd || "0");
-          totalBrasil += parseFloat(p.brasilUsd || "0");
-          totalParaguai += parseFloat(p.paraguaiUsd || "0");
+          totalGreenBrasil += parseFloat(p.brasilUsd || "0");
+          totalGreenParaguai += parseFloat(p.paraguaiUsd || "0");
           totalPago += parseFloat(p.totalPago || "0");
           totalSaldoBR += parseFloat(p.saldoDevedorBrasil || "0");
           totalSaldoPY += parseFloat(p.saldoDevedorParaguai || "0");
           totalSaldoTotal += parseFloat(p.saldoDevedorTotal || "0");
         }
 
-        // Totals row
-        currentY = checkPageBreak(currentY, 20);
+        // Totals row (bold, gray background, colored text per section)
+        currentY = checkPageBreak(currentY, 18);
         const totalsValues = [
           "TOTAL",
           "",
@@ -257,19 +310,19 @@ export async function importPdfExportHandler(req: Request, res: Response) {
           formatMoney(totalTotalUsd.toFixed(2)),
           formatMoney(totalBlueBrasil.toFixed(2)),
           formatMoney(totalBlueParaguai.toFixed(2)),
-          formatMoney(totalBrasil.toFixed(2)),
-          formatMoney(totalParaguai.toFixed(2)),
+          formatMoney(totalGreenBrasil.toFixed(2)),
+          formatMoney(totalGreenParaguai.toFixed(2)),
           formatMoney(totalPago.toFixed(2)),
           formatMoney(totalSaldoBR.toFixed(2)),
           formatMoney(totalSaldoPY.toFixed(2)),
           formatMoney(totalSaldoTotal.toFixed(2)),
           "",
         ];
-        drawRow(currentY, totalsValues, { bold: true, bg: "#e5e7eb", fontSize: 7 });
-        currentY += 20;
+        drawRow(currentY, totalsValues, { bold: true, bg: "#e5e7eb", fontSize: 6.5, isTotal: true });
+        currentY += 18;
 
         // Spacing between sections
-        currentY += 10;
+        currentY += 12;
       }
     }
 

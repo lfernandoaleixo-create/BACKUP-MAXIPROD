@@ -4021,3 +4021,4 @@
 - [x] Adicionar colunas total_brasil_usd e total_paraguai_usd no banco (seção azul independente)
 - [x] Atualizar backend router para aceitar todos os campos independentes
 - [x] Atualizar frontend: cada campo é editável individualmente, sem nenhum auto-cálculo
+- [x] PDF Export: reescrever para ficar fielmente igual à tabela do frontend (3 seções coloridas: Total a pagar azul, O que pagou verde, O que falta pagar vermelho)
