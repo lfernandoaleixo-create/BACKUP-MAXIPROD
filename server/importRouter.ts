@@ -4,6 +4,7 @@ import { getDb } from "./db";
 import { importSuppliers, importPayments } from "../drizzle/schema";
 import { eq, asc, and } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
+import { fetchOneTracking } from "./oneTracking";
 
 // Cache de cotação USD/BRL em memória (TTL: 30 minutos)
 let exchangeRateCache: { data: { rate: number; source: string; timestamp: string }; timestamp: number } | null = null;
@@ -77,6 +78,7 @@ export const importRouter = router({
       saldoDevedorTotal: z.string().optional(),
       rastreio: z.string().optional(),
       trackingUuid: z.string().optional(),
+      blNumber: z.string().optional(),
       arrivalDate: z.string().optional(),
       alertDaysBefore: z.number().nullable().optional(),
     }))
@@ -101,6 +103,7 @@ export const importRouter = router({
         saldoDevedorTotal: input.saldoDevedorTotal || "0.00",
         rastreio: input.rastreio || null,
         trackingUuid: input.trackingUuid || null,
+        blNumber: input.blNumber || null,
         arrivalDate: input.arrivalDate || null,
         alertDaysBefore: input.alertDaysBefore ?? null,
       });
@@ -125,6 +128,7 @@ export const importRouter = router({
       saldoDevedorTotal: z.string().optional(),
       rastreio: z.string().optional(),
       trackingUuid: z.string().nullable().optional(),
+      blNumber: z.string().nullable().optional(),
       arrivalDate: z.string().optional(),
       alertDaysBefore: z.number().nullable().optional(),
     }))
@@ -149,6 +153,7 @@ export const importRouter = router({
       if (rawData.saldoDevedorTotal !== undefined) updateData.saldoDevedorTotal = rawData.saldoDevedorTotal;
       if (rawData.rastreio !== undefined) updateData.rastreio = rawData.rastreio || null;
       if (rawData.trackingUuid !== undefined) updateData.trackingUuid = rawData.trackingUuid || null;
+      if (rawData.blNumber !== undefined) updateData.blNumber = rawData.blNumber || null;
       if (rawData.arrivalDate !== undefined) updateData.arrivalDate = rawData.arrivalDate || null;
       if (rawData.alertDaysBefore !== undefined) updateData.alertDaysBefore = rawData.alertDaysBefore;
 
@@ -483,6 +488,17 @@ export const importRouter = router({
         throw new Error("URL inválida. Cole o link completo da Logcomex.");
       }
       return { uuid: match[1] };
+    }),
+
+  // ===== ONE LINE TRACKING (direct carrier tracking) =====
+  fetchOneTracking: publicProcedure
+    .input(z.object({ blNumber: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const result = fetchOneTracking(input.blNumber);
+      if (!result) {
+        throw new Error(`Rastreamento não encontrado para BL ${input.blNumber}. O BL precisa ser cadastrado manualmente no sistema.`);
+      }
+      return result;
     }),
 
   // ===== FULL DATA (suppliers + payments grouped by section) =====

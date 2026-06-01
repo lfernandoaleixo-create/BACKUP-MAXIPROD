@@ -4060,3 +4060,7 @@
 - [x] Frontend: campo para colar link/UUID da Logcomex ao editar linha
 - [x] Funcionar para todos os fornecedores chineses (cada pedido rastreável individualmente)
 - [x] Melhorar TrackingModal: substituir mapa SVG por Google Maps real com rota do navio (Polyline), marcadores de origem/destino/posição atual, e layout profissional
+- [x] Adicionar campo BL number (bl_number) na tabela import_payments e UI de edição
+- [x] Criar backend scraper para consultar tracking da ONE Line (ecomm.one-line.com) por número de BL
+- [x] Atualizar TrackingModal para usar dados reais da ONE Line com mapa Google Maps, rota real, posição do navio e timeline de eventos
+- [x] Botão "Rastrear" funcionar com BL number (sem depender de UUID da Logcomex)

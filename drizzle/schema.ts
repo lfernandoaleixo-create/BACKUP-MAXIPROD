@@ -2375,6 +2375,7 @@ export const importPayments = mysqlTable("import_payments", {
   alertDismissed: boolean("alert_dismissed").default(false).notNull(), // se o alerta foi dispensado manualmente pela Larissa
   rastreio: varchar("rastreio", { length: 200 }), // código de rastreio do container
   trackingUuid: varchar("tracking_uuid", { length: 100 }), // UUID do workflow-item da Logcomex para rastreamento em tempo real
+  blNumber: varchar("bl_number", { length: 100 }), // Número do Bill of Lading (ex: XMNG50123700) para rastreamento direto no armador
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

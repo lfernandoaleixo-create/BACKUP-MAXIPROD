@@ -88,6 +88,7 @@ function PagamentosFornecedores() {
   const [currency, setCurrency] = useState<"USD" | "BRL">("USD");
   const [exportingPdf, setExportingPdf] = useState(false);
   const [trackingUuid, setTrackingUuid] = useState<string | null>(null);
+  const [trackingBl, setTrackingBl] = useState<string | null>(null);
 
   const handleExportPdf = async () => {
     setExportingPdf(true);
@@ -266,7 +267,7 @@ function PagamentosFornecedores() {
 
       {/* Supplier Sections */}
       {(fullData || []).map((supplier: any) => (
-        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} onTrack={(uuid) => setTrackingUuid(uuid)} />
+        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} onTrack={(uuid) => setTrackingUuid(uuid)} onTrackBl={(bl) => setTrackingBl(bl)} />
       ))}
 
       {/* Add Supplier */}
@@ -319,8 +320,8 @@ function PagamentosFornecedores() {
       )}
 
       {/* Tracking Modal */}
-      {trackingUuid && (
-        <TrackingModal trackingUuid={trackingUuid} onClose={() => setTrackingUuid(null)} />
+      {(trackingUuid || trackingBl) && (
+        <TrackingModal trackingUuid={trackingUuid} blNumber={trackingBl} onClose={() => { setTrackingUuid(null); setTrackingBl(null); }} />
       )}
     </div>
   );
@@ -335,6 +336,7 @@ interface PaymentData {
   status: string;
   pedido: string;
   doc: string;
+  blNumber: string | null;
   totalUsd: string;
   totalBrasilUsd: string;
   totalParaguaiUsd: string;
@@ -359,7 +361,7 @@ interface SupplierData {
   payments: PaymentData[];
 }
 
-function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; onTrack: (uuid: string) => void }) {
+function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack, onTrackBl }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; onTrack: (uuid: string) => void; onTrackBl: (bl: string) => void }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
   const [expanded, setExpanded] = useState(false);
@@ -592,6 +594,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack 
                 }
               }}
               onTrack={onTrack}
+              onTrackBl={onTrackBl}
             />
           ))}
 
@@ -704,6 +707,7 @@ function SectionTable({
   onRemoveSection,
   onRenameSection,
   onTrack,
+  onTrackBl,
   isWinnie = false,
 }: {
   sectionTitle: string | null;
@@ -720,6 +724,7 @@ function SectionTable({
   onRemoveSection?: (sectionTitle: string) => void;
   onRenameSection?: (oldTitle: string, newTitle: string) => void;
   onTrack?: (uuid: string) => void;
+  onTrackBl?: (bl: string) => void;
   isWinnie?: boolean;
 }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
@@ -870,7 +875,7 @@ function SectionTable({
             editingId === payment.id ? (
               <EditPaymentRow key={payment.id} payment={payment} onCancel={() => setEditingId(null)} onRefetch={onRefetch} isWinnie={isWinnie} />
             ) : (
-              <PaymentRow key={payment.id} payment={payment} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} onTrack={onTrack} currency={currency} exchangeRate={exchangeRate} isWinnie={isWinnie} />
+              <PaymentRow key={payment.id} payment={payment} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} onTrack={onTrack} onTrackBl={onTrackBl} currency={currency} exchangeRate={exchangeRate} isWinnie={isWinnie} />
             )
           ))}
           {payments.length === 0 && (
@@ -929,7 +934,7 @@ function SectionTable({
 
 // ===== PAYMENT ROW (display only - all fields manual) =====
 
-function PaymentRow({ payment, onEdit, onRefetch, onTrack, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
+function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; onTrackBl?: (bl: string) => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
 
@@ -1006,20 +1011,33 @@ function PaymentRow({ payment, onEdit, onRefetch, onTrack, currency, exchangeRat
       <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtRed(payment.saldoDevedorParaguai)}</td>
       <td className={`px-2 py-2 text-center font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtRed(payment.saldoDevedorTotal)}</td>
       <td className="px-2 py-2 text-center whitespace-nowrap">
-        {payment.trackingUuid ? (
-          <button
-            onClick={() => onTrack && onTrack(payment.trackingUuid!)}
-            className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md text-indigo-700 font-mono text-[10px] font-medium transition-colors"
-            title="Rastrear embarque"
-          >
-            <Navigation className="w-3 h-3" />
-            {payment.rastreio || 'Rastrear'}
-          </button>
-        ) : payment.rastreio ? (
-          <span className="text-slate-600 font-mono text-[10px]">{payment.rastreio}</span>
-        ) : (
-          <span className="text-slate-300 text-[10px]">-</span>
-        )}
+        <div className="flex flex-col items-center gap-1">
+          {/* BL-based tracking (ONE Line) */}
+          {payment.blNumber ? (
+            <button
+              onClick={() => onTrackBl && onTrackBl(payment.blNumber!)}
+              className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 font-mono text-[10px] font-medium transition-colors"
+              title="Rastrear via ONE Line"
+            >
+              <Navigation className="w-3 h-3" />
+              Rastrear
+            </button>
+          ) : payment.trackingUuid ? (
+            <button
+              onClick={() => onTrack && onTrack(payment.trackingUuid!)}
+              className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md text-indigo-700 font-mono text-[10px] font-medium transition-colors"
+              title="Rastrear via Logcomex"
+            >
+              <Navigation className="w-3 h-3" />
+              Rastrear
+            </button>
+          ) : (
+            <span className="text-slate-300 text-[10px]">-</span>
+          )}
+          {payment.blNumber && (
+            <span className="text-[9px] text-slate-500 font-mono">{payment.blNumber}</span>
+          )}
+        </div>
       </td>
       <td className="px-1 py-2 text-center">
         <div className="flex items-center justify-center gap-0.5">
@@ -1056,6 +1074,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false }: { pa
     saldoDevedorTotal: String(payment.saldoDevedorTotal),
     rastreio: payment.rastreio || "",
     trackingUuid: payment.trackingUuid || "",
+    blNumber: payment.blNumber || "",
     arrivalDate: payment.arrivalDate || "",
     alertDaysBefore: payment.alertDaysBefore !== null ? String(payment.alertDaysBefore) : "",
     sectionTitle: payment.sectionTitle || "",
@@ -1120,19 +1139,20 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false }: { pa
       </td>
       <td className="px-1 py-1.5">
         <div className="flex flex-col gap-1">
-          <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} className={inputClass} placeholder="Container" />
+          <input value={form.blNumber} onChange={e => setForm({ ...form, blNumber: e.target.value })} className={`${inputClass} font-mono`} placeholder="Nº BL (ex: ONEYXMNG50123700)" />
+          <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} className={`${inputClass} text-[9px]`} placeholder="Container (opcional)" />
           <input value={form.trackingUuid} onChange={e => {
             let val = e.target.value;
             const match = val.match(/workflow-item\/([a-f0-9-]+)/i);
             if (match) val = match[1];
             setForm({ ...form, trackingUuid: val });
-          }} className={`${inputClass} text-[9px]`} placeholder="Link Logcomex (cole aqui)" />
+          }} className={`${inputClass} text-[9px]`} placeholder="Link Logcomex (opcional)" />
         </div>
       </td>
       <td className="px-1 py-1.5 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button
-            onClick={() => updatePayment.mutate({ id: payment.id, ...form, trackingUuid: form.trackingUuid || undefined, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined, alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null })}
+            onClick={() => updatePayment.mutate({ id: payment.id, ...form, blNumber: form.blNumber || undefined, trackingUuid: form.trackingUuid || undefined, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined, alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null })}
             className="p-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
             <Check className="w-3 h-3" />
@@ -1164,6 +1184,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
     saldoDevedorTotal: "0",
     rastreio: "",
     trackingUuid: "",
+    blNumber: "",
     arrivalDate: "",
     alertDaysBefore: "",
   });
@@ -1227,13 +1248,14 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
       </td>
       <td className="px-1 py-1.5">
         <div className="flex flex-col gap-1">
-          <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} className={inputClass} placeholder="Container" />
+          <input value={form.blNumber} onChange={e => setForm({ ...form, blNumber: e.target.value })} className={`${inputClass} font-mono`} placeholder="Nº BL (ex: ONEYXMNG50123700)" />
+          <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} className={`${inputClass} text-[9px]`} placeholder="Container (opcional)" />
           <input value={form.trackingUuid} onChange={e => {
             let val = e.target.value;
             const match = val.match(/workflow-item\/([a-f0-9-]+)/i);
             if (match) val = match[1];
             setForm({ ...form, trackingUuid: val });
-          }} className={`${inputClass} text-[9px]`} placeholder="Link Logcomex (cole aqui)" />
+          }} className={`${inputClass} text-[9px]`} placeholder="Link Logcomex (opcional)" />
         </div>
       </td>
       <td className="px-1 py-1.5 text-center">
@@ -1261,6 +1283,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
                 saldoDevedorTotal: form.saldoDevedorTotal || undefined,
                 rastreio: form.rastreio || undefined,
                 trackingUuid: form.trackingUuid || undefined,
+                blNumber: form.blNumber || undefined,
                 arrivalDate: form.arrivalDate || undefined,
                 alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null,
               });
