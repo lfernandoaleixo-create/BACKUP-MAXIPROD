@@ -2374,6 +2374,7 @@ export const importPayments = mysqlTable("import_payments", {
   alertDaysBefore: int("alert_days_before"), // dias de antecedência para alerta de pagamento (ex: 15)
   alertDismissed: boolean("alert_dismissed").default(false).notNull(), // se o alerta foi dispensado manualmente pela Larissa
   rastreio: varchar("rastreio", { length: 200 }), // código de rastreio do container
+  trackingUuid: varchar("tracking_uuid", { length: 100 }), // UUID do workflow-item da Logcomex para rastreamento em tempo real
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

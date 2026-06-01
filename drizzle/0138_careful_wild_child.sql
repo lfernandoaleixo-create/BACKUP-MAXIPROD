@@ -1,0 +1,1 @@
+ALTER TABLE `import_payments` ADD `tracking_uuid` varchar(100);

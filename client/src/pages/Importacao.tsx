@@ -10,7 +10,8 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation } from "lucide-react";
+import { TrackingModal } from "@/components/TrackingModal";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -86,6 +87,7 @@ function PagamentosFornecedores() {
   const [newSupplierCategory, setNewSupplierCategory] = useState("");
   const [currency, setCurrency] = useState<"USD" | "BRL">("USD");
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [trackingUuid, setTrackingUuid] = useState<string | null>(null);
 
   const handleExportPdf = async () => {
     setExportingPdf(true);
@@ -264,7 +266,7 @@ function PagamentosFornecedores() {
 
       {/* Supplier Sections */}
       {(fullData || []).map((supplier: any) => (
-        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} />
+        <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} onTrack={(uuid) => setTrackingUuid(uuid)} />
       ))}
 
       {/* Add Supplier */}
@@ -315,6 +317,11 @@ function PagamentosFornecedores() {
           Adicionar Fornecedor
         </button>
       )}
+
+      {/* Tracking Modal */}
+      {trackingUuid && (
+        <TrackingModal trackingUuid={trackingUuid} onClose={() => setTrackingUuid(null)} />
+      )}
     </div>
   );
 }
@@ -338,6 +345,7 @@ interface PaymentData {
   saldoDevedorParaguai: string;
   saldoDevedorTotal: string;
   rastreio: string | null;
+  trackingUuid: string | null;
   arrivalDate: string | null;
   alertDaysBefore: number | null;
   alertDismissed: boolean;
@@ -351,7 +359,7 @@ interface SupplierData {
   payments: PaymentData[];
 }
 
-function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number }) {
+function SupplierSection({ supplier, onRefetch, currency, exchangeRate, onTrack }: { supplier: SupplierData; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; onTrack: (uuid: string) => void }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
   const [expanded, setExpanded] = useState(false);
@@ -583,6 +591,7 @@ function SupplierSection({ supplier, onRefetch, currency, exchangeRate }: { supp
                   renameSectionMut.mutate({ supplierId: supplier.id, oldSectionTitle: oldTitle, newSectionTitle: newTitle });
                 }
               }}
+              onTrack={onTrack}
             />
           ))}
 
@@ -694,6 +703,7 @@ function SectionTable({
   totalSections,
   onRemoveSection,
   onRenameSection,
+  onTrack,
   isWinnie = false,
 }: {
   sectionTitle: string | null;
@@ -709,6 +719,7 @@ function SectionTable({
   totalSections: number;
   onRemoveSection?: (sectionTitle: string) => void;
   onRenameSection?: (oldTitle: string, newTitle: string) => void;
+  onTrack?: (uuid: string) => void;
   isWinnie?: boolean;
 }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
@@ -859,7 +870,7 @@ function SectionTable({
             editingId === payment.id ? (
               <EditPaymentRow key={payment.id} payment={payment} onCancel={() => setEditingId(null)} onRefetch={onRefetch} isWinnie={isWinnie} />
             ) : (
-              <PaymentRow key={payment.id} payment={payment} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} currency={currency} exchangeRate={exchangeRate} isWinnie={isWinnie} />
+              <PaymentRow key={payment.id} payment={payment} onEdit={() => setEditingId(payment.id)} onRefetch={onRefetch} onTrack={onTrack} currency={currency} exchangeRate={exchangeRate} isWinnie={isWinnie} />
             )
           ))}
           {payments.length === 0 && (
@@ -918,7 +929,7 @@ function SectionTable({
 
 // ===== PAYMENT ROW (display only - all fields manual) =====
 
-function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
+function PaymentRow({ payment, onEdit, onRefetch, onTrack, currency, exchangeRate, isWinnie = false }: { payment: PaymentData; onEdit: () => void; onRefetch: () => void; onTrack?: (uuid: string) => void; currency: "USD" | "BRL"; exchangeRate: number; isWinnie?: boolean }) {
   const convertValue = (val: number) => currency === "BRL" ? val * exchangeRate : val;
   const currencySymbol = currency === "USD" ? "$" : "R$";
 
@@ -994,7 +1005,22 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate, isWinn
       <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorBrasil)}`}>{fmtRed(payment.saldoDevedorBrasil)}</td>
       <td className={`px-2 py-2 text-center bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorParaguai)}`}>{fmtRed(payment.saldoDevedorParaguai)}</td>
       <td className={`px-2 py-2 text-center font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtRed(payment.saldoDevedorTotal)}</td>
-      <td className="px-2 py-2 text-slate-600 font-mono text-[10px] whitespace-nowrap">{payment.rastreio || <span className="text-slate-300">-</span>}</td>
+      <td className="px-2 py-2 text-center whitespace-nowrap">
+        {payment.trackingUuid ? (
+          <button
+            onClick={() => onTrack && onTrack(payment.trackingUuid!)}
+            className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md text-indigo-700 font-mono text-[10px] font-medium transition-colors"
+            title="Rastrear embarque"
+          >
+            <Navigation className="w-3 h-3" />
+            {payment.rastreio || 'Rastrear'}
+          </button>
+        ) : payment.rastreio ? (
+          <span className="text-slate-600 font-mono text-[10px]">{payment.rastreio}</span>
+        ) : (
+          <span className="text-slate-300 text-[10px]">-</span>
+        )}
+      </td>
       <td className="px-1 py-2 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button onClick={onEdit} className="p-1 rounded hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors">
@@ -1029,6 +1055,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false }: { pa
     saldoDevedorParaguai: String(payment.saldoDevedorParaguai),
     saldoDevedorTotal: String(payment.saldoDevedorTotal),
     rastreio: payment.rastreio || "",
+    trackingUuid: payment.trackingUuid || "",
     arrivalDate: payment.arrivalDate || "",
     alertDaysBefore: payment.alertDaysBefore !== null ? String(payment.alertDaysBefore) : "",
     sectionTitle: payment.sectionTitle || "",
@@ -1092,12 +1119,20 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false }: { pa
         <input type="number" step="0.01" value={form.saldoDevedorTotal} onChange={e => setForm({ ...form, saldoDevedorTotal: e.target.value })} className={`${inputClass} text-right`} />
       </td>
       <td className="px-1 py-1.5">
-        <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} className={inputClass} placeholder="Container" />
+        <div className="flex flex-col gap-1">
+          <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} className={inputClass} placeholder="Container" />
+          <input value={form.trackingUuid} onChange={e => {
+            let val = e.target.value;
+            const match = val.match(/workflow-item\/([a-f0-9-]+)/i);
+            if (match) val = match[1];
+            setForm({ ...form, trackingUuid: val });
+          }} className={`${inputClass} text-[9px]`} placeholder="Link Logcomex (cole aqui)" />
+        </div>
       </td>
       <td className="px-1 py-1.5 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button
-            onClick={() => updatePayment.mutate({ id: payment.id, ...form, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined, alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null })}
+            onClick={() => updatePayment.mutate({ id: payment.id, ...form, trackingUuid: form.trackingUuid || undefined, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined, alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null })}
             className="p-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
             <Check className="w-3 h-3" />
@@ -1128,6 +1163,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
     saldoDevedorParaguai: "0",
     saldoDevedorTotal: "0",
     rastreio: "",
+    trackingUuid: "",
     arrivalDate: "",
     alertDaysBefore: "",
   });
@@ -1190,7 +1226,15 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
         <input type="number" step="0.01" value={form.saldoDevedorTotal} onChange={e => setForm({ ...form, saldoDevedorTotal: e.target.value })} className={`${inputClass} text-right`} placeholder="0" />
       </td>
       <td className="px-1 py-1.5">
-        <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} className={inputClass} placeholder="Container" />
+        <div className="flex flex-col gap-1">
+          <input value={form.rastreio} onChange={e => setForm({ ...form, rastreio: e.target.value })} className={inputClass} placeholder="Container" />
+          <input value={form.trackingUuid} onChange={e => {
+            let val = e.target.value;
+            const match = val.match(/workflow-item\/([a-f0-9-]+)/i);
+            if (match) val = match[1];
+            setForm({ ...form, trackingUuid: val });
+          }} className={`${inputClass} text-[9px]`} placeholder="Link Logcomex (cole aqui)" />
+        </div>
       </td>
       <td className="px-1 py-1.5 text-center">
         <div className="flex items-center justify-center gap-0.5">
@@ -1216,6 +1260,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
                 saldoDevedorParaguai: form.saldoDevedorParaguai || undefined,
                 saldoDevedorTotal: form.saldoDevedorTotal || undefined,
                 rastreio: form.rastreio || undefined,
+                trackingUuid: form.trackingUuid || undefined,
                 arrivalDate: form.arrivalDate || undefined,
                 alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null,
               });

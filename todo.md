@@ -4051,3 +4051,11 @@
 - [x] Garantir que nenhuma informação é apagada ao dispensar o alerta
 - [x] Frontend: botão para reativar alerta dispensado
 - [x] Testes automatizados para lógica de alerta (14 testes)
+
+## Rastreamento de Containers em Tempo Real (Logcomex)
+- [x] Backend: endpoint para buscar dados de rastreamento da Logcomex via API pública
+- [x] Backend: salvar UUID do workflow-item da Logcomex na tabela import_payments (coluna tracking_uuid)
+- [x] Frontend: modal de rastreamento com mapa, timeline de eventos, status e ETA
+- [x] Frontend: botão de rastreamento na coluna RASTREIO de cada linha (clicável)
+- [x] Frontend: campo para colar link/UUID da Logcomex ao editar linha
+- [x] Funcionar para todos os fornecedores chineses (cada pedido rastreável individualmente)

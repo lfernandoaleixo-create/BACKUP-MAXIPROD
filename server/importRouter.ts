@@ -76,6 +76,7 @@ export const importRouter = router({
       saldoDevedorParaguai: z.string().optional(),
       saldoDevedorTotal: z.string().optional(),
       rastreio: z.string().optional(),
+      trackingUuid: z.string().optional(),
       arrivalDate: z.string().optional(),
       alertDaysBefore: z.number().nullable().optional(),
     }))
@@ -99,6 +100,7 @@ export const importRouter = router({
         saldoDevedorParaguai: input.saldoDevedorParaguai || "0.00",
         saldoDevedorTotal: input.saldoDevedorTotal || "0.00",
         rastreio: input.rastreio || null,
+        trackingUuid: input.trackingUuid || null,
         arrivalDate: input.arrivalDate || null,
         alertDaysBefore: input.alertDaysBefore ?? null,
       });
@@ -122,6 +124,7 @@ export const importRouter = router({
       saldoDevedorParaguai: z.string().optional(),
       saldoDevedorTotal: z.string().optional(),
       rastreio: z.string().optional(),
+      trackingUuid: z.string().nullable().optional(),
       arrivalDate: z.string().optional(),
       alertDaysBefore: z.number().nullable().optional(),
     }))
@@ -145,6 +148,7 @@ export const importRouter = router({
       if (rawData.saldoDevedorParaguai !== undefined) updateData.saldoDevedorParaguai = rawData.saldoDevedorParaguai;
       if (rawData.saldoDevedorTotal !== undefined) updateData.saldoDevedorTotal = rawData.saldoDevedorTotal;
       if (rawData.rastreio !== undefined) updateData.rastreio = rawData.rastreio || null;
+      if (rawData.trackingUuid !== undefined) updateData.trackingUuid = rawData.trackingUuid || null;
       if (rawData.arrivalDate !== undefined) updateData.arrivalDate = rawData.arrivalDate || null;
       if (rawData.alertDaysBefore !== undefined) updateData.alertDaysBefore = rawData.alertDaysBefore;
 
@@ -364,6 +368,119 @@ export const importRouter = router({
     
     return alerts;
   }),
+
+  // ===== TRACKING (Logcomex integration) =====
+  fetchTracking: publicProcedure
+    .input(z.object({ trackingUuid: z.string().min(1) }))
+    .query(async ({ input }) => {
+      try {
+        const response = await fetch(
+          `https://backend.logcomex.ai/functions/v1/api-public-workflow-item?itemId=${input.trackingUuid}`
+        );
+        if (!response.ok) {
+          throw new Error(`Logcomex API returned ${response.status}`);
+        }
+        const data = await response.json();
+        const item = data.item;
+        if (!item) throw new Error("No tracking data found");
+
+        // Parse logmanager_data for detailed tracking info
+        let logmanagerData: any = null;
+        if (item.logmanager_data) {
+          try {
+            logmanagerData = typeof item.logmanager_data === 'string'
+              ? JSON.parse(item.logmanager_data)
+              : item.logmanager_data;
+          } catch (e) {
+            // ignore parse errors
+          }
+        }
+
+        // Extract key info from logmanager_data
+        const historic = logmanagerData?.historic || [];
+        
+        // Extract containers from the logmanager_data.containers object (keyed by container number)
+        const containersObj = logmanagerData?.containers || {};
+        const containersList = Object.entries(containersObj).map(([num, cData]: [string, any]) => ({
+          number: num,
+          type: cData?.volume?.type || '',
+          sealNumber: cData?.volume?.seal || '',
+          grossWeight: cData?.volume?.grossWeight || 0,
+          volume: cData?.volume?.volume || 0,
+          lastEvent: cData?.movement?.lastEvent || '',
+          events: cData?.events || [],
+        }));
+
+        // Get vessel coordinates
+        const coordinates = logmanagerData?.coordinates || null;
+        const vesselLat = logmanagerData?.internationalLogisticVesselLatitude || coordinates?.actualLatitude || null;
+        const vesselLng = logmanagerData?.internationalLogisticVesselLongitude || coordinates?.actualLongitude || null;
+        const vesselRoute = coordinates?.vesselRoute || [];
+
+        // Determine current status from last occurred event in historic
+        const occurredEvents = historic.filter((e: any) => e.hasOccurred);
+        const lastEvent = occurredEvents[occurredEvents.length - 1];
+
+        return {
+          shipment: logmanagerData?.shipment || logmanagerData?.transportDocument || item.tracking_number || '',
+          documentType: logmanagerData?.documentType || 'BL',
+          modal: logmanagerData?.modal || 'Maritimo',
+          eta: logmanagerData?.eta || item.estimated_delivery || null,
+          firstEta: logmanagerData?.firstEta || null,
+          predictiveEta: logmanagerData?.predictiveEta || null,
+          etd: logmanagerData?.etd || null,
+          atd: logmanagerData?.atd || null,
+          origin: logmanagerData?.loadingPortName || null,
+          originCode: logmanagerData?.loadingPortCode || null,
+          destination: logmanagerData?.dischargePortName || null,
+          destinationCode: logmanagerData?.dischargePortCode || null,
+          carrier: logmanagerData?.carrier || null,
+          vessel: logmanagerData?.vessel || null,
+          vesselImo: logmanagerData?.vesselImo || null,
+          voyage: logmanagerData?.voyage || null,
+          currentStatus: logmanagerData?.status || lastEvent?.description || 'Desconhecido',
+          translatedStatus: logmanagerData?.translatedStatus || null,
+          currentStatusSlug: lastEvent?.eventSlug || '',
+          vesselPosition: vesselLat && vesselLng ? { lat: parseFloat(vesselLat), lng: parseFloat(vesselLng) } : null,
+          vesselRoute: vesselRoute.length > 0 ? vesselRoute[0] : null,
+          mapUrl: logmanagerData?.mapUrl || null,
+          mapAvailable: logmanagerData?.mapAvailable || false,
+          containers: containersList,
+          historic: historic.map((event: any) => ({
+            id: event.id,
+            description: event.description,
+            eventSlug: event.eventSlug,
+            dateTime: event.dateTime,
+            location: event.location,
+            locationCode: event.locationCode,
+            vessel: event.vessel,
+            vesselImo: event.vesselImo,
+            voyage: event.voyage,
+            hasOccurred: event.hasOccurred,
+            isCustoms: event.isCustoms,
+            translatedDescriptions: event.translatedDescriptions,
+          })),
+          rawStatus: item.status,
+          updatedAt: item.updated_at,
+        };
+      } catch (error: any) {
+        throw new Error(`Erro ao buscar rastreamento: ${error.message}`);
+      }
+    }),
+
+  // Extract tracking UUID from a Logcomex URL
+  parseTrackingUrl: publicProcedure
+    .input(z.object({ url: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      // Extract UUID from URLs like:
+      // https://logcomex.ai/public/workflow-item/1a341f5b-327c-44f6-9411-e100cc022d67
+      const uuidRegex = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+      const match = input.url.match(uuidRegex);
+      if (!match) {
+        throw new Error("URL inválida. Cole o link completo da Logcomex.");
+      }
+      return { uuid: match[1] };
+    }),
 
   // ===== FULL DATA (suppliers + payments grouped by section) =====
   getFullData: publicProcedure.query(async () => {
