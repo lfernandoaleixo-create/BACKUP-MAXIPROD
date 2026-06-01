@@ -1,6 +1,22 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
-import { X, Ship, MapPin, Calendar, Anchor, Package, Clock, CheckCircle2, ArrowRight, Globe, Navigation, ExternalLink } from "lucide-react";
+import { MapView } from "@/components/Map";
+import {
+  X,
+  Ship,
+  MapPin,
+  Calendar,
+  Anchor,
+  Package,
+  Clock,
+  CheckCircle2,
+  ArrowRight,
+  Globe,
+  Navigation,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 interface TrackingModalProps {
   trackingUuid: string;
@@ -14,75 +30,100 @@ export function TrackingModal({ trackingUuid, onClose }: TrackingModalProps) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
-        className="relative w-[95vw] max-w-5xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+        className="relative w-[96vw] max-w-6xl max-h-[92vh] overflow-y-auto bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/50"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-700/50 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Ship className="w-6 h-6" />
+            <div className="w-10 h-10 bg-indigo-600/30 border border-indigo-500/50 rounded-xl flex items-center justify-center">
+              <Ship className="w-5 h-5 text-indigo-300" />
+            </div>
             <div>
-              <h2 className="text-lg font-bold">Rastreamento do Embarque</h2>
+              <h2 className="text-lg font-bold text-white">
+                Rastreamento do Embarque
+              </h2>
               {data && (
-                <p className="text-sm text-white/80">{data.shipment} • {data.documentType}</p>
+                <p className="text-sm text-slate-400">
+                  {data.shipment} • {data.documentType} •{" "}
+                  <span className="text-indigo-400">{data.carrier}</span>
+                </p>
               )}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition">
-            <X className="w-5 h-5" />
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/10 rounded-full transition"
+          >
+            <X className="w-5 h-5 text-slate-300" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 space-y-5">
           {isLoading && (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-              <p className="mt-4 text-gray-500">Buscando dados de rastreamento...</p>
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-14 h-14 border-4 border-indigo-900 border-t-indigo-400 rounded-full animate-spin" />
+              <p className="mt-4 text-slate-400">
+                Buscando dados de rastreamento...
+              </p>
             </div>
           )}
 
           {error && (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <X className="w-8 h-8 text-red-500" />
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-16 h-16 bg-red-900/30 border border-red-700/50 rounded-full flex items-center justify-center mb-4">
+                <X className="w-8 h-8 text-red-400" />
               </div>
-              <p className="text-red-600 font-medium">Erro ao buscar rastreamento</p>
-              <p className="text-gray-500 text-sm mt-1">{error.message}</p>
+              <p className="text-red-400 font-medium">
+                Erro ao buscar rastreamento
+              </p>
+              <p className="text-slate-500 text-sm mt-1">{error.message}</p>
             </div>
           )}
 
           {data && (
-            <div className="space-y-6">
-              {/* Status Banner */}
-              <StatusBanner data={data} />
-
-              {/* Info Cards */}
-              <InfoCards data={data} />
-
-              {/* Map */}
-              <TrackingMap data={data} />
-
-              {/* Timeline */}
-              <EventTimeline events={data.historic} />
-
-              {/* Containers */}
-              {data.containers.length > 0 && (
-                <ContainersList containers={data.containers} />
-              )}
-
-              {/* Logcomex link + last update */}
-              <div className="flex items-center justify-between text-xs text-gray-400">
-                {data.mapUrl && (
-                  <a href={data.mapUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-indigo-500 hover:text-indigo-700">
-                    <ExternalLink className="w-3 h-3" /> Ver no LogManager
-                  </a>
-                )}
-                <p>Última atualização: {data.updatedAt ? new Date(data.updatedAt).toLocaleString("pt-BR") : "N/A"}</p>
+            <>
+              {/* Status + Route Info Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <StatusBanner data={data} />
+                <RouteInfoCards data={data} />
               </div>
-            </div>
+
+              {/* Google Maps */}
+              <TrackingGoogleMap data={data} />
+
+              {/* Timeline + Containers */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <EventTimeline events={data.historic} />
+                {data.containers.length > 0 && (
+                  <ContainersList containers={data.containers} />
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-700/50">
+                <a
+                  href={`https://logcomex.ai/public/workflow-item/${trackingUuid}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition"
+                >
+                  <ExternalLink className="w-3 h-3" /> Ver na Logcomex
+                </a>
+                <p>
+                  Última atualização:{" "}
+                  {data.updatedAt
+                    ? new Date(data.updatedAt).toLocaleString("pt-BR")
+                    : "N/A"}
+                </p>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -91,241 +132,408 @@ export function TrackingModal({ trackingUuid, onClose }: TrackingModalProps) {
 }
 
 function StatusBanner({ data }: { data: any }) {
-  const getStatusColor = (slug: string, status: string) => {
+  const getStatusStyle = (slug: string, status: string) => {
     const s = (slug + status).toLowerCase();
-    if (s.includes("discharged") || s.includes("descarregado") || s.includes("delivered") || s.includes("entregue")) return "bg-green-100 text-green-800 border-green-200";
-    if (s.includes("departure") || s.includes("saída") || s.includes("loaded") || s.includes("carregado") || s.includes("navegando")) return "bg-blue-100 text-blue-800 border-blue-200";
-    if (s.includes("arrival") || s.includes("chegada")) return "bg-amber-100 text-amber-800 border-amber-200";
-    return "bg-gray-100 text-gray-800 border-gray-200";
+    if (
+      s.includes("discharged") ||
+      s.includes("descarregado") ||
+      s.includes("delivered") ||
+      s.includes("entregue")
+    )
+      return {
+        bg: "bg-emerald-900/30 border-emerald-600/40",
+        text: "text-emerald-300",
+        icon: <CheckCircle2 className="w-5 h-5" />,
+      };
+    if (
+      s.includes("departure") ||
+      s.includes("saída") ||
+      s.includes("loaded") ||
+      s.includes("carregado") ||
+      s.includes("navegando")
+    )
+      return {
+        bg: "bg-blue-900/30 border-blue-600/40",
+        text: "text-blue-300",
+        icon: <Ship className="w-5 h-5" />,
+      };
+    if (s.includes("arrival") || s.includes("chegada"))
+      return {
+        bg: "bg-amber-900/30 border-amber-600/40",
+        text: "text-amber-300",
+        icon: <Anchor className="w-5 h-5" />,
+      };
+    return {
+      bg: "bg-slate-800/50 border-slate-600/40",
+      text: "text-slate-300",
+      icon: <Globe className="w-5 h-5" />,
+    };
   };
 
-  const getStatusIcon = (slug: string, status: string) => {
-    const s = (slug + status).toLowerCase();
-    if (s.includes("discharged") || s.includes("descarregado") || s.includes("delivered") || s.includes("entregue")) return <CheckCircle2 className="w-5 h-5" />;
-    if (s.includes("departure") || s.includes("saída") || s.includes("loaded") || s.includes("carregado") || s.includes("navegando")) return <Ship className="w-5 h-5" />;
-    if (s.includes("arrival") || s.includes("chegada")) return <Anchor className="w-5 h-5" />;
-    return <Globe className="w-5 h-5" />;
-  };
+  const style = getStatusStyle(data.currentStatusSlug, data.currentStatus);
 
   return (
-    <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${getStatusColor(data.currentStatusSlug, data.currentStatus)}`}>
-      {getStatusIcon(data.currentStatusSlug, data.currentStatus)}
+    <div
+      className={`flex items-center gap-3 px-5 py-4 rounded-xl border ${style.bg}`}
+    >
+      <div className={style.text}>{style.icon}</div>
       <div>
-        <p className="font-semibold text-xs uppercase tracking-wide opacity-70">Status Atual</p>
-        <p className="text-lg font-bold">{data.currentStatus}</p>
+        <p className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
+          Status Atual
+        </p>
+        <p className={`text-base font-bold ${style.text}`}>
+          {data.currentStatus}
+        </p>
       </div>
-      {data.carrier && (
-        <div className="ml-auto text-right">
-          <p className="text-xs opacity-70">Armador</p>
-          <p className="font-bold text-sm">{data.carrier}</p>
-        </div>
-      )}
     </div>
   );
 }
 
-function InfoCards({ data }: { data: any }) {
+function RouteInfoCards({ data }: { data: any }) {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
     const d = new Date(dateStr);
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    return d.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div className="bg-gray-50 rounded-xl p-4 border">
-        <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-          <MapPin className="w-3.5 h-3.5" />
+    <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="bg-slate-800/50 rounded-xl p-3.5 border border-slate-700/50">
+        <div className="flex items-center gap-1.5 text-slate-500 text-[10px] uppercase tracking-wider mb-1">
+          <MapPin className="w-3 h-3" />
           <span>Rota</span>
         </div>
-        <p className="font-bold text-sm">
-          {data.origin || "—"} <ArrowRight className="w-3 h-3 inline mx-1" /> {data.destination || "—"}
+        <p className="font-bold text-sm text-white">
+          {data.origin || "—"}{" "}
+          <ArrowRight className="w-3 h-3 inline mx-0.5 text-indigo-400" />{" "}
+          {data.destination || "—"}
         </p>
       </div>
 
-      <div className="bg-gray-50 rounded-xl p-4 border">
-        <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-          <Ship className="w-3.5 h-3.5" />
+      <div className="bg-slate-800/50 rounded-xl p-3.5 border border-slate-700/50">
+        <div className="flex items-center gap-1.5 text-slate-500 text-[10px] uppercase tracking-wider mb-1">
+          <Ship className="w-3 h-3" />
           <span>Navio</span>
         </div>
-        <p className="font-bold text-sm">{data.vessel || "—"}</p>
-        {data.voyage && <p className="text-xs text-gray-500">Voyage: {data.voyage}</p>}
+        <p className="font-bold text-sm text-white">{data.vessel || "—"}</p>
+        {data.voyage && (
+          <p className="text-[10px] text-slate-500">Voyage: {data.voyage}</p>
+        )}
       </div>
 
-      <div className="bg-gray-50 rounded-xl p-4 border">
-        <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-          <Calendar className="w-3.5 h-3.5" />
+      <div className="bg-slate-800/50 rounded-xl p-3.5 border border-slate-700/50">
+        <div className="flex items-center gap-1.5 text-slate-500 text-[10px] uppercase tracking-wider mb-1">
+          <Calendar className="w-3 h-3" />
           <span>Saída (ETD)</span>
         </div>
-        <p className="font-bold text-sm">{formatDate(data.etd || data.atd)}</p>
+        <p className="font-bold text-sm text-white">
+          {formatDate(data.etd || data.atd)}
+        </p>
       </div>
 
-      <div className="bg-gray-50 rounded-xl p-4 border">
-        <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
-          <Clock className="w-3.5 h-3.5" />
+      <div className="bg-slate-800/50 rounded-xl p-3.5 border border-slate-700/50">
+        <div className="flex items-center gap-1.5 text-slate-500 text-[10px] uppercase tracking-wider mb-1">
+          <Clock className="w-3 h-3" />
           <span>Chegada (ETA)</span>
         </div>
-        <p className="font-bold text-sm">{formatDate(data.eta || data.predictiveEta)}</p>
+        <p className="font-bold text-sm text-white">
+          {formatDate(data.eta || data.predictiveEta)}
+        </p>
         {data.firstEta && data.firstEta !== data.eta && (
-          <p className="text-xs text-amber-600">Original: {formatDate(data.firstEta)}</p>
+          <p className="text-[10px] text-amber-400">
+            Original: {formatDate(data.firstEta)}
+          </p>
         )}
       </div>
     </div>
   );
 }
 
-function TrackingMap({ data }: { data: any }) {
-  // Calculate progress percentage based on events
+function TrackingGoogleMap({ data }: { data: any }) {
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const routeCoords: Array<{ lat: number; lng: number }> =
+    data.vesselRouteCoordinates || [];
+  const vesselPos = data.vesselPosition;
+  const originName = data.vesselRouteOrigin || data.origin || "Origem";
+  const destName = data.vesselRouteDestination || data.destination || "Destino";
+
+  // Calculate progress
   const totalEvents = data.historic.length;
   const occurredEvents = data.historic.filter((e: any) => e.hasOccurred).length;
-  const progress = totalEvents > 0 ? (occurredEvents / totalEvents) * 100 : 0;
+  const progress =
+    totalEvents > 0 ? Math.round((occurredEvents / totalEvents) * 100) : 0;
 
-  // Get origin and destination from data
-  const originName = data.origin || "Origem";
-  const destName = data.destination || "Destino";
+  const handleMapReady = useCallback(
+    (map: google.maps.Map) => {
+      mapRef.current = map;
 
-  // Build route coordinates for SVG map
-  const routeCoords = data.vesselRoute?.coordenates || [];
-  const vesselPos = data.vesselPosition;
+      // Set dark map style
+      map.setOptions({
+        mapTypeId: "roadmap",
+        styles: [
+          { elementType: "geometry", stylers: [{ color: "#1a1a2e" }] },
+          {
+            elementType: "labels.text.stroke",
+            stylers: [{ color: "#1a1a2e" }],
+          },
+          {
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#6b7280" }],
+          },
+          {
+            featureType: "water",
+            elementType: "geometry",
+            stylers: [{ color: "#0f172a" }],
+          },
+          {
+            featureType: "landscape",
+            elementType: "geometry",
+            stylers: [{ color: "#1e293b" }],
+          },
+          {
+            featureType: "road",
+            stylers: [{ visibility: "off" }],
+          },
+          {
+            featureType: "poi",
+            stylers: [{ visibility: "off" }],
+          },
+          {
+            featureType: "transit",
+            stylers: [{ visibility: "off" }],
+          },
+          {
+            featureType: "administrative.country",
+            elementType: "geometry.stroke",
+            stylers: [{ color: "#334155" }],
+          },
+          {
+            featureType: "administrative.country",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#475569" }],
+          },
+        ],
+        disableDefaultUI: true,
+        zoomControl: true,
+        gestureHandling: "cooperative",
+      });
 
-  return (
-    <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border overflow-hidden">
-      <div className="flex items-center gap-2 px-5 pt-4 pb-2">
-        <Globe className="w-4 h-4 text-indigo-600" />
-        <h3 className="font-bold text-gray-800">Mapa do Embarque</h3>
-        {data.mapUrl && (
-          <a href={data.mapUrl} target="_blank" rel="noopener noreferrer" className="ml-auto text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1">
-            <ExternalLink className="w-3 h-3" /> Mapa completo
-          </a>
-        )}
-      </div>
+      if (routeCoords.length === 0) return;
 
-      {/* SVG World Map with Route */}
-      {routeCoords.length > 0 ? (
-        <div className="relative w-full h-[280px] bg-gradient-to-b from-blue-50 to-blue-100 overflow-hidden">
-          <svg viewBox="-180 -90 360 180" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-            {/* Simple world outline background */}
-            <rect x="-180" y="-90" width="360" height="180" fill="#e8f4fd" />
-            
-            {/* Grid lines */}
-            {[-60, -30, 0, 30, 60].map(lat => (
-              <line key={`lat${lat}`} x1="-180" y1={-lat} x2="180" y2={-lat} stroke="#d1e5f0" strokeWidth="0.3" />
-            ))}
-            {[-120, -60, 0, 60, 120].map(lng => (
-              <line key={`lng${lng}`} x1={lng} y1="-90" x2={lng} y2="90" stroke="#d1e5f0" strokeWidth="0.3" />
-            ))}
+      // Draw route polyline (dashed effect using two polylines)
+      // Background line (wider, darker)
+      new google.maps.Polyline({
+        path: routeCoords,
+        map,
+        strokeColor: "#312e81",
+        strokeOpacity: 0.6,
+        strokeWeight: 4,
+        geodesic: true,
+      });
 
-            {/* Route path */}
-            <polyline
-              points={routeCoords.map((c: any) => `${c.lng},${-c.lat}`).join(' ')}
-              fill="none"
-              stroke="#4f46e5"
-              strokeWidth="0.8"
-              strokeDasharray="2,1"
-              opacity="0.8"
-            />
+      // Foreground line (thinner, brighter, dashed)
+      new google.maps.Polyline({
+        path: routeCoords,
+        map,
+        strokeColor: "#818cf8",
+        strokeOpacity: 1,
+        strokeWeight: 2,
+        geodesic: true,
+        icons: [
+          {
+            icon: {
+              path: "M 0,-1 0,1",
+              strokeOpacity: 1,
+              strokeWeight: 2,
+              scale: 3,
+            },
+            offset: "0",
+            repeat: "15px",
+          },
+        ],
+      });
 
-            {/* Origin point */}
-            {routeCoords.length > 0 && (
-              <circle cx={routeCoords[0].lng} cy={-routeCoords[0].lat} r="2.5" fill="#22c55e" stroke="white" strokeWidth="0.5" />
-            )}
-
-            {/* Destination point */}
-            {routeCoords.length > 1 && (
-              <circle cx={routeCoords[routeCoords.length - 1].lng} cy={-routeCoords[routeCoords.length - 1].lat} r="2.5" fill="#ef4444" stroke="white" strokeWidth="0.5" />
-            )}
-
-            {/* Vessel position */}
-            {vesselPos && (
-              <>
-                <circle cx={vesselPos.lng} cy={-vesselPos.lat} r="3.5" fill="#3b82f6" stroke="white" strokeWidth="0.8" />
-                <circle cx={vesselPos.lng} cy={-vesselPos.lat} r="5" fill="none" stroke="#3b82f6" strokeWidth="0.3" opacity="0.5">
-                  <animate attributeName="r" from="3.5" to="7" dur="2s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" from="0.5" to="0" dur="2s" repeatCount="indefinite" />
-                </circle>
-              </>
-            )}
-
-            {/* Labels */}
-            {routeCoords.length > 0 && (
-              <text x={routeCoords[0].lng} y={-routeCoords[0].lat - 4} textAnchor="middle" fontSize="3" fill="#166534" fontWeight="bold">{originName}</text>
-            )}
-            {routeCoords.length > 1 && (
-              <text x={routeCoords[routeCoords.length - 1].lng} y={-routeCoords[routeCoords.length - 1].lat - 4} textAnchor="middle" fontSize="3" fill="#991b1b" fontWeight="bold">{destName}</text>
-            )}
-          </svg>
-
-          {/* Legend */}
-          <div className="absolute bottom-2 left-3 flex items-center gap-3 text-[10px] text-gray-600 bg-white/80 rounded px-2 py-1">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span> {originName}</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Posição Atual</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> {destName}</span>
+      // Origin marker
+      const originEl = document.createElement("div");
+      originEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div style="background:#10b981;border:3px solid #34d399;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(16,185,129,0.5);">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="3"/></svg>
           </div>
+          <div style="margin-top:4px;background:#10b981;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">${originName}</div>
         </div>
-      ) : (
-        /* Fallback: progress bar route */
-        <div className="px-5 pb-5">
-          <div className="flex items-center justify-between px-4 py-6">
-            <div className="flex flex-col items-center z-10">
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                <MapPin className="w-5 h-5 text-white" />
-              </div>
-              <p className="mt-2 font-bold text-sm text-gray-800">{originName}</p>
-              {data.etd && <p className="text-xs text-gray-500">{new Date(data.etd).toLocaleDateString("pt-BR")}</p>}
-            </div>
+      `;
+      new google.maps.marker.AdvancedMarkerElement({
+        map,
+        position: routeCoords[0],
+        content: originEl,
+      });
 
-            <div className="flex-1 mx-4 relative">
-              <div className="h-2 bg-gray-200 rounded-full">
-                <div
-                  className="h-2 bg-gradient-to-r from-green-500 via-blue-500 to-indigo-500 rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(progress, 100)}%` }}
-                />
-              </div>
-              <div
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-500"
-                style={{ left: `${Math.min(progress, 100)}%` }}
-              >
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                  <Ship className="w-4 h-4 text-white" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center z-10">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg ${progress >= 100 ? 'bg-green-500' : 'bg-red-500'}`}>
-                <MapPin className="w-5 h-5 text-white" />
-              </div>
-              <p className="mt-2 font-bold text-sm text-gray-800">{destName}</p>
-              {data.eta && <p className="text-xs text-gray-500">{new Date(data.eta).toLocaleDateString("pt-BR")}</p>}
-            </div>
+      // Destination marker
+      const destEl = document.createElement("div");
+      destEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div style="background:#ef4444;border:3px solid #f87171;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(239,68,68,0.5);">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="3"/></svg>
           </div>
-
-          <div className="text-center">
-            <span className="text-sm font-medium text-indigo-600">
-              {progress >= 100 ? "✅ Entregue" : `${Math.round(progress)}% concluído`}
-            </span>
-          </div>
+          <div style="margin-top:4px;background:#ef4444;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);">${destName}</div>
         </div>
-      )}
+      `;
+      new google.maps.marker.AdvancedMarkerElement({
+        map,
+        position: routeCoords[routeCoords.length - 1],
+        content: destEl,
+      });
 
-      {/* Progress bar below map */}
-      {routeCoords.length > 0 && (
-        <div className="px-5 pb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500 whitespace-nowrap">{originName}</span>
-            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+      // Vessel position marker (animated pulse)
+      if (vesselPos) {
+        const vesselEl = document.createElement("div");
+        vesselEl.innerHTML = `
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+            <div style="position:absolute;width:40px;height:40px;background:rgba(99,102,241,0.2);border-radius:50%;animation:vesselPulse 2s ease-in-out infinite;"></div>
+            <div style="position:absolute;width:28px;height:28px;background:rgba(99,102,241,0.3);border-radius:50%;animation:vesselPulse 2s ease-in-out infinite 0.5s;"></div>
+            <div style="position:relative;background:#4f46e5;border:3px solid #a5b4fc;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(79,70,229,0.6);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" opacity="0"/><path d="M12 2L4 12l8 10 8-10L12 2z" fill="white" opacity="0"/><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.14.52-.05.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z" fill="white"/></svg>
+            </div>
+          </div>
+          <style>
+            @keyframes vesselPulse {
+              0%, 100% { transform: scale(1); opacity: 0.6; }
+              50% { transform: scale(1.5); opacity: 0; }
+            }
+          </style>
+        `;
+        new google.maps.marker.AdvancedMarkerElement({
+          map,
+          position: vesselPos,
+          content: vesselEl,
+        });
+      }
+
+      // Fit bounds to show entire route
+      const bounds = new google.maps.LatLngBounds();
+      routeCoords.forEach((coord) => bounds.extend(coord));
+      if (vesselPos) bounds.extend(vesselPos);
+      map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+    },
+    [routeCoords, vesselPos, originName, destName]
+  );
+
+  // If no route coordinates, show a simple progress bar fallback
+  if (routeCoords.length === 0) {
+    return (
+      <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Globe className="w-4 h-4 text-indigo-400" />
+          <h3 className="font-bold text-white text-sm">Progresso da Viagem</h3>
+        </div>
+        <div className="flex items-center justify-between px-4 py-6">
+          <div className="flex flex-col items-center z-10">
+            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg border-2 border-emerald-400">
+              <MapPin className="w-5 h-5 text-white" />
+            </div>
+            <p className="mt-2 font-bold text-sm text-white">
+              {data.origin || "Origem"}
+            </p>
+          </div>
+          <div className="flex-1 mx-4 relative">
+            <div className="h-2 bg-slate-700 rounded-full">
               <div
-                className="h-2 bg-gradient-to-r from-green-500 via-blue-500 to-indigo-500 rounded-full transition-all"
+                className="h-2 bg-gradient-to-r from-emerald-500 via-indigo-500 to-indigo-400 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(progress, 100)}%` }}
               />
             </div>
-            <span className="text-xs text-gray-500 whitespace-nowrap">{destName}</span>
+            <div
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-500"
+              style={{ left: `${Math.min(progress, 100)}%` }}
+            >
+              <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg border-2 border-indigo-400">
+                <Ship className="w-4 h-4 text-white" />
+              </div>
+            </div>
           </div>
-          <p className="text-center text-xs text-indigo-600 font-medium mt-1">
-            {progress >= 100 ? "✅ Chegou ao destino" : `${Math.round(progress)}% da viagem concluída`}
-          </p>
+          <div className="flex flex-col items-center z-10">
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg border-2 ${progress >= 100 ? "bg-emerald-600 border-emerald-400" : "bg-red-600 border-red-400"}`}
+            >
+              <MapPin className="w-5 h-5 text-white" />
+            </div>
+            <p className="mt-2 font-bold text-sm text-white">
+              {data.destination || "Destino"}
+            </p>
+          </div>
         </div>
-      )}
+        <p className="text-center text-xs text-indigo-400 font-medium">
+          {progress >= 100
+            ? "Chegou ao destino"
+            : `${progress}% da viagem concluída`}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 overflow-hidden">
+      {/* Map header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700/50">
+        <div className="flex items-center gap-2">
+          <Navigation className="w-4 h-4 text-indigo-400" />
+          <h3 className="font-bold text-white text-sm">
+            Rota Marítima em Tempo Real
+          </h3>
+        </div>
+        <div className="flex items-center gap-4 text-[10px]">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]"></span>
+            <span className="text-slate-400">{originName}</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.5)] animate-pulse"></span>
+            <span className="text-slate-400">Navio</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]"></span>
+            <span className="text-slate-400">{destName}</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Google Map */}
+      <MapView
+        className="w-full h-[350px] md:h-[420px]"
+        initialCenter={
+          vesselPos || routeCoords[Math.floor(routeCoords.length / 2)]
+        }
+        initialZoom={3}
+        onMapReady={handleMapReady}
+      />
+
+      {/* Progress bar below map */}
+      <div className="px-5 py-3 border-t border-slate-700/50">
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-emerald-400 font-medium whitespace-nowrap">
+            {originName}
+          </span>
+          <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className="h-1.5 bg-gradient-to-r from-emerald-500 via-indigo-500 to-indigo-400 rounded-full transition-all"
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            />
+          </div>
+          <span className="text-[10px] text-red-400 font-medium whitespace-nowrap">
+            {destName}
+          </span>
+        </div>
+        <p className="text-center text-[10px] text-indigo-400 font-medium mt-1">
+          {progress >= 100
+            ? "Chegou ao destino"
+            : `${progress}% da viagem concluída`}
+        </p>
+      </div>
     </div>
   );
 }
@@ -337,7 +545,13 @@ function EventTimeline({ events }: { events: any[] }) {
   const formatDateTime = (dateStr: string) => {
     if (!dateStr) return "—";
     const d = new Date(dateStr);
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const getEventIcon = (slug: string, isCustoms: boolean) => {
@@ -356,46 +570,49 @@ function EventTimeline({ events }: { events: any[] }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border p-5">
-      <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <Calendar className="w-4 h-4 text-indigo-600" />
+    <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-5">
+      <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-sm">
+        <Calendar className="w-4 h-4 text-indigo-400" />
         Timeline de Eventos ({events.length})
       </h3>
 
-      <div className="space-y-0">
+      <div className="space-y-0 max-h-[400px] overflow-y-auto pr-2">
         {displayEvents.map((event, index) => (
           <div key={event.id || index} className="flex gap-3">
             <div className="flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${
-                event.hasOccurred
-                  ? "bg-green-100 border-2 border-green-400"
-                  : "bg-gray-100 border-2 border-gray-300 border-dashed"
-              }`}>
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 ${
+                  event.hasOccurred
+                    ? "bg-emerald-900/40 border-2 border-emerald-500/60"
+                    : "bg-slate-700/50 border-2 border-slate-600 border-dashed"
+                }`}
+              >
                 {getEventIcon(event.eventSlug, event.isCustoms)}
               </div>
               {index < displayEvents.length - 1 && (
-                <div className={`w-0.5 flex-1 min-h-[24px] ${
-                  event.hasOccurred ? "bg-green-300" : "bg-gray-200 border-dashed"
-                }`} />
+                <div
+                  className={`w-0.5 flex-1 min-h-[20px] ${
+                    event.hasOccurred ? "bg-emerald-700/50" : "bg-slate-700"
+                  }`}
+                />
               )}
             </div>
 
-            <div className={`pb-4 ${!event.hasOccurred ? "opacity-50" : ""}`}>
-              <p className="font-medium text-sm text-gray-800">{event.description}</p>
-              <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                <span className="text-xs text-gray-500">{formatDateTime(event.dateTime)}</span>
+            <div className={`pb-3 ${!event.hasOccurred ? "opacity-40" : ""}`}>
+              <p className="font-medium text-xs text-white">
+                {event.description}
+              </p>
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                <span className="text-[10px] text-slate-500">
+                  {formatDateTime(event.dateTime)}
+                </span>
                 {event.location && (
-                  <span className="text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
-                    📍 {event.location}
-                  </span>
-                )}
-                {event.vessel && (
-                  <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                    🚢 {event.vessel} {event.voyage}
+                  <span className="text-[10px] text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">
+                    {event.location}
                   </span>
                 )}
                 {!event.hasOccurred && (
-                  <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] text-amber-400 bg-amber-900/30 px-1.5 py-0.5 rounded">
                     Previsto
                   </span>
                 )}
@@ -408,9 +625,18 @@ function EventTimeline({ events }: { events: any[] }) {
       {events.length > 6 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="mt-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+          className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 transition"
         >
-          {showAll ? "Mostrar menos" : `Ver todos (${events.length} eventos)`}
+          {showAll ? (
+            <>
+              <ChevronUp className="w-3 h-3" /> Mostrar menos
+            </>
+          ) : (
+            <>
+              <ChevronDown className="w-3 h-3" /> Ver todos ({events.length}{" "}
+              eventos)
+            </>
+          )}
         </button>
       )}
     </div>
@@ -419,30 +645,48 @@ function EventTimeline({ events }: { events: any[] }) {
 
 function ContainersList({ containers }: { containers: any[] }) {
   return (
-    <div className="bg-white rounded-xl border p-5">
-      <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-        <Package className="w-4 h-4 text-indigo-600" />
+    <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-5">
+      <h3 className="font-bold text-white mb-3 flex items-center gap-2 text-sm">
+        <Package className="w-4 h-4 text-indigo-400" />
         Containers ({containers.length})
       </h3>
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-2.5">
         {containers.map((container, i) => (
-          <div key={i} className="bg-gray-50 rounded-lg px-4 py-3 border">
+          <div
+            key={i}
+            className="bg-slate-900/50 rounded-lg px-4 py-3 border border-slate-700/40"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Package className="w-5 h-5 text-indigo-500" />
+                <div className="w-8 h-8 bg-indigo-900/40 border border-indigo-700/50 rounded-lg flex items-center justify-center">
+                  <Package className="w-4 h-4 text-indigo-400" />
+                </div>
                 <div>
-                  <p className="font-mono font-bold text-sm">{container.number}</p>
-                  <p className="text-xs text-gray-500">{container.type}</p>
+                  <p className="font-mono font-bold text-sm text-white">
+                    {container.number}
+                  </p>
+                  <p className="text-[10px] text-slate-500">{container.type}</p>
                 </div>
               </div>
-              <div className="text-right text-xs text-gray-500">
-                {container.sealNumber && <p>Lacre: <span className="font-mono">{container.sealNumber}</span></p>}
-                {container.grossWeight > 0 && <p>Peso: {container.grossWeight.toLocaleString("pt-BR")} kg</p>}
+              <div className="text-right text-[10px] text-slate-400">
+                {container.sealNumber && (
+                  <p>
+                    Lacre:{" "}
+                    <span className="font-mono text-slate-300">
+                      {container.sealNumber}
+                    </span>
+                  </p>
+                )}
+                {container.grossWeight > 0 && (
+                  <p>
+                    Peso: {container.grossWeight.toLocaleString("pt-BR")} kg
+                  </p>
+                )}
                 {container.volume > 0 && <p>Volume: {container.volume} m³</p>}
               </div>
             </div>
             {container.lastEvent && (
-              <p className="mt-2 text-xs text-gray-600 bg-white rounded px-2 py-1 border">
+              <p className="mt-2 text-[10px] text-slate-400 bg-slate-800/80 rounded px-2 py-1 border border-slate-700/30">
                 Último evento: {container.lastEvent}
               </p>
             )}

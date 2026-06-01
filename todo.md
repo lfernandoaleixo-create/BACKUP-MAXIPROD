@@ -4059,3 +4059,4 @@
 - [x] Frontend: botão de rastreamento na coluna RASTREIO de cada linha (clicável)
 - [x] Frontend: campo para colar link/UUID da Logcomex ao editar linha
 - [x] Funcionar para todos os fornecedores chineses (cada pedido rastreável individualmente)
+- [x] Melhorar TrackingModal: substituir mapa SVG por Google Maps real com rota do navio (Polyline), marcadores de origem/destino/posição atual, e layout profissional
