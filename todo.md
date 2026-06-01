@@ -4038,3 +4038,16 @@
 - [x] Métricas por cliente: % de cada motivo de não-compra sobre total de visitas
 - [x] Métricas gerais: total visitas, taxa conversão, motivos mais frequentes
 - [x] Testes automatizados para salesVisitRouter
+
+## Alerta de Pagamento Winnie - Harbin (Data de Chegada)
+
+- [x] Adicionar campos no banco: alert_days_before (dias de antecedência) e alert_dismissed (se foi dispensado manualmente)
+- [x] Backend: endpoint para configurar dias de antecedência do alerta
+- [x] Backend: endpoint para dispensar/desativar o alerta manualmente
+- [x] Backend: lógica para calcular se o alerta deve ser exibido (data_chegada - alert_days_before <= hoje)
+- [x] Frontend: seletor de dias de antecedência ao lado da data de chegada
+- [x] Frontend: card vermelho de alerta de pagamento quando ativado
+- [x] Frontend: botão para Larissa dispensar o card manualmente
+- [x] Garantir que nenhuma informação é apagada ao dispensar o alerta
+- [x] Frontend: botão para reativar alerta dispensado
+- [x] Testes automatizados para lógica de alerta (14 testes)

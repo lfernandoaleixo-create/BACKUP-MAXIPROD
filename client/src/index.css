@@ -649,3 +649,12 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Subtle pulse animation for payment alert cards */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}

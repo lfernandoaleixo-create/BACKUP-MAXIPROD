@@ -77,6 +77,7 @@ export const importRouter = router({
       saldoDevedorTotal: z.string().optional(),
       rastreio: z.string().optional(),
       arrivalDate: z.string().optional(),
+      alertDaysBefore: z.number().nullable().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -99,6 +100,7 @@ export const importRouter = router({
         saldoDevedorTotal: input.saldoDevedorTotal || "0.00",
         rastreio: input.rastreio || null,
         arrivalDate: input.arrivalDate || null,
+        alertDaysBefore: input.alertDaysBefore ?? null,
       });
       return { id: result.insertId };
     }),
@@ -121,6 +123,7 @@ export const importRouter = router({
       saldoDevedorTotal: z.string().optional(),
       rastreio: z.string().optional(),
       arrivalDate: z.string().optional(),
+      alertDaysBefore: z.number().nullable().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -143,6 +146,7 @@ export const importRouter = router({
       if (rawData.saldoDevedorTotal !== undefined) updateData.saldoDevedorTotal = rawData.saldoDevedorTotal;
       if (rawData.rastreio !== undefined) updateData.rastreio = rawData.rastreio || null;
       if (rawData.arrivalDate !== undefined) updateData.arrivalDate = rawData.arrivalDate || null;
+      if (rawData.alertDaysBefore !== undefined) updateData.alertDaysBefore = rawData.alertDaysBefore;
 
       if (Object.keys(updateData).length > 0) {
         await db.update(importPayments).set(updateData).where(eq(importPayments.id, id));
@@ -268,6 +272,97 @@ export const importRouter = router({
 
     // Last resort fallback
     return { rate: 5.04, source: "fallback", timestamp: new Date().toISOString() };
+  }),
+
+  // ===== ALERT: Dismiss payment alert (manual by Larissa) =====
+  dismissAlert: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(importPayments)
+        .set({ alertDismissed: true })
+        .where(eq(importPayments.id, input.id));
+      return { success: true };
+    }),
+
+  // ===== ALERT: Reactivate alert (if Larissa needs it back) =====
+  reactivateAlert: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(importPayments)
+        .set({ alertDismissed: false })
+        .where(eq(importPayments.id, input.id));
+      return { success: true };
+    }),
+
+  // ===== ALERT: Get active payment alerts (arrival date - days_before <= today, not dismissed) =====
+  getActiveAlerts: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    const payments = await db.select().from(importPayments).orderBy(asc(importPayments.id));
+    const suppliers = await db.select().from(importSuppliers).orderBy(asc(importSuppliers.displayOrder));
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const alerts: Array<{
+      id: number;
+      pedido: string;
+      supplierName: string;
+      sectionTitle: string | null;
+      arrivalDate: string;
+      alertDaysBefore: number;
+      alertDate: string;
+      daysRemaining: number;
+      totalUsd: string;
+      saldoDevedorTotal: string;
+    }> = [];
+    
+    for (const payment of payments) {
+      // Only Winnie payments with arrival date + alert days configured + not dismissed
+      if (!payment.arrivalDate || !payment.alertDaysBefore || payment.alertDismissed) continue;
+      
+      // Parse arrival date (format: DD/MM/YYYY or YYYY-MM-DD)
+      let arrivalDateObj: Date;
+      if (payment.arrivalDate.includes('/')) {
+        const [day, month, year] = payment.arrivalDate.split('/');
+        arrivalDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        arrivalDateObj = new Date(payment.arrivalDate);
+      }
+      
+      if (isNaN(arrivalDateObj.getTime())) continue;
+      
+      // Calculate alert trigger date (arrival - days_before)
+      const alertTriggerDate = new Date(arrivalDateObj);
+      alertTriggerDate.setDate(alertTriggerDate.getDate() - payment.alertDaysBefore);
+      
+      // If today >= alert trigger date, show the alert
+      if (today >= alertTriggerDate) {
+        const diffTime = arrivalDateObj.getTime() - today.getTime();
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        const supplier = suppliers.find(s => s.id === payment.supplierId);
+        
+        alerts.push({
+          id: payment.id,
+          pedido: payment.pedido,
+          supplierName: supplier?.name || 'Desconhecido',
+          sectionTitle: payment.sectionTitle,
+          arrivalDate: payment.arrivalDate,
+          alertDaysBefore: payment.alertDaysBefore,
+          alertDate: alertTriggerDate.toLocaleDateString('pt-BR'),
+          daysRemaining,
+          totalUsd: payment.totalUsd,
+          saldoDevedorTotal: payment.saldoDevedorTotal,
+        });
+      }
+    }
+    
+    return alerts;
   }),
 
   // ===== FULL DATA (suppliers + payments grouped by section) =====

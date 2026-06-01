@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2 } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -76,6 +76,11 @@ export default function Importacao() {
 function PagamentosFornecedores() {
   const { data: fullData, isLoading, refetch } = trpc.import.getFullData.useQuery();
   const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
+  const { data: activeAlerts, refetch: refetchAlerts } = trpc.import.getActiveAlerts.useQuery();
+  const dismissAlert = trpc.import.dismissAlert.useMutation({
+    onSuccess: () => { refetchAlerts(); toast.success("Alerta dispensado"); },
+    onError: () => toast.error("Erro ao dispensar alerta"),
+  });
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [newSupplierName, setNewSupplierName] = useState("");
   const [newSupplierCategory, setNewSupplierCategory] = useState("");
@@ -221,6 +226,42 @@ function PagamentosFornecedores() {
       </div>
       </div>
 
+      {/* Payment Alert Cards (Winnie - Harbin) */}
+      {activeAlerts && activeAlerts.length > 0 && (
+        <div className="space-y-2">
+          {activeAlerts.map((alert) => (
+            <div key={alert.id} className="relative bg-red-50 border-2 border-red-400 rounded-xl p-4 shadow-md animate-pulse-subtle">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-red-100 rounded-full shrink-0">
+                  <Bell className="w-5 h-5 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="text-sm font-bold text-red-800">ALERTA DE PAGAMENTO</h4>
+                    <span className="px-2 py-0.5 bg-red-200 text-red-800 rounded-full text-[10px] font-bold">
+                      {alert.daysRemaining <= 0 ? "VENCIDO" : `${alert.daysRemaining} dia${alert.daysRemaining !== 1 ? 's' : ''} restante${alert.daysRemaining !== 1 ? 's' : ''}`}
+                    </span>
+                  </div>
+                  <p className="text-xs text-red-700 mb-1">
+                    <strong>{alert.supplierName}</strong>{alert.sectionTitle ? ` - ${alert.sectionTitle}` : ''} | Pedido: <strong>{alert.pedido}</strong>
+                  </p>
+                  <p className="text-xs text-red-600">
+                    Data de chegada: <strong>{alert.arrivalDate}</strong> | Alerta configurado: <strong>{alert.alertDaysBefore} dias antes</strong> | Saldo devedor: <strong>$ {parseFloat(alert.saldoDevedorTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                  </p>
+                </div>
+                <button
+                  onClick={() => dismissAlert.mutate({ id: alert.id })}
+                  className="shrink-0 p-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-800 transition-colors"
+                  title="Dispensar alerta (não apaga dados)"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Supplier Sections */}
       {(fullData || []).map((supplier: any) => (
         <SupplierSection key={supplier.id} supplier={supplier} onRefetch={refetch} currency={currency} exchangeRate={exchangeRate} />
@@ -298,6 +339,8 @@ interface PaymentData {
   saldoDevedorTotal: string;
   rastreio: string | null;
   arrivalDate: string | null;
+  alertDaysBefore: number | null;
+  alertDismissed: boolean;
 }
 
 interface SupplierData {
@@ -928,7 +971,14 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate, isWinn
         </span>
       </td>
       <td className="px-2 py-2 font-mono font-medium text-slate-700 text-[11px] whitespace-nowrap">{payment.pedido}</td>
-      {isWinnie && <td className="px-2 py-2 text-center text-slate-600 text-[10px] whitespace-nowrap">{payment.arrivalDate || <span className="text-slate-300">-</span>}</td>}
+      {isWinnie && <td className="px-2 py-2 text-center text-[10px] whitespace-nowrap">
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-slate-600">{payment.arrivalDate || <span className="text-slate-300">-</span>}</span>
+          {payment.arrivalDate && (
+            <AlertDaysSelector paymentId={payment.id} currentDays={payment.alertDaysBefore} dismissed={payment.alertDismissed} onRefetch={onRefetch} />
+          )}
+        </div>
+      </td>}
       <td className="px-2 py-2 text-center">
         <span className="px-1 py-0.5 rounded bg-slate-100 text-slate-600 font-medium text-[10px]">{payment.doc}</span>
       </td>
@@ -980,6 +1030,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false }: { pa
     saldoDevedorTotal: String(payment.saldoDevedorTotal),
     rastreio: payment.rastreio || "",
     arrivalDate: payment.arrivalDate || "",
+    alertDaysBefore: payment.alertDaysBefore !== null ? String(payment.alertDaysBefore) : "",
     sectionTitle: payment.sectionTitle || "",
   });
 
@@ -999,7 +1050,10 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false }: { pa
         <input value={form.pedido} onChange={e => setForm({ ...form, pedido: e.target.value })} className={inputClass} />
       </td>
       {isWinnie && <td className="px-1 py-1.5">
-        <input value={form.arrivalDate} onChange={e => setForm({ ...form, arrivalDate: e.target.value })} className={inputClass} placeholder="dd/mm/aaaa" />
+        <div className="flex flex-col gap-0.5">
+          <input value={form.arrivalDate} onChange={e => setForm({ ...form, arrivalDate: e.target.value })} className={inputClass} placeholder="dd/mm/aaaa" />
+          <input type="number" min="0" max="90" value={form.alertDaysBefore} onChange={e => setForm({ ...form, alertDaysBefore: e.target.value })} className={`${inputClass} text-center`} placeholder="Alerta (dias)" title="Dias de antecedência para alerta" />
+        </div>
       </td>}
       <td className="px-1 py-1.5">
         <select value={form.doc} onChange={e => setForm({ ...form, doc: e.target.value })} className={`${inputClass} text-center`}>
@@ -1043,7 +1097,7 @@ function EditPaymentRow({ payment, onCancel, onRefetch, isWinnie = false }: { pa
       <td className="px-1 py-1.5 text-center">
         <div className="flex items-center justify-center gap-0.5">
           <button
-            onClick={() => updatePayment.mutate({ id: payment.id, ...form, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined })}
+            onClick={() => updatePayment.mutate({ id: payment.id, ...form, sectionTitle: form.sectionTitle || undefined, arrivalDate: form.arrivalDate || undefined, alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null })}
             className="p-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
             <Check className="w-3 h-3" />
@@ -1075,6 +1129,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
     saldoDevedorTotal: "0",
     rastreio: "",
     arrivalDate: "",
+    alertDaysBefore: "",
   });
 
   const createPayment = trpc.import.createPayment.useMutation({
@@ -1093,7 +1148,10 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
         <input value={form.pedido} onChange={e => setForm({ ...form, pedido: e.target.value })} className={inputClass} placeholder="PO..." />
       </td>
       {isWinnie && <td className="px-1 py-1.5">
-        <input value={form.arrivalDate} onChange={e => setForm({ ...form, arrivalDate: e.target.value })} className={inputClass} placeholder="dd/mm/aaaa" />
+        <div className="flex flex-col gap-0.5">
+          <input value={form.arrivalDate} onChange={e => setForm({ ...form, arrivalDate: e.target.value })} className={inputClass} placeholder="dd/mm/aaaa" />
+          <input type="number" min="0" max="90" value={form.alertDaysBefore} onChange={e => setForm({ ...form, alertDaysBefore: e.target.value })} className={`${inputClass} text-center`} placeholder="Alerta (dias)" title="Dias de antecedência para alerta" />
+        </div>
       </td>}
       <td className="px-1 py-1.5">
         <select value={form.doc} onChange={e => setForm({ ...form, doc: e.target.value })} className={`${inputClass} text-center`}>
@@ -1159,6 +1217,7 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
                 saldoDevedorTotal: form.saldoDevedorTotal || undefined,
                 rastreio: form.rastreio || undefined,
                 arrivalDate: form.arrivalDate || undefined,
+                alertDaysBefore: form.alertDaysBefore ? parseInt(form.alertDaysBefore) : null,
               });
             }}
             className="p-1 rounded bg-green-600 text-white hover:bg-green-700 transition-colors"
@@ -1172,6 +1231,91 @@ function InlineAddPaymentRow({ supplierId, sectionTitle, onCancel, onRefetch, is
         </div>
       </td>
     </tr>
+  );
+}
+
+// ===== ALERT DAYS SELECTOR (inline, Winnie only) =====
+
+function AlertDaysSelector({ paymentId, currentDays, dismissed, onRefetch }: { paymentId: number; currentDays: number | null; dismissed: boolean; onRefetch: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [days, setDays] = useState(currentDays !== null ? String(currentDays) : "");
+
+  const updatePayment = trpc.import.updatePayment.useMutation({
+    onSuccess: () => { onRefetch(); setEditing(false); toast.success("Alerta configurado!"); },
+    onError: () => toast.error("Erro ao configurar alerta"),
+  });
+
+  const reactivateAlert = trpc.import.reactivateAlert.useMutation({
+    onSuccess: () => { onRefetch(); toast.success("Alerta reativado!"); },
+    onError: () => toast.error("Erro ao reativar"),
+  });
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-0.5">
+        <input
+          type="number"
+          min="1"
+          max="90"
+          value={days}
+          onChange={e => setDays(e.target.value)}
+          className="w-10 px-1 py-0.5 border border-blue-300 rounded text-[9px] text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
+          placeholder="dias"
+          autoFocus
+        />
+        <button
+          onClick={() => {
+            const d = parseInt(days);
+            if (d > 0) updatePayment.mutate({ id: paymentId, alertDaysBefore: d });
+            else { updatePayment.mutate({ id: paymentId, alertDaysBefore: null }); }
+          }}
+          className="p-0.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+          title="Salvar"
+        >
+          <Check className="w-2.5 h-2.5" />
+        </button>
+        <button onClick={() => setEditing(false)} className="p-0.5 rounded bg-slate-200 text-slate-600 hover:bg-slate-300">
+          <X className="w-2.5 h-2.5" />
+        </button>
+      </div>
+    );
+  }
+
+  if (currentDays !== null) {
+    return (
+      <div className="flex items-center gap-0.5">
+        <button
+          onClick={() => setEditing(true)}
+          className={`px-1 py-0.5 rounded text-[9px] font-medium border ${
+            dismissed
+              ? "bg-slate-100 text-slate-500 border-slate-200 line-through"
+              : "bg-amber-50 text-amber-700 border-amber-300"
+          }`}
+          title={dismissed ? "Alerta dispensado (clique para editar)" : `Alerta: ${currentDays} dias antes`}
+        >
+          {dismissed ? `${currentDays}d (off)` : `⚠️ ${currentDays}d`}
+        </button>
+        {dismissed && (
+          <button
+            onClick={() => reactivateAlert.mutate({ id: paymentId })}
+            className="p-0.5 rounded bg-amber-100 text-amber-600 hover:bg-amber-200 text-[9px]"
+            title="Reativar alerta"
+          >
+            <Bell className="w-2.5 h-2.5" />
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      className="px-1 py-0.5 rounded text-[9px] text-slate-400 hover:text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-200 transition-colors"
+      title="Configurar alerta de pagamento"
+    >
+      + alerta
+    </button>
   );
 }
 

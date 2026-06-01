@@ -960,6 +960,13 @@
       "when": 1780080465648,
       "tag": "0136_tough_pet_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 137,
+      "version": "5",
+      "when": 1780319702903,
+      "tag": "0137_youthful_night_thrasher",
+      "breakpoints": true
     }
   ]
 }

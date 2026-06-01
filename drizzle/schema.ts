@@ -2371,6 +2371,8 @@ export const importPayments = mysqlTable("import_payments", {
   saldoDevedorParaguai: decimal("saldo_devedor_paraguai", { precision: 18, scale: 2 }).default("0").notNull(),
   saldoDevedorTotal: decimal("saldo_devedor_total", { precision: 18, scale: 2 }).default("0").notNull(),
   arrivalDate: varchar("arrival_date", { length: 50 }), // data de chegada (usado apenas para Winnie)
+  alertDaysBefore: int("alert_days_before"), // dias de antecedência para alerta de pagamento (ex: 15)
+  alertDismissed: boolean("alert_dismissed").default(false).notNull(), // se o alerta foi dispensado manualmente pela Larissa
   rastreio: varchar("rastreio", { length: 200 }), // código de rastreio do container
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
