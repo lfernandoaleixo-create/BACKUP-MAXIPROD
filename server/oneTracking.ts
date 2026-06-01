@@ -140,6 +140,25 @@ function calculateProgress(events: OneTrackingEvent[]): number {
 }
 
 /**
+ * Calculate voyage progress based on actual departure date and ETA.
+ * This gives the real percentage of the maritime journey completed.
+ */
+function calculateVoyageProgress(
+  firstDepartureDate: string,
+  finalArrivalDate: string
+): number {
+  const now = Date.now();
+  const dep = new Date(firstDepartureDate).getTime();
+  const arr = new Date(finalArrivalDate).getTime();
+  
+  if (now <= dep) return 0;
+  if (now >= arr) return 100;
+  
+  const progress = ((now - dep) / (arr - dep)) * 100;
+  return Math.round(Math.min(Math.max(progress, 0), 100));
+}
+
+/**
  * Get tracking data for a known BL number.
  * Currently uses hardcoded data from FindTEU/ONE website.
  * In the future will integrate with FindTEU API or Logcomex API.
@@ -215,7 +234,7 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
       ],
       events: allEvents,
       currentStatus,
-      progress: calculateProgress(allEvents),
+      progress: calculateVoyageProgress('2026-05-10T00:34:00Z', '2026-06-28T01:00:00Z'),
       vesselPosition,
       routeCoordinates: fullRoute,
       origin: { lat: 24.47, lng: 118.08, name: 'XIAMEN' },
@@ -297,7 +316,7 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
       ],
       events: allEvents,
       currentStatus,
-      progress: calculateProgress(allEvents),
+      progress: calculateVoyageProgress('2026-05-19T00:00:00Z', '2026-07-04T00:00:00Z'),
       vesselPosition,
       routeCoordinates: fullRoute,
       origin: { lat: 38.92, lng: 121.63, name: 'DALIAN' },
