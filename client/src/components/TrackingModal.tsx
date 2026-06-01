@@ -361,7 +361,7 @@ function TrackingGoogleMap({ data }: { data: NormalizedTrackingData }) {
 
       // Set dark map style
       map.setOptions({
-        mapTypeId: "roadmap",
+        mapTypeId: "hybrid",
         styles: [
           { elementType: "geometry", stylers: [{ color: "#1a1a2e" }] },
           { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a2e" }] },
