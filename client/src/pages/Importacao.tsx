@@ -1027,6 +1027,8 @@ function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, currency, 
               <Navigation className="w-3 h-3" />
               Rastrear
             </button>
+          ) : payment.rastreio ? (
+            <span className="text-[10px] text-slate-500 font-mono bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">{payment.rastreio}</span>
           ) : (
             <span className="text-slate-300 text-[10px]">-</span>
           )}
