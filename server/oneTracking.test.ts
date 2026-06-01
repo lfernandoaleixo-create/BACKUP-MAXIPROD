@@ -60,4 +60,40 @@ describe("ONE Line Tracking", () => {
       expect(result!.vesselPosition!.lng).toBeDefined();
     }
   });
+
+  // Tests for Winnie BL (HKGG45910500 - Dalian → Busan → Santos)
+  it("should return tracking data for Winnie BL HKGG45910500", () => {
+    const result = fetchOneTracking("HKGG45910500");
+    expect(result).not.toBeNull();
+    expect(result!.blNumber).toBe("ONEYHKGG45910500");
+    expect(result!.containerNo).toBe("TCLU7290240");
+    expect(result!.containerType).toBe("20'DV (Dry Van)");
+    expect(result!.placeOfReceipt).toBe("DALIAN, CHINA");
+    expect(result!.placeOfDelivery).toBe("SANTOS, BRAZIL");
+    expect(result!.origin.name).toBe("DALIAN");
+    expect(result!.destination.name).toBe("SANTOS");
+    expect(result!.sailingLegs).toHaveLength(2);
+    expect(result!.sailingLegs[0].vessel).toBe("ACX DIAMOND");
+    expect(result!.sailingLegs[1].vessel).toBe("HMM JAKARTA");
+    expect(result!.transshipments).toHaveLength(1);
+    expect(result!.transshipments[0].name).toBe("BUSAN");
+    expect(result!.routeCoordinates.length).toBeGreaterThan(10);
+  });
+
+  it("should normalize Winnie BL with ONEY prefix", () => {
+    const result = fetchOneTracking("ONEYHKGG45910500");
+    expect(result).not.toBeNull();
+    expect(result!.blNumber).toBe("ONEYHKGG45910500");
+    expect(result!.containerNo).toBe("TCLU7290240");
+  });
+
+  it("should calculate Winnie vessel position on Busan→Santos route", () => {
+    const result = fetchOneTracking("HKGG45910500");
+    expect(result).not.toBeNull();
+    if (result!.progress > 0 && result!.progress < 100) {
+      expect(result!.vesselPosition).not.toBeNull();
+      expect(result!.vesselPosition!.lat).toBeDefined();
+      expect(result!.vesselPosition!.lng).toBeDefined();
+    }
+  });
 });
