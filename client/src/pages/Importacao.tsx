@@ -1012,21 +1012,17 @@ function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, currency, 
       <td className={`px-2 py-2 text-center font-medium bg-red-50/30 whitespace-nowrap ${saldoColor(payment.saldoDevedorTotal)}`}>{fmtRed(payment.saldoDevedorTotal)}</td>
       <td className="px-2 py-2 text-center whitespace-nowrap">
         <div className="flex flex-col items-center gap-1">
-          {/* BL-based tracking (ONE Line) */}
-          {payment.blNumber ? (
+          {(payment.blNumber || payment.trackingUuid) ? (
             <button
-              onClick={() => onTrackBl && onTrackBl(payment.blNumber!)}
+              onClick={() => {
+                if (payment.blNumber) {
+                  onTrackBl && onTrackBl(payment.blNumber);
+                } else if (payment.trackingUuid) {
+                  onTrack && onTrack(payment.trackingUuid);
+                }
+              }}
               className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 font-mono text-[10px] font-medium transition-colors"
-              title="Rastrear via ONE Line"
-            >
-              <Navigation className="w-3 h-3" />
-              Rastrear
-            </button>
-          ) : payment.trackingUuid ? (
-            <button
-              onClick={() => onTrack && onTrack(payment.trackingUuid!)}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md text-indigo-700 font-mono text-[10px] font-medium transition-colors"
-              title="Rastrear via Logcomex"
+              title={payment.blNumber ? "Rastrear via ONE Line" : "Rastrear via Logcomex"}
             >
               <Navigation className="w-3 h-3" />
               Rastrear
