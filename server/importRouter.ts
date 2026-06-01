@@ -1,7 +1,7 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { importSuppliers, importPayments } from "../drizzle/schema";
+import { importSuppliers, importPayments, trackingCache } from "../drizzle/schema";
 import { eq, asc, and } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
@@ -498,6 +498,35 @@ export const importRouter = router({
       if (!result) {
         throw new Error(`Rastreamento não encontrado para BL ${input.blNumber}. O BL precisa ser cadastrado manualmente no sistema.`);
       }
+      // Atualizar cache em background
+      try {
+        const db = await getDb();
+        if (db) {
+          const existing = await db.select().from(trackingCache)
+            .where(eq(trackingCache.blNumber, input.blNumber.replace(/^ONEY/i, '').trim().toUpperCase()))
+            .limit(1);
+          const cacheData = {
+            blNumber: input.blNumber.replace(/^ONEY/i, '').trim().toUpperCase(),
+            trackingSource: 'one_line',
+            status: result.currentStatus,
+            vesselName: result.sailingLegs[result.sailingLegs.length - 1]?.vessel || null,
+            voyageNo: result.sailingLegs[result.sailingLegs.length - 1]?.vesselCode || null,
+            origin: result.placeOfReceipt,
+            destination: result.placeOfDelivery,
+            etd: result.sailingLegs[0]?.departureDate || null,
+            eta: result.podArrival,
+            progress: result.progress,
+            vesselLat: result.vesselPosition ? String(result.vesselPosition.lat) : null,
+            vesselLng: result.vesselPosition ? String(result.vesselPosition.lng) : null,
+            rawData: JSON.stringify(result),
+          };
+          if (existing.length > 0) {
+            await db.update(trackingCache).set(cacheData).where(eq(trackingCache.id, existing[0].id));
+          } else {
+            await db.insert(trackingCache).values(cacheData);
+          }
+        }
+      } catch (e) { /* cache update is best-effort */ }
       return result;
     }),
 
