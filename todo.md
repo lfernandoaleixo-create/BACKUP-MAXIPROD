@@ -4064,3 +4064,7 @@
 - [x] Criar backend scraper para consultar tracking da ONE Line (ecomm.one-line.com) por número de BL
 - [x] Atualizar TrackingModal para usar dados reais da ONE Line com mapa Google Maps, rota real, posição do navio e timeline de eventos
 - [x] Botão "Rastrear" funcionar com BL number (sem depender de UUID da Logcomex)
+- [ ] Criar tabela tracking_cache no banco para armazenar dados de rastreamento atualizados
+- [ ] Implementar scraper Puppeteer para ONE Line (ecomm.one-line.com) que extrai dados reais
+- [ ] Implementar job agendado (AGENT cron) diário às 06:00 AM Brasília para atualizar rastreamento dos 2 BLs
+- [ ] TrackingModal usar dados do cache (banco) em vez de dados hardcoded

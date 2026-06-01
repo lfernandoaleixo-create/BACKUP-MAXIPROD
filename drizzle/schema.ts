@@ -2425,3 +2425,30 @@ export const salesVisitReports = mysqlTable("sales_visit_reports", {
 
 export type SalesVisitReport = typeof salesVisitReports.$inferSelect;
 export type InsertSalesVisitReport = typeof salesVisitReports.$inferInsert;
+
+
+/**
+ * Cache de rastreamento de navios - atualizado diariamente às 06:00 AM
+ */
+export const trackingCache = mysqlTable("tracking_cache", {
+  id: int("id").autoincrement().primaryKey(),
+  blNumber: varchar("bl_number", { length: 100 }).notNull(),
+  trackingSource: varchar("tracking_source", { length: 50 }).notNull(), // 'one_line' | 'logcomex'
+  trackingUuid: varchar("tracking_uuid", { length: 200 }), // UUID da Logcomex (quando aplicável)
+  status: varchar("status", { length: 100 }), // 'in_transit', 'arrived', 'loading', etc.
+  vesselName: varchar("vessel_name", { length: 200 }),
+  voyageNo: varchar("voyage_no", { length: 50 }),
+  origin: varchar("origin", { length: 200 }),
+  destination: varchar("destination", { length: 200 }),
+  etd: varchar("etd", { length: 50 }), // estimated time of departure
+  eta: varchar("eta", { length: 50 }), // estimated time of arrival
+  progress: int("progress"), // 0-100
+  vesselLat: decimal("vessel_lat", { precision: 10, scale: 6 }),
+  vesselLng: decimal("vessel_lng", { precision: 10, scale: 6 }),
+  rawData: text("raw_data"), // JSON completo do tracking para o modal
+  lastUpdated: timestamp("last_updated").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type TrackingCache = typeof trackingCache.$inferSelect;
+export type InsertTrackingCache = typeof trackingCache.$inferInsert;

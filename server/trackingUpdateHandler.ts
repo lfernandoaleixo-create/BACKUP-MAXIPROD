@@ -1,0 +1,147 @@
+import type { Request, Response } from "express";
+import { eq } from "drizzle-orm";
+import { getDb } from "./db";
+import { importPayments, trackingCache } from "../drizzle/schema";
+import { fetchOneTracking } from "./oneTracking";
+
+/**
+ * Handler para atualização automática de rastreamento de navios.
+ * Chamado via Heartbeat (cron) diariamente às 06:00 AM Brasília (09:00 UTC).
+ * 
+ * Busca todos os BLs cadastrados na tabela import_payments e atualiza
+ * o cache de rastreamento com dados frescos.
+ * 
+ * Fontes suportadas:
+ * - ONE Line (via dados de rota + cálculo de posição)
+ * - Logcomex (via API pública com UUID)
+ */
+export async function trackingUpdateCronHandler(req: Request, res: Response) {
+  try {
+    console.log("[Tracking Update] Iniciando atualização diária de rastreamento...");
+
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    // Buscar todos os pagamentos com BL number ou tracking UUID
+    const payments = await db.select({
+      id: importPayments.id,
+      blNumber: importPayments.blNumber,
+      trackingUuid: importPayments.trackingUuid,
+    }).from(importPayments);
+
+    const blPayments = payments.filter(p => p.blNumber);
+    const uuidPayments = payments.filter(p => p.trackingUuid && !p.blNumber);
+
+    let updatedCount = 0;
+    let errorCount = 0;
+
+    // 1. Atualizar BLs da ONE Line
+    for (const payment of blPayments) {
+      try {
+        const trackingData = fetchOneTracking(payment.blNumber!);
+        if (trackingData) {
+          // Upsert no tracking_cache
+          const existing = await db.select().from(trackingCache)
+            .where(eq(trackingCache.blNumber, payment.blNumber!))
+            .limit(1);
+
+          const cacheData = {
+            blNumber: payment.blNumber!,
+            trackingSource: 'one_line',
+            status: trackingData.currentStatus,
+            vesselName: trackingData.sailingLegs[trackingData.sailingLegs.length - 1]?.vessel || null,
+            voyageNo: trackingData.sailingLegs[trackingData.sailingLegs.length - 1]?.vesselCode || null,
+            origin: trackingData.placeOfReceipt,
+            destination: trackingData.placeOfDelivery,
+            etd: trackingData.sailingLegs[0]?.departureDate || null,
+            eta: trackingData.podArrival,
+            progress: trackingData.progress,
+            vesselLat: trackingData.vesselPosition ? String(trackingData.vesselPosition.lat) : null,
+            vesselLng: trackingData.vesselPosition ? String(trackingData.vesselPosition.lng) : null,
+            rawData: JSON.stringify(trackingData),
+          };
+
+          if (existing.length > 0) {
+            await db.update(trackingCache)
+              .set(cacheData)
+              .where(eq(trackingCache.id, existing[0].id));
+          } else {
+            await db.insert(trackingCache).values(cacheData);
+          }
+          updatedCount++;
+          console.log(`[Tracking Update] BL ${payment.blNumber} atualizado (ONE Line)`);
+        }
+      } catch (err) {
+        errorCount++;
+        console.error(`[Tracking Update] Erro ao atualizar BL ${payment.blNumber}:`, err);
+      }
+    }
+
+    // 2. Atualizar UUIDs da Logcomex
+    for (const payment of uuidPayments) {
+      try {
+        // Fetch from Logcomex public API
+        const response = await fetch(
+          `https://backend.logcomex.ai/functions/v1/api-public-workflow-item/${payment.trackingUuid}`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          const existing = await db.select().from(trackingCache)
+            .where(eq(trackingCache.trackingUuid, payment.trackingUuid!))
+            .limit(1);
+
+          const cacheData = {
+            blNumber: data.blNumber || payment.trackingUuid!,
+            trackingSource: 'logcomex',
+            trackingUuid: payment.trackingUuid,
+            status: data.currentStatus || null,
+            vesselName: data.vesselName || null,
+            voyageNo: data.voyageNumber || null,
+            origin: data.origin || null,
+            destination: data.destination || null,
+            etd: data.etd || null,
+            eta: data.eta || null,
+            progress: data.progress || null,
+            vesselLat: data.vesselLat ? String(data.vesselLat) : null,
+            vesselLng: data.vesselLng ? String(data.vesselLng) : null,
+            rawData: JSON.stringify(data),
+          };
+
+          if (existing.length > 0) {
+            await db.update(trackingCache)
+              .set(cacheData)
+              .where(eq(trackingCache.id, existing[0].id));
+          } else {
+            await db.insert(trackingCache).values(cacheData);
+          }
+          updatedCount++;
+          console.log(`[Tracking Update] UUID ${payment.trackingUuid} atualizado (Logcomex)`);
+        }
+      } catch (err) {
+        errorCount++;
+        console.error(`[Tracking Update] Erro ao atualizar UUID ${payment.trackingUuid}:`, err);
+      }
+    }
+
+    const result = {
+      ok: true,
+      timestamp: new Date().toISOString(),
+      totalBLs: blPayments.length,
+      totalUUIDs: uuidPayments.length,
+      updated: updatedCount,
+      errors: errorCount,
+    };
+
+    console.log(`[Tracking Update] Concluído: ${updatedCount} atualizados, ${errorCount} erros`);
+    res.json(result);
+  } catch (error: any) {
+    console.error("[Tracking Update] Erro fatal:", error);
+    res.status(500).json({
+      error: error.message || "Unknown error",
+      stack: error.stack,
+      context: { url: req.url },
+      timestamp: new Date().toISOString(),
+    });
+  }
+}

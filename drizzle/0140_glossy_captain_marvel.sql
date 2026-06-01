@@ -1,0 +1,20 @@
+CREATE TABLE `tracking_cache` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`bl_number` varchar(100) NOT NULL,
+	`tracking_source` varchar(50) NOT NULL,
+	`tracking_uuid` varchar(200),
+	`status` varchar(100),
+	`vessel_name` varchar(200),
+	`voyage_no` varchar(50),
+	`origin` varchar(200),
+	`destination` varchar(200),
+	`etd` varchar(50),
+	`eta` varchar(50),
+	`progress` int,
+	`vessel_lat` decimal(10,6),
+	`vessel_lng` decimal(10,6),
+	`raw_data` text,
+	`last_updated` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `tracking_cache_id` PRIMARY KEY(`id`)
+);

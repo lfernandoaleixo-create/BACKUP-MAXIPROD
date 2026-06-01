@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { startScraper } from "../maxiprodScraper";
 import { startScheduler } from "../scheduler";
 import { inadimplenciaBackupCronHandler } from "../inadimplenciaBackupHandler";
+import { trackingUpdateCronHandler } from "../trackingUpdateHandler";
 import { importPdfExportHandler } from "../importPdfExport";
 import { registerStorageProxy } from "./storageProxy";
 
@@ -44,6 +45,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Scheduled endpoints (Heartbeat cron)
   app.post("/api/scheduled/inadimplencia-backup", inadimplenciaBackupCronHandler);
+  app.post("/api/scheduled/tracking-update", trackingUpdateCronHandler);
   // PDF export endpoint
   app.get("/api/import/export-pdf", importPdfExportHandler);
 
