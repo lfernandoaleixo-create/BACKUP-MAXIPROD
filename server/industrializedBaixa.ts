@@ -22,6 +22,7 @@ import {
   billedIndustrializedSnapshot,
   industrializedBillingHistory,
   stockEditHistory,
+  productVariants,
 } from "../drizzle/schema";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -114,6 +115,13 @@ export async function processIndustrializedBaixa(): Promise<void> {
         madeiraMap.set(ms.codigoItem, { id: ms.id, quantidade: ms.quantidade });
       }
 
+      // 4.1 Buscar tabela de variações (child → parent) para resolver baixa no produto mãe
+      const allVariants = await db.select().from(productVariants);
+      const childToParentMap = new Map<string, { parentCode: string; conversionFactor: number }>();
+      for (const v of allVariants) {
+        childToParentMap.set(v.childCode, { parentCode: v.parentCode, conversionFactor: parseFloat(v.conversionFactor) });
+      }
+
       // 5. Processar cada novo faturamento
       for (const item of newBilled) {
         if (!item.codigoItem) continue;
@@ -122,23 +130,36 @@ export async function processIndustrializedBaixa(): Promise<void> {
         const unidade = item.unidadeMedidaCodigo || 'un';
 
         // Verificar se o produto existe no estoque de madeira
-        const madeiraItem = madeiraMap.get(codigoItem);
+        let madeiraItem = madeiraMap.get(codigoItem);
+        let targetCode = codigoItem;
+        let quantidadeAbater = quantidadeFaturada;
+
+        // Se não encontrou no estoque, verificar se é uma VARIAÇÃO → baixar do produto MÃE
+        if (!madeiraItem && childToParentMap.has(codigoItem)) {
+          const variant = childToParentMap.get(codigoItem)!;
+          targetCode = variant.parentCode;
+          quantidadeAbater = quantidadeFaturada * variant.conversionFactor;
+          madeiraItem = madeiraMap.get(targetCode);
+          if (madeiraItem) {
+            console.log(`  → Variação detectada: ${codigoItem} → pai ${targetCode} (fator: ${variant.conversionFactor})`);
+          }
+        }
         
         if (madeiraItem) {
           const estoqueAnterior = parseFloat(madeiraItem.quantidade);
-          const estoqueNovo = Math.max(0, estoqueAnterior - quantidadeFaturada);
+          const estoqueNovo = Math.max(0, estoqueAnterior - quantidadeAbater);
 
-          // Dar baixa no estoque de madeira
+          // Dar baixa no estoque de madeira (no produto alvo — pode ser o mãe)
           await db.update(madeiraStock)
             .set({
               quantidade: estoqueNovo.toFixed(5),
               updatedBy: "Sistema (Baixa Faturamento)",
               updatedAt: new Date(),
             })
-            .where(eq(madeiraStock.codigoItem, codigoItem));
+            .where(eq(madeiraStock.codigoItem, targetCode));
 
           // Atualizar o mapa local para baixas subsequentes no mesmo sync
-          madeiraMap.set(codigoItem, { id: madeiraItem.id, quantidade: estoqueNovo.toFixed(5) });
+          madeiraMap.set(targetCode, { id: madeiraItem.id, quantidade: estoqueNovo.toFixed(5) });
 
           // Registrar no histórico de baixas (PERMANENTE — nunca é deletado)
           await db.insert(industrializedBillingHistory).values({
@@ -146,7 +167,7 @@ export async function processIndustrializedBaixa(): Promise<void> {
             codigoItem: codigoItem,
             descricaoItem: item.descricaoItem || item.descricao || '',
             cliente: item.cliente || '',
-            quantidade: quantidadeFaturada.toFixed(5),
+            quantidade: quantidadeAbater.toFixed(5),
             unidadeMedida: unidade,
             estoqueAnterior: estoqueAnterior.toFixed(5),
             estoqueNovo: estoqueNovo.toFixed(5),
@@ -155,9 +176,12 @@ export async function processIndustrializedBaixa(): Promise<void> {
           });
 
           // Registrar no histórico de edições de estoque (para auditoria)
+          const descBaixa = targetCode !== codigoItem
+            ? `${codigoItem} (variação → pai ${targetCode})`
+            : codigoItem;
           await db.insert(stockEditHistory).values({
             card: "madeira",
-            codigoItem: codigoItem,
+            codigoItem: targetCode,
             descricaoItem: item.descricaoItem || item.descricao || '',
             valorAnterior: estoqueAnterior.toFixed(5),
             valorNovo: estoqueNovo.toFixed(5),
@@ -165,7 +189,7 @@ export async function processIndustrializedBaixa(): Promise<void> {
             tipo: "baixa_faturamento",
           });
 
-          console.log(`  → Baixa: ${codigoItem} (${(item.descricaoItem || '').substring(0, 40)}) | Pedido #${item.pedido} | -${quantidadeFaturada} ${unidade} | ${estoqueAnterior} → ${estoqueNovo}`);
+          console.log(`  → Baixa: ${descBaixa} (${(item.descricaoItem || '').substring(0, 40)}) | Pedido #${item.pedido} | -${quantidadeAbater} ${unidade} | ${estoqueAnterior} → ${estoqueNovo}`);
         } else {
           console.log(`  → Sem estoque madeira: ${codigoItem} (${(item.descricaoItem || '').substring(0, 40)}) | Pedido #${item.pedido} | ${quantidadeFaturada} ${unidade} — produto não existe no madeira_stock, ignorando`);
         }

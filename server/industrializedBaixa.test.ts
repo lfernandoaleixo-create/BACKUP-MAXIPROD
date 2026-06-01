@@ -133,3 +133,123 @@ describe("Industrialized Baixa - Business Rules", () => {
     }
   });
 });
+
+describe("Industrialized Baixa - Variação → Produto Mãe", () => {
+  it("deve identificar variação e baixar do produto mãe", () => {
+    // Given: codigoItem = '00541' (variação), parentCode = '00086', conversionFactor = 1.0
+    // When: 100 cx faturadas de 00541
+    // Then: deve abater 100 cx do estoque de 00086
+
+    const childToParentMap = new Map<string, { parentCode: string; conversionFactor: number }>();
+    childToParentMap.set("00541", { parentCode: "00086", conversionFactor: 1.0 });
+    childToParentMap.set("00087", { parentCode: "00086", conversionFactor: 1.0 });
+
+    const madeiraMap = new Map<string, { id: number; quantidade: string }>();
+    madeiraMap.set("00086", { id: 1, quantidade: "766.00000" });
+    // Note: 00541 does NOT exist in madeiraMap (variação não tem estoque próprio)
+
+    const codigoItem = "00541";
+    const quantidadeFaturada = 100;
+
+    let madeiraItem = madeiraMap.get(codigoItem); // undefined
+    let targetCode = codigoItem;
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (!madeiraItem && childToParentMap.has(codigoItem)) {
+      const variant = childToParentMap.get(codigoItem)!;
+      targetCode = variant.parentCode;
+      quantidadeAbater = quantidadeFaturada * variant.conversionFactor;
+      madeiraItem = madeiraMap.get(targetCode);
+    }
+
+    expect(madeiraItem).toBeDefined();
+    expect(targetCode).toBe("00086");
+    expect(quantidadeAbater).toBe(100);
+
+    const estoqueAnterior = parseFloat(madeiraItem!.quantidade);
+    const estoqueNovo = Math.max(0, estoqueAnterior - quantidadeAbater);
+
+    expect(estoqueAnterior).toBe(766);
+    expect(estoqueNovo).toBe(666);
+  });
+
+  it("deve aplicar fator de conversão quando diferente de 1", () => {
+    const childToParentMap = new Map<string, { parentCode: string; conversionFactor: number }>();
+    childToParentMap.set("00999", { parentCode: "00100", conversionFactor: 0.5 });
+
+    const madeiraMap = new Map<string, { id: number; quantidade: string }>();
+    madeiraMap.set("00100", { id: 2, quantidade: "1000.00000" });
+
+    const codigoItem = "00999";
+    const quantidadeFaturada = 200;
+
+    let madeiraItem = madeiraMap.get(codigoItem);
+    let targetCode = codigoItem;
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (!madeiraItem && childToParentMap.has(codigoItem)) {
+      const variant = childToParentMap.get(codigoItem)!;
+      targetCode = variant.parentCode;
+      quantidadeAbater = quantidadeFaturada * variant.conversionFactor;
+      madeiraItem = madeiraMap.get(targetCode);
+    }
+
+    expect(targetCode).toBe("00100");
+    expect(quantidadeAbater).toBe(100); // 200 * 0.5 = 100
+    
+    const estoqueAnterior = parseFloat(madeiraItem!.quantidade);
+    const estoqueNovo = Math.max(0, estoqueAnterior - quantidadeAbater);
+    expect(estoqueNovo).toBe(900); // 1000 - 100 = 900
+  });
+
+  it("produto direto (não variação) deve baixar normalmente", () => {
+    const childToParentMap = new Map<string, { parentCode: string; conversionFactor: number }>();
+
+    const madeiraMap = new Map<string, { id: number; quantidade: string }>();
+    madeiraMap.set("00195", { id: 3, quantidade: "28.00000" });
+
+    const codigoItem = "00195";
+    const quantidadeFaturada = 10;
+
+    let madeiraItem = madeiraMap.get(codigoItem);
+    let targetCode = codigoItem;
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (!madeiraItem && childToParentMap.has(codigoItem)) {
+      const variant = childToParentMap.get(codigoItem)!;
+      targetCode = variant.parentCode;
+      quantidadeAbater = quantidadeFaturada * variant.conversionFactor;
+      madeiraItem = madeiraMap.get(targetCode);
+    }
+
+    expect(targetCode).toBe("00195");
+    expect(quantidadeAbater).toBe(10);
+    
+    const estoqueAnterior = parseFloat(madeiraItem!.quantidade);
+    const estoqueNovo = Math.max(0, estoqueAnterior - quantidadeAbater);
+    expect(estoqueNovo).toBe(18); // 28 - 10 = 18
+  });
+
+  it("variação sem estoque no pai deve ser ignorada (madeiraItem undefined)", () => {
+    const childToParentMap = new Map<string, { parentCode: string; conversionFactor: number }>();
+    childToParentMap.set("00777", { parentCode: "00888", conversionFactor: 1.0 });
+
+    const madeiraMap = new Map<string, { id: number; quantidade: string }>();
+
+    const codigoItem = "00777";
+    const quantidadeFaturada = 50;
+
+    let madeiraItem = madeiraMap.get(codigoItem);
+    let targetCode = codigoItem;
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (!madeiraItem && childToParentMap.has(codigoItem)) {
+      const variant = childToParentMap.get(codigoItem)!;
+      targetCode = variant.parentCode;
+      quantidadeAbater = quantidadeFaturada * variant.conversionFactor;
+      madeiraItem = madeiraMap.get(targetCode);
+    }
+
+    expect(madeiraItem).toBeUndefined();
+  });
+});

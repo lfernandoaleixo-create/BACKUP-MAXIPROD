@@ -4068,3 +4068,5 @@
 - [x] Implementar scraper Puppeteer para ONE Line (ecomm.one-line.com) que extrai dados reais
 - [x] Implementar job agendado (AGENT cron) diário às 06:00 AM Brasília para atualizar rastreamento dos 2 BLs
 - [x] TrackingModal usar dados do cache (banco) em vez de dados hardcoded
+- [x] Bug: Produção lançada pela Maria não está somando no estoque PA (ex: 00195 deveria ter 32 cx, mostra 28) — usuário ajusta manualmente, próximo lançamento soma corretamente
+- [x] Bug: Faturamento de variação não dá baixa no estoque do produto mãe (ex: faturar 00541 deveria subtrair do estoque do 00086) — corrigido: lookup child→parent via product_variants
