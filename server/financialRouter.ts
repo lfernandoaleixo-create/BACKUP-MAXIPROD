@@ -2761,8 +2761,13 @@ export const financialRouter = router({
       reconciled: z.boolean(),
     }))
     .mutation(async ({ input }) => {
-      // Validate password
-      if (input.password !== "Thiago") {
+      // Validate password - allow Thiago or Thalita
+      const validPasswords: Record<string, string> = {
+        "Thiago": "Thiago",
+        "Thalita": "Thalita",
+      };
+      const reconciledBy = validPasswords[input.password];
+      if (!reconciledBy) {
         return { success: false, error: "Senha incorreta" };
       }
 
@@ -2782,7 +2787,7 @@ export const financialRouter = router({
           .update(dailyReconciliation)
           .set({
             reconciled: input.reconciled,
-            reconciledBy: input.reconciled ? "Thiago" : null,
+            reconciledBy: input.reconciled ? reconciledBy : null,
             reconciledAt: input.reconciled ? new Date() : null,
           })
           .where(eq(dailyReconciliation.date, todayBR));
@@ -2790,7 +2795,7 @@ export const financialRouter = router({
         await db.insert(dailyReconciliation).values({
           date: todayBR,
           reconciled: input.reconciled,
-          reconciledBy: input.reconciled ? "Thiago" : null,
+          reconciledBy: input.reconciled ? reconciledBy : null,
           reconciledAt: input.reconciled ? new Date() : null,
         });
       }
