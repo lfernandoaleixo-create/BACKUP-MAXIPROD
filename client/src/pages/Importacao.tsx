@@ -1015,14 +1015,14 @@ function PaymentRow({ payment, onEdit, onRefetch, onTrack, onTrackBl, currency, 
           {(payment.blNumber || payment.trackingUuid) ? (
             <button
               onClick={() => {
-                if (payment.blNumber) {
-                  onTrackBl && onTrackBl(payment.blNumber);
-                } else if (payment.trackingUuid) {
+                if (payment.trackingUuid) {
                   onTrack && onTrack(payment.trackingUuid);
+                } else if (payment.blNumber) {
+                  onTrackBl && onTrackBl(payment.blNumber);
                 }
               }}
               className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 font-mono text-[10px] font-medium transition-colors"
-              title={payment.blNumber ? "Rastrear via ONE Line" : "Rastrear via Logcomex"}
+              title={payment.trackingUuid ? "Rastrear via Logcomex" : "Rastrear via ONE Line"}
             >
               <Navigation className="w-3 h-3" />
               Rastrear
