@@ -971,9 +971,9 @@ function PaymentRow({ payment, onEdit, onRefetch, currency, exchangeRate, isWinn
         </span>
       </td>
       <td className="px-2 py-2 font-mono font-medium text-slate-700 text-[11px] whitespace-nowrap">{payment.pedido}</td>
-      {isWinnie && <td className="px-2 py-2 text-center text-[10px] whitespace-nowrap">
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-slate-600">{payment.arrivalDate || <span className="text-slate-300">-</span>}</span>
+      {isWinnie && <td className="px-2 py-2 text-center whitespace-nowrap">
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-[11px] font-medium text-slate-700">{payment.arrivalDate || <span className="text-slate-300">-</span>}</span>
           {payment.arrivalDate && (
             <AlertDaysSelector paymentId={payment.id} currentDays={payment.alertDaysBefore} dismissed={payment.alertDismissed} onRefetch={onRefetch} />
           )}
@@ -1252,30 +1252,34 @@ function AlertDaysSelector({ paymentId, currentDays, dismissed, onRefetch }: { p
 
   if (editing) {
     return (
-      <div className="flex items-center gap-0.5">
-        <input
-          type="number"
-          min="1"
-          max="90"
-          value={days}
-          onChange={e => setDays(e.target.value)}
-          className="w-10 px-1 py-0.5 border border-blue-300 rounded text-[9px] text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
-          placeholder="dias"
-          autoFocus
-        />
+      <div className="flex items-center gap-1 justify-center">
+        <div className="flex items-center gap-0.5 bg-white border border-amber-300 rounded-md px-1.5 py-1 shadow-sm">
+          <Bell className="w-3 h-3 text-amber-500" />
+          <input
+            type="number"
+            min="1"
+            max="90"
+            value={days}
+            onChange={e => setDays(e.target.value)}
+            className="w-8 px-0.5 py-0 border-0 border-b border-amber-300 rounded-none text-[11px] text-center font-bold text-amber-700 focus:outline-none focus:border-amber-500 bg-transparent"
+            placeholder="15"
+            autoFocus
+          />
+          <span className="text-[9px] text-amber-600 font-medium">dias</span>
+        </div>
         <button
           onClick={() => {
             const d = parseInt(days);
             if (d > 0) updatePayment.mutate({ id: paymentId, alertDaysBefore: d });
             else { updatePayment.mutate({ id: paymentId, alertDaysBefore: null }); }
           }}
-          className="p-0.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+          className="p-1 rounded-md bg-amber-500 text-white hover:bg-amber-600 shadow-sm transition-colors"
           title="Salvar"
         >
-          <Check className="w-2.5 h-2.5" />
+          <Check className="w-3 h-3" />
         </button>
-        <button onClick={() => setEditing(false)} className="p-0.5 rounded bg-slate-200 text-slate-600 hover:bg-slate-300">
-          <X className="w-2.5 h-2.5" />
+        <button onClick={() => setEditing(false)} className="p-1 rounded-md bg-slate-200 text-slate-600 hover:bg-slate-300 transition-colors">
+          <X className="w-3 h-3" />
         </button>
       </div>
     );
@@ -1283,25 +1287,27 @@ function AlertDaysSelector({ paymentId, currentDays, dismissed, onRefetch }: { p
 
   if (currentDays !== null) {
     return (
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-1 justify-center">
         <button
           onClick={() => setEditing(true)}
-          className={`px-1 py-0.5 rounded text-[9px] font-medium border ${
+          className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-sm transition-all ${
             dismissed
-              ? "bg-slate-100 text-slate-500 border-slate-200 line-through"
-              : "bg-amber-50 text-amber-700 border-amber-300"
+              ? "bg-slate-50 text-slate-400 border-slate-200 opacity-60"
+              : "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 hover:shadow"
           }`}
-          title={dismissed ? "Alerta dispensado (clique para editar)" : `Alerta: ${currentDays} dias antes`}
+          title={dismissed ? "Alerta dispensado (clique para editar)" : `Alerta: ${currentDays} dias antes da chegada`}
         >
-          {dismissed ? `${currentDays}d (off)` : `⚠️ ${currentDays}d`}
+          <Bell className={`w-3 h-3 ${dismissed ? 'text-slate-400' : 'text-amber-500'}`} />
+          <span className={dismissed ? 'line-through' : ''}>{currentDays}d</span>
         </button>
         {dismissed && (
           <button
             onClick={() => reactivateAlert.mutate({ id: paymentId })}
-            className="p-0.5 rounded bg-amber-100 text-amber-600 hover:bg-amber-200 text-[9px]"
+            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 hover:bg-amber-200 text-[10px] font-medium border border-amber-200 shadow-sm transition-colors"
             title="Reativar alerta"
           >
-            <Bell className="w-2.5 h-2.5" />
+            <RefreshCw className="w-2.5 h-2.5" />
+            <span>Ativar</span>
           </button>
         )}
       </div>
@@ -1311,10 +1317,11 @@ function AlertDaysSelector({ paymentId, currentDays, dismissed, onRefetch }: { p
   return (
     <button
       onClick={() => setEditing(true)}
-      className="px-1 py-0.5 rounded text-[9px] text-slate-400 hover:text-amber-600 hover:bg-amber-50 border border-transparent hover:border-amber-200 transition-colors"
+      className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium text-amber-600 bg-amber-50/80 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 hover:shadow-sm transition-all"
       title="Configurar alerta de pagamento"
     >
-      + alerta
+      <Bell className="w-3 h-3" />
+      <span>Alerta</span>
     </button>
   );
 }
