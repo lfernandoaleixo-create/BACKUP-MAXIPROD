@@ -1621,7 +1621,7 @@ function OrderRow({ order }: { order: OrderData }) {
                     <span className="text-base font-medium text-slate-800">{item.descricao}</span>
                     {item.codigoItem && <div className="text-xs text-slate-400 mt-0.5">Cod: {item.codigoItem}</div>}
                   </td>
-                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatNumber(item.codigoItem === '00808' ? item.quantidade / 11.6 : item.quantidade)}</td>
+                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatNumber(item.codigoItem === '00808' ? item.quantidade / 11.6 : item.codigoItem === '00556' ? item.quantidade / 10.002 : item.quantidade)}</td>
                    <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatCurrencyFull(item.valorUnitario)}</td>
                    <td className="px-3 py-2.5 text-base font-semibold text-slate-800 text-right">{formatCurrencyFull(item.valorTotal)}</td>
                    <td className="px-3 py-2 text-center">
@@ -2539,7 +2539,7 @@ function UnifiedOrderRow({ order }: { order: UnifiedOrderData }) {
                     <span className="text-base font-medium text-slate-800">{item.descricao}</span>
                     {item.codigoItem && <div className="text-xs text-slate-400 mt-0.5">Cod: {item.codigoItem}</div>}
                   </td>
-                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatNumber(item.codigoItem === '00808' ? item.quantidade / 11.6 : item.quantidade)}</td>
+                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatNumber(item.codigoItem === '00808' ? item.quantidade / 11.6 : item.codigoItem === '00556' ? item.quantidade / 10.002 : item.quantidade)}</td>
                   <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatCurrencyFull(item.valorUnitario)}</td>
                   <td className="px-3 py-2.5 text-base font-semibold text-slate-800 text-right">{formatCurrencyFull(item.valorTotal)}</td>
                   <td className="px-3 py-2 text-center">
@@ -2632,7 +2632,7 @@ function DraftOrderRow({ order }: { order: DraftOrderData }) {
                     <span className="text-base font-medium text-slate-800">{item.descricao}</span>
                     {item.codigoItem && <div className="text-xs text-slate-400 mt-0.5">Cod: {item.codigoItem}</div>}
                   </td>
-                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatNumber(item.codigoItem === '00808' ? item.quantidade / 11.6 : item.quantidade)}</td>
+                  <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatNumber(item.codigoItem === '00808' ? item.quantidade / 11.6 : item.codigoItem === '00556' ? item.quantidade / 10.002 : item.quantidade)}</td>
                   <td className="px-3 py-2.5 text-sm text-slate-600 text-right">{formatCurrencyFull(item.valorUnitario)}</td>
                   <td className="px-3 py-2.5 text-base font-semibold text-slate-800 text-right">{formatCurrencyFull(item.valorTotal)}</td>
                 </tr>
