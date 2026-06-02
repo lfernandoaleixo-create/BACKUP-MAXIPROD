@@ -594,7 +594,7 @@ function DailyChart({ data, mode, period, comparison }: {
                     x={x + barWidth / 2}
                     y={y - 8}
                     textAnchor="middle"
-                    className="fill-slate-800 dark:fill-slate-200 label-animated"
+                    className="fill-black dark:fill-slate-200 label-animated"
                     fontSize="13"
                     fontWeight="700"
                     style={{ animationDelay: `${idx * 60 + 300}ms` }}
