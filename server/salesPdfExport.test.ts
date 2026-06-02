@@ -296,3 +296,84 @@ describe("Sales PDF Export - fmtCompactCurrency", () => {
     expect(fmtCompactCurrency(0)).toBe("R$ 0");
   });
 });
+
+// ─── SVG Animation Neutralization Tests ────────────────────────────
+// Verify that the svgToImage fix correctly removes animations from cloned SVG
+describe("Sales PDF Export - SVG Animation Neutralization", () => {
+  /**
+   * Simulates the animation neutralization logic from svgToImage.
+   * This tests the regex patterns and element manipulation that ensure
+   * bars appear at full height (scaleY(1)) and labels are visible (opacity:1)
+   * when the SVG is serialized for PDF rasterization.
+   */
+  function neutralizeAnimations(svgString: string): string {
+    // Same regex patterns used in salesPdfExport.ts svgToImage
+    let result = svgString
+      .replace(/@keyframes\s+barGrow\s*\{[^}]*\{[^}]*\}[^}]*\{[^}]*\}\s*\}/g, "")
+      .replace(/@keyframes\s+fadeInUp\s*\{[^}]*\{[^}]*\}[^}]*\{[^}]*\}\s*\}/g, "")
+      .replace(/\.bar-animated\s*\{[^}]*\}/g, "")
+      .replace(/\.label-animated\s*\{[^}]*\}/g, "");
+    return result;
+  }
+
+  const sampleStyle = `
+    @keyframes barGrow {
+      from { transform: scaleY(0); }
+      to { transform: scaleY(1); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .bar-animated {
+      animation: barGrow 0.5s ease-out forwards;
+      transform-origin: bottom;
+    }
+    .label-animated {
+      animation: fadeInUp 0.3s ease-out forwards;
+      opacity: 0;
+    }
+  `;
+
+  it("removes @keyframes barGrow from style content", () => {
+    const result = neutralizeAnimations(sampleStyle);
+    expect(result).not.toContain("@keyframes barGrow");
+    expect(result).not.toContain("scaleY(0)");
+  });
+
+  it("removes @keyframes fadeInUp from style content", () => {
+    const result = neutralizeAnimations(sampleStyle);
+    expect(result).not.toContain("@keyframes fadeInUp");
+    expect(result).not.toContain("translateY(6px)");
+  });
+
+  it("removes .bar-animated class definition", () => {
+    const result = neutralizeAnimations(sampleStyle);
+    expect(result).not.toContain(".bar-animated");
+    expect(result).not.toContain("barGrow 0.5s");
+  });
+
+  it("removes .label-animated class definition", () => {
+    const result = neutralizeAnimations(sampleStyle);
+    expect(result).not.toContain(".label-animated");
+    expect(result).not.toContain("fadeInUp 0.3s");
+  });
+
+  it("preserves non-animation CSS content", () => {
+    const styleWithOther = sampleStyle + "\n    .other-class { color: red; }";
+    const result = neutralizeAnimations(styleWithOther);
+    expect(result).toContain(".other-class");
+    expect(result).toContain("color: red");
+  });
+
+  it("handles empty style content", () => {
+    const result = neutralizeAnimations("");
+    expect(result).toBe("");
+  });
+
+  it("handles style with only animations (all removed)", () => {
+    const result = neutralizeAnimations(sampleStyle);
+    // Should only have whitespace left
+    expect(result.trim()).toBe("");
+  });
+});

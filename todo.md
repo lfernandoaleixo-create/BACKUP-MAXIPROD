@@ -4070,3 +4070,4 @@
 - [x] TrackingModal usar dados do cache (banco) em vez de dados hardcoded
 - [x] Bug: Produção lançada pela Maria não está somando no estoque PA (ex: 00195 deveria ter 32 cx, mostra 28) — usuário ajusta manualmente, próximo lançamento soma corretamente
 - [x] Bug: Faturamento de variação não dá baixa no estoque do produto mãe (ex: faturar 00541 deveria subtrair do estoque do 00086) — corrigido: lookup child→parent via product_variants
+- [x] Bug: Barras de vendas diárias não aparecem no PDF exportado (apenas linhas cumulativas visíveis) — problema com CSS animation no SVG clone

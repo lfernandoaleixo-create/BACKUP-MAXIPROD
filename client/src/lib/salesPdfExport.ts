@@ -219,6 +219,32 @@ async function svgToImage(svgElement: SVGSVGElement, isDark?: boolean): Promise<
     clone.setAttribute("height", String(height));
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
 
+    // ─── Fix: Neutralize CSS animations so bars/labels render at final state ───
+    // Remove @keyframes style blocks from the clone (they cause bars to start at scaleY(0))
+    const styleEls = clone.querySelectorAll("style");
+    styleEls.forEach(styleEl => {
+      // Remove animation keyframes and classes from embedded <style>
+      styleEl.textContent = (styleEl.textContent || "")
+        .replace(/@keyframes\s+barGrow\s*\{[^}]*\{[^}]*\}[^}]*\{[^}]*\}\s*\}/g, "")
+        .replace(/@keyframes\s+fadeInUp\s*\{[^}]*\{[^}]*\}[^}]*\{[^}]*\}\s*\}/g, "")
+        .replace(/\.bar-animated\s*\{[^}]*\}/g, "")
+        .replace(/\.label-animated\s*\{[^}]*\}/g, "");
+    });
+    // Force bar elements to their final visible state (scaleY(1), full opacity)
+    clone.querySelectorAll(".bar-animated").forEach(el => {
+      (el as SVGElement).classList.remove("bar-animated");
+      (el as SVGElement).style.animation = "none";
+      (el as SVGElement).style.transform = "scaleY(1)";
+      (el as SVGElement).style.transformOrigin = "bottom";
+    });
+    // Force label elements to their final visible state (opacity 1, no translate)
+    clone.querySelectorAll(".label-animated").forEach(el => {
+      (el as SVGElement).classList.remove("label-animated");
+      (el as SVGElement).style.animation = "none";
+      (el as SVGElement).style.opacity = "1";
+      (el as SVGElement).style.transform = "none";
+    });
+
     // Dark-to-light color mapping for PDF export (white background)
     // Dark mode: keep gold bars as gold, but gold TEXT becomes black for readability on white PDF
     const darkBarKeep: string[] = ["#d4a017"]; // gold bars stay gold
