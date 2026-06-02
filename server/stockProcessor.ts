@@ -630,7 +630,10 @@ export async function processStockData(): Promise<void> {
     const maxiprodFator = item.unidadeDeVendaFator ? parseFloat(item.unidadeDeVendaFator) : null;
     const descFator = extractUnitsPerBox(item.descricaoItem);
     // Produto 00808 (VARETA GLADE REEDS): estoque vem em kg, cada caixa = 11.6 kg
-    const unitsPerBox = item.codigoItem === '00808' ? 11.6 : (maxiprodFator || descFator);
+    // Produto 00556 (VARETA GLADE REEDS 100 ML): vendido em MIL, 1 caixa = 10.002 milheiros
+    const unitsPerBox = item.codigoItem === '00808' ? 11.6 
+      : item.codigoItem === '00556' ? 10.002 
+      : (maxiprodFator || descFator);
     
     const orderData = orderByCode.get(item.codigoItem);
     
@@ -698,10 +701,13 @@ export async function processStockData(): Promise<void> {
     // isKg: produtos vendidos em kg (ex: PCT 20KG)
     const isKg = item.codigoItem === '00808' ? false : isKgBasedProduct(item.unidadeMedida || "", item.descricaoItem, item.codigoItem);
     const estoqueCxVal = unitsPerBox ? Math.floor(itemUn / unitsPerBox) : null;
+    // Produto 00556: pedido vem em MIL, dividir totalCx por 10.002 para obter caixas
     const pedidosCxVal = orderData
-      ? (unitsPerBox && unitsPerBox !== 1
-          ? Math.ceil(pedidosUn / unitsPerBox)
-          : Math.ceil(orderData.totalCx))
+      ? (item.codigoItem === '00556'
+          ? Math.round(orderData.totalCx / 10.002)
+          : (unitsPerBox && unitsPerBox !== 1
+              ? Math.ceil(pedidosUn / unitsPerBox)
+              : Math.ceil(orderData.totalCx)))
       : null;
     // Disponível em caixas: para MADEIRA industrializado, não desconta pedidos
     const disponivelCxVal = estoqueCxVal !== null 
@@ -750,12 +756,13 @@ export async function processStockData(): Promise<void> {
       parentCode: childToParent.get(item.codigoItem)?.parentCode || null,
       variants: [], // preenchido no pós-processamento
       variantConversionFactor: childToParent.get(item.codigoItem)?.conversionFactor || null,
-      pedidosCxProprio: unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null,
+      pedidosCxProprio: item.codigoItem === '00556' ? (orderData ? Math.round(orderData.totalCx / 10.002) : null) : (unitsPerBox ? Math.ceil(pedidosUn / unitsPerBox) : null),
       pedidosUnProprio: pedidosUn,
       pedidosPorClienteProprio: [...pedidosPorCliente],
       ecommerceBreakdown: null, // preenchido no pós-processamento
       // Produto 00808: forçar unidade de venda como CX (comercial lança em caixas, não kg)
-      unidadeVenda: item.codigoItem === '00808' ? 'CX' : (unidadeVendaByCode.get(item.codigoItem) || item.unidadeMedida || ""),
+      // Produto 00556: forçar unidade de venda como CX (comercial lança em MIL, converter para caixas)
+      unidadeVenda: (item.codigoItem === '00808' || item.codigoItem === '00556') ? 'CX' : (unidadeVendaByCode.get(item.codigoItem) || item.unidadeMedida || ""),
     });
     processedCodes.add(item.codigoItem);
   }
@@ -913,15 +920,25 @@ export async function processStockData(): Promise<void> {
       
       if (isMadeiraAcabado) {
         // MADEIRA PRODUTO ACABADO: sempre abater do mãe
-        extraPedidosUn += childPedidosUn * child.conversionFactor;
+        // Produto 00556: converter MIL para caixas antes de multiplicar pelo fator
+        const effectiveChildPedidosForParent = child.childCode === '00556'
+          ? (childPedidosCx || 0) * (parentUnitsPerBox) // converter caixas da variação para unidades do pai
+          : childPedidosUn * child.conversionFactor;
+        extraPedidosUn += effectiveChildPedidosForParent;
         // Criar estoque virtual na variação = quantidade dos pedidos
         // (o Maxiprod já criou a variação com as configurações, mas o estoque
         // ainda está no mãe até o faturamento)
         if (childItem.estoqueUn === 0 && childPedidosUn > 0) {
-          variantEstoqueUn = childPedidosUn;
-          variantEstoqueCx = childItem.unidadesPorCaixa
-            ? Math.floor(childPedidosUn / childItem.unidadesPorCaixa)
-            : null;
+          // Produto 00556: estoque virtual = pedidosCx (já convertido para caixas)
+          if (child.childCode === '00556') {
+            variantEstoqueCx = childPedidosCx;
+            variantEstoqueUn = childPedidosCx * (childItem.unidadesPorCaixa || 1);
+          } else {
+            variantEstoqueUn = childPedidosUn;
+            variantEstoqueCx = childItem.unidadesPorCaixa
+              ? Math.floor(childPedidosUn / childItem.unidadesPorCaixa)
+              : null;
+          }
         }
       } else if (isZecaChild || !childHasOwnStock) {
         // ZECA ou variação sem estoque próprio: debitar pedidos do pai (comportamento original)

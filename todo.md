@@ -4072,3 +4072,4 @@
 - [x] Bug: Faturamento de variação não dá baixa no estoque do produto mãe (ex: faturar 00541 deveria subtrair do estoque do 00086) — corrigido: lookup child→parent via product_variants
 - [x] Bug: Barras de vendas diárias não aparecem no PDF exportado (apenas linhas cumulativas visíveis) — problema com CSS animation no SVG clone
 - [x] Produto 00556 (unidade MIL): converter para caixas dividindo por 10.002 nos cards de pedidos e atualizar fator de conversão na product_variants (00808→00556)
+- [x] Produto 00556: corrigir estoque/pedidos/disponível na tabela de madeira (stockProcessor) - dividir totalCx por 10.002, estoque virtual = pedidosCx, unidadeVenda = CX
