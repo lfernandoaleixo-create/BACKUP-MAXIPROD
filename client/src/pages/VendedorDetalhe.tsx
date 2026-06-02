@@ -3121,10 +3121,10 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                   const hasPOs = p.pendingPOs && p.pendingPOs.length > 0;
                   return (
                     <div key={p.codigoItem} className="border-b border-slate-100 dark:border-slate-700 last:border-0">
-                      {/* Main product row - clickable to add */}
+                      {/* Main product row - clickable to add (or expand if has POs) */}
                       <div className="flex items-stretch">
                         <button
-                          onClick={() => addProduct(p)}
+                          onClick={() => hasPOs ? setExpandedProduct(isExpanded ? null : p.codigoItem) : addProduct(p)}
                           className="flex-1 text-left px-2 sm:px-3 py-2.5 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors min-w-0"
                         >
                           <p className="text-[11px] sm:text-xs font-semibold text-slate-700 dark:text-slate-200 break-words">{p.descricaoItem}</p>
@@ -3251,6 +3251,17 @@ function NewOrderInline({ sellerId, sellerName, onClose }: { sellerId: number; s
                                   </div>
                                 );
                               })}
+                            </div>
+                          )}
+                          {/* Botão para adicionar produto ao pedido (quando expandido por ter PO) */}
+                          {hasPOs && (
+                            <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-600">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); addProduct(p); setExpandedProduct(null); }}
+                                className="w-full px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md text-[11px] font-semibold cursor-pointer flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5" /> Adicionar ao Pedido (estoque atual)
+                              </button>
                             </div>
                           )}
                         </div>

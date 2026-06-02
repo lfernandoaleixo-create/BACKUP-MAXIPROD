@@ -4080,3 +4080,6 @@
 - [x] Atualizar getPriceTableItems: priorizar mapeamento direto via priceTableCode, fallback para matching por nome
 - [x] Marcar 48 produtos da tabela 006 como visíveis para RENATO ALEIXO em seller_product_visibility
 - [x] Gerar migration Drizzle (0141_burly_the_leader.sql) para o campo price_table_code
+
+## UX: Facilitar reserva de PO no Novo Pedido de Venda
+- [x] Quando vendedor clica no produto com PO chegando (na lista de produtos, etapa 2), mostrar automaticamente a seção de PO com botão "Reservar Caixas desta PO" sem precisar expandir com a seta
