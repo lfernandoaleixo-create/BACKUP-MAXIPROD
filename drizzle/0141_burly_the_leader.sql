@@ -1,0 +1,1 @@
+ALTER TABLE `seller_permissions` ADD `price_table_code` varchar(20);

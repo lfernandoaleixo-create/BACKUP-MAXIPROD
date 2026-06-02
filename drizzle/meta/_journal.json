@@ -988,6 +988,13 @@
       "when": 1780333827367,
       "tag": "0140_glossy_captain_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 141,
+      "version": "5",
+      "when": 1780403210855,
+      "tag": "0141_burly_the_leader",
+      "breakpoints": true
     }
   ]
 }

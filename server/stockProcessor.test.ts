@@ -1053,9 +1053,9 @@ describe("stockProcessor - Correção duplicidade de baixa MADEIRA", () => {
     const items = JSON.parse(insertedDashboardData.dataJson);
     const item = items.find((i: any) => i.codigoItem === "00400");
     
-    // pedidosUn deve ser 0 para MADEIRA (não reserva estoque)
-    expect(item.pedidosUn).toBe(0);
-    // disponível = estoque (sem desconto de pedidos)
+    // pedidosUn APARECE (informativo para o vendedor/gestor), mas NÃO subtrai do disponível
+    expect(item.pedidosUn).toBe(50000);
+    // disponível = estoque (sem desconto de pedidos) — baixa só no faturamento
     expect(item.disponivelUn).toBe(100000);
   });
 
@@ -1084,7 +1084,9 @@ describe("stockProcessor - Correção duplicidade de baixa MADEIRA", () => {
     const items = JSON.parse(insertedDashboardData.dataJson);
     const item = items.find((i: any) => i.codigoItem === "00401");
     
-    expect(item.pedidosUn).toBe(0);
+    // pedidosUn APARECE (informativo), mas NÃO subtrai do disponível
+    expect(item.pedidosUn).toBe(500);
+    // disponível = estoque (sem desconto de pedidos)
     expect(item.disponivelUn).toBe(50000);
   });
 

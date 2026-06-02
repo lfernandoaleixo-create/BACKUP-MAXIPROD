@@ -2009,6 +2009,7 @@ export const sellerPermissions = mysqlTable("seller_permissions", {
   gestorName: varchar("gestor_name", { length: 200 }).notNull(),
   password: varchar("password", { length: 100 }).notNull(), // primeiro nome, primeira letra maiúscula
   authorized: boolean("authorized").default(false).notNull(), // gestor precisa ticar pra liberar
+  priceTableCode: varchar("price_table_code", { length: 20 }), // código da tabela de preços vinculada (ex: "006")
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

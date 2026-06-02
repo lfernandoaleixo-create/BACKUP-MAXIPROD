@@ -3800,21 +3800,27 @@ export const salesRouter = router({
       let tableId = input.priceTableId;
       
       if (input.sellerId && !tableId) {
-        // Get seller name
+        // Get seller info
         const sellers = await db.select().from(sellerPermissions)
           .where(eq(sellerPermissions.id, input.sellerId));
         if (sellers.length === 0) return { items: [], priceTable: null };
         
-        const sellerName = sellers[0].sellerName;
-        
-        // Find matching price table by seller name
+        const seller = sellers[0];
         const allTables = await db.select().from(priceTables);
-        const matchedTable = allTables.find(t => {
-          const desc = t.descricao.toUpperCase();
-          const nameParts = sellerName.toUpperCase().split(' ');
-          // Match if first name or last name appears in the table description
-          return nameParts.some(part => part.length > 3 && desc.includes(part));
-        });
+        
+        // 1. Try direct mapping via priceTableCode field
+        let matchedTable = seller.priceTableCode
+          ? allTables.find(t => t.codigo === seller.priceTableCode)
+          : null;
+        
+        // 2. Fallback: match by seller name in table description
+        if (!matchedTable) {
+          const nameParts = seller.sellerName.toUpperCase().split(' ');
+          matchedTable = allTables.find(t => {
+            const desc = t.descricao.toUpperCase();
+            return nameParts.some(part => part.length > 3 && desc.includes(part));
+          });
+        }
         
         if (!matchedTable) return { items: [], priceTable: null };
         tableId = matchedTable.id;
