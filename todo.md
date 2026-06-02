@@ -4088,3 +4088,5 @@
 - [x] Recuperar histórico de dias (bolinha verde) de cada cliente nas etapas de cobrança da inadimplência
 - [x] Corrigir auto-sync para herdar etapas de cobrança ao criar novos registros da mesma empresa
 - [x] Corrigir syncFromInadimplencia para herdar semAcao1/semAcao2/semAcao3 (antes só herdava as datas principais)
+- [x] Corrigir herança de etapas: só herdar se primeira_cobranca >= vencimento do título (evita misturar etapas de títulos antigos com títulos novos da mesma empresa)
+- [x] Limpar 5 registros que tinham etapas herdadas incorretamente (primeira cobrança anterior ao vencimento)

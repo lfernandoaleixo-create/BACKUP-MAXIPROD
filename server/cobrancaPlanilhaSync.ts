@@ -259,9 +259,20 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       }
 
       // PROTEÇÃO: Herdar etapas de cobrança da mesma empresa (priorizar registro com mais etapas preenchidas)
+      // REGRA: Só herdar se a primeira_cobranca for >= vencimento do título novo
+      // (não faz sentido cobrar antes do título vencer)
       const empresaRecords = allPlanilhaRecords.filter(p => p.empresa === title.empresa);
       const etapaSource = empresaRecords
-        .filter(p => p.primeiraCobranca || p.segundaCobranca || p.terceiraCobranca || p.acaoFinal)
+        .filter(p => {
+          if (!p.primeiraCobranca && !p.segundaCobranca && !p.terceiraCobranca && !p.acaoFinal) return false;
+          // Validar: primeira cobrança deve ser >= vencimento do título novo
+          if (p.primeiraCobranca && vencDate) {
+            const primeiraDate = new Date(p.primeiraCobranca);
+            const vencDateObj = new Date(vencDate);
+            if (primeiraDate < vencDateObj) return false; // Etapas de outro título mais antigo
+          }
+          return true;
+        })
         .sort((a, b) => {
           const countEtapas = (r: any) => [r.primeiraCobranca, r.semAcao1, r.segundaCobranca, r.semAcao2, r.terceiraCobranca, r.semAcao3, r.acaoFinal].filter(Boolean).length;
           return countEtapas(b) - countEtapas(a);

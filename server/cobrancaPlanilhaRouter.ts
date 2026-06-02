@@ -1074,6 +1074,15 @@ export const cobrancaPlanilhaRouter = router({
           ) || planilhaAtual.find(
             p => p.empresa === inad.empresa && (p.observacoes || p.primeiraCobranca || p.segundaCobranca || p.terceiraCobranca || p.acaoFinal)
           );
+
+          // VALIDAÇÃO: Só herdar etapas se primeira_cobranca >= vencimento do título novo
+          // (não faz sentido cobrar antes do título vencer - seriam etapas de outro título mais antigo)
+          const etapasValidas = (() => {
+            if (!existingOfSameEmpresa?.primeiraCobranca || !inad.vencimento) return true;
+            const primeiraDate = new Date(existingOfSameEmpresa.primeiraCobranca);
+            const vencDateObj = new Date(inad.vencimento);
+            return primeiraDate >= vencDateObj;
+          })();
           
           await db.insert(cobrancaPlanilha).values({
             arId: inad.arId,
@@ -1107,16 +1116,16 @@ export const cobrancaPlanilhaRouter = router({
             vendedor: isClienteGrupoFox(inad.empresa) ? "Grupo Fox" : (vendedorMap[normEmpNew] || null),
             formaCobranca: formaCobrancaMap[inad.arId] || existingOfSameEmpresa?.formaCobranca || null,
             contatosAdicionais: contatosExtrasMap[normEmpNew] || [],
-            // HERDAR campos manuais de cobrança da mesma empresa
+            // HERDAR campos manuais de cobrança da mesma empresa (só se datas forem compatíveis)
             observacoes: existingOfSameEmpresa?.observacoes || null,
-            primeiraCobranca: existingOfSameEmpresa?.primeiraCobranca || null,
-            semAcao1: existingOfSameEmpresa?.semAcao1 || null,
-            segundaCobranca: existingOfSameEmpresa?.segundaCobranca || null,
-            semAcao2: existingOfSameEmpresa?.semAcao2 || null,
-            terceiraCobranca: existingOfSameEmpresa?.terceiraCobranca || null,
-            semAcao3: existingOfSameEmpresa?.semAcao3 || null,
-            acaoFinal: existingOfSameEmpresa?.acaoFinal || null,
-            etapasPausadas: existingOfSameEmpresa?.etapasPausadas || null,
+            primeiraCobranca: etapasValidas ? (existingOfSameEmpresa?.primeiraCobranca || null) : null,
+            semAcao1: etapasValidas ? (existingOfSameEmpresa?.semAcao1 || null) : null,
+            segundaCobranca: etapasValidas ? (existingOfSameEmpresa?.segundaCobranca || null) : null,
+            semAcao2: etapasValidas ? (existingOfSameEmpresa?.semAcao2 || null) : null,
+            terceiraCobranca: etapasValidas ? (existingOfSameEmpresa?.terceiraCobranca || null) : null,
+            semAcao3: etapasValidas ? (existingOfSameEmpresa?.semAcao3 || null) : null,
+            acaoFinal: etapasValidas ? (existingOfSameEmpresa?.acaoFinal || null) : null,
+            etapasPausadas: etapasValidas ? (existingOfSameEmpresa?.etapasPausadas || null) : null,
             updatedBy: `Sync: ${input.updatedBy}`,
           });
           added++;
