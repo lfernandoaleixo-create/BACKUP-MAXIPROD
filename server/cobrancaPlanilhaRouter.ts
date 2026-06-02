@@ -1110,8 +1110,11 @@ export const cobrancaPlanilhaRouter = router({
             // HERDAR campos manuais de cobrança da mesma empresa
             observacoes: existingOfSameEmpresa?.observacoes || null,
             primeiraCobranca: existingOfSameEmpresa?.primeiraCobranca || null,
+            semAcao1: existingOfSameEmpresa?.semAcao1 || null,
             segundaCobranca: existingOfSameEmpresa?.segundaCobranca || null,
+            semAcao2: existingOfSameEmpresa?.semAcao2 || null,
             terceiraCobranca: existingOfSameEmpresa?.terceiraCobranca || null,
+            semAcao3: existingOfSameEmpresa?.semAcao3 || null,
             acaoFinal: existingOfSameEmpresa?.acaoFinal || null,
             etapasPausadas: existingOfSameEmpresa?.etapasPausadas || null,
             updatedBy: `Sync: ${input.updatedBy}`,

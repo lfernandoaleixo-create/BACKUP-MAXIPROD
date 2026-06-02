@@ -4083,3 +4083,8 @@
 
 ## UX: Facilitar reserva de PO no Novo Pedido de Venda
 - [x] Quando vendedor clica no produto com PO chegando (na lista de produtos, etapa 2), mostrar automaticamente a seção de PO com botão "Reservar Caixas desta PO" sem precisar expandir com a seta
+
+## Bug Fix: Histórico de Dias na Inadimplência
+- [x] Recuperar histórico de dias (bolinha verde) de cada cliente nas etapas de cobrança da inadimplência
+- [x] Corrigir auto-sync para herdar etapas de cobrança ao criar novos registros da mesma empresa
+- [x] Corrigir syncFromInadimplencia para herdar semAcao1/semAcao2/semAcao3 (antes só herdava as datas principais)

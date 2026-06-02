@@ -249,7 +249,7 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       const statusInad = action?.status || "pendente";
       let statusPlanilha = STATUS_MAP[statusInad] || "Pendente";
 
-      // PROTEÇÃO: Herdar status manual de registros existentes (ativos ou inativos) da mesma empresa
+      // PROTEÇÃO: Herdar status manual e etapas de cobrança de registros existentes (ativos ou inativos) da mesma empresa
       // Priorizar registros com status NÃO-Pendente (marcações manuais da Larissa/Thiago/Thalita)
       const existingOfSameEmpresa = allPlanilhaRecords.find(
         p => p.empresa === title.empresa && p.status && p.status !== 'Pendente'
@@ -257,6 +257,15 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       if (existingOfSameEmpresa?.status) {
         statusPlanilha = existingOfSameEmpresa.status;
       }
+
+      // PROTEÇÃO: Herdar etapas de cobrança da mesma empresa (priorizar registro com mais etapas preenchidas)
+      const empresaRecords = allPlanilhaRecords.filter(p => p.empresa === title.empresa);
+      const etapaSource = empresaRecords
+        .filter(p => p.primeiraCobranca || p.segundaCobranca || p.terceiraCobranca || p.acaoFinal)
+        .sort((a, b) => {
+          const countEtapas = (r: any) => [r.primeiraCobranca, r.semAcao1, r.segundaCobranca, r.semAcao2, r.terceiraCobranca, r.semAcao3, r.acaoFinal].filter(Boolean).length;
+          return countEtapas(b) - countEtapas(a);
+        })[0] || null;
 
       // Determine tipo (protesto)
       const decisao = (title.row.decisaoCobranca || "").toUpperCase();
@@ -294,6 +303,14 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         formaCobranca: title.row.formaCobranca || null,
         documento,
         centroCustos,
+        // Herdar etapas de cobrança da mesma empresa (para não perder histórico)
+        primeiraCobranca: etapaSource?.primeiraCobranca || null,
+        semAcao1: etapaSource?.semAcao1 || null,
+        segundaCobranca: etapaSource?.segundaCobranca || null,
+        semAcao2: etapaSource?.semAcao2 || null,
+        terceiraCobranca: etapaSource?.terceiraCobranca || null,
+        semAcao3: etapaSource?.semAcao3 || null,
+        acaoFinal: etapaSource?.acaoFinal || null,
         updatedBy: "Auto-sync (novo título vencido)",
       });
       added++;
