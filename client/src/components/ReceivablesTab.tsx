@@ -2626,27 +2626,33 @@ export default function ReceivablesTab() {
                         {selectedFactoring && factoringQuery.data?.porFactoring[selectedFactoring] && (() => {
                           const factData = factoringQuery.data.porFactoring[selectedFactoring] as any;
                           const cheques = factData.cheques || [];
+                          const detailColorMap: Record<string, { border: string; headerBg: string; headerText: string; headBg: string; headText: string; hoverBg: string; divider: string; footBg: string; footBorder: string; footText: string; closeText: string; closeHover: string }> = {
+                            CIFRAS: { border: "border-teal-300", headerBg: "bg-teal-100/80", headerText: "text-teal-800", headBg: "bg-teal-50", headText: "text-teal-700", hoverBg: "hover:bg-teal-50/50", divider: "divide-teal-100", footBg: "bg-teal-50", footBorder: "border-t border-teal-200", footText: "text-teal-800", closeText: "text-teal-600", closeHover: "hover:text-teal-800" },
+                            FINANZA: { border: "border-blue-300", headerBg: "bg-blue-100/80", headerText: "text-blue-800", headBg: "bg-blue-50", headText: "text-blue-700", hoverBg: "hover:bg-blue-50/50", divider: "divide-blue-100", footBg: "bg-blue-50", footBorder: "border-t border-blue-200", footText: "text-blue-800", closeText: "text-blue-600", closeHover: "hover:text-blue-800" },
+                            SAMONEY: { border: "border-violet-300", headerBg: "bg-violet-100/80", headerText: "text-violet-800", headBg: "bg-violet-50", headText: "text-violet-700", hoverBg: "hover:bg-violet-50/50", divider: "divide-violet-100", footBg: "bg-violet-50", footBorder: "border-t border-violet-200", footText: "text-violet-800", closeText: "text-violet-600", closeHover: "hover:text-violet-800" },
+                          };
+                          const dc = detailColorMap[selectedFactoring] || detailColorMap.FINANZA;
                           return (
-                            <div className="mt-4 border border-indigo-200 rounded-lg overflow-hidden">
-                              <div className="bg-indigo-100/80 px-4 py-2 flex items-center justify-between">
-                                <h6 className="text-xs font-bold text-indigo-800">FACTORING {selectedFactoring} — {cheques.length} cheque{cheques.length !== 1 ? 's' : ''}</h6>
-                                <button onClick={(e) => { e.stopPropagation(); setSelectedFactoring(null); }} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Fechar</button>
+                            <div className={`mt-4 border ${dc.border} rounded-lg overflow-hidden`}>
+                              <div className={`${dc.headerBg} px-4 py-2 flex items-center justify-between`}>
+                                <h6 className={`text-xs font-bold ${dc.headerText}`}>FACTORING {selectedFactoring} — {cheques.length} cheque{cheques.length !== 1 ? 's' : ''}</h6>
+                                <button onClick={(e) => { e.stopPropagation(); setSelectedFactoring(null); }} className={`text-xs ${dc.closeText} ${dc.closeHover} font-medium`}>Fechar</button>
                               </div>
                               <div className="max-h-[400px] overflow-y-auto">
                                 <table className="w-full text-xs">
-                                  <thead className="bg-indigo-50 sticky top-0">
+                                  <thead className={`${dc.headBg} sticky top-0`}>
                                     <tr>
-                                      <th className="px-3 py-2 text-left font-semibold text-indigo-700">Cliente</th>
-                                      <th className="px-3 py-2 text-left font-semibold text-indigo-700">Descrição</th>
-                                      <th className="px-3 py-2 text-left font-semibold text-indigo-700">Cheque</th>
-                                      <th className="px-3 py-2 text-right font-semibold text-indigo-700">Valor</th>
-                                      <th className="px-3 py-2 text-center font-semibold text-indigo-700">Vencimento</th>
-                                      <th className="px-3 py-2 text-center font-semibold text-indigo-700">Estado</th>
+                                      <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Cliente</th>
+                                      <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Descrição</th>
+                                      <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Cheque</th>
+                                      <th className={`px-3 py-2 text-right font-semibold ${dc.headText}`}>Valor</th>
+                                      <th className={`px-3 py-2 text-center font-semibold ${dc.headText}`}>Vencimento</th>
+                                      <th className={`px-3 py-2 text-center font-semibold ${dc.headText}`}>Estado</th>
                                     </tr>
                                   </thead>
-                                  <tbody className="divide-y divide-indigo-100">
+                                  <tbody className={`${dc.divider}`}>
                                     {cheques.map((c: any) => (
-                                      <tr key={c.id} className="hover:bg-indigo-50/50">
+                                      <tr key={c.id} className={dc.hoverBg}>
                                         <td className="px-3 py-2 font-medium text-slate-800 whitespace-normal">{c.cliente}</td>
                                         <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.descricao || '-'}</td>
                                         <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.dadosCheque || '-'}</td>
@@ -2656,10 +2662,10 @@ export default function ReceivablesTab() {
                                       </tr>
                                     ))}
                                   </tbody>
-                                  <tfoot className="bg-indigo-50 border-t border-indigo-200">
+                                  <tfoot className={`${dc.footBg} ${dc.footBorder}`}>
                                     <tr>
-                                      <td colSpan={3} className="px-3 py-2 font-bold text-indigo-800">Total</td>
-                                      <td className="px-3 py-2 text-right font-bold text-indigo-800">R$ {factData.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                      <td colSpan={3} className={`px-3 py-2 font-bold ${dc.footText}`}>Total</td>
+                                      <td className={`px-3 py-2 text-right font-bold ${dc.footText}`}>R$ {factData.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                       <td colSpan={2}></td>
                                     </tr>
                                   </tfoot>
