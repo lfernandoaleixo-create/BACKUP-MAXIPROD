@@ -4692,7 +4692,66 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         })();
 
         return (
-          <div className="flex flex-col sm:flex-row items-stretch gap-4">
+          <div className="flex flex-col gap-4">
+            {/* E-commerce Alert + Buttons Row */}
+            <div className="flex flex-wrap items-center gap-3">
+            {/* Pending E-commerce Transfer Alert Card */}
+            {pendingEcommerce && pendingEcommerce.items.length > 0 && (
+              <div className="w-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl px-5 py-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md flex-shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm font-bold text-amber-900">Transferência E-commerce Pendente</h4>
+                      {pendingEcommerce.pedidos.map((p: string) => (
+                        <span key={p} className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">#{p}</span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-amber-700 mt-1">
+                      <span className="font-bold text-amber-900">{formatNumber(pendingEcommerce.totalCx)} cx</span> em pedidos para filial E-commerce (não gera receita). O estoque pode diminuir após faturamento.
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {pendingEcommerce.items.slice(0, 5).map((item: any, idx: number) => (
+                        <span key={idx} className="text-[10px] bg-white/80 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md font-mono">
+                          {item.codigoItem} → {formatNumber(item.quantidadeCx)} cx
+                        </span>
+                      ))}
+                      {pendingEcommerce.items.length > 5 && (
+                        <span className="text-[10px] text-amber-500 font-medium">+{pendingEcommerce.items.length - 5} mais</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* E-commerce History button */}
+              <button
+                onClick={() => setShowEcommerceHistory(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 shadow-sm"
+              >
+                <Store className="w-4 h-4 flex-shrink-0" />
+                Histórico E-commerce — Importação
+              </button>
+
+            {/* Financial toggle button - restricted by est.valorizacao granular permission */}
+            {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+              <button
+                onClick={() => setShowFinancial(!showFinancial)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                  showFinancial
+                    ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
+                }`}
+              >
+                <DollarSign className="w-4 h-4" />
+                {showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
+                {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            )}
+            </div>
+
             {/* Global Valuation Card */}
             {showFinancial && (
               <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm px-3 md:px-5 py-3 transition-all">
@@ -4739,66 +4798,6 @@ function DashboardContent({ items }: { items: StockItem[] }) {
               </div>
             )}
 
-            {/* Pending E-commerce Transfer Alert Card */}
-            {pendingEcommerce && pendingEcommerce.items.length > 0 && (
-              <div className="w-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl px-5 py-4 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md flex-shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm font-bold text-amber-900">Transferência E-commerce Pendente</h4>
-                      {pendingEcommerce.pedidos.map((p: string) => (
-                        <span key={p} className="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">#{p}</span>
-                      ))}
-                    </div>
-                    <p className="text-xs text-amber-700 mt-1">
-                      <span className="font-bold text-amber-900">{formatNumber(pendingEcommerce.totalCx)} cx</span> em pedidos para filial E-commerce (não gera receita). O estoque pode diminuir após faturamento.
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {pendingEcommerce.items.slice(0, 5).map((item: any, idx: number) => (
-                        <span key={idx} className="text-[10px] bg-white/80 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md font-mono">
-                          {item.codigoItem} → {formatNumber(item.quantidadeCx)} cx
-                        </span>
-                      ))}
-                      {pendingEcommerce.items.length > 5 && (
-                        <span className="text-[10px] text-amber-500 font-medium">+{pendingEcommerce.items.length - 5} mais</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* E-commerce History button */}
-            <div className="flex items-center">
-              <button
-                onClick={() => setShowEcommerceHistory(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all sm:whitespace-nowrap bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 shadow-sm"
-              >
-                <Store className="w-4 h-4 flex-shrink-0" />
-                Histórico E-commerce — Importação
-              </button>
-            </div>
-
-
-            {/* Financial toggle button - restricted by est.valorizacao granular permission */}
-            {operatorCtx?.hasGranularAccess("est.valorizacao") && (
-              <div className={`flex items-center ${!showFinancial ? 'ml-auto' : ''}`}>
-                <button
-                  onClick={() => setShowFinancial(!showFinancial)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                    showFinancial
-                      ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
-                  }`}
-                >
-                  <DollarSign className="w-4 h-4" />
-                  {showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
-                  {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            )}
           </div>
         );
       })()}
