@@ -269,6 +269,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [pdfHistoryFilterMonth, setPdfHistoryFilterMonth] = useState("");
   const [pdfHistorySelectedIds, setPdfHistorySelectedIds] = useState<number[]>([]);
   const [segmentDetailOpen, setSegmentDetailOpen] = useState<string | null>(null);
+  const [editingVendedorId, setEditingVendedorId] = useState<number | null>(null);
+  const [editingVendedorValue, setEditingVendedorValue] = useState("");
 
   // Queries que dependem dos estados acima
   const { data: resolvedData } = trpc.financial.getResolvedTitles.useQuery({ sortOrder: 'newest', sortBy: resolvedSortBy, sortDir: resolvedSortDir });
@@ -1432,7 +1434,7 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                       </td>
                       {/* Vendedor */}
                       <td className="text-center px-2 py-2.5">
-                        <span className="text-[9px] font-medium text-slate-600 truncate block max-w-[80px]" title={item.vendedor || ""}>
+                        <span className="text-[9px] font-medium text-slate-600 break-words block max-w-[120px]" title={item.vendedor || ""}>
                           {item.vendedor || "-"}
                         </span>
                       </td>
@@ -1549,10 +1551,58 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                                   <span className="font-medium text-slate-500 w-[70px] shrink-0">Apelido:</span>
                                   <span className="text-purple-700 font-bold">{(item as any).apelido || "-"}</span>
                                 </div>
-                                {/* Vendedor (somente leitura) */}
+                                {/* Vendedor (editável) */}
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium text-slate-500 w-[70px] shrink-0">Vendedor:</span>
-                                  <span className="text-slate-700 font-medium">{item.vendedor || "-"}</span>
+                                  {editingVendedorId === item.id ? (
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="text"
+                                        className="text-xs border border-slate-300 rounded px-1.5 py-0.5 w-[160px]"
+                                        value={editingVendedorValue}
+                                        onChange={e => setEditingVendedorValue(e.target.value)}
+                                        autoFocus
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') {
+                                            updateField.mutate({ id: item.id, field: 'vendedor', value: editingVendedorValue || null, updatedBy: operator?.name || 'Sistema' });
+                                            setEditingVendedorId(null);
+                                          }
+                                          if (e.key === 'Escape') setEditingVendedorId(null);
+                                        }}
+                                      />
+                                      <button
+                                        className="text-emerald-600 hover:text-emerald-800"
+                                        onClick={() => {
+                                          updateField.mutate({ id: item.id, field: 'vendedor', value: editingVendedorValue || null, updatedBy: operator?.name || 'Sistema' });
+                                          setEditingVendedorId(null);
+                                        }}
+                                      >
+                                        <Check className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        className="text-slate-400 hover:text-slate-600"
+                                        onClick={() => setEditingVendedorId(null)}
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-slate-700 font-medium">{item.vendedor || "-"}</span>
+                                      {canEdit && (
+                                        <button
+                                          className="text-slate-400 hover:text-blue-600 transition-colors"
+                                          title="Editar vendedor"
+                                          onClick={() => {
+                                            setEditingVendedorId(item.id);
+                                            setEditingVendedorValue(item.vendedor || "");
+                                          }}
+                                        >
+                                          <Pencil className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                                 {/* Forma de Cobrança (somente leitura) */}
                                 <div className="flex items-center gap-2">

@@ -4099,3 +4099,13 @@
 
 ## Cheques Factoring: Detalhe ao clicar no card
 - [x] Ao clicar no card de factoring (FINANZA, SAMONEY, CIFRAS), abrir tabela detalhada com nome do cliente, descrição, valor, vencimento de cada cheque
+
+## Inadimplência: Correções Múltiplas (03/06/2026)
+- [x] Puxar nomes dos vendedores do Maxiprod para cada cliente na inadimplência; quando não conseguir, dar opção de editar manualmente
+- [x] Corrigir contagem de Pagos/Resolvidos: só considerar quem tinha 3+ dias de inadimplência (já estava correto no backend — filtro diasAtrasoNaResolucao >= 3)
+- [x] Remover observações de teste vitest do histórico (24 registros removidos)
+- [x] Corrigir duplicatas no histórico de observações (deduplicação de 60s adicionada ao addEtapaObs)
+- [x] Quando tem ação final registrada, preencher automaticamente que etapas anteriores (1ª, 2ª, 3ª cobrança) foram cumpridas — SEM desmarcar status
+- [x] Corrigir truncamento do nome do vendedor na tabela (max-w-[80px] → max-w-[120px] break-words)
+- [x] Adicionar edição manual do vendedor no detalhe expandido (ícone lápis + input inline)
+- [x] Limpar scripts temporários (fix_vendedor.ts, check_vendedor.ts, backfill_etapas.ts)

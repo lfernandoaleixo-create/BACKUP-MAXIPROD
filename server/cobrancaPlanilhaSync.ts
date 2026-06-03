@@ -332,9 +332,9 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
   }
 
   // 4b. Populate apelido and vendedor for items that don't have them yet
-  const itemsWithoutApelido = await db.select({ id: cobrancaPlanilha.id, empresa: cobrancaPlanilha.empresa })
+  const itemsWithoutApelido = await db.select({ id: cobrancaPlanilha.id, empresa: cobrancaPlanilha.empresa, apelido: cobrancaPlanilha.apelido, vendedor: cobrancaPlanilha.vendedor })
     .from(cobrancaPlanilha)
-    .where(and(eq(cobrancaPlanilha.ativo, true), isNull(cobrancaPlanilha.apelido)));
+    .where(and(eq(cobrancaPlanilha.ativo, true), or(isNull(cobrancaPlanilha.apelido), isNull(cobrancaPlanilha.vendedor), eq(cobrancaPlanilha.vendedor, ''))));
   
   if (itemsWithoutApelido.length > 0) {
     // Fetch apelido from Maxiprod GraphQL empresas
@@ -393,8 +393,8 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       const apelido = apelidoMap[normEmp];
       const vendedor = isClienteGrupoFox(item.empresa) ? "Grupo Fox" : vendedorMap[normEmp];
       const updateData: Record<string, any> = {};
-      if (apelido) updateData.apelido = apelido;
-      if (vendedor) updateData.vendedor = vendedor;
+      if (apelido && !item.apelido) updateData.apelido = apelido;
+      if (vendedor && (!item.vendedor || item.vendedor === '')) updateData.vendedor = vendedor;
       if (Object.keys(updateData).length > 0) {
         await db.update(cobrancaPlanilha)
           .set(updateData)

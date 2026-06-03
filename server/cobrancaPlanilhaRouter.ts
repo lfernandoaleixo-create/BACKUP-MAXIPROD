@@ -2,7 +2,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { cobrancaPlanilha, cobrancaPlanilhaBackup, accountsReceivable, collectionActions, cobrancaEtapaObs, salesOrders } from "../drizzle/schema";
-import { eq, desc, sql, and, inArray, lte, asc, isNull, like, or } from "drizzle-orm";
+import { eq, desc, sql, and, inArray, lte, asc, isNull, like, or, gte } from "drizzle-orm";
 import { gql, normalizeVendedorName } from "./maxiprodGraphQL";
 
 /**
@@ -212,6 +212,7 @@ export const cobrancaPlanilhaRouter = router({
         'semAcao1', 'segundaCobranca', 'semAcao2', 'terceiraCobranca',
         'semAcao3', 'acaoFinal', 'tipo', 'diasVencidos',
         'contato', 'email', 'regiao', 'municipio', 'uf', 'cnpjCpf', 'centroCustos', 'documento',
+        'vendedor', 'formaCobranca',
       ];
       
       if (!editableFields.includes(input.field)) {
@@ -239,6 +240,8 @@ export const cobrancaPlanilhaRouter = router({
         cnpjCpf: 'cnpj_cpf',
         centroCustos: 'centro_custos',
         documento: 'documento',
+        vendedor: 'vendedor',
+        formaCobranca: 'forma_cobranca',
       };
       
       const colName = fieldToColumn[input.field] || input.field;
@@ -246,6 +249,45 @@ export const cobrancaPlanilhaRouter = router({
       await db.execute(
         sql`UPDATE cobranca_planilha SET ${sql.raw(colName)} = ${input.value}, updated_by = ${input.updatedBy} WHERE id = ${input.id}`
       );
+      
+      // AUTO-FILL: Quando ação final é registrada, preencher etapas anteriores vazias
+      // Regra: se acaoFinal é definida e etapas anteriores estão vazias, auto-preencher com datas calculadas
+      // baseadas no vencimento (vencimento+1, vencimento+3, vencimento+5) — SEM alterar status
+      if (input.field === 'acaoFinal' && input.value) {
+        const [record] = await db.select()
+          .from(cobrancaPlanilha)
+          .where(eq(cobrancaPlanilha.id, input.id))
+          .limit(1);
+        
+        if (record && record.vencimento) {
+          const venc = new Date(record.vencimento + 'T00:00:00');
+          const updates: Record<string, string> = {};
+          
+          // Calcular datas: vencimento + 1 dia, +3 dias, +5 dias
+          const addDays = (d: Date, n: number) => {
+            const r = new Date(d);
+            r.setDate(r.getDate() + n);
+            return r.toISOString().split('T')[0];
+          };
+          
+          if (!record.primeiraCobranca) updates['primeira_cobranca'] = addDays(venc, 1);
+          if (!record.semAcao1) updates['sem_acao_1'] = addDays(venc, 2);
+          if (!record.segundaCobranca) updates['segunda_cobranca'] = addDays(venc, 3);
+          if (!record.semAcao2) updates['sem_acao_2'] = addDays(venc, 4);
+          if (!record.terceiraCobranca) updates['terceira_cobranca'] = addDays(venc, 5);
+          if (!record.semAcao3) updates['sem_acao_3'] = addDays(venc, 6);
+          
+          if (Object.keys(updates).length > 0) {
+            const setClauses = Object.entries(updates)
+              .map(([col, val]) => `${col} = '${val}'`)
+              .join(', ');
+            await db.execute(
+              sql`UPDATE cobranca_planilha SET ${sql.raw(setClauses)} WHERE id = ${input.id} AND ativo = true`
+            );
+          }
+        }
+      }
+      
       return { success: true };
     }),
 
@@ -1334,6 +1376,22 @@ export const cobrancaPlanilhaRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      
+      // Deduplicação: não inserir se a mesma observação já existe para esta etapa nos últimos 60 segundos
+      const existing = await db.select({ id: cobrancaEtapaObs.id })
+        .from(cobrancaEtapaObs)
+        .where(and(
+          eq(cobrancaEtapaObs.planilhaId, input.planilhaId),
+          eq(cobrancaEtapaObs.etapa, input.etapa),
+          eq(cobrancaEtapaObs.observacao, input.observacao),
+          gte(cobrancaEtapaObs.createdAt, new Date(Date.now() - 60_000)),
+        ))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        return { success: true, deduplicated: true };
+      }
+      
       await db.insert(cobrancaEtapaObs).values({
         planilhaId: input.planilhaId,
         etapa: input.etapa,
