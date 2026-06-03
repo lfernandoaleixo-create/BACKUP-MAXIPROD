@@ -2584,7 +2584,7 @@ export default function ReceivablesTab() {
                           <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
                             <Landmark className="w-4 h-4 text-indigo-600" />
                           </div>
-                          <h5 className="text-sm font-bold text-indigo-800 tracking-wide">CHEQUES EM FACTORING</h5>
+                          <h5 className="text-sm font-bold text-indigo-800 tracking-wide">CHEQUES DESCONTADOS</h5>
                           <span className="ml-auto text-xs font-semibold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
                             {factoringQuery.data.totalCount} cheques — R$ {factoringQuery.data.totalGeral.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                           </span>
