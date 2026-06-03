@@ -322,6 +322,9 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
         terceiraCobranca: etapaSource?.terceiraCobranca || null,
         semAcao3: etapaSource?.semAcao3 || null,
         acaoFinal: etapaSource?.acaoFinal || null,
+        // Rastreabilidade: de qual registro as etapas foram herdadas
+        etapasHerdadasDeId: etapaSource?.id || null,
+        etapasHerdadasDeDoc: etapaSource?.documento || null,
         updatedBy: "Auto-sync (novo título vencido)",
       });
       added++;

@@ -1849,6 +1849,9 @@ export const cobrancaPlanilha = mysqlTable("cobranca_planilha", {
   contatosAdicionais: json("contatos_adicionais").$type<string[]>().default([]),
   // Controle de pausa por etapa (JSON: {primeiraCobranca: true, semAcao1: false, ...})
   etapasPausadas: json("etapas_pausadas").$type<Record<string, boolean>>().default({}),
+  // Rastreabilidade: de qual registro as etapas foram herdadas
+  etapasHerdadasDeId: int("etapas_herdadas_de_id"), // ID do registro de onde as etapas vieram
+  etapasHerdadasDeDoc: varchar("etapas_herdadas_de_doc", { length: 200 }), // Documento/NF do título original (para exibição)
   // Controle
   ativo: boolean("ativo").notNull().default(true), // false = título pago/resolvido, não aparece nos cards
   updatedBy: varchar("updated_by", { length: 200 }),

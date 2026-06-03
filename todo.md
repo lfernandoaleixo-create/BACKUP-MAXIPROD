@@ -4090,3 +4090,9 @@
 - [x] Corrigir syncFromInadimplencia para herdar semAcao1/semAcao2/semAcao3 (antes só herdava as datas principais)
 - [x] Corrigir herança de etapas: só herdar se primeira_cobranca >= vencimento do título (evita misturar etapas de títulos antigos com títulos novos da mesma empresa)
 - [x] Limpar 5 registros que tinham etapas herdadas incorretamente (primeira cobrança anterior ao vencimento)
+
+## Cheques: Cards de Factoring
+- [x] Adicionar cards separados para CHEQUE DESCONTADO FACTORING CIFRAS, FINANZA e SAMONEY na aba de cheques/recebíveis do financeiro
+
+## Inadimplência: Rastreabilidade de Etapas Herdadas
+- [x] Adicionar indicador visual ou tooltip mostrando de qual título a etapa de cobrança foi herdada

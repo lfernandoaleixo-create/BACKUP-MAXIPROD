@@ -1899,7 +1899,16 @@ export default function ReceivablesTab() {
     { enabled: !!chequesOpenEmpresa }
   );
 
-
+  // Fetch factoring data
+  const factoringInput = useMemo(() => {
+    const inp: { empresaNome?: string } = {};
+    if (chequesOpenEmpresa) inp.empresaNome = chequesOpenEmpresa;
+    return inp;
+  }, [chequesOpenEmpresa]);
+  const factoringQuery = trpc.financial.getChequeFactoring.useQuery(
+    factoringInput,
+    { enabled: !!chequesOpenEmpresa }
+  );
 
   // Cheque Exchange (Troca) state
   const [exchangeMode, setExchangeMode] = useState(false);
@@ -2564,6 +2573,53 @@ export default function ReceivablesTab() {
                         );
                       })}
                     </div>
+
+                    {/* Factoring Cards Section */}
+                    {factoringQuery.data && factoringQuery.data.totalCount > 0 && (
+                      <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-indigo-50/80 via-purple-50/50 to-violet-50/60 border border-indigo-200/60">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center">
+                            <Landmark className="w-4 h-4 text-indigo-600" />
+                          </div>
+                          <h5 className="text-sm font-bold text-indigo-800 tracking-wide">CHEQUES EM FACTORING</h5>
+                          <span className="ml-auto text-xs font-semibold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
+                            {factoringQuery.data.totalCount} cheques — R$ {factoringQuery.data.totalGeral.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {Object.entries(factoringQuery.data.porFactoring).map(([company, data]) => {
+                            const colorMap: Record<string, { bg: string; border: string; icon: string; text: string; badge: string }> = {
+                              CIFRAS: { bg: "bg-gradient-to-br from-teal-50 to-emerald-50", border: "border-teal-300", icon: "bg-teal-500 text-white", text: "text-teal-800", badge: "bg-teal-100 text-teal-700" },
+                              FINANZA: { bg: "bg-gradient-to-br from-blue-50 to-sky-50", border: "border-blue-300", icon: "bg-blue-500 text-white", text: "text-blue-800", badge: "bg-blue-100 text-blue-700" },
+                              SAMONEY: { bg: "bg-gradient-to-br from-violet-50 to-purple-50", border: "border-violet-300", icon: "bg-violet-500 text-white", text: "text-violet-800", badge: "bg-violet-100 text-violet-700" },
+                              OUTROS: { bg: "bg-gradient-to-br from-slate-50 to-gray-50", border: "border-slate-300", icon: "bg-slate-500 text-white", text: "text-slate-800", badge: "bg-slate-100 text-slate-700" },
+                            };
+                            const colors = colorMap[company] || colorMap.OUTROS;
+                            return (
+                              <div key={company} className={`relative p-4 rounded-xl border-2 ${colors.border} ${colors.bg} shadow-sm hover:shadow-md transition-shadow`}>
+                                <div className="flex items-center gap-2.5 mb-2">
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colors.icon} shadow-sm`}>
+                                    <Landmark className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <h6 className={`text-xs font-extrabold uppercase tracking-wider ${colors.text}`}>Factoring {company}</h6>
+                                    <p className="text-[10px] text-slate-500">Cheques descontados</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-baseline justify-between mt-3">
+                                  <span className={`text-lg font-black ${colors.text}`}>
+                                    R$ {(data as any).valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                  </span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${colors.badge}`}>
+                                    {(data as any).count} cheque{(data as any).count !== 1 ? "s" : ""}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Cheques Data Table */}
                     <div className="mt-4">

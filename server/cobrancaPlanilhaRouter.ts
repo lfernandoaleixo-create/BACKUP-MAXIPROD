@@ -1126,6 +1126,9 @@ export const cobrancaPlanilhaRouter = router({
             semAcao3: etapasValidas ? (existingOfSameEmpresa?.semAcao3 || null) : null,
             acaoFinal: etapasValidas ? (existingOfSameEmpresa?.acaoFinal || null) : null,
             etapasPausadas: etapasValidas ? (existingOfSameEmpresa?.etapasPausadas || null) : null,
+            // Rastreabilidade: de qual registro as etapas foram herdadas
+            etapasHerdadasDeId: etapasValidas ? (existingOfSameEmpresa?.id || null) : null,
+            etapasHerdadasDeDoc: etapasValidas ? (existingOfSameEmpresa?.documento || null) : null,
             updatedBy: `Sync: ${input.updatedBy}`,
           });
           added++;

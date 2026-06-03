@@ -1612,6 +1612,14 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
                               <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                                 <Calendar className="w-3.5 h-3.5 text-emerald-500" />
                                 Etapas de Cobrança
+                                {(item as any).etapasHerdadasDeDoc && (
+                                  <span
+                                    className="ml-1 text-[9px] font-normal text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 cursor-help"
+                                    title={`Etapas herdadas do t\u00edtulo: ${(item as any).etapasHerdadasDeDoc} (ID #${(item as any).etapasHerdadasDeId})`}
+                                  >
+                                    \u21e2 Herdado de: {(item as any).etapasHerdadasDeDoc}
+                                  </span>
+                                )}
                               </h4>
                               <div className="space-y-1.5">
                                 {[

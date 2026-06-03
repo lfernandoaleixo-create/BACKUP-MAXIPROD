@@ -6878,6 +6878,107 @@ ${acoesTexto}
     }),
 
   /**
+   * getChequeFactoring - Retorna cheques separados por empresa de factoring
+   * Busca cheques com situacaoTitulo contendo FACTORING (CIFRAS, FINANZA, SAMONEY)
+   * Estes são cheques que foram descontados em empresas de factoring
+   */
+  getChequeFactoring: publicProcedure
+    .input(z.object({
+      empresaNome: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB indisponível");
+
+      const conditions = [
+        sql`${accountsReceivable.formaCobranca} LIKE 'Cheque%'`,
+        sql`${accountsReceivable.situacaoTitulo} LIKE '%FACTORING%'`,
+        inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
+      ];
+
+      if (input?.empresaNome) {
+        conditions.push(eq(accountsReceivable.empresaNome, input.empresaNome));
+      }
+
+      const rows = await db.select({
+        id: accountsReceivable.id,
+        maxiprodId: accountsReceivable.maxiprodId,
+        vencimentoData: accountsReceivable.vencimentoData,
+        emissaoData: accountsReceivable.emissaoData,
+        liquidacaoData: accountsReceivable.liquidacaoData,
+        referenteA: accountsReceivable.referenteA,
+        cliente: accountsReceivable.cliente,
+        valorOriginal: accountsReceivable.valorOriginal,
+        valorLiquido: accountsReceivable.valorLiquido,
+        valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
+        formaCobranca: accountsReceivable.formaCobranca,
+        empresaNome: accountsReceivable.empresaNome,
+        parcela: accountsReceivable.parcela,
+        parcelasQuantidadeTotal: accountsReceivable.parcelasQuantidadeTotal,
+        documentoVinculadoNumero: accountsReceivable.documentoVinculadoNumero,
+        dadosCheque: accountsReceivable.dadosCheque,
+        situacaoTitulo: accountsReceivable.situacaoTitulo,
+        estado: accountsReceivable.estado,
+      })
+        .from(accountsReceivable)
+        .where(and(...conditions))
+        .orderBy(desc(accountsReceivable.vencimentoData));
+
+      // Parse factoring company from situacaoTitulo
+      // e.g. "CHEQUE DESCONTADO FACTORING FINANZA" -> "FINANZA"
+      function parseFactoringCompany(situacao: string | null): string {
+        if (!situacao) return "OUTROS";
+        const upper = situacao.toUpperCase();
+        if (upper.includes("CIFRAS")) return "CIFRAS";
+        if (upper.includes("FINANZA")) return "FINANZA";
+        if (upper.includes("SAMONEY")) return "SAMONEY";
+        // Generic fallback - extract last word after FACTORING
+        const match = upper.match(/FACTORING\s+(\w+)/);
+        return match ? match[1] : "OUTROS";
+      }
+
+      const cheques = rows.map(row => {
+        const valor = parseFloat(row.valorLiquido || row.valorOriginal || "0");
+        const factoringCompany = parseFactoringCompany(row.situacaoTitulo);
+        return {
+          id: row.id,
+          maxiprodId: row.maxiprodId,
+          vencimentoData: row.vencimentoData,
+          emissaoData: row.emissaoData,
+          liquidacaoData: row.liquidacaoData,
+          descricao: row.referenteA || row.documentoVinculadoNumero || "",
+          cliente: row.cliente || "",
+          valor,
+          formaPagamento: row.formaCobranca || "",
+          factoringCompany,
+          situacaoTitulo: row.situacaoTitulo || "",
+          estado: row.estado || "",
+          empresaNome: row.empresaNome || "",
+          parcela: row.parcela,
+          parcelasTotal: row.parcelasQuantidadeTotal,
+          dadosCheque: row.dadosCheque || "",
+        };
+      });
+
+      // Group by factoring company
+      const porFactoring: Record<string, { count: number; valor: number; cheques: typeof cheques }> = {};
+      for (const c of cheques) {
+        if (!porFactoring[c.factoringCompany]) {
+          porFactoring[c.factoringCompany] = { count: 0, valor: 0, cheques: [] };
+        }
+        porFactoring[c.factoringCompany].count++;
+        porFactoring[c.factoringCompany].valor += c.valor;
+        porFactoring[c.factoringCompany].cheques.push(c);
+      }
+
+      return {
+        porFactoring,
+        totalGeral: cheques.reduce((sum, c) => sum + c.valor, 0),
+        totalCount: cheques.length,
+      };
+    }),
+
+  /**
    * getCustodians - Retorna todos os responsáveis registrados para cheques
    */
   getCustodians: publicProcedure
