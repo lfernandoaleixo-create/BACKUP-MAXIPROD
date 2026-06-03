@@ -4113,3 +4113,11 @@
 ## Bug: Card "Factoring Outros" não deveria existir (03/06/2026)
 - [x] Remover card "FACTORING OUTROS" da aba de cheques — só existem 3 factorings: CIFRAS, FINANZA e SAMONEY
 - [x] Investigar qual cheque está caindo em "Outros" e reclassificar ou remover (era 1 cheque com situacaoTitulo="BOLETO DESCONTADO FACTORING" sem empresa — corrigido no Maxiprod + filtro no backend)
+
+## Todos os Cheques: Descrição completa e Dados do Cheque (03/06/2026)
+- [x] Puxar descrição completa do Maxiprod (com nome do cliente ref, ex: "TROPICAL PALITOS ref. Parcelamento de s/nº...") para TODOS os títulos
+- [x] Puxar campo "DADOS DOS CHEQUES" do Maxiprod (banco, número, titular) e exibir na coluna Cheque em TODAS as tabelas que mostram cheques
+- [x] Corrigir tag extractDadosCheque: 'DadosDosCheques' (com s) em vez de 'DadosDoCheque'
+- [x] Adicionar coluna clienteApelido ao schema e sync GraphQL (campo 'apelido' do cliente)
+- [x] Backfill: 4737 registros com apelido preenchido, 80 com dados do cheque
+- [x] Renomear header da coluna para "Dados do Cheque" na tabela factoring

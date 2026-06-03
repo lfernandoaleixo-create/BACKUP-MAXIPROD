@@ -368,6 +368,7 @@ export const accountsReceivable = mysqlTable("accounts_receivable", {
   documentoVinculadoNumero: varchar("documentoVinculadoNumero", { length: 100 }),
   bloqueado: boolean("bloqueado").default(false),
   cliente: varchar("cliente", { length: 300 }),
+  clienteApelido: varchar("clienteApelido", { length: 300 }), // Apelido do cliente no Maxiprod (ex: "TROPICAL PALITOS")
   centroDeCustosId: bigint("centroDeCustosId", { mode: "number" }),
   contaId: bigint("contaId", { mode: "number" }),
   bancoNome: varchar("bancoNome", { length: 200 }),

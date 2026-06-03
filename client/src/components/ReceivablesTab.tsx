@@ -2644,7 +2644,7 @@ export default function ReceivablesTab() {
                                     <tr>
                                       <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Cliente</th>
                                       <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Descrição</th>
-                                      <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Cheque</th>
+                                      <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Dados do Cheque</th>
                                       <th className={`px-3 py-2 text-right font-semibold ${dc.headText}`}>Valor</th>
                                       <th className={`px-3 py-2 text-center font-semibold ${dc.headText}`}>Vencimento</th>
                                       <th className={`px-3 py-2 text-center font-semibold ${dc.headText}`}>Estado</th>

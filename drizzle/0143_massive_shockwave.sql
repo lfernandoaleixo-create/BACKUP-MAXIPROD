@@ -1,0 +1,1 @@
+ALTER TABLE `accounts_receivable` ADD `clienteApelido` varchar(300);

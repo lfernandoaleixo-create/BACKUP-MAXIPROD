@@ -6652,6 +6652,7 @@ ${acoesTexto}
         emissaoData: accountsReceivable.emissaoData,
         referenteA: accountsReceivable.referenteA,
         cliente: accountsReceivable.cliente,
+        clienteApelido: accountsReceivable.clienteApelido,
         valorOriginal: accountsReceivable.valorOriginal,
         valorLiquido: accountsReceivable.valorLiquido,
         valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
@@ -6704,6 +6705,20 @@ ${acoesTexto}
         return "OUTROS";
       }
 
+      /** Build full description like Maxiprod: "APELIDO ref. referenteA parc. x/y" */
+      function buildFullDesc(row: any): string {
+        const apelido = row.clienteApelido || "";
+        let desc = row.referenteA || "";
+        if (!desc && row.documentoVinculadoNumero) {
+          desc = `NF n\u00ba ${row.documentoVinculadoNumero}`;
+        }
+        const parcelaStr = row.parcela && row.parcelasQuantidadeTotal
+          ? `parc. ${row.parcela}/${row.parcelasQuantidadeTotal}`
+          : "";
+        const parts = [apelido, desc ? `ref. ${desc}` : "", parcelaStr].filter(Boolean);
+        return parts.join(" ") || row.cliente || "";
+      }
+
       const cheques = rows.map(row => {
         const estadoCheque = parseChequeState(row.formaCobranca);
         // Valor a receber = valorLiquido - valorRecebidoLiquido (desconta abatimentos/recebimentos parciais)
@@ -6715,7 +6730,7 @@ ${acoesTexto}
           maxiprodId: row.maxiprodId,
           vencimentoData: row.vencimentoData,
           emissaoData: row.emissaoData,
-          descricao: row.referenteA || row.documentoVinculadoNumero || "",
+          descricao: buildFullDesc(row),
           cliente: row.cliente || "",
           valor,
           formaPagamento: row.formaCobranca || "",
@@ -6796,6 +6811,7 @@ ${acoesTexto}
         liquidacaoData: accountsReceivable.liquidacaoData,
         referenteA: accountsReceivable.referenteA,
         cliente: accountsReceivable.cliente,
+        clienteApelido: accountsReceivable.clienteApelido,
         valorOriginal: accountsReceivable.valorOriginal,
         valorLiquido: accountsReceivable.valorLiquido,
         valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
@@ -6847,6 +6863,20 @@ ${acoesTexto}
         return "OUTROS";
       }
 
+      /** Build full description like Maxiprod */
+      function buildFullDescDescontados(row: any): string {
+        const apelido = row.clienteApelido || "";
+        let desc = row.referenteA || "";
+        if (!desc && row.documentoVinculadoNumero) {
+          desc = `NF n\u00ba ${row.documentoVinculadoNumero}`;
+        }
+        const parcelaStr = row.parcela && row.parcelasQuantidadeTotal
+          ? `parc. ${row.parcela}/${row.parcelasQuantidadeTotal}`
+          : "";
+        const parts = [apelido, desc ? `ref. ${desc}` : "", parcelaStr].filter(Boolean);
+        return parts.join(" ") || row.cliente || "";
+      }
+
       const cheques = rows.map(row => {
         const estadoOrigem = parseChequeState(row.formaCobranca);
         const valor = parseFloat(row.valorLiquido || row.valorOriginal || "0");
@@ -6856,7 +6886,7 @@ ${acoesTexto}
           vencimentoData: row.vencimentoData,
           emissaoData: row.emissaoData,
           liquidacaoData: row.liquidacaoData,
-          descricao: row.referenteA || row.documentoVinculadoNumero || "",
+          descricao: buildFullDescDescontados(row),
           cliente: row.cliente || "",
           valor,
           formaPagamento: row.formaCobranca || "",
@@ -6914,6 +6944,7 @@ ${acoesTexto}
         liquidacaoData: accountsReceivable.liquidacaoData,
         referenteA: accountsReceivable.referenteA,
         cliente: accountsReceivable.cliente,
+        clienteApelido: accountsReceivable.clienteApelido,
         valorOriginal: accountsReceivable.valorOriginal,
         valorLiquido: accountsReceivable.valorLiquido,
         valorRecebidoLiquido: accountsReceivable.valorRecebidoLiquido,
@@ -6943,6 +6974,20 @@ ${acoesTexto}
         return match ? match[1] : "OUTROS";
       }
 
+      /** Build full description like Maxiprod: "APELIDO ref. referenteA parc. x/y" or "APELIDO ref. NF nº doc parc. x/y" */
+      function buildFullDescription(row: any): string {
+        const apelido = row.clienteApelido || "";
+        let desc = row.referenteA || "";
+        if (!desc && row.documentoVinculadoNumero) {
+          desc = `NF n\u00ba ${row.documentoVinculadoNumero}`;
+        }
+        const parcelaStr = row.parcela && row.parcelasQuantidadeTotal
+          ? `parc. ${row.parcela}/${row.parcelasQuantidadeTotal}`
+          : "";
+        const parts = [apelido, desc ? `ref. ${desc}` : "", parcelaStr].filter(Boolean);
+        return parts.join(" ") || row.cliente || "";
+      }
+
       const cheques = rows.map(row => {
         const valor = parseFloat(row.valorLiquido || row.valorOriginal || "0");
         const factoringCompany = parseFactoringCompany(row.situacaoTitulo);
@@ -6952,7 +6997,7 @@ ${acoesTexto}
           vencimentoData: row.vencimentoData,
           emissaoData: row.emissaoData,
           liquidacaoData: row.liquidacaoData,
-          descricao: row.referenteA || row.documentoVinculadoNumero || "",
+          descricao: buildFullDescription(row),
           cliente: row.cliente || "",
           valor,
           formaPagamento: row.formaCobranca || "",

@@ -1124,7 +1124,7 @@ async function fetchAccountsReceivable(): Promise<any[]> {
         observacoes
         documentoVinculadoNumero
         bloqueado
-        cliente { nomeFantasia razaoSocial campoAdicionalEspecifico { descricao valor } }
+        cliente { nomeFantasia razaoSocial apelido campoAdicionalEspecifico { descricao valor } }
         centroDeCustos { id }
         conta { id descricao }
         formaDeCobranca { id meioDePagamento banco { descricao } contaNumero agenciaCodigo pixChave carteira }
@@ -1163,11 +1163,11 @@ async function fetchAccountsReceivable(): Promise<any[]> {
           observacoes
           documentoVinculadoNumero
           bloqueado
-          cliente { nomeFantasia razaoSocial campoAdicionalEspecifico { descricao valor } }
-          centroDeCustos { id }
-          conta { id descricao }
-          formaDeCobranca { id meioDePagamento banco { descricao } contaNumero agenciaCodigo pixChave carteira }
-          minhaEmpresaId
+        cliente { nomeFantasia razaoSocial apelido campoAdicionalEspecifico { descricao valor } }
+        centroDeCustos { id }
+        conta { id descricao }
+        formaDeCobranca { id meioDePagamento banco { descricao } contaNumero agenciaCodigo pixChave carteira }
+        minhaEmpresaId
           tarefasEAnotacoes { descricao }
           campoAdicionalEspecifico { descricao valor tag }
         }
@@ -1281,6 +1281,7 @@ function transformAccountsReceivable(items: any[]): any[] {
     documentoVinculadoNumero: item.documentoVinculadoNumero || null,
     bloqueado: item.bloqueado || false,
     cliente: item.cliente?.razaoSocial || item.cliente?.nomeFantasia || "",
+    clienteApelido: item.cliente?.apelido || item.cliente?.nomeFantasia || null,
     centroDeCustosId: item.centroDeCustos?.id || null,
     contaId: item.conta?.id || null,
     bancoNome: item.formaDeCobranca?.banco?.descricao || null,
@@ -1325,8 +1326,8 @@ function extractSituacaoTitulo(campos: any[] | null | undefined): string | null 
 function extractDadosCheque(campos: any[] | null | undefined): string | null {
   if (!campos || !Array.isArray(campos)) return null;
   const dadosCampo = campos.find((c: any) => {
-    const tag = (c.tag || '').trim();
-    return tag === 'DadosDoCheque' || tag === 'dadosDoCheque';
+    const tag = (c.tag || '').trim().toLowerCase();
+    return tag === 'dadosdocheque' || tag === 'dadosdoscheques';
   });
   if (!dadosCampo) return null;
   const valor = (dadosCampo.valor || '').trim();

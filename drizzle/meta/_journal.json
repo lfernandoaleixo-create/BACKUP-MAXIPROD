@@ -1002,6 +1002,13 @@
       "when": 1780491640424,
       "tag": "0142_fast_sue_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 143,
+      "version": "5",
+      "when": 1780513138457,
+      "tag": "0143_massive_shockwave",
+      "breakpoints": true
     }
   ]
 }
