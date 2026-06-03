@@ -2651,7 +2651,7 @@ export default function ReceivablesTab() {
                                         <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.descricao || '-'}</td>
                                         <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.dadosCheque || '-'}</td>
                                         <td className="px-3 py-2 text-right font-semibold text-slate-800 whitespace-nowrap">R$ {c.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-2 text-center text-slate-600 whitespace-nowrap">{c.vencimentoData ? (() => { const d = new Date(c.vencimentoData + 'T12:00:00'); return isNaN(d.getTime()) ? c.vencimentoData : d.toLocaleDateString('pt-BR'); })() : '-'}</td>
+                                        <td className="px-3 py-2 text-center text-slate-600 whitespace-nowrap">{c.vencimentoData ? (() => { const parts = c.vencimentoData.split('T')[0].split('-'); return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : c.vencimentoData; })() : '-'}</td>
                                         <td className="px-3 py-2 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">{c.estado}</span></td>
                                       </tr>
                                     ))}
