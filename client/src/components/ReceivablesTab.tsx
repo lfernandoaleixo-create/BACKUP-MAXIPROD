@@ -49,6 +49,7 @@ import {
   Info,
   Layers,
   Loader2,
+  Calculator,
 } from "lucide-react";
 import {
   Dialog,
@@ -2642,7 +2643,8 @@ export default function ReceivablesTab() {
                                 <h6 className={`text-xs font-bold ${dc.headerText}`}>FACTORING {selectedFactoring} — {cheques.length} cheque{cheques.length !== 1 ? 's' : ''}</h6>
                                 <div className="flex items-center gap-3">
                                   {selectedCount > 0 && (
-                                    <span className={`text-xs font-bold ${dc.headerText} bg-white/60 px-2 py-0.5 rounded`}>
+                                    <span className={`text-xs font-bold ${dc.headerText} bg-white/60 px-2 py-0.5 rounded flex items-center gap-1.5`}>
+                                      <Calculator className="w-3.5 h-3.5" />
                                       {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''} = R$ {selectedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                     </span>
                                   )}
@@ -2704,7 +2706,10 @@ export default function ReceivablesTab() {
                               </div>
                               {selectedCount > 0 && (
                                 <div className={`${dc.headerBg} px-4 py-2.5 border-t ${dc.border} flex items-center justify-between`}>
-                                  <span className={`text-xs ${dc.headerText}`}>{selectedCount} cheque{selectedCount !== 1 ? 's' : ''} selecionado{selectedCount !== 1 ? 's' : ''}</span>
+                                  <span className={`text-xs ${dc.headerText} flex items-center gap-1.5`}>
+                                    <Calculator className="w-4 h-4" />
+                                    {selectedCount} cheque{selectedCount !== 1 ? 's' : ''} selecionado{selectedCount !== 1 ? 's' : ''}
+                                  </span>
                                   <span className={`text-sm font-black ${dc.headerText}`}>Soma: R$ {selectedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                               )}
