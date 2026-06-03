@@ -4109,3 +4109,7 @@
 - [x] Corrigir truncamento do nome do vendedor na tabela (max-w-[80px] → max-w-[120px] break-words)
 - [x] Adicionar edição manual do vendedor no detalhe expandido (ícone lápis + input inline)
 - [x] Limpar scripts temporários (fix_vendedor.ts, check_vendedor.ts, backfill_etapas.ts)
+
+## Bug: Card "Factoring Outros" não deveria existir (03/06/2026)
+- [x] Remover card "FACTORING OUTROS" da aba de cheques — só existem 3 factorings: CIFRAS, FINANZA e SAMONEY
+- [x] Investigar qual cheque está caindo em "Outros" e reclassificar ou remover (era 1 cheque com situacaoTitulo="BOLETO DESCONTADO FACTORING" sem empresa — corrigido no Maxiprod + filtro no backend)

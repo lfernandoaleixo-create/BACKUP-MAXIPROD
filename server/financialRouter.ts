@@ -7,7 +7,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { accountsPayable, accountsReceivable, bankAccounts, bankTransactions, salesOrders, dailyReconciliation, paymentAuthorizations, collectionActions, authCompletion, collectionDailyActions, receivableProtestConfig, collectionDocuments, financialChanges, resolvedReceivables, collectionActionEdits, collectionManualTicks, collectionManualTickHistory, collectionStepOverrides, spreadsheetUploads, decisionPdfHistory, paymentPriorityMarks, chequeCustodians, chequeExchanges, chequeSyncChanges, paymentCalendarTicks, deferredPaymentNotes } from "../drizzle/schema";
 import { saveFinancialSnapshot, detectFinancialChanges, getFinancialChanges, getSnapshotDates } from "./financialHistory";
-import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc, asc, ne, inArray, isNotNull, or } from "drizzle-orm";
 import { storagePut, storageGet } from "./storage";
 import { ENV } from "./_core/env";
 import { generateCollectionPdf } from "./generateCollectionPdf";
@@ -6893,6 +6893,12 @@ ${acoesTexto}
       const conditions = [
         sql`${accountsReceivable.formaCobranca} LIKE 'Cheque%'`,
         sql`${accountsReceivable.situacaoTitulo} LIKE '%FACTORING%'`,
+        // Somente os 3 factorings válidos: CIFRAS, FINANZA, SAMONEY (exclui genéricos)
+        or(
+          sql`${accountsReceivable.situacaoTitulo} LIKE '%CIFRAS%'`,
+          sql`${accountsReceivable.situacaoTitulo} LIKE '%FINANZA%'`,
+          sql`${accountsReceivable.situacaoTitulo} LIKE '%SAMONEY%'`,
+        )!,
         inArray(accountsReceivable.tipo, RECEIVABLE_VALID_TYPES),
       ];
 
