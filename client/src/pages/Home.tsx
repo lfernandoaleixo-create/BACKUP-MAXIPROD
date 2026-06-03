@@ -4694,7 +4694,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         return (
           <div className="flex flex-col gap-4">
             {/* E-commerce Alert + Buttons Row */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
             {/* Pending E-commerce Transfer Alert Card */}
             {pendingEcommerce && pendingEcommerce.items.length > 0 && (
               <div className="w-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl px-5 py-4 shadow-sm">
@@ -4727,29 +4727,31 @@ function DashboardContent({ items }: { items: StockItem[] }) {
               </div>
             )}
             {/* E-commerce History button */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={() => setShowEcommerceHistory(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 shadow-sm"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all bg-white text-purple-600 border border-purple-200 hover:bg-purple-50 shadow-sm"
               >
                 <Store className="w-4 h-4 flex-shrink-0" />
-                Histórico E-commerce — Importação
+                <span>Histórico E-commerce — Importação</span>
               </button>
 
-            {/* Financial toggle button - restricted by est.valorizacao granular permission */}
-            {operatorCtx?.hasGranularAccess("est.valorizacao") && (
-              <button
-                onClick={() => setShowFinancial(!showFinancial)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                  showFinancial
-                    ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
-                }`}
-              >
-                <DollarSign className="w-4 h-4" />
-                {showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}
-                {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            )}
+              {/* Financial toggle button - restricted by est.valorizacao granular permission */}
+              {operatorCtx?.hasGranularAccess("est.valorizacao") && (
+                <button
+                  onClick={() => setShowFinancial(!showFinancial)}
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    showFinancial
+                      ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 shadow-sm'
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4" />
+                  <span>{showFinancial ? 'Ocultar Valorização' : 'Valorização do Estoque'}</span>
+                  {showFinancial ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              )}
+            </div>
             </div>
 
             {/* Global Valuation Card */}
