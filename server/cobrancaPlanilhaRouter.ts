@@ -29,6 +29,33 @@ function isClienteGrupoFox(nome: string): boolean {
 // Tipos válidos de contas a receber (mesmo filtro da inadimplência)
 const RECEIVABLE_VALID_TYPES = ["TITULO", "RECEITA", "ADIANTAMENTO"];
 
+/**
+ * Para títulos PIX, o campo `cliente` no Maxiprod retorna o banco (ex: "BANCO COOPERATIVO SICREDI S.A.")
+ * em vez do cliente real. O nome real do cliente está no campo `referenteA` (ex: "PIX BOTICA BELADONA -J L FORMULAS").
+ * Esta função extrai o nome real do cliente quando detecta esse padrão.
+ */
+function extractRealClientFromPix(referenteA: string | null, cliente: string): string {
+  if (!referenteA) return cliente;
+  const ref = referenteA.trim();
+  const refUpper = ref.toUpperCase();
+  const clienteUpper = cliente.toUpperCase();
+  
+  // Se o cliente parece ser um banco e o referenteA contém o nome real do cliente
+  if (clienteUpper.includes('BANCO')) {
+    // Padrão 1: "PIX NOME DO CLIENTE"
+    if (refUpper.startsWith('PIX ')) {
+      const realClient = ref.substring(4).trim();
+      if (realClient.length > 3) return realClient;
+    }
+    // Padrão 2: "RECEBIMENTO PIX-PIX - NOME DO CLIENTE"
+    const pixDashMatch = ref.match(/RECEBIMENTO PIX[\-\s]*PIX[\s\-]+(.+)/i);
+    if (pixDashMatch && pixDashMatch[1].trim().length > 3) {
+      return pixDashMatch[1].trim();
+    }
+  }
+  return cliente;
+}
+
 // Mapeamento de status da inadimplência (collection_actions) → planilha de cobrança
 const STATUS_MAP: Record<string, string> = {
   pendente: "Pendente",
@@ -627,7 +654,7 @@ export const cobrancaPlanilhaRouter = router({
 
           return {
             arId: row.id,
-            empresa: (row.cliente || "").trim(),
+            empresa: extractRealClientFromPix(row.referenteA, (row.cliente || "").trim()),
             descricao: row.referenteA || "",
             vencimento: vencDate,
             valorOriginal,

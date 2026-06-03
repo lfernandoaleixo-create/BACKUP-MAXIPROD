@@ -30,6 +30,33 @@ function normalizeName(name: string): string {
 // Tipos válidos de contas a receber (mesmo filtro da inadimplência)
 const RECEIVABLE_VALID_TYPES = ["TITULO", "RECEITA", "ADIANTAMENTO"];
 
+/**
+ * Para títulos PIX, o campo `cliente` no Maxiprod retorna o banco (ex: "BANCO COOPERATIVO SICREDI S.A.")
+ * em vez do cliente real. O nome real do cliente está no campo `referenteA` (ex: "PIX BOTICA BELADONA -J L FORMULAS").
+ * Esta função extrai o nome real do cliente quando detecta esse padrão.
+ */
+function extractRealClientFromPix(referenteA: string | null, cliente: string): string {
+  if (!referenteA) return cliente;
+  const ref = referenteA.trim();
+  const refUpper = ref.toUpperCase();
+  const clienteUpper = cliente.toUpperCase();
+  
+  // Se o cliente parece ser um banco e o referenteA contém o nome real do cliente
+  if (clienteUpper.includes('BANCO')) {
+    // Padrão 1: "PIX NOME DO CLIENTE"
+    if (refUpper.startsWith('PIX ')) {
+      const realClient = ref.substring(4).trim();
+      if (realClient.length > 3) return realClient;
+    }
+    // Padrão 2: "RECEBIMENTO PIX-PIX - NOME DO CLIENTE"
+    const pixDashMatch = ref.match(/RECEBIMENTO PIX[\-\s]*PIX[\s\-]+(.+)/i);
+    if (pixDashMatch && pixDashMatch[1].trim().length > 3) {
+      return pixDashMatch[1].trim();
+    }
+  }
+  return cliente;
+}
+
 // Clientes de teste a ignorar
 const TEST_CLIENTS = ['CLIENTE TESTE REGRA', 'CLIENTE MANUAL TICK TEST', 'CLIENTE LEGACY VIBRATION TEST', 'CLIENTE RECENT VIBRATION TEST', 'CLIENTE TESTE COBRANCA'];
 
@@ -153,7 +180,7 @@ export async function syncCobrancaPlanilhaAuto(): Promise<{ added: number; deact
       const valorPago = Number(row.valorRecebidoLiquido) || 0;
       const valorAReceber = valorOriginal - valorPago;
       const vencDate = (row.vencimentoData || "").split("T")[0];
-      return { arId: row.id, empresa: (row.cliente || "").trim(), valorAReceber, vencDate, row };
+      return { arId: row.id, empresa: extractRealClientFromPix(row.referenteA, (row.cliente || "").trim()), valorAReceber, vencDate, row };
     })
     .filter(t => t.valorAReceber > 0)
     .filter(t => !TEST_CLIENTS.includes(t.empresa.toUpperCase().trim()));
