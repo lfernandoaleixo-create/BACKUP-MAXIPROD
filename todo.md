@@ -4096,3 +4096,6 @@
 
 ## Inadimplência: Rastreabilidade de Etapas Herdadas
 - [x] Adicionar indicador visual ou tooltip mostrando de qual título a etapa de cobrança foi herdada
+
+## Cheques Factoring: Detalhe ao clicar no card
+- [x] Ao clicar no card de factoring (FINANZA, SAMONEY, CIFRAS), abrir tabela detalhada com nome do cliente, descrição, valor, vencimento de cada cheque

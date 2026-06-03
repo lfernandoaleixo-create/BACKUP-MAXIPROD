@@ -1910,6 +1910,9 @@ export default function ReceivablesTab() {
     { enabled: !!chequesOpenEmpresa }
   );
 
+  // Factoring detail state
+  const [selectedFactoring, setSelectedFactoring] = useState<string | null>(null);
+
   // Cheque Exchange (Troca) state
   const [exchangeMode, setExchangeMode] = useState(false);
   const [exchangeSelectedIds, setExchangeSelectedIds] = useState<Set<number>>(new Set());
@@ -2596,7 +2599,7 @@ export default function ReceivablesTab() {
                             };
                             const colors = colorMap[company] || colorMap.OUTROS;
                             return (
-                              <div key={company} className={`relative p-4 rounded-xl border-2 ${colors.border} ${colors.bg} shadow-sm hover:shadow-md transition-shadow`}>
+                              <div key={company} onClick={() => setSelectedFactoring(selectedFactoring === company ? null : company)} className={`relative p-4 rounded-xl border-2 ${colors.border} ${colors.bg} shadow-sm hover:shadow-md transition-shadow cursor-pointer ${selectedFactoring === company ? 'ring-2 ring-offset-1 ring-indigo-400' : ''}`}>
                                 <div className="flex items-center gap-2.5 mb-2">
                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colors.icon} shadow-sm`}>
                                     <Landmark className="w-4 h-4" />
@@ -2618,6 +2621,53 @@ export default function ReceivablesTab() {
                             );
                           })}
                         </div>
+
+                        {/* Factoring Detail Table */}
+                        {selectedFactoring && factoringQuery.data?.porFactoring[selectedFactoring] && (() => {
+                          const factData = factoringQuery.data.porFactoring[selectedFactoring] as any;
+                          const cheques = factData.cheques || [];
+                          return (
+                            <div className="mt-4 border border-indigo-200 rounded-lg overflow-hidden">
+                              <div className="bg-indigo-100/80 px-4 py-2 flex items-center justify-between">
+                                <h6 className="text-xs font-bold text-indigo-800">FACTORING {selectedFactoring} — {cheques.length} cheque{cheques.length !== 1 ? 's' : ''}</h6>
+                                <button onClick={(e) => { e.stopPropagation(); setSelectedFactoring(null); }} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Fechar</button>
+                              </div>
+                              <div className="max-h-[400px] overflow-y-auto">
+                                <table className="w-full text-xs">
+                                  <thead className="bg-indigo-50 sticky top-0">
+                                    <tr>
+                                      <th className="px-3 py-2 text-left font-semibold text-indigo-700">Cliente</th>
+                                      <th className="px-3 py-2 text-left font-semibold text-indigo-700">Descrição</th>
+                                      <th className="px-3 py-2 text-left font-semibold text-indigo-700">Cheque</th>
+                                      <th className="px-3 py-2 text-right font-semibold text-indigo-700">Valor</th>
+                                      <th className="px-3 py-2 text-center font-semibold text-indigo-700">Vencimento</th>
+                                      <th className="px-3 py-2 text-center font-semibold text-indigo-700">Estado</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-indigo-100">
+                                    {cheques.map((c: any) => (
+                                      <tr key={c.id} className="hover:bg-indigo-50/50">
+                                        <td className="px-3 py-2 font-medium text-slate-800 max-w-[200px] truncate">{c.cliente}</td>
+                                        <td className="px-3 py-2 text-slate-600 max-w-[180px] truncate">{c.descricao || '-'}</td>
+                                        <td className="px-3 py-2 text-slate-600 max-w-[120px] truncate">{c.dadosCheque || '-'}</td>
+                                        <td className="px-3 py-2 text-right font-semibold text-slate-800">R$ {c.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                        <td className="px-3 py-2 text-center text-slate-600">{c.vencimentoData ? new Date(c.vencimentoData + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+                                        <td className="px-3 py-2 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">{c.estado}</span></td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                  <tfoot className="bg-indigo-50 border-t border-indigo-200">
+                                    <tr>
+                                      <td colSpan={3} className="px-3 py-2 font-bold text-indigo-800">Total</td>
+                                      <td className="px-3 py-2 text-right font-bold text-indigo-800">R$ {factData.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                      <td colSpan={2}></td>
+                                    </tr>
+                                  </tfoot>
+                                </table>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 
