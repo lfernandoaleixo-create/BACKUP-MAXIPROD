@@ -1912,6 +1912,7 @@ export default function ReceivablesTab() {
 
   // Factoring detail state
   const [selectedFactoring, setSelectedFactoring] = useState<string | null>(null);
+  const [factoringCheckedIds, setFactoringCheckedIds] = useState<Set<number>>(new Set());
 
   // Cheque Exchange (Troca) state
   const [exchangeMode, setExchangeMode] = useState(false);
@@ -2632,16 +2633,32 @@ export default function ReceivablesTab() {
                             SAMONEY: { border: "border-violet-300", headerBg: "bg-violet-100/80", headerText: "text-violet-800", headBg: "bg-violet-50", headText: "text-violet-700", hoverBg: "hover:bg-violet-50/50", divider: "divide-violet-100", footBg: "bg-violet-50", footBorder: "border-t border-violet-200", footText: "text-violet-800", closeText: "text-violet-600", closeHover: "hover:text-violet-800" },
                           };
                           const dc = detailColorMap[selectedFactoring] || detailColorMap.FINANZA;
+                          const selectedSum = cheques.filter((c: any) => factoringCheckedIds.has(c.id)).reduce((sum: number, c: any) => sum + (c.valor || 0), 0);
+                          const selectedCount = cheques.filter((c: any) => factoringCheckedIds.has(c.id)).length;
+                          const allChecked = cheques.length > 0 && cheques.every((c: any) => factoringCheckedIds.has(c.id));
                           return (
                             <div className={`mt-4 border ${dc.border} rounded-lg overflow-hidden`}>
                               <div className={`${dc.headerBg} px-4 py-2 flex items-center justify-between`}>
                                 <h6 className={`text-xs font-bold ${dc.headerText}`}>FACTORING {selectedFactoring} — {cheques.length} cheque{cheques.length !== 1 ? 's' : ''}</h6>
-                                <button onClick={(e) => { e.stopPropagation(); setSelectedFactoring(null); }} className={`text-xs ${dc.closeText} ${dc.closeHover} font-medium`}>Fechar</button>
+                                <div className="flex items-center gap-3">
+                                  {selectedCount > 0 && (
+                                    <span className={`text-xs font-bold ${dc.headerText} bg-white/60 px-2 py-0.5 rounded`}>
+                                      {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''} = R$ {selectedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                  )}
+                                  <button onClick={(e) => { e.stopPropagation(); setSelectedFactoring(null); setFactoringCheckedIds(new Set()); }} className={`text-xs ${dc.closeText} ${dc.closeHover} font-medium`}>Fechar</button>
+                                </div>
                               </div>
                               <div className="max-h-[400px] overflow-y-auto">
                                 <table className="w-full text-xs">
                                   <thead className={`${dc.headBg} sticky top-0`}>
                                     <tr>
+                                      <th className={`px-2 py-2 text-center ${dc.headText}`}>
+                                        <input type="checkbox" checked={allChecked} onChange={() => {
+                                          if (allChecked) { setFactoringCheckedIds(new Set()); }
+                                          else { setFactoringCheckedIds(new Set(cheques.map((c: any) => c.id))); }
+                                        }} className="w-3.5 h-3.5 rounded cursor-pointer accent-indigo-600" />
+                                      </th>
                                       <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Cliente</th>
                                       <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Descrição</th>
                                       <th className={`px-3 py-2 text-left font-semibold ${dc.headText}`}>Dados do Cheque</th>
@@ -2651,19 +2668,33 @@ export default function ReceivablesTab() {
                                     </tr>
                                   </thead>
                                   <tbody className={`${dc.divider}`}>
-                                    {cheques.map((c: any) => (
-                                      <tr key={c.id} className={dc.hoverBg}>
-                                        <td className="px-3 py-2 font-medium text-slate-800 whitespace-normal">{c.cliente}</td>
-                                        <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.descricao || '-'}</td>
-                                        <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.dadosCheque || '-'}</td>
-                                        <td className="px-3 py-2 text-right font-semibold text-slate-800 whitespace-nowrap">R$ {c.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-3 py-2 text-center text-slate-600 whitespace-nowrap">{c.vencimentoData ? (() => { const parts = c.vencimentoData.split('T')[0].split('-'); return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : c.vencimentoData; })() : '-'}</td>
-                                        <td className="px-3 py-2 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">{c.estado}</span></td>
-                                      </tr>
-                                    ))}
+                                    {cheques.map((c: any) => {
+                                      const isChecked = factoringCheckedIds.has(c.id);
+                                      return (
+                                        <tr key={c.id} className={`${dc.hoverBg} ${isChecked ? 'bg-indigo-50/50' : ''}`}>
+                                          <td className="px-2 py-2 text-center">
+                                            <input type="checkbox" checked={isChecked} onChange={() => {
+                                              setFactoringCheckedIds(prev => {
+                                                const next = new Set(prev);
+                                                if (next.has(c.id)) next.delete(c.id);
+                                                else next.add(c.id);
+                                                return next;
+                                              });
+                                            }} className="w-3.5 h-3.5 rounded cursor-pointer accent-indigo-600" />
+                                          </td>
+                                          <td className="px-3 py-2 font-medium text-slate-800 whitespace-normal">{c.cliente}</td>
+                                          <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.descricao || '-'}</td>
+                                          <td className="px-3 py-2 text-slate-600 whitespace-normal">{c.dadosCheque || '-'}</td>
+                                          <td className="px-3 py-2 text-right font-semibold text-slate-800 whitespace-nowrap">R$ {c.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                          <td className="px-3 py-2 text-center text-slate-600 whitespace-nowrap">{c.vencimentoData ? (() => { const parts = c.vencimentoData.split('T')[0].split('-'); return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : c.vencimentoData; })() : '-'}</td>
+                                          <td className="px-3 py-2 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">{c.estado}</span></td>
+                                        </tr>
+                                      );
+                                    })}
                                   </tbody>
                                   <tfoot className={`${dc.footBg} ${dc.footBorder}`}>
                                     <tr>
+                                      <td></td>
                                       <td colSpan={3} className={`px-3 py-2 font-bold ${dc.footText}`}>Total</td>
                                       <td className={`px-3 py-2 text-right font-bold ${dc.footText}`}>R$ {factData.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                       <td colSpan={2}></td>
@@ -2671,6 +2702,12 @@ export default function ReceivablesTab() {
                                   </tfoot>
                                 </table>
                               </div>
+                              {selectedCount > 0 && (
+                                <div className={`${dc.headerBg} px-4 py-2.5 border-t ${dc.border} flex items-center justify-between`}>
+                                  <span className={`text-xs ${dc.headerText}`}>{selectedCount} cheque{selectedCount !== 1 ? 's' : ''} selecionado{selectedCount !== 1 ? 's' : ''}</span>
+                                  <span className={`text-sm font-black ${dc.headerText}`}>Soma: R$ {selectedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </div>
+                              )}
                             </div>
                           );
                         })()}
