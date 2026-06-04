@@ -4863,8 +4863,8 @@ function DashboardContent({ items }: { items: StockItem[] }) {
       {/* ═══ ESTOQUE E-COMMERCE ═══ */}
       {ecommerceItems.length > 0 && (
         <ClassificationCard
-          title="Estoque E-Commerce"
-          subtitle={`${parentOnlyEcommerce.length} produtos do grupo \"Outros\" (E-Commerce)`}
+          title="Estoque de Produtos Variados"
+          subtitle={`${parentOnlyEcommerce.length} produtos do grupo \"Outros\"`}
           icon={ShoppingBag}
           iconBg="bg-purple-100"
           iconColor="text-purple-600"
