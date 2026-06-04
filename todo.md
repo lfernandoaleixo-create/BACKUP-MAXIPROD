@@ -4143,3 +4143,8 @@
 
 ## Fix: Filtro "Outros" na Config Produto Importado (04/06/2026)
 - [x] Filtro "Outros" não encontrava produtos E-Commerce — settingsRouter.getProductSegments não classificava produtos sem grupoCodigo como "outros". Corrigido com fallback usando superGrupoCodigo/grupoCodigo (mesma lógica do stockProcessor)
+
+## Bug URGENTE: Baixas automáticas de estoque em 03/06 às 16:31 (04/06/2026)
+- [x] Investigar o que causou baixas automáticas de caixas em 03/06 às 16:31 — causa: snapshot perdido no deploy, reprocessou 33 faturamentos antigos
+- [x] Restaurar os valores corretos de estoque (retomar caixas) — 11 produtos restaurados, 33 baixas revertidas
+- [x] Prevenir que baixas automáticas ocorram novamente — trava >10 faturamentos/sync + billing_history populado com 527 registros

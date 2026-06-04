@@ -105,6 +105,25 @@ export async function processIndustrializedBaixa(): Promise<void> {
 
     if (newBilled.length === 0) {
       console.log(`[Baixa Industrializado] Nenhum novo faturamento detectado (${billedIndustrialized.length} itens já processados)`);
+    } else if (newBilled.length > 10) {
+      // PROTEÇÃO: Se detectar mais de 10 novos faturamentos de uma vez,
+      // provavelmente é um reprocessamento indevido (snapshot perdido).
+      // Não processar e apenas logar o alerta.
+      console.error(`[Baixa Industrializado] ⚠️ ALERTA: ${newBilled.length} novos faturamentos detectados de uma vez! Possível reprocessamento indevido. ABORTANDO baixas automáticas. Verifique manualmente.`);
+      
+      // Mesmo assim, inserir no snapshot para não alertar novamente
+      await db.delete(billedIndustrializedSnapshot);
+      for (let i = 0; i < billedIndustrialized.length; i += 200) {
+        const batch = billedIndustrialized.slice(i, i + 200).filter(item => item.codigoItem).map(item => ({
+          pedido: item.pedido || '',
+          codigoItem: item.codigoItem as string,
+          quantidade: parseFloat(item.quantidade || '0').toFixed(5),
+          unidadeMedida: item.unidadeMedidaCodigo || null,
+          snapshotDate: today,
+        }));
+        await db.insert(billedIndustrializedSnapshot).values(batch);
+      }
+      console.log(`[Baixa Industrializado] Snapshot atualizado (sem baixas). Próxima sync não repetirá o alerta.`);
     } else {
       console.log(`[Baixa Industrializado] ${newBilled.length} novo(s) faturamento(s) detectado(s)!`);
 
