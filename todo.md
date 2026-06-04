@@ -4129,3 +4129,6 @@
 
 ## Bug: Card "A FATURAR MÊS ATUAL" com valor incorreto (04/06/2026)
 - [x] Card "A FATURAR MÊS ATUAL" (card de baixo) mostrava R$ 514.678,58 com 27 pedidos porque getOrders incluía pedidos com dataEntrega no mês (de meses anteriores). Corrigido para usar apenas dataEmissao, consistente com card KPI laranja (R$ 225.738,58)
+
+## Bug: Card "A FATURAR (ANTERIOR)" com valor incorreto (04/06/2026)
+- [x] Card "A FATURAR (ANTERIOR)" mostra R$ 485.784,72 — valor está correto (acumula todos os meses anteriores não faturados, não apenas maio). Usuário confirmou que pode deixar como está.
