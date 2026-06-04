@@ -4137,3 +4137,6 @@
 - [x] Remover produtos com grupo "Outros" da tabela principal de estoque de importação
 - [x] Criar card separado "Estoque E-Commerce" para exibir produtos com grupo "Outros"
 - [x] Adicionar "Outros" como opção de grupo no dropdown da página Configurações > Produto Importado (para controle de visibilidade)
+
+## Fix: Estoque E-Commerce em unidades (04/06/2026)
+- [x] KPIs do card Estoque E-Commerce devem mostrar "un" em vez de "cx" (produtos são contados em unidades)

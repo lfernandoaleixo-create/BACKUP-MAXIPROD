@@ -2098,6 +2098,7 @@ function ClassificationCard({
   enableCompraRule,
   hideAlerts,
   monthlySalesData,
+  useUnits,
 }: { 
   title: string; 
   subtitle: string;
@@ -2114,6 +2115,7 @@ function ClassificationCard({
   enableCompraRule?: boolean;
   hideAlerts?: boolean;
   monthlySalesData?: MonthlySalesData;
+  useUnits?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [grupoFilter, setGrupoFilter] = useState("all");
@@ -2201,11 +2203,19 @@ function ClassificationCard({
   };
   // Excluir filhos (isChild) dos totais para não duplicar estoque de variações PC já somadas no mãe
   const parentItems_ = useMemo(() => items.filter(i => !i.isChild), [items]);
-  const totalEstoque = parentItems_.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
-  const totalPedidos = parentItems_.reduce((sum, i) => sum + (i.pedidosCx ?? 0), 0);
-  const totalDisponivel = parentItems_.reduce((sum, i) => sum + (i.disponivelCx ?? 0), 0);
+  const unitLabel = useUnits ? "un" : "cx";
+  const totalEstoque = parentItems_.reduce((sum, i) => sum + (useUnits ? (i.estoqueUn ?? 0) : (i.estoqueCx ?? 0)), 0);
+  const totalPedidos = parentItems_.reduce((sum, i) => sum + (useUnits ? (i.pedidosUn ?? 0) : (i.pedidosCx ?? 0)), 0);
+  const totalDisponivel = parentItems_.reduce((sum, i) => sum + (useUnits ? (i.disponivelUn ?? 0) : (i.disponivelCx ?? 0)), 0);
   // PO total: usar poLotes.quantidade (sempre em caixas) para evitar inflar com kg products
   const totalPO = parentItems_.reduce((sum, i) => {
+    if (useUnits) {
+      // Para unidades, usar poUn ou somar lotes
+      if (i.poLotes && i.poLotes.length > 0) {
+        return sum + i.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0);
+      }
+      return sum + (i.poUn ?? i.poCx ?? 0);
+    }
     if (i.poLotes && i.poLotes.length > 0) {
       return sum + i.poLotes.reduce((ls: number, l: any) => ls + (l.quantidade ?? 0), 0);
     }
@@ -2294,23 +2304,23 @@ function ClassificationCard({
         <div className="hidden sm:grid grid-cols-6 gap-0 mt-4 ml-12 divide-x divide-slate-200 dark:divide-slate-600 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
           <div className="bg-teal-50/80 dark:bg-teal-950/30 px-3 py-3.5 text-center">
             <p className="text-[10px] text-teal-600 font-semibold uppercase tracking-wider">Estoque</p>
-            <p className="text-lg font-extrabold text-teal-700 dark:text-teal-400 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className="text-lg font-extrabold text-teal-700 dark:text-teal-400 mt-1">{formatNumber(totalEstoque, true)} <span className="text-xs font-semibold">{unitLabel}</span></p>
           </div>
           <div className="bg-orange-50/80 dark:bg-orange-950/30 px-3 py-3.5 text-center">
             <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Pedidos</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-700 dark:text-orange-400' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPedidos > 0 ? 'text-orange-700 dark:text-orange-400' : 'text-slate-400'}`}>{formatNumber(totalPedidos, true)} <span className="text-xs font-semibold">{unitLabel}</span></p>
           </div>
           <div className={`px-3 py-3.5 text-center ${totalDisponivel < 0 ? 'bg-red-50/80 dark:bg-red-950/30' : 'bg-emerald-50/80 dark:bg-emerald-950/30'}`}>
             <p className={`text-[10px] font-semibold uppercase tracking-wider ${totalDisponivel < 0 ? 'text-red-600' : 'text-emerald-600'}`}>Disponível</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalDisponivel < 0 ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{formatNumber(totalDisponivel, true)} <span className="text-xs font-semibold">{unitLabel}</span></p>
           </div>
           <div className="bg-blue-50/80 dark:bg-blue-950/30 px-3 py-3.5 text-center">
             <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">PO (Compra)</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalPO > 0 ? 'text-blue-700 dark:text-blue-400' : 'text-slate-400'}`}>{formatNumber(totalPO, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalPO > 0 ? 'text-blue-700 dark:text-blue-400' : 'text-slate-400'}`}>{formatNumber(totalPO, true)} <span className="text-xs font-semibold">{unitLabel}</span></p>
           </div>
           <div className="bg-indigo-50/80 dark:bg-indigo-950/30 px-3 py-3.5 text-center">
             <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Projetado</p>
-            <p className={`text-lg font-extrabold mt-1 ${totalProjetado < 0 ? 'text-red-700 dark:text-red-400' : 'text-indigo-700 dark:text-indigo-400'}`}>{formatNumber(totalProjetado, true)} <span className="text-xs font-semibold">cx</span></p>
+            <p className={`text-lg font-extrabold mt-1 ${totalProjetado < 0 ? 'text-red-700 dark:text-red-400' : 'text-indigo-700 dark:text-indigo-400'}`}>{formatNumber(totalProjetado, true)} <span className="text-xs font-semibold">{unitLabel}</span></p>
           </div>
           <div className="bg-slate-50/80 dark:bg-slate-800/50 px-3 py-3.5 text-center">
             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Produtos</p>
@@ -4867,6 +4877,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
           pricingOverrides={pricingOverrides ?? undefined}
           hideAlerts={true}
           monthlySalesData={monthlySalesData}
+          useUnits={true}
         />
       )}
 
