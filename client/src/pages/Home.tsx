@@ -74,6 +74,7 @@ import {
   User,
   Sun,
   Moon,
+  ShoppingBag,
 } from "lucide-react";
 import {
   Dialog,
@@ -4178,7 +4179,7 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const [segmentoFilter, setSegmentoFilter] = useState("all");
   const [sort, setSort] = useState<SortField>("comprimento");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false, madeira: false, semiPronto: false, aguardandoEscolha: false });
+  const [openCards, setOpenCards] = useState<Record<string, boolean>>({ estoque: false, encomenda: false, ecommerce: false, madeira: false, semiPronto: false, aguardandoEscolha: false });
   const [showFinancial, setShowFinancial] = useState(false);
   const [showMadeiraFinancial, setShowMadeiraFinancial] = useState(false);
   const [showEcommerceHistory, setShowEcommerceHistory] = useState(false);
@@ -4248,8 +4249,11 @@ function DashboardContent({ items }: { items: StockItem[] }) {
     const c = classificationMap.get(i.codigoItem);
     // Excluir itens de industrialização (madeira) - eles vão no card Madeira
     if (i.grupo === "industrializacao") return false;
+    // Excluir itens "outros" - eles vão no card Estoque E-Commerce
+    if (i.grupo === "outros") return false;
     return c === "estoque" || !c || c === "outros";
   }), [items, classificationMap]);
+  const ecommerceItems = useMemo(() => items.filter(i => i.grupo === "outros"), [items]);
   const encomendaItems = useMemo(() => items.filter(i => classificationMap.get(i.codigoItem) === "encomenda"), [items, classificationMap]);
 
   // Build madeira visibility map
@@ -4287,8 +4291,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const mpItems = useMemo(() => items.filter((i) => i.grupo === "importacao_mp"), [items]);
 
   // Contagem apenas de pais (excluindo variações filhas)
-  // KPI geral conta apenas importação (revenda + MP), exclui industrialização (madeira)
-  const parentOnlyItems = useMemo(() => items.filter(i => !i.isChild && i.grupo !== "industrializacao"), [items]);
+  // KPI geral conta apenas importação (revenda + MP), exclui industrialização (madeira) e "outros" (e-commerce)
+  const parentOnlyItems = useMemo(() => items.filter(i => !i.isChild && i.grupo !== "industrializacao" && i.grupo !== "outros"), [items]);
+  const parentOnlyEcommerce = useMemo(() => ecommerceItems.filter(i => !i.isChild), [ecommerceItems]);
   const parentOnlyEstoque = useMemo(() => estoqueItems.filter(i => !i.isChild), [estoqueItems]);
   const parentOnlyEncomenda = useMemo(() => encomendaItems.filter(i => !i.isChild), [encomendaItems]);
   const parentOnlyMadeira = useMemo(() => madeiraItems.filter(i => !i.isChild), [madeiraItems]);
@@ -4296,9 +4301,9 @@ function DashboardContent({ items }: { items: StockItem[] }) {
   const parentOnlyIndust = useMemo(() => industItems.filter(i => !i.isChild), [industItems]);
   const parentOnlyMP = useMemo(() => mpItems.filter(i => !i.isChild), [mpItems]);
 
-  // Totais gerais: apenas importação (revenda + MP), exclui industrialização (madeira)
+  // Totais gerais: apenas importação (revenda + MP), exclui industrialização (madeira) e "outros" (e-commerce)
   // IMPORTANTE: excluir filhos (isChild) para não duplicar estoque de variações PC já somadas no mãe
-  const importItems = useMemo(() => items.filter(i => i.grupo !== "industrializacao" && !i.isChild), [items]);
+  const importItems = useMemo(() => items.filter(i => i.grupo !== "industrializacao" && i.grupo !== "outros" && !i.isChild), [items]);
   const totalEstoqueCx = importItems.reduce((sum, i) => sum + (i.estoqueCx ?? 0), 0);
   // Pedidos de venda: soma APENAS produtos de importação (excluir industrialização/madeira)
   // Industrialização tem seus próprios pedidos na seção Madeira Produto Acabado
@@ -4844,6 +4849,26 @@ function DashboardContent({ items }: { items: StockItem[] }) {
         hideAlerts={true}
         monthlySalesData={monthlySalesData}
       />
+
+      {/* ═══ ESTOQUE E-COMMERCE ═══ */}
+      {ecommerceItems.length > 0 && (
+        <ClassificationCard
+          title="Estoque E-Commerce"
+          subtitle={`${parentOnlyEcommerce.length} produtos do grupo \"Outros\" (E-Commerce)`}
+          icon={ShoppingBag}
+          iconBg="bg-purple-100"
+          iconColor="text-purple-600"
+          borderColor="border-l-purple-500"
+          items={ecommerceItems}
+          isOpen={openCards.ecommerce}
+          onToggle={() => toggleCard("ecommerce")}
+          priceMap={priceMap}
+          showFinancial={showFinancial}
+          pricingOverrides={pricingOverrides ?? undefined}
+          hideAlerts={true}
+          monthlySalesData={monthlySalesData}
+        />
+      )}
 
       {/* ═══ SEÇÃO MADEIRA ═══ */}
       <div className="mt-6 md:mt-10 mb-3 md:mb-5">

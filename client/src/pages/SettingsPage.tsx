@@ -1138,6 +1138,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
       case "industrializacao": return "bg-violet-100 text-violet-700";
       case "importacao": return "bg-teal-100 text-teal-700";
       case "importacao_mp": return "bg-blue-100 text-blue-700";
+      case "outros": return "bg-purple-100 text-purple-700";
       default: return "bg-slate-100 text-slate-600";
     }
   };
@@ -1367,6 +1368,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
               <SelectItem value="importacao">Import. (Revenda)</SelectItem>
               <SelectItem value="importacao_mp">Import. Mat. Prima</SelectItem>
               <SelectItem value="industrializacao">Industrializados</SelectItem>
+              <SelectItem value="outros">Outros</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterOverride} onValueChange={setFilterOverride}>
@@ -1557,6 +1559,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
                           <SelectItem value="importacao">Import. (Revenda)</SelectItem>
                           <SelectItem value="importacao_mp">Import. Mat. Prima</SelectItem>
                           <SelectItem value="industrializacao">Industrializados</SelectItem>
+                          <SelectItem value="outros">Outros</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>

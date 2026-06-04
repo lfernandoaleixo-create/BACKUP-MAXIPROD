@@ -4132,3 +4132,8 @@
 
 ## Bug: Card "A FATURAR (ANTERIOR)" com valor incorreto (04/06/2026)
 - [x] Card "A FATURAR (ANTERIOR)" mostra R$ 485.784,72 — valor está correto (acumula todos os meses anteriores não faturados, não apenas maio). Usuário confirmou que pode deixar como está.
+
+## Feature: Estoque E-Commerce separado (04/06/2026)
+- [x] Remover produtos com grupo "Outros" da tabela principal de estoque de importação
+- [x] Criar card separado "Estoque E-Commerce" para exibir produtos com grupo "Outros"
+- [x] Adicionar "Outros" como opção de grupo no dropdown da página Configurações > Produto Importado (para controle de visibilidade)
