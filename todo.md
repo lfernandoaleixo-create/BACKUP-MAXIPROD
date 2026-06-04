@@ -4126,3 +4126,6 @@
 - [x] Corrigir barra de pesquisa da inadimplência — não está filtrando pelo nome do cliente (causa raiz: campo empresa continha nome do banco em vez do cliente para títulos PIX; após correção, busca por descricao já encontra)
 - [x] Corrigir cliente invertido com banco — "BANCO COOPERATIVO SICREDI S.A." aparecendo como nome do cliente quando deveria ser "BOTICA BELADONA - J L FORMULAS" (função extractRealClientFromPix extrai nome real do referenteA; backfill de 6 registros corrigidos)
 - [x] Limpar scripts temporários de investigação (check_banco.mjs, check_pix_issue.mjs, fix_banco_empresa.mjs + 20 outros)
+
+## Bug: Card "A FATURAR MÊS ATUAL" com valor incorreto (04/06/2026)
+- [x] Card "A FATURAR MÊS ATUAL" (card de baixo) mostrava R$ 514.678,58 com 27 pedidos porque getOrders incluía pedidos com dataEntrega no mês (de meses anteriores). Corrigido para usar apenas dataEmissao, consistente com card KPI laranja (R$ 225.738,58)

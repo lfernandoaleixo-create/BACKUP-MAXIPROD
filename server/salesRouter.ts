@@ -872,23 +872,13 @@ export const salesRouter = router({
         return "all";
       };
 
-      // Comparar apenas a parte YYYY-MM-DD (evita bugs de timezone)
+      // Comparar apenas a parte YYYY-MM-DD da dataEmissao (evita bugs de timezone)
+      // REGRA: Usar apenas dataEmissao para filtrar pedidos no período (consistente com card KPI)
       const startDay = input.startDate.substring(0, 10);
       const endDay = input.endDate.substring(0, 10);
-      // Buscar pedidos onde dataEmissao está no período OU dataEntrega está no período
-      // Isso garante que pedidos faturados recentemente (mas emitidos há meses) apareçam
       const conditions = [
-        or(
-          and(
-            sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
-            sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`,
-          ),
-          and(
-            sql`${salesOrders.dataEntrega} IS NOT NULL`,
-            sql`SUBSTRING(${salesOrders.dataEntrega}, 1, 10) >= ${startDay}`,
-            sql`SUBSTRING(${salesOrders.dataEntrega}, 1, 10) <= ${endDay}`,
-          ),
-        ),
+        sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) >= ${startDay}`,
+        sql`SUBSTRING(${salesOrders.dataEmissao}, 1, 10) <= ${endDay}`,
       ];
 
       const allItems = await db
