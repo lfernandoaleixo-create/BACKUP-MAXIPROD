@@ -180,8 +180,31 @@ export const settingsRouter = router({
       const codigoItem = item.codigoItem || "";
       const descricaoItem = item.descricaoItem || "";
       
-      // Determine default segment
-      const defaultSegment = item.segmento === "bambu" ? "importacao" : "industrializacao";
+      // Determine default segment based on grupo from stockProcessor
+      // Use item.grupo if available (from processed data), otherwise classify from codes
+      let grupoValue = item.grupo;
+      if (!grupoValue) {
+        // Fallback: classify using superGrupoCodigo and grupoCodigo (same logic as stockProcessor)
+        const sgc = item.superGrupoCodigo || "";
+        const gc = item.grupoCodigo || "";
+        if (sgc === "12") grupoValue = "importacao_revenda";
+        else if (sgc === "05") grupoValue = "industrializacao";
+        else if (sgc === "16") {
+          if (gc === "18" || gc === "19") grupoValue = "industrializacao";
+          else grupoValue = "outros";
+        } else if (sgc === "" && gc === "") grupoValue = "outros";
+        else grupoValue = "outros";
+      }
+      let defaultSegment: string;
+      if (grupoValue === "outros") {
+        defaultSegment = "outros";
+      } else if (grupoValue === "importacao_mp") {
+        defaultSegment = "importacao_mp";
+      } else if (grupoValue === "industrializacao") {
+        defaultSegment = "industrializacao";
+      } else {
+        defaultSegment = "importacao";
+      }
 
       // Look up override: match by descricao (product description) or codigoItem
       const override = overrides.find(o => o.descricao === descricaoItem || o.descricao === codigoItem || o.codigoGrupo === codigoItem);
@@ -220,7 +243,7 @@ export const settingsRouter = router({
       password: z.string(),
       descricao: z.string(),
       codigoGrupo: z.string().optional(),
-      segment: z.enum(["industrializacao", "importacao", "importacao_mp"]),
+      segment: z.enum(["industrializacao", "importacao", "importacao_mp", "outros"]),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();

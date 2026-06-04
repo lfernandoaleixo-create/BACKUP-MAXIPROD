@@ -1238,7 +1238,7 @@ function ProductSegmentsPanel({ adminPassword }: { adminPassword: string }) {
       password: adminPassword,
       descricao,
       codigoGrupo,
-      segment: newSegment as "industrializacao" | "importacao" | "importacao_mp",
+      segment: newSegment as "industrializacao" | "importacao" | "importacao_mp" | "outros",
     });
     if (result.success) {
       toast.success(`Segmento alterado para ${segmentLabel(newSegment)}`);

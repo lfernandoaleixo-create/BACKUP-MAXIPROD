@@ -4140,3 +4140,6 @@
 
 ## Fix: Estoque E-Commerce em unidades (04/06/2026)
 - [x] KPIs do card Estoque E-Commerce devem mostrar "un" em vez de "cx" (produtos são contados em unidades)
+
+## Fix: Filtro "Outros" na Config Produto Importado (04/06/2026)
+- [x] Filtro "Outros" não encontrava produtos E-Commerce — settingsRouter.getProductSegments não classificava produtos sem grupoCodigo como "outros". Corrigido com fallback usando superGrupoCodigo/grupoCodigo (mesma lógica do stockProcessor)
