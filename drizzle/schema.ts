@@ -2493,6 +2493,7 @@ export const importPos = mysqlTable("import_pos", {
   status: varchar("status", { length: 30 }).default("arrived"), // 'navigating', 'arrived', 'cleared'
   avgDollarRate: decimal("avg_dollar_rate", { precision: 6, scale: 4 }),
   totalCiUsd: decimal("total_ci_usd", { precision: 12, scale: 2 }),
+  pdfUrl: text("pdf_url"), // URL do PDF da Commercial Invoice (meia nota)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 export type ImportPo = typeof importPos.$inferSelect;

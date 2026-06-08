@@ -4180,8 +4180,11 @@
 ## Custo da Mercadoria: Correções e Melhorias (08/06/2026 - parte 2)
 - [x] Alterar fluxo "Adicionar Produto": primeiro campo = seletor de código (busca no estoque), ao selecionar puxa descrição automaticamente
 - [x] Depois do código: campo NCM
-- [ ] Corrigir valores PO Cheia/Menor: VALOR (C7) = meia nota (menor), VALOR DA CI (C8) = nota cheia
-- [ ] Para POs sem valor menor explícito: calcular como 50% do valor cheio (CI)
+- [x] Corrigir valores PO Cheia/Menor: extrair valores da meia nota dos PDFs das Commercial Invoices
+- [x] Para POs sem valor menor explícito: calcular como 50% do valor cheio (CI)
+- [x] Upload e anexar PDFs das Commercial Invoices em cada PO correspondente (27 POs)
+- [x] Adicionar coluna pdf_url na tabela import_pos
+- [x] Botão de visualizar PDF da meia nota no card de cada PO
 - [x] Botão excluir PO (para POs criadas pelo usuário)
 - [x] Botão excluir produto dentro de uma PO
 - [x] Botão excluir fornecedor (com confirmação, exclui POs e produtos associados)
