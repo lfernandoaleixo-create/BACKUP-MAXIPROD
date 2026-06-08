@@ -2283,7 +2283,7 @@ function ClassificationCard({
             <div>
               <div className="flex items-center gap-3">
                 <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-                <span className="text-sm font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{parentCount} itens</span>
+                <span className="text-[10px] md:text-sm font-extrabold text-slate-600 bg-slate-100 border border-slate-300 px-2 md:px-3 py-0.5 md:py-1 rounded-full whitespace-nowrap">{parentCount} itens</span>
                 {!hideAlerts && alertCount > 0 && (
                   <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />{alertCount} alerta{alertCount > 1 ? 's' : ''}

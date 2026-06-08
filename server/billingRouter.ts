@@ -10,6 +10,14 @@ import { createHash } from "crypto";
 const DEFAULT_ADMIN_PASSWORD = "240288";
 
 /**
+ * Mapeamento de conversão kg → caixa para exibição no faturamento.
+ * Produtos que são lançados em kg no Maxiprod mas controlados em caixas.
+ */
+const KG_TO_CAIXA_CONVERSION: Record<string, number> = {
+  "00808": 11.6, // VARETA GLADE REEDS 100 ML — 11,6 kg/caixa
+};
+
+/**
  * Compute a hash of order-relevant data to detect CRITICAL changes.
  * Only includes fields that materially affect the order:
  *   - pedido (order number)
@@ -332,10 +340,22 @@ export const billingRouter = router({
         if (item.estadoItem === "Faturado parcial") {
           order.estadoItem = "Faturado parcial";
         }
+        // Conversão kg → caixa para exibição
+        const codigoItemVal = item.codigoItem || "";
+        const unidadeVal = (item.unidadeMedidaCodigo || "").toLowerCase();
+        let qtdExibicao = qtdEfetiva;
+        let qtdOriginalExibicao = qtdOriginal;
+        let unidadeExibicao = item.unidadeMedidaCodigo || "";
+        if (KG_TO_CAIXA_CONVERSION[codigoItemVal] && unidadeVal === 'kg') {
+          const pesoCx = KG_TO_CAIXA_CONVERSION[codigoItemVal];
+          qtdExibicao = Math.round(qtdEfetiva / pesoCx);
+          qtdOriginalExibicao = Math.round(qtdOriginal / pesoCx);
+          unidadeExibicao = "cx";
+        }
         order.itens.push({
           descricao: item.descricao || "",
-          quantidade: qtdEfetiva,
-          quantidadeOriginal: qtdOriginal,
+          quantidade: qtdExibicao,
+          quantidadeOriginal: qtdOriginalExibicao,
           quantidadeFaturada: qtdFaturada,
           valorUnitario: vuOriginal,
           valorTotal: Math.round(vtEfetivo * 100) / 100,
@@ -346,7 +366,7 @@ export const billingRouter = router({
           codigoItem: item.codigoItem || null,
           descricaoItem: item.descricaoItem || null,
           // Campos adicionais para detalhes completos (produção)
-          unidadeMedida: item.unidadeMedidaCodigo || "",
+          unidadeMedida: unidadeExibicao,
           unidadeMedidaDescricao: item.unidadeMedidaDescricao || "",
           quantidadeUnidadeItem: item.quantidadeUnidadeItem ? parseFloat(String(item.quantidadeUnidadeItem)) : null,
           ncm: item.ncm || "",
@@ -408,9 +428,19 @@ export const billingRouter = router({
         const order = billedMap.get(key)!;
         const vt = parseFloat(String(item.valorTotal || 0));
         order.valorTotal += vt;
+        // Conversão kg → caixa para exibição (faturados)
+        const billedCodigoItem = item.codigoItem || "";
+        const billedUnidade = (item.unidadeMedidaCodigo || "").toLowerCase();
+        let billedQtd = parseFloat(String(item.quantidade || 0));
+        let billedUnidadeExibicao = item.unidadeMedidaCodigo || "";
+        if (KG_TO_CAIXA_CONVERSION[billedCodigoItem] && billedUnidade === 'kg') {
+          const pesoCx = KG_TO_CAIXA_CONVERSION[billedCodigoItem];
+          billedQtd = Math.round(billedQtd / pesoCx);
+          billedUnidadeExibicao = "cx";
+        }
         order.itens.push({
           descricao: item.descricao || "",
-          quantidade: parseFloat(String(item.quantidade || 0)),
+          quantidade: billedQtd,
           valorUnitario: parseFloat(String(item.valorUnitario || 0)),
           valorTotal: Math.round(vt * 100) / 100,
           valorFaturar: parseFloat(String(item.valorFaturar || 0)),
@@ -420,7 +450,7 @@ export const billingRouter = router({
           codigoItem: item.codigoItem || null,
           descricaoItem: item.descricaoItem || null,
           // Campos adicionais para detalhes completos (produção)
-          unidadeMedida: item.unidadeMedidaCodigo || "",
+          unidadeMedida: billedUnidadeExibicao,
           unidadeMedidaDescricao: item.unidadeMedidaDescricao || "",
           quantidadeUnidadeItem: item.quantidadeUnidadeItem ? parseFloat(String(item.quantidadeUnidadeItem)) : null,
           ncm: item.ncm || "",

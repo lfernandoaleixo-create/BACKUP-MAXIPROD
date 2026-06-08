@@ -26,6 +26,15 @@ import {
 } from "../drizzle/schema";
 import { eq, and, sql } from "drizzle-orm";
 
+/**
+ * Mapeamento de conversão kg → caixa para produtos que são faturados em kg
+ * mas cujo estoque é controlado em caixas.
+ * Chave: código do produto, Valor: peso em kg de uma caixa
+ */
+const KG_TO_CAIXA_CONVERSION: Record<string, number> = {
+  "00808": 11.6, // VARETA GLADE REEDS 100 ML — 11,6 kg/caixa
+};
+
 /** Retorna a data de hoje em Brasília como string YYYY-MM-DD */
 function getTodayBR(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
@@ -152,6 +161,14 @@ export async function processIndustrializedBaixa(): Promise<void> {
         let madeiraItem = madeiraMap.get(codigoItem);
         let targetCode = codigoItem;
         let quantidadeAbater = quantidadeFaturada;
+
+        // CONVERSÃO KG → CAIXA: se o produto está no mapa de conversão
+        // e a unidade é kg, converter para caixas antes de abater
+        if (KG_TO_CAIXA_CONVERSION[codigoItem] && unidade.toLowerCase() === 'kg') {
+          const pesoporCaixa = KG_TO_CAIXA_CONVERSION[codigoItem];
+          quantidadeAbater = Math.round(quantidadeFaturada / pesoporCaixa);
+          console.log(`  → Conversão kg→cx: ${codigoItem} | ${quantidadeFaturada} kg ÷ ${pesoporCaixa} = ${quantidadeAbater} cx`);
+        }
 
         // Se não encontrou no estoque, verificar se é uma VARIAÇÃO → baixar do produto MÃE
         if (!madeiraItem && childToParentMap.has(codigoItem)) {

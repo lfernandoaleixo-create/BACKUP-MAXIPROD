@@ -4148,3 +4148,4 @@
 - [x] Investigar o que causou baixas automáticas de caixas em 03/06 às 16:31 — causa: snapshot perdido no deploy, reprocessou 33 faturamentos antigos
 - [x] Restaurar os valores corretos de estoque (retomar caixas) — 11 produtos restaurados, 33 baixas revertidas
 - [x] Prevenir que baixas automáticas ocorram novamente — trava >10 faturamentos/sync + billing_history populado com 527 registros
+- [x] Conversão kg→caixa no faturamento: produto 00808 (11,6 kg/cx) — exibir em caixas e abater estoque em caixas

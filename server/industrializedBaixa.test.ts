@@ -253,3 +253,102 @@ describe("Industrialized Baixa - Variação → Produto Mãe", () => {
     expect(madeiraItem).toBeUndefined();
   });
 });
+
+describe("Industrialized Baixa - Conversão kg → caixa", () => {
+  const KG_TO_CAIXA_CONVERSION: Record<string, number> = {
+    "00808": 11.6,
+  };
+
+  it("produto 00808 com 116 kg deve abater 10 caixas", () => {
+    const codigoItem = "00808";
+    const quantidadeFaturada = 116; // 116 kg
+    const unidade = "kg";
+
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (KG_TO_CAIXA_CONVERSION[codigoItem] && unidade.toLowerCase() === 'kg') {
+      const pesoPorCaixa = KG_TO_CAIXA_CONVERSION[codigoItem];
+      quantidadeAbater = Math.round(quantidadeFaturada / pesoPorCaixa);
+    }
+
+    expect(quantidadeAbater).toBe(10); // 116 / 11.6 = 10 caixas
+  });
+
+  it("produto 00808 com 232 kg deve abater 20 caixas", () => {
+    const codigoItem = "00808";
+    const quantidadeFaturada = 232; // 232 kg
+    const unidade = "kg";
+
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (KG_TO_CAIXA_CONVERSION[codigoItem] && unidade.toLowerCase() === 'kg') {
+      const pesoPorCaixa = KG_TO_CAIXA_CONVERSION[codigoItem];
+      quantidadeAbater = Math.round(quantidadeFaturada / pesoPorCaixa);
+    }
+
+    expect(quantidadeAbater).toBe(20); // 232 / 11.6 = 20 caixas
+  });
+
+  it("produto 00808 com 700.8 kg deve abater 60 caixas (arredondamento)", () => {
+    const codigoItem = "00808";
+    const quantidadeFaturada = 700.8;
+    const unidade = "kg";
+
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (KG_TO_CAIXA_CONVERSION[codigoItem] && unidade.toLowerCase() === 'kg') {
+      const pesoPorCaixa = KG_TO_CAIXA_CONVERSION[codigoItem];
+      quantidadeAbater = Math.round(quantidadeFaturada / pesoPorCaixa);
+    }
+
+    expect(quantidadeAbater).toBe(60); // 700.8 / 11.6 = 60.41... → 60
+  });
+
+  it("produto NÃO no mapa de conversão mantém quantidade original", () => {
+    const codigoItem = "00195";
+    const quantidadeFaturada = 50;
+    const unidade = "cx";
+
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (KG_TO_CAIXA_CONVERSION[codigoItem] && unidade.toLowerCase() === 'kg') {
+      const pesoPorCaixa = KG_TO_CAIXA_CONVERSION[codigoItem];
+      quantidadeAbater = Math.round(quantidadeFaturada / pesoPorCaixa);
+    }
+
+    expect(quantidadeAbater).toBe(50); // Sem conversão
+  });
+
+  it("produto 00808 com unidade diferente de kg NÃO converte", () => {
+    const codigoItem = "00808";
+    const quantidadeFaturada = 10;
+    const unidade = "cx"; // Já em caixas
+
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (KG_TO_CAIXA_CONVERSION[codigoItem] && unidade.toLowerCase() === 'kg') {
+      const pesoPorCaixa = KG_TO_CAIXA_CONVERSION[codigoItem];
+      quantidadeAbater = Math.round(quantidadeFaturada / pesoPorCaixa);
+    }
+
+    expect(quantidadeAbater).toBe(10); // Sem conversão, já é cx
+  });
+
+  it("conversão integrada com baixa de estoque", () => {
+    const estoqueAnterior = 1587; // caixas no madeira_stock
+    const codigoItem = "00808";
+    const quantidadeFaturada = 116; // kg
+    const unidade = "kg";
+
+    let quantidadeAbater = quantidadeFaturada;
+
+    if (KG_TO_CAIXA_CONVERSION[codigoItem] && unidade.toLowerCase() === 'kg') {
+      const pesoPorCaixa = KG_TO_CAIXA_CONVERSION[codigoItem];
+      quantidadeAbater = Math.round(quantidadeFaturada / pesoPorCaixa);
+    }
+
+    const estoqueNovo = Math.max(0, estoqueAnterior - quantidadeAbater);
+    expect(quantidadeAbater).toBe(10);
+    expect(estoqueNovo).toBe(1577); // 1587 - 10 = 1577
+  });
+});
