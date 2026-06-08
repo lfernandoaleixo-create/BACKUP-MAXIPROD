@@ -4195,3 +4195,10 @@
 - [x] Coluna "Frete Total" = soma automática (marítimo + terrestre)
 - [x] NCM: ao digitar, puxar impostos em tempo real da tabela de configurações
 - [x] Card expandível ao clicar em "Impostos" mostrando detalhamento (II, IPI, PIS, COFINS, ICMS)
+
+## Custo da Mercadoria: Tipo de Frete / Incoterm (08/06/2026)
+- [x] Adicionar seletor de tipo de frete (Incoterm) no cadastro de produto: DXW, FOB, CIF
+- [x] Coluna na tabela de produtos mostrando o tipo de frete selecionado
+- [x] Campo editável no modo edição
+- [x] Coluna Frete/Cx = PO Cheia (CI) - Valor USD (calculado automaticamente)
+- [x] Coluna Frete Total = Frete/Cx × Quantidade (calculado automaticamente)

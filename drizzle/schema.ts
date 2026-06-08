@@ -2521,6 +2521,7 @@ export const importPoProducts = mysqlTable("import_po_products", {
   totalFreightUsd: decimal("total_freight_usd", { precision: 10, scale: 4 }), // Total frete por produto
   freteMaritimo: decimal("frete_maritimo", { precision: 10, scale: 4 }), // Frete marítimo USD (manual)
   freteTerrestre: decimal("frete_terrestre", { precision: 10, scale: 4 }), // Frete terrestre USD (manual)
+  incoterm: varchar("incoterm", { length: 10 }), // Tipo de frete: DXW, FOB, CIF
   // Impostos calculados
   iiValor: decimal("ii_valor", { precision: 12, scale: 2 }),
   ipiValor: decimal("ipi_valor", { precision: 12, scale: 2 }),

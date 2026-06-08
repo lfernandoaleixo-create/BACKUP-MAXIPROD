@@ -595,6 +595,7 @@ export const importRouter = router({
       valorUsd: z.string().optional(),
       freteMaritimo: z.string().optional(),
       freteTerrestre: z.string().optional(),
+      incoterm: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -608,6 +609,7 @@ export const importRouter = router({
       if (data.valorUsd !== undefined) updateData.valorUsd = data.valorUsd || null;
       if (data.freteMaritimo !== undefined) updateData.freteMaritimo = data.freteMaritimo || null;
       if (data.freteTerrestre !== undefined) updateData.freteTerrestre = data.freteTerrestre || null;
+      if (data.incoterm !== undefined) updateData.incoterm = data.incoterm || null;
       // Auto-calculate totalFreightUsd
       if (data.freteMaritimo !== undefined || data.freteTerrestre !== undefined) {
         const fm = parseFloat(data.freteMaritimo || '0') || 0;
@@ -696,6 +698,7 @@ export const importRouter = router({
       valorUsd: z.string().optional(),
       freteMaritimo: z.string().optional(),
       freteTerrestre: z.string().optional(),
+      incoterm: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -712,6 +715,7 @@ export const importRouter = router({
         freteMaritimo: input.freteMaritimo || null,
         freteTerrestre: input.freteTerrestre || null,
         totalFreightUsd: (fm + ft) > 0 ? String(fm + ft) : null,
+        incoterm: input.incoterm || null,
       });
       return { id: result.insertId };
     }),

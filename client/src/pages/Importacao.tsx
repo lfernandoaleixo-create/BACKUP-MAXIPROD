@@ -2019,12 +2019,13 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
     onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); toast.success('Produto removido!'); },
   });
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; freteMaritimo?: string; freteTerrestre?: string }>({});
+  const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; freteMaritimo?: string; freteTerrestre?: string; incoterm?: string }>({});
   const [taxDetailId, setTaxDetailId] = useState<number | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProductCode, setNewProductCode] = useState('');
   const [newProductDesc, setNewProductDesc] = useState('');
   const [newProductNcm, setNewProductNcm] = useState('');
+  const [newProductIncoterm, setNewProductIncoterm] = useState('');
   
   // Product code search for ADD flow
   const [addCodeSearch, setAddCodeSearch] = useState('');
@@ -2055,6 +2056,7 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
       valorPoMenor: product.valorPoMenor || '',
       freteMaritimo: product.freteMaritimo || '',
       freteTerrestre: product.freteTerrestre || '',
+      incoterm: product.incoterm || '',
     });
     setCodeSearch(product.productCode || '');
     setShowCodeDropdown(false);
@@ -2140,12 +2142,26 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                 onChange={e => setNewProductNcm(e.target.value)}
               />
             </div>
+            {/* Step 4: Incoterm */}
+            <div className="w-28">
+              <label className="text-[10px] text-slate-500 font-medium">4. Tipo Frete</label>
+              <select
+                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs bg-white"
+                value={newProductIncoterm}
+                onChange={e => setNewProductIncoterm(e.target.value)}
+              >
+                <option value="">Selecione...</option>
+                <option value="DXW">DXW - Fornecedor deixa no pátio</option>
+                <option value="FOB">FOB - Fornecedor coloca no porto</option>
+                <option value="CIF">CIF - Fornecedor entrega em Santos</option>
+              </select>
+            </div>
             {/* Actions */}
             <button
-              onClick={() => { if (!newProductDesc.trim()) { toast.error('Selecione um produto pelo código'); return; } addProduct.mutate({ poId, description: newProductDesc.trim(), productCode: newProductCode || undefined, ncm: newProductNcm || undefined }); }}
+              onClick={() => { if (!newProductDesc.trim()) { toast.error('Selecione um produto pelo código'); return; } addProduct.mutate({ poId, description: newProductDesc.trim(), productCode: newProductCode || undefined, ncm: newProductNcm || undefined, incoterm: newProductIncoterm || undefined }); }}
               className="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 whitespace-nowrap"
             >Adicionar</button>
-            <button onClick={() => { setShowAddProduct(false); setAddCodeSearch(''); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); }} className="p-1 text-slate-500 hover:text-red-500"><X className="w-4 h-4" /></button>
+            <button onClick={() => { setShowAddProduct(false); setAddCodeSearch(''); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setNewProductIncoterm(''); }} className="p-1 text-slate-500 hover:text-red-500"><X className="w-4 h-4" /></button>
           </div>
           {newProductCode && (
             <p className="mt-1.5 text-[10px] text-emerald-700">✓ Produto selecionado: <span className="font-mono font-bold">{newProductCode}</span> — {newProductDesc}</p>
@@ -2158,12 +2174,12 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
             <th className="px-3 py-2.5 text-left font-medium whitespace-nowrap">Descrição</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Código</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">NCM</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Incoterm</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Un/Cx</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Valor USD</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Cheia</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Menor</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Fr. Marítimo</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Fr. Terrestre</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete/Cx</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete Total</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Qtd</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Ref $</th>
@@ -2223,6 +2239,24 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   </span>
                 )}
               </td>
+              <td className="px-3 py-2 text-center whitespace-nowrap">
+                {editingId === prod.id ? (
+                  <select
+                    className="w-16 text-center border border-blue-300 rounded px-0.5 py-0.5 text-[10px]"
+                    value={editValues.incoterm || ''}
+                    onChange={e => setEditValues({ ...editValues, incoterm: e.target.value })}
+                  >
+                    <option value="">—</option>
+                    <option value="DXW">DXW</option>
+                    <option value="FOB">FOB</option>
+                    <option value="CIF">CIF</option>
+                  </select>
+                ) : (
+                  <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${prod.incoterm === 'CIF' ? 'bg-green-100 text-green-700' : prod.incoterm === 'FOB' ? 'bg-blue-100 text-blue-700' : prod.incoterm === 'DXW' ? 'bg-amber-100 text-amber-700' : 'text-slate-300'}`}>
+                    {prod.incoterm || '—'}
+                  </span>
+                )}
+              </td>
               <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.unidCaixa || '—'}</td>
               <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">
                 {prod.valorUsd ? `$${Number(prod.valorUsd).toFixed(2)}` : '—'}
@@ -2255,40 +2289,22 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2 text-center whitespace-nowrap">
-                {editingId === prod.id ? (
-                  <input
-                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
-                    value={editValues.freteMaritimo || ''}
-                    onChange={e => setEditValues({ ...editValues, freteMaritimo: e.target.value })}
-                    placeholder="0.00"
-                  />
-                ) : (
-                  <span className="font-mono text-orange-600">
-                    {prod.freteMaritimo ? `$${Number(prod.freteMaritimo).toFixed(2)}` : '—'}
-                  </span>
-                )}
-              </td>
-              <td className="px-3 py-2 text-center whitespace-nowrap">
-                {editingId === prod.id ? (
-                  <input
-                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
-                    value={editValues.freteTerrestre || ''}
-                    onChange={e => setEditValues({ ...editValues, freteTerrestre: e.target.value })}
-                    placeholder="0.00"
-                  />
-                ) : (
-                  <span className="font-mono text-orange-500">
-                    {prod.freteTerrestre ? `$${Number(prod.freteTerrestre).toFixed(2)}` : '—'}
-                  </span>
-                )}
+              <td className="px-3 py-2 text-center font-mono text-orange-600 whitespace-nowrap">
+                {(() => {
+                  const ci = Number(prod.valorPoCheia || 0);
+                  const val = Number(prod.valorUsd || 0);
+                  const freteCx = ci > 0 && val > 0 ? ci - val : 0;
+                  return freteCx > 0 ? `$${freteCx.toFixed(2)}` : (prod.totalFreightUsd && prod.quantidade ? `$${(Number(prod.totalFreightUsd) / Number(prod.quantidade)).toFixed(2)}` : '—');
+                })()}
               </td>
               <td className="px-3 py-2 text-center font-mono text-orange-700 font-semibold whitespace-nowrap">
                 {(() => {
-                  const fm = Number(prod.freteMaritimo || 0);
-                  const ft = Number(prod.freteTerrestre || 0);
-                  const total = fm + ft;
-                  return total > 0 ? `$${total.toFixed(2)}` : (prod.totalFreightUsd ? `$${Number(prod.totalFreightUsd).toFixed(2)}` : '—');
+                  const ci = Number(prod.valorPoCheia || 0);
+                  const val = Number(prod.valorUsd || 0);
+                  const qty = Number(prod.quantidade || 0);
+                  const freteCx = ci > 0 && val > 0 ? ci - val : 0;
+                  const freteTotal = freteCx > 0 && qty > 0 ? freteCx * qty : 0;
+                  return freteTotal > 0 ? `$${freteTotal.toFixed(2)}` : (prod.totalFreightUsd ? `$${Number(prod.totalFreightUsd).toFixed(2)}` : '—');
                 })()}
               </td>
               <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.quantidade || '—'}</td>
