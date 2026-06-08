@@ -1548,7 +1548,7 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
 
   return (
     <div className="border-t border-slate-100 overflow-x-auto">
-      <table className="w-full text-[11px] border-collapse min-w-[1400px]">
+      <table className="w-full text-[11px] border-collapse min-w-[1500px]">
         <thead>
           <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider">
             <th className="px-3 py-2.5 text-left font-medium whitespace-nowrap">Descrição</th>
@@ -1558,6 +1558,7 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Valor USD</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Cheia</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Menor</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Qtd</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Ref $</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">% REP.</th>
@@ -1629,6 +1630,9 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                     {prod.valorPoMenor ? `$${Number(prod.valorPoMenor).toFixed(2)}` : '—'}
                   </span>
                 )}
+              </td>
+              <td className="px-3 py-2 text-center font-mono text-orange-600 whitespace-nowrap">
+                {prod.totalFreightUsd ? `$${Number(prod.totalFreightUsd).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
               </td>
               <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.quantidade || '—'}</td>
               <td className="px-3 py-2 text-center font-mono text-slate-600 whitespace-nowrap">
