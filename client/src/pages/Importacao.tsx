@@ -1460,9 +1460,10 @@ function CustoMercadoria() {
           </div>
         </div>
 
-        {/* Toolbar: PDF Export + Currency Conversion (same as Pagamentos tab) */}
+        {/* Toolbar: PDF Export + Currency Conversion - STICKY */}
         {custoTab === "pos" && (
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mb-4">
+          <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 border-b border-slate-200/50 shadow-sm mb-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <button
                 onClick={handleExportCustoPdf}
@@ -1499,6 +1500,7 @@ function CustoMercadoria() {
                 {currency === "USD" ? "USD → BRL" : "BRL → USD"}
               </button>
             </div>
+          </div>
           </div>
         )}
         
@@ -2003,7 +2005,10 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
             <div className="flex items-center gap-2 sm:gap-3">
               {po.totalCustosImportacao && (
                 <span className="text-[10px] sm:text-xs text-slate-500 font-mono">
-                  R$ {Number(po.totalCustosImportacao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  {currency === "BRL" 
+                    ? `R$ ${Number(po.totalCustosImportacao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
+                    : `$ ${(Number(po.totalCustosImportacao) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                  }
                 </span>
               )}
 
@@ -2032,7 +2037,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
           {expandedPo === po.id && (
             <div>
               <PoLogisticsPanel po={po} />
-              <PoProductsTable poId={po.id} valorFator={po.valorFator ? Number(po.valorFator) : null} />
+              <PoProductsTable poId={po.id} valorFator={po.valorFator ? Number(po.valorFator) : null} currency={currency} exchangeRate={exchangeRate} />
             </div>
           )}
         </div>
@@ -2368,7 +2373,7 @@ function TaxDetailCard({ prod, onClose }: { prod: any; onClose: () => void }) {
   );
 }
 
-function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: number | null }) {
+function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.50 }: { poId: number; valorFator: number | null; currency?: "USD" | "BRL"; exchangeRate?: number }) {
   const { data: products, isLoading } = trpc.import.getPoProducts.useQuery({ poId });
   const utils = trpc.useUtils();
   const updateProduct = trpc.import.updatePoProduct.useMutation({
@@ -2538,13 +2543,13 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">NCM</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Incoterm</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Un/Cx</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Valor USD</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Valor {currency === "USD" ? "USD" : "BRL"}</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Cheia</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Menor</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete/Cx</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete Total</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Qtd</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Ref $</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Ref {currency === "USD" ? "$" : "R$"}</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">% REP.</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Cx R$</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Mil/Un R$</th>
@@ -2621,7 +2626,7 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
               </td>
               <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.unidCaixa || '—'}</td>
               <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">
-                {prod.valorUsd ? `$${Number(prod.valorUsd).toFixed(2)}` : '—'}
+                {prod.valorUsd ? (currency === "USD" ? `$${Number(prod.valorUsd).toFixed(2)}` : `R$ ${(Number(prod.valorUsd) * exchangeRate).toFixed(2)}`) : '—'}
               </td>
               <td className="px-3 py-2 text-center whitespace-nowrap">
                 {editingId === prod.id ? (
@@ -2633,7 +2638,7 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   />
                 ) : (
                   <span className="font-mono text-slate-600">
-                    {prod.valorPoCheia ? `$${Number(prod.valorPoCheia).toFixed(2)}` : '—'}
+                    {prod.valorPoCheia ? (currency === "USD" ? `$${Number(prod.valorPoCheia).toFixed(2)}` : `R$ ${(Number(prod.valorPoCheia) * exchangeRate).toFixed(2)}`) : '—'}
                   </span>
                 )}
               </td>
@@ -2647,7 +2652,7 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   />
                 ) : (
                   <span className="font-mono text-slate-600">
-                    {prod.valorPoMenor ? `$${Number(prod.valorPoMenor).toFixed(2)}` : '—'}
+                    {prod.valorPoMenor ? (currency === "USD" ? `$${Number(prod.valorPoMenor).toFixed(2)}` : `R$ ${(Number(prod.valorPoMenor) * exchangeRate).toFixed(2)}`) : '—'}
                   </span>
                 )}
               </td>
@@ -2656,7 +2661,9 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   const ci = Number(prod.valorPoCheia || 0);
                   const val = Number(prod.valorUsd || 0);
                   const freteCx = ci > 0 && val > 0 ? ci - val : 0;
-                  return freteCx > 0 ? `$${freteCx.toFixed(2)}` : (prod.totalFreightUsd && prod.quantidade ? `$${(Number(prod.totalFreightUsd) / Number(prod.quantidade)).toFixed(2)}` : '—');
+                  const rawVal = freteCx > 0 ? freteCx : (prod.totalFreightUsd && prod.quantidade ? Number(prod.totalFreightUsd) / Number(prod.quantidade) : 0);
+                  if (!rawVal) return '—';
+                  return currency === "USD" ? `$${rawVal.toFixed(2)}` : `R$ ${(rawVal * exchangeRate).toFixed(2)}`;
                 })()}
               </td>
               <td className="px-3 py-2 text-center font-mono text-orange-700 font-semibold whitespace-nowrap">
@@ -2666,21 +2673,23 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   const qty = Number(prod.quantidade || 0);
                   const freteCx = ci > 0 && val > 0 ? ci - val : 0;
                   const freteTotal = freteCx > 0 && qty > 0 ? freteCx * qty : 0;
-                  return freteTotal > 0 ? `$${freteTotal.toFixed(2)}` : (prod.totalFreightUsd ? `$${Number(prod.totalFreightUsd).toFixed(2)}` : '—');
+                  const rawVal = freteTotal > 0 ? freteTotal : (prod.totalFreightUsd ? Number(prod.totalFreightUsd) : 0);
+                  if (!rawVal) return '—';
+                  return currency === "USD" ? `$${rawVal.toFixed(2)}` : `R$ ${(rawVal * exchangeRate).toFixed(2)}`;
                 })()}
               </td>
               <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.quantidade || '—'}</td>
               <td className="px-3 py-2 text-center font-mono text-slate-600 whitespace-nowrap">
-                {prod.valorReferencia ? `$${Number(prod.valorReferencia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                {prod.valorReferencia ? (currency === "USD" ? `$${Number(prod.valorReferencia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `R$ ${(Number(prod.valorReferencia) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`) : '—'}
               </td>
               <td className="px-3 py-2 text-center font-mono text-slate-500 whitespace-nowrap">
                 {prod.percRepresentatividade ? `${(Number(prod.percRepresentatividade) * 100).toFixed(2)}%` : '—'}
               </td>
               <td className="px-3 py-2 text-center font-mono text-emerald-700 font-semibold whitespace-nowrap">
-                {prod.valorCaixaBrl ? `R$ ${Number(prod.valorCaixaBrl).toFixed(2)}` : '—'}
+                {prod.valorCaixaBrl ? (currency === "BRL" ? `R$ ${Number(prod.valorCaixaBrl).toFixed(2)}` : `$${(Number(prod.valorCaixaBrl) / exchangeRate).toFixed(2)}`) : '—'}
               </td>
               <td className="px-3 py-2 text-center font-mono text-blue-700 font-medium whitespace-nowrap">
-                {prod.precoMilUnid ? `R$ ${Number(prod.precoMilUnid).toFixed(2)}` : '—'}
+                {prod.precoMilUnid ? (currency === "BRL" ? `R$ ${Number(prod.precoMilUnid).toFixed(2)}` : `$${(Number(prod.precoMilUnid) / exchangeRate).toFixed(2)}`) : '—'}
               </td>
               <td className="px-3 py-2 text-center whitespace-nowrap relative">
                 {prod.totalImpostos || prod.ncm ? (
@@ -2688,7 +2697,7 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                     onClick={() => setTaxDetailId(taxDetailId === prod.id ? null : prod.id)}
                     className={`font-mono text-[10px] font-medium px-1.5 py-0.5 rounded cursor-pointer transition-colors ${prod.totalImpostos ? 'text-red-600 hover:bg-red-50 border border-red-200' : 'text-amber-600 hover:bg-amber-50 border border-amber-200'}`}
                   >
-                    {prod.totalImpostos ? `$${Number(prod.totalImpostos).toFixed(2)}` : 'Ver'}
+                    {prod.totalImpostos ? (currency === "USD" ? `$${Number(prod.totalImpostos).toFixed(2)}` : `R$ ${(Number(prod.totalImpostos) * exchangeRate).toFixed(2)}`) : 'Ver'}
                   </button>
                 ) : (
                   <span className="text-slate-300">—</span>

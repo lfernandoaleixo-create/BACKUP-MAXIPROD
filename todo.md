@@ -4216,3 +4216,5 @@
 - [ ] Backend: endpoint para salvar/carregar custos logísticos da PO
 - [x] Barra de cotação USD/BRL com Exportar PDF e conversor de moeda na aba Custo da Mercadoria (igual à aba Pagamentos)
 - [x] Filtro de ordenação de POs (setinha) - mais recentes para mais antigas e vice-versa
+- [x] Barra de cotação sticky (fixa no topo ao rolar)
+- [x] Conversor USD/BRL converte todos os valores simultaneamente (cards recolhidos + tabela expandida)
