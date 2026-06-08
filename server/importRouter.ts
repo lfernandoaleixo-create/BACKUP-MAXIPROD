@@ -1,8 +1,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { importSuppliers, importPayments, trackingCache } from "../drizzle/schema";
-import { eq, asc, and } from "drizzle-orm";
+import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts } from "../drizzle/schema";
+import { eq, asc, and, desc } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
 
@@ -530,16 +530,88 @@ export const importRouter = router({
       return result;
     }),
 
-  // ===== FULL DATA (suppliers + payments grouped by section) =====
+    // ===== FULL DATA (suppliers + payments grouped by section) =====
   getFullData: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
     const suppliers = await db.select().from(importSuppliers).orderBy(asc(importSuppliers.displayOrder));
     const payments = await db.select().from(importPayments).orderBy(asc(importPayments.id));
-
     return suppliers.map((supplier) => ({
       ...supplier,
       payments: payments.filter((p) => p.supplierId === supplier.id),
     }));
   }),
+
+  // ===== CUSTO DA MERCADORIA =====
+  
+  // Lista POs de um fornecedor
+  getPosBySupplier: publicProcedure
+    .input(z.object({ supplierId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(importPos)
+        .where(eq(importPos.supplierId, input.supplierId))
+        .orderBy(desc(importPos.id));
+    }),
+
+  // Lista todos os fornecedores com contagem de POs
+  getSuppliersWithPoCount: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    const suppliers = await db.select().from(importSuppliers).orderBy(asc(importSuppliers.displayOrder));
+    const pos = await db.select().from(importPos);
+    return suppliers.map(s => ({
+      ...s,
+      poCount: pos.filter(p => p.supplierId === s.id).length,
+    }));
+  }),
+
+  // Lista produtos de uma PO
+  getPoProducts: publicProcedure
+    .input(z.object({ poId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(importPoProducts)
+        .where(eq(importPoProducts.poId, input.poId))
+        .orderBy(asc(importPoProducts.id));
+    }),
+
+  // Atualizar produto (código, NCM, valores PO cheia/menor)
+  updatePoProduct: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      productCode: z.string().optional(),
+      ncm: z.string().optional(),
+      valorPoCheia: z.string().optional(),
+      valorPoMenor: z.string().optional(),
+      valorUsd: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { id, ...data } = input;
+      const updateData: Record<string, any> = {};
+      if (data.productCode !== undefined) updateData.productCode = data.productCode || null;
+      if (data.ncm !== undefined) updateData.ncm = data.ncm || null;
+      if (data.valorPoCheia !== undefined) updateData.valorPoCheia = data.valorPoCheia || null;
+      if (data.valorPoMenor !== undefined) updateData.valorPoMenor = data.valorPoMenor || null;
+      if (data.valorUsd !== undefined) updateData.valorUsd = data.valorUsd || null;
+      await db.update(importPoProducts).set(updateData).where(eq(importPoProducts.id, id));
+      return { success: true };
+    }),
+
+  // Buscar produto no estoque pelo código
+  getStockProductByCode: publicProcedure
+    .input(z.object({ code: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const { stockItems } = await import("../drizzle/schema");
+      const results = await db.select()
+        .from(stockItems)
+        .where(eq(stockItems.codigoItem, input.code));
+      return results[0] || null;
+    }),
 });

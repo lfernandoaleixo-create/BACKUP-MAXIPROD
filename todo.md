@@ -4151,3 +4151,10 @@
 - [x] Conversão kg→caixa no faturamento: produto 00808 (11,6 kg/cx) — exibir em caixas e abater estoque em caixas
 - [x] Criar senha "Renato" para vendedor Renato Aleixo (acesso versão vendedor) — já existia com senha "Renato", authorized=1 ativado
 - [x] Liberar acesso do Juvenal Teixeira à aba Gestão Comercial (apenas seus vendedores, com todos os direitos: ticar produtos, catálogos, autorização de acesso)
+- [x] Custo da Mercadoria: criar schema de banco (import_pos, import_po_products)
+- [x] Custo da Mercadoria: popular banco com 41 POs da Betty extraídas da planilha (1069 produtos, 906 com valores CI)
+- [x] Custo da Mercadoria: criar endpoints tRPC (listar fornecedores, POs, produtos)
+- [x] Custo da Mercadoria: frontend com cards por fornecedor, POs expandíveis, tabela de produtos
+- [ ] Custo da Mercadoria: coluna código do produto (editável) que puxa nome do estoque
+- [ ] Custo da Mercadoria: coluna NCM (editável) que calcula impostos automaticamente
+- [x] Custo da Mercadoria: colunas valor PO cheia e valor PO menor (PO01-PO27 só cheia, PO29+ ambas)

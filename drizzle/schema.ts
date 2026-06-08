@@ -2457,3 +2457,68 @@ export const trackingCache = mysqlTable("tracking_cache", {
 
 export type TrackingCache = typeof trackingCache.$inferSelect;
 export type InsertTrackingCache = typeof trackingCache.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTO DA MERCADORIA - POs e Produtos
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * POs (Purchase Orders) - cada container/importação
+ */
+export const importPos = mysqlTable("import_pos", {
+  id: int("id").autoincrement().primaryKey(),
+  supplierId: int("supplier_id").notNull(),
+  poNumber: varchar("po_number", { length: 20 }).notNull(), // PO65, PO63, etc.
+  containerName: varchar("container_name", { length: 100 }), // CONTÊINER P0-65
+  importNumber: varchar("import_number", { length: 50 }), // IMPORTAÇÃO 1, 2, etc.
+  // Pagamentos
+  pagamento1: decimal("pagamento_1", { precision: 14, scale: 2 }),
+  pagamento2: decimal("pagamento_2", { precision: 14, scale: 2 }),
+  pagamento3: decimal("pagamento_3", { precision: 14, scale: 2 }),
+  despesasLiberacao: decimal("despesas_liberacao", { precision: 14, scale: 2 }),
+  freteSpMg: decimal("frete_sp_mg", { precision: 14, scale: 2 }),
+  custosSco: decimal("custos_sco", { precision: 14, scale: 2 }),
+  totalCustosImportacao: decimal("total_custos_importacao", { precision: 14, scale: 2 }),
+  // Informações em USD
+  valorTotalProdutosUsd: decimal("valor_total_produtos_usd", { precision: 14, scale: 2 }),
+  valorFreteMaritimo: decimal("valor_frete_maritimo", { precision: 14, scale: 2 }),
+  totalCommercialInvoice: decimal("total_commercial_invoice", { precision: 14, scale: 2 }),
+  // Câmbio
+  valorDolar1: decimal("valor_dolar_1", { precision: 8, scale: 4 }),
+  valorDolar2: decimal("valor_dolar_2", { precision: 8, scale: 4 }),
+  valorDolar3: decimal("valor_dolar_3", { precision: 8, scale: 4 }),
+  valorMedioDolar: decimal("valor_medio_dolar", { precision: 8, scale: 4 }),
+  valorFator: decimal("valor_fator", { precision: 8, scale: 4 }),
+  // Status
+  status: varchar("status", { length: 30 }).default("arrived"), // 'navigating', 'arrived', 'cleared'
+  avgDollarRate: decimal("avg_dollar_rate", { precision: 6, scale: 4 }),
+  totalCiUsd: decimal("total_ci_usd", { precision: 12, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type ImportPo = typeof importPos.$inferSelect;
+
+/**
+ * Produtos dentro de cada PO
+ */
+export const importPoProducts = mysqlTable("import_po_products", {
+  id: int("id").autoincrement().primaryKey(),
+  poId: int("po_id").notNull(),
+  description: text("description").notNull(), // Descrição do produto na PO
+  productCode: varchar("product_code", { length: 20 }), // Código no estoque (preenchido manualmente)
+  ncm: varchar("ncm", { length: 15 }), // NCM (preenchido manualmente)
+  unidCaixa: decimal("unid_caixa", { precision: 8, scale: 2 }), // Mil unidades por caixa
+  valorUsd: decimal("valor_usd", { precision: 10, scale: 4 }), // Preço USD fornecedor (tabelado)
+  valorCiUsd: decimal("valor_ci_usd", { precision: 10, scale: 4 }), // Valor na CI
+  valorPoCheia: decimal("valor_po_cheia", { precision: 10, scale: 4 }), // Valor PO cheia (USD)
+  valorPoMenor: decimal("valor_po_menor", { precision: 10, scale: 4 }), // Valor PO menor (USD)
+  quantidade: int("quantidade"), // Quantidade de caixas
+  valorReferencia: decimal("valor_referencia", { precision: 14, scale: 2 }), // Valor total referência
+  percRepresentatividade: decimal("perc_representatividade", { precision: 8, scale: 6 }),
+  valorCaixaBrl: decimal("valor_caixa_brl", { precision: 10, scale: 2 }), // Custo final por caixa R$
+  precoMilUnid: decimal("preco_mil_unid", { precision: 10, scale: 2 }), // Preço por mil unidades R$
+  ciValueUsd: decimal("ci_value_usd", { precision: 10, scale: 4 }), // Valor CI (duplicado para compatibilidade)
+  totalFreightUsd: decimal("total_freight_usd", { precision: 10, scale: 4 }), // Total frete por produto
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ImportPoProduct = typeof importPoProducts.$inferSelect;

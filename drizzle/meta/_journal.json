@@ -1009,6 +1009,13 @@
       "when": 1780513138457,
       "tag": "0143_massive_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 144,
+      "version": "5",
+      "when": 1780926881552,
+      "tag": "0144_motionless_black_bolt",
+      "breakpoints": true
     }
   ]
 }

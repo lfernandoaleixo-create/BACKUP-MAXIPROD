@@ -1395,21 +1395,277 @@ function AlertDaysSelector({ paymentId, currentDays, dismissed, onRefetch }: { p
 // ===== CUSTO MERCADORIA (placeholder) =====
 
 function CustoMercadoria() {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-8">
-      <div className="flex items-center gap-2 sm:gap-3 mb-4">
-        <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
-        <h2 className="text-sm sm:text-lg font-semibold text-slate-800">Custo da Mercadoria</h2>
-      </div>
-      <div className="flex flex-col items-center justify-center py-10 sm:py-16 text-center">
-        <div className="p-3 sm:p-4 bg-blue-50 rounded-full mb-3 sm:mb-4">
-          <Calculator className="w-8 h-8 sm:w-10 sm:h-10 text-blue-400" />
+  const { data: suppliers, isLoading } = trpc.import.getSuppliersWithPoCount.useQuery();
+  const [expandedSupplier, setExpandedSupplier] = useState<number | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-8">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4">
+          <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+          <h2 className="text-sm sm:text-lg font-semibold text-slate-800">Custo da Mercadoria</h2>
         </div>
-        <p className="text-slate-500 text-xs sm:text-sm max-w-md px-2">
-          Em breve: cálculo detalhado do custo de mercadoria importada, 
-          incluindo frete, impostos, câmbio e demais despesas de internação.
-        </p>
+        <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
       </div>
+    );
+  }
+
+  const suppliersWithPos = (suppliers || []).filter(s => s.poCount > 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4">
+          <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+          <h2 className="text-sm sm:text-lg font-semibold text-slate-800">Custo da Mercadoria</h2>
+        </div>
+        <p className="text-xs text-slate-500 mb-4">Selecione um fornecedor para ver as POs e produtos.</p>
+        
+        <div className="space-y-3">
+          {suppliersWithPos.map(supplier => (
+            <SupplierPoCard
+              key={supplier.id}
+              supplier={supplier}
+              isExpanded={expandedSupplier === supplier.id}
+              onToggle={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
+            />
+          ))}
+          {suppliersWithPos.length === 0 && (
+            <p className="text-center text-slate-400 text-sm py-8">Nenhum fornecedor com POs cadastradas.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SupplierPoCard({ supplier, isExpanded, onToggle }: {
+  supplier: { id: number; name: string; category: string | null; poCount: number };
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="border border-slate-200 rounded-xl overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-white hover:from-blue-100 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+            <Package className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-left">
+            <p className="font-semibold text-sm text-slate-800">{supplier.name}</p>
+            <p className="text-xs text-slate-500">{supplier.category || 'Fornecedor'} • {supplier.poCount} POs</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+            {supplier.poCount}
+          </span>
+          {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+        </div>
+      </button>
+      {isExpanded && <SupplierPoList supplierId={supplier.id} />}
+    </div>
+  );
+}
+
+function SupplierPoList({ supplierId }: { supplierId: number }) {
+  const { data: pos, isLoading } = trpc.import.getPosBySupplier.useQuery({ supplierId });
+  const [expandedPo, setExpandedPo] = useState<number | null>(null);
+
+  if (isLoading) {
+    return <div className="p-4 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>;
+  }
+
+  return (
+    <div className="border-t border-slate-100 bg-slate-50/50 p-2 sm:p-3 space-y-2">
+      {(pos || []).map(po => (
+        <div key={po.id} className="border border-slate-200 rounded-lg bg-white overflow-hidden">
+          <button
+            onClick={() => setExpandedPo(expandedPo === po.id ? null : po.id)}
+            className="w-full flex items-center justify-between p-2.5 sm:p-3 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded bg-amber-50 flex items-center justify-center">
+                <Layers className="w-3.5 h-3.5 text-amber-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-xs sm:text-sm text-slate-700">{po.poNumber}</p>
+                <p className="text-[10px] text-slate-400">{po.containerName || ''}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              {po.totalCustosImportacao && (
+                <span className="text-[10px] sm:text-xs text-slate-500 font-mono">
+                  R$ {Number(po.totalCustosImportacao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              )}
+              {po.valorFator && (
+                <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 rounded px-1.5 py-0.5 font-mono">
+                  Fator: {Number(po.valorFator).toFixed(3)}
+                </span>
+              )}
+              {expandedPo === po.id ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+            </div>
+          </button>
+          {expandedPo === po.id && <PoProductsTable poId={po.id} valorFator={po.valorFator ? Number(po.valorFator) : null} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: number | null }) {
+  const { data: products, isLoading } = trpc.import.getPoProducts.useQuery({ poId });
+  const utils = trpc.useUtils();
+  const updateProduct = trpc.import.updatePoProduct.useMutation({
+    onSuccess: () => utils.import.getPoProducts.invalidate({ poId }),
+  });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string }>({});
+
+  if (isLoading) {
+    return <div className="p-4 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>;
+  }
+
+  const startEdit = (product: any) => {
+    setEditingId(product.id);
+    setEditValues({
+      productCode: product.productCode || '',
+      ncm: product.ncm || '',
+      valorPoCheia: product.valorPoCheia || '',
+      valorPoMenor: product.valorPoMenor || '',
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    await updateProduct.mutateAsync({ id: editingId, ...editValues });
+    setEditingId(null);
+  };
+
+  return (
+    <div className="border-t border-slate-100 overflow-x-auto">
+      <table className="w-full text-[10px] sm:text-xs border-collapse min-w-[1100px]">
+        <thead>
+          <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider">
+            <th className="p-2 text-left font-medium">Descrição</th>
+            <th className="p-2 text-center font-medium w-16">Código</th>
+            <th className="p-2 text-center font-medium w-16">NCM</th>
+            <th className="p-2 text-center font-medium w-12">Un/Cx</th>
+            <th className="p-2 text-right font-medium w-20">Valor USD</th>
+            <th className="p-2 text-right font-medium w-20">PO Cheia</th>
+            <th className="p-2 text-right font-medium w-20">PO Menor</th>
+            <th className="p-2 text-center font-medium w-12">Qtd</th>
+            <th className="p-2 text-right font-medium w-24">Vlr Ref $</th>
+            <th className="p-2 text-right font-medium w-16">% REP.</th>
+            <th className="p-2 text-right font-medium w-20">Cx R$</th>
+            <th className="p-2 text-right font-medium w-20">Mil/Un R$</th>
+            <th className="p-2 text-center font-medium w-12">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(products || []).map((prod, idx) => (
+            <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
+              <td className="p-2 text-slate-700 max-w-[250px] truncate" title={prod.description}>{prod.description}</td>
+              <td className="p-2 text-center">
+                {editingId === prod.id ? (
+                  <input
+                    className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                    value={editValues.productCode || ''}
+                    onChange={e => setEditValues({ ...editValues, productCode: e.target.value })}
+                    placeholder="00000"
+                  />
+                ) : (
+                  <span className={`font-mono ${prod.productCode ? 'text-blue-600' : 'text-slate-300'}`}>
+                    {prod.productCode || '—'}
+                  </span>
+                )}
+              </td>
+              <td className="p-2 text-center">
+                {editingId === prod.id ? (
+                  <input
+                    className="w-20 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                    value={editValues.ncm || ''}
+                    onChange={e => setEditValues({ ...editValues, ncm: e.target.value })}
+                    placeholder="0000.00.00"
+                  />
+                ) : (
+                  <span className={`font-mono ${prod.ncm ? 'text-emerald-600' : 'text-slate-300'}`}>
+                    {prod.ncm || '—'}
+                  </span>
+                )}
+              </td>
+              <td className="p-2 text-center text-slate-600 font-mono">{prod.unidCaixa || '—'}</td>
+              <td className="p-2 text-right text-slate-600 font-mono">
+                {prod.valorUsd ? `$${Number(prod.valorUsd).toFixed(2)}` : '—'}
+              </td>
+              <td className="p-2 text-right">
+                {editingId === prod.id ? (
+                  <input
+                    className="w-16 text-right border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                    value={editValues.valorPoCheia || ''}
+                    onChange={e => setEditValues({ ...editValues, valorPoCheia: e.target.value })}
+                    placeholder="0.00"
+                  />
+                ) : (
+                  <span className="font-mono text-slate-600">
+                    {prod.valorPoCheia ? `$${Number(prod.valorPoCheia).toFixed(2)}` : '—'}
+                  </span>
+                )}
+              </td>
+              <td className="p-2 text-right">
+                {editingId === prod.id ? (
+                  <input
+                    className="w-16 text-right border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                    value={editValues.valorPoMenor || ''}
+                    onChange={e => setEditValues({ ...editValues, valorPoMenor: e.target.value })}
+                    placeholder="0.00"
+                  />
+                ) : (
+                  <span className="font-mono text-slate-600">
+                    {prod.valorPoMenor ? `$${Number(prod.valorPoMenor).toFixed(2)}` : '—'}
+                  </span>
+                )}
+              </td>
+              <td className="p-2 text-center text-slate-600 font-mono">{prod.quantidade || '—'}</td>
+              <td className="p-2 text-right font-mono text-slate-600">
+                {prod.valorReferencia ? `$${Number(prod.valorReferencia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+              </td>
+              <td className="p-2 text-right font-mono text-slate-500">
+                {prod.percRepresentatividade ? `${(Number(prod.percRepresentatividade) * 100).toFixed(2)}%` : '—'}
+              </td>
+              <td className="p-2 text-right font-mono text-emerald-700 font-semibold">
+                {prod.valorCaixaBrl ? `R$ ${Number(prod.valorCaixaBrl).toFixed(2)}` : '—'}
+              </td>
+              <td className="p-2 text-right font-mono text-blue-700 font-medium">
+                {prod.precoMilUnid ? `R$ ${Number(prod.precoMilUnid).toFixed(2)}` : '—'}
+              </td>
+              <td className="p-2 text-center">
+                {editingId === prod.id ? (
+                  <div className="flex gap-1 justify-center">
+                    <button onClick={saveEdit} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded">
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="p-0.5 text-red-500 hover:bg-red-50 rounded">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => startEdit(prod)} className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {(products || []).length === 0 && (
+        <p className="text-center text-slate-400 text-xs py-6">Nenhum produto nesta PO.</p>
+      )}
     </div>
   );
 }
