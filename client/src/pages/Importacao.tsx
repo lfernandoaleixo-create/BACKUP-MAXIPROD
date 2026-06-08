@@ -1798,28 +1798,45 @@ function SupplierPoCard({ supplier, isExpanded, onToggle }: {
   isExpanded: boolean;
   onToggle: () => void;
 }) {
+  const utils = trpc.useUtils();
+  const deleteSupplierMut = trpc.import.deleteSupplier.useMutation({
+    onSuccess: () => {
+      utils.import.getSuppliersWithPoCount.invalidate();
+      toast.success('Fornecedor excluído!');
+    },
+  });
+
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-white hover:from-blue-100 transition-colors"
-      >
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-white hover:from-blue-100 transition-colors">
+        <button
+          onClick={onToggle}
+          className="flex-1 flex items-center gap-3 text-left"
+        >
           <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
             <Package className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="text-left">
+          <div>
             <p className="font-semibold text-sm text-slate-800">{supplier.name}</p>
             <p className="text-xs text-slate-500">{supplier.category || 'Fornecedor'} • {supplier.poCount} POs</p>
           </div>
-        </div>
+        </button>
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
             {supplier.poCount}
           </span>
-          {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+          <button
+            onClick={(e) => { e.stopPropagation(); if (confirm(`Excluir fornecedor "${supplier.name}" e todas as suas POs e produtos?`)) deleteSupplierMut.mutate({ id: supplier.id }); }}
+            className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+            title="Excluir Fornecedor"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={onToggle}>
+            {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+          </button>
         </div>
-      </button>
+      </div>
       {isExpanded && <SupplierPoList supplierId={supplier.id} />}
     </div>
   );

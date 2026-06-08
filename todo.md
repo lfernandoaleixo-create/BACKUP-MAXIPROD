@@ -4184,3 +4184,4 @@
 - [ ] Para POs sem valor menor explícito: calcular como 50% do valor cheio (CI)
 - [x] Botão excluir PO (para POs criadas pelo usuário)
 - [x] Botão excluir produto dentro de uma PO
+- [x] Botão excluir fornecedor (com confirmação, exclui POs e produtos associados)

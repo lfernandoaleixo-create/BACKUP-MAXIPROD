@@ -54,6 +54,12 @@ export const importRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      // Get all POs for this supplier to delete their products
+      const pos = await db.select({ id: importPos.id }).from(importPos).where(eq(importPos.supplierId, input.id));
+      for (const po of pos) {
+        await db.delete(importPoProducts).where(eq(importPoProducts.poId, po.id));
+      }
+      await db.delete(importPos).where(eq(importPos.supplierId, input.id));
       await db.delete(importPayments).where(eq(importPayments.supplierId, input.id));
       await db.delete(importSuppliers).where(eq(importSuppliers.id, input.id));
       return { success: true };
