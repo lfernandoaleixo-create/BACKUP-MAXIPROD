@@ -4155,6 +4155,24 @@
 - [x] Custo da Mercadoria: popular banco com 41 POs da Betty extraídas da planilha (1069 produtos, 906 com valores CI)
 - [x] Custo da Mercadoria: criar endpoints tRPC (listar fornecedores, POs, produtos)
 - [x] Custo da Mercadoria: frontend com cards por fornecedor, POs expandíveis, tabela de produtos
-- [ ] Custo da Mercadoria: coluna código do produto (editável) que puxa nome do estoque
-- [ ] Custo da Mercadoria: coluna NCM (editável) que calcula impostos automaticamente
+- [x] Custo da Mercadoria: coluna código do produto (editável) que puxa nome do estoque
+- [x] Custo da Mercadoria: coluna NCM (editável) que calcula impostos automaticamente
 - [x] Custo da Mercadoria: colunas valor PO cheia e valor PO menor (PO01-PO27 só cheia, PO29+ ambas)
+
+## Custo da Mercadoria: Configurações e Funcionalidades Completas (08/06/2026)
+- [x] Criar tabela DB import_icms_config (UF, alíquota ICMS sugerida, alíquota editável)
+- [x] Criar tabela DB import_ncm_taxes (NCM, alíquota II, alíquota IPI, editável)
+- [x] Aba/seção Configurações no Custo da Mercadoria: seletor de estado com ICMS sugerido + editável
+- [x] Aba/seção Configurações no Custo da Mercadoria: tabela NCM com alíquotas II e IPI editáveis
+- [x] Backend: endpoints tRPC para CRUD de ICMS por estado
+- [x] Backend: endpoints tRPC para CRUD de NCM/alíquotas
+- [x] Backend: endpoint para criar novo fornecedor
+- [x] Backend: endpoint para criar nova PO (nome, fornecedor)
+- [x] Backend: endpoint para buscar produtos do estoque (seletor de código)
+- [x] Frontend: botão "Novo Fornecedor" com modal de criação
+- [x] Frontend: botão "Nova PO" dentro do card do fornecedor
+- [x] Frontend: seletor de código de produto (dropdown/search do estoque)
+- [x] Frontend: auto-preenchimento de descrição ao selecionar código
+- [x] Frontend: campo NCM que dispara cálculo automático de impostos
+- [x] Frontend: exibição dos impostos calculados (II, IPI, PIS, COFINS, ICMS) baseados no Valor Menor
+- [x] Colunas de impostos na tabela import_po_products (ii_valor, ipi_valor, pis_valor, cofins_valor, icms_valor)

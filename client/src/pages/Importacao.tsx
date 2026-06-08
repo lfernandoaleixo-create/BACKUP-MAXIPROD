@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -1392,48 +1392,402 @@ function AlertDaysSelector({ paymentId, currentDays, dismissed, onRefetch }: { p
   );
 }
 
-// ===== CUSTO MERCADORIA (placeholder) =====
+// ===== CUSTO MERCADORIA =====
+
+type CustoSubTab = "pos" | "config";
 
 function CustoMercadoria() {
-  const { data: suppliers, isLoading } = trpc.import.getSuppliersWithPoCount.useQuery();
-  const [expandedSupplier, setExpandedSupplier] = useState<number | null>(null);
-
-  if (isLoading) {
-    return (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-8">
-        <div className="flex items-center gap-2 sm:gap-3 mb-4">
-          <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
-          <h2 className="text-sm sm:text-lg font-semibold text-slate-800">Custo da Mercadoria</h2>
-        </div>
-        <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
-      </div>
-    );
-  }
-
-  const suppliersWithPos = (suppliers || []).filter(s => s.poCount > 0);
+  const [custoTab, setCustoTab] = useState<CustoSubTab>("pos");
 
   return (
     <div className="space-y-3">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
-        <div className="flex items-center gap-2 sm:gap-3 mb-4">
-          <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
-          <h2 className="text-sm sm:text-lg font-semibold text-slate-800">Custo da Mercadoria</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+            <h2 className="text-sm sm:text-lg font-semibold text-slate-800">Custo da Mercadoria</h2>
+          </div>
+          <div className="flex gap-1 bg-slate-100 p-0.5 rounded-lg">
+            <button
+              onClick={() => setCustoTab("pos")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                custoTab === "pos"
+                  ? "bg-white text-blue-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Package className="w-3.5 h-3.5" />
+              POs
+            </button>
+            <button
+              onClick={() => setCustoTab("config")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                custoTab === "config"
+                  ? "bg-white text-blue-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              Configurações
+            </button>
+          </div>
         </div>
-        <p className="text-xs text-slate-500 mb-4">Selecione um fornecedor para ver as POs e produtos.</p>
         
-        <div className="space-y-3">
-          {suppliersWithPos.map(supplier => (
-            <SupplierPoCard
-              key={supplier.id}
-              supplier={supplier}
-              isExpanded={expandedSupplier === supplier.id}
-              onToggle={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
-            />
-          ))}
-          {suppliersWithPos.length === 0 && (
-            <p className="text-center text-slate-400 text-sm py-8">Nenhum fornecedor com POs cadastradas.</p>
-          )}
+        {custoTab === "pos" && <CustoPosView />}
+        {custoTab === "config" && <CustoConfigView />}
+      </div>
+    </div>
+  );
+}
+
+function CustoPosView() {
+  const { data: suppliers, isLoading } = trpc.import.getSuppliersWithPoCount.useQuery();
+  const [expandedSupplier, setExpandedSupplier] = useState<number | null>(null);
+  const [showNewSupplier, setShowNewSupplier] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState('');
+  const [newSupplierCategory, setNewSupplierCategory] = useState('');
+  const utils = trpc.useUtils();
+  const createSupplierMut = trpc.import.createSupplier.useMutation({
+    onSuccess: () => {
+      utils.import.getSuppliersWithPoCount.invalidate();
+      setShowNewSupplier(false);
+      setNewSupplierName('');
+      setNewSupplierCategory('');
+      toast.success('Fornecedor criado!');
+    },
+  });
+
+  if (isLoading) {
+    return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>;
+  }
+
+  const allSuppliers = suppliers || [];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs text-slate-500">Selecione um fornecedor para ver as POs e produtos.</p>
+        <button
+          onClick={() => setShowNewSupplier(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Novo Fornecedor
+        </button>
+      </div>
+
+      {showNewSupplier && (
+        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          <p className="text-xs font-medium text-blue-800 mb-2">Novo Fornecedor</p>
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <label className="text-[10px] text-slate-500">Nome</label>
+              <input
+                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs"
+                placeholder="Ex: BETTY, WINNIE..."
+                value={newSupplierName}
+                onChange={e => setNewSupplierName(e.target.value)}
+              />
+            </div>
+            <div className="w-32">
+              <label className="text-[10px] text-slate-500">Categoria</label>
+              <input
+                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs"
+                placeholder="BAMBU, MADEIRA..."
+                value={newSupplierCategory}
+                onChange={e => setNewSupplierCategory(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={() => {
+                if (!newSupplierName.trim()) return toast.error('Nome obrigatório');
+                createSupplierMut.mutate({ name: newSupplierName.trim(), category: newSupplierCategory.trim() || undefined });
+              }}
+              className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700"
+            >
+              Criar
+            </button>
+            <button
+              onClick={() => setShowNewSupplier(false)}
+              className="px-2 py-1.5 text-slate-500 hover:text-red-500 text-xs"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+      )}
+      
+      <div className="space-y-3">
+        {allSuppliers.map(supplier => (
+          <SupplierPoCard
+            key={supplier.id}
+            supplier={supplier}
+            isExpanded={expandedSupplier === supplier.id}
+            onToggle={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
+          />
+        ))}
+        {allSuppliers.length === 0 && (
+          <p className="text-center text-slate-400 text-sm py-8">Nenhum fornecedor cadastrado.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ===== CONFIGURAÇÕES DE IMPOSTOS =====
+function CustoConfigView() {
+  return (
+    <div className="space-y-6">
+      <IcmsConfigSection />
+      <NcmTaxesSection />
+    </div>
+  );
+}
+
+function IcmsConfigSection() {
+  const { data, isLoading } = trpc.import.getIcmsConfig.useQuery();
+  const utils = trpc.useUtils();
+  const updateRate = trpc.import.updateIcmsRate.useMutation({
+    onSuccess: () => { utils.import.getIcmsConfig.invalidate(); toast.success('ICMS atualizado!'); },
+  });
+  const setUf = trpc.import.setSelectedUf.useMutation({
+    onSuccess: () => { utils.import.getIcmsConfig.invalidate(); toast.success('Estado selecionado!'); },
+  });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editRate, setEditRate] = useState('');
+
+  if (isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>;
+
+  const { states, selectedUf } = data || { states: [], selectedUf: 'SP' };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <MapPin className="w-4 h-4 text-emerald-600" />
+        <h3 className="text-sm font-semibold text-slate-700">ICMS por Estado</h3>
+      </div>
+      <p className="text-xs text-slate-500 mb-3">
+        Selecione o estado de destino da importação. A alíquota será usada no cálculo de impostos.
+        Você pode editar a alíquota de qualquer estado.
+      </p>
+      
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xs text-slate-600 font-medium">Estado ativo:</span>
+        <select
+          value={selectedUf}
+          onChange={e => setUf.mutate({ uf: e.target.value })}
+          className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50"
+        >
+          {states.map(s => (
+            <option key={s.uf} value={s.uf}>{s.uf} - {s.stateName} ({s.icmsRate}%)</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="border border-slate-200 rounded-xl overflow-hidden">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-slate-50 text-slate-500">
+              <th className="px-3 py-2 text-left font-medium">UF</th>
+              <th className="px-3 py-2 text-left font-medium">Estado</th>
+              <th className="px-3 py-2 text-center font-medium">Alíquota ICMS (%)</th>
+              <th className="px-3 py-2 text-center font-medium">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {states.map((s, idx) => (
+              <tr key={s.id} className={`border-t border-slate-100 ${s.uf === selectedUf ? 'bg-blue-50/50' : idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                <td className="px-3 py-2 font-mono font-bold text-slate-700">{s.uf}</td>
+                <td className="px-3 py-2 text-slate-600">{s.stateName}</td>
+                <td className="px-3 py-2 text-center">
+                  {editingId === s.id ? (
+                    <input
+                      className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-xs"
+                      value={editRate}
+                      onChange={e => setEditRate(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          updateRate.mutate({ id: s.id, icmsRate: editRate });
+                          setEditingId(null);
+                        }
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="font-mono font-medium text-emerald-700">{Number(s.icmsRate).toFixed(2)}%</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-center">
+                  {editingId === s.id ? (
+                    <div className="flex gap-1 justify-center">
+                      <button onClick={() => { updateRate.mutate({ id: s.id, icmsRate: editRate }); setEditingId(null); }} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded"><Check className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setEditingId(null)} className="p-0.5 text-red-500 hover:bg-red-50 rounded"><X className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ) : (
+                    <button onClick={() => { setEditingId(s.id); setEditRate(String(s.icmsRate)); }} className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Pencil className="w-3.5 h-3.5" /></button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function NcmTaxesSection() {
+  const { data: ncmList, isLoading } = trpc.import.getNcmTaxes.useQuery();
+  const utils = trpc.useUtils();
+  const createNcm = trpc.import.createNcmTax.useMutation({
+    onSuccess: () => { utils.import.getNcmTaxes.invalidate(); toast.success('NCM adicionado!'); setShowAdd(false); resetForm(); },
+  });
+  const updateNcm = trpc.import.updateNcmTax.useMutation({
+    onSuccess: () => { utils.import.getNcmTaxes.invalidate(); toast.success('NCM atualizado!'); setEditingId(null); },
+  });
+  const deleteNcm = trpc.import.deleteNcmTax.useMutation({
+    onSuccess: () => { utils.import.getNcmTaxes.invalidate(); toast.success('NCM removido!'); },
+  });
+
+  const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState({ ncm: '', description: '', iiRate: '', ipiRate: '', pisRate: '2.10', cofinsRate: '9.65' });
+  const resetForm = () => setForm({ ncm: '', description: '', iiRate: '', ipiRate: '', pisRate: '2.10', cofinsRate: '9.65' });
+
+  if (isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Calculator className="w-4 h-4 text-amber-600" />
+          <h3 className="text-sm font-semibold text-slate-700">Alíquotas por NCM</h3>
+        </div>
+        <button
+          onClick={() => { setShowAdd(true); resetForm(); }}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Novo NCM
+        </button>
+      </div>
+      <p className="text-xs text-slate-500 mb-3">
+        Cadastre os NCMs dos produtos importados com suas alíquotas de II e IPI.
+        PIS (2,10%) e COFINS (9,65%) já vêm preenchidos mas podem ser editados.
+      </p>
+
+      {showAdd && (
+        <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+          <p className="text-xs font-medium text-amber-800 mb-2">Novo NCM</p>
+          <div className="grid grid-cols-6 gap-2">
+            <div>
+              <label className="text-[10px] text-slate-500">NCM</label>
+              <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0000.00.00" value={form.ncm} onChange={e => setForm({ ...form, ncm: e.target.value })} />
+            </div>
+            <div className="col-span-2">
+              <label className="text-[10px] text-slate-500">Descrição</label>
+              <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Descrição do produto" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-[10px] text-slate-500">II (%)</label>
+              <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs text-center" placeholder="18" value={form.iiRate} onChange={e => setForm({ ...form, iiRate: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-[10px] text-slate-500">IPI (%)</label>
+              <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs text-center" placeholder="5" value={form.ipiRate} onChange={e => setForm({ ...form, ipiRate: e.target.value })} />
+            </div>
+            <div className="flex items-end gap-1">
+              <button
+                onClick={() => {
+                  if (!form.ncm.trim() || !form.iiRate || !form.ipiRate) return toast.error('NCM, II e IPI obrigatórios');
+                  createNcm.mutate({ ncm: form.ncm.trim(), description: form.description.trim() || undefined, iiRate: form.iiRate, ipiRate: form.ipiRate, pisRate: form.pisRate, cofinsRate: form.cofinsRate });
+                }}
+                className="px-3 py-1.5 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700"
+              >
+                Salvar
+              </button>
+              <button onClick={() => setShowAdd(false)} className="p-1.5 text-slate-500 hover:text-red-500"><X className="w-4 h-4" /></button>
+            </div>
+          </div>
+          <div className="grid grid-cols-6 gap-2 mt-2">
+            <div className="col-start-4">
+              <label className="text-[10px] text-slate-500">PIS (%)</label>
+              <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs text-center" value={form.pisRate} onChange={e => setForm({ ...form, pisRate: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-[10px] text-slate-500">COFINS (%)</label>
+              <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs text-center" value={form.cofinsRate} onChange={e => setForm({ ...form, cofinsRate: e.target.value })} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="border border-slate-200 rounded-xl overflow-hidden">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-slate-50 text-slate-500">
+              <th className="px-3 py-2 text-left font-medium">NCM</th>
+              <th className="px-3 py-2 text-left font-medium">Descrição</th>
+              <th className="px-3 py-2 text-center font-medium">II (%)</th>
+              <th className="px-3 py-2 text-center font-medium">IPI (%)</th>
+              <th className="px-3 py-2 text-center font-medium">PIS (%)</th>
+              <th className="px-3 py-2 text-center font-medium">COFINS (%)</th>
+              <th className="px-3 py-2 text-center font-medium">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(ncmList || []).length === 0 && (
+              <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-400">Nenhum NCM cadastrado. Clique em "Novo NCM" para adicionar.</td></tr>
+            )}
+            {(ncmList || []).map((ncm, idx) => (
+              <tr key={ncm.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                <td className="px-3 py-2 font-mono font-bold text-slate-700">
+                  {editingId === ncm.id ? (
+                    <input className="w-24 border border-blue-300 rounded px-1 py-0.5 text-xs font-mono" value={form.ncm} onChange={e => setForm({ ...form, ncm: e.target.value })} />
+                  ) : ncm.ncm}
+                </td>
+                <td className="px-3 py-2 text-slate-600">
+                  {editingId === ncm.id ? (
+                    <input className="w-full border border-blue-300 rounded px-1 py-0.5 text-xs" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+                  ) : (ncm.description || '—')}
+                </td>
+                <td className="px-3 py-2 text-center font-mono text-red-600 font-medium">
+                  {editingId === ncm.id ? (
+                    <input className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-xs" value={form.iiRate} onChange={e => setForm({ ...form, iiRate: e.target.value })} />
+                  ) : `${Number(ncm.iiRate).toFixed(2)}`}
+                </td>
+                <td className="px-3 py-2 text-center font-mono text-orange-600 font-medium">
+                  {editingId === ncm.id ? (
+                    <input className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-xs" value={form.ipiRate} onChange={e => setForm({ ...form, ipiRate: e.target.value })} />
+                  ) : `${Number(ncm.ipiRate).toFixed(2)}`}
+                </td>
+                <td className="px-3 py-2 text-center font-mono text-blue-600">
+                  {editingId === ncm.id ? (
+                    <input className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-xs" value={form.pisRate} onChange={e => setForm({ ...form, pisRate: e.target.value })} />
+                  ) : `${Number(ncm.pisRate).toFixed(2)}`}
+                </td>
+                <td className="px-3 py-2 text-center font-mono text-purple-600">
+                  {editingId === ncm.id ? (
+                    <input className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-xs" value={form.cofinsRate} onChange={e => setForm({ ...form, cofinsRate: e.target.value })} />
+                  ) : `${Number(ncm.cofinsRate).toFixed(2)}`}
+                </td>
+                <td className="px-3 py-2 text-center">
+                  {editingId === ncm.id ? (
+                    <div className="flex gap-1 justify-center">
+                      <button onClick={() => { updateNcm.mutate({ id: ncm.id, ...form }); }} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded"><Check className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setEditingId(null)} className="p-0.5 text-red-500 hover:bg-red-50 rounded"><X className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-1 justify-center">
+                      <button onClick={() => { setEditingId(ncm.id); setForm({ ncm: ncm.ncm, description: ncm.description || '', iiRate: String(ncm.iiRate), ipiRate: String(ncm.ipiRate), pisRate: String(ncm.pisRate), cofinsRate: String(ncm.cofinsRate) }); }} className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => { if (confirm('Remover NCM?')) deleteNcm.mutate({ id: ncm.id }); }} className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -1474,6 +1828,18 @@ function SupplierPoCard({ supplier, isExpanded, onToggle }: {
 function SupplierPoList({ supplierId }: { supplierId: number }) {
   const { data: pos, isLoading } = trpc.import.getPosBySupplier.useQuery({ supplierId });
   const [expandedPo, setExpandedPo] = useState<number | null>(null);
+  const [showNewPo, setShowNewPo] = useState(false);
+  const [newPoName, setNewPoName] = useState('');
+  const utils = trpc.useUtils();
+  const createPoMut = trpc.import.createPo.useMutation({
+    onSuccess: () => {
+      utils.import.getPosBySupplier.invalidate({ supplierId });
+      utils.import.getSuppliersWithPoCount.invalidate();
+      setShowNewPo(false);
+      setNewPoName('');
+      toast.success('PO criada!');
+    },
+  });
 
   if (isLoading) {
     return <div className="p-4 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>;
@@ -1481,6 +1847,36 @@ function SupplierPoList({ supplierId }: { supplierId: number }) {
 
   return (
     <div className="border-t border-slate-100 bg-slate-50/50 p-2 sm:p-3 space-y-2">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] text-slate-400">{(pos || []).length} POs</span>
+        <button
+          onClick={() => setShowNewPo(true)}
+          className="flex items-center gap-1 px-2 py-1 bg-amber-500 text-white rounded text-[10px] font-medium hover:bg-amber-600 transition-colors"
+        >
+          <Plus className="w-3 h-3" />
+          Nova PO
+        </button>
+      </div>
+      {showNewPo && (
+        <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="text-[10px] text-slate-500">Nome da PO</label>
+            <input
+              className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+              placeholder="Ex: PO66, PO67..."
+              value={newPoName}
+              onChange={e => setNewPoName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && newPoName.trim()) createPoMut.mutate({ supplierId, poNumber: newPoName.trim() }); }}
+              autoFocus
+            />
+          </div>
+          <button
+            onClick={() => { if (!newPoName.trim()) return toast.error('Nome obrigatório'); createPoMut.mutate({ supplierId, poNumber: newPoName.trim() }); }}
+            className="px-2 py-1 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700"
+          >Criar</button>
+          <button onClick={() => setShowNewPo(false)} className="p-1 text-slate-500 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
       {(pos || []).map(po => (
         <div key={po.id} className="border border-slate-200 rounded-lg bg-white overflow-hidden">
           <button
@@ -1523,8 +1919,24 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
   const updateProduct = trpc.import.updatePoProduct.useMutation({
     onSuccess: () => utils.import.getPoProducts.invalidate({ poId }),
   });
+  const addProduct = trpc.import.addPoProduct.useMutation({
+    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); setShowAddProduct(false); setNewProductDesc(''); toast.success('Produto adicionado!'); },
+  });
+  const deleteProduct = trpc.import.deletePoProduct.useMutation({
+    onSuccess: () => utils.import.getPoProducts.invalidate({ poId }),
+  });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string }>({});
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newProductDesc, setNewProductDesc] = useState('');
+  
+  // Product code search
+  const [codeSearch, setCodeSearch] = useState('');
+  const [showCodeDropdown, setShowCodeDropdown] = useState(false);
+  const { data: searchResults } = trpc.import.searchStockProducts.useQuery(
+    { query: codeSearch },
+    { enabled: codeSearch.length >= 2 }
+  );
 
   if (isLoading) {
     return <div className="p-4 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>;
@@ -1538,16 +1950,55 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
       valorPoCheia: product.valorPoCheia || '',
       valorPoMenor: product.valorPoMenor || '',
     });
+    setCodeSearch(product.productCode || '');
+    setShowCodeDropdown(false);
   };
 
   const saveEdit = async () => {
     if (!editingId) return;
     await updateProduct.mutateAsync({ id: editingId, ...editValues });
     setEditingId(null);
+    setShowCodeDropdown(false);
+  };
+
+  const selectProduct = (code: string, desc: string) => {
+    setEditValues({ ...editValues, productCode: code });
+    setCodeSearch(code);
+    setShowCodeDropdown(false);
   };
 
   return (
     <div className="border-t border-slate-100 overflow-x-auto">
+      {/* Add product button */}
+      <div className="p-2 flex justify-end border-b border-slate-100">
+        <button
+          onClick={() => setShowAddProduct(true)}
+          className="flex items-center gap-1 px-2 py-1 bg-emerald-500 text-white rounded text-[10px] font-medium hover:bg-emerald-600 transition-colors"
+        >
+          <Plus className="w-3 h-3" />
+          Adicionar Produto
+        </button>
+      </div>
+      {showAddProduct && (
+        <div className="p-2 bg-emerald-50 border-b border-emerald-200 flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="text-[10px] text-slate-500">Descrição do produto</label>
+            <input
+              className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+              placeholder="Descrição do produto..."
+              value={newProductDesc}
+              onChange={e => setNewProductDesc(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && newProductDesc.trim()) addProduct.mutate({ poId, description: newProductDesc.trim() }); }}
+              autoFocus
+            />
+          </div>
+          <button
+            onClick={() => { if (!newProductDesc.trim()) return; addProduct.mutate({ poId, description: newProductDesc.trim() }); }}
+            className="px-2 py-1 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700"
+          >Adicionar</button>
+          <button onClick={() => setShowAddProduct(false)} className="p-1 text-slate-500 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
       <table className="w-full text-[11px] border-collapse min-w-[1500px]">
         <thead>
           <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider">
@@ -1564,6 +2015,7 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">% REP.</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Cx R$</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Mil/Un R$</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Impostos</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Ações</th>
           </tr>
         </thead>
@@ -1571,14 +2023,31 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
           {(products || []).map((prod, idx) => (
             <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
               <td className="px-3 py-2 text-slate-700 whitespace-nowrap" title={prod.description}>{prod.description}</td>
-              <td className="px-3 py-2 text-center whitespace-nowrap">
+              <td className="px-3 py-2 text-center whitespace-nowrap relative">
                 {editingId === prod.id ? (
-                  <input
-                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
-                    value={editValues.productCode || ''}
-                    onChange={e => setEditValues({ ...editValues, productCode: e.target.value })}
-                    placeholder="00000"
-                  />
+                  <div className="relative">
+                    <input
+                      className="w-20 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
+                      value={codeSearch}
+                      onChange={e => { setCodeSearch(e.target.value); setEditValues({ ...editValues, productCode: e.target.value }); setShowCodeDropdown(true); }}
+                      onFocus={() => { if (codeSearch.length >= 2) setShowCodeDropdown(true); }}
+                      placeholder="Buscar..."
+                    />
+                    {showCodeDropdown && searchResults && searchResults.length > 0 && (
+                      <div className="absolute z-50 top-full left-0 mt-1 w-64 max-h-40 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
+                        {searchResults.map(item => (
+                          <button
+                            key={item.codigoItem}
+                            onClick={() => selectProduct(item.codigoItem, item.descricaoItem)}
+                            className="w-full text-left px-2 py-1.5 hover:bg-blue-50 text-[10px] border-b border-slate-50 last:border-0"
+                          >
+                            <span className="font-mono font-bold text-blue-600">{item.codigoItem}</span>
+                            <span className="ml-2 text-slate-600 truncate">{item.descricaoItem}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <span className={`font-mono ${prod.productCode ? 'text-blue-600' : 'text-slate-300'}`}>
                     {prod.productCode || '—'}
@@ -1648,19 +2117,33 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                 {prod.precoMilUnid ? `R$ ${Number(prod.precoMilUnid).toFixed(2)}` : '—'}
               </td>
               <td className="px-3 py-2 text-center whitespace-nowrap">
+                {prod.totalImpostos ? (
+                  <span className="font-mono text-red-600 font-medium text-[10px]" title={`II: $${prod.iiValor || 0} | IPI: $${prod.ipiValor || 0} | PIS: $${prod.pisValor || 0} | COFINS: $${prod.cofinsValor || 0} | ICMS: $${prod.icmsValor || 0}`}>
+                    ${Number(prod.totalImpostos).toFixed(2)}
+                  </span>
+                ) : (
+                  <span className="text-slate-300">—</span>
+                )}
+              </td>
+              <td className="px-3 py-2 text-center whitespace-nowrap">
                 {editingId === prod.id ? (
                   <div className="flex gap-1 justify-center">
                     <button onClick={saveEdit} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded">
                       <Check className="w-3.5 h-3.5" />
                     </button>
-                    <button onClick={() => setEditingId(null)} className="p-0.5 text-red-500 hover:bg-red-50 rounded">
+                    <button onClick={() => { setEditingId(null); setShowCodeDropdown(false); }} className="p-0.5 text-red-500 hover:bg-red-50 rounded">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
-                  <button onClick={() => startEdit(prod)} className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded">
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex gap-1 justify-center">
+                    <button onClick={() => startEdit(prod)} className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => { if (confirm('Remover produto?')) deleteProduct.mutate({ id: prod.id }); }} className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
                 )}
               </td>
             </tr>
@@ -1668,7 +2151,7 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
         </tbody>
       </table>
       {(products || []).length === 0 && (
-        <p className="text-center text-slate-400 text-xs py-6">Nenhum produto nesta PO.</p>
+        <p className="text-center text-slate-400 text-xs py-6">Nenhum produto nesta PO. Clique em "Adicionar Produto" para começar.</p>
       )}
     </div>
   );

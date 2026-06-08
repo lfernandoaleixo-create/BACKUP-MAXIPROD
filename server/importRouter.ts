@@ -1,8 +1,8 @@
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts } from "../drizzle/schema";
-import { eq, asc, and, desc } from "drizzle-orm";
+import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems } from "../drizzle/schema";
+import { eq, asc, and, desc, like, sql } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
 
@@ -608,10 +608,260 @@ export const importRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return null;
-      const { stockItems } = await import("../drizzle/schema");
       const results = await db.select()
         .from(stockItems)
         .where(eq(stockItems.codigoItem, input.code));
       return results[0] || null;
+    }),
+
+  // ===== BUSCA DE PRODUTOS DO ESTOQUE (para seletor) =====
+  searchStockProducts: publicProcedure
+    .input(z.object({ query: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const results = await db.select({
+        codigoItem: stockItems.codigoItem,
+        descricaoItem: stockItems.descricaoItem,
+      })
+        .from(stockItems)
+        .where(
+          sql`(${stockItems.codigoItem} LIKE ${`%${input.query}%`} OR ${stockItems.descricaoItem} LIKE ${`%${input.query}%`})`
+        )
+        .limit(30);
+      // Deduplicate by codigoItem
+      const seen = new Set<string>();
+      return results.filter(r => {
+        if (seen.has(r.codigoItem)) return false;
+        seen.add(r.codigoItem);
+        return true;
+      });
+    }),
+
+  // ===== CRIAR PO =====
+  createPo: publicProcedure
+    .input(z.object({
+      supplierId: z.number(),
+      poNumber: z.string().min(1),
+      containerName: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [result] = await db.insert(importPos).values({
+        supplierId: input.supplierId,
+        poNumber: input.poNumber,
+        containerName: input.containerName || null,
+      });
+      return { id: result.insertId };
+    }),
+
+  // ===== ADICIONAR PRODUTO A UMA PO =====
+  addPoProduct: publicProcedure
+    .input(z.object({
+      poId: z.number(),
+      description: z.string().min(1),
+      productCode: z.string().optional(),
+      ncm: z.string().optional(),
+      unidCaixa: z.string().optional(),
+      valorUsd: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [result] = await db.insert(importPoProducts).values({
+        poId: input.poId,
+        description: input.description,
+        productCode: input.productCode || null,
+        ncm: input.ncm || null,
+        unidCaixa: input.unidCaixa || null,
+        valorUsd: input.valorUsd || null,
+      });
+      return { id: result.insertId };
+    }),
+
+  // ===== DELETAR PRODUTO DE UMA PO =====
+  deletePoProduct: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.delete(importPoProducts).where(eq(importPoProducts.id, input.id));
+      return { success: true };
+    }),
+
+  // ===== ICMS CONFIG =====
+  getIcmsConfig: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { states: [], selectedUf: 'SP' };
+    const states = await db.select().from(importIcmsConfig).orderBy(asc(importIcmsConfig.uf));
+    const configRows = await db.select().from(importConfig).where(eq(importConfig.configKey, 'selected_uf'));
+    const selectedUf = configRows[0]?.configValue || 'SP';
+    return { states, selectedUf };
+  }),
+
+  updateIcmsRate: publicProcedure
+    .input(z.object({ id: z.number(), icmsRate: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(importIcmsConfig)
+        .set({ icmsRate: input.icmsRate })
+        .where(eq(importIcmsConfig.id, input.id));
+      return { success: true };
+    }),
+
+  setSelectedUf: publicProcedure
+    .input(z.object({ uf: z.string().length(2) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(importConfig)
+        .set({ configValue: input.uf })
+        .where(eq(importConfig.configKey, 'selected_uf'));
+      return { success: true };
+    }),
+
+  // ===== NCM TAXES =====
+  getNcmTaxes: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db.select().from(importNcmTaxes).orderBy(asc(importNcmTaxes.ncm));
+  }),
+
+  getNcmTaxByCode: publicProcedure
+    .input(z.object({ ncm: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const results = await db.select().from(importNcmTaxes)
+        .where(eq(importNcmTaxes.ncm, input.ncm));
+      return results[0] || null;
+    }),
+
+  createNcmTax: publicProcedure
+    .input(z.object({
+      ncm: z.string().min(1),
+      description: z.string().optional(),
+      iiRate: z.string(),
+      ipiRate: z.string(),
+      pisRate: z.string().optional(),
+      cofinsRate: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [result] = await db.insert(importNcmTaxes).values({
+        ncm: input.ncm,
+        description: input.description || null,
+        iiRate: input.iiRate,
+        ipiRate: input.ipiRate,
+        pisRate: input.pisRate || "2.10",
+        cofinsRate: input.cofinsRate || "9.65",
+      });
+      return { id: result.insertId };
+    }),
+
+  updateNcmTax: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      ncm: z.string().optional(),
+      description: z.string().optional(),
+      iiRate: z.string().optional(),
+      ipiRate: z.string().optional(),
+      pisRate: z.string().optional(),
+      cofinsRate: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { id, ...data } = input;
+      const updateData: Record<string, any> = {};
+      if (data.ncm !== undefined) updateData.ncm = data.ncm;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.iiRate !== undefined) updateData.iiRate = data.iiRate;
+      if (data.ipiRate !== undefined) updateData.ipiRate = data.ipiRate;
+      if (data.pisRate !== undefined) updateData.pisRate = data.pisRate;
+      if (data.cofinsRate !== undefined) updateData.cofinsRate = data.cofinsRate;
+      await db.update(importNcmTaxes).set(updateData).where(eq(importNcmTaxes.id, id));
+      return { success: true };
+    }),
+
+  deleteNcmTax: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.delete(importNcmTaxes).where(eq(importNcmTaxes.id, input.id));
+      return { success: true };
+    }),
+
+  // ===== CÁLCULO DE IMPOSTOS =====
+  calculateTaxes: publicProcedure
+    .input(z.object({
+      ncm: z.string(),
+      valorMenorUsd: z.number(), // Valor PO menor em USD (base CIF)
+      freteUsd: z.number().optional(), // Frete por produto
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      
+      // Get NCM rates
+      const ncmResults = await db.select().from(importNcmTaxes)
+        .where(eq(importNcmTaxes.ncm, input.ncm));
+      if (ncmResults.length === 0) return null;
+      const ncmTax = ncmResults[0];
+      
+      // Get selected UF and its ICMS rate
+      const configRows = await db.select().from(importConfig)
+        .where(eq(importConfig.configKey, 'selected_uf'));
+      const selectedUf = configRows[0]?.configValue || 'SP';
+      const icmsRows = await db.select().from(importIcmsConfig)
+        .where(eq(importIcmsConfig.uf, selectedUf));
+      const icmsRate = icmsRows[0] ? Number(icmsRows[0].icmsRate) / 100 : 0.18;
+      
+      const iiRate = Number(ncmTax.iiRate) / 100;
+      const ipiRate = Number(ncmTax.ipiRate) / 100;
+      const pisRate = Number(ncmTax.pisRate) / 100;
+      const cofinsRate = Number(ncmTax.cofinsRate) / 100;
+      
+      // CIF = valor menor (já é o valor da meia nota)
+      const cif = input.valorMenorUsd;
+      const frete = input.freteUsd || 0;
+      
+      // II = CIF * alíquota II
+      const iiValor = cif * iiRate;
+      
+      // IPI = (CIF + II) * alíquota IPI
+      const ipiValor = (cif + iiValor) * ipiRate;
+      
+      // PIS = CIF * alíquota PIS
+      const pisValor = cif * pisRate;
+      
+      // COFINS = CIF * alíquota COFINS
+      const cofinsValor = cif * cofinsRate;
+      
+      // ICMS = Base / (1 - alíquota) * alíquota ("por dentro")
+      // Base ICMS = CIF + II + IPI + PIS + COFINS + despesas
+      const baseIcms = cif + iiValor + ipiValor + pisValor + cofinsValor;
+      const icmsValor = (baseIcms / (1 - icmsRate)) * icmsRate;
+      
+      const totalImpostos = iiValor + ipiValor + pisValor + cofinsValor + icmsValor;
+      
+      return {
+        iiRate: Number(ncmTax.iiRate),
+        ipiRate: Number(ncmTax.ipiRate),
+        pisRate: Number(ncmTax.pisRate),
+        cofinsRate: Number(ncmTax.cofinsRate),
+        icmsRate: Number(icmsRows[0]?.icmsRate || 18),
+        iiValor: Math.round(iiValor * 100) / 100,
+        ipiValor: Math.round(ipiValor * 100) / 100,
+        pisValor: Math.round(pisValor * 100) / 100,
+        cofinsValor: Math.round(cofinsValor * 100) / 100,
+        icmsValor: Math.round(icmsValor * 100) / 100,
+        totalImpostos: Math.round(totalImpostos * 100) / 100,
+        selectedUf,
+      };
     }),
 });

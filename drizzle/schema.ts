@@ -2518,7 +2518,54 @@ export const importPoProducts = mysqlTable("import_po_products", {
   precoMilUnid: decimal("preco_mil_unid", { precision: 10, scale: 2 }), // Preço por mil unidades R$
   ciValueUsd: decimal("ci_value_usd", { precision: 10, scale: 4 }), // Valor CI (duplicado para compatibilidade)
   totalFreightUsd: decimal("total_freight_usd", { precision: 10, scale: 4 }), // Total frete por produto
+  // Impostos calculados
+  iiValor: decimal("ii_valor", { precision: 12, scale: 2 }),
+  ipiValor: decimal("ipi_valor", { precision: 12, scale: 2 }),
+  pisValor: decimal("pis_valor", { precision: 12, scale: 2 }),
+  cofinsValor: decimal("cofins_valor", { precision: 12, scale: 2 }),
+  icmsValor: decimal("icms_valor", { precision: 12, scale: 2 }),
+  totalImpostos: decimal("total_impostos", { precision: 12, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 export type ImportPoProduct = typeof importPoProducts.$inferSelect;
+
+/**
+ * Configuração de ICMS por estado
+ */
+export const importIcmsConfig = mysqlTable("import_icms_config", {
+  id: int("id").autoincrement().primaryKey(),
+  uf: varchar("uf", { length: 2 }).notNull(),
+  stateName: varchar("state_name", { length: 50 }).notNull(),
+  icmsRate: decimal("icms_rate", { precision: 5, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ImportIcmsConfig = typeof importIcmsConfig.$inferSelect;
+
+/**
+ * Tabela de NCM com alíquotas de II e IPI
+ */
+export const importNcmTaxes = mysqlTable("import_ncm_taxes", {
+  id: int("id").autoincrement().primaryKey(),
+  ncm: varchar("ncm", { length: 15 }).notNull(),
+  description: varchar("description", { length: 200 }),
+  iiRate: decimal("ii_rate", { precision: 5, scale: 2 }).notNull().default("0"),
+  ipiRate: decimal("ipi_rate", { precision: 5, scale: 2 }).notNull().default("0"),
+  pisRate: decimal("pis_rate", { precision: 5, scale: 2 }).notNull().default("2.10"),
+  cofinsRate: decimal("cofins_rate", { precision: 5, scale: 2 }).notNull().default("9.65"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ImportNcmTax = typeof importNcmTaxes.$inferSelect;
+
+/**
+ * Configurações gerais de importação (key-value)
+ */
+export const importConfig = mysqlTable("import_config", {
+  id: int("id").autoincrement().primaryKey(),
+  configKey: varchar("config_key", { length: 50 }).notNull(),
+  configValue: varchar("config_value", { length: 200 }).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ImportConfig = typeof importConfig.$inferSelect;
