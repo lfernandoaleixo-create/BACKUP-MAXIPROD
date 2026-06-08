@@ -1428,8 +1428,9 @@ function CustoMercadoria() {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
+      {/* STICKY HEADER + TOOLBAR - stays fixed below TopNav when scrolling */}
+      <div className="sticky top-12 z-40 bg-white border border-slate-200 rounded-xl shadow-sm px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
             <h2 className="text-sm sm:text-lg font-semibold text-slate-800">Custo da Mercadoria</h2>
@@ -1459,11 +1460,8 @@ function CustoMercadoria() {
             </button>
           </div>
         </div>
-
-        {/* Toolbar: PDF Export + Currency Conversion - STICKY */}
         {custoTab === "pos" && (
-          <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 border-b border-slate-200/50 shadow-sm mb-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-2 pt-2 border-t border-slate-100">
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <button
                 onClick={handleExportCustoPdf}
@@ -1501,12 +1499,15 @@ function CustoMercadoria() {
               </button>
             </div>
           </div>
-          </div>
         )}
-        
-        {custoTab === "pos" && <CustoPosView currency={currency} exchangeRate={exchangeRate} />}
-        {custoTab === "config" && <CustoConfigView />}
       </div>
+
+      {custoTab === "pos" && <CustoPosView currency={currency} exchangeRate={exchangeRate} />}
+      {custoTab === "config" && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+          <CustoConfigView />
+        </div>
+      )}
     </div>
   );
 }
