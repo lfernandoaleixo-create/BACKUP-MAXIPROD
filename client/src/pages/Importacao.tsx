@@ -1922,11 +1922,7 @@ function SupplierPoList({ supplierId }: { supplierId: number }) {
                   R$ {Number(po.totalCustosImportacao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               )}
-              {po.valorFator && (
-                <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 rounded px-1.5 py-0.5 font-mono">
-                  Fator: {Number(po.valorFator).toFixed(3)}
-                </span>
-              )}
+
               {po.pdfUrl && (
                 <a
                   href={po.pdfUrl}
@@ -1956,6 +1952,60 @@ function SupplierPoList({ supplierId }: { supplierId: number }) {
   );
 }
 
+// ===== TAX DETAIL CARD (popup ao clicar em Impostos) =====
+function TaxDetailCard({ prod, onClose }: { prod: any; onClose: () => void }) {
+  const ncm = prod.ncm || '';
+  const valorMenor = Number(prod.valorPoMenor || 0);
+  const { data: taxCalc } = trpc.import.calculateTaxes.useQuery(
+    { ncm, valorMenorUsd: valorMenor, freteUsd: Number(prod.totalFreightUsd || 0) },
+    { enabled: !!ncm && valorMenor > 0 }
+  );
+
+  return (
+    <div className="absolute z-50 right-0 top-full mt-1 w-72 bg-white border border-slate-200 rounded-lg shadow-xl p-3 text-left">
+      <div className="flex justify-between items-center mb-2">
+        <h4 className="text-xs font-bold text-slate-700">Detalhamento de Impostos</h4>
+        <button onClick={onClose} className="text-slate-400 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+      </div>
+      {!ncm ? (
+        <p className="text-[10px] text-amber-600">NCM não informado. Cadastre o NCM para calcular.</p>
+      ) : !taxCalc ? (
+        <p className="text-[10px] text-amber-600">NCM não encontrado nas configurações. Cadastre as alíquotas na aba Configurações.</p>
+      ) : (
+        <div className="space-y-1.5">
+          <p className="text-[10px] text-slate-500">Base: PO Menor = <span className="font-mono font-bold">${valorMenor.toFixed(4)}</span> | UF: {taxCalc.selectedUf}</p>
+          <div className="border-t border-slate-100 pt-1.5 space-y-1">
+            <div className="flex justify-between text-[10px]">
+              <span className="text-slate-600">II ({taxCalc.iiRate}%)</span>
+              <span className="font-mono font-medium text-red-600">${taxCalc.iiValor.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-[10px]">
+              <span className="text-slate-600">IPI ({taxCalc.ipiRate}%)</span>
+              <span className="font-mono font-medium text-red-600">${taxCalc.ipiValor.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-[10px]">
+              <span className="text-slate-600">PIS ({taxCalc.pisRate}%)</span>
+              <span className="font-mono font-medium text-red-600">${taxCalc.pisValor.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-[10px]">
+              <span className="text-slate-600">COFINS ({taxCalc.cofinsRate}%)</span>
+              <span className="font-mono font-medium text-red-600">${taxCalc.cofinsValor.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-[10px]">
+              <span className="text-slate-600">ICMS ({taxCalc.icmsRate}% por dentro)</span>
+              <span className="font-mono font-medium text-red-600">${taxCalc.icmsValor.toFixed(2)}</span>
+            </div>
+          </div>
+          <div className="border-t border-slate-200 pt-1.5 flex justify-between text-[11px] font-bold">
+            <span className="text-slate-700">TOTAL IMPOSTOS</span>
+            <span className="font-mono text-red-700">${taxCalc.totalImpostos.toFixed(2)}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: number | null }) {
   const { data: products, isLoading } = trpc.import.getPoProducts.useQuery({ poId });
   const utils = trpc.useUtils();
@@ -1969,7 +2019,8 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
     onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); toast.success('Produto removido!'); },
   });
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string }>({});
+  const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; freteMaritimo?: string; freteTerrestre?: string }>({});
+  const [taxDetailId, setTaxDetailId] = useState<number | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProductCode, setNewProductCode] = useState('');
   const [newProductDesc, setNewProductDesc] = useState('');
@@ -2002,6 +2053,8 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
       ncm: product.ncm || '',
       valorPoCheia: product.valorPoCheia || '',
       valorPoMenor: product.valorPoMenor || '',
+      freteMaritimo: product.freteMaritimo || '',
+      freteTerrestre: product.freteTerrestre || '',
     });
     setCodeSearch(product.productCode || '');
     setShowCodeDropdown(false);
@@ -2109,7 +2162,9 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Valor USD</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Cheia</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Menor</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Fr. Marítimo</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Fr. Terrestre</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete Total</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Qtd</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Ref $</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">% REP.</th>
@@ -2200,8 +2255,41 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2 text-center font-mono text-orange-600 whitespace-nowrap">
-                {prod.totalFreightUsd ? `$${Number(prod.totalFreightUsd).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+              <td className="px-3 py-2 text-center whitespace-nowrap">
+                {editingId === prod.id ? (
+                  <input
+                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
+                    value={editValues.freteMaritimo || ''}
+                    onChange={e => setEditValues({ ...editValues, freteMaritimo: e.target.value })}
+                    placeholder="0.00"
+                  />
+                ) : (
+                  <span className="font-mono text-orange-600">
+                    {prod.freteMaritimo ? `$${Number(prod.freteMaritimo).toFixed(2)}` : '—'}
+                  </span>
+                )}
+              </td>
+              <td className="px-3 py-2 text-center whitespace-nowrap">
+                {editingId === prod.id ? (
+                  <input
+                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
+                    value={editValues.freteTerrestre || ''}
+                    onChange={e => setEditValues({ ...editValues, freteTerrestre: e.target.value })}
+                    placeholder="0.00"
+                  />
+                ) : (
+                  <span className="font-mono text-orange-500">
+                    {prod.freteTerrestre ? `$${Number(prod.freteTerrestre).toFixed(2)}` : '—'}
+                  </span>
+                )}
+              </td>
+              <td className="px-3 py-2 text-center font-mono text-orange-700 font-semibold whitespace-nowrap">
+                {(() => {
+                  const fm = Number(prod.freteMaritimo || 0);
+                  const ft = Number(prod.freteTerrestre || 0);
+                  const total = fm + ft;
+                  return total > 0 ? `$${total.toFixed(2)}` : (prod.totalFreightUsd ? `$${Number(prod.totalFreightUsd).toFixed(2)}` : '—');
+                })()}
               </td>
               <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.quantidade || '—'}</td>
               <td className="px-3 py-2 text-center font-mono text-slate-600 whitespace-nowrap">
@@ -2216,13 +2304,19 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
               <td className="px-3 py-2 text-center font-mono text-blue-700 font-medium whitespace-nowrap">
                 {prod.precoMilUnid ? `R$ ${Number(prod.precoMilUnid).toFixed(2)}` : '—'}
               </td>
-              <td className="px-3 py-2 text-center whitespace-nowrap">
-                {prod.totalImpostos ? (
-                  <span className="font-mono text-red-600 font-medium text-[10px]" title={`II: $${prod.iiValor || 0} | IPI: $${prod.ipiValor || 0} | PIS: $${prod.pisValor || 0} | COFINS: $${prod.cofinsValor || 0} | ICMS: $${prod.icmsValor || 0}`}>
-                    ${Number(prod.totalImpostos).toFixed(2)}
-                  </span>
+              <td className="px-3 py-2 text-center whitespace-nowrap relative">
+                {prod.totalImpostos || prod.ncm ? (
+                  <button
+                    onClick={() => setTaxDetailId(taxDetailId === prod.id ? null : prod.id)}
+                    className={`font-mono text-[10px] font-medium px-1.5 py-0.5 rounded cursor-pointer transition-colors ${prod.totalImpostos ? 'text-red-600 hover:bg-red-50 border border-red-200' : 'text-amber-600 hover:bg-amber-50 border border-amber-200'}`}
+                  >
+                    {prod.totalImpostos ? `$${Number(prod.totalImpostos).toFixed(2)}` : 'Ver'}
+                  </button>
                 ) : (
                   <span className="text-slate-300">—</span>
+                )}
+                {taxDetailId === prod.id && (
+                  <TaxDetailCard prod={prod} onClose={() => setTaxDetailId(null)} />
                 )}
               </td>
               <td className="px-3 py-2 text-center whitespace-nowrap">

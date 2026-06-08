@@ -2519,6 +2519,8 @@ export const importPoProducts = mysqlTable("import_po_products", {
   precoMilUnid: decimal("preco_mil_unid", { precision: 10, scale: 2 }), // Preço por mil unidades R$
   ciValueUsd: decimal("ci_value_usd", { precision: 10, scale: 4 }), // Valor CI (duplicado para compatibilidade)
   totalFreightUsd: decimal("total_freight_usd", { precision: 10, scale: 4 }), // Total frete por produto
+  freteMaritimo: decimal("frete_maritimo", { precision: 10, scale: 4 }), // Frete marítimo USD (manual)
+  freteTerrestre: decimal("frete_terrestre", { precision: 10, scale: 4 }), // Frete terrestre USD (manual)
   // Impostos calculados
   iiValor: decimal("ii_valor", { precision: 12, scale: 2 }),
   ipiValor: decimal("ipi_valor", { precision: 12, scale: 2 }),

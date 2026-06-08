@@ -4188,3 +4188,10 @@
 - [x] Botão excluir PO (para POs criadas pelo usuário)
 - [x] Botão excluir produto dentro de uma PO
 - [x] Botão excluir fornecedor (com confirmação, exclui POs e produtos associados)
+
+## Custo da Mercadoria: Frete e Impostos por NCM (08/06/2026)
+- [x] Adicionar coluna "Frete Marítimo" (preenchimento manual) na tabela de produtos da PO
+- [x] Adicionar coluna "Frete Terrestre" (preenchimento manual) na tabela de produtos da PO
+- [x] Coluna "Frete Total" = soma automática (marítimo + terrestre)
+- [x] NCM: ao digitar, puxar impostos em tempo real da tabela de configurações
+- [x] Card expandível ao clicar em "Impostos" mostrando detalhamento (II, IPI, PIS, COFINS, ICMS)

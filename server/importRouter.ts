@@ -593,6 +593,8 @@ export const importRouter = router({
       valorPoCheia: z.string().optional(),
       valorPoMenor: z.string().optional(),
       valorUsd: z.string().optional(),
+      freteMaritimo: z.string().optional(),
+      freteTerrestre: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -604,6 +606,14 @@ export const importRouter = router({
       if (data.valorPoCheia !== undefined) updateData.valorPoCheia = data.valorPoCheia || null;
       if (data.valorPoMenor !== undefined) updateData.valorPoMenor = data.valorPoMenor || null;
       if (data.valorUsd !== undefined) updateData.valorUsd = data.valorUsd || null;
+      if (data.freteMaritimo !== undefined) updateData.freteMaritimo = data.freteMaritimo || null;
+      if (data.freteTerrestre !== undefined) updateData.freteTerrestre = data.freteTerrestre || null;
+      // Auto-calculate totalFreightUsd
+      if (data.freteMaritimo !== undefined || data.freteTerrestre !== undefined) {
+        const fm = parseFloat(data.freteMaritimo || '0') || 0;
+        const ft = parseFloat(data.freteTerrestre || '0') || 0;
+        updateData.totalFreightUsd = String(fm + ft);
+      }
       await db.update(importPoProducts).set(updateData).where(eq(importPoProducts.id, id));
       return { success: true };
     }),
@@ -684,10 +694,14 @@ export const importRouter = router({
       ncm: z.string().optional(),
       unidCaixa: z.string().optional(),
       valorUsd: z.string().optional(),
+      freteMaritimo: z.string().optional(),
+      freteTerrestre: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      const fm = parseFloat(input.freteMaritimo || '0') || 0;
+      const ft = parseFloat(input.freteTerrestre || '0') || 0;
       const [result] = await db.insert(importPoProducts).values({
         poId: input.poId,
         description: input.description,
@@ -695,6 +709,9 @@ export const importRouter = router({
         ncm: input.ncm || null,
         unidCaixa: input.unidCaixa || null,
         valorUsd: input.valorUsd || null,
+        freteMaritimo: input.freteMaritimo || null,
+        freteTerrestre: input.freteTerrestre || null,
+        totalFreightUsd: (fm + ft) > 0 ? String(fm + ft) : null,
       });
       return { id: result.insertId };
     }),
