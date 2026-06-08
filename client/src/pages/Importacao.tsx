@@ -1548,32 +1548,32 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
 
   return (
     <div className="border-t border-slate-100 overflow-x-auto">
-      <table className="w-full text-[10px] sm:text-xs border-collapse min-w-[1100px]">
+      <table className="w-full text-[11px] border-collapse min-w-[1400px]">
         <thead>
           <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider">
-            <th className="p-2 text-left font-medium">Descrição</th>
-            <th className="p-2 text-center font-medium w-16">Código</th>
-            <th className="p-2 text-center font-medium w-16">NCM</th>
-            <th className="p-2 text-center font-medium w-12">Un/Cx</th>
-            <th className="p-2 text-right font-medium w-20">Valor USD</th>
-            <th className="p-2 text-right font-medium w-20">PO Cheia</th>
-            <th className="p-2 text-right font-medium w-20">PO Menor</th>
-            <th className="p-2 text-center font-medium w-12">Qtd</th>
-            <th className="p-2 text-right font-medium w-24">Vlr Ref $</th>
-            <th className="p-2 text-right font-medium w-16">% REP.</th>
-            <th className="p-2 text-right font-medium w-20">Cx R$</th>
-            <th className="p-2 text-right font-medium w-20">Mil/Un R$</th>
-            <th className="p-2 text-center font-medium w-12">Ações</th>
+            <th className="px-3 py-2.5 text-left font-medium whitespace-nowrap">Descrição</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Código</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">NCM</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Un/Cx</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Valor USD</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Cheia</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Menor</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Qtd</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Ref $</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">% REP.</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Cx R$</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Mil/Un R$</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Ações</th>
           </tr>
         </thead>
         <tbody>
           {(products || []).map((prod, idx) => (
             <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
-              <td className="p-2 text-slate-700 max-w-[250px] truncate" title={prod.description}>{prod.description}</td>
-              <td className="p-2 text-center">
+              <td className="px-3 py-2 text-slate-700 whitespace-nowrap" title={prod.description}>{prod.description}</td>
+              <td className="px-3 py-2 text-center whitespace-nowrap">
                 {editingId === prod.id ? (
                   <input
-                    className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
                     value={editValues.productCode || ''}
                     onChange={e => setEditValues({ ...editValues, productCode: e.target.value })}
                     placeholder="00000"
@@ -1584,10 +1584,10 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   </span>
                 )}
               </td>
-              <td className="p-2 text-center">
+              <td className="px-3 py-2 text-center whitespace-nowrap">
                 {editingId === prod.id ? (
                   <input
-                    className="w-20 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                    className="w-24 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
                     value={editValues.ncm || ''}
                     onChange={e => setEditValues({ ...editValues, ncm: e.target.value })}
                     placeholder="0000.00.00"
@@ -1598,14 +1598,14 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   </span>
                 )}
               </td>
-              <td className="p-2 text-center text-slate-600 font-mono">{prod.unidCaixa || '—'}</td>
-              <td className="p-2 text-right text-slate-600 font-mono">
+              <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.unidCaixa || '—'}</td>
+              <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">
                 {prod.valorUsd ? `$${Number(prod.valorUsd).toFixed(2)}` : '—'}
               </td>
-              <td className="p-2 text-right">
+              <td className="px-3 py-2 text-center whitespace-nowrap">
                 {editingId === prod.id ? (
                   <input
-                    className="w-16 text-right border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
                     value={editValues.valorPoCheia || ''}
                     onChange={e => setEditValues({ ...editValues, valorPoCheia: e.target.value })}
                     placeholder="0.00"
@@ -1616,10 +1616,10 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   </span>
                 )}
               </td>
-              <td className="p-2 text-right">
+              <td className="px-3 py-2 text-center whitespace-nowrap">
                 {editingId === prod.id ? (
                   <input
-                    className="w-16 text-right border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
                     value={editValues.valorPoMenor || ''}
                     onChange={e => setEditValues({ ...editValues, valorPoMenor: e.target.value })}
                     placeholder="0.00"
@@ -1630,20 +1630,20 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
                   </span>
                 )}
               </td>
-              <td className="p-2 text-center text-slate-600 font-mono">{prod.quantidade || '—'}</td>
-              <td className="p-2 text-right font-mono text-slate-600">
+              <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.quantidade || '—'}</td>
+              <td className="px-3 py-2 text-center font-mono text-slate-600 whitespace-nowrap">
                 {prod.valorReferencia ? `$${Number(prod.valorReferencia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
               </td>
-              <td className="p-2 text-right font-mono text-slate-500">
+              <td className="px-3 py-2 text-center font-mono text-slate-500 whitespace-nowrap">
                 {prod.percRepresentatividade ? `${(Number(prod.percRepresentatividade) * 100).toFixed(2)}%` : '—'}
               </td>
-              <td className="p-2 text-right font-mono text-emerald-700 font-semibold">
+              <td className="px-3 py-2 text-center font-mono text-emerald-700 font-semibold whitespace-nowrap">
                 {prod.valorCaixaBrl ? `R$ ${Number(prod.valorCaixaBrl).toFixed(2)}` : '—'}
               </td>
-              <td className="p-2 text-right font-mono text-blue-700 font-medium">
+              <td className="px-3 py-2 text-center font-mono text-blue-700 font-medium whitespace-nowrap">
                 {prod.precoMilUnid ? `R$ ${Number(prod.precoMilUnid).toFixed(2)}` : '—'}
               </td>
-              <td className="p-2 text-center">
+              <td className="px-3 py-2 text-center whitespace-nowrap">
                 {editingId === prod.id ? (
                   <div className="flex gap-1 justify-center">
                     <button onClick={saveEdit} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded">
