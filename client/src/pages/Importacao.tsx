@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -1395,9 +1395,36 @@ function AlertDaysSelector({ paymentId, currentDays, dismissed, onRefetch }: { p
 // ===== CUSTO MERCADORIA =====
 
 type CustoSubTab = "pos" | "config";
-
 function CustoMercadoria() {
   const [custoTab, setCustoTab] = useState<CustoSubTab>("pos");
+  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
+  const [currency, setCurrency] = useState<"USD" | "BRL">("USD");
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const exchangeRate = exchangeData?.rate || 5.50;
+
+  const handleExportCustoPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const params = new URLSearchParams({ currency, rate: String(exchangeRate) });
+      const response = await fetch(`/api/import/export-custo-pdf?${params}`);
+      if (!response.ok) throw new Error("Erro ao gerar PDF");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const dateStr = new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
+      a.download = `Custo_Mercadoria_${dateStr}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("PDF exportado com sucesso!");
+    } catch (err) {
+      toast.error("Erro ao exportar PDF. Tente novamente.");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -1432,15 +1459,57 @@ function CustoMercadoria() {
             </button>
           </div>
         </div>
+
+        {/* Toolbar: PDF Export + Currency Conversion (same as Pagamentos tab) */}
+        {custoTab === "pos" && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mb-4">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <button
+                onClick={handleExportCustoPdf}
+                disabled={exportingPdf}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-all shadow-sm bg-red-50 border-red-300 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {exportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                Exportar PDF
+              </button>
+              {exchangeData && (
+                <span className="text-[10px] sm:text-xs text-slate-500">
+                  Cotação: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                </span>
+              )}
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
+                currency === "USD"
+                  ? "bg-blue-100 border-blue-400 text-blue-800"
+                  : "bg-green-100 border-green-400 text-green-800"
+              }`}>
+                <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${
+                  currency === "USD" ? "bg-blue-500" : "bg-green-500"
+                }`}></span>
+                {currency === "USD" ? "DÓLAR (USD)" : "REAL (BRL)"}
+              </div>
+              <button
+                onClick={() => setCurrency(prev => prev === "USD" ? "BRL" : "USD")}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium border transition-all shadow-sm ${
+                  currency === "BRL"
+                    ? "bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+                    : "bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100"
+                }`}
+              >
+                <ArrowLeftRight className="w-4 h-4" />
+                {currency === "USD" ? "USD → BRL" : "BRL → USD"}
+              </button>
+            </div>
+          </div>
+        )}
         
-        {custoTab === "pos" && <CustoPosView />}
+        {custoTab === "pos" && <CustoPosView currency={currency} exchangeRate={exchangeRate} />}
         {custoTab === "config" && <CustoConfigView />}
       </div>
     </div>
   );
 }
 
-function CustoPosView() {
+function CustoPosView({ currency, exchangeRate }: { currency: "USD" | "BRL"; exchangeRate: number }) {
   const { data: suppliers, isLoading } = trpc.import.getSuppliersWithPoCount.useQuery();
   const [expandedSupplier, setExpandedSupplier] = useState<number | null>(null);
   const [showNewSupplier, setShowNewSupplier] = useState(false);
@@ -1524,6 +1593,8 @@ function CustoPosView() {
             supplier={supplier}
             isExpanded={expandedSupplier === supplier.id}
             onToggle={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
+            currency={currency}
+            exchangeRate={exchangeRate}
           />
         ))}
         {allSuppliers.length === 0 && (
@@ -1793,10 +1864,12 @@ function NcmTaxesSection() {
   );
 }
 
-function SupplierPoCard({ supplier, isExpanded, onToggle }: {
+function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate }: {
   supplier: { id: number; name: string; category: string | null; poCount: number };
   isExpanded: boolean;
   onToggle: () => void;
+  currency: "USD" | "BRL";
+  exchangeRate: number;
 }) {
   const utils = trpc.useUtils();
   const deleteSupplierMut = trpc.import.deleteSupplier.useMutation({
@@ -1837,16 +1910,17 @@ function SupplierPoCard({ supplier, isExpanded, onToggle }: {
           </button>
         </div>
       </div>
-      {isExpanded && <SupplierPoList supplierId={supplier.id} />}
+      {isExpanded && <SupplierPoList supplierId={supplier.id} currency={currency} exchangeRate={exchangeRate} />}
     </div>
   );
 }
 
-function SupplierPoList({ supplierId }: { supplierId: number }) {
+function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: number; currency: "USD" | "BRL"; exchangeRate: number }) {
   const { data: pos, isLoading } = trpc.import.getPosBySupplier.useQuery({ supplierId });
   const [expandedPo, setExpandedPo] = useState<number | null>(null);
   const [showNewPo, setShowNewPo] = useState(false);
   const [newPoName, setNewPoName] = useState('');
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const utils = trpc.useUtils();
   const createPoMut = trpc.import.createPo.useMutation({
     onSuccess: () => {
@@ -1872,7 +1946,17 @@ function SupplierPoList({ supplierId }: { supplierId: number }) {
   return (
     <div className="border-t border-slate-100 bg-slate-50/50 p-2 sm:p-3 space-y-2">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] text-slate-400">{(pos || []).length} POs</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-slate-400">{(pos || []).length} POs</span>
+          <button
+            onClick={() => setSortOrder(prev => prev === "newest" ? "oldest" : "newest")}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors border border-slate-200"
+            title={sortOrder === "newest" ? "Mais recentes primeiro" : "Mais antigas primeiro"}
+          >
+            <ArrowUpDown className="w-3 h-3" />
+            {sortOrder === "newest" ? "Recentes" : "Antigas"}
+          </button>
+        </div>
         <button
           onClick={() => setShowNewPo(true)}
           className="flex items-center gap-1 px-2 py-1 bg-amber-500 text-white rounded text-[10px] font-medium hover:bg-amber-600 transition-colors"
@@ -1901,7 +1985,7 @@ function SupplierPoList({ supplierId }: { supplierId: number }) {
           <button onClick={() => setShowNewPo(false)} className="p-1 text-slate-500 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
-      {(pos || []).map(po => (
+      {[...(pos || [])].sort((a, b) => sortOrder === "newest" ? b.id - a.id : a.id - b.id).map(po => (
         <div key={po.id} className="border border-slate-200 rounded-lg bg-white overflow-hidden">
           <button
             onClick={() => setExpandedPo(expandedPo === po.id ? null : po.id)}
@@ -1945,9 +2029,287 @@ function SupplierPoList({ supplierId }: { supplierId: number }) {
               {expandedPo === po.id ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
             </div>
           </button>
-          {expandedPo === po.id && <PoProductsTable poId={po.id} valorFator={po.valorFator ? Number(po.valorFator) : null} />}
+          {expandedPo === po.id && (
+            <div>
+              <PoLogisticsPanel po={po} />
+              <PoProductsTable poId={po.id} valorFator={po.valorFator ? Number(po.valorFator) : null} />
+            </div>
+          )}
         </div>
       ))}
+    </div>
+  );
+}
+
+// ===== PAINEL DE CUSTOS LOGÍSTICOS POR PO =====
+function PoLogisticsPanel({ po }: { po: any }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const utils = trpc.useUtils();
+  const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
+  const updateLogistics = trpc.import.updatePoLogistics.useMutation({
+    onSuccess: () => {
+      utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId });
+      toast.success('Custos atualizados!');
+    },
+    onError: () => toast.error('Erro ao salvar custos'),
+  });
+
+  // Local state for all fields
+  const [portoChegada, setPortoChegada] = useState(po.portoChegada || '');
+  const [cidadeDesembaraco, setCidadeDesembaraco] = useState(po.cidadeDesembaraco || '');
+  const [localFinal, setLocalFinal] = useState(po.localFinal || '');
+  const [pag1, setPag1] = useState(po.pagamento1Remessa || '');
+  const [pag2, setPag2] = useState(po.pagamento2Remessa || '');
+  const [pag3, setPag3] = useState(po.pagamento3Remessa || '');
+  const [taxasRemessa, setTaxasRemessa] = useState(po.taxasRemessa || '');
+  const [despLib, setDespLib] = useState(po.despesasLiberacaoRemessa || '');
+  const [freteTerr, setFreteTerr] = useState(po.freteTermestreRemessa || '');
+  const [difal, setDifal] = useState(po.difalValor || '');
+  const [comSilverio, setComSilverio] = useState(po.comissaoSilverio || '');
+  const [dolar1, setDolar1] = useState(po.valorDolar1Remessa || '');
+  const [dolar2, setDolar2] = useState(po.valorDolar2Remessa || '');
+  const [dolar3, setDolar3] = useState(po.valorDolar3Remessa || '');
+  const [freteMaritimo, setFreteMaritimo] = useState(po.valorFreteMaritimoCnBr || '');
+  const [totalCi, setTotalCi] = useState(po.totalCiRemessa || '');
+  const [totalProdUsd, setTotalProdUsd] = useState(po.valorTotalProdutosUsdRemessa || '');
+
+  const portosOptions = ['Santos - SP', 'Itajaí - SC', 'Paranaguá - PR', 'Rio de Janeiro - RJ', 'Vitória - ES', 'Navegantes - SC', 'Manaus - AM'];
+  const cidadesDesembaracoOptions = ['Varginha - MG', 'Pouso Alegre - MG', 'Juiz de Fora - MG', 'Santos - SP', 'São Paulo - SP', 'Campinas - SP', 'Uberlândia - MG'];
+  const locaisFinaisOptions = ['Ribeirão Vermelho - MG', 'Lavras - MG', 'Varginha - MG', 'São João del-Rei - MG', 'Belo Horizonte - MG'];
+
+  // Auto-calculate total
+  const totalCustos = [
+    Number(pag1 || 0), Number(pag2 || 0), Number(pag3 || 0),
+    Number(taxasRemessa || 0), Number(despLib || 0),
+    Number(freteTerr || 0), Number(difal || 0), Number(comSilverio || 0)
+  ].reduce((a, b) => a + b, 0);
+
+  const handleSave = () => {
+    updateLogistics.mutate({
+      id: po.id,
+      portoChegada: portoChegada || null,
+      cidadeDesembaraco: cidadeDesembaraco || null,
+      localFinal: localFinal || null,
+      pagamento1Remessa: pag1 || null,
+      pagamento2Remessa: pag2 || null,
+      pagamento3Remessa: pag3 || null,
+      taxasRemessa: taxasRemessa || null,
+      despesasLiberacaoRemessa: despLib || null,
+      freteTermestreRemessa: freteTerr || null,
+      difalValor: difal || null,
+      comissaoSilverio: comSilverio || null,
+      valorDolar1Remessa: dolar1 || null,
+      valorDolar2Remessa: dolar2 || null,
+      valorDolar3Remessa: dolar3 || null,
+      valorFreteMaritimoCnBr: freteMaritimo || null,
+      totalCiRemessa: totalCi || null,
+      valorTotalProdutosUsdRemessa: totalProdUsd || null,
+    });
+  };
+
+  const liveRate = exchangeData?.rate || 0;
+  const liveSource = exchangeData?.source || '';
+
+  return (
+    <div className="border-t border-slate-100">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-3 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <DollarSign className="w-3.5 h-3.5 text-indigo-600" />
+          <span className="text-xs font-semibold text-indigo-700">Custos Logísticos & Informações</span>
+          {totalCustos > 0 && (
+            <span className="text-[10px] font-mono text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded">
+              R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {liveRate > 0 && (
+            <span className="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+              USD R$ {liveRate.toFixed(4)}
+            </span>
+          )}
+          {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-indigo-400" /> : <ChevronDown className="w-3.5 h-3.5 text-indigo-400" />}
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="p-3 sm:p-4 bg-gradient-to-br from-slate-50 to-indigo-50/30 space-y-4">
+          {/* ROTA */}
+          <div>
+            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Navigation className="w-3 h-3" /> Rota da Importação
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label className="text-[10px] text-slate-500">Porto de Chegada</label>
+                <select
+                  value={portoChegada}
+                  onChange={e => setPortoChegada(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs bg-white"
+                >
+                  <option value="">Selecione...</option>
+                  {portosOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">Cidade de Desembaraço</label>
+                <select
+                  value={cidadeDesembaraco}
+                  onChange={e => setCidadeDesembaraco(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs bg-white"
+                >
+                  <option value="">Selecione...</option>
+                  {cidadesDesembaracoOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">Local Final de Chegada</label>
+                <select
+                  value={localFinal}
+                  onChange={e => setLocalFinal(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs bg-white"
+                >
+                  <option value="">Selecione...</option>
+                  {locaisFinaisOptions.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* PAGAMENTOS */}
+          <div>
+            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Receipt className="w-3 h-3" /> Pagamentos Realizados (R$)
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div>
+                <label className="text-[10px] text-slate-500">1ª Remessa</label>
+                <input type="number" step="0.01" value={pag1} onChange={e => setPag1(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">2ª Remessa</label>
+                <input type="number" step="0.01" value={pag2} onChange={e => setPag2(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">3ª Remessa</label>
+                <input type="number" step="0.01" value={pag3} onChange={e => setPag3(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">Taxas Remessa</label>
+                <input type="number" step="0.01" value={taxasRemessa} onChange={e => setTaxasRemessa(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+            </div>
+          </div>
+
+          {/* CUSTOS ADICIONAIS */}
+          <div>
+            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Calculator className="w-3 h-3" /> Custos Adicionais (R$)
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div>
+                <label className="text-[10px] text-slate-500">Despesas Liberação</label>
+                <input type="number" step="0.01" value={despLib} onChange={e => setDespLib(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">Frete Terrestre</label>
+                <input type="number" step="0.01" value={freteTerr} onChange={e => setFreteTerr(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">DIFAL</label>
+                <input type="number" step="0.01" value={difal} onChange={e => setDifal(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">Comissão do Silvério</label>
+                <input type="number" step="0.01" value={comSilverio} onChange={e => setComSilverio(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+            </div>
+          </div>
+
+          {/* TOTAL CUSTOS */}
+          <div className="flex items-center justify-between bg-white border border-indigo-200 rounded-lg px-3 py-2">
+            <span className="text-xs font-semibold text-indigo-700">Total Custos Importação</span>
+            <span className="text-sm font-bold font-mono text-indigo-800">
+              R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+
+          {/* INFORMAÇÕES IMPORTANTES */}
+          <div>
+            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <AlertCircle className="w-3 h-3" /> Informações Importantes
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div>
+                <label className="text-[10px] text-slate-500">Valor Total Produtos (USD)</label>
+                <input type="number" step="0.01" value={totalProdUsd} onChange={e => setTotalProdUsd(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">Frete Marítimo CN/BR (USD)</label>
+                <input type="number" step="0.01" value={freteMaritimo} onChange={e => setFreteMaritimo(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">Total CI (USD)</label>
+                <input type="number" step="0.01" value={totalCi} onChange={e => setTotalCi(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-1.5">
+                <label className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                  Dólar Tempo Real
+                </label>
+                <p className="text-sm font-bold font-mono text-emerald-800">
+                  R$ {liveRate > 0 ? liveRate.toFixed(4) : '...'}
+                </p>
+                <p className="text-[9px] text-emerald-600">{liveSource}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+              <div>
+                <label className="text-[10px] text-slate-500">Dólar 1ª Remessa</label>
+                <input type="number" step="0.0001" value={dolar1} onChange={e => setDolar1(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.0000" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">Dólar 2ª Remessa</label>
+                <input type="number" step="0.0001" value={dolar2} onChange={e => setDolar2(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.0000" />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500">Dólar 3ª Remessa</label>
+                <input type="number" step="0.0001" value={dolar3} onChange={e => setDolar3(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.0000" />
+              </div>
+            </div>
+          </div>
+
+          {/* BOTÃO SALVAR */}
+          <div className="flex justify-end pt-1">
+            <button
+              onClick={handleSave}
+              disabled={updateLogistics.isPending}
+              className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {updateLogistics.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              Salvar Custos
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

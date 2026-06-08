@@ -12,6 +12,7 @@ import { startScheduler } from "../scheduler";
 import { inadimplenciaBackupCronHandler } from "../inadimplenciaBackupHandler";
 import { trackingUpdateCronHandler } from "../trackingUpdateHandler";
 import { importPdfExportHandler } from "../importPdfExport";
+import { custoPdfExportHandler } from "../custoPdfExport";
 import { registerStorageProxy } from "./storageProxy";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -46,8 +47,9 @@ async function startServer() {
   // Scheduled endpoints (Heartbeat cron)
   app.post("/api/scheduled/inadimplencia-backup", inadimplenciaBackupCronHandler);
   app.post("/api/scheduled/tracking-update", trackingUpdateCronHandler);
-  // PDF export endpoint
+  // PDF export endpoints
   app.get("/api/import/export-pdf", importPdfExportHandler);
+  app.get("/api/import/export-custo-pdf", custoPdfExportHandler);
 
   // tRPC API
   app.use(

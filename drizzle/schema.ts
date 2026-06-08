@@ -2471,7 +2471,7 @@ export const importPos = mysqlTable("import_pos", {
   poNumber: varchar("po_number", { length: 20 }).notNull(), // PO65, PO63, etc.
   containerName: varchar("container_name", { length: 100 }), // CONTÊINER P0-65
   importNumber: varchar("import_number", { length: 50 }), // IMPORTAÇÃO 1, 2, etc.
-  // Pagamentos
+  // Pagamentos (legacy)
   pagamento1: decimal("pagamento_1", { precision: 14, scale: 2 }),
   pagamento2: decimal("pagamento_2", { precision: 14, scale: 2 }),
   pagamento3: decimal("pagamento_3", { precision: 14, scale: 2 }),
@@ -2479,11 +2479,11 @@ export const importPos = mysqlTable("import_pos", {
   freteSpMg: decimal("frete_sp_mg", { precision: 14, scale: 2 }),
   custosSco: decimal("custos_sco", { precision: 14, scale: 2 }),
   totalCustosImportacao: decimal("total_custos_importacao", { precision: 14, scale: 2 }),
-  // Informações em USD
+  // Informações em USD (legacy)
   valorTotalProdutosUsd: decimal("valor_total_produtos_usd", { precision: 14, scale: 2 }),
   valorFreteMaritimo: decimal("valor_frete_maritimo", { precision: 14, scale: 2 }),
   totalCommercialInvoice: decimal("total_commercial_invoice", { precision: 14, scale: 2 }),
-  // Câmbio
+  // Câmbio (legacy)
   valorDolar1: decimal("valor_dolar_1", { precision: 8, scale: 4 }),
   valorDolar2: decimal("valor_dolar_2", { precision: 8, scale: 4 }),
   valorDolar3: decimal("valor_dolar_3", { precision: 8, scale: 4 }),
@@ -2494,6 +2494,27 @@ export const importPos = mysqlTable("import_pos", {
   avgDollarRate: decimal("avg_dollar_rate", { precision: 6, scale: 4 }),
   totalCiUsd: decimal("total_ci_usd", { precision: 12, scale: 2 }),
   pdfUrl: text("pdf_url"), // URL do PDF da Commercial Invoice (meia nota)
+  // === LOGÍSTICA: Rota ===
+  portoChegada: varchar("porto_chegada", { length: 100 }), // Santos, Itajaí, etc.
+  cidadeDesembaraco: varchar("cidade_desembaraco", { length: 100 }), // Varginha, Pouso Alegre, etc.
+  localFinal: varchar("local_final", { length: 100 }), // Ribeirão Vermelho, etc.
+  // === LOGÍSTICA: Pagamentos Remessa ===
+  pagamento1Remessa: decimal("pagamento_1_remessa", { precision: 12, scale: 2 }),
+  pagamento2Remessa: decimal("pagamento_2_remessa", { precision: 12, scale: 2 }),
+  pagamento3Remessa: decimal("pagamento_3_remessa", { precision: 12, scale: 2 }),
+  taxasRemessa: decimal("taxas_remessa", { precision: 12, scale: 2 }),
+  freteTermestreRemessa: decimal("frete_terrestre_remessa", { precision: 12, scale: 2 }),
+  difalValor: decimal("difal_valor", { precision: 12, scale: 2 }),
+  comissaoSilverio: decimal("comissao_silverio", { precision: 12, scale: 2 }),
+  despesasLiberacaoRemessa: decimal("despesas_liberacao_remessa", { precision: 12, scale: 2 }),
+  // === LOGÍSTICA: Câmbio por Remessa ===
+  valorDolar1Remessa: decimal("valor_dolar_1_remessa", { precision: 8, scale: 4 }),
+  valorDolar2Remessa: decimal("valor_dolar_2_remessa", { precision: 8, scale: 4 }),
+  valorDolar3Remessa: decimal("valor_dolar_3_remessa", { precision: 8, scale: 4 }),
+  // === LOGÍSTICA: Informações Importantes ===
+  valorFreteMaritimoCnBr: decimal("valor_frete_maritimo_usd", { precision: 12, scale: 2 }), // Frete marítimo CN/BR em USD
+  totalCiRemessa: decimal("total_ci_remessa", { precision: 12, scale: 2 }), // Total CI da remessa
+  valorTotalProdutosUsdRemessa: decimal("valor_total_produtos_usd_remessa", { precision: 12, scale: 2 }), // Valor total dos produtos USD
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 export type ImportPo = typeof importPos.$inferSelect;

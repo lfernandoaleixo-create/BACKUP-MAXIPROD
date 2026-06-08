@@ -4202,3 +4202,17 @@
 - [x] Campo editável no modo edição
 - [x] Coluna Frete/Cx = PO Cheia (CI) - Valor USD (calculado automaticamente)
 - [x] Coluna Frete Total = Frete/Cx × Quantidade (calculado automaticamente)
+
+## Custo da Mercadoria: Painel de Custos Logísticos por PO (08/06/2026)
+- [ ] Criar colunas no banco para custos logísticos da PO (rota, pagamentos, informações)
+- [ ] Seletores de rota por PO: Porto de Chegada, Cidade de Desembaraço, Local Final de Chegada
+- [ ] Campos de Pagamentos Realizados: 1ª/2ª/3ª Remessa, Taxas Remessa, Despesas Liberação
+- [ ] Frete Terrestre + DIFAL separados (com breakdown ao clicar)
+- [ ] Comissão do Silvério (antigo Custos S.C.O)
+- [ ] Total Custos Importação (soma automática)
+- [ ] Informações Importantes: Valor Total Produtos $, Frete Marítimo CN/BR, Total CI
+- [ ] Informações Importantes: Valor Dólar 1ª/2ª/3ª Remessa, Valor Médio Dólar, Valor do Fator
+- [ ] Painel expandível dentro de cada PO (acima da tabela de produtos)
+- [ ] Backend: endpoint para salvar/carregar custos logísticos da PO
+- [x] Barra de cotação USD/BRL com Exportar PDF e conversor de moeda na aba Custo da Mercadoria (igual à aba Pagamentos)
+- [x] Filtro de ordenação de POs (setinha) - mais recentes para mais antigas e vice-versa

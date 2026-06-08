@@ -836,6 +836,44 @@ export const importRouter = router({
       return { success: true };
     }),
 
+  // ===== ATUALIZAR LOGÍSTICA DA PO =====
+  updatePoLogistics: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      portoChegada: z.string().nullable().optional(),
+      cidadeDesembaraco: z.string().nullable().optional(),
+      localFinal: z.string().nullable().optional(),
+      pagamento1Remessa: z.string().nullable().optional(),
+      pagamento2Remessa: z.string().nullable().optional(),
+      pagamento3Remessa: z.string().nullable().optional(),
+      taxasRemessa: z.string().nullable().optional(),
+      freteTermestreRemessa: z.string().nullable().optional(),
+      difalValor: z.string().nullable().optional(),
+      comissaoSilverio: z.string().nullable().optional(),
+      despesasLiberacaoRemessa: z.string().nullable().optional(),
+      valorDolar1Remessa: z.string().nullable().optional(),
+      valorDolar2Remessa: z.string().nullable().optional(),
+      valorDolar3Remessa: z.string().nullable().optional(),
+      valorFreteMaritimoCnBr: z.string().nullable().optional(),
+      totalCiRemessa: z.string().nullable().optional(),
+      valorTotalProdutosUsdRemessa: z.string().nullable().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { id, ...data } = input;
+      const updateData: Record<string, any> = {};
+      for (const [key, value] of Object.entries(data)) {
+        if (value !== undefined) {
+          updateData[key] = value === null || value === '' ? null : value;
+        }
+      }
+      if (Object.keys(updateData).length > 0) {
+        await db.update(importPos).set(updateData).where(eq(importPos.id, id));
+      }
+      return { success: true };
+    }),
+
   // ===== CÁLCULO DE IMPOSTOS =====
   calculateTaxes: publicProcedure
     .input(z.object({
