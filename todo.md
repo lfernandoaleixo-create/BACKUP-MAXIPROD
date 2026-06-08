@@ -4176,3 +4176,11 @@
 - [x] Frontend: campo NCM que dispara cálculo automático de impostos
 - [x] Frontend: exibição dos impostos calculados (II, IPI, PIS, COFINS, ICMS) baseados no Valor Menor
 - [x] Colunas de impostos na tabela import_po_products (ii_valor, ipi_valor, pis_valor, cofins_valor, icms_valor)
+
+## Custo da Mercadoria: Correções e Melhorias (08/06/2026 - parte 2)
+- [x] Alterar fluxo "Adicionar Produto": primeiro campo = seletor de código (busca no estoque), ao selecionar puxa descrição automaticamente
+- [x] Depois do código: campo NCM
+- [ ] Corrigir valores PO Cheia/Menor: VALOR (C7) = meia nota (menor), VALOR DA CI (C8) = nota cheia
+- [ ] Para POs sem valor menor explícito: calcular como 50% do valor cheio (CI)
+- [x] Botão excluir PO (para POs criadas pelo usuário)
+- [x] Botão excluir produto dentro de uma PO

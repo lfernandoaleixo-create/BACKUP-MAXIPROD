@@ -1840,6 +1840,13 @@ function SupplierPoList({ supplierId }: { supplierId: number }) {
       toast.success('PO criada!');
     },
   });
+  const deletePoMut = trpc.import.deletePo.useMutation({
+    onSuccess: () => {
+      utils.import.getPosBySupplier.invalidate({ supplierId });
+      utils.import.getSuppliersWithPoCount.invalidate();
+      toast.success('PO excluída!');
+    },
+  });
 
   if (isLoading) {
     return <div className="p-4 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>;
@@ -1903,6 +1910,13 @@ function SupplierPoList({ supplierId }: { supplierId: number }) {
                   Fator: {Number(po.valorFator).toFixed(3)}
                 </span>
               )}
+              <button
+                onClick={(e) => { e.stopPropagation(); if (confirm(`Excluir PO "${po.poNumber}" e todos os seus produtos?`)) deletePoMut.mutate({ id: po.id }); }}
+                className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                title="Excluir PO"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
               {expandedPo === po.id ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
             </div>
           </button>
@@ -1920,17 +1934,27 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
     onSuccess: () => utils.import.getPoProducts.invalidate({ poId }),
   });
   const addProduct = trpc.import.addPoProduct.useMutation({
-    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); setShowAddProduct(false); setNewProductDesc(''); toast.success('Produto adicionado!'); },
+    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); setShowAddProduct(false); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setAddCodeSearch(''); toast.success('Produto adicionado!'); },
   });
   const deleteProduct = trpc.import.deletePoProduct.useMutation({
-    onSuccess: () => utils.import.getPoProducts.invalidate({ poId }),
+    onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); toast.success('Produto removido!'); },
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string }>({});
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [newProductCode, setNewProductCode] = useState('');
   const [newProductDesc, setNewProductDesc] = useState('');
+  const [newProductNcm, setNewProductNcm] = useState('');
   
-  // Product code search
+  // Product code search for ADD flow
+  const [addCodeSearch, setAddCodeSearch] = useState('');
+  const [showAddCodeDropdown, setShowAddCodeDropdown] = useState(false);
+  const { data: addSearchResults } = trpc.import.searchStockProducts.useQuery(
+    { query: addCodeSearch },
+    { enabled: addCodeSearch.length >= 2 }
+  );
+  
+  // Product code search for EDIT flow
   const [codeSearch, setCodeSearch] = useState('');
   const [showCodeDropdown, setShowCodeDropdown] = useState(false);
   const { data: searchResults } = trpc.import.searchStockProducts.useQuery(
@@ -1980,23 +2004,70 @@ function PoProductsTable({ poId, valorFator }: { poId: number; valorFator: numbe
         </button>
       </div>
       {showAddProduct && (
-        <div className="p-2 bg-emerald-50 border-b border-emerald-200 flex gap-2 items-end">
-          <div className="flex-1">
-            <label className="text-[10px] text-slate-500">Descrição do produto</label>
-            <input
-              className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
-              placeholder="Descrição do produto..."
-              value={newProductDesc}
-              onChange={e => setNewProductDesc(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && newProductDesc.trim()) addProduct.mutate({ poId, description: newProductDesc.trim() }); }}
-              autoFocus
-            />
+        <div className="p-3 bg-emerald-50 border-b border-emerald-200">
+          <div className="flex gap-3 items-end">
+            {/* Step 1: Code selector */}
+            <div className="w-40 relative">
+              <label className="text-[10px] text-slate-500 font-medium">1. Código do Produto</label>
+              <input
+                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono"
+                placeholder="Buscar código..."
+                value={addCodeSearch}
+                onChange={e => { setAddCodeSearch(e.target.value); setShowAddCodeDropdown(true); }}
+                onFocus={() => { if (addCodeSearch.length >= 2) setShowAddCodeDropdown(true); }}
+                autoFocus
+              />
+              {showAddCodeDropdown && addSearchResults && addSearchResults.length > 0 && (
+                <div className="absolute z-50 top-full left-0 mt-1 w-72 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
+                  {addSearchResults.map(item => (
+                    <button
+                      key={item.codigoItem}
+                      onClick={() => {
+                        setNewProductCode(item.codigoItem);
+                        setNewProductDesc(item.descricaoItem);
+                        setAddCodeSearch(item.codigoItem);
+                        setShowAddCodeDropdown(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-blue-50 text-[11px] border-b border-slate-50 last:border-0"
+                    >
+                      <span className="font-mono font-bold text-blue-600">{item.codigoItem}</span>
+                      <span className="ml-2 text-slate-600">{item.descricaoItem}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Step 2: Description (auto-filled) */}
+            <div className="flex-1">
+              <label className="text-[10px] text-slate-500 font-medium">2. Descrição {newProductDesc && <span className="text-emerald-600">(preenchido)</span>}</label>
+              <input
+                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs bg-slate-50"
+                placeholder="Selecione o código acima..."
+                value={newProductDesc}
+                onChange={e => setNewProductDesc(e.target.value)}
+                readOnly={!!newProductCode}
+              />
+            </div>
+            {/* Step 3: NCM */}
+            <div className="w-32">
+              <label className="text-[10px] text-slate-500 font-medium">3. NCM</label>
+              <input
+                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono"
+                placeholder="0000.00.00"
+                value={newProductNcm}
+                onChange={e => setNewProductNcm(e.target.value)}
+              />
+            </div>
+            {/* Actions */}
+            <button
+              onClick={() => { if (!newProductDesc.trim()) { toast.error('Selecione um produto pelo código'); return; } addProduct.mutate({ poId, description: newProductDesc.trim(), productCode: newProductCode || undefined, ncm: newProductNcm || undefined }); }}
+              className="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 whitespace-nowrap"
+            >Adicionar</button>
+            <button onClick={() => { setShowAddProduct(false); setAddCodeSearch(''); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); }} className="p-1 text-slate-500 hover:text-red-500"><X className="w-4 h-4" /></button>
           </div>
-          <button
-            onClick={() => { if (!newProductDesc.trim()) return; addProduct.mutate({ poId, description: newProductDesc.trim() }); }}
-            className="px-2 py-1 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700"
-          >Adicionar</button>
-          <button onClick={() => setShowAddProduct(false)} className="p-1 text-slate-500 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+          {newProductCode && (
+            <p className="mt-1.5 text-[10px] text-emerald-700">✓ Produto selecionado: <span className="font-mono font-bold">{newProductCode}</span> — {newProductDesc}</p>
+          )}
         </div>
       )}
       <table className="w-full text-[11px] border-collapse min-w-[1500px]">

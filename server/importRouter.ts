@@ -656,6 +656,19 @@ export const importRouter = router({
       return { id: result.insertId };
     }),
 
+  // ===== DELETAR PO =====
+  deletePo: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      // Delete all products in this PO first
+      await db.delete(importPoProducts).where(eq(importPoProducts.poId, input.id));
+      // Then delete the PO itself
+      await db.delete(importPos).where(eq(importPos.id, input.id));
+      return { success: true };
+    }),
+
   // ===== ADICIONAR PRODUTO A UMA PO =====
   addPoProduct: publicProcedure
     .input(z.object({
