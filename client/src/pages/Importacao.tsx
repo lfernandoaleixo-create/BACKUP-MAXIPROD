@@ -2543,12 +2543,12 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">NCM</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Incoterm</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Un/Cx</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Valor {currency === "USD" ? "USD" : "BRL"}</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Pago Forn.</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Cheia</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Menor</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Meia Nota</th>
+            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Qtd Cx</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete/Cx</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete Total</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Qtd</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Ref {currency === "USD" ? "$" : "R$"}</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">% REP.</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Cx R$</th>
@@ -2656,6 +2656,7 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                   </span>
                 )}
               </td>
+              <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.quantidade || '—'}</td>
               <td className="px-3 py-2 text-center font-mono text-orange-600 whitespace-nowrap">
                 {(() => {
                   const ci = Number(prod.valorPoCheia || 0);
@@ -2678,7 +2679,6 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                   return currency === "USD" ? `$${rawVal.toFixed(2)}` : `R$ ${(rawVal * exchangeRate).toFixed(2)}`;
                 })()}
               </td>
-              <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.quantidade || '—'}</td>
               <td className="px-3 py-2 text-center font-mono text-slate-600 whitespace-nowrap">
                 {prod.valorReferencia ? (currency === "USD" ? `$${Number(prod.valorReferencia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `R$ ${(Number(prod.valorReferencia) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`) : '—'}
               </td>
