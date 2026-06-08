@@ -114,7 +114,7 @@ export function OperatorProvider({ children }: { children: ReactNode }) {
     switch (section) {
       case "estoque": return operator.accessEstoque;
       case "vendas": return operator.accessVendas;
-      case "gestao-comercial": return operator.name === "Fernando" || operator.name === "Guilherme";
+      case "gestao-comercial": return operator.name === "Fernando" || operator.name === "Guilherme" || operator.name === "Juvenal";
       case "faturamento": return operator.accessFaturamento;
       case "financeiro": return operator.accessFinanceiro;
       case "importacao": return operator.name === "Fernando" || operator.name === "Guilherme" || operator.name === "Larissa";

@@ -9,6 +9,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Users, ChevronDown, ChevronRight, RefreshCw, AlertCircle, Shield, ShieldCheck, Lock, Package, Check, Layers, FileText, Upload, Trash2, X, FolderOpen, ExternalLink } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
+import { useOperator } from "@/contexts/OperatorContext";
 
 interface SellerPermission {
   id: number;
@@ -30,8 +31,14 @@ interface StockItem {
   subgrupo: string;
 }
 
+// Map operator names to their gestor names in Maxiprod
+const OPERATOR_GESTOR_MAP: Record<string, string> = {
+  "Juvenal": "JUVENAL TEIXEIRA",
+};
+
 export default function CadastroVendedoresTab() {
   const [, navigate] = useLocation();
+  const { operator } = useOperator();
   const [expandedGestores, setExpandedGestores] = useState<Set<string>>(new Set());
   const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
   const [expandedPdfSeller, setExpandedPdfSeller] = useState<string | null>(null);
@@ -100,7 +107,18 @@ export default function CadastroVendedoresTab() {
     );
   };
 
-  const data = representantesQuery.data;
+  // Filter gestores based on operator - if operator is a gestor (e.g. Juvenal), only show their group
+  const rawData = representantesQuery.data;
+  const data = React.useMemo(() => {
+    if (!rawData) return rawData;
+    const gestorFilter = operator ? OPERATOR_GESTOR_MAP[operator.name] : null;
+    if (!gestorFilter) return rawData; // Fernando/Guilherme see all
+    // Filter to only show the gestor's own group
+    const filtered = rawData.gestores.filter((g: GestorGroup) => 
+      g.gestor.toUpperCase() === gestorFilter.toUpperCase()
+    );
+    return { ...rawData, gestores: filtered };
+  }, [rawData, operator]);
   const totalVendedores = data?.gestores.reduce((acc: number, g: GestorGroup) => acc + g.vendedores.length, 0) || 0;
 
   return (

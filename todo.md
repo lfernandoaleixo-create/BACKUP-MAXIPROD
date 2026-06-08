@@ -4149,3 +4149,5 @@
 - [x] Restaurar os valores corretos de estoque (retomar caixas) — 11 produtos restaurados, 33 baixas revertidas
 - [x] Prevenir que baixas automáticas ocorram novamente — trava >10 faturamentos/sync + billing_history populado com 527 registros
 - [x] Conversão kg→caixa no faturamento: produto 00808 (11,6 kg/cx) — exibir em caixas e abater estoque em caixas
+- [x] Criar senha "Renato" para vendedor Renato Aleixo (acesso versão vendedor) — já existia com senha "Renato", authorized=1 ativado
+- [x] Liberar acesso do Juvenal Teixeira à aba Gestão Comercial (apenas seus vendedores, com todos os direitos: ticar produtos, catálogos, autorização de acesso)
