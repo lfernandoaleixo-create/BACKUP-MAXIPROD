@@ -1922,6 +1922,8 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
   const [expandedPo, setExpandedPo] = useState<number | null>(null);
   const [showNewPo, setShowNewPo] = useState(false);
   const [newPoName, setNewPoName] = useState('');
+  const [showLogisticsFields, setShowLogisticsFields] = useState(false);
+  const [newPoLogistics, setNewPoLogistics] = useState<Record<string, string>>({});
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const utils = trpc.useUtils();
   const createPoMut = trpc.import.createPo.useMutation({
@@ -1968,23 +1970,135 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
         </button>
       </div>
       {showNewPo && (
-        <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg flex gap-2 items-end">
-          <div className="flex-1">
-            <label className="text-[10px] text-slate-500">Nome da PO</label>
-            <input
-              className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
-              placeholder="Ex: PO66, PO67..."
-              value={newPoName}
-              onChange={e => setNewPoName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && newPoName.trim()) createPoMut.mutate({ supplierId, poNumber: newPoName.trim() }); }}
-              autoFocus
-            />
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <label className="text-[10px] text-slate-500 font-medium">Nome da PO *</label>
+              <input
+                className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                placeholder="Ex: PO66, PO67..."
+                value={newPoName}
+                onChange={e => setNewPoName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-[10px] text-slate-500 font-medium">Contêiner (opcional)</label>
+              <input
+                className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
+                placeholder="Ex: CONTÊINER PO-66"
+                value={newPoLogistics.containerName || ''}
+                onChange={e => setNewPoLogistics({ ...newPoLogistics, containerName: e.target.value })}
+              />
+            </div>
           </div>
           <button
-            onClick={() => { if (!newPoName.trim()) return toast.error('Nome obrigatório'); createPoMut.mutate({ supplierId, poNumber: newPoName.trim() }); }}
-            className="px-2 py-1 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700"
-          >Criar</button>
-          <button onClick={() => setShowNewPo(false)} className="p-1 text-slate-500 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+            onClick={() => setShowLogisticsFields(!showLogisticsFields)}
+            className="flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-800 font-medium"
+          >
+            <ChevronDown className={`w-3 h-3 transition-transform ${showLogisticsFields ? 'rotate-180' : ''}`} />
+            {showLogisticsFields ? 'Ocultar campos logísticos' : 'Preencher custos logísticos (opcional)'}
+          </button>
+          {showLogisticsFields && (
+            <div className="space-y-3 border-t border-amber-200 pt-3">
+              {/* ROTA */}
+              <div>
+                <p className="text-[10px] font-semibold text-slate-600 mb-1">✈️ ROTA DA IMPORTAÇÃO</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[9px] text-slate-500">Porto de Chegada</label>
+                    <select className="w-full border border-slate-300 rounded px-1 py-1 text-[10px]" value={newPoLogistics.portoChegada || ''} onChange={e => setNewPoLogistics({ ...newPoLogistics, portoChegada: e.target.value })}>
+                      <option value="">Selecione...</option>
+                      <option value="Santos">Santos</option>
+                      <option value="Paranaguá">Paranaguá</option>
+                      <option value="Itajaí">Itajaí</option>
+                      <option value="Navegantes">Navegantes</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-slate-500">Cidade de Desembaraço</label>
+                    <select className="w-full border border-slate-300 rounded px-1 py-1 text-[10px]" value={newPoLogistics.cidadeDesembaraco || ''} onChange={e => setNewPoLogistics({ ...newPoLogistics, cidadeDesembaraco: e.target.value })}>
+                      <option value="">Selecione...</option>
+                      <option value="Santos">Santos</option>
+                      <option value="Curitiba">Curitiba</option>
+                      <option value="Itajaí">Itajaí</option>
+                      <option value="São Paulo">São Paulo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-slate-500">Local Final</label>
+                    <select className="w-full border border-slate-300 rounded px-1 py-1 text-[10px]" value={newPoLogistics.localFinal || ''} onChange={e => setNewPoLogistics({ ...newPoLogistics, localFinal: e.target.value })}>
+                      <option value="">Selecione...</option>
+                      <option value="Uberaba">Uberaba</option>
+                      <option value="Uberlândia">Uberlândia</option>
+                      <option value="São Paulo">São Paulo</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              {/* PAGAMENTOS */}
+              <div>
+                <p className="text-[10px] font-semibold text-slate-600 mb-1">💵 PAGAMENTOS REALIZADOS (R$)</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {[['pagamento1Remessa', '1ª Remessa'], ['pagamento2Remessa', '2ª Remessa'], ['pagamento3Remessa', '3ª Remessa'], ['taxasRemessa', 'Taxas Remessa']].map(([key, label]) => (
+                    <div key={key}>
+                      <label className="text-[9px] text-slate-500">{label}</label>
+                      <input className="w-full border border-slate-300 rounded px-1 py-1 text-[10px]" placeholder="0.00" value={newPoLogistics[key] || ''} onChange={e => setNewPoLogistics({ ...newPoLogistics, [key]: e.target.value })} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* CUSTOS ADICIONAIS */}
+              <div>
+                <p className="text-[10px] font-semibold text-slate-600 mb-1">📦 CUSTOS ADICIONAIS (R$)</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {[['despesasLiberacaoRemessa', 'Despesas Liberação'], ['freteTermestreRemessa', 'Frete Terrestre'], ['difalValor', 'DIFAL'], ['comissaoSilverio', 'Comissão Silvério']].map(([key, label]) => (
+                    <div key={key}>
+                      <label className="text-[9px] text-slate-500">{label}</label>
+                      <input className="w-full border border-slate-300 rounded px-1 py-1 text-[10px]" placeholder="0.00" value={newPoLogistics[key] || ''} onChange={e => setNewPoLogistics({ ...newPoLogistics, [key]: e.target.value })} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* INFORMAÇÕES IMPORTANTES */}
+              <div>
+                <p className="text-[10px] font-semibold text-slate-600 mb-1">ⓘ INFORMAÇÕES IMPORTANTES</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[['valorTotalProdutosUsdRemessa', 'Valor Total Produtos (USD)'], ['valorFreteMaritimoCnBr', 'Frete Marítimo CN/BR (USD)'], ['totalCiRemessa', 'Total CI (USD)']].map(([key, label]) => (
+                    <div key={key}>
+                      <label className="text-[9px] text-slate-500">{label}</label>
+                      <input className="w-full border border-slate-300 rounded px-1 py-1 text-[10px]" placeholder="0.00" value={newPoLogistics[key] || ''} onChange={e => setNewPoLogistics({ ...newPoLogistics, [key]: e.target.value })} />
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  {[['valorDolar1Remessa', 'Dólar 1ª Remessa'], ['valorDolar2Remessa', 'Dólar 2ª Remessa'], ['valorDolar3Remessa', 'Dólar 3ª Remessa']].map(([key, label]) => (
+                    <div key={key}>
+                      <label className="text-[9px] text-slate-500">{label}</label>
+                      <input className="w-full border border-slate-300 rounded px-1 py-1 text-[10px]" placeholder="0.0000" value={newPoLogistics[key] || ''} onChange={e => setNewPoLogistics({ ...newPoLogistics, [key]: e.target.value })} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-2 justify-end pt-2 border-t border-amber-200">
+            <button onClick={() => { setShowNewPo(false); setShowLogisticsFields(false); setNewPoLogistics({}); setNewPoName(''); }} className="px-3 py-1 text-slate-500 hover:text-red-500 text-xs">Cancelar</button>
+            <button
+              onClick={() => {
+                if (!newPoName.trim()) return toast.error('Nome obrigatório');
+                const payload: any = { supplierId, poNumber: newPoName.trim() };
+                if (newPoLogistics.containerName) payload.containerName = newPoLogistics.containerName;
+                for (const [key, value] of Object.entries(newPoLogistics)) {
+                  if (key !== 'containerName' && value && value.trim()) payload[key] = value.trim();
+                }
+                createPoMut.mutate(payload);
+                setShowLogisticsFields(false);
+                setNewPoLogistics({});
+              }}
+              className="px-3 py-1 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700"
+            >Criar PO</button>
+          </div>
         </div>
       )}
       {[...(pos || [])].sort((a, b) => sortOrder === "newest" ? b.id - a.id : a.id - b.id).map(po => (

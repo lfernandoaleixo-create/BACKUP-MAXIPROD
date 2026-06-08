@@ -662,15 +662,39 @@ export const importRouter = router({
       supplierId: z.number(),
       poNumber: z.string().min(1),
       containerName: z.string().optional(),
+      portoChegada: z.string().nullable().optional(),
+      cidadeDesembaraco: z.string().nullable().optional(),
+      localFinal: z.string().nullable().optional(),
+      pagamento1Remessa: z.string().nullable().optional(),
+      pagamento2Remessa: z.string().nullable().optional(),
+      pagamento3Remessa: z.string().nullable().optional(),
+      taxasRemessa: z.string().nullable().optional(),
+      freteTermestreRemessa: z.string().nullable().optional(),
+      difalValor: z.string().nullable().optional(),
+      comissaoSilverio: z.string().nullable().optional(),
+      despesasLiberacaoRemessa: z.string().nullable().optional(),
+      valorDolar1Remessa: z.string().nullable().optional(),
+      valorDolar2Remessa: z.string().nullable().optional(),
+      valorDolar3Remessa: z.string().nullable().optional(),
+      valorFreteMaritimoCnBr: z.string().nullable().optional(),
+      totalCiRemessa: z.string().nullable().optional(),
+      valorTotalProdutosUsdRemessa: z.string().nullable().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      const [result] = await db.insert(importPos).values({
-        supplierId: input.supplierId,
-        poNumber: input.poNumber,
-        containerName: input.containerName || null,
-      });
+      const { supplierId, poNumber, containerName, ...logistics } = input;
+      const insertData: Record<string, any> = {
+        supplierId,
+        poNumber,
+        containerName: containerName || null,
+      };
+      for (const [key, value] of Object.entries(logistics)) {
+        if (value !== undefined && value !== null && value !== '') {
+          insertData[key] = value;
+        }
+      }
+      const [result] = await db.insert(importPos).values(insertData as any);
       return { id: result.insertId };
     }),
 
