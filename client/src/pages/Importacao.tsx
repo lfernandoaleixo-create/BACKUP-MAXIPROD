@@ -1528,15 +1528,15 @@ function CustoPosView({ currency, exchangeRate }: { currency: "USD" | "BRL"; exc
       toast.success('Fornecedor criado!');
     },
   });
+  const updateSupplierOrderMut = trpc.import.updateSupplier.useMutation({
+    onSuccess: () => { utils.import.getSuppliersWithPoCount.invalidate(); },
+  });
 
   if (isLoading) {
     return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>;
   }
 
   const allSuppliers = suppliers || [];
-  const updateSupplierOrderMut = trpc.import.updateSupplier.useMutation({
-    onSuccess: () => { utils.import.getSuppliersWithPoCount.invalidate(); },
-  });
 
   const moveSupplier = (index: number, direction: 'up' | 'down') => {
     const newIndex = direction === 'up' ? index - 1 : index + 1;
