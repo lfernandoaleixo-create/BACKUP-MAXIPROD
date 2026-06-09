@@ -5,7 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory, importPayments } from "../drizzle/schema";
+import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory, importPayments, importSuppliers } from "../drizzle/schema";
 import { sql, desc, eq, and, gte, or } from "drizzle-orm";
 import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
 import { isSchedulerRunning } from "./scheduler";
@@ -637,14 +637,16 @@ export const appRouter = router({
      */
     getPoTrackingLinks: publicProcedure.query(async () => {
       const db = await getDb();
-      if (!db) return { trackingByPO: {} as Record<string, { blNumber: string | null; trackingUuid: string | null }> };
+      if (!db) return { trackingByPO: {} as Record<string, { blNumber: string | null; trackingUuid: string | null; supplierName: string | null }> };
 
-      // Fetch all payments that have tracking info
+      // Fetch all payments that have tracking info, joined with supplier name
       const payments = await db.select({
         pedido: importPayments.pedido,
         blNumber: importPayments.blNumber,
         trackingUuid: importPayments.trackingUuid,
+        supplierName: importSuppliers.name,
       }).from(importPayments)
+        .leftJoin(importSuppliers, eq(importPayments.supplierId, importSuppliers.id))
         .where(or(
           sql`${importPayments.blNumber} IS NOT NULL`,
           sql`${importPayments.trackingUuid} IS NOT NULL`
@@ -652,16 +654,16 @@ export const appRouter = router({
 
       // Build a map keyed by normalized PO reference
       // Payment pedido values like "PO062" need to match Estoque referenciaPO like "PO62"
-      const trackingByPO: Record<string, { blNumber: string | null; trackingUuid: string | null }> = {};
+      const trackingByPO: Record<string, { blNumber: string | null; trackingUuid: string | null; supplierName: string | null }> = {};
       for (const p of payments) {
         // Normalize: extract PO number, remove leading zeros after "PO"
         const raw = (p.pedido || "").trim().toUpperCase();
         const poMatch = raw.match(/^PO0*(\d+)$/);
         const normalizedKey = poMatch ? `PO${poMatch[1]}` : raw;
         // Also store with the original key for non-PO pedidos (e.g. ZYZ2026-018)
-        trackingByPO[normalizedKey] = { blNumber: p.blNumber, trackingUuid: p.trackingUuid };
+        trackingByPO[normalizedKey] = { blNumber: p.blNumber, trackingUuid: p.trackingUuid, supplierName: p.supplierName };
         if (normalizedKey !== raw) {
-          trackingByPO[raw] = { blNumber: p.blNumber, trackingUuid: p.trackingUuid };
+          trackingByPO[raw] = { blNumber: p.blNumber, trackingUuid: p.trackingUuid, supplierName: p.supplierName };
         }
       }
 

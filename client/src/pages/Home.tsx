@@ -1757,6 +1757,10 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
         if (!existing.dataEntrega && lote.dataEntrega) {
           existing.dataEntrega = lote.dataEntrega;
         }
+        // Fill fornecedor if still empty
+        if (!existing.fornecedor && lote.fornecedor) {
+          existing.fornecedor = lote.fornecedor;
+        }
         poMap.set(key, existing);
       }
     }
@@ -1861,7 +1865,7 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                     <div className="flex items-center gap-2 md:gap-3 mt-0.5 flex-wrap">
                       <span className="text-[10px] md:text-xs text-slate-500 flex items-center gap-0.5 md:gap-1">
                         <MapPin className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                        <span className="truncate max-w-[100px] md:max-w-none">{po.fornecedor || "Fornecedor"}</span>
+                        <span className="truncate max-w-[100px] md:max-w-none">{po.fornecedor || (trackingQuery.data?.trackingByPO?.[po.referenciaPO.toUpperCase()]?.supplierName) || "Fornecedor"}</span>
                       </span>
                       <span className="text-[10px] md:text-xs text-slate-500 flex items-center gap-0.5 md:gap-1">
                         <CalendarDays className="w-2.5 h-2.5 md:w-3 md:h-3" />
@@ -1874,31 +1878,33 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 shrink-0">
-                  {/* Tracking button - show if this PO has tracking data */}
-                  {(() => {
-                    const trackingMap = trackingQuery.data?.trackingByPO || {};
-                    const poKey = po.referenciaPO.toUpperCase();
-                    const tracking = trackingMap[poKey];
-                    if (!tracking) return null;
-                    return (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (tracking.trackingUuid) {
-                            setTrackingUuid(tracking.trackingUuid);
-                          } else if (tracking.blNumber) {
-                            setTrackingBl(tracking.blNumber);
-                          }
-                        }}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 text-[10px] md:text-xs font-medium transition-colors"
-                        title="Rastrear navio em tempo real"
-                      >
-                        <Navigation className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                        <span className="hidden sm:inline">Rastrear</span>
-                      </button>
-                    );
-                  })()}
-                  <div className="text-right">
+                  {/* Tracking button - fixed width slot for alignment */}
+                  <div className="w-[80px] md:w-[90px] flex justify-end">
+                    {(() => {
+                      const trackingMap = trackingQuery.data?.trackingByPO || {};
+                      const poKey = po.referenciaPO.toUpperCase();
+                      const tracking = trackingMap[poKey];
+                      if (!tracking) return null;
+                      return (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (tracking.trackingUuid) {
+                              setTrackingUuid(tracking.trackingUuid);
+                            } else if (tracking.blNumber) {
+                              setTrackingBl(tracking.blNumber);
+                            }
+                          }}
+                          className="inline-flex items-center justify-center gap-1 w-full px-2 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 text-[10px] md:text-xs font-medium transition-colors"
+                          title="Rastrear navio em tempo real"
+                        >
+                          <Navigation className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                          <span>Rastrear</span>
+                        </button>
+                      );
+                    })()}
+                  </div>
+                  <div className="text-right w-[70px] md:w-[80px]">
                     <p className="font-bold text-blue-600 text-xs md:text-sm whitespace-nowrap">{formatNumber(po.totalCx, true)} <span className="text-[10px] md:text-xs">cx</span></p>
                   </div>
                   {isExpanded ? (
