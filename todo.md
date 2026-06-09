@@ -4248,3 +4248,4 @@
 - [x] Botão de rastreamento em tempo real nas POs da aba Estoque (puxar link de rastreio da aba Importação para quem não tem acesso à Importação)
 - [x] Alinhar botões Rastrear um embaixo do outro com tamanho uniforme nas POs do Estoque
 - [x] Corrigir nome do fornecedor da PO 01PH202603 (fallback para nome do supplier da Importação quando Maxiprod retorna vazio)
+- [x] Importação/Custo Mercadoria: verificar e puxar dados de produtos faltantes da planilha para POs que têm informações completas
