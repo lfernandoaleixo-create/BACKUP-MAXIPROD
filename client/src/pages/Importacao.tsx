@@ -1875,35 +1875,128 @@ function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate
   exchangeRate: number;
 }) {
   const utils = trpc.useUtils();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(supplier.name);
   const deleteSupplierMut = trpc.import.deleteSupplier.useMutation({
     onSuccess: () => {
       utils.import.getSuppliersWithPoCount.invalidate();
       toast.success('Fornecedor excluído!');
     },
   });
+  const updateSupplierMut = trpc.import.updateSupplier.useMutation({
+    onSuccess: () => {
+      utils.import.getSuppliersWithPoCount.invalidate();
+      toast.success('Nome atualizado!');
+      setIsEditing(false);
+    },
+  });
+
+  // Color scheme based on category
+  const cat = (supplier.category || '').toUpperCase();
+  const colorScheme = cat.includes('BAMBU') ? {
+    gradient: 'from-emerald-50 to-white',
+    hoverGradient: 'hover:from-emerald-100',
+    iconBg: 'bg-emerald-100',
+    iconText: 'text-emerald-700',
+    border: 'border-emerald-200',
+    badgeBg: 'bg-emerald-600',
+    badgeText: 'text-white',
+    categoryBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  } : cat.includes('MADEIRA') ? {
+    gradient: 'from-amber-50 to-white',
+    hoverGradient: 'hover:from-amber-100',
+    iconBg: 'bg-amber-100',
+    iconText: 'text-amber-700',
+    border: 'border-amber-200',
+    badgeBg: 'bg-amber-600',
+    badgeText: 'text-white',
+    categoryBadge: 'bg-amber-50 text-amber-700 border-amber-200',
+  } : cat.includes('MÁQUINA') || cat.includes('MAQUINA') ? {
+    gradient: 'from-purple-50 to-white',
+    hoverGradient: 'hover:from-purple-100',
+    iconBg: 'bg-purple-100',
+    iconText: 'text-purple-700',
+    border: 'border-purple-200',
+    badgeBg: 'bg-purple-600',
+    badgeText: 'text-white',
+    categoryBadge: 'bg-purple-50 text-purple-700 border-purple-200',
+  } : {
+    gradient: 'from-blue-50 to-white',
+    hoverGradient: 'hover:from-blue-100',
+    iconBg: 'bg-blue-100',
+    iconText: 'text-blue-700',
+    border: 'border-blue-200',
+    badgeBg: 'bg-blue-600',
+    badgeText: 'text-white',
+    categoryBadge: 'bg-blue-50 text-blue-700 border-blue-200',
+  };
 
   return (
-    <div className="border border-slate-200 rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-white hover:from-blue-100 transition-colors">
+    <div className={`border ${colorScheme.border} rounded-xl overflow-hidden shadow-sm`}>
+      <div className={`flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r ${colorScheme.gradient} ${colorScheme.hoverGradient} transition-colors`}>
         <button
           onClick={onToggle}
           className="flex-1 flex items-center gap-3 text-left"
         >
-          <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
-            <Package className="w-4 h-4 text-blue-600" />
+          <div className={`w-9 h-9 rounded-lg ${colorScheme.iconBg} flex items-center justify-center`}>
+            <Package className={`w-4 h-4 ${colorScheme.iconText}`} />
           </div>
           <div>
-            <p className="font-semibold text-sm text-slate-800">{supplier.name}</p>
-            <p className="text-xs text-slate-500">{supplier.category || 'Fornecedor'} • {supplier.poCount} POs</p>
+            {isEditing ? (
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="font-semibold text-sm text-slate-800 border border-slate-300 rounded px-2 py-0.5 w-48"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && editName.trim()) {
+                      updateSupplierMut.mutate({ id: supplier.id, name: editName.trim().toUpperCase() });
+                    } else if (e.key === 'Escape') {
+                      setIsEditing(false);
+                      setEditName(supplier.name);
+                    }
+                  }}
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (editName.trim()) updateSupplierMut.mutate({ id: supplier.id, name: editName.trim().toUpperCase() }); }}
+                  className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setIsEditing(false); setEditName(supplier.name); }}
+                  className="p-0.5 text-red-500 hover:bg-red-50 rounded"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <p className="font-semibold text-sm text-slate-800">{supplier.name}</p>
+            )}
+            <div className="flex items-center gap-2 mt-0.5">
+              {supplier.category && (
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${colorScheme.categoryBadge}`}>
+                  {supplier.category}
+                </span>
+              )}
+            </div>
           </div>
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+          <div className={`flex items-center justify-center min-w-[36px] h-9 rounded-lg ${colorScheme.badgeBg} ${colorScheme.badgeText} font-bold text-sm px-2 shadow-sm`}>
             {supplier.poCount}
-          </span>
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsEditing(true); setEditName(supplier.name); }}
+            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            title="Editar nome"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={(e) => { e.stopPropagation(); if (confirm(`Excluir fornecedor "${supplier.name}" e todas as suas POs e produtos?`)) deleteSupplierMut.mutate({ id: supplier.id }); }}
-            className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded border border-red-200 transition-colors"
             title="Excluir Fornecedor"
           >
             <Trash2 className="w-3.5 h-3.5" />

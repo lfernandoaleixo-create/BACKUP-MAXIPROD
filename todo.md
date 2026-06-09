@@ -4231,3 +4231,6 @@
 - [x] Destacar ícone da lixeira no card recolhido da PO
 - [x] Adicionar texto "PO Meia Nota" acima do ícone de documento existente
 - [x] Preparar novo ícone de documento com texto "PO Nota Cheia" para quando os documentos forem enviados
+- [x] Adicionar opção de editar nome do fornecedor na lista de fornecedores
+- [x] Dar mais destaque visual ao número de POs na lista de fornecedores
+- [x] Diferenciar cards de fornecedores por cor baseado na categoria (Bambu, Madeira, Máquinas)
