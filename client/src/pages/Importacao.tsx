@@ -2633,7 +2633,7 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                 onChange={e => setNewProductIncoterm(e.target.value)}
               >
                 <option value="">Selecione...</option>
-                <option value="DXW">DXW - Fornecedor deixa no pátio</option>
+                <option value="EXW">EXW - Ex Works (na fábrica)</option>
                 <option value="FOB">FOB - Fornecedor coloca no porto</option>
                 <option value="CIF">CIF - Fornecedor entrega em Santos</option>
               </select>
@@ -2729,12 +2729,12 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                     onChange={e => setEditValues({ ...editValues, incoterm: e.target.value })}
                   >
                     <option value="">—</option>
-                    <option value="DXW">DXW</option>
+                    <option value="EXW">EXW</option>
                     <option value="FOB">FOB</option>
                     <option value="CIF">CIF</option>
                   </select>
                 ) : (
-                  <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${prod.incoterm === 'CIF' ? 'bg-green-100 text-green-700' : prod.incoterm === 'FOB' ? 'bg-blue-100 text-blue-700' : prod.incoterm === 'DXW' ? 'bg-amber-100 text-amber-700' : 'text-slate-300'}`}>
+                  <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${prod.incoterm === 'CIF' ? 'bg-green-100 text-green-700' : prod.incoterm === 'FOB' ? 'bg-blue-100 text-blue-700' : prod.incoterm === 'EXW' ? 'bg-amber-100 text-amber-700' : 'text-slate-300'}`}>
                     {prod.incoterm || '—'}
                   </span>
                 )}
