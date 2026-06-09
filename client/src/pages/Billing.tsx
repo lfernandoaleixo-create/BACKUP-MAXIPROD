@@ -1433,6 +1433,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
   const [expanded, setExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [empresaFilter, setEmpresaFilter] = useState("all");
+  const [collectionFilter, setCollectionFilter] = useState<"all" | "coletado" | "nao_coletado">("all");
   const [sortField, setSortField] = useState<SortField>("entrega");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -1523,6 +1524,15 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
       result = result.filter(o => o.empresa === empresaFilter);
     }
 
+    // Collection status filter
+    if (collectionFilter !== "all" && collectionStatuses) {
+      if (collectionFilter === "coletado") {
+        result = result.filter(o => collectionStatuses[o.pedido]?.coletado === true);
+      } else if (collectionFilter === "nao_coletado") {
+        result = result.filter(o => !collectionStatuses[o.pedido]?.coletado);
+      }
+    }
+
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       result = result.filter(o =>
@@ -1586,7 +1596,7 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
     });
 
     return sorted;
-  }, [orders, searchTerm, empresaFilter, sortField, sortDir, invoicesByPedido, activeTab, tabEntries, collectionStatuses]);
+  }, [orders, searchTerm, empresaFilter, collectionFilter, sortField, sortDir, invoicesByPedido, activeTab, tabEntries, collectionStatuses]);
 
   const filteredTotal = useMemo(() => filtered.reduce((sum, o) => sum + o.valorTotal, 0), [filtered]);
 
@@ -1686,6 +1696,18 @@ function BillingCard({ title, icon: Icon, orders, borderColor, iconColor, hoverC
                   {empresas.map(e => (
                     <SelectItem key={e} value={e}>{e}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            )}
+            {onToggleCollection && collectionStatuses && (
+              <Select value={collectionFilter} onValueChange={(v) => setCollectionFilter(v as "all" | "coletado" | "nao_coletado")}>
+                <SelectTrigger className="w-full sm:w-44 bg-white h-8 text-sm">
+                  <SelectValue placeholder="Coleta" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="coletado">Coletados</SelectItem>
+                  <SelectItem value="nao_coletado">Não Coletados</SelectItem>
                 </SelectContent>
               </Select>
             )}

@@ -4240,3 +4240,4 @@
 - [x] Adicionar opção de reordenar os cards de fornecedores na aba Importação
 - [x] Eliminar scroll horizontal na tabela de produtos das POs - tudo deve caber em uma tela
 - [x] Garantir que conversão dólar/real funciona nos Custos Logísticos & Informações (botão visível)
+- [x] Faturamento: adicionar filtro de status de coleta (Todos / Coletados / Não Coletados) baseado no checkbox "Coletado"
