@@ -4226,3 +4226,4 @@
 - [x] Preencher Incoterm como CIF para todos os produtos das POs já cadastradas
 - [x] Preencher NCM 44219100 para todos os produtos das POs antigas que não têm NCM
 - [x] Preencher código do produto puxando do estoque para produtos das POs antigas
+- [x] Remover coluna "Impostos" da tabela de produtos das POs antigas (está vazia)

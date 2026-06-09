@@ -2660,7 +2660,6 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">% REP.</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Cx R$</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Mil/Un R$</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Impostos</th>
             <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Ações</th>
           </tr>
         </thead>
@@ -2797,21 +2796,6 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
               </td>
               <td className="px-3 py-2 text-center font-mono text-blue-700 font-medium whitespace-nowrap">
                 {prod.precoMilUnid ? (currency === "BRL" ? `R$ ${Number(prod.precoMilUnid).toFixed(2)}` : `$${(Number(prod.precoMilUnid) / exchangeRate).toFixed(2)}`) : '—'}
-              </td>
-              <td className="px-3 py-2 text-center whitespace-nowrap relative">
-                {prod.totalImpostos ? (
-                  <button
-                    onClick={() => setTaxDetailId(taxDetailId === prod.id ? null : prod.id)}
-                    className="font-mono text-[10px] font-medium px-1.5 py-0.5 rounded cursor-pointer transition-colors text-red-600 hover:bg-red-50 border border-red-200"
-                  >
-                    {currency === "USD" ? `$${Number(prod.totalImpostos).toFixed(2)}` : `R$ ${(Number(prod.totalImpostos) * exchangeRate).toFixed(2)}`}
-                  </button>
-                ) : (
-                  <span className="text-slate-300">—</span>
-                )}
-                {taxDetailId === prod.id && (
-                  <TaxDetailCard prod={prod} onClose={() => setTaxDetailId(null)} />
-                )}
               </td>
               <td className="px-3 py-2 text-center whitespace-nowrap">
                 {editingId === prod.id ? (
