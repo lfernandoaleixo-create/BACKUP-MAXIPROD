@@ -667,10 +667,9 @@ export const billingRouter = router({
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       thirtyDaysAgo.setHours(0, 0, 0, 0);
       
-      const allBilledOrders = Array.from(billedMap.values()).map(o => {
+            const allBilledOrders = Array.from(billedMap.values()).map(o => {
         const valorRounded = Math.round(o.valorTotal * 100) / 100;
         const tipoEspecial = getTipoEspecial(o._estadoConfiguravel, o.observacoes, valorRounded);
-        
         // Para pedidos AMOSTRA/BONIFICAÇÃO: inferir grupo dos itens e gerar label combinado
         let grupo = o.grupo;
         let grupoKey = o.grupoKey;

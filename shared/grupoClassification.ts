@@ -7,8 +7,8 @@
  * - Import. Matéria-Prima: MADEIRA IMPORTAÇÃO, MADEIRA IMPORTACAO, MADEIRA IMPORTADA
  * 
  * Para pedidos AMOSTRA/BONIFICAÇÃO, o grupo é inferido pelos itens do pedido (grupoDescricao):
- * - ESPETO, VARETA → Revenda (importados)
- * - PALITO → Industrializados
+ * - PALITO → Revenda (importados - palitos de bambu)
+ * - ESPETO, VARETA → Industrializados (produtos de madeira)
  * 
  * TODAS as abas (Vendas, Faturamento, Estoque, Financeiro) DEVEM usar estas funções.
  * NUNCA duplique esta lógica em outros arquivos.
@@ -82,8 +82,8 @@ export const SUBGRUPO_LABELS: Record<SubgrupoKey, string> = {
  * Usado para pedidos AMOSTRA/BONIFICAÇÃO onde o estadoConfiguravel não indica o grupo.
  * 
  * Regras:
- * - ESPETO, VARETA → importacao_revenda (produtos importados)
- * - PALITO → industrializacao (produtos industrializados)
+ * - PALITO → importacao_revenda (palitos de bambu = produtos importados para revenda)
+ * - ESPETO, VARETA → industrializacao (varetas/espetos de madeira = produtos industrializados)
  * - Mix → usa o grupo predominante (mais itens)
  * - Sem grupoDescricao → outros
  */
@@ -97,9 +97,11 @@ export function inferGrupoFromItems(grupoDescricoes: (string | null)[]): GrupoKe
   for (const gd of grupoDescricoes) {
     if (!gd) continue;
     const g = gd.toUpperCase().trim();
-    if (g === "ESPETO" || g === "VARETA") {
+    if (g === "PALITO") {
+      // PALITO de bambu = produto importado para revenda
       revendaCount++;
-    } else if (g === "PALITO") {
+    } else if (g === "ESPETO" || g === "VARETA") {
+      // ESPETO/VARETA de madeira = produto industrializado
       industrializacaoCount++;
     }
     // Matéria-prima items would be rare in AMOSTRA/BONIFICAÇÃO but handle anyway
