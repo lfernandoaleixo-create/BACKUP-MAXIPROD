@@ -1543,8 +1543,14 @@ function CustoPosView({ currency, exchangeRate }: { currency: "USD" | "BRL"; exc
     if (newIndex < 0 || newIndex >= allSuppliers.length) return;
     const current = allSuppliers[index];
     const target = allSuppliers[newIndex];
-    updateSupplierOrderMut.mutate({ id: current.id, displayOrder: target.displayOrder });
-    updateSupplierOrderMut.mutate({ id: target.id, displayOrder: current.displayOrder });
+    // Use index-based ordering to avoid duplicate displayOrder issues
+    updateSupplierOrderMut.mutate({ id: current.id, displayOrder: newIndex }, {
+      onSuccess: () => {
+        updateSupplierOrderMut.mutate({ id: target.id, displayOrder: index }, {
+          onSuccess: () => utils.import.getSuppliersWithPoCount.invalidate(),
+        });
+      },
+    });
   };
 
   return (
