@@ -75,6 +75,7 @@ import {
   Sun,
   Moon,
   ShoppingBag,
+  Navigation,
 } from "lucide-react";
 import {
   Dialog,
@@ -84,6 +85,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
+import { TrackingModal } from "@/components/TrackingModal";
 import { generateEcommerceExtractPdf } from "@/lib/ecommerceExtractPdf";
 import { Link } from "wouter";
 import TopNav from "@/components/TopNav";
@@ -1720,6 +1722,11 @@ interface POSummary {
 function POOverviewCard({ items }: { items: StockItem[] }) {
   const [isListOpen, setIsListOpen] = useState(false);
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
+  const [trackingUuid, setTrackingUuid] = useState<string | null>(null);
+  const [trackingBl, setTrackingBl] = useState<string | null>(null);
+
+  // Fetch tracking links for POs (from Importação data)
+  const trackingQuery = trpc.dashboard.getPoTrackingLinks.useQuery(undefined, { staleTime: 60_000 });
 
   // Aggregate all PO lotes across all items, grouped by referenciaPO
   const poSummaries = useMemo(() => {
@@ -1867,6 +1874,30 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 shrink-0">
+                  {/* Tracking button - show if this PO has tracking data */}
+                  {(() => {
+                    const trackingMap = trackingQuery.data?.trackingByPO || {};
+                    const poKey = po.referenciaPO.toUpperCase();
+                    const tracking = trackingMap[poKey];
+                    if (!tracking) return null;
+                    return (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (tracking.trackingUuid) {
+                            setTrackingUuid(tracking.trackingUuid);
+                          } else if (tracking.blNumber) {
+                            setTrackingBl(tracking.blNumber);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md text-blue-700 text-[10px] md:text-xs font-medium transition-colors"
+                        title="Rastrear navio em tempo real"
+                      >
+                        <Navigation className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                        <span className="hidden sm:inline">Rastrear</span>
+                      </button>
+                    );
+                  })()}
                   <div className="text-right">
                     <p className="font-bold text-blue-600 text-xs md:text-sm whitespace-nowrap">{formatNumber(po.totalCx, true)} <span className="text-[10px] md:text-xs">cx</span></p>
                   </div>
@@ -1921,6 +1952,15 @@ function POOverviewCard({ items }: { items: StockItem[] }) {
           );
         })}
       </div>}
+
+      {/* Tracking Modal */}
+      {(trackingUuid || trackingBl) && (
+        <TrackingModal
+          trackingUuid={trackingUuid}
+          blNumber={trackingBl}
+          onClose={() => { setTrackingUuid(null); setTrackingBl(null); }}
+        />
+      )}
     </div>
   );
 }

@@ -5,8 +5,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
-import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory } from "../drizzle/schema";
-import { sql, desc, eq, and, gte } from "drizzle-orm";
+import { dashboardData, scraperStatus, salesOrders, semiProntoStock, aguardandoEscolhaStock, madeiraStock, stockEditHistory, importPayments } from "../drizzle/schema";
+import { sql, desc, eq, and, gte, or } from "drizzle-orm";
 import { runGraphQLSync, testGraphQLConnection, getSyncProgress, syncBankBalances } from "./maxiprodGraphQL";
 import { isSchedulerRunning } from "./scheduler";
 import { processStockData } from "./stockProcessor";
@@ -628,6 +628,45 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await getIndustrializedBaixaHistory(input || undefined);
       }),
+
+    /**
+     * Get tracking info for POs visible in Estoque.
+     * Returns a map of normalized PO reference -> { blNumber, trackingUuid }
+     * so the Estoque PO card can show a "Rastrear" button without needing
+     * access to the full Importação tab.
+     */
+    getPoTrackingLinks: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { trackingByPO: {} as Record<string, { blNumber: string | null; trackingUuid: string | null }> };
+
+      // Fetch all payments that have tracking info
+      const payments = await db.select({
+        pedido: importPayments.pedido,
+        blNumber: importPayments.blNumber,
+        trackingUuid: importPayments.trackingUuid,
+      }).from(importPayments)
+        .where(or(
+          sql`${importPayments.blNumber} IS NOT NULL`,
+          sql`${importPayments.trackingUuid} IS NOT NULL`
+        ));
+
+      // Build a map keyed by normalized PO reference
+      // Payment pedido values like "PO062" need to match Estoque referenciaPO like "PO62"
+      const trackingByPO: Record<string, { blNumber: string | null; trackingUuid: string | null }> = {};
+      for (const p of payments) {
+        // Normalize: extract PO number, remove leading zeros after "PO"
+        const raw = (p.pedido || "").trim().toUpperCase();
+        const poMatch = raw.match(/^PO0*(\d+)$/);
+        const normalizedKey = poMatch ? `PO${poMatch[1]}` : raw;
+        // Also store with the original key for non-PO pedidos (e.g. ZYZ2026-018)
+        trackingByPO[normalizedKey] = { blNumber: p.blNumber, trackingUuid: p.trackingUuid };
+        if (normalizedKey !== raw) {
+          trackingByPO[raw] = { blNumber: p.blNumber, trackingUuid: p.trackingUuid };
+        }
+      }
+
+      return { trackingByPO };
+    }),
   }),
 });
 
