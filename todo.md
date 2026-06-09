@@ -4238,3 +4238,5 @@
 - [x] Filtrar produtos das POs para mostrar apenas os preenchidos (com QTD CX ou dados relevantes)
 - [x] Editar nome do fornecedor na aba Custo da Mercadoria não deve alterar o nome na aba Importação (usar campo alias separado)
 - [x] Adicionar opção de reordenar os cards de fornecedores na aba Importação
+- [x] Eliminar scroll horizontal na tabela de produtos das POs - tudo deve caber em uma tela
+- [x] Garantir que conversão dólar/real funciona nos Custos Logísticos & Informações (botão visível)

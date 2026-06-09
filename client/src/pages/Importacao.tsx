@@ -2714,7 +2714,7 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
   };
 
   return (
-    <div className="border-t border-slate-100 overflow-x-auto">
+    <div className="border-t border-slate-100 overflow-hidden">
       {/* Add product button */}
       <div className="p-2 flex justify-end border-b border-slate-100">
         <button
@@ -2806,36 +2806,36 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
           )}
         </div>
       )}
-      <table className="w-full text-[11px] border-collapse min-w-[1500px]">
+      <table className="w-full text-[10px] border-collapse">
         <thead>
-          <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider">
-            <th className="px-3 py-2.5 text-left font-medium whitespace-nowrap">Descrição</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Código</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">NCM</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Incoterm</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Un/Cx</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Pago Forn.</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Cheia</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">PO Meia Nota</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Qtd Cx</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete/Cx</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Frete Total</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Vlr Ref {currency === "USD" ? "$" : "R$"}</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">% REP.</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Cx R$</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Mil/Un R$</th>
-            <th className="px-3 py-2.5 text-center font-medium whitespace-nowrap">Ações</th>
+          <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[9px]">
+            <th className="px-1.5 py-2 text-left font-medium">Descrição</th>
+            <th className="px-1 py-2 text-center font-medium">Cód</th>
+            <th className="px-1 py-2 text-center font-medium">NCM</th>
+            <th className="px-1 py-2 text-center font-medium">Frete</th>
+            <th className="px-1 py-2 text-center font-medium">Un/Cx</th>
+            <th className="px-1 py-2 text-center font-medium">Vlr Forn</th>
+            <th className="px-1 py-2 text-center font-medium">PO Cheia</th>
+            <th className="px-1 py-2 text-center font-medium">PO Meia</th>
+            <th className="px-1 py-2 text-center font-medium">Qtd</th>
+            <th className="px-1 py-2 text-center font-medium">Fr/Cx</th>
+            <th className="px-1 py-2 text-center font-medium">Fr Tot</th>
+            <th className="px-1 py-2 text-center font-medium">Vlr Ref</th>
+            <th className="px-1 py-2 text-center font-medium">%Rep</th>
+            <th className="px-1 py-2 text-center font-medium">Cx R$</th>
+            <th className="px-1 py-2 text-center font-medium">Mil/Un</th>
+            <th className="px-1 py-2 text-center font-medium">Ações</th>
           </tr>
         </thead>
         <tbody>
           {(products || []).filter(p => (p.quantidade && Number(p.quantidade) > 0) || editingId === p.id).map((prod, idx) => (
             <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
-              <td className="px-3 py-2 text-slate-700 whitespace-nowrap" title={prod.description}>{prod.description}</td>
-              <td className="px-3 py-2 text-center whitespace-nowrap relative">
+              <td className="px-1.5 py-1.5 text-slate-700 max-w-[200px] truncate" title={prod.description}>{prod.description}</td>
+              <td className="px-1 py-1.5 text-center relative">
                 {editingId === prod.id ? (
                   <div className="relative">
                     <input
-                      className="w-20 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
+                      className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
                       value={codeSearch}
                       onChange={e => { setCodeSearch(e.target.value); setEditValues({ ...editValues, productCode: e.target.value }); setShowCodeDropdown(true); }}
                       onFocus={() => { if (codeSearch.length >= 2) setShowCodeDropdown(true); }}
@@ -2862,10 +2862,10 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2 text-center whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center">
                 {editingId === prod.id ? (
                   <input
-                    className="w-24 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
+                    className="w-18 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
                     value={editValues.ncm || ''}
                     onChange={e => setEditValues({ ...editValues, ncm: e.target.value })}
                     placeholder="0000.00.00"
@@ -2876,10 +2876,10 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2 text-center whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center">
                 {editingId === prod.id ? (
                   <select
-                    className="w-16 text-center border border-blue-300 rounded px-0.5 py-0.5 text-[10px]"
+                    className="w-14 text-center border border-blue-300 rounded px-0.5 py-0.5 text-[9px]"
                     value={editValues.incoterm || ''}
                     onChange={e => setEditValues({ ...editValues, incoterm: e.target.value })}
                   >
@@ -2889,19 +2889,19 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                     <option value="CIF">CIF</option>
                   </select>
                 ) : (
-                  <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${prod.incoterm === 'CIF' ? 'bg-green-100 text-green-700' : prod.incoterm === 'FOB' ? 'bg-blue-100 text-blue-700' : prod.incoterm === 'EXW' ? 'bg-amber-100 text-amber-700' : 'text-slate-300'}`}>
+                  <span className={`font-mono text-[9px] px-1 py-0.5 rounded ${prod.incoterm === 'CIF' ? 'bg-green-100 text-green-700' : prod.incoterm === 'FOB' ? 'bg-blue-100 text-blue-700' : prod.incoterm === 'EXW' ? 'bg-amber-100 text-amber-700' : 'text-slate-300'}`}>
                     {prod.incoterm || '—'}
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.unidCaixa || '—'}</td>
-              <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center text-slate-600 font-mono">{prod.unidCaixa || '—'}</td>
+              <td className="px-1 py-1.5 text-center text-slate-600 font-mono">
                 {prod.valorUsd ? (currency === "USD" ? `$${Number(prod.valorUsd).toFixed(2)}` : `R$ ${(Number(prod.valorUsd) * exchangeRate).toFixed(2)}`) : '—'}
               </td>
-              <td className="px-3 py-2 text-center whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center">
                 {editingId === prod.id ? (
                   <input
-                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
+                    className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
                     value={editValues.valorPoCheia || ''}
                     onChange={e => setEditValues({ ...editValues, valorPoCheia: e.target.value })}
                     placeholder="0.00"
@@ -2912,10 +2912,10 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2 text-center whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center">
                 {editingId === prod.id ? (
                   <input
-                    className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[11px]"
+                    className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
                     value={editValues.valorPoMenor || ''}
                     onChange={e => setEditValues({ ...editValues, valorPoMenor: e.target.value })}
                     placeholder="0.00"
@@ -2926,8 +2926,8 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2 text-center text-slate-600 font-mono whitespace-nowrap">{prod.quantidade || '—'}</td>
-              <td className="px-3 py-2 text-center font-mono text-orange-600 whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center text-slate-600 font-mono">{prod.quantidade || '—'}</td>
+              <td className="px-1 py-1.5 text-center font-mono text-orange-600">
                 {(() => {
                   const ci = Number(prod.valorPoCheia || 0);
                   const val = Number(prod.valorUsd || 0);
@@ -2937,7 +2937,7 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                   return currency === "USD" ? `$${rawVal.toFixed(2)}` : `R$ ${(rawVal * exchangeRate).toFixed(2)}`;
                 })()}
               </td>
-              <td className="px-3 py-2 text-center font-mono text-orange-700 font-semibold whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center font-mono text-orange-700 font-semibold">
                 {(() => {
                   const ci = Number(prod.valorPoCheia || 0);
                   const val = Number(prod.valorUsd || 0);
@@ -2949,19 +2949,19 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                   return currency === "USD" ? `$${rawVal.toFixed(2)}` : `R$ ${(rawVal * exchangeRate).toFixed(2)}`;
                 })()}
               </td>
-              <td className="px-3 py-2 text-center font-mono text-slate-600 whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center font-mono text-slate-600">
                 {prod.valorReferencia ? (currency === "USD" ? `$${Number(prod.valorReferencia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `R$ ${(Number(prod.valorReferencia) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`) : '—'}
               </td>
-              <td className="px-3 py-2 text-center font-mono text-slate-500 whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center font-mono text-slate-500">
                 {prod.percRepresentatividade ? `${(Number(prod.percRepresentatividade) * 100).toFixed(2)}%` : '—'}
               </td>
-              <td className="px-3 py-2 text-center font-mono text-emerald-700 font-semibold whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center font-mono text-emerald-700 font-semibold">
                 {prod.valorCaixaBrl ? (currency === "BRL" ? `R$ ${Number(prod.valorCaixaBrl).toFixed(2)}` : `$${(Number(prod.valorCaixaBrl) / exchangeRate).toFixed(2)}`) : '—'}
               </td>
-              <td className="px-3 py-2 text-center font-mono text-blue-700 font-medium whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center font-mono text-blue-700 font-medium">
                 {prod.precoMilUnid ? (currency === "BRL" ? `R$ ${Number(prod.precoMilUnid).toFixed(2)}` : `$${(Number(prod.precoMilUnid) / exchangeRate).toFixed(2)}`) : '—'}
               </td>
-              <td className="px-3 py-2 text-center whitespace-nowrap">
+              <td className="px-1 py-1.5 text-center">
                 {editingId === prod.id ? (
                   <div className="flex gap-1 justify-center">
                     <button onClick={saveEdit} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded">
