@@ -2254,11 +2254,10 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
               {po.pdfUrl && (
                 <a
                   href={po.pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  download={`Meia Nota - ${po.poNumber}.pdf`}
                   onClick={(e) => e.stopPropagation()}
                   className="flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded border border-blue-200 transition-colors"
-                  title="Ver PDF da Meia Nota"
+                  title="Baixar Meia Nota"
                 >
                   <FileText className="w-4 h-4" />
                   <span className="text-[8px] font-medium leading-none">PO Meia Nota</span>
@@ -2267,11 +2266,10 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
               {po.pdfNotaCheiaUrl && (
                 <a
                   href={po.pdfNotaCheiaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  download={`Nota Cheia - ${po.poNumber}.pdf`}
                   onClick={(e) => e.stopPropagation()}
                   className="flex flex-col items-center gap-0.5 px-2 py-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded border border-emerald-200 transition-colors"
-                  title="Ver PDF da Nota Cheia"
+                  title="Baixar Nota Cheia"
                 >
                   <FileText className="w-4 h-4" />
                   <span className="text-[8px] font-medium leading-none">PO Nota Cheia</span>
