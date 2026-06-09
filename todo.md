@@ -4244,3 +4244,4 @@
 - [x] Bug: filtros "Bonif. Import. Revenda" e "Bonif. Industrializados" estão invertidos na aba Faturamento (PALITO=revenda/bambu, VARETA/ESPETO=industrializado/madeira)
 - [x] Importação/Custo Mercadoria: adicionar ícone de documento "PO Nota Cheia" ao lado do campo Meia Nota na tabela de produtos
 - [x] Bug: fornecedores criados em Custo de Mercadoria não devem aparecer em Pagamento aos Fornecedores Chineses e vice-versa (separar dados por aba)
+- [x] Importação/Custo Mercadoria: botões PO Meia Nota e PO Nota Cheia devem ter opção de visualizar (olho) sem sair da página e baixar sem sair da página

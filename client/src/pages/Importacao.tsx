@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -1400,6 +1400,8 @@ function CustoMercadoria() {
   const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
   const [currency, setCurrency] = useState<"USD" | "BRL">("USD");
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
+  const [pdfViewerTitle, setPdfViewerTitle] = useState("");
   const exchangeRate = exchangeData?.rate || 5.50;
 
   const handleExportCustoPdf = async () => {
@@ -1502,17 +1504,47 @@ function CustoMercadoria() {
         )}
       </div>
 
-      {custoTab === "pos" && <CustoPosView currency={currency} exchangeRate={exchangeRate} />}
+      {custoTab === "pos" && <CustoPosView currency={currency} exchangeRate={exchangeRate} setPdfViewerUrl={setPdfViewerUrl} setPdfViewerTitle={setPdfViewerTitle} />}
       {custoTab === "config" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
           <CustoConfigView />
+        </div>
+      )}
+
+      {/* PDF Viewer Modal */}
+      {pdfViewerUrl && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setPdfViewerUrl(null)}>
+          <div className="relative w-[95vw] h-[90vh] max-w-5xl bg-white rounded-xl shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+              <h3 className="text-sm font-semibold text-slate-700">{pdfViewerTitle}</h3>
+              <div className="flex items-center gap-2">
+                <a
+                  href={pdfViewerUrl}
+                  download={`${pdfViewerTitle}.pdf`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-md border border-blue-200 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Baixar
+                </a>
+                <button
+                  onClick={() => setPdfViewerUrl(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <iframe src={pdfViewerUrl} className="w-full h-full" title={pdfViewerTitle} />
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function CustoPosView({ currency, exchangeRate }: { currency: "USD" | "BRL"; exchangeRate: number }) {
+function CustoPosView({ currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: { currency: "USD" | "BRL"; exchangeRate: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
   const { data: suppliers, isLoading } = trpc.import.getSuppliersWithPoCount.useQuery();
   const [expandedSupplier, setExpandedSupplier] = useState<number | null>(null);
   const [showNewSupplier, setShowNewSupplier] = useState(false);
@@ -1635,6 +1667,8 @@ function CustoPosView({ currency, exchangeRate }: { currency: "USD" | "BRL"; exc
                 onToggle={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
                 currency={currency}
                 exchangeRate={exchangeRate}
+                setPdfViewerUrl={setPdfViewerUrl}
+                setPdfViewerTitle={setPdfViewerTitle}
               />
             </div>
           </div>
@@ -1906,12 +1940,14 @@ function NcmTaxesSection() {
   );
 }
 
-function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate }: {
+function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: {
   supplier: { id: number; name: string; displayName: string | null; category: string | null; poCount: number };
   isExpanded: boolean;
   onToggle: () => void;
   currency: "USD" | "BRL";
   exchangeRate: number;
+  setPdfViewerUrl: (url: string | null) => void;
+  setPdfViewerTitle: (title: string) => void;
 }) {
   const utils = trpc.useUtils();
   const [isEditing, setIsEditing] = useState(false);
@@ -2045,12 +2081,12 @@ function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate
           </button>
         </div>
       </div>
-      {isExpanded && <SupplierPoList supplierId={supplier.id} currency={currency} exchangeRate={exchangeRate} />}
+      {isExpanded && <SupplierPoList supplierId={supplier.id} currency={currency} exchangeRate={exchangeRate} setPdfViewerUrl={setPdfViewerUrl} setPdfViewerTitle={setPdfViewerTitle} />}
     </div>
   );
 }
 
-function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: number; currency: "USD" | "BRL"; exchangeRate: number }) {
+function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, setPdfViewerTitle }: { supplierId: number; currency: "USD" | "BRL"; exchangeRate: number; setPdfViewerUrl: (url: string | null) => void; setPdfViewerTitle: (title: string) => void }) {
   const { data: pos, isLoading } = trpc.import.getPosBySupplier.useQuery({ supplierId });
   const [expandedPo, setExpandedPo] = useState<number | null>(null);
   const [showNewPo, setShowNewPo] = useState(false);
@@ -2252,28 +2288,54 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
             <div className="flex items-center gap-2 sm:gap-3">
 
               {po.pdfUrl && (
-                <a
-                  href={po.pdfUrl}
-                  download={`Meia Nota - ${po.poNumber}.pdf`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded border border-blue-200 transition-colors"
-                  title="Baixar Meia Nota"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span className="text-[8px] font-medium leading-none">PO Meia Nota</span>
-                </a>
+                <div className="relative group/meia" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded border border-blue-200 transition-colors cursor-pointer">
+                    <FileText className="w-4 h-4" />
+                    <span className="text-[8px] font-medium leading-none">PO Meia Nota</span>
+                  </div>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 hidden group-hover/meia:flex bg-white shadow-lg rounded-md border border-slate-200 z-50 overflow-hidden">
+                    <button
+                      onClick={() => { setPdfViewerUrl(po.pdfUrl!); setPdfViewerTitle(`Meia Nota - ${po.poNumber}`); }}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 whitespace-nowrap"
+                      title="Visualizar"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    <a
+                      href={po.pdfUrl}
+                      download={`Meia Nota - ${po.poNumber}.pdf`}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 whitespace-nowrap border-l border-slate-200"
+                      title="Baixar"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
               )}
               {po.pdfNotaCheiaUrl && (
-                <a
-                  href={po.pdfNotaCheiaUrl}
-                  download={`Nota Cheia - ${po.poNumber}.pdf`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex flex-col items-center gap-0.5 px-2 py-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded border border-emerald-200 transition-colors"
-                  title="Baixar Nota Cheia"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span className="text-[8px] font-medium leading-none">PO Nota Cheia</span>
-                </a>
+                <div className="relative group/cheia" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col items-center gap-0.5 px-2 py-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded border border-emerald-200 transition-colors cursor-pointer">
+                    <FileText className="w-4 h-4" />
+                    <span className="text-[8px] font-medium leading-none">PO Nota Cheia</span>
+                  </div>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 hidden group-hover/cheia:flex bg-white shadow-lg rounded-md border border-slate-200 z-50 overflow-hidden">
+                    <button
+                      onClick={() => { setPdfViewerUrl(po.pdfNotaCheiaUrl!); setPdfViewerTitle(`Nota Cheia - ${po.poNumber}`); }}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs text-emerald-600 hover:bg-emerald-50 whitespace-nowrap"
+                      title="Visualizar"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    <a
+                      href={po.pdfNotaCheiaUrl}
+                      download={`Nota Cheia - ${po.poNumber}.pdf`}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs text-emerald-600 hover:bg-emerald-50 whitespace-nowrap border-l border-slate-200"
+                      title="Baixar"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
               )}
               <button
                 onClick={(e) => { e.stopPropagation(); if (confirm(`Excluir PO "${po.poNumber}" e todos os seus produtos?`)) deletePoMut.mutate({ id: po.id }); }}
