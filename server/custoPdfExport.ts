@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import PDFDocument from "pdfkit";
 import { getDb } from "./db";
 import { importSuppliers, importPos, importPoProducts } from "../drizzle/schema";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, or } from "drizzle-orm";
 
 // Helper: format monetary value
 const formatMoney = (val: string | number | null | undefined, symbol: string, rate: number): string => {
@@ -25,7 +25,9 @@ export async function custoPdfExportHandler(req: Request, res: Response) {
       return;
     }
 
-    const suppliers = await db.select().from(importSuppliers).orderBy(asc(importSuppliers.displayOrder));
+    const suppliers = await db.select().from(importSuppliers)
+      .where(or(eq(importSuppliers.context, 'custo'), eq(importSuppliers.context, 'both')))
+      .orderBy(asc(importSuppliers.displayOrder));
     const allPos = await db.select().from(importPos).orderBy(asc(importPos.id));
     const allProducts = await db.select().from(importPoProducts).orderBy(asc(importPoProducts.id));
 

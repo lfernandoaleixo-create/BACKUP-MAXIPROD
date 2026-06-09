@@ -1,0 +1,1 @@
+ALTER TABLE `import_suppliers` ADD `context` varchar(20) DEFAULT 'both' NOT NULL;

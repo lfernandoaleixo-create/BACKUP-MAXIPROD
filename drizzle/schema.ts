@@ -2349,6 +2349,7 @@ export const importSuppliers = mysqlTable("import_suppliers", {
   name: varchar("name", { length: 200 }).notNull(), // ex: "BETTY", "WINNIE - HARBIN", "HANK - CARRY", "BANNY"
   displayName: varchar("display_name", { length: 200 }), // Apelido usado na aba Custo da Mercadoria (não altera name original)
   category: varchar("category", { length: 100 }), // ex: "BAMBU", "MADEIRA", "MÁQUINAS"
+  context: varchar("context", { length: 20 }).default("both").notNull(), // 'pagamentos' | 'custo' | 'both'
   displayOrder: int("display_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

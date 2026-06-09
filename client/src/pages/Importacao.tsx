@@ -293,7 +293,7 @@ function PagamentosFornecedores() {
               <button
                 onClick={() => {
                   if (newSupplierName.trim()) {
-                    createSupplier.mutate({ name: newSupplierName.trim(), category: newSupplierCategory.trim() || undefined });
+                    createSupplier.mutate({ name: newSupplierName.trim(), category: newSupplierCategory.trim() || undefined, context: 'pagamentos' as const });
                   }
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -1591,7 +1591,7 @@ function CustoPosView({ currency, exchangeRate }: { currency: "USD" | "BRL"; exc
             <button
               onClick={() => {
                 if (!newSupplierName.trim()) return toast.error('Nome obrigatório');
-                createSupplierMut.mutate({ name: newSupplierName.trim(), category: newSupplierCategory.trim() || undefined });
+                createSupplierMut.mutate({ name: newSupplierName.trim(), category: newSupplierCategory.trim() || undefined, context: 'custo' as const });
               }}
               className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700"
             >

@@ -2,7 +2,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import { importSuppliers, importPayments, trackingCache, importPos, importPoProducts, importIcmsConfig, importNcmTaxes, importConfig, stockItems } from "../drizzle/schema";
-import { eq, asc, and, desc, like, sql } from "drizzle-orm";
+import { eq, asc, and, desc, like, sql, or, inArray } from "drizzle-orm";
 import { callDataApi } from "./_core/dataApi";
 import { fetchOneTracking } from "./oneTracking";
 
@@ -22,6 +22,7 @@ export const importRouter = router({
       name: z.string().min(1),
       category: z.string().optional(),
       displayOrder: z.number().optional(),
+      context: z.enum(['pagamentos', 'custo', 'both']).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -30,6 +31,7 @@ export const importRouter = router({
         name: input.name,
         category: input.category || null,
         displayOrder: input.displayOrder || 0,
+        context: input.context || 'both',
       });
       return { id: result.insertId };
     }),
@@ -319,7 +321,9 @@ export const importRouter = router({
     const db = await getDb();
     if (!db) return [];
     const payments = await db.select().from(importPayments).orderBy(asc(importPayments.id));
-    const suppliers = await db.select().from(importSuppliers).orderBy(asc(importSuppliers.displayOrder));
+    const suppliers = await db.select().from(importSuppliers)
+      .where(or(eq(importSuppliers.context, 'pagamentos'), eq(importSuppliers.context, 'both')))
+      .orderBy(asc(importSuppliers.displayOrder));
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -541,7 +545,9 @@ export const importRouter = router({
   getFullData: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
-    const suppliers = await db.select().from(importSuppliers).orderBy(asc(importSuppliers.displayOrder));
+    const suppliers = await db.select().from(importSuppliers)
+      .where(or(eq(importSuppliers.context, 'pagamentos'), eq(importSuppliers.context, 'both')))
+      .orderBy(asc(importSuppliers.displayOrder));
     const payments = await db.select().from(importPayments).orderBy(asc(importPayments.id));
     return suppliers.map((supplier) => ({
       ...supplier,
@@ -562,11 +568,13 @@ export const importRouter = router({
         .orderBy(desc(importPos.id));
     }),
 
-  // Lista todos os fornecedores com contagem de POs
+  // Lista todos os fornecedores com contagem de POs (apenas contexto 'custo' ou 'both')
   getSuppliersWithPoCount: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) return [];
-    const suppliers = await db.select().from(importSuppliers).orderBy(asc(importSuppliers.displayOrder));
+    const suppliers = await db.select().from(importSuppliers)
+      .where(or(eq(importSuppliers.context, 'custo'), eq(importSuppliers.context, 'both')))
+      .orderBy(asc(importSuppliers.displayOrder));
     const pos = await db.select().from(importPos);
     return suppliers.map(s => ({
       ...s,

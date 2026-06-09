@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import PDFDocument from "pdfkit";
 import { getDb } from "./db";
 import { importSuppliers, importPayments } from "../drizzle/schema";
-import { asc } from "drizzle-orm";
+import { asc, eq, or } from "drizzle-orm";
 
 // Helper: format monetary value with currency symbol
 const formatMoney = (val: string | null | undefined, symbol: string, rate: number): string => {
@@ -30,7 +30,9 @@ export async function importPdfExportHandler(req: Request, res: Response) {
       return;
     }
 
-    const suppliers = await db.select().from(importSuppliers).orderBy(asc(importSuppliers.displayOrder));
+    const suppliers = await db.select().from(importSuppliers)
+      .where(or(eq(importSuppliers.context, 'pagamentos'), eq(importSuppliers.context, 'both')))
+      .orderBy(asc(importSuppliers.displayOrder));
     const payments = await db.select().from(importPayments).orderBy(asc(importPayments.id));
 
     // Group payments by supplier
