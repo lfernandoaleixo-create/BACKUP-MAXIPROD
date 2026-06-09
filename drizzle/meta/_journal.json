@@ -1016,6 +1016,13 @@
       "when": 1780926881552,
       "tag": "0144_motionless_black_bolt",
       "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "5",
+      "when": 1781004712321,
+      "tag": "0145_sharp_kid_colt",
+      "breakpoints": true
     }
   ]
 }

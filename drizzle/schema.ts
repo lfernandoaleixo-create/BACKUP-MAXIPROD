@@ -2494,6 +2494,7 @@ export const importPos = mysqlTable("import_pos", {
   avgDollarRate: decimal("avg_dollar_rate", { precision: 6, scale: 4 }),
   totalCiUsd: decimal("total_ci_usd", { precision: 12, scale: 2 }),
   pdfUrl: text("pdf_url"), // URL do PDF da Commercial Invoice (meia nota)
+  pdfNotaCheiaUrl: text("pdf_nota_cheia_url"), // URL do PDF da Nota Cheia
   // === LOGÍSTICA: Rota ===
   portoChegada: varchar("porto_chegada", { length: 100 }), // Santos, Itajaí, etc.
   cidadeDesembaraco: varchar("cidade_desembaraco", { length: 100 }), // Varginha, Pouso Alegre, etc.

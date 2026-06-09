@@ -4227,3 +4227,7 @@
 - [x] Preencher NCM 44219100 para todos os produtos das POs antigas que não têm NCM
 - [x] Preencher código do produto puxando do estoque para produtos das POs antigas
 - [x] Remover coluna "Impostos" da tabela de produtos das POs antigas (está vazia)
+- [x] Destacar ícone do documento PDF no card recolhido da PO (mais visível/colorido)
+- [x] Destacar ícone da lixeira no card recolhido da PO
+- [x] Adicionar texto "PO Meia Nota" acima do ícone de documento existente
+- [x] Preparar novo ícone de documento com texto "PO Nota Cheia" para quando os documentos forem enviados

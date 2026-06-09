@@ -2125,18 +2125,32 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="p-1 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  className="flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded border border-blue-200 transition-colors"
                   title="Ver PDF da Meia Nota"
                 >
-                  <FileText className="w-3.5 h-3.5" />
+                  <FileText className="w-4 h-4" />
+                  <span className="text-[8px] font-medium leading-none">PO Meia Nota</span>
+                </a>
+              )}
+              {po.pdfNotaCheiaUrl && (
+                <a
+                  href={po.pdfNotaCheiaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex flex-col items-center gap-0.5 px-2 py-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded border border-emerald-200 transition-colors"
+                  title="Ver PDF da Nota Cheia"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="text-[8px] font-medium leading-none">PO Nota Cheia</span>
                 </a>
               )}
               <button
                 onClick={(e) => { e.stopPropagation(); if (confirm(`Excluir PO "${po.poNumber}" e todos os seus produtos?`)) deletePoMut.mutate({ id: po.id }); }}
-                className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded border border-red-200 transition-colors"
                 title="Excluir PO"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
               {expandedPo === po.id ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
             </div>
