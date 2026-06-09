@@ -350,21 +350,62 @@ export const salesRouter = router({
         }))
         .sort((a, b) => a.month.localeCompare(b.month));
 
-      // By day
+      // By day - usar valorTotalPedido (distribuído proporcionalmente) para bater com o card totalValue
+      // Primeiro, agrupar itens por pedido+dia para calcular proporção
+      const pedidoDayMap = new Map<string, { day: string; pedido: string; cliente: string; somaItens: number; valorTotalPedido: number }>();
+      for (const item of items) {
+        if (!item.dataEmissao) continue;
+        const dayKey = item.dataEmissao.substring(0, 10);
+        const pedido = item.pedido || 'sem-pedido';
+        const key = `${pedido}__${dayKey}`;
+        const itemVal = Number(item.valorTotal || 0);
+        if (!pedidoDayMap.has(key)) {
+          pedidoDayMap.set(key, {
+            day: dayKey,
+            pedido,
+            cliente: item.clienteApelido || item.cliente || "—",
+            somaItens: itemVal,
+            valorTotalPedido: item.valorTotalPedido ? Number(item.valorTotalPedido) : 0,
+          });
+        } else {
+          const p = pedidoDayMap.get(key)!;
+          p.somaItens += itemVal;
+          if (!p.valorTotalPedido && item.valorTotalPedido) {
+            p.valorTotalPedido = Number(item.valorTotalPedido);
+          }
+        }
+      }
+
+      // Para cada pedido, calcular o valor real (valorTotalPedido ou soma bruta)
+      // e distribuir proporcionalmente entre os dias onde esse pedido aparece
+      const pedidoTotalReal = new Map<string, { valorReal: number; somaTotal: number }>();
+      for (const entry of Array.from(pedidoDayMap.values())) {
+        if (!pedidoTotalReal.has(entry.pedido)) {
+          const pm = pedidoMap.get(entry.pedido);
+          const valorReal = pm ? (pm.valorTotalPedido || pm.somaItensBruto) : entry.somaItens;
+          pedidoTotalReal.set(entry.pedido, { valorReal, somaTotal: pm ? pm.somaItensBruto : entry.somaItens });
+        }
+      }
+
       const dayMap = new Map<string, { value: number; orders: Set<string>; items: number; orderDetails: Map<string, { cliente: string; valor: number }> }>();
       for (const item of items) {
         if (!item.dataEmissao) continue;
-        const dayKey = item.dataEmissao.substring(0, 10); // YYYY-MM-DD
+        const dayKey = item.dataEmissao.substring(0, 10);
         if (!dayMap.has(dayKey)) dayMap.set(dayKey, { value: 0, orders: new Set(), items: 0, orderDetails: new Map() });
         const d = dayMap.get(dayKey)!;
-        d.value += Number(item.valorTotal || 0);
+        const pedido = item.pedido || 'sem-pedido';
+        const itemVal = Number(item.valorTotal || 0);
+        const ptr = pedidoTotalReal.get(pedido);
+        // Calcular valor proporcional do item usando valorTotalPedido
+        const valorProporcional = (ptr && ptr.somaTotal > 0) ? (itemVal / ptr.somaTotal) * ptr.valorReal : itemVal;
+        d.value += valorProporcional;
         if (item.pedido) {
           d.orders.add(item.pedido);
           const existing = d.orderDetails.get(item.pedido);
           if (existing) {
-            existing.valor += Number(item.valorTotal || 0);
+            existing.valor += valorProporcional;
           } else {
-            d.orderDetails.set(item.pedido, { cliente: item.clienteApelido || item.cliente || "—", valor: Number(item.valorTotal || 0) });
+            d.orderDetails.set(item.pedido, { cliente: item.clienteApelido || item.cliente || "—", valor: valorProporcional });
           }
         }
         d.items++;
