@@ -4242,3 +4242,4 @@
 - [x] Garantir que conversão dólar/real funciona nos Custos Logísticos & Informações (botão visível)
 - [x] Faturamento: adicionar filtro de status de coleta (Todos / Coletados / Não Coletados) baseado no checkbox "Coletado"
 - [x] Bug: filtros "Bonif. Import. Revenda" e "Bonif. Industrializados" estão invertidos na aba Faturamento (PALITO=revenda/bambu, VARETA/ESPETO=industrializado/madeira)
+- [x] Importação/Custo Mercadoria: adicionar ícone de documento "PO Nota Cheia" ao lado do campo Meia Nota na tabela de produtos
