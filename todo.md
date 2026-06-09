@@ -4236,3 +4236,5 @@
 - [x] Diferenciar cards de fornecedores por cor baseado na categoria (Bambu, Madeira, Máquinas)
 - [x] Conversor dólar/real deve funcionar no painel de Custos Logísticos (Pagamentos, Custos Adicionais, Total)
 - [x] Filtrar produtos das POs para mostrar apenas os preenchidos (com QTD CX ou dados relevantes)
+- [x] Editar nome do fornecedor na aba Custo da Mercadoria não deve alterar o nome na aba Importação (usar campo alias separado)
+- [x] Adicionar opção de reordenar os cards de fornecedores na aba Importação

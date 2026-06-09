@@ -1534,6 +1534,18 @@ function CustoPosView({ currency, exchangeRate }: { currency: "USD" | "BRL"; exc
   }
 
   const allSuppliers = suppliers || [];
+  const updateSupplierOrderMut = trpc.import.updateSupplier.useMutation({
+    onSuccess: () => { utils.import.getSuppliersWithPoCount.invalidate(); },
+  });
+
+  const moveSupplier = (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= allSuppliers.length) return;
+    const current = allSuppliers[index];
+    const target = allSuppliers[newIndex];
+    updateSupplierOrderMut.mutate({ id: current.id, displayOrder: target.displayOrder });
+    updateSupplierOrderMut.mutate({ id: target.id, displayOrder: current.displayOrder });
+  };
 
   return (
     <div>
@@ -1590,15 +1602,36 @@ function CustoPosView({ currency, exchangeRate }: { currency: "USD" | "BRL"; exc
       )}
       
       <div className="space-y-3">
-        {allSuppliers.map(supplier => (
-          <SupplierPoCard
-            key={supplier.id}
-            supplier={supplier}
-            isExpanded={expandedSupplier === supplier.id}
-            onToggle={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
-            currency={currency}
-            exchangeRate={exchangeRate}
-          />
+        {allSuppliers.map((supplier, idx) => (
+          <div key={supplier.id} className="flex items-start gap-1">
+            <div className="flex flex-col gap-0.5 pt-3">
+              <button
+                onClick={() => moveSupplier(idx, 'up')}
+                disabled={idx === 0}
+                className="p-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 disabled:cursor-not-allowed rounded hover:bg-blue-50 transition-colors"
+                title="Mover para cima"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => moveSupplier(idx, 'down')}
+                disabled={idx === allSuppliers.length - 1}
+                className="p-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 disabled:cursor-not-allowed rounded hover:bg-blue-50 transition-colors"
+                title="Mover para baixo"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="flex-1">
+              <SupplierPoCard
+                supplier={supplier}
+                isExpanded={expandedSupplier === supplier.id}
+                onToggle={() => setExpandedSupplier(expandedSupplier === supplier.id ? null : supplier.id)}
+                currency={currency}
+                exchangeRate={exchangeRate}
+              />
+            </div>
+          </div>
         ))}
         {allSuppliers.length === 0 && (
           <p className="text-center text-slate-400 text-sm py-8">Nenhum fornecedor cadastrado.</p>
@@ -1868,7 +1901,7 @@ function NcmTaxesSection() {
 }
 
 function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate }: {
-  supplier: { id: number; name: string; category: string | null; poCount: number };
+  supplier: { id: number; name: string; displayName: string | null; category: string | null; poCount: number };
   isExpanded: boolean;
   onToggle: () => void;
   currency: "USD" | "BRL";
@@ -1876,7 +1909,7 @@ function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate
 }) {
   const utils = trpc.useUtils();
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(supplier.name);
+  const [editName, setEditName] = useState(supplier.displayName || supplier.name);
   const deleteSupplierMut = trpc.import.deleteSupplier.useMutation({
     onSuccess: () => {
       utils.import.getSuppliersWithPoCount.invalidate();
@@ -1951,28 +1984,28 @@ function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && editName.trim()) {
-                      updateSupplierMut.mutate({ id: supplier.id, name: editName.trim().toUpperCase() });
+                      updateSupplierMut.mutate({ id: supplier.id, displayName: editName.trim().toUpperCase() });
                     } else if (e.key === 'Escape') {
                       setIsEditing(false);
-                      setEditName(supplier.name);
+                      setEditName(supplier.displayName || supplier.name);
                     }
                   }}
                 />
                 <button
-                  onClick={(e) => { e.stopPropagation(); if (editName.trim()) updateSupplierMut.mutate({ id: supplier.id, name: editName.trim().toUpperCase() }); }}
+                  onClick={(e) => { e.stopPropagation(); if (editName.trim()) updateSupplierMut.mutate({ id: supplier.id, displayName: editName.trim().toUpperCase() }); }}
                   className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded"
                 >
                   <Check className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setIsEditing(false); setEditName(supplier.name); }}
+                  onClick={(e) => { e.stopPropagation(); setIsEditing(false); setEditName(supplier.displayName || supplier.name); }}
                   className="p-0.5 text-red-500 hover:bg-red-50 rounded"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
-              <p className="font-semibold text-sm text-slate-800">{supplier.name}</p>
+              <p className="font-semibold text-sm text-slate-800">{supplier.displayName || supplier.name}</p>
             )}
             <div className="flex items-center gap-2 mt-0.5">
               {supplier.category && (
@@ -1988,7 +2021,7 @@ function SupplierPoCard({ supplier, isExpanded, onToggle, currency, exchangeRate
             {supplier.poCount}
           </div>
           <button
-            onClick={(e) => { e.stopPropagation(); setIsEditing(true); setEditName(supplier.name); }}
+            onClick={(e) => { e.stopPropagation(); setIsEditing(true); setEditName(supplier.displayName || supplier.name); }}
             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Editar nome"
           >

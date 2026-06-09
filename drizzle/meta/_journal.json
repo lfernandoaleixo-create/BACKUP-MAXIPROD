@@ -1023,6 +1023,13 @@
       "when": 1781004712321,
       "tag": "0145_sharp_kid_colt",
       "breakpoints": true
+    },
+    {
+      "idx": 146,
+      "version": "5",
+      "when": 1781007818549,
+      "tag": "0146_blushing_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

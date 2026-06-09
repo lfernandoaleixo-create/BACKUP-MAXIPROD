@@ -1,0 +1,1 @@
+ALTER TABLE `import_suppliers` ADD `display_name` varchar(200);

@@ -2347,6 +2347,7 @@ export type InsertPriceTableItem = typeof priceTableItems.$inferInsert;
 export const importSuppliers = mysqlTable("import_suppliers", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 200 }).notNull(), // ex: "BETTY", "WINNIE - HARBIN", "HANK - CARRY", "BANNY"
+  displayName: varchar("display_name", { length: 200 }), // Apelido usado na aba Custo da Mercadoria (não altera name original)
   category: varchar("category", { length: 100 }), // ex: "BAMBU", "MADEIRA", "MÁQUINAS"
   displayOrder: int("display_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

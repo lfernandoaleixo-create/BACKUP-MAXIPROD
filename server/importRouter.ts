@@ -38,6 +38,7 @@ export const importRouter = router({
     .input(z.object({
       id: z.number(),
       name: z.string().min(1).optional(),
+      displayName: z.string().optional(),
       category: z.string().optional(),
       displayOrder: z.number().optional(),
     }))
