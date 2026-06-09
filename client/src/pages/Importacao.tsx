@@ -2288,53 +2288,49 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
             <div className="flex items-center gap-2 sm:gap-3">
 
               {po.pdfUrl && (
-                <div className="relative group/meia" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded border border-blue-200 transition-colors cursor-pointer">
+                <div className="flex items-center gap-0.5 rounded border border-blue-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600">
                     <FileText className="w-4 h-4" />
                     <span className="text-[8px] font-medium leading-none">PO Meia Nota</span>
                   </div>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 hidden group-hover/meia:flex bg-white shadow-lg rounded-md border border-slate-200 z-50 overflow-hidden">
-                    <button
-                      onClick={() => { setPdfViewerUrl(po.pdfUrl!); setPdfViewerTitle(`Meia Nota - ${po.poNumber}`); }}
-                      className="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 whitespace-nowrap"
-                      title="Visualizar"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </button>
-                    <a
-                      href={po.pdfUrl}
-                      download={`Meia Nota - ${po.poNumber}.pdf`}
-                      className="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 whitespace-nowrap border-l border-slate-200"
-                      title="Baixar"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
+                  <button
+                    onClick={() => { setPdfViewerUrl(po.pdfUrl!); setPdfViewerTitle(`Meia Nota - ${po.poNumber}`); }}
+                    className="flex items-center px-1.5 py-1 text-blue-600 hover:bg-blue-50 border-l border-blue-200 h-full"
+                    title="Visualizar"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <a
+                    href={po.pdfUrl}
+                    download={`Meia Nota - ${po.poNumber}.pdf`}
+                    className="flex items-center px-1.5 py-1 text-blue-600 hover:bg-blue-50 border-l border-blue-200 h-full"
+                    title="Baixar"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
                 </div>
               )}
               {po.pdfNotaCheiaUrl && (
-                <div className="relative group/cheia" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex flex-col items-center gap-0.5 px-2 py-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded border border-emerald-200 transition-colors cursor-pointer">
+                <div className="flex items-center gap-0.5 rounded border border-emerald-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex flex-col items-center gap-0.5 px-2 py-1 text-emerald-600">
                     <FileText className="w-4 h-4" />
                     <span className="text-[8px] font-medium leading-none">PO Nota Cheia</span>
                   </div>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 hidden group-hover/cheia:flex bg-white shadow-lg rounded-md border border-slate-200 z-50 overflow-hidden">
-                    <button
-                      onClick={() => { setPdfViewerUrl(po.pdfNotaCheiaUrl!); setPdfViewerTitle(`Nota Cheia - ${po.poNumber}`); }}
-                      className="flex items-center gap-1.5 px-3 py-2 text-xs text-emerald-600 hover:bg-emerald-50 whitespace-nowrap"
-                      title="Visualizar"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </button>
-                    <a
-                      href={po.pdfNotaCheiaUrl}
-                      download={`Nota Cheia - ${po.poNumber}.pdf`}
-                      className="flex items-center gap-1.5 px-3 py-2 text-xs text-emerald-600 hover:bg-emerald-50 whitespace-nowrap border-l border-slate-200"
-                      title="Baixar"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
+                  <button
+                    onClick={() => { setPdfViewerUrl(po.pdfNotaCheiaUrl!); setPdfViewerTitle(`Nota Cheia - ${po.poNumber}`); }}
+                    className="flex items-center px-1.5 py-1 text-emerald-600 hover:bg-emerald-50 border-l border-emerald-200 h-full"
+                    title="Visualizar"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <a
+                    href={po.pdfNotaCheiaUrl}
+                    download={`Nota Cheia - ${po.poNumber}.pdf`}
+                    className="flex items-center px-1.5 py-1 text-emerald-600 hover:bg-emerald-50 border-l border-emerald-200 h-full"
+                    title="Baixar"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
                 </div>
               )}
               <button
