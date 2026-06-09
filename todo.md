@@ -4222,3 +4222,7 @@
 - [x] Corrigir gráfico byDay para usar valorTotalPedido (distribuído proporcionalmente) em vez de soma bruta de itens
 - [x] Ocultar valores monetários dos cards recolhidos das POs na aba Custo da Mercadoria
 - [x] Preencher dados de custos logísticos das POs existentes baseado na planilha PREÇOSPRODUTOSPORIMPORTAÇÃO.xlsx
+- [x] Remover botão "Ver" da coluna Impostos - mostrar valor calculado diretamente
+- [x] Preencher Incoterm como CIF para todos os produtos das POs já cadastradas
+- [x] Preencher NCM 44219100 para todos os produtos das POs antigas que não têm NCM
+- [x] Preencher código do produto puxando do estoque para produtos das POs antigas
