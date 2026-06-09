@@ -2807,7 +2807,7 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
           </tr>
         </thead>
         <tbody>
-          {(products || []).filter(p => p.quantidade || p.valorPoCheia || p.valorPoMenor || editingId === p.id).map((prod, idx) => (
+          {(products || []).filter(p => (p.quantidade && Number(p.quantidade) > 0) || editingId === p.id).map((prod, idx) => (
             <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
               <td className="px-3 py-2 text-slate-700 whitespace-nowrap" title={prod.description}>{prod.description}</td>
               <td className="px-3 py-2 text-center whitespace-nowrap relative">
@@ -2968,8 +2968,8 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
       {(products || []).length === 0 && (
         <p className="text-center text-slate-400 text-xs py-6">Nenhum produto nesta PO. Clique em "Adicionar Produto" para começar.</p>
       )}
-      {(products || []).length > 0 && (products || []).filter(p => p.quantidade || p.valorPoCheia || p.valorPoMenor).length === 0 && (
-        <p className="text-center text-slate-400 text-xs py-4">Nenhum produto preenchido nesta PO. ({(products || []).length} produtos cadastrados sem dados de quantidade/valor)</p>
+      {(products || []).length > 0 && (products || []).filter(p => p.quantidade && Number(p.quantidade) > 0).length === 0 && (
+        <p className="text-center text-slate-400 text-xs py-4">Nenhum produto preenchido nesta PO. ({(products || []).length} produtos cadastrados sem dados de QTD CX)</p>
       )}
     </div>
   );
