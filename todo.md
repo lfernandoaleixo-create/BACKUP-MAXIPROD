@@ -4220,3 +4220,5 @@
 - [x] Conversor USD/BRL converte todos os valores simultaneamente (cards recolhidos + tabela expandida)
 - [x] Incluir campos de custos logísticos (opcionais) no formulário de criação de nova PO
 - [x] Corrigir gráfico byDay para usar valorTotalPedido (distribuído proporcionalmente) em vez de soma bruta de itens
+- [x] Ocultar valores monetários dos cards recolhidos das POs na aba Custo da Mercadoria
+- [x] Preencher dados de custos logísticos das POs existentes baseado na planilha PREÇOSPRODUTOSPORIMPORTAÇÃO.xlsx

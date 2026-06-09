@@ -2118,14 +2118,6 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              {po.totalCustosImportacao && (
-                <span className="text-[10px] sm:text-xs text-slate-500 font-mono">
-                  {currency === "BRL" 
-                    ? `R$ ${Number(po.totalCustosImportacao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
-                    : `$ ${(Number(po.totalCustosImportacao) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  }
-                </span>
-              )}
 
               {po.pdfUrl && (
                 <a
