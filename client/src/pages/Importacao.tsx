@@ -2250,7 +2250,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
           </button>
           {expandedPo === po.id && (
             <div>
-              <PoLogisticsPanel po={po} />
+              <PoLogisticsPanel po={po} currency={currency} exchangeRate={exchangeRate} />
               <PoProductsTable poId={po.id} valorFator={po.valorFator ? Number(po.valorFator) : null} currency={currency} exchangeRate={exchangeRate} />
             </div>
           )}
@@ -2261,7 +2261,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate }: { supplierId: nu
 }
 
 // ===== PAINEL DE CUSTOS LOGÍSTICOS POR PO =====
-function PoLogisticsPanel({ po }: { po: any }) {
+function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "USD" | "BRL"; exchangeRate: number }) {
   const [isOpen, setIsOpen] = useState(false);
   const utils = trpc.useUtils();
   const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
@@ -2402,7 +2402,7 @@ function PoLogisticsPanel({ po }: { po: any }) {
           {/* PAGAMENTOS */}
           <div>
             <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Receipt className="w-3 h-3" /> Pagamentos Realizados (R$)
+              <Receipt className="w-3 h-3" /> Pagamentos Realizados {currency === "USD" ? "(USD)" : "(R$)"}
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div>
@@ -2431,7 +2431,7 @@ function PoLogisticsPanel({ po }: { po: any }) {
           {/* CUSTOS ADICIONAIS */}
           <div>
             <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Calculator className="w-3 h-3" /> Custos Adicionais (R$)
+              <Calculator className="w-3 h-3" /> Custos Adicionais {currency === "USD" ? "(USD)" : "(R$)"}
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div>
@@ -2461,7 +2461,10 @@ function PoLogisticsPanel({ po }: { po: any }) {
           <div className="flex items-center justify-between bg-white border border-indigo-200 rounded-lg px-3 py-2">
             <span className="text-xs font-semibold text-indigo-700">Total Custos Importação</span>
             <span className="text-sm font-bold font-mono text-indigo-800">
-              R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {currency === "USD" && exchangeRate > 0
+                ? `$ ${(totalCustos / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : `R$ ${totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              }
             </span>
           </div>
 
@@ -2771,7 +2774,7 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
           </tr>
         </thead>
         <tbody>
-          {(products || []).map((prod, idx) => (
+          {(products || []).filter(p => p.quantidade || p.valorPoCheia || p.valorPoMenor || editingId === p.id).map((prod, idx) => (
             <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
               <td className="px-3 py-2 text-slate-700 whitespace-nowrap" title={prod.description}>{prod.description}</td>
               <td className="px-3 py-2 text-center whitespace-nowrap relative">
@@ -2931,6 +2934,9 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
       </table>
       {(products || []).length === 0 && (
         <p className="text-center text-slate-400 text-xs py-6">Nenhum produto nesta PO. Clique em "Adicionar Produto" para começar.</p>
+      )}
+      {(products || []).length > 0 && (products || []).filter(p => p.quantidade || p.valorPoCheia || p.valorPoMenor).length === 0 && (
+        <p className="text-center text-slate-400 text-xs py-4">Nenhum produto preenchido nesta PO. ({(products || []).length} produtos cadastrados sem dados de quantidade/valor)</p>
       )}
     </div>
   );

@@ -4234,3 +4234,5 @@
 - [x] Adicionar opção de editar nome do fornecedor na lista de fornecedores
 - [x] Dar mais destaque visual ao número de POs na lista de fornecedores
 - [x] Diferenciar cards de fornecedores por cor baseado na categoria (Bambu, Madeira, Máquinas)
+- [x] Conversor dólar/real deve funcionar no painel de Custos Logísticos (Pagamentos, Custos Adicionais, Total)
+- [x] Filtrar produtos das POs para mostrar apenas os preenchidos (com QTD CX ou dados relevantes)
