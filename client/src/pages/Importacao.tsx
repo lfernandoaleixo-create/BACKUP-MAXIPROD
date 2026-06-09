@@ -2446,23 +2446,28 @@ function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div>
                 <label className="text-[10px] text-slate-500">1ª Remessa</label>
-                <input type="number" step="0.01" value={pag1} onChange={e => setPag1(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "USD" && exchangeRate > 0 ? `$ ${(Number(pag1 || 0) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(pag1 || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
+                <input type="hidden" value={pag1} />
               </div>
               <div>
                 <label className="text-[10px] text-slate-500">2ª Remessa</label>
-                <input type="number" step="0.01" value={pag2} onChange={e => setPag2(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "USD" && exchangeRate > 0 ? `$ ${(Number(pag2 || 0) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(pag2 || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500">3ª Remessa</label>
-                <input type="number" step="0.01" value={pag3} onChange={e => setPag3(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "USD" && exchangeRate > 0 ? `$ ${(Number(pag3 || 0) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(pag3 || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500">Taxas Remessa</label>
-                <input type="number" step="0.01" value={taxasRemessa} onChange={e => setTaxasRemessa(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "USD" && exchangeRate > 0 ? `$ ${(Number(taxasRemessa || 0) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(taxasRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
             </div>
           </div>
@@ -2475,23 +2480,27 @@ function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div>
                 <label className="text-[10px] text-slate-500">Despesas Liberação</label>
-                <input type="number" step="0.01" value={despLib} onChange={e => setDespLib(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "USD" && exchangeRate > 0 ? `$ ${(Number(despLib || 0) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(despLib || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500">Frete Terrestre</label>
-                <input type="number" step="0.01" value={freteTerr} onChange={e => setFreteTerr(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "USD" && exchangeRate > 0 ? `$ ${(Number(freteTerr || 0) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(freteTerr || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500">DIFAL</label>
-                <input type="number" step="0.01" value={difal} onChange={e => setDifal(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "USD" && exchangeRate > 0 ? `$ ${(Number(difal || 0) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(difal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500">Comissão do Silvério</label>
-                <input type="number" step="0.01" value={comSilverio} onChange={e => setComSilverio(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "USD" && exchangeRate > 0 ? `$ ${(Number(comSilverio || 0) / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(comSilverio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
             </div>
           </div>
@@ -2514,19 +2523,22 @@ function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div>
-                <label className="text-[10px] text-slate-500">Valor Total Produtos (USD)</label>
-                <input type="number" step="0.01" value={totalProdUsd} onChange={e => setTotalProdUsd(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <label className="text-[10px] text-slate-500">Valor Total Produtos {currency === "USD" ? "(USD)" : "(R$)"}</label>
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "BRL" && exchangeRate > 0 ? `R$ ${(Number(totalProdUsd || 0) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$ ${Number(totalProdUsd || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
               <div>
-                <label className="text-[10px] text-slate-500">Frete Marítimo CN/BR (USD)</label>
-                <input type="number" step="0.01" value={freteMaritimo} onChange={e => setFreteMaritimo(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <label className="text-[10px] text-slate-500">Frete Marítimo CN/BR {currency === "USD" ? "(USD)" : "(R$)"}</label>
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "BRL" && exchangeRate > 0 ? `R$ ${(Number(freteMaritimo || 0) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$ ${Number(freteMaritimo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
               <div>
-                <label className="text-[10px] text-slate-500">Total CI (USD)</label>
-                <input type="number" step="0.01" value={totalCi} onChange={e => setTotalCi(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.00" />
+                <label className="text-[10px] text-slate-500">Total CI {currency === "USD" ? "(USD)" : "(R$)"}</label>
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {currency === "BRL" && exchangeRate > 0 ? `R$ ${(Number(totalCi || 0) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$ ${Number(totalCi || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
               </div>
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-1.5">
                 <label className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
@@ -2542,18 +2554,21 @@ function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
               <div>
                 <label className="text-[10px] text-slate-500">Dólar 1ª Remessa</label>
-                <input type="number" step="0.0001" value={dolar1} onChange={e => setDolar1(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.0000" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {Number(dolar1 || 0).toFixed(4)}
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500">Dólar 2ª Remessa</label>
-                <input type="number" step="0.0001" value={dolar2} onChange={e => setDolar2(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.0000" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {Number(dolar2 || 0).toFixed(4)}
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500">Dólar 3ª Remessa</label>
-                <input type="number" step="0.0001" value={dolar3} onChange={e => setDolar3(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0.0000" />
+                <div className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white">
+                  {Number(dolar3 || 0).toFixed(4)}
+                </div>
               </div>
             </div>
           </div>
