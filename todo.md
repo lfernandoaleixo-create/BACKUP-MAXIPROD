@@ -4279,3 +4279,7 @@
 - [x] Custos Totais da Importação = Total Ordem + Total Frete + Despesas Liberação + Frete Terrestre + DIFAL + Comissão Silvério
 - [x] Conversor USD/BRL fixo no topo sempre visível
 - [x] Nomes completos sem abreviações em todas as colunas
+
+## Custo da Mercadoria: Porcentagem representatividade e Valor da Caixa (10/06/2026)
+- [x] Coluna: "Porcentagem que o produto representa no valor do total da ordem de pagamento" (Valor Ref / (Total Ordem + Total Frete))
+- [x] Coluna: "Valor da Caixa" = (Custos Totais × porcentagem / 100) / Quantidade de Caixas

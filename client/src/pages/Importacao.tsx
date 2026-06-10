@@ -3014,7 +3014,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-orange-200 bg-orange-50">Frete Calculado pelo Fornecedor</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-purple-200 bg-purple-50">Frete com Rateio Correto</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-emerald-200 bg-emerald-50">Valor de Referência</th>
-              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">% Representatividade</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-indigo-200 bg-indigo-50">Porcentagem que o Produto Representa no Valor do Total da Ordem de Pagamento</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-emerald-200 bg-emerald-50">Valor da Caixa</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">Ações</th>
             </tr>
           </thead>
@@ -3028,6 +3029,11 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               const valorRef = valorForn * qty;
               const percRep = totalValorReferencia > 0 ? valorRef / totalValorReferencia : 0;
               const freteRateioCorreto = percRep * totalFreteCalculado;
+              // Porcentagem que o produto representa no total (Ordem + Frete, sem frete terrestre)
+              const totalOrdemMaisFrete = totalValorReferencia + totalFreteCalculado;
+              const percProdutoNoTotal = totalOrdemMaisFrete > 0 ? (valorRef / totalOrdemMaisFrete) * 100 : 0;
+              // Valor da Caixa = (Custos Totais × porcentagem / 100) / Quantidade de Caixas
+              const valorDaCaixa = qty > 0 ? (custosTotais * (percProdutoNoTotal / 100)) / qty : 0;
 
               return (
                 <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
@@ -3188,10 +3194,16 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       {valorRef > 0 ? (currency === "USD" ? `$ ${valorRef.toFixed(2)}` : `R$ ${(valorRef * exchangeRate).toFixed(2)}`) : '—'}
                     </span>
                   </td>
-                  {/* % Representatividade */}
-                  <td className="px-2 py-2 text-center">
-                    <span className="font-mono text-slate-500">
-                      {percRep > 0 ? `${(percRep * 100).toFixed(2)}%` : '—'}
+                  {/* Porcentagem que o Produto Representa no Valor do Total da Ordem de Pagamento */}
+                  <td className="px-2 py-2 text-center bg-indigo-50/30">
+                    <span className="font-mono text-indigo-700 font-semibold">
+                      {percProdutoNoTotal > 0 ? `${percProdutoNoTotal.toFixed(2)}%` : '—'}
+                    </span>
+                  </td>
+                  {/* Valor da Caixa */}
+                  <td className="px-2 py-2 text-center bg-emerald-50/30">
+                    <span className="font-mono text-emerald-800 font-bold text-[11px]">
+                      {valorDaCaixa > 0 ? (currency === "USD" ? `$ ${valorDaCaixa.toFixed(2)}` : `R$ ${(valorDaCaixa * exchangeRate).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Ações */}
