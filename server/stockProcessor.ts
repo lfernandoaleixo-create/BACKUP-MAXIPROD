@@ -1082,20 +1082,30 @@ export async function processStockData(): Promise<void> {
     });
     if (eligibleItems.length < 2) continue;
     
-    // Encontrar o produto mãe: maior unidadesPorCaixa.
-    // Em caso de empate, preferir o item com estoque > 0.
+    // Encontrar o produto mãe:
+    // PRIORIDADE 1: Se há um item que é pai reconhecido no product_variants E tem estoque, ele é a mãe
+    // PRIORIDADE 2: Maior unidadesPorCaixa. Em caso de empate, preferir com estoque > 0.
     let mother: ProcessedItem | null = null;
-    let maxUpb = 0;
-    for (const item of eligibleItems) {
-      const upb = item.unidadesPorCaixa || 0;
-      if (upb > maxUpb || (upb === maxUpb && item.estoqueUn > (mother?.estoqueUn || 0))) {
-        maxUpb = upb;
-        mother = item;
+    
+    // Primeiro: procurar pai reconhecido no product_variants com estoque
+    const recognizedParent = eligibleItems.find(i => i.isParent && !i.isChild && i.estoqueUn > 0);
+    if (recognizedParent && recognizedParent.unidadesPorCaixa) {
+      mother = recognizedParent;
+    } else {
+      // Fallback: maior upb
+      let maxUpb = 0;
+      for (const item of eligibleItems) {
+        const upb = item.unidadesPorCaixa || 0;
+        if (upb > maxUpb || (upb === maxUpb && item.estoqueUn > (mother?.estoqueUn || 0))) {
+          maxUpb = upb;
+          mother = item;
+        }
       }
     }
     if (!mother || !mother.unidadesPorCaixa) continue;
     // Se a mãe selecionada tem 0 estoque mas há outro item com mesmo upb e estoque, trocar
     if (mother.estoqueUn === 0) {
+      const maxUpb = mother.unidadesPorCaixa;
       const altMother = eligibleItems.find(i => i !== mother && (i.unidadesPorCaixa || 0) === maxUpb && i.estoqueUn > 0);
       if (altMother) mother = altMother;
     }
