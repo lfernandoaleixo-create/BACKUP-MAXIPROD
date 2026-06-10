@@ -602,6 +602,7 @@ export const importRouter = router({
       valorPoCheia: z.string().optional(),
       valorPoMenor: z.string().optional(),
       valorUsd: z.string().optional(),
+      quantidade: z.number().nullable().optional(),
       freteMaritimo: z.string().optional(),
       freteTerrestre: z.string().optional(),
       incoterm: z.string().optional(),
@@ -616,6 +617,7 @@ export const importRouter = router({
       if (data.valorPoCheia !== undefined) updateData.valorPoCheia = data.valorPoCheia || null;
       if (data.valorPoMenor !== undefined) updateData.valorPoMenor = data.valorPoMenor || null;
       if (data.valorUsd !== undefined) updateData.valorUsd = data.valorUsd || null;
+      if (data.quantidade !== undefined) updateData.quantidade = data.quantidade;
       if (data.freteMaritimo !== undefined) updateData.freteMaritimo = data.freteMaritimo || null;
       if (data.freteTerrestre !== undefined) updateData.freteTerrestre = data.freteTerrestre || null;
       if (data.incoterm !== undefined) updateData.incoterm = data.incoterm || null;

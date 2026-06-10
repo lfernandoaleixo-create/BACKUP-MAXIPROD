@@ -2356,7 +2356,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
           {expandedPo === po.id && (
             <div>
               <PoLogisticsPanel po={po} currency={currency} exchangeRate={exchangeRate} />
-              <PoProductsTable poId={po.id} valorFator={po.valorFator ? Number(po.valorFator) : null} currency={currency} exchangeRate={exchangeRate} />
+              <PoProductsTable poId={po.id} po={po} valorFator={po.valorFator ? Number(po.valorFator) : null} currency={currency} exchangeRate={exchangeRate} />
             </div>
           )}
         </div>
@@ -2710,12 +2710,15 @@ function TaxDetailCard({ prod, onClose }: { prod: any; onClose: () => void }) {
   );
 }
 
-function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.50 }: { poId: number; valorFator: number | null; currency?: "USD" | "BRL"; exchangeRate?: number }) {
+function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate = 5.50 }: { poId: number; po: any; valorFator: number | null; currency?: "USD" | "BRL"; exchangeRate?: number }) {
   const { data: products, isLoading } = trpc.import.getPoProducts.useQuery({ poId });
   const { data: ncmListForProducts } = trpc.import.getNcmTaxes.useQuery();
   const utils = trpc.useUtils();
   const updateProduct = trpc.import.updatePoProduct.useMutation({
     onSuccess: () => utils.import.getPoProducts.invalidate({ poId }),
+  });
+  const updateLogistics = trpc.import.updatePoLogistics.useMutation({
+    onSuccess: () => { utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId }); toast.success('Custos salvos!'); },
   });
   const addProduct = trpc.import.addPoProduct.useMutation({
     onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); setShowAddProduct(false); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setAddCodeSearch(''); toast.success('Produto adicionado!'); },
@@ -2724,7 +2727,7 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
     onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); toast.success('Produto removido!'); },
   });
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; freteMaritimo?: string; freteTerrestre?: string; incoterm?: string }>({});
+  const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; valorUsd?: string; quantidade?: string; freteMaritimo?: string; freteTerrestre?: string; incoterm?: string }>({});
   const [editNcmDropdownId, setEditNcmDropdownId] = useState<number | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProductCode, setNewProductCode] = useState('');
@@ -2733,6 +2736,15 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
   const [newProductIncoterm, setNewProductIncoterm] = useState('');
   const [showNcmCard, setShowNcmCard] = useState(false);
   const [ncmSearchFilter, setNcmSearchFilter] = useState('');
+  
+  // Costs panel state
+  const [valorCi, setValorCi] = useState(po.totalCiRemessa || '');
+  const [pag1, setPag1] = useState(po.pagamento1Remessa || '');
+  const [pag2, setPag2] = useState(po.pagamento2Remessa || '');
+  const [pag3, setPag3] = useState(po.pagamento3Remessa || '');
+  const [freteTerrestreSP, setFreteTerrestreSP] = useState(po.freteTermestreRemessa || '');
+  const [difalVal, setDifalVal] = useState(po.difalValor || '');
+  const [comSilverio, setComSilverio] = useState(po.comissaoSilverio || '');
   
   // Product code search for ADD flow
   const [addCodeSearch, setAddCodeSearch] = useState('');
@@ -2761,6 +2773,8 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
       ncm: product.ncm || '',
       valorPoCheia: product.valorPoCheia || '',
       valorPoMenor: product.valorPoMenor || '',
+      valorUsd: product.valorUsd || '',
+      quantidade: product.quantidade ? String(product.quantidade) : '',
       freteMaritimo: product.freteMaritimo || '',
       freteTerrestre: product.freteTerrestre || '',
       incoterm: product.incoterm || '',
@@ -2771,7 +2785,8 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
 
   const saveEdit = async () => {
     if (!editingId) return;
-    await updateProduct.mutateAsync({ id: editingId, ...editValues });
+    const { quantidade, ...rest } = editValues;
+    await updateProduct.mutateAsync({ id: editingId, ...rest, quantidade: quantidade ? parseInt(quantidade) : null });
     setEditingId(null);
     setShowCodeDropdown(false);
   };
@@ -2780,6 +2795,51 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
     setEditValues({ ...editValues, productCode: code });
     setCodeSearch(code);
     setShowCodeDropdown(false);
+  };
+
+  // === CALCULATIONS ===
+  const filteredProducts = (products || []).filter(p => (p.quantidade && Number(p.quantidade) > 0) || editingId === p.id);
+  
+  // Total Frete Calculado pelo Fornecedor (soma de todos os fretes col5)
+  const totalFreteCalculado = filteredProducts.reduce((sum, prod) => {
+    const valorForn = Number(prod.valorUsd || 0);
+    const valorOrdem = Number(prod.valorPoCheia || 0);
+    const qty = Number(prod.quantidade || 0);
+    const diff = valorOrdem - valorForn;
+    return sum + (diff > 0 ? diff * qty : 0);
+  }, 0);
+
+  // Total Valor de Referência (soma col7 = valorFornecedor × qtd)
+  const totalValorReferencia = filteredProducts.reduce((sum, prod) => {
+    const valorForn = Number(prod.valorUsd || 0);
+    const qty = Number(prod.quantidade || 0);
+    return sum + (valorForn * qty);
+  }, 0);
+
+  // Despesas de Liberação - Valor Vilela (37% do valor da CI)
+  const despesasLiberacao = Number(valorCi || 0) * 0.37;
+
+  // Custos Totais da Importação
+  const custosTotais = totalValorReferencia + totalFreteCalculado + despesasLiberacao + Number(freteTerrestreSP || 0) + Number(difalVal || 0) + Number(comSilverio || 0);
+
+  // Remessa logic: 1ª = total - 2ª - 3ª
+  const totalOrdemPagamento = totalValorReferencia;
+  const remessa2 = Number(pag2 || 0);
+  const remessa3 = Number(pag3 || 0);
+  const remessa1Calculada = totalOrdemPagamento - remessa2 - remessa3;
+
+  const saveCosts = () => {
+    updateLogistics.mutate({
+      id: po.id,
+      totalCiRemessa: valorCi || null,
+      pagamento1Remessa: String(remessa1Calculada > 0 ? remessa1Calculada.toFixed(2) : pag1) || null,
+      pagamento2Remessa: pag2 || null,
+      pagamento3Remessa: pag3 || null,
+      freteTermestreRemessa: freteTerrestreSP || null,
+      difalValor: difalVal || null,
+      comissaoSilverio: comSilverio || null,
+      despesasLiberacaoRemessa: despesasLiberacao > 0 ? String(despesasLiberacao.toFixed(2)) : null,
+    });
   };
 
   return (
@@ -2938,216 +2998,409 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
           )}
         </div>
       )}
-      <table className="w-full text-[10px] border-collapse">
-        <thead>
-          <tr className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[9px]">
-            <th className="px-1.5 py-2 text-left font-medium">Descrição</th>
-            <th className="px-1 py-2 text-center font-medium">Cód</th>
-            <th className="px-1 py-2 text-center font-medium">NCM</th>
-            <th className="px-1 py-2 text-center font-medium">Frete</th>
-            <th className="px-1 py-2 text-center font-medium">Un/Cx</th>
-            <th className="px-1 py-2 text-center font-medium">Vlr Forn</th>
-            <th className="px-1 py-2 text-center font-medium">PO Cheia</th>
-            <th className="px-1 py-2 text-center font-medium">PO Meia</th>
-            <th className="px-1 py-2 text-center font-medium">Qtd</th>
-            <th className="px-1 py-2 text-center font-medium">Fr/Cx</th>
-            <th className="px-1 py-2 text-center font-medium">Fr Tot</th>
-            <th className="px-1 py-2 text-center font-medium">Vlr Ref</th>
-            <th className="px-1 py-2 text-center font-medium">%Rep</th>
-            <th className="px-1 py-2 text-center font-medium">Cx R$</th>
-            <th className="px-1 py-2 text-center font-medium">Mil/Un</th>
-            <th className="px-1 py-2 text-center font-medium">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(products || []).filter(p => (p.quantidade && Number(p.quantidade) > 0) || editingId === p.id).map((prod, idx) => (
-            <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
-              <td className="px-1.5 py-1.5 text-slate-700 max-w-[200px] truncate" title={prod.description}>{prod.description}</td>
-              <td className="px-1 py-1.5 text-center relative">
-                {editingId === prod.id ? (
-                  <div className="relative">
-                    <input
-                      className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
-                      value={codeSearch}
-                      onChange={e => { setCodeSearch(e.target.value); setEditValues({ ...editValues, productCode: e.target.value }); setShowCodeDropdown(true); }}
-                      onFocus={() => { if (codeSearch.length >= 2) setShowCodeDropdown(true); }}
-                      placeholder="Buscar..."
-                    />
-                    {showCodeDropdown && searchResults && searchResults.length > 0 && (
-                      <div className="absolute z-50 top-full left-0 mt-1 w-64 max-h-40 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
-                        {searchResults.map(item => (
-                          <button
-                            key={item.codigoItem}
-                            onClick={() => selectProduct(item.codigoItem, item.descricaoItem)}
-                            className="w-full text-left px-2 py-1.5 hover:bg-blue-50 text-[10px] border-b border-slate-50 last:border-0"
-                          >
-                            <span className="font-mono font-bold text-blue-600">{item.codigoItem}</span>
-                            <span className="ml-2 text-slate-600 truncate">{item.descricaoItem}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <span className={`font-mono ${prod.productCode ? 'text-blue-600' : 'text-slate-300'}`}>
-                    {prod.productCode || '—'}
-                  </span>
-                )}
-              </td>
-              <td className="px-1 py-1.5 text-center relative">
-                {editingId === prod.id ? (
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setEditNcmDropdownId(editNcmDropdownId === prod.id ? null : prod.id)}
-                      className={`w-24 text-center border rounded px-1 py-0.5 text-[10px] font-mono flex items-center justify-between ${
-                        editValues.ncm ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-blue-300 bg-white text-slate-500'
-                      }`}
-                    >
-                      <span className="truncate">{editValues.ncm || 'NCM...'}</span>
-                      <ChevronDown className="w-2.5 h-2.5 flex-shrink-0" />
-                    </button>
-                    {editNcmDropdownId === prod.id && (
-                      <div className="absolute z-50 top-full left-0 mt-1 w-64 bg-white border border-blue-200 rounded-lg shadow-xl p-2">
-                        <div className="max-h-36 overflow-y-auto space-y-0.5">
-                          {(ncmListForProducts || []).map(n => (
-                            <button
-                              key={n.id}
-                              onClick={() => { setEditValues({ ...editValues, ncm: n.ncm }); setEditNcmDropdownId(null); }}
-                              className={`w-full text-left px-2 py-1.5 rounded text-[10px] flex items-center gap-2 transition-colors hover:bg-blue-50 ${
-                                editValues.ncm === n.ncm ? 'bg-emerald-50 border border-emerald-300' : ''
-                              }`}
-                            >
-                              <span className="font-mono font-bold text-blue-700">{n.ncm}</span>
-                              {n.grupo && <span className="px-1 bg-amber-100 text-amber-700 rounded text-[8px] font-semibold">{n.grupo}</span>}
-                              <span className="text-slate-500 truncate flex-1 text-[9px]">{n.description || ''}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <span className={`font-mono ${prod.ncm ? 'text-emerald-600' : 'text-slate-300'}`}>
-                    {prod.ncm || '—'}
-                  </span>
-                )}
-              </td>
-              <td className="px-1 py-1.5 text-center">
-                {editingId === prod.id ? (
-                  <select
-                    className="w-14 text-center border border-blue-300 rounded px-0.5 py-0.5 text-[9px]"
-                    value={editValues.incoterm || ''}
-                    onChange={e => setEditValues({ ...editValues, incoterm: e.target.value })}
-                  >
-                    <option value="">—</option>
-                    <option value="EXW">EXW</option>
-                    <option value="FOB">FOB</option>
-                    <option value="CIF">CIF</option>
-                  </select>
-                ) : (
-                  <span className={`font-mono text-[9px] px-1 py-0.5 rounded ${prod.incoterm === 'CIF' ? 'bg-green-100 text-green-700' : prod.incoterm === 'FOB' ? 'bg-blue-100 text-blue-700' : prod.incoterm === 'EXW' ? 'bg-amber-100 text-amber-700' : 'text-slate-300'}`}>
-                    {prod.incoterm || '—'}
-                  </span>
-                )}
-              </td>
-              <td className="px-1 py-1.5 text-center text-slate-600 font-mono">{prod.unidCaixa || '—'}</td>
-              <td className="px-1 py-1.5 text-center text-slate-600 font-mono">
-                {prod.valorUsd ? (currency === "USD" ? `$${Number(prod.valorUsd).toFixed(2)}` : `R$ ${(Number(prod.valorUsd) * exchangeRate).toFixed(2)}`) : '—'}
-              </td>
-              <td className="px-1 py-1.5 text-center">
-                {editingId === prod.id ? (
-                  <input
-                    className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
-                    value={editValues.valorPoCheia || ''}
-                    onChange={e => setEditValues({ ...editValues, valorPoCheia: e.target.value })}
-                    placeholder="0.00"
-                  />
-                ) : (
-                  <span className="font-mono text-slate-600">
-                    {prod.valorPoCheia ? (currency === "USD" ? `$${Number(prod.valorPoCheia).toFixed(2)}` : `R$ ${(Number(prod.valorPoCheia) * exchangeRate).toFixed(2)}`) : '—'}
-                  </span>
-                )}
-              </td>
-              <td className="px-1 py-1.5 text-center">
-                {editingId === prod.id ? (
-                  <input
-                    className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
-                    value={editValues.valorPoMenor || ''}
-                    onChange={e => setEditValues({ ...editValues, valorPoMenor: e.target.value })}
-                    placeholder="0.00"
-                  />
-                ) : (
-                  <span className="font-mono text-slate-600">
-                    {prod.valorPoMenor ? (currency === "USD" ? `$${Number(prod.valorPoMenor).toFixed(2)}` : `R$ ${(Number(prod.valorPoMenor) * exchangeRate).toFixed(2)}`) : '—'}
-                  </span>
-                )}
-              </td>
-              <td className="px-1 py-1.5 text-center text-slate-600 font-mono">{prod.quantidade || '—'}</td>
-              <td className="px-1 py-1.5 text-center font-mono text-orange-600">
-                {(() => {
-                  const ci = Number(prod.valorPoCheia || 0);
-                  const val = Number(prod.valorUsd || 0);
-                  const freteCx = ci > 0 && val > 0 ? ci - val : 0;
-                  const rawVal = freteCx > 0 ? freteCx : (prod.totalFreightUsd && prod.quantidade ? Number(prod.totalFreightUsd) / Number(prod.quantidade) : 0);
-                  if (!rawVal) return '—';
-                  return currency === "USD" ? `$${rawVal.toFixed(2)}` : `R$ ${(rawVal * exchangeRate).toFixed(2)}`;
-                })()}
-              </td>
-              <td className="px-1 py-1.5 text-center font-mono text-orange-700 font-semibold">
-                {(() => {
-                  const ci = Number(prod.valorPoCheia || 0);
-                  const val = Number(prod.valorUsd || 0);
-                  const qty = Number(prod.quantidade || 0);
-                  const freteCx = ci > 0 && val > 0 ? ci - val : 0;
-                  const freteTotal = freteCx > 0 && qty > 0 ? freteCx * qty : 0;
-                  const rawVal = freteTotal > 0 ? freteTotal : (prod.totalFreightUsd ? Number(prod.totalFreightUsd) : 0);
-                  if (!rawVal) return '—';
-                  return currency === "USD" ? `$${rawVal.toFixed(2)}` : `R$ ${(rawVal * exchangeRate).toFixed(2)}`;
-                })()}
-              </td>
-              <td className="px-1 py-1.5 text-center font-mono text-slate-600">
-                {prod.valorReferencia ? (currency === "USD" ? `$${Number(prod.valorReferencia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `R$ ${(Number(prod.valorReferencia) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`) : '—'}
-              </td>
-              <td className="px-1 py-1.5 text-center font-mono text-slate-500">
-                {prod.percRepresentatividade ? `${(Number(prod.percRepresentatividade) * 100).toFixed(2)}%` : '—'}
-              </td>
-              <td className="px-1 py-1.5 text-center font-mono text-emerald-700 font-semibold">
-                {prod.valorCaixaBrl ? (currency === "BRL" ? `R$ ${Number(prod.valorCaixaBrl).toFixed(2)}` : `$${(Number(prod.valorCaixaBrl) / exchangeRate).toFixed(2)}`) : '—'}
-              </td>
-              <td className="px-1 py-1.5 text-center font-mono text-blue-700 font-medium">
-                {prod.precoMilUnid ? (currency === "BRL" ? `R$ ${Number(prod.precoMilUnid).toFixed(2)}` : `$${(Number(prod.precoMilUnid) / exchangeRate).toFixed(2)}`) : '—'}
-              </td>
-              <td className="px-1 py-1.5 text-center">
-                {editingId === prod.id ? (
-                  <div className="flex gap-1 justify-center">
-                    <button onClick={saveEdit} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded">
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => { setEditingId(null); setShowCodeDropdown(false); }} className="p-0.5 text-red-500 hover:bg-red-50 rounded">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex gap-1 justify-center">
-                    <button onClick={() => startEdit(prod)} className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded">
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => { if (confirm('Remover produto?')) deleteProduct.mutate({ id: prod.id }); }} className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-              </td>
+      {/* === TABELA DE PRODUTOS COM 7 COLUNAS === */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-[10px] border-collapse min-w-[900px]">
+          <thead>
+            <tr className="bg-gradient-to-r from-slate-100 to-blue-50 text-slate-600 text-[9px]">
+              <th className="px-2 py-2.5 text-left font-semibold border-b-2 border-slate-200">Produto</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">Código</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">NCM</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">Tipo Frete</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-blue-200 bg-blue-50">Valor Pago ao Fornecedor</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-blue-200 bg-blue-50">Valor Pago na Ordem de Pagamento</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-orange-200 bg-orange-50">Diferença</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">Quantidade de Caixas</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-orange-200 bg-orange-50">Frete Calculado pelo Fornecedor</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-purple-200 bg-purple-50">Frete com Rateio Correto</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-emerald-200 bg-emerald-50">Valor de Referência</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">% Representatividade</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">Ações</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredProducts.map((prod, idx) => {
+              const valorForn = Number(prod.valorUsd || 0);
+              const valorOrdem = Number(prod.valorPoCheia || 0);
+              const qty = Number(prod.quantidade || 0);
+              const diferenca = valorOrdem - valorForn;
+              const freteCalcFornecedor = diferenca > 0 && qty > 0 ? diferenca * qty : 0;
+              const valorRef = valorForn * qty;
+              const percRep = totalValorReferencia > 0 ? valorRef / totalValorReferencia : 0;
+              const freteRateioCorreto = percRep * totalFreteCalculado;
+
+              return (
+                <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
+                  <td className="px-2 py-2 text-slate-700 max-w-[180px] truncate font-medium" title={prod.description}>{prod.description}</td>
+                  <td className="px-2 py-2 text-center relative">
+                    {editingId === prod.id ? (
+                      <div className="relative">
+                        <input
+                          className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                          value={codeSearch}
+                          onChange={e => { setCodeSearch(e.target.value); setEditValues({ ...editValues, productCode: e.target.value }); setShowCodeDropdown(true); }}
+                          onFocus={() => { if (codeSearch.length >= 2) setShowCodeDropdown(true); }}
+                          placeholder="Buscar..."
+                        />
+                        {showCodeDropdown && searchResults && searchResults.length > 0 && (
+                          <div className="absolute z-50 top-full left-0 mt-1 w-64 max-h-40 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
+                            {searchResults.map(item => (
+                              <button
+                                key={item.codigoItem}
+                                onClick={() => selectProduct(item.codigoItem, item.descricaoItem)}
+                                className="w-full text-left px-2 py-1.5 hover:bg-blue-50 text-[10px] border-b border-slate-50 last:border-0"
+                              >
+                                <span className="font-mono font-bold text-blue-600">{item.codigoItem}</span>
+                                <span className="ml-2 text-slate-600 truncate">{item.descricaoItem}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={`font-mono ${prod.productCode ? 'text-blue-600 font-semibold' : 'text-slate-300'}`}>
+                        {prod.productCode || '—'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-2 py-2 text-center relative">
+                    {editingId === prod.id ? (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setEditNcmDropdownId(editNcmDropdownId === prod.id ? null : prod.id)}
+                          className={`w-24 text-center border rounded px-1 py-0.5 text-[10px] font-mono flex items-center justify-between ${
+                            editValues.ncm ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-blue-300 bg-white text-slate-500'
+                          }`}
+                        >
+                          <span className="truncate">{editValues.ncm || 'NCM...'}</span>
+                          <ChevronDown className="w-2.5 h-2.5 flex-shrink-0" />
+                        </button>
+                        {editNcmDropdownId === prod.id && (
+                          <div className="absolute z-50 top-full left-0 mt-1 w-64 bg-white border border-blue-200 rounded-lg shadow-xl p-2">
+                            <div className="max-h-36 overflow-y-auto space-y-0.5">
+                              {(ncmListForProducts || []).map(n => (
+                                <button
+                                  key={n.id}
+                                  onClick={() => { setEditValues({ ...editValues, ncm: n.ncm }); setEditNcmDropdownId(null); }}
+                                  className={`w-full text-left px-2 py-1.5 rounded text-[10px] flex items-center gap-2 transition-colors hover:bg-blue-50 ${
+                                    editValues.ncm === n.ncm ? 'bg-emerald-50 border border-emerald-300' : ''
+                                  }`}
+                                >
+                                  <span className="font-mono font-bold text-blue-700">{n.ncm}</span>
+                                  {n.grupo && <span className="px-1 bg-amber-100 text-amber-700 rounded text-[8px] font-semibold">{n.grupo}</span>}
+                                  <span className="text-slate-500 truncate flex-1 text-[9px]">{n.description || ''}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className={`font-mono ${prod.ncm ? 'text-emerald-600' : 'text-slate-300'}`}>
+                        {prod.ncm || '—'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-2 py-2 text-center">
+                    {editingId === prod.id ? (
+                      <select
+                        className="w-14 text-center border border-blue-300 rounded px-0.5 py-0.5 text-[9px]"
+                        value={editValues.incoterm || ''}
+                        onChange={e => setEditValues({ ...editValues, incoterm: e.target.value })}
+                      >
+                        <option value="">—</option>
+                        <option value="EXW">EXW</option>
+                        <option value="FOB">FOB</option>
+                        <option value="CIF">CIF</option>
+                      </select>
+                    ) : (
+                      <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded ${prod.incoterm === 'CIF' ? 'bg-green-100 text-green-700' : prod.incoterm === 'FOB' ? 'bg-blue-100 text-blue-700' : prod.incoterm === 'EXW' ? 'bg-amber-100 text-amber-700' : 'text-slate-300'}`}>
+                        {prod.incoterm || '—'}
+                      </span>
+                    )}
+                  </td>
+                  {/* Col 1: Valor Pago ao Fornecedor */}
+                  <td className="px-2 py-2 text-center bg-blue-50/30">
+                    {editingId === prod.id ? (
+                      <input
+                        className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                        value={editValues.valorUsd || ''}
+                        onChange={e => setEditValues({ ...editValues, valorUsd: e.target.value })}
+                        placeholder="0.00"
+                      />
+                    ) : (
+                      <span className="font-mono text-blue-700 font-semibold">
+                        {valorForn > 0 ? (currency === "USD" ? `$ ${valorForn.toFixed(2)}` : `R$ ${(valorForn * exchangeRate).toFixed(2)}`) : '—'}
+                      </span>
+                    )}
+                  </td>
+                  {/* Col 2: Valor Pago na Ordem de Pagamento */}
+                  <td className="px-2 py-2 text-center bg-blue-50/30">
+                    {editingId === prod.id ? (
+                      <input
+                        className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                        value={editValues.valorPoCheia || ''}
+                        onChange={e => setEditValues({ ...editValues, valorPoCheia: e.target.value })}
+                        placeholder="0.00"
+                      />
+                    ) : (
+                      <span className="font-mono text-blue-700">
+                        {valorOrdem > 0 ? (currency === "USD" ? `$ ${valorOrdem.toFixed(2)}` : `R$ ${(valorOrdem * exchangeRate).toFixed(2)}`) : '—'}
+                      </span>
+                    )}
+                  </td>
+                  {/* Col 3: Diferença (automático) */}
+                  <td className="px-2 py-2 text-center bg-orange-50/30">
+                    <span className={`font-mono font-medium ${diferenca > 0 ? 'text-orange-600' : diferenca < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                      {valorForn > 0 && valorOrdem > 0 ? (currency === "USD" ? `$ ${diferenca.toFixed(2)}` : `R$ ${(diferenca * exchangeRate).toFixed(2)}`) : '—'}
+                    </span>
+                  </td>
+                  {/* Col 4: Quantidade de Caixas */}
+                  <td className="px-2 py-2 text-center">
+                    {editingId === prod.id ? (
+                      <input
+                        className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                        value={editValues.quantidade || ''}
+                        onChange={e => setEditValues({ ...editValues, quantidade: e.target.value })}
+                        placeholder="0"
+                        type="number"
+                      />
+                    ) : (
+                      <span className="font-mono text-slate-700 font-semibold">{qty > 0 ? qty : '—'}</span>
+                    )}
+                  </td>
+                  {/* Col 5: Frete Calculado pelo Fornecedor */}
+                  <td className="px-2 py-2 text-center bg-orange-50/30">
+                    <span className="font-mono text-orange-700 font-semibold">
+                      {freteCalcFornecedor > 0 ? (currency === "USD" ? `$ ${freteCalcFornecedor.toFixed(2)}` : `R$ ${(freteCalcFornecedor * exchangeRate).toFixed(2)}`) : '—'}
+                    </span>
+                  </td>
+                  {/* Col 6: Frete com Rateio Correto */}
+                  <td className="px-2 py-2 text-center bg-purple-50/30">
+                    <span className="font-mono text-purple-700 font-medium">
+                      {freteRateioCorreto > 0 ? (currency === "USD" ? `$ ${freteRateioCorreto.toFixed(2)}` : `R$ ${(freteRateioCorreto * exchangeRate).toFixed(2)}`) : '—'}
+                    </span>
+                  </td>
+                  {/* Col 7: Valor de Referência */}
+                  <td className="px-2 py-2 text-center bg-emerald-50/30">
+                    <span className="font-mono text-emerald-700 font-semibold">
+                      {valorRef > 0 ? (currency === "USD" ? `$ ${valorRef.toFixed(2)}` : `R$ ${(valorRef * exchangeRate).toFixed(2)}`) : '—'}
+                    </span>
+                  </td>
+                  {/* % Representatividade */}
+                  <td className="px-2 py-2 text-center">
+                    <span className="font-mono text-slate-500">
+                      {percRep > 0 ? `${(percRep * 100).toFixed(2)}%` : '—'}
+                    </span>
+                  </td>
+                  {/* Ações */}
+                  <td className="px-2 py-2 text-center">
+                    {editingId === prod.id ? (
+                      <div className="flex gap-1 justify-center">
+                        <button onClick={saveEdit} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded">
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => { setEditingId(null); setShowCodeDropdown(false); }} className="p-0.5 text-red-500 hover:bg-red-50 rounded">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-1 justify-center">
+                        <button onClick={() => startEdit(prod)} className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => { if (confirm('Remover produto?')) deleteProduct.mutate({ id: prod.id }); }} className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
       {(products || []).length === 0 && (
         <p className="text-center text-slate-400 text-xs py-6">Nenhum produto nesta PO. Clique em "Adicionar Produto" para começar.</p>
       )}
-      {(products || []).length > 0 && (products || []).filter(p => p.quantidade && Number(p.quantidade) > 0).length === 0 && (
-        <p className="text-center text-slate-400 text-xs py-4">Nenhum produto preenchido nesta PO. ({(products || []).length} produtos cadastrados sem dados de QTD CX)</p>
+
+      {/* === TOTALIZADORES === */}
+      {filteredProducts.length > 0 && (
+        <div className="p-4 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50/30 space-y-4">
+          {/* Totais da Tabela */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-white border border-emerald-200 rounded-lg p-3">
+              <p className="text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">Valor Total da Ordem de Pagamento</p>
+              <p className="text-lg font-bold font-mono text-emerald-800">
+                {currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalValorReferencia * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              </p>
+              <p className="text-[9px] text-slate-500">Soma dos Valores de Referência</p>
+            </div>
+            <div className="bg-white border border-orange-200 rounded-lg p-3">
+              <p className="text-[10px] text-orange-600 font-semibold uppercase tracking-wider">Valor Total do Frete</p>
+              <p className="text-lg font-bold font-mono text-orange-800">
+                {currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              </p>
+              <p className="text-[9px] text-slate-500">Soma Frete Calculado pelo Fornecedor</p>
+            </div>
+            <div className="bg-white border border-indigo-200 rounded-lg p-3">
+              <p className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">Total Geral (Ordem + Frete)</p>
+              <p className="text-lg font-bold font-mono text-indigo-800">
+                {currency === "USD" ? `$ ${(totalValorReferencia + totalFreteCalculado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${((totalValorReferencia + totalFreteCalculado) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              </p>
+            </div>
+          </div>
+
+          {/* Remessas */}
+          <div className="bg-white border border-slate-200 rounded-lg p-3">
+            <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Receipt className="w-3 h-3" /> Remessas de Pagamento
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] text-slate-500 font-medium">1ª Remessa (valor total menos 2ª e 3ª)</label>
+                <div className="w-full border border-emerald-200 bg-emerald-50 rounded px-3 py-2 text-sm font-mono font-bold text-emerald-800">
+                  {currency === "USD" ? `$ ${(remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${((remessa1Calculada > 0 ? remessa1Calculada : totalOrdemPagamento) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500 font-medium">2ª Remessa</label>
+                <input
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
+                  placeholder="0.00"
+                  value={pag2}
+                  onChange={e => setPag2(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500 font-medium">3ª Remessa</label>
+                <input
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
+                  placeholder="0.00"
+                  value={pag3}
+                  onChange={e => setPag3(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* CI + Despesas + Frete Terrestre + DIFAL + Comissão */}
+          <div className="bg-white border border-slate-200 rounded-lg p-3">
+            <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Calculator className="w-3 h-3" /> Custos Adicionais da Importação
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] text-slate-500 font-medium">Valor da CI (Commercial Invoice)</label>
+                <input
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
+                  placeholder="0.00"
+                  value={valorCi}
+                  onChange={e => setValorCi(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500 font-medium">Despesas de Liberação - Valor Vilela (37% da CI)</label>
+                <div className="w-full border border-amber-200 bg-amber-50 rounded px-3 py-2 text-sm font-mono font-bold text-amber-800">
+                  {currency === "USD" ? `$ ${despesasLiberacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(despesasLiberacao * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500 font-medium">Frete Terrestre SP/MG</label>
+                <input
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
+                  placeholder="0.00"
+                  value={freteTerrestreSP}
+                  onChange={e => setFreteTerrestreSP(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500 font-medium">DIFAL</label>
+                <input
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
+                  placeholder="0.00"
+                  value={difalVal}
+                  onChange={e => setDifalVal(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500 font-medium">Comissão Silvério</label>
+                <input
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
+                  placeholder="0.00"
+                  value={comSilverio}
+                  onChange={e => setComSilverio(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* CUSTOS TOTAIS DA IMPORTAÇÃO */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-4 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-200">Custos Totais da Importação</p>
+                <p className="text-[9px] text-indigo-300 mt-0.5">Ordem de Pagamento + Frete + Despesas Liberação + Frete Terrestre + DIFAL + Comissão Silvério</p>
+              </div>
+              <p className="text-2xl font-bold font-mono">
+                {currency === "USD" ? `$ ${custosTotais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(custosTotais * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              </p>
+            </div>
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-6 gap-2 text-[9px]">
+              <div className="bg-white/10 rounded px-2 py-1">
+                <p className="text-indigo-200">Ordem Pgto</p>
+                <p className="font-mono font-semibold">{currency === "USD" ? `$${totalValorReferencia.toFixed(0)}` : `R$${(totalValorReferencia * exchangeRate).toFixed(0)}`}</p>
+              </div>
+              <div className="bg-white/10 rounded px-2 py-1">
+                <p className="text-indigo-200">Frete</p>
+                <p className="font-mono font-semibold">{currency === "USD" ? `$${totalFreteCalculado.toFixed(0)}` : `R$${(totalFreteCalculado * exchangeRate).toFixed(0)}`}</p>
+              </div>
+              <div className="bg-white/10 rounded px-2 py-1">
+                <p className="text-indigo-200">Desp. Lib.</p>
+                <p className="font-mono font-semibold">{currency === "USD" ? `$${despesasLiberacao.toFixed(0)}` : `R$${(despesasLiberacao * exchangeRate).toFixed(0)}`}</p>
+              </div>
+              <div className="bg-white/10 rounded px-2 py-1">
+                <p className="text-indigo-200">Frete SP/MG</p>
+                <p className="font-mono font-semibold">{currency === "USD" ? `$${Number(freteTerrestreSP || 0).toFixed(0)}` : `R$${(Number(freteTerrestreSP || 0) * exchangeRate).toFixed(0)}`}</p>
+              </div>
+              <div className="bg-white/10 rounded px-2 py-1">
+                <p className="text-indigo-200">DIFAL</p>
+                <p className="font-mono font-semibold">{currency === "USD" ? `$${Number(difalVal || 0).toFixed(0)}` : `R$${(Number(difalVal || 0) * exchangeRate).toFixed(0)}`}</p>
+              </div>
+              <div className="bg-white/10 rounded px-2 py-1">
+                <p className="text-indigo-200">Com. Silvério</p>
+                <p className="font-mono font-semibold">{currency === "USD" ? `$${Number(comSilverio || 0).toFixed(0)}` : `R$${(Number(comSilverio || 0) * exchangeRate).toFixed(0)}`}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Botão Salvar Custos */}
+          <div className="flex justify-end">
+            <button
+              onClick={saveCosts}
+              disabled={updateLogistics.isPending}
+              className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {updateLogistics.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              Salvar Custos
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

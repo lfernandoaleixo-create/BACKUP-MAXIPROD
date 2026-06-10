@@ -4258,3 +4258,24 @@
 - [x] Código do produto: ao digitar, puxa descrição automaticamente do estoque
 - [x] NCM: ao clicar, abre card expansivo para seleção visual (mostra grupo, código NCM e descrição)
 - [x] Tipo de Frete: seletor com os 3 tipos combinados (CIF, FOB, EXW)
+
+## Custo da Mercadoria: Nova estrutura de colunas e custos (10/06/2026)
+- [x] Coluna 1: "Valor Pago ao Fornecedor" (editável, por caixa USD)
+- [x] Coluna 2: "Valor Pago na Ordem de Pagamento" (editável, por caixa USD)
+- [x] Coluna 3: Diferença automática (col2 - col1)
+- [x] Coluna 4: Quantidade de Caixas (editável)
+- [x] Coluna 5: "Frete Calculado pelo Fornecedor" (diferença × qtd, automático)
+- [x] Coluna 6: "Frete com Rateio Correto" (% representatividade × frete total, automático)
+- [x] Coluna 7: "Valor de Referência" (col1 × qtd caixas, automático)
+- [x] Totalizador: "Valor Total da Ordem de Pagamento" (soma valores referência)
+- [x] Totalizador: "Valor Total do Frete" (soma frete calculado)
+- [x] Totalizador: Total Geral (ordem + frete)
+- [x] Remessas: 1ª Remessa (valor total default), 2ª e 3ª Remessa (em branco, abate da 1ª)
+- [x] Campo: Valor da CI (preenchido manualmente)
+- [x] Campo: "Despesas de Liberação - Valor Vilela" (37% do valor da CI, automático)
+- [x] Campo: Frete Terrestre SP/MG (editável)
+- [x] Campo: DIFAL (editável)
+- [x] Campo: "Comissão Silvério" (editável)
+- [x] Custos Totais da Importação = Total Ordem + Total Frete + Despesas Liberação + Frete Terrestre + DIFAL + Comissão Silvério
+- [x] Conversor USD/BRL fixo no topo sempre visível
+- [x] Nomes completos sem abreviações em todas as colunas
