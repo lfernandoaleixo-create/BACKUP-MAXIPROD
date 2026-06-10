@@ -4283,3 +4283,8 @@
 ## Custo da Mercadoria: Porcentagem representatividade e Valor da Caixa (10/06/2026)
 - [x] Coluna: "Porcentagem que o produto representa no valor do total da ordem de pagamento" (Valor Ref / (Total Ordem + Total Frete))
 - [x] Coluna: "Valor da Caixa" = (Custos Totais × porcentagem / 100) / Quantidade de Caixas
+
+## Bug Fix: Produto 00046 não aparece no estoque de importação (10/06/2026)
+- [x] Investigar por que 00046 não aparece (era marcado como isChild pelo e-commerce grouping)
+- [x] Corrigir lógica: itens que são pais no product_variants e têm estoque não devem ser engolidos como variação e-commerce
+- [x] Reprocessar dados e confirmar que 00046 agora aparece com isChild: false

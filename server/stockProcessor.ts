@@ -1108,6 +1108,9 @@ export async function processStockData(): Promise<void> {
     for (const child of eligibleItems) {
       if (child === mother) continue; // Pular o próprio mãe
       if (!child.unidadesPorCaixa) continue;
+      // PROTEÇÃO: Se o item é pai reconhecido no Sistema 1 (product_variants) e tem estoque,
+      // NÃO deve ser engolido como variação e-commerce (ex: 00046 é pai de 00047/00050)
+      if (child.isParent && !child.isChild && child.estoqueUn > 0) continue;
       // Variação = upb menor que mãe OU upb igual mas é filho reconhecido pelo Sistema 1 (isChild)
       const isVariantByUpb = child.unidadesPorCaixa < motherUpb;
       const isVariantByRelation = child.isChild && child.parentCode === mother.codigoItem;
