@@ -2291,10 +2291,10 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                 <div className="flex items-center gap-0.5 rounded border border-blue-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
                   <div className="flex flex-col items-center gap-0.5 px-2 py-1 text-blue-600">
                     <FileText className="w-4 h-4" />
-                    <span className="text-[8px] font-medium leading-none">PO Meia Nota</span>
+                    <span className="text-[8px] font-medium leading-none">CI</span>
                   </div>
                   <button
-                    onClick={() => { setPdfViewerUrl(po.pdfUrl!); setPdfViewerTitle(`Meia Nota - ${po.poNumber}`); }}
+                    onClick={() => { setPdfViewerUrl(po.pdfUrl!); setPdfViewerTitle(`CI - ${po.poNumber}`); }}
                     className="flex items-center px-1.5 py-1 text-blue-600 hover:bg-blue-50 border-l border-blue-200 h-full"
                     title="Visualizar"
                   >
@@ -2302,7 +2302,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                   </button>
                   <a
                     href={po.pdfUrl}
-                    download={`Meia Nota - ${po.poNumber}.pdf`}
+                    download={`CI - ${po.poNumber}.pdf`}
                     className="flex items-center px-1.5 py-1 text-blue-600 hover:bg-blue-50 border-l border-blue-200 h-full"
                     title="Baixar"
                   >
@@ -2314,10 +2314,10 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                 <div className="flex items-center gap-0.5 rounded border border-emerald-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
                   <div className="flex flex-col items-center gap-0.5 px-2 py-1 text-emerald-600">
                     <FileText className="w-4 h-4" />
-                    <span className="text-[8px] font-medium leading-none">PO Nota Cheia</span>
+                    <span className="text-[8px] font-medium leading-none">Ordem de Pagamento</span>
                   </div>
                   <button
-                    onClick={() => { setPdfViewerUrl(po.pdfNotaCheiaUrl!); setPdfViewerTitle(`Nota Cheia - ${po.poNumber}`); }}
+                    onClick={() => { setPdfViewerUrl(po.pdfNotaCheiaUrl!); setPdfViewerTitle(`Ordem de Pagamento - ${po.poNumber}`); }}
                     className="flex items-center px-1.5 py-1 text-emerald-600 hover:bg-emerald-50 border-l border-emerald-200 h-full"
                     title="Visualizar"
                   >
@@ -2325,7 +2325,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
                   </button>
                   <a
                     href={po.pdfNotaCheiaUrl}
-                    download={`Nota Cheia - ${po.poNumber}.pdf`}
+                    download={`Ordem de Pagamento - ${po.poNumber}.pdf`}
                     className="flex items-center px-1.5 py-1 text-emerald-600 hover:bg-emerald-50 border-l border-emerald-200 h-full"
                     title="Baixar"
                   >
