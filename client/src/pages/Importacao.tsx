@@ -1798,8 +1798,8 @@ function NcmTaxesSection() {
 
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ ncm: '', description: '', iiRate: '', ipiRate: '', pisRate: '2.10', cofinsRate: '9.65' });
-  const resetForm = () => setForm({ ncm: '', description: '', iiRate: '', ipiRate: '', pisRate: '2.10', cofinsRate: '9.65' });
+  const [form, setForm] = useState({ ncm: '', description: '', grupo: '', iiRate: '', ipiRate: '', pisRate: '2.10', cofinsRate: '9.65' });
+  const resetForm = () => setForm({ ncm: '', description: '', grupo: '', iiRate: '', ipiRate: '', pisRate: '2.10', cofinsRate: '9.65' });
 
   if (isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>;
 
@@ -1826,7 +1826,7 @@ function NcmTaxesSection() {
       {showAdd && (
         <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
           <p className="text-xs font-medium text-amber-800 mb-2">Novo NCM</p>
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-7 gap-2">
             <div>
               <label className="text-[10px] text-slate-500">NCM</label>
               <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono" placeholder="0000.00.00" value={form.ncm} onChange={e => setForm({ ...form, ncm: e.target.value })} />
@@ -1834,6 +1834,10 @@ function NcmTaxesSection() {
             <div className="col-span-2">
               <label className="text-[10px] text-slate-500">Descrição</label>
               <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Descrição do produto" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-[10px] text-slate-500">Grupo</label>
+              <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs" placeholder="Ex: Bambu" value={form.grupo} onChange={e => setForm({ ...form, grupo: e.target.value })} />
             </div>
             <div>
               <label className="text-[10px] text-slate-500">II (%)</label>
@@ -1847,7 +1851,7 @@ function NcmTaxesSection() {
               <button
                 onClick={() => {
                   if (!form.ncm.trim() || !form.iiRate || !form.ipiRate) return toast.error('NCM, II e IPI obrigatórios');
-                  createNcm.mutate({ ncm: form.ncm.trim(), description: form.description.trim() || undefined, iiRate: form.iiRate, ipiRate: form.ipiRate, pisRate: form.pisRate, cofinsRate: form.cofinsRate });
+                  createNcm.mutate({ ncm: form.ncm.trim(), description: form.description.trim() || undefined, grupo: form.grupo.trim() || undefined, iiRate: form.iiRate, ipiRate: form.ipiRate, pisRate: form.pisRate, cofinsRate: form.cofinsRate });
                 }}
                 className="px-3 py-1.5 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700"
               >
@@ -1856,8 +1860,8 @@ function NcmTaxesSection() {
               <button onClick={() => setShowAdd(false)} className="p-1.5 text-slate-500 hover:text-red-500"><X className="w-4 h-4" /></button>
             </div>
           </div>
-          <div className="grid grid-cols-6 gap-2 mt-2">
-            <div className="col-start-4">
+          <div className="grid grid-cols-7 gap-2 mt-2">
+            <div className="col-start-5">
               <label className="text-[10px] text-slate-500">PIS (%)</label>
               <input className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs text-center" value={form.pisRate} onChange={e => setForm({ ...form, pisRate: e.target.value })} />
             </div>
@@ -1875,6 +1879,7 @@ function NcmTaxesSection() {
             <tr className="bg-slate-50 text-slate-500">
               <th className="px-3 py-2 text-left font-medium">NCM</th>
               <th className="px-3 py-2 text-left font-medium">Descrição</th>
+              <th className="px-3 py-2 text-left font-medium">Grupo</th>
               <th className="px-3 py-2 text-center font-medium">II (%)</th>
               <th className="px-3 py-2 text-center font-medium">IPI (%)</th>
               <th className="px-3 py-2 text-center font-medium">PIS (%)</th>
@@ -1884,7 +1889,7 @@ function NcmTaxesSection() {
           </thead>
           <tbody>
             {(ncmList || []).length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-400">Nenhum NCM cadastrado. Clique em "Novo NCM" para adicionar.</td></tr>
+              <tr><td colSpan={8} className="px-3 py-6 text-center text-slate-400">Nenhum NCM cadastrado. Clique em "Novo NCM" para adicionar.</td></tr>
             )}
             {(ncmList || []).map((ncm, idx) => (
               <tr key={ncm.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
@@ -1897,6 +1902,11 @@ function NcmTaxesSection() {
                   {editingId === ncm.id ? (
                     <input className="w-full border border-blue-300 rounded px-1 py-0.5 text-xs" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
                   ) : (ncm.description || '—')}
+                </td>
+                <td className="px-3 py-2 text-slate-600">
+                  {editingId === ncm.id ? (
+                    <input className="w-full border border-blue-300 rounded px-1 py-0.5 text-xs" value={form.grupo} onChange={e => setForm({ ...form, grupo: e.target.value })} />
+                  ) : (ncm.grupo || '—')}
                 </td>
                 <td className="px-3 py-2 text-center font-mono text-red-600 font-medium">
                   {editingId === ncm.id ? (
@@ -1921,12 +1931,12 @@ function NcmTaxesSection() {
                 <td className="px-3 py-2 text-center">
                   {editingId === ncm.id ? (
                     <div className="flex gap-1 justify-center">
-                      <button onClick={() => { updateNcm.mutate({ id: ncm.id, ...form }); }} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded"><Check className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => { updateNcm.mutate({ id: ncm.id, ncm: form.ncm, description: form.description, grupo: form.grupo, iiRate: form.iiRate, ipiRate: form.ipiRate, pisRate: form.pisRate, cofinsRate: form.cofinsRate }); }} className="p-0.5 text-emerald-600 hover:bg-emerald-50 rounded"><Check className="w-3.5 h-3.5" /></button>
                       <button onClick={() => setEditingId(null)} className="p-0.5 text-red-500 hover:bg-red-50 rounded"><X className="w-3.5 h-3.5" /></button>
                     </div>
                   ) : (
                     <div className="flex gap-1 justify-center">
-                      <button onClick={() => { setEditingId(ncm.id); setForm({ ncm: ncm.ncm, description: ncm.description || '', iiRate: String(ncm.iiRate), ipiRate: String(ncm.ipiRate), pisRate: String(ncm.pisRate), cofinsRate: String(ncm.cofinsRate) }); }} className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => { setEditingId(ncm.id); setForm({ ncm: ncm.ncm, description: ncm.description || '', grupo: ncm.grupo || '', iiRate: String(ncm.iiRate), ipiRate: String(ncm.ipiRate), pisRate: String(ncm.pisRate), cofinsRate: String(ncm.cofinsRate) }); }} className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Pencil className="w-3.5 h-3.5" /></button>
                       <button onClick={() => { if (confirm('Remover NCM?')) deleteNcm.mutate({ id: ncm.id }); }} className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   )}
@@ -2702,6 +2712,7 @@ function TaxDetailCard({ prod, onClose }: { prod: any; onClose: () => void }) {
 
 function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.50 }: { poId: number; valorFator: number | null; currency?: "USD" | "BRL"; exchangeRate?: number }) {
   const { data: products, isLoading } = trpc.import.getPoProducts.useQuery({ poId });
+  const { data: ncmListForProducts } = trpc.import.getNcmTaxes.useQuery();
   const utils = trpc.useUtils();
   const updateProduct = trpc.import.updatePoProduct.useMutation({
     onSuccess: () => utils.import.getPoProducts.invalidate({ poId }),
@@ -2826,15 +2837,21 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                 readOnly={!!newProductCode}
               />
             </div>
-            {/* Step 3: NCM */}
-            <div className="w-32">
+            {/* Step 3: NCM Selector */}
+            <div className="w-48">
               <label className="text-[10px] text-slate-500 font-medium">3. NCM</label>
-              <input
-                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono"
-                placeholder="0000.00.00"
+              <select
+                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white"
                 value={newProductNcm}
                 onChange={e => setNewProductNcm(e.target.value)}
-              />
+              >
+                <option value="">Selecione NCM...</option>
+                {(ncmListForProducts || []).map(n => (
+                  <option key={n.id} value={n.ncm}>
+                    {n.ncm} {n.grupo ? `(${n.grupo})` : ''} {n.description ? `- ${n.description}` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
             {/* Step 4: Incoterm */}
             <div className="w-28">
@@ -2920,12 +2937,16 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
               </td>
               <td className="px-1 py-1.5 text-center">
                 {editingId === prod.id ? (
-                  <input
-                    className="w-18 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                  <select
+                    className="w-24 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px] bg-white"
                     value={editValues.ncm || ''}
                     onChange={e => setEditValues({ ...editValues, ncm: e.target.value })}
-                    placeholder="0000.00.00"
-                  />
+                  >
+                    <option value="">Selecione...</option>
+                    {(ncmListForProducts || []).map(n => (
+                      <option key={n.id} value={n.ncm}>{n.ncm}</option>
+                    ))}
+                  </select>
                 ) : (
                   <span className={`font-mono ${prod.ncm ? 'text-emerald-600' : 'text-slate-300'}`}>
                     {prod.ncm || '—'}

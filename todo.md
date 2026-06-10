@@ -4249,3 +4249,7 @@
 - [x] Alinhar botões Rastrear um embaixo do outro com tamanho uniforme nas POs do Estoque
 - [x] Corrigir nome do fornecedor da PO 01PH202603 (fallback para nome do supplier da Importação quando Maxiprod retorna vazio)
 - [x] Importação/Custo Mercadoria: verificar e puxar dados de produtos faltantes da planilha para POs que têm informações completas
+- [x] Cadastro de NCMs na aba Configurações (Custo da Mercadoria) - tabela no banco (com campo grupo)
+- [x] Endpoints tRPC para CRUD de NCMs (listar, criar, editar, excluir) com campo grupo
+- [x] Interface de gerenciamento de NCMs na aba Configurações (tabela 7 colunas com grupo)
+- [x] Seletor de NCM ao cadastrar/editar produtos em POs (dropdown mostra NCMs cadastrados com grupo e descrição)

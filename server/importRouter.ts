@@ -816,6 +816,7 @@ export const importRouter = router({
     .input(z.object({
       ncm: z.string().min(1),
       description: z.string().optional(),
+      grupo: z.string().optional(),
       iiRate: z.string(),
       ipiRate: z.string(),
       pisRate: z.string().optional(),
@@ -827,6 +828,7 @@ export const importRouter = router({
       const [result] = await db.insert(importNcmTaxes).values({
         ncm: input.ncm,
         description: input.description || null,
+        grupo: input.grupo || null,
         iiRate: input.iiRate,
         ipiRate: input.ipiRate,
         pisRate: input.pisRate || "2.10",
@@ -840,6 +842,7 @@ export const importRouter = router({
       id: z.number(),
       ncm: z.string().optional(),
       description: z.string().optional(),
+      grupo: z.string().optional(),
       iiRate: z.string().optional(),
       ipiRate: z.string().optional(),
       pisRate: z.string().optional(),
@@ -852,6 +855,7 @@ export const importRouter = router({
       const updateData: Record<string, any> = {};
       if (data.ncm !== undefined) updateData.ncm = data.ncm;
       if (data.description !== undefined) updateData.description = data.description;
+      if (data.grupo !== undefined) updateData.grupo = data.grupo;
       if (data.iiRate !== undefined) updateData.iiRate = data.iiRate;
       if (data.ipiRate !== undefined) updateData.ipiRate = data.ipiRate;
       if (data.pisRate !== undefined) updateData.pisRate = data.pisRate;

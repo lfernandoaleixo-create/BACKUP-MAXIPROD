@@ -2578,6 +2578,7 @@ export const importNcmTaxes = mysqlTable("import_ncm_taxes", {
   id: int("id").autoincrement().primaryKey(),
   ncm: varchar("ncm", { length: 15 }).notNull(),
   description: varchar("description", { length: 200 }),
+  grupo: varchar("grupo", { length: 100 }),
   iiRate: decimal("ii_rate", { precision: 5, scale: 2 }).notNull().default("0"),
   ipiRate: decimal("ipi_rate", { precision: 5, scale: 2 }).notNull().default("0"),
   pisRate: decimal("pis_rate", { precision: 5, scale: 2 }).notNull().default("2.10"),
