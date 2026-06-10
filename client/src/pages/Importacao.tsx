@@ -2798,7 +2798,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   };
 
   // === CALCULATIONS ===
-  const filteredProducts = (products || []).filter(p => (p.quantidade && Number(p.quantidade) > 0) || editingId === p.id);
+  const filteredProducts = products || [];
   
   // Total Frete Calculado pelo Fornecedor (soma de todos os fretes col5)
   const totalFreteCalculado = filteredProducts.reduce((sum, prod) => {
