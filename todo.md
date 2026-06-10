@@ -4253,3 +4253,8 @@
 - [x] Endpoints tRPC para CRUD de NCMs (listar, criar, editar, excluir) com campo grupo
 - [x] Interface de gerenciamento de NCMs na aba Configurações (tabela 7 colunas com grupo)
 - [x] Seletor de NCM ao cadastrar/editar produtos em POs (dropdown mostra NCMs cadastrados com grupo e descrição)
+
+## Custo da Mercadoria: Reformular fluxo de cadastro de produto em PO (10/06/2026)
+- [x] Código do produto: ao digitar, puxa descrição automaticamente do estoque
+- [x] NCM: ao clicar, abre card expansivo para seleção visual (mostra grupo, código NCM e descrição)
+- [x] Tipo de Frete: seletor com os 3 tipos combinados (CIF, FOB, EXW)

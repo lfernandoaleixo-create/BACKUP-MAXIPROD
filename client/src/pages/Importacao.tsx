@@ -2725,12 +2725,14 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; freteMaritimo?: string; freteTerrestre?: string; incoterm?: string }>({});
-  const [taxDetailId, setTaxDetailId] = useState<number | null>(null);
+  const [editNcmDropdownId, setEditNcmDropdownId] = useState<number | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProductCode, setNewProductCode] = useState('');
   const [newProductDesc, setNewProductDesc] = useState('');
   const [newProductNcm, setNewProductNcm] = useState('');
   const [newProductIncoterm, setNewProductIncoterm] = useState('');
+  const [showNcmCard, setShowNcmCard] = useState(false);
+  const [ncmSearchFilter, setNcmSearchFilter] = useState('');
   
   // Product code search for ADD flow
   const [addCodeSearch, setAddCodeSearch] = useState('');
@@ -2837,21 +2839,19 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                 readOnly={!!newProductCode}
               />
             </div>
-            {/* Step 3: NCM Selector */}
-            <div className="w-48">
+            {/* Step 3: NCM Selector - Card Expansivo */}
+            <div className="w-48 relative">
               <label className="text-[10px] text-slate-500 font-medium">3. NCM</label>
-              <select
-                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono bg-white"
-                value={newProductNcm}
-                onChange={e => setNewProductNcm(e.target.value)}
+              <button
+                type="button"
+                onClick={() => { setShowNcmCard(!showNcmCard); setNcmSearchFilter(''); }}
+                className={`w-full border rounded px-2 py-1.5 text-xs font-mono text-left flex items-center justify-between gap-1 transition-colors ${
+                  newProductNcm ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-500'
+                }`}
               >
-                <option value="">Selecione NCM...</option>
-                {(ncmListForProducts || []).map(n => (
-                  <option key={n.id} value={n.ncm}>
-                    {n.ncm} {n.grupo ? `(${n.grupo})` : ''} {n.description ? `- ${n.description}` : ''}
-                  </option>
-                ))}
-              </select>
+                <span className="truncate">{newProductNcm || 'Selecione NCM...'}</span>
+                <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${showNcmCard ? 'rotate-180' : ''}`} />
+              </button>
             </div>
             {/* Step 4: Incoterm */}
             <div className="w-28">
@@ -2872,8 +2872,67 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
               onClick={() => { if (!newProductDesc.trim()) { toast.error('Selecione um produto pelo código'); return; } addProduct.mutate({ poId, description: newProductDesc.trim(), productCode: newProductCode || undefined, ncm: newProductNcm || undefined, incoterm: newProductIncoterm || undefined }); }}
               className="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 whitespace-nowrap"
             >Adicionar</button>
-            <button onClick={() => { setShowAddProduct(false); setAddCodeSearch(''); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setNewProductIncoterm(''); }} className="p-1 text-slate-500 hover:text-red-500"><X className="w-4 h-4" /></button>
+            <button onClick={() => { setShowAddProduct(false); setAddCodeSearch(''); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setNewProductIncoterm(''); setShowNcmCard(false); setNcmSearchFilter(''); }} className="p-1 text-slate-500 hover:text-red-500"><X className="w-4 h-4" /></button>
           </div>
+          {/* NCM Card Expansivo */}
+          {showNcmCard && (
+            <div className="mt-2 bg-white border border-blue-200 rounded-lg shadow-lg p-3 animate-in slide-in-from-top-2">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                  <FileText className="w-3.5 h-3.5 text-blue-500" />
+                  Selecionar NCM
+                </h4>
+                <button onClick={() => setShowNcmCard(false)} className="p-0.5 text-slate-400 hover:text-red-500">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <input
+                className="w-full border border-slate-200 rounded px-2 py-1.5 text-xs mb-2 placeholder:text-slate-400"
+                placeholder="Buscar por código, grupo ou descrição..."
+                value={ncmSearchFilter}
+                onChange={e => setNcmSearchFilter(e.target.value)}
+                autoFocus
+              />
+              <div className="max-h-48 overflow-y-auto space-y-1">
+                {(ncmListForProducts || [])
+                  .filter(n => {
+                    if (!ncmSearchFilter) return true;
+                    const q = ncmSearchFilter.toLowerCase();
+                    return n.ncm.toLowerCase().includes(q) || (n.grupo || '').toLowerCase().includes(q) || (n.description || '').toLowerCase().includes(q);
+                  })
+                  .map(n => (
+                    <button
+                      key={n.id}
+                      onClick={() => { setNewProductNcm(n.ncm); setShowNcmCard(false); }}
+                      className={`w-full text-left px-3 py-2 rounded-md border transition-all hover:border-blue-300 hover:bg-blue-50 flex items-center gap-3 ${
+                        newProductNcm === n.ncm ? 'border-emerald-400 bg-emerald-50' : 'border-slate-100 bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex-shrink-0">
+                        <span className="font-mono font-bold text-[11px] text-blue-700">{n.ncm}</span>
+                      </div>
+                      {n.grupo && (
+                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[9px] font-semibold flex-shrink-0">
+                          {n.grupo}
+                        </span>
+                      )}
+                      <span className="text-[10px] text-slate-600 truncate flex-1">{n.description || '—'}</span>
+                      {newProductNcm === n.ncm && (
+                        <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                      )}
+                    </button>
+                  ))
+                }
+                {(ncmListForProducts || []).filter(n => {
+                  if (!ncmSearchFilter) return true;
+                  const q = ncmSearchFilter.toLowerCase();
+                  return n.ncm.toLowerCase().includes(q) || (n.grupo || '').toLowerCase().includes(q) || (n.description || '').toLowerCase().includes(q);
+                }).length === 0 && (
+                  <p className="text-center text-[10px] text-slate-400 py-3">Nenhum NCM encontrado. Cadastre em Configurações.</p>
+                )}
+              </div>
+            </div>
+          )}
           {newProductCode && (
             <p className="mt-1.5 text-[10px] text-emerald-700">✓ Produto selecionado: <span className="font-mono font-bold">{newProductCode}</span> — {newProductDesc}</p>
           )}
@@ -2935,18 +2994,39 @@ function PoProductsTable({ poId, valorFator, currency = "USD", exchangeRate = 5.
                   </span>
                 )}
               </td>
-              <td className="px-1 py-1.5 text-center">
+              <td className="px-1 py-1.5 text-center relative">
                 {editingId === prod.id ? (
-                  <select
-                    className="w-24 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px] bg-white"
-                    value={editValues.ncm || ''}
-                    onChange={e => setEditValues({ ...editValues, ncm: e.target.value })}
-                  >
-                    <option value="">Selecione...</option>
-                    {(ncmListForProducts || []).map(n => (
-                      <option key={n.id} value={n.ncm}>{n.ncm}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setEditNcmDropdownId(editNcmDropdownId === prod.id ? null : prod.id)}
+                      className={`w-24 text-center border rounded px-1 py-0.5 text-[10px] font-mono flex items-center justify-between ${
+                        editValues.ncm ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-blue-300 bg-white text-slate-500'
+                      }`}
+                    >
+                      <span className="truncate">{editValues.ncm || 'NCM...'}</span>
+                      <ChevronDown className="w-2.5 h-2.5 flex-shrink-0" />
+                    </button>
+                    {editNcmDropdownId === prod.id && (
+                      <div className="absolute z-50 top-full left-0 mt-1 w-64 bg-white border border-blue-200 rounded-lg shadow-xl p-2">
+                        <div className="max-h-36 overflow-y-auto space-y-0.5">
+                          {(ncmListForProducts || []).map(n => (
+                            <button
+                              key={n.id}
+                              onClick={() => { setEditValues({ ...editValues, ncm: n.ncm }); setEditNcmDropdownId(null); }}
+                              className={`w-full text-left px-2 py-1.5 rounded text-[10px] flex items-center gap-2 transition-colors hover:bg-blue-50 ${
+                                editValues.ncm === n.ncm ? 'bg-emerald-50 border border-emerald-300' : ''
+                              }`}
+                            >
+                              <span className="font-mono font-bold text-blue-700">{n.ncm}</span>
+                              {n.grupo && <span className="px-1 bg-amber-100 text-amber-700 rounded text-[8px] font-semibold">{n.grupo}</span>}
+                              <span className="text-slate-500 truncate flex-1 text-[9px]">{n.description || ''}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <span className={`font-mono ${prod.ncm ? 'text-emerald-600' : 'text-slate-300'}`}>
                     {prod.ncm || '—'}
