@@ -2755,14 +2755,35 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const [showNcmCard, setShowNcmCard] = useState(false);
   const [ncmSearchFilter, setNcmSearchFilter] = useState('');
   
-  // Costs panel state
-  const [valorCi, setValorCi] = useState(po.totalCiRemessa || '');
+  // Costs panel state - all values stored in USD internally
+  const [valorCiUsd, setValorCiUsd] = useState(po.totalCiRemessa || '');
   const [pag1, setPag1] = useState(po.pagamento1Remessa || '');
-  const [pag2, setPag2] = useState(po.pagamento2Remessa || '');
-  const [pag3, setPag3] = useState(po.pagamento3Remessa || '');
-  const [freteTerrestreSP, setFreteTerrestreSP] = useState(po.freteTermestreRemessa || '');
-  const [difalVal, setDifalVal] = useState(po.difalValor || '');
-  const [comSilverio, setComSilverio] = useState(po.comissaoSilverio || '');
+  const [pag2Usd, setPag2Usd] = useState(po.pagamento2Remessa || '');
+  const [pag3Usd, setPag3Usd] = useState(po.pagamento3Remessa || '');
+  const [freteTerrestreSPUsd, setFreteTerrestreSPUsd] = useState(po.freteTermestreRemessa || '');
+  const [difalValUsd, setDifalValUsd] = useState(po.difalValor || '');
+  const [comSilverioUsd, setComSilverioUsd] = useState(po.comissaoSilverio || '');
+  
+  // Helper: display value in current currency
+  const displayVal = (usdVal: string) => {
+    if (!usdVal) return '';
+    const n = Number(usdVal);
+    if (isNaN(n)) return usdVal;
+    return currency === 'BRL' ? (n * exchangeRate).toFixed(2) : n.toFixed(2);
+  };
+  // Helper: convert input from current currency to USD for storage
+  const toUsd = (inputVal: string) => {
+    const n = Number(inputVal.replace(',', '.'));
+    if (isNaN(n)) return '0';
+    return currency === 'BRL' ? (n / exchangeRate).toFixed(4) : String(n);
+  };
+  // Aliases for compatibility
+  const valorCi = valorCiUsd;
+  const pag2 = pag2Usd;
+  const pag3 = pag3Usd;
+  const freteTerrestreSP = freteTerrestreSPUsd;
+  const difalVal = difalValUsd;
+  const comSilverio = comSilverioUsd;
   
   // Product code search for ADD flow
   const [addCodeSearch, setAddCodeSearch] = useState('');
@@ -3146,59 +3167,73 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                     )}
                   </td>
                   {/* Col 1: Valor Pago ao Fornecedor (sempre editável) */}
-                  <td className="px-2 py-2 text-center bg-blue-50/30">
+                  <td className="px-2 py-2 text-center">
                     {editingId === prod.id ? (
-                      <input
-                        className="w-20 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px] font-mono"
-                        value={editValues.valorUsd || ''}
-                        onChange={e => setEditValues({ ...editValues, valorUsd: e.target.value })}
-                        placeholder="0.00"
-                      />
+                      <div className="relative inline-flex items-center">
+                        <span className="absolute left-1.5 text-[9px] text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                        <input
+                          className="w-20 text-center border border-blue-300 rounded pl-5 pr-1 py-0.5 text-[10px] font-mono"
+                          value={editValues.valorUsd || ''}
+                          onChange={e => setEditValues({ ...editValues, valorUsd: e.target.value })}
+                          placeholder="0,00"
+                        />
+                      </div>
                     ) : (
-                      <input
-                        key={`val-${prod.id}-${prod.valorUsd}`}
-                        className="w-20 text-center border border-slate-200 rounded px-1 py-1 text-[10px] font-mono text-blue-700 font-semibold bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
-                        defaultValue={prod.valorUsd || ''}
-                        placeholder="0.00"
-                        onBlur={e => {
-                          const normalized = e.target.value.replace(',', '.');
-                          if (normalized !== String(prod.valorUsd || '')) {
-                            updateProduct.mutate({ id: prod.id, valorUsd: normalized });
-                          }
-                        }}
-                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                      />
+                      <div className="relative inline-flex items-center">
+                        <span className="absolute left-1.5 text-[9px] text-blue-500 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                        <input
+                          key={`val-${prod.id}-${prod.valorUsd}-${currency}`}
+                          className="w-20 text-center border border-slate-200 rounded pl-5 pr-1 py-1 text-[10px] font-mono text-blue-700 font-semibold bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
+                          defaultValue={prod.valorUsd ? (currency === 'BRL' ? (Number(prod.valorUsd) * exchangeRate).toFixed(2) : Number(prod.valorUsd).toFixed(2)) : ''}
+                          placeholder="0,00"
+                          onBlur={e => {
+                            const normalized = e.target.value.replace(',', '.');
+                            const valueInUsd = currency === 'BRL' ? String((Number(normalized) / exchangeRate).toFixed(4)) : normalized;
+                            if (valueInUsd !== String(prod.valorUsd || '')) {
+                              updateProduct.mutate({ id: prod.id, valorUsd: valueInUsd });
+                            }
+                          }}
+                          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        />
+                      </div>
                     )}
                   </td>
                   {/* Col 2: Valor Pago na Ordem de Pagamento (sempre editável) */}
                   <td className="px-2 py-2 text-center bg-blue-50/30">
                     {editingId === prod.id ? (
-                      <input
-                        className="w-20 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px] font-mono"
-                        value={editValues.valorPoCheia || ''}
-                        onChange={e => setEditValues({ ...editValues, valorPoCheia: e.target.value })}
-                        placeholder="0.00"
-                      />
+                      <div className="relative inline-flex items-center">
+                        <span className="absolute left-1.5 text-[9px] text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                        <input
+                          className="w-20 text-center border border-blue-300 rounded pl-5 pr-1 py-0.5 text-[10px] font-mono"
+                          value={editValues.valorPoCheia || ''}
+                          onChange={e => setEditValues({ ...editValues, valorPoCheia: e.target.value })}
+                          placeholder="0,00"
+                        />
+                      </div>
                     ) : (
-                      <input
-                        key={`ordem-${prod.id}-${prod.valorPoCheia}`}
-                        className="w-20 text-center border border-slate-200 rounded px-1 py-1 text-[10px] font-mono text-blue-700 bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
-                        defaultValue={prod.valorPoCheia || ''}
-                        placeholder="0.00"
-                        onBlur={e => {
-                          const normalized = e.target.value.replace(',', '.');
-                          if (normalized !== String(prod.valorPoCheia || '')) {
-                            updateProduct.mutate({ id: prod.id, valorPoCheia: normalized });
-                          }
-                        }}
-                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                      />
+                      <div className="relative inline-flex items-center">
+                        <span className="absolute left-1.5 text-[9px] text-blue-500 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                        <input
+                          key={`ordem-${prod.id}-${prod.valorPoCheia}-${currency}`}
+                          className="w-20 text-center border border-slate-200 rounded pl-5 pr-1 py-1 text-[10px] font-mono text-blue-700 bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
+                          defaultValue={prod.valorPoCheia ? (currency === 'BRL' ? (Number(prod.valorPoCheia) * exchangeRate).toFixed(2) : Number(prod.valorPoCheia).toFixed(2)) : ''}
+                          placeholder="0,00"
+                          onBlur={e => {
+                            const normalized = e.target.value.replace(',', '.');
+                            const valueInUsd = currency === 'BRL' ? String((Number(normalized) / exchangeRate).toFixed(4)) : normalized;
+                            if (valueInUsd !== String(prod.valorPoCheia || '')) {
+                              updateProduct.mutate({ id: prod.id, valorPoCheia: valueInUsd });
+                            }
+                          }}
+                          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        />
+                      </div>
                     )}
                   </td>
                   {/* Col 3: Diferença (automático) */}
                   <td className="px-2 py-2 text-center bg-orange-50/30">
                     <span className={`font-mono font-medium ${diferenca > 0 ? 'text-orange-600' : diferenca < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                      {(prod.valorUsd && prod.valorPoCheia) ? (currency === "USD" ? `$ ${diferenca.toFixed(2)}` : `R$ ${(diferenca * exchangeRate).toFixed(2)}`) : '—'}
+                      {(valorForn > 0 || valorOrdem > 0) ? (currency === "USD" ? `$ ${Math.round(diferenca * 100) / 100 === diferenca ? diferenca.toFixed(2) : (Math.ceil(diferenca * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(diferenca * exchangeRate * 100) / 100).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Col 4: Quantidade de Caixas (sempre editável) */}
@@ -3231,31 +3266,31 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   {/* Col 5: Frete Calculado pelo Fornecedor */}
                   <td className="px-2 py-2 text-center bg-orange-50/30">
                     <span className="font-mono text-orange-700 font-semibold">
-                      {(prod.valorUsd && prod.valorPoCheia && prod.quantidade) ? (currency === "USD" ? `$ ${freteCalcFornecedor.toFixed(2)}` : `R$ ${(freteCalcFornecedor * exchangeRate).toFixed(2)}`) : '—'}
+                      {(valorForn > 0 && valorOrdem > 0 && qty > 0) ? (currency === "USD" ? `$ ${(Math.round(freteCalcFornecedor * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(freteCalcFornecedor * exchangeRate * 100) / 100).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Col 6: Frete com Rateio Correto (% na ordem × frete total) */}
                   <td className="px-2 py-2 text-center bg-purple-50/30">
                     <span className="font-mono text-purple-700 font-medium">
-                      {(prod.valorUsd && prod.quantidade && totalValorReferencia > 0 && totalFreteCalculado > 0) ? (currency === "USD" ? `$ ${freteRateioCorreto.toFixed(2)}` : `R$ ${(freteRateioCorreto * exchangeRate).toFixed(2)}`) : '—'}
+                      {(valorForn > 0 && qty > 0 && totalValorReferencia > 0 && totalFreteCalculado > 0) ? (currency === "USD" ? `$ ${(Math.round(freteRateioCorreto * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(freteRateioCorreto * exchangeRate * 100) / 100).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Col 7: Valor de Referência (Valor Pago ao Fornecedor × Quantidade de Caixas) */}
                   <td className="px-2 py-2 text-center bg-emerald-50/30">
                     <span className="font-mono text-emerald-700 font-semibold">
-                      {(prod.valorUsd && prod.quantidade) ? (currency === "USD" ? `$ ${valorRef.toFixed(2)}` : `R$ ${(valorRef * exchangeRate).toFixed(2)}`) : '—'}
+                      {(valorForn > 0 && qty > 0) ? (currency === "USD" ? `$ ${(Math.round(valorRef * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(valorRef * exchangeRate * 100) / 100).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Porcentagem que o Produto Representa no Valor do Total da Ordem de Pagamento */}
                   <td className="px-2 py-2 text-center bg-indigo-50/30">
                     <span className="font-mono text-indigo-700 font-semibold">
-                      {percProdutoNoTotal > 0 ? `${percProdutoNoTotal.toFixed(2)}%` : '—'}
+                      {percProdutoNoTotal > 0 ? `${(Math.round(percProdutoNoTotal * 100) / 100).toFixed(2)} %` : '—'}
                     </span>
                   </td>
                   {/* Valor da Caixa */}
                   <td className="px-2 py-2 text-center bg-emerald-50/30">
                     <span className="font-mono text-emerald-800 font-bold text-[11px]">
-                      {valorDaCaixa > 0 ? (currency === "USD" ? `$ ${valorDaCaixa.toFixed(2)}` : `R$ ${(valorDaCaixa * exchangeRate).toFixed(2)}`) : '—'}
+                      {valorDaCaixa > 0 ? (currency === "USD" ? `$ ${(Math.round(valorDaCaixa * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(valorDaCaixa * exchangeRate * 100) / 100).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Ações */}
@@ -3332,25 +3367,33 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               </div>
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">2ª Remessa</label>
-                <input
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
-                  placeholder="0.00"
-                  value={pag2}
-                  onChange={e => setPag2(e.target.value)}
-                  type="number"
-                  step="0.01"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <input
+                    key={`pag2-${currency}`}
+                    className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
+                    placeholder="0,00"
+                    defaultValue={displayVal(pag2Usd)}
+                    onBlur={e => setPag2Usd(toUsd(e.target.value))}
+                    type="number"
+                    step="0.01"
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">3ª Remessa</label>
-                <input
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
-                  placeholder="0.00"
-                  value={pag3}
-                  onChange={e => setPag3(e.target.value)}
-                  type="number"
-                  step="0.01"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <input
+                    key={`pag3-${currency}`}
+                    className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
+                    placeholder="0,00"
+                    defaultValue={displayVal(pag3Usd)}
+                    onBlur={e => setPag3Usd(toUsd(e.target.value))}
+                    type="number"
+                    step="0.01"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -3363,14 +3406,18 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">Valor da CI (Commercial Invoice)</label>
-                <input
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
-                  placeholder="0.00"
-                  value={valorCi}
-                  onChange={e => setValorCi(e.target.value)}
-                  type="number"
-                  step="0.01"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <input
+                    key={`ci-${currency}`}
+                    className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
+                    placeholder="0,00"
+                    defaultValue={displayVal(valorCiUsd)}
+                    onBlur={e => setValorCiUsd(toUsd(e.target.value))}
+                    type="number"
+                    step="0.01"
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">Despesas de Liberação - Valor Vilela (37% da CI)</label>
@@ -3380,75 +3427,87 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               </div>
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">Frete Terrestre SP/MG</label>
-                <input
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
-                  placeholder="0.00"
-                  value={freteTerrestreSP}
-                  onChange={e => setFreteTerrestreSP(e.target.value)}
-                  type="number"
-                  step="0.01"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <input
+                    key={`frete-sp-${currency}`}
+                    className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
+                    placeholder="0,00"
+                    defaultValue={displayVal(freteTerrestreSPUsd)}
+                    onBlur={e => setFreteTerrestreSPUsd(toUsd(e.target.value))}
+                    type="number"
+                    step="0.01"
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">DIFAL</label>
-                <input
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
-                  placeholder="0.00"
-                  value={difalVal}
-                  onChange={e => setDifalVal(e.target.value)}
-                  type="number"
-                  step="0.01"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <input
+                    key={`difal-${currency}`}
+                    className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
+                    placeholder="0,00"
+                    defaultValue={displayVal(difalValUsd)}
+                    onBlur={e => setDifalValUsd(toUsd(e.target.value))}
+                    type="number"
+                    step="0.01"
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">Comissão Silvério</label>
-                <input
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono bg-white"
-                  placeholder="0.00"
-                  value={comSilverio}
-                  onChange={e => setComSilverio(e.target.value)}
-                  type="number"
-                  step="0.01"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono pointer-events-none">{currency === 'USD' ? '$' : 'R$'}</span>
+                  <input
+                    key={`com-silverio-${currency}`}
+                    className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-sm font-mono bg-white"
+                    placeholder="0,00"
+                    defaultValue={displayVal(comSilverioUsd)}
+                    onBlur={e => setComSilverioUsd(toUsd(e.target.value))}
+                    type="number"
+                    step="0.01"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           {/* CUSTOS TOTAIS DA IMPORTAÇÃO */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg p-4 text-white">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-5 sm:p-6 text-white shadow-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-200">Custos Totais da Importação</p>
-                <p className="text-[9px] text-indigo-300 mt-0.5">Ordem de Pagamento + Frete + Despesas Liberação + Frete Terrestre + DIFAL + Comissão Silvério</p>
+                <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-indigo-100">Custos Totais da Importação</p>
+                <p className="text-[10px] sm:text-xs text-indigo-200 mt-1">Ordem de Pagamento + Frete + Despesas Liberação + Frete Terrestre + DIFAL + Comissão Silvério</p>
               </div>
-              <p className="text-2xl font-bold font-mono">
+              <p className="text-3xl sm:text-4xl font-bold font-mono">
                 {currency === "USD" ? `$ ${custosTotais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(custosTotais * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               </p>
             </div>
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-6 gap-2 text-[9px]">
-              <div className="bg-white/10 rounded px-2 py-1">
-                <p className="text-indigo-200">Ordem Pgto</p>
-                <p className="font-mono font-semibold">{currency === "USD" ? `$${totalValorReferencia.toFixed(0)}` : `R$${(totalValorReferencia * exchangeRate).toFixed(0)}`}</p>
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-3">
+              <div className="bg-white/15 rounded-lg px-3 py-2">
+                <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Ordem Pgto</p>
+                <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalValorReferencia * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
               </div>
-              <div className="bg-white/10 rounded px-2 py-1">
-                <p className="text-indigo-200">Frete</p>
-                <p className="font-mono font-semibold">{currency === "USD" ? `$${totalFreteCalculado.toFixed(0)}` : `R$${(totalFreteCalculado * exchangeRate).toFixed(0)}`}</p>
+              <div className="bg-white/15 rounded-lg px-3 py-2">
+                <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Frete</p>
+                <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
               </div>
-              <div className="bg-white/10 rounded px-2 py-1">
-                <p className="text-indigo-200">Desp. Lib.</p>
-                <p className="font-mono font-semibold">{currency === "USD" ? `$${despesasLiberacao.toFixed(0)}` : `R$${(despesasLiberacao * exchangeRate).toFixed(0)}`}</p>
+              <div className="bg-white/15 rounded-lg px-3 py-2">
+                <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Desp. Lib.</p>
+                <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{currency === "USD" ? `$ ${despesasLiberacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(despesasLiberacao * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
               </div>
-              <div className="bg-white/10 rounded px-2 py-1">
-                <p className="text-indigo-200">Frete SP/MG</p>
-                <p className="font-mono font-semibold">{currency === "USD" ? `$${Number(freteTerrestreSP || 0).toFixed(0)}` : `R$${(Number(freteTerrestreSP || 0) * exchangeRate).toFixed(0)}`}</p>
+              <div className="bg-white/15 rounded-lg px-3 py-2">
+                <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Frete SP/MG</p>
+                <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{currency === "USD" ? `$ ${Number(freteTerrestreSP || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Number(freteTerrestreSP || 0) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
               </div>
-              <div className="bg-white/10 rounded px-2 py-1">
-                <p className="text-indigo-200">DIFAL</p>
-                <p className="font-mono font-semibold">{currency === "USD" ? `$${Number(difalVal || 0).toFixed(0)}` : `R$${(Number(difalVal || 0) * exchangeRate).toFixed(0)}`}</p>
+              <div className="bg-white/15 rounded-lg px-3 py-2">
+                <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">DIFAL</p>
+                <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{currency === "USD" ? `$ ${Number(difalVal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Number(difalVal || 0) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
               </div>
-              <div className="bg-white/10 rounded px-2 py-1">
-                <p className="text-indigo-200">Com. Silvério</p>
-                <p className="font-mono font-semibold">{currency === "USD" ? `$${Number(comSilverio || 0).toFixed(0)}` : `R$${(Number(comSilverio || 0) * exchangeRate).toFixed(0)}`}</p>
+              <div className="bg-white/15 rounded-lg px-3 py-2">
+                <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Com. Silvério</p>
+                <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{currency === "USD" ? `$ ${Number(comSilverio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Number(comSilverio || 0) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
               </div>
             </div>
           </div>

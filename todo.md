@@ -4288,3 +4288,7 @@
 - [x] Investigar por que 00046 não aparece (era marcado como isChild pelo e-commerce grouping)
 - [x] Corrigir lógica: itens que são pais no product_variants e têm estoque não devem ser engolidos como variação e-commerce
 - [x] Reprocessar dados e confirmar que 00046 agora aparece com isChild: false
+- [x] Card roxo (Custos Totais da Importação) com números maiores e mais destacados
+- [x] Prefixo R$ ou $ nos campos de input de valor monetário na tabela de produtos
+- [x] Sufixo % na coluna de porcentagem
+- [x] 2 casas decimais com arredondamento correto (3ª casa > 5 arredonda pra cima)
