@@ -4358,3 +4358,7 @@
 ## Conversor Custo em Tempo Real (11/06/2026)
 - [x] Substituir conversor atual (input+dropdown) por botões estilo POs (DÓLAR/USD indicator + toggle USD→BRL/BRL→USD)
 - [x] Toggle deve converter os valores de Custo Médio/Caixa na tabela entre USD e BRL
+
+## Conversão USD/BRL nas POs legacy (11/06/2026)
+- [x] POs legacy (planilha/Ghangzou): converter Valor da Caixa e Preço Mil/Unid usando fator fixo 5,5 quando toggle USD ativo
+- [x] POs novas: continuar usando dólar em tempo real para conversão

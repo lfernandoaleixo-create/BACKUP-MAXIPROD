@@ -3539,8 +3539,10 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   <td className="px-2 py-2 text-center bg-emerald-50/30 whitespace-nowrap">
                     <span className="font-mono text-emerald-800 font-bold text-[11px]">
                       {prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0
-                        ? `R$ ${Number(prod.valorCaixaBrl).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : valorDaCaixa > 0 ? (currency === "USD" ? `$ ${(Math.round(valorDaCaixa * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Math.round(valorDaCaixa * (isLegacyPo ? poExchangeRate : exchangeRate) * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
+                        ? (currency === "USD"
+                            ? `$ ${(Number(prod.valorCaixaBrl) / 5.5).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : `R$ ${Number(prod.valorCaixaBrl).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+                        : valorDaCaixa > 0 ? (currency === "USD" ? `$ ${(Math.round(valorDaCaixa * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Math.round(valorDaCaixa * exchangeRate * 100) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) : '—'}
                     </span>
                     {prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0 && (
                       <span className="block text-[8px] text-emerald-500 mt-0.5">(planilha)</span>
@@ -3550,14 +3552,21 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   <td className="px-2 py-2 text-center bg-teal-50/30 whitespace-nowrap">
                     <span className="font-mono text-teal-800 font-bold text-[11px]">
                       {isLegacyPo
-                        ? (prod.precoMilUnid ? `R$ ${Number(prod.precoMilUnid).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—')
+                        ? (prod.precoMilUnid
+                            ? (currency === "USD"
+                                ? `$ ${(Number(prod.precoMilUnid) / 5.5).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                : `R$ ${Number(prod.precoMilUnid).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+                            : '—')
                         : (() => {
                             const unid = Number(prod.unidCaixa || 0);
                             // For new POs: valorDaCaixa is in USD (custosTotais is USD for new POs)
                             // Convert to BRL then divide by unid
                             const valorCaixaBrl = valorDaCaixa * exchangeRate;
                             const precoCalc = unid > 0 ? valorCaixaBrl / unid : 0;
-                            return precoCalc > 0 ? `R$ ${precoCalc.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
+                            if (precoCalc <= 0) return '—';
+                            return currency === "USD"
+                              ? `$ ${(precoCalc / exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                              : `R$ ${precoCalc.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                           })()
                       }
                     </span>
