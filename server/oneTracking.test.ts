@@ -1,7 +1,17 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fetchOneTracking } from "./oneTracking";
 
 describe("ONE Line Tracking", () => {
+  beforeEach(() => {
+    // Mock Date.now to June 11, 2026 - vessel in transit
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-11T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("should return tracking data for known BL XMNG50123700", () => {
     const result = fetchOneTracking("XMNG50123700");
     expect(result).not.toBeNull();
@@ -39,6 +49,32 @@ describe("ONE Line Tracking", () => {
     expect(result).not.toBeNull();
     expect(result!.progress).toBeGreaterThanOrEqual(0);
     expect(result!.progress).toBeLessThanOrEqual(100);
+  });
+
+  it("should calculate progress based on geographic distance, not time elapsed", () => {
+    // At June 11, 2026 - time-based would be ~67% (32 of 49 days from May 10 to June 28)
+    // But geographically, vessel departed Singapore June 5 → only 6 days into 23-day leg
+    // Geographic progress should be significantly less than 67%
+    const result = fetchOneTracking("XMNG50123700");
+    expect(result).not.toBeNull();
+    // Key assertion: progress should NOT be ~67% (time-based)
+    // It should be lower since vessel is still in Indian Ocean
+    expect(result!.progress).toBeLessThan(55);
+    expect(result!.progress).toBeGreaterThan(15); // Past Singapore (~14% of total route)
+  });
+
+  it("should show 0% progress before departure", () => {
+    vi.setSystemTime(new Date('2026-05-01T00:00:00Z'));
+    const result = fetchOneTracking("XMNG50123700");
+    expect(result).not.toBeNull();
+    expect(result!.progress).toBe(0);
+  });
+
+  it("should show 100% progress after arrival", () => {
+    vi.setSystemTime(new Date('2026-07-15T00:00:00Z'));
+    const result = fetchOneTracking("XMNG50123700");
+    expect(result).not.toBeNull();
+    expect(result!.progress).toBe(100);
   });
 
   it("should have events with hasOccurred flags", () => {

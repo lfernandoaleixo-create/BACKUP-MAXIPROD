@@ -4378,3 +4378,6 @@
 - [x] Criar card "Especial s/ Cobrança" que ao clicar expande e mostra todos os títulos desses clientes
 - [x] Dentro do card, permitir alterar status - se mudar de "Fundo perdido" para outro (exceto "Especial s/ cobrança"), volta pra lista
 - [x] Dentro do card, permitir alterar status - se mudar de "Especial s/ cobrança" para outro (exceto "Fundo perdido"), volta pra lista
+
+## Correção porcentagem de progresso da viagem
+- [x] Corrigir cálculo da porcentagem da viagem: usar distância geográfica percorrida ao longo da rota em vez de tempo decorrido

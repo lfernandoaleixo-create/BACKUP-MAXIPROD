@@ -156,12 +156,29 @@ function calculateProgress(events: OneTrackingEvent[]): number {
 }
 
 /**
- * Calculate voyage progress based on actual departure date and ETA.
- * This gives the real percentage of the maritime journey completed.
+ * Calculate the distance between two geographic points using the Haversine formula.
+ * Returns distance in kilometers.
+ */
+function haversineDistance(p1: { lat: number; lng: number }, p2: { lat: number; lng: number }): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = (p2.lat - p1.lat) * Math.PI / 180;
+  const dLng = (p2.lng - p1.lng) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Calculate voyage progress based on geographic distance traveled along the route.
+ * Uses the vessel's current position to determine how much of the total route has been covered.
  */
 function calculateVoyageProgress(
   firstDepartureDate: string,
-  finalArrivalDate: string
+  finalArrivalDate: string,
+  vesselPosition: { lat: number; lng: number } | null,
+  routeCoordinates: Array<{ lat: number; lng: number }>
 ): number {
   const now = Date.now();
   const dep = new Date(firstDepartureDate).getTime();
@@ -170,6 +187,61 @@ function calculateVoyageProgress(
   if (now <= dep) return 0;
   if (now >= arr) return 100;
   
+  // If we have vessel position and route, calculate based on geographic distance
+  if (vesselPosition && routeCoordinates.length >= 2) {
+    // Calculate total route distance
+    let totalDistance = 0;
+    for (let i = 1; i < routeCoordinates.length; i++) {
+      totalDistance += haversineDistance(routeCoordinates[i - 1], routeCoordinates[i]);
+    }
+    
+    // Find the closest point on the route to the vessel
+    let minDist = Infinity;
+    let closestSegmentIndex = 0;
+    let closestFraction = 0;
+    
+    for (let i = 0; i < routeCoordinates.length - 1; i++) {
+      const segStart = routeCoordinates[i];
+      const segEnd = routeCoordinates[i + 1];
+      
+      // Project vessel position onto the segment
+      const dx = segEnd.lng - segStart.lng;
+      const dy = segEnd.lat - segStart.lat;
+      const segLenSq = dx * dx + dy * dy;
+      
+      let t = 0;
+      if (segLenSq > 0) {
+        t = ((vesselPosition.lng - segStart.lng) * dx + (vesselPosition.lat - segStart.lat) * dy) / segLenSq;
+        t = Math.max(0, Math.min(1, t));
+      }
+      
+      const projLat = segStart.lat + t * dy;
+      const projLng = segStart.lng + t * dx;
+      const dist = haversineDistance(vesselPosition, { lat: projLat, lng: projLng });
+      
+      if (dist < minDist) {
+        minDist = dist;
+        closestSegmentIndex = i;
+        closestFraction = t;
+      }
+    }
+    
+    // Calculate distance traveled up to the closest point
+    let distanceTraveled = 0;
+    for (let i = 1; i <= closestSegmentIndex; i++) {
+      distanceTraveled += haversineDistance(routeCoordinates[i - 1], routeCoordinates[i]);
+    }
+    // Add the fraction of the current segment
+    distanceTraveled += closestFraction * haversineDistance(
+      routeCoordinates[closestSegmentIndex],
+      routeCoordinates[closestSegmentIndex + 1]
+    );
+    
+    const progress = (distanceTraveled / totalDistance) * 100;
+    return Math.round(Math.min(Math.max(progress, 0), 100));
+  }
+  
+  // Fallback to time-based if no position/route available
   const progress = ((now - dep) / (arr - dep)) * 100;
   return Math.round(Math.min(Math.max(progress, 0), 100));
 }
@@ -250,7 +322,7 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
       ],
       events: allEvents,
       currentStatus,
-      progress: calculateVoyageProgress('2026-05-10T00:34:00Z', '2026-06-28T01:00:00Z'),
+      progress: calculateVoyageProgress('2026-05-10T00:34:00Z', '2026-06-28T01:00:00Z', vesselPosition, fullRoute),
       vesselPosition,
       routeCoordinates: fullRoute,
       origin: { lat: 24.47, lng: 118.08, name: 'XIAMEN' },
@@ -332,7 +404,7 @@ export function fetchOneTracking(blNumber: string): OneTrackingResult | null {
       ],
       events: allEvents,
       currentStatus,
-      progress: calculateVoyageProgress('2026-05-19T00:00:00Z', '2026-07-04T00:00:00Z'),
+      progress: calculateVoyageProgress('2026-05-19T00:00:00Z', '2026-07-04T00:00:00Z', vesselPosition, fullRoute),
       vesselPosition,
       routeCoordinates: fullRoute,
       origin: { lat: 38.92, lng: 121.63, name: 'DALIAN' },
