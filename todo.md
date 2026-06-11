@@ -4342,3 +4342,10 @@
 - [x] Criar widget conversor Real/Dólar em tempo real
 - [x] Widget fica fixado (sticky) no topo ao fazer scroll vertical
 - [x] Usar câmbio em tempo real para conversão
+
+## POs novas: UNID. CAIXA editável e PREÇO MIL/UNID. calculado (11/06/2026)
+- [x] Coluna UNID. CAIXA editável antes de "Valor Pago ao Fornecedor" para POs novas
+- [x] Coluna PREÇO MIL/UNID. calculada (Valor da Caixa / UNID. CAIXA) como última coluna antes de Ações
+- [x] Salvar UNID. CAIXA no banco ao editar
+- [x] Campo UNID. CAIXA no formulário "Adicionar Produto"
+- [x] POs legacy: UNID. CAIXA e PREÇO MIL/UNID. exibem valores fixos do banco (planilha)

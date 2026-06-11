@@ -2962,13 +2962,14 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); toast.success('Produto removido!'); },
   });
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; valorUsd?: string; quantidade?: string; freteMaritimo?: string; freteTerrestre?: string; incoterm?: string }>({});
+  const [editValues, setEditValues] = useState<{ productCode?: string; ncm?: string; valorPoCheia?: string; valorPoMenor?: string; valorUsd?: string; quantidade?: string; freteMaritimo?: string; freteTerrestre?: string; incoterm?: string; unidCaixa?: string }>({});
   const [editNcmDropdownId, setEditNcmDropdownId] = useState<number | null>(null);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProductCode, setNewProductCode] = useState('');
   const [newProductDesc, setNewProductDesc] = useState('');
   const [newProductNcm, setNewProductNcm] = useState('');
   const [newProductIncoterm, setNewProductIncoterm] = useState('');
+  const [newProductUnidCaixa, setNewProductUnidCaixa] = useState('');
   const [showNcmCard, setShowNcmCard] = useState(false);
   const [ncmSearchFilter, setNcmSearchFilter] = useState('');
   
@@ -3046,6 +3047,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       freteMaritimo: product.freteMaritimo || '',
       freteTerrestre: product.freteTerrestre || '',
       incoterm: product.incoterm || '',
+      unidCaixa: product.unidCaixa || '',
     });
     setCodeSearch(product.productCode || '');
     setShowCodeDropdown(false);
@@ -3208,12 +3210,23 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                 <option value="CIF">CIF - Fornecedor entrega em Santos</option>
               </select>
             </div>
+            {/* Step 5: Unid. Caixa */}
+            <div className="w-24">
+              <label className="text-[10px] text-slate-500 font-medium">5. Unid. Caixa</label>
+              <input
+                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs font-mono text-center"
+                placeholder="Ex: 1000"
+                value={newProductUnidCaixa}
+                onChange={e => setNewProductUnidCaixa(e.target.value)}
+                type="number"
+              />
+            </div>
             {/* Actions */}
             <button
-              onClick={() => { if (!newProductDesc.trim()) { toast.error('Selecione um produto pelo código'); return; } addProduct.mutate({ poId, description: newProductDesc.trim(), productCode: newProductCode || undefined, ncm: newProductNcm || undefined, incoterm: newProductIncoterm || undefined }); }}
+              onClick={() => { if (!newProductDesc.trim()) { toast.error('Selecione um produto pelo código'); return; } addProduct.mutate({ poId, description: newProductDesc.trim(), productCode: newProductCode || undefined, ncm: newProductNcm || undefined, incoterm: newProductIncoterm || undefined, unidCaixa: newProductUnidCaixa || undefined }); }}
               className="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 whitespace-nowrap"
             >Adicionar</button>
-            <button onClick={() => { setShowAddProduct(false); setAddCodeSearch(''); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setNewProductIncoterm(''); setShowNcmCard(false); setNcmSearchFilter(''); }} className="p-1 text-slate-500 hover:text-red-500"><X className="w-4 h-4" /></button>
+            <button onClick={() => { setShowAddProduct(false); setAddCodeSearch(''); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setNewProductIncoterm(''); setNewProductUnidCaixa(''); setShowNcmCard(false); setNcmSearchFilter(''); }} className="p-1 text-slate-500 hover:text-red-500"><X className="w-4 h-4" /></button>
           </div>
           {/* NCM Card Expansivo */}
           {showNcmCard && (
@@ -3288,6 +3301,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">Código</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">NCM</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">Tipo Frete</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-teal-200 bg-teal-50">Unid. Caixa</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-blue-200 bg-blue-50">Valor Pago ao Fornecedor</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-blue-200 bg-blue-50">Valor Pago na Ordem de Pagamento</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-orange-200 bg-orange-50">Diferença</th>
@@ -3297,7 +3311,6 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-emerald-200 bg-emerald-50">Valor de Referência</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-indigo-200 bg-indigo-50">Porcentagem que o Produto Representa no Valor do Total da Ordem de Pagamento</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-emerald-200 bg-emerald-50">Valor da Caixa</th>
-              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-teal-200 bg-teal-50">Unid. Caixa</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-teal-200 bg-teal-50">Preço Mil/Unid.</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">Ações</th>
             </tr>
@@ -3408,6 +3421,37 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded ${prod.incoterm === 'CIF' ? 'bg-green-100 text-green-700' : prod.incoterm === 'FOB' ? 'bg-blue-100 text-blue-700' : prod.incoterm === 'EXW' ? 'bg-amber-100 text-amber-700' : 'text-slate-300'}`}>
                         {prod.incoterm || '—'}
                       </span>
+                    )}
+                  </td>
+                  {/* Unid. Caixa - editável para POs novas, fixo para legacy */}
+                  <td className="px-2 py-2 text-center bg-teal-50/30 whitespace-nowrap">
+                    {isLegacyPo ? (
+                      <span className="font-mono text-teal-700 font-semibold">
+                        {prod.unidCaixa ? Number(prod.unidCaixa).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '—'}
+                      </span>
+                    ) : editingId === prod.id ? (
+                      <input
+                        className="w-16 text-center border border-teal-300 rounded px-1 py-0.5 text-[10px] font-mono"
+                        value={editValues.unidCaixa || ''}
+                        onChange={e => setEditValues({ ...editValues, unidCaixa: e.target.value })}
+                        placeholder="0"
+                        type="number"
+                      />
+                    ) : (
+                      <input
+                        key={`unidcaixa-${prod.id}-${prod.unidCaixa}`}
+                        className="w-16 text-center border border-slate-200 rounded px-1 py-1 text-[10px] font-mono text-teal-700 font-semibold bg-white hover:border-teal-300 focus:border-teal-400 focus:ring-1 focus:ring-teal-200 outline-none"
+                        defaultValue={prod.unidCaixa || ''}
+                        placeholder="0"
+                        type="number"
+                        onBlur={e => {
+                          const val = e.target.value;
+                          if (val !== String(prod.unidCaixa || '')) {
+                            updateProduct.mutate({ id: prod.id, unidCaixa: val || undefined });
+                          }
+                        }}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      />
                     )}
                   </td>
                   {/* Col 1: Valor Pago ao Fornecedor (sempre editável) */}
@@ -3544,16 +3588,20 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       <span className="block text-[8px] text-emerald-500 mt-0.5">(planilha)</span>
                     )}
                   </td>
-                  {/* Unid. Caixa (do Excel/banco) */}
-                  <td className="px-2 py-2 text-center bg-teal-50/30 whitespace-nowrap">
-                    <span className="font-mono text-teal-700 font-semibold">
-                      {prod.unidCaixa ? Number(prod.unidCaixa).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '—'}
-                    </span>
-                  </td>
-                  {/* Preço Mil/Unid. (do Excel/banco) */}
+                  {/* Preço Mil/Unid. - do banco para legacy, calculado para novas */}
                   <td className="px-2 py-2 text-center bg-teal-50/30 whitespace-nowrap">
                     <span className="font-mono text-teal-800 font-bold text-[11px]">
-                      {prod.precoMilUnid ? `R$ ${Number(prod.precoMilUnid).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                      {isLegacyPo
+                        ? (prod.precoMilUnid ? `R$ ${Number(prod.precoMilUnid).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—')
+                        : (() => {
+                            const unid = Number(prod.unidCaixa || 0);
+                            // For new POs: valorDaCaixa is in USD (custosTotais is USD for new POs)
+                            // Convert to BRL then divide by unid
+                            const valorCaixaBrl = valorDaCaixa * exchangeRate;
+                            const precoCalc = unid > 0 ? valorCaixaBrl / unid : 0;
+                            return precoCalc > 0 ? `R$ ${precoCalc.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
+                          })()
+                      }
                     </span>
                   </td>
                   {/* Ações */}

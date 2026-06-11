@@ -606,6 +606,7 @@ export const importRouter = router({
       freteMaritimo: z.string().optional(),
       freteTerrestre: z.string().optional(),
       incoterm: z.string().optional(),
+      unidCaixa: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -621,6 +622,7 @@ export const importRouter = router({
       if (data.freteMaritimo !== undefined) updateData.freteMaritimo = data.freteMaritimo || null;
       if (data.freteTerrestre !== undefined) updateData.freteTerrestre = data.freteTerrestre || null;
       if (data.incoterm !== undefined) updateData.incoterm = data.incoterm || null;
+      if (data.unidCaixa !== undefined) updateData.unidCaixa = data.unidCaixa || null;
       // Auto-calculate totalFreightUsd
       if (data.freteMaritimo !== undefined || data.freteTerrestre !== undefined) {
         const fm = parseFloat(data.freteMaritimo || '0') || 0;
