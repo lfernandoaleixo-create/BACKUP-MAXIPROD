@@ -2713,7 +2713,12 @@ function TaxDetailCard({ prod, onClose }: { prod: any; onClose: () => void }) {
 function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate = 5.50, onCollapse }: { poId: number; po: any; valorFator: number | null; currency?: "USD" | "BRL"; exchangeRate?: number; onCollapse?: () => void }) {
   const { data: products, isLoading } = trpc.import.getPoProducts.useQuery({ poId });
   const { data: ncmListForProducts } = trpc.import.getNcmTaxes.useQuery();
+  const { data: vilelaConfig } = trpc.import.getVilelaPercent.useQuery();
+  const vilelaPercent = vilelaConfig?.percent ?? 37;
   const utils = trpc.useUtils();
+  const setVilelaPercent = trpc.import.setVilelaPercent.useMutation({
+    onSuccess: () => { utils.import.getVilelaPercent.invalidate(); toast.success('Porcentagem Vilela atualizada!'); },
+  });
   const updateProduct = trpc.import.updatePoProduct.useMutation({
     onMutate: async (newData) => {
       // Cancel outgoing refetches
@@ -2855,8 +2860,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     return sum + (valorForn * qty);
   }, 0);
 
-  // Despesas de Liberação - Valor Vilela (37% do valor da CI)
-  const despesasLiberacao = Number(valorCi || 0) * 0.37;
+  // Despesas de Liberação - Valor Vilela (dynamic % do valor da CI)
+  const despesasLiberacao = Number(valorCi || 0) * (vilelaPercent / 100);
 
   // Custos Totais da Importação
   const custosTotais = totalValorReferencia + totalFreteCalculado + despesasLiberacao + Number(freteTerrestreSP || 0) + Number(difalVal || 0) + Number(comSilverio || 0);
@@ -3420,7 +3425,25 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                 </div>
               </div>
               <div>
-                <label className="text-[10px] text-slate-500 font-medium">Despesas de Liberação - Valor Vilela (37% da CI)</label>
+                <label className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5">
+                  Despesas de Liberação - Valor Vilela (
+                  <input
+                    className="w-10 border border-amber-300 rounded px-1 py-0 text-[10px] font-mono text-center bg-amber-50 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                    defaultValue={vilelaPercent}
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    onBlur={e => {
+                      const val = Number(e.target.value);
+                      if (val !== vilelaPercent && val >= 0 && val <= 100) {
+                        setVilelaPercent.mutate({ percent: val });
+                      }
+                    }}
+                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  />
+                  % da CI)
+                </label>
                 <div className="w-full border border-amber-200 bg-amber-50 rounded px-3 py-2 text-sm font-mono font-bold text-amber-800">
                   {currency === "USD" ? `$ ${despesasLiberacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(despesasLiberacao * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 </div>

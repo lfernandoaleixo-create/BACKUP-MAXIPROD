@@ -797,6 +797,30 @@ export const importRouter = router({
       return { success: true };
     }),
 
+  // ===== VILELA PERCENT =====
+  getVilelaPercent: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return { percent: 37 };
+    const rows = await db.select().from(importConfig).where(eq(importConfig.configKey, 'vilela_percent'));
+    return { percent: Number(rows[0]?.configValue || '37') };
+  }),
+
+  setVilelaPercent: publicProcedure
+    .input(z.object({ percent: z.number().min(0).max(100) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const rows = await db.select().from(importConfig).where(eq(importConfig.configKey, 'vilela_percent'));
+      if (rows.length === 0) {
+        await db.insert(importConfig).values({ configKey: 'vilela_percent', configValue: String(input.percent) });
+      } else {
+        await db.update(importConfig)
+          .set({ configValue: String(input.percent) })
+          .where(eq(importConfig.configKey, 'vilela_percent'));
+      }
+      return { success: true };
+    }),
+
   // ===== NCM TAXES =====
   getNcmTaxes: publicProcedure.query(async () => {
     const db = await getDb();

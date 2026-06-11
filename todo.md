@@ -4295,3 +4295,5 @@
 - [x] Remover card "Custos Logísticos & Informações" das POs na aba Custo da Mercadoria
 - [x] Autorizar Flavio para descontos de títulos no Financeiro (Recebíveis) - client e server
 - [x] Liberar aba Importação para a senha Gilson
+- [x] Contrair card da PO ao clicar em "Salvar Custos"
+- [x] Criar seletor de porcentagem editável para Despesas de Liberação - Valor Vilela (salva no banco)
