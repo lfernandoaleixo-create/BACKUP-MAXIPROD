@@ -4381,3 +4381,6 @@
 
 ## Correção porcentagem de progresso da viagem
 - [x] Corrigir cálculo da porcentagem da viagem: usar distância geográfica percorrida ao longo da rota em vez de tempo decorrido
+
+## Fundo Perdido - Popular com dados reais do Maxiprod
+- [x] Inserir os 4 clientes do Fundo Perdido (conta destino 571, Contas a Pagar Maxiprod) no card da Planilha de Cobrança
