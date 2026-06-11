@@ -4297,3 +4297,4 @@
 - [x] Liberar aba Importação para a senha Gilson
 - [x] Contrair card da PO ao clicar em "Salvar Custos"
 - [x] Criar seletor de porcentagem editável para Despesas de Liberação - Valor Vilela (salva no banco)
+- [x] Reorganizar aba Custo da Mercadoria com 3 sub-abas: 1) Custo da Mercadoria em Tempo Real, 2) POs (existente), 3) Configurações

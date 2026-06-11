@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import TopNav from "@/components/TopNav";
-import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download } from "lucide-react";
+import { Ship, Receipt, Calculator, Plus, Pencil, Trash2, X, Check, Package, ChevronDown, ChevronUp, DollarSign, AlertCircle, Layers, ArrowLeftRight, RefreshCw, FileDown, Loader2, Bell, XCircle, Navigation, Settings, Search, MapPin, FileText, ArrowUpDown, Eye, Download, TrendingUp } from "lucide-react";
 import { TrackingModal } from "@/components/TrackingModal";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -1394,9 +1394,9 @@ function AlertDaysSelector({ paymentId, currentDays, dismissed, onRefetch }: { p
 
 // ===== CUSTO MERCADORIA =====
 
-type CustoSubTab = "pos" | "config";
+type CustoSubTab = "realtime" | "pos" | "config";
 function CustoMercadoria() {
-  const [custoTab, setCustoTab] = useState<CustoSubTab>("pos");
+  const [custoTab, setCustoTab] = useState<CustoSubTab>("realtime");
   const { data: exchangeData } = trpc.import.getExchangeRate.useQuery();
   const [currency, setCurrency] = useState<"USD" | "BRL">("USD");
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -1438,6 +1438,17 @@ function CustoMercadoria() {
             <h2 className="text-sm sm:text-lg font-semibold text-slate-800">Custo da Mercadoria</h2>
           </div>
           <div className="flex gap-1 bg-slate-100 p-0.5 rounded-lg">
+            <button
+              onClick={() => setCustoTab("realtime")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                custoTab === "realtime"
+                  ? "bg-white text-blue-700 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              Custo em Tempo Real
+            </button>
             <button
               onClick={() => setCustoTab("pos")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
@@ -1504,6 +1515,15 @@ function CustoMercadoria() {
         )}
       </div>
 
+      {custoTab === "realtime" && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <TrendingUp className="w-5 h-5 text-emerald-600" />
+            <h3 className="text-lg font-semibold text-slate-800">Custo da Mercadoria em Tempo Real</h3>
+          </div>
+          <p className="text-sm text-slate-500">Em breve: visualização do custo atualizado da mercadoria em tempo real.</p>
+        </div>
+      )}
       {custoTab === "pos" && <CustoPosView currency={currency} exchangeRate={exchangeRate} setPdfViewerUrl={setPdfViewerUrl} setPdfViewerTitle={setPdfViewerTitle} />}
       {custoTab === "config" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
