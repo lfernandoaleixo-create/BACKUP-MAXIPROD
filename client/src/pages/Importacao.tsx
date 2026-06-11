@@ -2715,7 +2715,25 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const { data: ncmListForProducts } = trpc.import.getNcmTaxes.useQuery();
   const utils = trpc.useUtils();
   const updateProduct = trpc.import.updatePoProduct.useMutation({
-    onSuccess: () => utils.import.getPoProducts.invalidate({ poId }),
+    onMutate: async (newData) => {
+      // Cancel outgoing refetches
+      await utils.import.getPoProducts.cancel({ poId });
+      // Snapshot previous value
+      const prev = utils.import.getPoProducts.getData({ poId });
+      // Optimistically update the cache
+      utils.import.getPoProducts.setData({ poId }, (old: any) => {
+        if (!old) return old;
+        return old.map((p: any) => p.id === newData.id ? { ...p, ...newData } : p);
+      });
+      return { prev };
+    },
+    onError: (_err, _newData, context: any) => {
+      // Rollback on error
+      if (context?.prev) utils.import.getPoProducts.setData({ poId }, context.prev);
+    },
+    onSettled: () => {
+      utils.import.getPoProducts.invalidate({ poId });
+    },
   });
   const updateLogistics = trpc.import.updatePoLogistics.useMutation({
     onSuccess: () => { utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId }); toast.success('Custos salvos!'); },
@@ -2802,8 +2820,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   
   // Total Frete Calculado pelo Fornecedor (soma de todos os fretes col5)
   const totalFreteCalculado = filteredProducts.reduce((sum, prod) => {
-    const valorForn = Number(prod.valorUsd || 0);
-    const valorOrdem = Number(prod.valorPoCheia || 0);
+    const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
+    const valorOrdem = Number(String(prod.valorPoCheia || 0).replace(',', '.'));
     const qty = Number(prod.quantidade || 0);
     const diff = valorOrdem - valorForn;
     return sum + (diff > 0 ? diff * qty : 0);
@@ -2811,7 +2829,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
 
   // Total Valor de Referência (soma col7 = valorFornecedor × qtd)
   const totalValorReferencia = filteredProducts.reduce((sum, prod) => {
-    const valorForn = Number(prod.valorUsd || 0);
+    const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
     const qty = Number(prod.quantidade || 0);
     return sum + (valorForn * qty);
   }, 0);
@@ -3021,8 +3039,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
           </thead>
           <tbody>
             {filteredProducts.map((prod, idx) => {
-              const valorForn = Number(prod.valorUsd || 0);
-              const valorOrdem = Number(prod.valorPoCheia || 0);
+              const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
+              const valorOrdem = Number(String(prod.valorPoCheia || 0).replace(',', '.'));
               const qty = Number(prod.quantidade || 0);
               const diferenca = valorOrdem - valorForn;
               const freteCalcFornecedor = diferenca > 0 && qty > 0 ? diferenca * qty : 0;
@@ -3143,8 +3161,9 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                         defaultValue={prod.valorUsd || ''}
                         placeholder="0.00"
                         onBlur={e => {
-                          if (e.target.value !== (prod.valorUsd || '')) {
-                            updateProduct.mutate({ id: prod.id, valorUsd: e.target.value });
+                          const normalized = e.target.value.replace(',', '.');
+                          if (normalized !== String(prod.valorUsd || '')) {
+                            updateProduct.mutate({ id: prod.id, valorUsd: normalized });
                           }
                         }}
                         onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
@@ -3167,8 +3186,9 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                         defaultValue={prod.valorPoCheia || ''}
                         placeholder="0.00"
                         onBlur={e => {
-                          if (e.target.value !== (prod.valorPoCheia || '')) {
-                            updateProduct.mutate({ id: prod.id, valorPoCheia: e.target.value });
+                          const normalized = e.target.value.replace(',', '.');
+                          if (normalized !== String(prod.valorPoCheia || '')) {
+                            updateProduct.mutate({ id: prod.id, valorPoCheia: normalized });
                           }
                         }}
                         onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
