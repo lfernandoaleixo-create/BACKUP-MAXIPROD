@@ -4354,3 +4354,7 @@
 - [x] Comparar planilha atualizada com dados no banco e identificar diferenças
 - [x] Incluir PO57 (nova) no banco de dados (35 produtos, total custos R$149.864)
 - [x] Atualizar valores alterados nos produtos existentes (291 updates em 33 POs)
+
+## Conversor Custo em Tempo Real (11/06/2026)
+- [x] Substituir conversor atual (input+dropdown) por botões estilo POs (DÓLAR/USD indicator + toggle USD→BRL/BRL→USD)
+- [x] Toggle deve converter os valores de Custo Médio/Caixa na tabela entre USD e BRL
