@@ -4349,3 +4349,8 @@
 - [x] Salvar UNID. CAIXA no banco ao editar
 - [x] Campo UNID. CAIXA no formulário "Adicionar Produto"
 - [x] POs legacy: UNID. CAIXA e PREÇO MIL/UNID. exibem valores fixos do banco (planilha)
+
+## Atualização planilha importação (11/06/2026)
+- [x] Comparar planilha atualizada com dados no banco e identificar diferenças
+- [x] Incluir PO57 (nova) no banco de dados (35 produtos, total custos R$149.864)
+- [x] Atualizar valores alterados nos produtos existentes (291 updates em 33 POs)
