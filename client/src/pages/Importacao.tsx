@@ -3090,6 +3090,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-emerald-200 bg-emerald-50">Valor de Referência</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-indigo-200 bg-indigo-50">Porcentagem que o Produto Representa no Valor do Total da Ordem de Pagamento</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-emerald-200 bg-emerald-50">Valor da Caixa</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-teal-200 bg-teal-50">Unid. Caixa</th>
+              <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-teal-200 bg-teal-50">Preço Mil/Unid.</th>
               <th className="px-2 py-2.5 text-center font-semibold border-b-2 border-slate-200">Ações</th>
             </tr>
           </thead>
@@ -3322,10 +3324,27 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       {percProdutoNoTotal > 0 ? `${(Math.round(percProdutoNoTotal * 100) / 100).toFixed(2)} %` : '—'}
                     </span>
                   </td>
-                  {/* Valor da Caixa */}
+                  {/* Valor da Caixa - usa valor exato do banco (planilha) se disponível, senão calcula */}
                   <td className="px-2 py-2 text-center bg-emerald-50/30">
                     <span className="font-mono text-emerald-800 font-bold text-[11px]">
-                      {valorDaCaixa > 0 ? (currency === "USD" ? `$ ${(Math.round(valorDaCaixa * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(valorDaCaixa * exchangeRate * 100) / 100).toFixed(2)}`) : '—'}
+                      {prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0
+                        ? `R$ ${Number(prod.valorCaixaBrl).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`
+                        : valorDaCaixa > 0 ? (currency === "USD" ? `$ ${(Math.round(valorDaCaixa * 100) / 100).toFixed(2)}` : `R$ ${(Math.round(valorDaCaixa * exchangeRate * 100) / 100).toFixed(2)}`) : '—'}
+                    </span>
+                    {prod.valorCaixaBrl && Number(prod.valorCaixaBrl) > 0 && (
+                      <span className="block text-[8px] text-emerald-500 mt-0.5">(planilha)</span>
+                    )}
+                  </td>
+                  {/* Unid. Caixa (do Excel/banco) */}
+                  <td className="px-2 py-2 text-center bg-teal-50/30">
+                    <span className="font-mono text-teal-700 font-semibold">
+                      {prod.unidCaixa ? Number(prod.unidCaixa).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '—'}
+                    </span>
+                  </td>
+                  {/* Preço Mil/Unid. (do Excel/banco) */}
+                  <td className="px-2 py-2 text-center bg-teal-50/30">
+                    <span className="font-mono text-teal-800 font-bold text-[11px]">
+                      {prod.precoMilUnid ? `R$ ${Number(prod.precoMilUnid).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : '—'}
                     </span>
                   </td>
                   {/* Ações */}

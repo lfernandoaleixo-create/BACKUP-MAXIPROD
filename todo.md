@@ -4301,3 +4301,12 @@
 - [x] Trocar operador Marcos por Danubia (nome, senha, mesmos acessos) no banco e código
 - [x] Desativar senha Thiago e transferir todos os acessos/responsabilidades dele para Thalita
 - [x] Esconder card "Custos Logísticos & Informações" para novas POs (manter para POs antigas que já têm dados)
+
+## Importação Excel Betty - Custo Final Exato da Planilha (11/06/2026)
+- [x] Extrair dados exatos da planilha Betty Guangzhou (41 POs, 250+ produtos)
+- [x] Alterar precisão de valor_caixa_brl e preco_mil_unid para DECIMAL(12,6) no banco
+- [x] Atualizar headers de todas as 41 POs com dados logísticos da planilha
+- [x] Atualizar todos os 250 produtos com valores exatos (unid_caixa, valor_usd, ci_value_usd, total_freight_usd, quantidade, valor_referencia, perc_representatividade, valor_caixa_brl, preco_mil_unid)
+- [x] Adicionar colunas "Unid. Caixa" e "Preço Mil/Unid." na tabela de produtos das POs
+- [x] Coluna "Valor da Caixa" agora mostra valor exato do banco (planilha) quando disponível, com indicador "(planilha)"
+- [x] Teste vitest para verificar que getPoProducts retorna campos valorCaixaBrl, precoMilUnid e unidCaixa com precisão correta

@@ -2539,8 +2539,8 @@ export const importPoProducts = mysqlTable("import_po_products", {
   quantidade: int("quantidade"), // Quantidade de caixas
   valorReferencia: decimal("valor_referencia", { precision: 14, scale: 2 }), // Valor total referência
   percRepresentatividade: decimal("perc_representatividade", { precision: 8, scale: 6 }),
-  valorCaixaBrl: decimal("valor_caixa_brl", { precision: 10, scale: 2 }), // Custo final por caixa R$
-  precoMilUnid: decimal("preco_mil_unid", { precision: 10, scale: 2 }), // Preço por mil unidades R$
+  valorCaixaBrl: decimal("valor_caixa_brl", { precision: 12, scale: 6 }), // Custo final por caixa R$ (6 decimais para fidelidade ao Excel)
+  precoMilUnid: decimal("preco_mil_unid", { precision: 12, scale: 6 }), // Preço por mil unidades R$ (6 decimais para fidelidade ao Excel)
   ciValueUsd: decimal("ci_value_usd", { precision: 10, scale: 4 }), // Valor CI (duplicado para compatibilidade)
   totalFreightUsd: decimal("total_freight_usd", { precision: 10, scale: 4 }), // Total frete por produto
   freteMaritimo: decimal("frete_maritimo", { precision: 10, scale: 4 }), // Frete marítimo USD (manual)
