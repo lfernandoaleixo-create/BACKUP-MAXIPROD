@@ -3037,7 +3037,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
 
               return (
                 <tr key={prod.id} className={`border-t border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} hover:bg-blue-50/30`}>
-                  <td className="px-2 py-2 text-slate-700 max-w-[180px] truncate font-medium" title={prod.description}>{prod.description}</td>
+                  <td className="px-2 py-2 text-slate-700 font-medium text-xs whitespace-normal break-words min-w-[200px]">{prod.description}</td>
                   <td className="px-2 py-2 text-center relative">
                     {editingId === prod.id ? (
                       <div className="relative">
@@ -3126,34 +3126,52 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       </span>
                     )}
                   </td>
-                  {/* Col 1: Valor Pago ao Fornecedor */}
+                  {/* Col 1: Valor Pago ao Fornecedor (sempre editável) */}
                   <td className="px-2 py-2 text-center bg-blue-50/30">
                     {editingId === prod.id ? (
                       <input
-                        className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                        className="w-20 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px] font-mono"
                         value={editValues.valorUsd || ''}
                         onChange={e => setEditValues({ ...editValues, valorUsd: e.target.value })}
                         placeholder="0.00"
                       />
                     ) : (
-                      <span className="font-mono text-blue-700 font-semibold">
-                        {valorForn > 0 ? (currency === "USD" ? `$ ${valorForn.toFixed(2)}` : `R$ ${(valorForn * exchangeRate).toFixed(2)}`) : '—'}
-                      </span>
+                      <input
+                        key={`val-${prod.id}-${prod.valorUsd}`}
+                        className="w-20 text-center border border-slate-200 rounded px-1 py-1 text-[10px] font-mono text-blue-700 font-semibold bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
+                        defaultValue={prod.valorUsd || ''}
+                        placeholder="0.00"
+                        onBlur={e => {
+                          if (e.target.value !== (prod.valorUsd || '')) {
+                            updateProduct.mutate({ id: prod.id, valorUsd: e.target.value });
+                          }
+                        }}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      />
                     )}
                   </td>
-                  {/* Col 2: Valor Pago na Ordem de Pagamento */}
+                  {/* Col 2: Valor Pago na Ordem de Pagamento (sempre editável) */}
                   <td className="px-2 py-2 text-center bg-blue-50/30">
                     {editingId === prod.id ? (
                       <input
-                        className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                        className="w-20 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px] font-mono"
                         value={editValues.valorPoCheia || ''}
                         onChange={e => setEditValues({ ...editValues, valorPoCheia: e.target.value })}
                         placeholder="0.00"
                       />
                     ) : (
-                      <span className="font-mono text-blue-700">
-                        {valorOrdem > 0 ? (currency === "USD" ? `$ ${valorOrdem.toFixed(2)}` : `R$ ${(valorOrdem * exchangeRate).toFixed(2)}`) : '—'}
-                      </span>
+                      <input
+                        key={`ordem-${prod.id}-${prod.valorPoCheia}`}
+                        className="w-20 text-center border border-slate-200 rounded px-1 py-1 text-[10px] font-mono text-blue-700 bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
+                        defaultValue={prod.valorPoCheia || ''}
+                        placeholder="0.00"
+                        onBlur={e => {
+                          if (e.target.value !== (prod.valorPoCheia || '')) {
+                            updateProduct.mutate({ id: prod.id, valorPoCheia: e.target.value });
+                          }
+                        }}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      />
                     )}
                   </td>
                   {/* Col 3: Diferença (automático) */}
@@ -3162,18 +3180,31 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                       {valorForn > 0 && valorOrdem > 0 ? (currency === "USD" ? `$ ${diferenca.toFixed(2)}` : `R$ ${(diferenca * exchangeRate).toFixed(2)}`) : '—'}
                     </span>
                   </td>
-                  {/* Col 4: Quantidade de Caixas */}
+                  {/* Col 4: Quantidade de Caixas (sempre editável) */}
                   <td className="px-2 py-2 text-center">
                     {editingId === prod.id ? (
                       <input
-                        className="w-14 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px]"
+                        className="w-16 text-center border border-blue-300 rounded px-1 py-0.5 text-[10px] font-mono"
                         value={editValues.quantidade || ''}
                         onChange={e => setEditValues({ ...editValues, quantidade: e.target.value })}
                         placeholder="0"
                         type="number"
                       />
                     ) : (
-                      <span className="font-mono text-slate-700 font-semibold">{qty > 0 ? qty : '—'}</span>
+                      <input
+                        key={`qty-${prod.id}-${prod.quantidade}`}
+                        className="w-16 text-center border border-slate-200 rounded px-1 py-1 text-[10px] font-mono text-slate-700 font-semibold bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none"
+                        defaultValue={prod.quantidade || ''}
+                        placeholder="0"
+                        type="number"
+                        onBlur={e => {
+                          const val = e.target.value;
+                          if (val !== String(prod.quantidade || '')) {
+                            updateProduct.mutate({ id: prod.id, quantidade: val ? parseInt(val) : null });
+                          }
+                        }}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      />
                     )}
                   </td>
                   {/* Col 5: Frete Calculado pelo Fornecedor */}
