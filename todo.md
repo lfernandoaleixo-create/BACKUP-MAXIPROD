@@ -4316,3 +4316,10 @@
 - [x] Não aplicar % Vilela, não recalcular custos totais — tudo já está cravado na planilha
 - [x] Totalizadores das POs antigas devem usar os valores do banco (despesasLiberacaoRemessa já salvo)
 - [x] Cálculo dinâmico (% Vilela, custos totais) só se aplica a POs novas sem valorCaixaBrl
+
+## Fix: POs antigas - valores de custo estão em BRL, não USD (11/06/2026)
+- [x] Para POs legacy, freteTermestreRemessa, comissaoSilverio, difalValor e despesasLiberacaoRemessa já estão em BRL no banco
+- [x] Exibir esses campos com prefixo R$ sem conversão de câmbio para POs antigas
+- [x] Custos Totais da Importação deve bater com a planilha (ex: PO65 = R$ 183.451,33)
+- [x] Fórmula correta: (totalRef_USD + totalFrete_USD) * dólar_da_PO + despesas_BRL + frete_terrestre_BRL + comissao_BRL
+- [x] Sub-itens (Ordem Pgto, Frete, Desp.Lib, Frete SP/MG, DIFAL, Com.Silvério) exibem valores fixos em R$ para POs antigas
