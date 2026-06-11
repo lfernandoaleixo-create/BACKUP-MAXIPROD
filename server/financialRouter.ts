@@ -3434,7 +3434,7 @@ export const financialRouter = router({
 
   /**
    * Set auth completion for today.
-   * Requires password "Fernando" or "Bruno" to mark as completed.
+   * Requires password "Fernando", "Bruno" or "Flavio" to mark as completed.
    */
   setAuthCompletion: publicProcedure
     .input(z.object({
@@ -3443,7 +3443,7 @@ export const financialRouter = router({
     }))
     .mutation(async ({ input }) => {
       // Validate password
-      const AUTH_PASSWORDS = ["Fernando", "Bruno"];
+      const AUTH_PASSWORDS = ["Fernando", "Bruno", "Flavio"];
       if (!AUTH_PASSWORDS.includes(input.password)) {
         return { success: false, error: "Senha incorreta" };
       }
@@ -7057,7 +7057,7 @@ ${acoesTexto}
       password: z.string(),
     }))
     .mutation(async ({ input }) => {
-      const EXCHANGE_PASSWORDS = ["Fernando"];
+      const EXCHANGE_PASSWORDS = ["Fernando", "Flavio"];
       if (!EXCHANGE_PASSWORDS.includes(input.password)) {
         return { success: false, error: "Senha incorreta" };
       }
@@ -7085,7 +7085,7 @@ ${acoesTexto}
     }))
     .mutation(async ({ input }) => {
       // Validate password
-      const EXCHANGE_PASSWORDS = ["Fernando"];
+      const EXCHANGE_PASSWORDS = ["Fernando", "Flavio"];
       if (!EXCHANGE_PASSWORDS.includes(input.password)) {
         return { success: false, error: "Senha incorreta" };
       }
@@ -7113,7 +7113,7 @@ ${acoesTexto}
       y -= 18;
       page.drawText(`Data: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, { x: margin, y, font, size: 11, color: rgb(0.3, 0.3, 0.3) });
       y -= 18;
-      page.drawText(`Autorizado por: Fernando`, { x: margin, y, font, size: 11, color: rgb(0.3, 0.3, 0.3) });
+      page.drawText(`Autorizado por: ${input.password}`, { x: margin, y, font, size: 11, color: rgb(0.3, 0.3, 0.3) });
       y -= 30;
 
       // Line separator
@@ -7172,7 +7172,7 @@ ${acoesTexto}
       // Save to database
       await db.insert(chequeExchanges).values({
         empresaNome: input.empresaNome,
-        operador: "Fernando",
+        operador: input.password,
         chequesJson: JSON.stringify(input.cheques),
         totalValor: totalValor.toFixed(2),
         totalCheques,

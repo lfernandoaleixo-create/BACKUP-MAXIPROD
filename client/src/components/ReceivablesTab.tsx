@@ -574,8 +574,8 @@ function ContaFiltersAndTable({
   const selectedContaItems = filteredItems.filter(i => selectedIds.has(i.id));
   const selectedContaTotal = selectedContaItems.reduce((a, b) => a + b.valorAReceber, 0);
 
-  // Finalization with authorized operators (Fernando/Bruno)
-  const AUTH_PASSWORDS = ["Fernando", "Bruno"];
+  // Finalization with authorized operators (Fernando/Bruno/Flavio)
+  const AUTH_PASSWORDS = ["Fernando", "Bruno", "Flavio"];
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -990,7 +990,7 @@ function ContaFiltersAndTable({
                 Descontos Autorizados
               </span>
               {!isAuthorizer && !discountsAuthorized && (
-                <span className="text-xs text-slate-400 italic">(somente Fernando/Bruno)</span>
+                <span className="text-xs text-slate-400 italic">(somente Fernando/Bruno/Flavio)</span>
               )}
             </div>
             {discountsAuthorized && (
@@ -1874,6 +1874,7 @@ function shortEmpresaNameForAlert(nome: string): string {
 }
 
 export default function ReceivablesTab() {
+  const { operator } = useOperator();
   const [estado, setEstado] = useState<"EMITIDO" | "RECEBIDO" | "ALL">("EMITIDO");
   const [search, setSearch] = useState("");
   const [expandedEmpresas, setExpandedEmpresas] = useState<Set<string>>(new Set());
@@ -2004,7 +2005,7 @@ export default function ReceivablesTab() {
 
   const handleExchangePasswordSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (exchangePasswordInput === "Fernando") {
+    if (exchangePasswordInput === "Fernando" || exchangePasswordInput === "Flavio") {
       setExchangeAuthenticated(true);
       setShowExchangePasswordDialog(false);
       setExchangePasswordError(false);
@@ -2033,7 +2034,7 @@ export default function ReceivablesTab() {
     setExchangeProcessing(true);
     try {
       const result = await createExchangeMutation.mutateAsync({
-        password: "Fernando",
+        password: operator?.name || "Fernando",
         empresaNome: chequesOpenEmpresa || "",
         cheques: selectedCheques.map((c: any) => ({
           id: c.id,

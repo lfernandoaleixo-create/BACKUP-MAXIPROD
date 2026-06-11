@@ -4293,3 +4293,5 @@
 - [x] Sufixo % na coluna de porcentagem
 - [x] 2 casas decimais com arredondamento correto (3ª casa > 5 arredonda pra cima)
 - [x] Remover card "Custos Logísticos & Informações" das POs na aba Custo da Mercadoria
+- [x] Autorizar Flavio para descontos de títulos no Financeiro (Recebíveis) - client e server
+- [x] Liberar aba Importação para a senha Gilson
