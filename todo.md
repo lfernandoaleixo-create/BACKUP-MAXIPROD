@@ -4326,3 +4326,14 @@
 - [x] pagamento_1_remessa salvo no banco com valor exato da planilha para Ordem Pgto
 - [x] Frete sub-item oculto para POs legacy (já incluso na Ordem Pgto/CI)
 - [x] Todas as 41 POs com total_custos_importacao salvo direto da planilha no banco
+
+## Custo em Tempo Real - Média Ponderada por Produto Importado (11/06/2026)
+- [x] Criar endpoint tRPC que calcula custo em tempo real para cada produto importado
+- [x] Lógica: buscar todas as POs com valor_caixa_brl para cada produto, cruzar com estoque atual
+- [x] Média ponderada LIFO: usa POs mais recentes primeiro até cobrir estoque atual
+- [x] Se produto sem estoque: usar valor da última PO recebida
+- [x] Criar aba/seção "Custo em Tempo Real" na página de Importação
+- [x] Lista de todos os produtos importados com custo atualizado por caixa
+- [x] Card expandível mostrando detalhamento: X caixas da POy a R$ Z cada
+- [x] Apenas produtos de importação (grupo 20/21), madeira/industrializado não entra
+- [x] Testes automatizados (3 testes passando)

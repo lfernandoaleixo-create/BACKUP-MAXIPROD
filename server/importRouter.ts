@@ -1005,4 +1005,118 @@ export const importRouter = router({
         selectedUf,
       };
     }),
+
+  // ===== CUSTO EM TEMPO REAL =====
+  getRealTimeCosts: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+
+    // 1. Get all stock items from grupo 20/21 (imported products)
+    const stockRows = await db.select({
+      codigoItem: stockItems.codigoItem,
+      descricaoItem: stockItems.descricaoItem,
+      quantidade: stockItems.quantidade,
+      unidadeDeVendaFator: stockItems.unidadeDeVendaFator,
+    }).from(stockItems).where(
+      or(
+        eq(stockItems.grupoCodigo, '20'),
+        eq(stockItems.grupoCodigo, '21')
+      )
+    );
+
+    // 2. Get all PO products with valor_caixa_brl and product_code, from arrived POs
+    const poProducts = await db.select({
+      productCode: importPoProducts.productCode,
+      quantidade: importPoProducts.quantidade,
+      valorCaixaBrl: importPoProducts.valorCaixaBrl,
+      poNumber: importPos.poNumber,
+      poId: importPos.id,
+    }).from(importPoProducts)
+      .innerJoin(importPos, eq(importPoProducts.poId, importPos.id))
+      .where(
+        and(
+          sql`${importPoProducts.productCode} IS NOT NULL`,
+          sql`${importPoProducts.productCode} != ''`,
+          sql`${importPoProducts.valorCaixaBrl} IS NOT NULL`,
+          eq(importPos.status, 'arrived')
+        )
+      )
+      .orderBy(desc(importPos.id)); // Most recent POs first (LIFO)
+
+    // 3. Group PO products by product_code
+    const poByProduct: Record<string, Array<{ poNumber: string; quantidade: number; valorCaixaBrl: number }>> = {};
+    for (const pp of poProducts) {
+      const code = pp.productCode!;
+      if (!poByProduct[code]) poByProduct[code] = [];
+      poByProduct[code].push({
+        poNumber: pp.poNumber,
+        quantidade: Number(pp.quantidade || 0),
+        valorCaixaBrl: Number(pp.valorCaixaBrl || 0),
+      });
+    }
+
+    // 4. Calculate weighted average for each stock item
+    const results = [];
+    for (const item of stockRows) {
+      const code = item.codigoItem;
+      const poHistory = poByProduct[code];
+      if (!poHistory || poHistory.length === 0) continue; // Skip products without PO cost data
+
+      const fator = Number(item.unidadeDeVendaFator || 1);
+      const stockUnits = Number(item.quantidade || 0);
+      const boxesInStock = fator > 0 ? stockUnits / fator : 0;
+
+      if (boxesInStock <= 0) {
+        // No stock: use the most recent PO cost
+        const lastPo = poHistory[0];
+        results.push({
+          codigoItem: code,
+          descricao: item.descricaoItem,
+          caixasEstoque: 0,
+          custoMedioPonderado: lastPo.valorCaixaBrl,
+          breakdown: [{
+            poNumber: lastPo.poNumber,
+            caixasUsadas: 0,
+            valorCaixa: lastPo.valorCaixaBrl,
+          }],
+          semEstoque: true,
+        });
+        continue;
+      }
+
+      // LIFO: use most recent POs first until we cover all boxes in stock
+      let remaining = boxesInStock;
+      let totalCost = 0;
+      const breakdown: Array<{ poNumber: string; caixasUsadas: number; valorCaixa: number }> = [];
+
+      for (const po of poHistory) {
+        if (remaining <= 0) break;
+        const used = Math.min(po.quantidade, remaining);
+        totalCost += used * po.valorCaixaBrl;
+        breakdown.push({
+          poNumber: po.poNumber,
+          caixasUsadas: Math.round(used * 100) / 100,
+          valorCaixa: po.valorCaixaBrl,
+        });
+        remaining -= used;
+      }
+
+      const coveredBoxes = boxesInStock - remaining;
+      const avgCost = coveredBoxes > 0 ? totalCost / coveredBoxes : 0;
+
+      results.push({
+        codigoItem: code,
+        descricao: item.descricaoItem,
+        caixasEstoque: Math.round(boxesInStock * 100) / 100,
+        custoMedioPonderado: Math.round(avgCost * 100) / 100,
+        breakdown,
+        semEstoque: false,
+        caixasSemCusto: remaining > 0 ? Math.round(remaining * 100) / 100 : 0,
+      });
+    }
+
+    // Sort by product code
+    results.sort((a, b) => a.codigoItem.localeCompare(b.codigoItem, undefined, { numeric: true }));
+    return results;
+  }),
 });

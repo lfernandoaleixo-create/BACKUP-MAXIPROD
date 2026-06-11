@@ -1515,15 +1515,7 @@ function CustoMercadoria() {
         )}
       </div>
 
-      {custoTab === "realtime" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="w-5 h-5 text-emerald-600" />
-            <h3 className="text-lg font-semibold text-slate-800">Custo da Mercadoria em Tempo Real</h3>
-          </div>
-          <p className="text-sm text-slate-500">Em breve: visualização do custo atualizado da mercadoria em tempo real.</p>
-        </div>
-      )}
+      {custoTab === "realtime" && <CustoTempoReal exchangeRate={exchangeRate} currency={currency} />}
       {custoTab === "pos" && <CustoPosView currency={currency} exchangeRate={exchangeRate} setPdfViewerUrl={setPdfViewerUrl} setPdfViewerTitle={setPdfViewerTitle} />}
       {custoTab === "config" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
@@ -1558,6 +1550,151 @@ function CustoMercadoria() {
               <iframe src={pdfViewerUrl} className="w-full h-full" title={pdfViewerTitle} />
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustoTempoReal({ exchangeRate, currency }: { exchangeRate: number; currency: "USD" | "BRL" }) {
+  const { data: costs, isLoading } = trpc.import.getRealTimeCosts.useQuery();
+  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
+      </div>
+    );
+  }
+
+  const allCosts = costs || [];
+  const filtered = searchTerm
+    ? allCosts.filter(c => c.codigoItem.toLowerCase().includes(searchTerm.toLowerCase()) || c.descricao.toLowerCase().includes(searchTerm.toLowerCase()))
+    : allCosts;
+
+  const formatBrl = (val: number) => val.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const displayVal = (brl: number) => currency === "BRL" ? `R$ ${formatBrl(brl)}` : `$ ${formatBrl(brl / exchangeRate)}`;
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <TrendingUp className="w-5 h-5 text-emerald-600" />
+          <h3 className="text-lg font-semibold text-slate-800">Custo da Mercadoria em Tempo Real</h3>
+          <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{allCosts.length} produtos</span>
+        </div>
+      </div>
+      <p className="text-xs text-slate-500 mb-4">Média ponderada do custo por caixa baseada no estoque atual e nos valores das POs que chegaram (LIFO).</p>
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Buscar por código ou descrição..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+        />
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 text-left">
+              <th className="pb-2 pr-4 font-medium text-slate-600">Código</th>
+              <th className="pb-2 pr-4 font-medium text-slate-600">Descrição</th>
+              <th className="pb-2 pr-4 font-medium text-slate-600 text-right">Caixas em Estoque</th>
+              <th className="pb-2 pr-4 font-medium text-slate-600 text-right">Custo Médio/Caixa</th>
+              <th className="pb-2 font-medium text-slate-600 text-center">Detalhes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((item) => (
+              <>
+                <tr
+                  key={item.codigoItem}
+                  className={`border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors ${
+                    expandedProduct === item.codigoItem ? "bg-blue-50/50" : ""
+                  }`}
+                  onClick={() => setExpandedProduct(expandedProduct === item.codigoItem ? null : item.codigoItem)}
+                >
+                  <td className="py-2.5 pr-4 font-mono text-xs text-slate-700 font-medium">{item.codigoItem}</td>
+                  <td className="py-2.5 pr-4 text-slate-700 text-xs">{item.descricao}</td>
+                  <td className="py-2.5 pr-4 text-right font-medium">
+                    {item.semEstoque ? (
+                      <span className="text-orange-500 text-xs">Sem estoque</span>
+                    ) : (
+                      <span className="text-slate-800">{item.caixasEstoque.toLocaleString("pt-BR")}</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 pr-4 text-right">
+                    <span className="font-semibold text-emerald-700 whitespace-nowrap">{displayVal(item.custoMedioPonderado)}</span>
+                  </td>
+                  <td className="py-2.5 text-center">
+                    <button className="p-1 rounded hover:bg-slate-200 transition-colors">
+                      {expandedProduct === item.codigoItem ? (
+                        <ChevronUp className="w-4 h-4 text-slate-500" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-slate-500" />
+                      )}
+                    </button>
+                  </td>
+                </tr>
+                {expandedProduct === item.codigoItem && (
+                  <tr key={`${item.codigoItem}-detail`}>
+                    <td colSpan={5} className="p-0">
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl mx-2 my-2 p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Layers className="w-4 h-4 text-blue-600" />
+                          <h4 className="text-sm font-semibold text-blue-800">Composição da Média Ponderada</h4>
+                        </div>
+                        {item.semEstoque && (
+                          <p className="text-xs text-orange-600 mb-2 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200">
+                            Sem estoque atual. Custo baseado na última PO recebida.
+                          </p>
+                        )}
+                        {(item.caixasSemCusto ?? 0) > 0 && (
+                          <p className="text-xs text-amber-600 mb-2 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                            {item.caixasSemCusto} caixas de POs mais antigas sem dados de custo cadastrados.
+                          </p>
+                        )}
+                        <div className="space-y-1.5">
+                          {item.breakdown.map((b, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-white/80 rounded-lg px-3 py-2 border border-blue-100/50">
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">{b.poNumber}</span>
+                                <span className="text-xs text-slate-600">
+                                  {b.caixasUsadas > 0 ? `${b.caixasUsadas.toLocaleString("pt-BR")} caixas` : "Referência"}
+                                </span>
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 whitespace-nowrap">{displayVal(b.valorCaixa)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {!item.semEstoque && item.breakdown.length > 1 && (
+                          <div className="mt-3 pt-3 border-t border-blue-200/50 flex items-center justify-between">
+                            <span className="text-xs text-blue-700 font-medium">Média Ponderada Final:</span>
+                            <span className="text-sm font-bold text-emerald-700">{displayVal(item.custoMedioPonderado)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="text-center py-8 text-slate-400">
+          <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">Nenhum produto encontrado.</p>
         </div>
       )}
     </div>
