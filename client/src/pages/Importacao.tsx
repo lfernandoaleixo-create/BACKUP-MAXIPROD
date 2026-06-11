@@ -2795,22 +2795,34 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   const [pag1, setPag1] = useState(po.pagamento1Remessa || '');
   const [pag2Usd, setPag2Usd] = useState(po.pagamento2Remessa || '');
   const [pag3Usd, setPag3Usd] = useState(po.pagamento3Remessa || '');
-  const [freteTerrestreSPUsd, setFreteTerrestreSPUsd] = useState(po.freteTermestreRemessa || '');
-  const [difalValUsd, setDifalValUsd] = useState(po.difalValor || '');
-  const [comSilverioUsd, setComSilverioUsd] = useState(po.comissaoSilverio || '');
+  // Para POs antigas (legacy), os valores de frete terrestre, DIFAL e comissão estão em BRL no banco.
+  // Precisamos converter para USD (dividir pelo dólar da PO) para que o displayVal funcione corretamente.
+  const legacyRate = Number(po.valorDolar1 || po.valorDolar1Remessa || exchangeRate);
+  const isLegacyInit = !!(po.freteTermestreRemessa || po.comissaoSilverio || po.difalValor);
+  const [freteTerrestreSPUsd, setFreteTerrestreSPUsd] = useState(
+    isLegacyInit && po.freteTermestreRemessa ? String((Number(po.freteTermestreRemessa) / legacyRate).toFixed(4)) : (po.freteTermestreRemessa || '')
+  );
+  const [difalValUsd, setDifalValUsd] = useState(
+    isLegacyInit && po.difalValor ? String((Number(po.difalValor) / legacyRate).toFixed(4)) : (po.difalValor || '')
+  );
+  const [comSilverioUsd, setComSilverioUsd] = useState(
+    isLegacyInit && po.comissaoSilverio ? String((Number(po.comissaoSilverio) / legacyRate).toFixed(4)) : (po.comissaoSilverio || '')
+  );
   
-  // Helper: display value in current currency
+  // Helper: display value in current currency (uses legacyRate for legacy POs)
   const displayVal = (usdVal: string) => {
     if (!usdVal) return '';
     const n = Number(usdVal);
     if (isNaN(n)) return usdVal;
-    return currency === 'BRL' ? (n * exchangeRate).toFixed(2) : n.toFixed(2);
+    const rate = isLegacyInit ? legacyRate : exchangeRate;
+    return currency === 'BRL' ? (n * rate).toFixed(2) : n.toFixed(2);
   };
   // Helper: convert input from current currency to USD for storage
   const toUsd = (inputVal: string) => {
     const n = Number(inputVal.replace(',', '.'));
     if (isNaN(n)) return '0';
-    return currency === 'BRL' ? (n / exchangeRate).toFixed(4) : String(n);
+    const rate = isLegacyInit ? legacyRate : exchangeRate;
+    return currency === 'BRL' ? (n / rate).toFixed(4) : String(n);
   };
   // Aliases for compatibility
   const valorCi = valorCiUsd;
@@ -2922,10 +2934,10 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       pagamento1Remessa: String(remessa1Calculada > 0 ? remessa1Calculada.toFixed(2) : pag1) || null,
       pagamento2Remessa: pag2 || null,
       pagamento3Remessa: pag3 || null,
-      freteTermestreRemessa: freteTerrestreSP || null,
-      difalValor: difalVal || null,
-      comissaoSilverio: comSilverio || null,
-      // Para POs antigas (planilha), não sobrescrever despesasLiberacaoRemessa com valor recalculado
+      // Para POs antigas (planilha), preservar os valores originais em BRL do banco
+      freteTermestreRemessa: isLegacyPo ? (po.freteTermestreRemessa || null) : (freteTerrestreSP || null),
+      difalValor: isLegacyPo ? (po.difalValor || null) : (difalVal || null),
+      comissaoSilverio: isLegacyPo ? (po.comissaoSilverio || null) : (comSilverio || null),
       despesasLiberacaoRemessa: isLegacyPo ? (po.despesasLiberacaoRemessa || null) : (despesasLiberacao > 0 ? String(despesasLiberacao.toFixed(2)) : null),
     });
   };
@@ -3493,7 +3505,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   <>
                     <label className="text-[10px] text-slate-500 font-medium">Despesas de Liberação (valor fixo da planilha)</label>
                     <div className="w-full border border-amber-200 bg-amber-50 rounded px-3 py-2 text-sm font-mono font-bold text-amber-800">
-                      {`R$ ${Number(po.despesasLiberacaoRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      {currency === "USD" ? `$ ${(Number(po.despesasLiberacaoRemessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.despesasLiberacaoRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     </div>
                   </>
                 ) : (
@@ -3580,7 +3592,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               </div>
               <p className="text-3xl sm:text-4xl font-bold font-mono">
                 {isLegacyPo
-                  ? `R$ ${custosTotais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ? (currency === "USD" ? `$ ${(custosTotais / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${custosTotais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                   : (currency === "USD" ? `$ ${custosTotais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(custosTotais * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}
               </p>
             </div>
@@ -3588,37 +3600,37 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Ordem Pgto</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? `R$ ${(totalValorReferencia * poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ? (currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalValorReferencia * poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                   : (currency === "USD" ? `$ ${totalValorReferencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalValorReferencia * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Frete</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? `R$ ${(totalFreteCalculado * poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ? (currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                   : (currency === "USD" ? `$ ${totalFreteCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(totalFreteCalculado * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Desp. Lib.</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? `R$ ${Number(po.despesasLiberacaoRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ? (currency === "USD" ? `$ ${(Number(po.despesasLiberacaoRemessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.despesasLiberacaoRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                   : (currency === "USD" ? `$ ${despesasLiberacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(despesasLiberacao * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Frete SP/MG</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? `R$ ${Number(po.freteTermestreRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ? (currency === "USD" ? `$ ${(Number(po.freteTermestreRemessa || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.freteTermestreRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                   : (currency === "USD" ? `$ ${Number(freteTerrestreSP || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Number(freteTerrestreSP || 0) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">DIFAL</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? `R$ ${Number(po.difalValor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ? (currency === "USD" ? `$ ${(Number(po.difalValor || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.difalValor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                   : (currency === "USD" ? `$ ${Number(difalVal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Number(difalVal || 0) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
               <div className="bg-white/15 rounded-lg px-3 py-2">
                 <p className="text-[10px] sm:text-xs text-indigo-200 font-medium">Com. Silvério</p>
                 <p className="font-mono font-bold text-sm sm:text-base mt-0.5">{isLegacyPo
-                  ? `R$ ${Number(po.comissaoSilverio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ? (currency === "USD" ? `$ ${(Number(po.comissaoSilverio || 0) / poExchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${Number(po.comissaoSilverio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
                   : (currency === "USD" ? `$ ${Number(comSilverio || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(Number(comSilverio || 0) * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}</p>
               </div>
             </div>
