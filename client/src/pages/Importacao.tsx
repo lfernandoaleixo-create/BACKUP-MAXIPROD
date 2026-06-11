@@ -3027,12 +3027,13 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
               const diferenca = valorOrdem - valorForn;
               const freteCalcFornecedor = diferenca > 0 && qty > 0 ? diferenca * qty : 0;
               const valorRef = valorForn * qty;
-              const percRep = totalValorReferencia > 0 ? valorRef / totalValorReferencia : 0;
-              const freteRateioCorreto = percRep * totalFreteCalculado;
-              // Porcentagem que o produto representa no total (Ordem + Frete, sem frete terrestre)
-              const totalOrdemMaisFrete = totalValorReferencia + totalFreteCalculado;
-              const percProdutoNoTotal = totalOrdemMaisFrete > 0 ? (valorRef / totalOrdemMaisFrete) * 100 : 0;
-              // Valor da Caixa = (Custos Totais × porcentagem / 100) / Quantidade de Caixas
+              // % que o produto representa no total da ordem = Valor de Referência / Total da Ordem de Pagamento
+              const percProdutoNaOrdem = totalValorReferencia > 0 ? valorRef / totalValorReferencia : 0;
+              // Frete com Rateio Correto = % do produto × Valor Total do Frete
+              const freteRateioCorreto = percProdutoNaOrdem * totalFreteCalculado;
+              // Porcentagem que o produto representa no valor total da ordem de pagamento (sem frete)
+              const percProdutoNoTotal = totalValorReferencia > 0 ? (valorRef / totalValorReferencia) * 100 : 0;
+              // Valor da Caixa = (Custos Totais da Importação × porcentagem / 100) / Quantidade de Caixas
               const valorDaCaixa = qty > 0 ? (custosTotais * (percProdutoNoTotal / 100)) / qty : 0;
 
               return (
@@ -3177,7 +3178,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   {/* Col 3: Diferença (automático) */}
                   <td className="px-2 py-2 text-center bg-orange-50/30">
                     <span className={`font-mono font-medium ${diferenca > 0 ? 'text-orange-600' : diferenca < 0 ? 'text-red-600' : 'text-slate-400'}`}>
-                      {valorForn > 0 && valorOrdem > 0 ? (currency === "USD" ? `$ ${diferenca.toFixed(2)}` : `R$ ${(diferenca * exchangeRate).toFixed(2)}`) : '—'}
+                      {(prod.valorUsd && prod.valorPoCheia) ? (currency === "USD" ? `$ ${diferenca.toFixed(2)}` : `R$ ${(diferenca * exchangeRate).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Col 4: Quantidade de Caixas (sempre editável) */}
@@ -3210,19 +3211,19 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                   {/* Col 5: Frete Calculado pelo Fornecedor */}
                   <td className="px-2 py-2 text-center bg-orange-50/30">
                     <span className="font-mono text-orange-700 font-semibold">
-                      {freteCalcFornecedor > 0 ? (currency === "USD" ? `$ ${freteCalcFornecedor.toFixed(2)}` : `R$ ${(freteCalcFornecedor * exchangeRate).toFixed(2)}`) : '—'}
+                      {(prod.valorUsd && prod.valorPoCheia && prod.quantidade) ? (currency === "USD" ? `$ ${freteCalcFornecedor.toFixed(2)}` : `R$ ${(freteCalcFornecedor * exchangeRate).toFixed(2)}`) : '—'}
                     </span>
                   </td>
-                  {/* Col 6: Frete com Rateio Correto */}
+                  {/* Col 6: Frete com Rateio Correto (% na ordem × frete total) */}
                   <td className="px-2 py-2 text-center bg-purple-50/30">
                     <span className="font-mono text-purple-700 font-medium">
-                      {freteRateioCorreto > 0 ? (currency === "USD" ? `$ ${freteRateioCorreto.toFixed(2)}` : `R$ ${(freteRateioCorreto * exchangeRate).toFixed(2)}`) : '—'}
+                      {(prod.valorUsd && prod.quantidade && totalValorReferencia > 0 && totalFreteCalculado > 0) ? (currency === "USD" ? `$ ${freteRateioCorreto.toFixed(2)}` : `R$ ${(freteRateioCorreto * exchangeRate).toFixed(2)}`) : '—'}
                     </span>
                   </td>
-                  {/* Col 7: Valor de Referência */}
+                  {/* Col 7: Valor de Referência (Valor Pago ao Fornecedor × Quantidade de Caixas) */}
                   <td className="px-2 py-2 text-center bg-emerald-50/30">
                     <span className="font-mono text-emerald-700 font-semibold">
-                      {valorRef > 0 ? (currency === "USD" ? `$ ${valorRef.toFixed(2)}` : `R$ ${(valorRef * exchangeRate).toFixed(2)}`) : '—'}
+                      {(prod.valorUsd && prod.quantidade) ? (currency === "USD" ? `$ ${valorRef.toFixed(2)}` : `R$ ${(valorRef * exchangeRate).toFixed(2)}`) : '—'}
                     </span>
                   </td>
                   {/* Porcentagem que o Produto Representa no Valor do Total da Ordem de Pagamento */}
