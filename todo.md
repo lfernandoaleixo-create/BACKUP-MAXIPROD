@@ -4321,5 +4321,8 @@
 - [x] Para POs legacy, freteTermestreRemessa, comissaoSilverio, difalValor e despesasLiberacaoRemessa já estão em BRL no banco
 - [x] Exibir esses campos com prefixo R$ sem conversão de câmbio para POs antigas
 - [x] Custos Totais da Importação deve bater com a planilha (ex: PO65 = R$ 183.451,33)
-- [x] Fórmula correta: (totalRef_USD + totalFrete_USD) * dólar_da_PO + despesas_BRL + frete_terrestre_BRL + comissao_BRL
-- [x] Sub-itens (Ordem Pgto, Frete, Desp.Lib, Frete SP/MG, DIFAL, Com.Silvério) exibem valores fixos em R$ para POs antigas
+- [x] Fórmula correta: usa total_custos_importacao fixo do banco (não recalcula)
+- [x] Sub-itens (Ordem Pgto, Desp.Lib, Frete SP/MG, DIFAL, Com.Silvério) exibem valores fixos em R$ para POs antigas
+- [x] pagamento_1_remessa salvo no banco com valor exato da planilha para Ordem Pgto
+- [x] Frete sub-item oculto para POs legacy (já incluso na Ordem Pgto/CI)
+- [x] Todas as 41 POs com total_custos_importacao salvo direto da planilha no banco
