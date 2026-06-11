@@ -24,7 +24,7 @@ const ALL_NOTIFICATION_TYPES = ["novo_pedido", "pedido_modificado", "observacao_
 const FATURAMENTO_ONLY_TYPES = ["novo_pedido", "pedido_modificado", "observacao_alterada"];
 
 // Operadores que só devem ver notificações de faturamento (NÃO cobrança/inadimplência)
-const FATURAMENTO_ONLY_OPERATORS = ["Maria", "Erica", "Marcos"];
+const FATURAMENTO_ONLY_OPERATORS = ["Maria", "Erica", "Danubia"];
 
 /** Retorna os tipos de notificação permitidos para o operador */
 function getAllowedTypes(operatorName?: string): string[] {

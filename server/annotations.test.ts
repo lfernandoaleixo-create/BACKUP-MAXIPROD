@@ -50,7 +50,7 @@ describe("Annotation Entries Schema", () => {
 
 describe("Notification Filter for Operators", () => {
   // Operators who should only see billing notifications
-  const billingOnlyOperators = ["Maria", "Erica", "Marcos"];
+  const billingOnlyOperators = ["Maria", "Erica", "Danubia"];
   
   // Notification types
   const billingNotificationTypes = ["novo_pedido", "pedido_modificado", "observacao_alterada"];
@@ -59,7 +59,7 @@ describe("Notification Filter for Operators", () => {
   it("should identify billing-only operators", () => {
     expect(billingOnlyOperators).toContain("Maria");
     expect(billingOnlyOperators).toContain("Erica");
-    expect(billingOnlyOperators).toContain("Marcos");
+    expect(billingOnlyOperators).toContain("Danubia");
   });
 
   it("should filter out financial notifications for billing operators", () => {
@@ -89,7 +89,7 @@ describe("Notification Filter for Operators", () => {
       expect(isFinancialNotification(type)).toBe(true);
     }
     
-    // These should NOT be shown to Maria/Erica/Marcos
+    // These should NOT be shown to Maria/Erica/Danubia
     for (const type of billingNotificationTypes) {
       expect(isFinancialNotification(type)).toBe(false);
     }

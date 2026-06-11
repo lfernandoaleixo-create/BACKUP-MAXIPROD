@@ -88,20 +88,20 @@ describe("updateMadeiraStock - permissões de redução", () => {
     expect(result.success).toBe(true);
   });
 
-  it("blocks decreasing stock for unauthorized operators (Marcos)", async () => {
+  it("blocks decreasing stock for unauthorized operators (Danubia)", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.dashboard.updateMadeiraStock({
       codigoItem: TEST_CODE,
       quantidade: 5,
-      operatorName: "Marcos",
+      operatorName: "Danubia",
       descricaoItem: "Test Product",
     });
 
     expect(result.success).toBe(false);
     expect((result as any).error).toBe("reduction_blocked");
-    expect((result as any).operador).toBe("Marcos");
+    expect((result as any).operador).toBe("Danubia");
   });
 
   it("allows Maria to DECREASE stock (authorized operator)", async () => {
@@ -289,7 +289,7 @@ describe("getStockEditHistory", () => {
 
     const blocked = result.history.find((h: any) => h.tipo === "tentativa_reducao");
     expect(blocked).toBeDefined();
-    expect(blocked!.operador).toBe("Marcos");
+    expect(blocked!.operador).toBe("Danubia");
   });
 
   it("returns history for semiPronto card", async () => {

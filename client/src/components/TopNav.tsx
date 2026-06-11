@@ -133,7 +133,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
                     <span className="hidden sm:inline">{theme === "dark" ? "Claro" : "Noturno"}</span>
                   </button>
                 )}
-                {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (
+                {operator && ["Erica", "Maria", "Danubia", "Guilherme"].includes(operator.name) && (
                   <NotificationBell />
                 )}
                 {operator && (
@@ -270,7 +270,7 @@ export default function TopNav({ rightContent }: TopNavProps) {
 
           {/* Right: notification bell + operator info + logout */}
           <div className="flex items-center gap-3">
-            {operator && ["Erica", "Maria", "Marcos", "Guilherme"].includes(operator.name) && (
+            {operator && ["Erica", "Maria", "Danubia", "Guilherme"].includes(operator.name) && (
               <NotificationBell />
             )}
             {operator && (
