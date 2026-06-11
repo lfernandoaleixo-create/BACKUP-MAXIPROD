@@ -1722,6 +1722,7 @@ function IcmsConfigSection() {
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editRate, setEditRate] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   if (isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-blue-400" /></div>;
 
@@ -1729,11 +1730,19 @@ function IcmsConfigSection() {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-3">
-        <MapPin className="w-4 h-4 text-emerald-600" />
-        <h3 className="text-sm font-semibold text-slate-700">ICMS por Estado</h3>
+      <div
+        className="flex items-center justify-between cursor-pointer hover:bg-slate-50 rounded-lg p-2 -m-2 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-emerald-600" />
+          <h3 className="text-sm font-semibold text-slate-700">ICMS por Estado</h3>
+          <span className="text-xs text-slate-400 ml-2">Estado ativo: <span className="font-medium text-blue-600">{selectedUf}</span></span>
+        </div>
+        {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
       </div>
-      <p className="text-xs text-slate-500 mb-3">
+      {isExpanded && (<>
+      <p className="text-xs text-slate-500 mb-3 mt-3">
         Selecione o estado de destino da importação. A alíquota será usada no cálculo de impostos.
         Você pode editar a alíquota de qualquer estado.
       </p>
@@ -1799,6 +1808,7 @@ function IcmsConfigSection() {
           </tbody>
         </table>
       </div>
+      </>)}
     </div>
   );
 }
