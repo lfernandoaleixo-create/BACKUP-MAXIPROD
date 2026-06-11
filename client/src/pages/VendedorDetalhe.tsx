@@ -297,6 +297,7 @@ function PlaceholderTab({ title, description }: { title: string; description: st
 function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerName: string }) {
   const [reservationItem, setReservationItem] = useState<DashboardItem | null>(null);
   const [reservationPO, setReservationPO] = useState<{ referencia: string; dataEntrega: string; quantidade: number } | null>(null);
+  const [stockSearch, setStockSearch] = useState("");
 
   // Produtos ticados para este vendedor
   const productsQuery = trpc.sales.getSellerProducts.useQuery({ sellerId });
@@ -324,14 +325,23 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
     return (stockQuery.data.items as DashboardItem[]).filter(item => visibleCodes.has(item.codigoItem));
   }, [productsQuery.data, stockQuery.data]);
 
+  const filteredProducts = useMemo(() => {
+    if (!stockSearch.trim()) return visibleProducts;
+    const term = stockSearch.toLowerCase().trim();
+    return visibleProducts.filter(item =>
+      item.codigoItem.toLowerCase().includes(term) ||
+      item.descricaoItem.toLowerCase().includes(term)
+    );
+  }, [visibleProducts, stockSearch]);
+
   const madeiraProducts = useMemo(() =>
-    visibleProducts.filter(item => item.grupo === "industrializacao" && item.subgrupo === "madeira"),
-    [visibleProducts]
+    filteredProducts.filter(item => item.grupo === "industrializacao" && item.subgrupo === "madeira"),
+    [filteredProducts]
   );
 
   const bambuProducts = useMemo(() =>
-    visibleProducts.filter(item => item.grupo === "importacao_revenda" && item.subgrupo === "bambu"),
-    [visibleProducts]
+    filteredProducts.filter(item => item.grupo === "importacao_revenda" && item.subgrupo === "bambu"),
+    [filteredProducts]
   );
 
   if (productsQuery.isLoading || stockQuery.isLoading) {
@@ -361,6 +371,31 @@ function SellerStockView({ sellerId, sellerName }: { sellerId: number; sellerNam
 
   return (
     <div className="space-y-4">
+      {/* Barra de pesquisa */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm px-4 py-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por código ou nome do produto..."
+            value={stockSearch}
+            onChange={(e) => setStockSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-400 transition-all"
+          />
+          {stockSearch && (
+            <button
+              onClick={() => setStockSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        {stockSearch && filteredProducts.length === 0 && (
+          <p className="text-xs text-slate-400 mt-2 text-center">Nenhum produto encontrado para "{stockSearch}"</p>
+        )}
+      </div>
+
       {/* Madeira */}
       {madeiraProducts.length > 0 && (
         <StockCategorySection

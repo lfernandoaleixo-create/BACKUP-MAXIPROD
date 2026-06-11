@@ -4362,3 +4362,6 @@
 ## Conversão USD/BRL nas POs legacy (11/06/2026)
 - [x] POs legacy (planilha/Ghangzou): converter Valor da Caixa e Preço Mil/Unid usando fator fixo 5,5 quando toggle USD ativo
 - [x] POs novas: continuar usando dólar em tempo real para conversão
+
+## Barra de pesquisa no Estoque do Vendedor (Gestão Comercial)
+- [x] Adicionar barra de pesquisa na aba Estoque de cada vendedor para buscar por nome ou código do produto
