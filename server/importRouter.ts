@@ -565,7 +565,7 @@ export const importRouter = router({
       if (!db) return [];
       return db.select().from(importPos)
         .where(eq(importPos.supplierId, input.supplierId))
-        .orderBy(desc(importPos.id));
+        .orderBy(desc(importPos.poNumber));
     }),
 
   // Lista todos os fornecedores com contagem de POs (apenas contexto 'custo' ou 'both')
