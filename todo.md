@@ -4292,3 +4292,4 @@
 - [x] Prefixo R$ ou $ nos campos de input de valor monetário na tabela de produtos
 - [x] Sufixo % na coluna de porcentagem
 - [x] 2 casas decimais com arredondamento correto (3ª casa > 5 arredonda pra cima)
+- [x] Remover card "Custos Logísticos & Informações" das POs na aba Custo da Mercadoria
