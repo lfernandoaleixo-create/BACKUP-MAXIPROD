@@ -2874,6 +2874,9 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
   // === CALCULATIONS ===
   const filteredProducts = products || [];
   
+  // Detect if this is a legacy PO (from spreadsheet) - has valorCaixaBrl filled in products
+  const isLegacyPo = filteredProducts.some((p: any) => p.valorCaixaBrl && Number(p.valorCaixaBrl) > 0);
+
   // Total Frete Calculado pelo Fornecedor (soma de todos os fretes col5)
   const totalFreteCalculado = filteredProducts.reduce((sum, prod) => {
     const valorForn = Number(String(prod.valorUsd || 0).replace(',', '.'));
@@ -2890,11 +2893,19 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     return sum + (valorForn * qty);
   }, 0);
 
-  // Despesas de Liberação - Valor Vilela (dynamic % do valor da CI)
-  const despesasLiberacao = Number(valorCi || 0) * (vilelaPercent / 100);
+  // Despesas de Liberação - Valor Vilela
+  // Para POs antigas (planilha): usa o valor fixo já salvo no banco
+  // Para POs novas: calcula dinamicamente com % da CI
+  const despesasLiberacao = isLegacyPo
+    ? Number(po.despesasLiberacaoRemessa || 0)
+    : Number(valorCi || 0) * (vilelaPercent / 100);
 
   // Custos Totais da Importação
-  const custosTotais = totalValorReferencia + totalFreteCalculado + despesasLiberacao + Number(freteTerrestreSP || 0) + Number(difalVal || 0) + Number(comSilverio || 0);
+  // Para POs antigas: usa valores fixos do banco (já cravados na planilha)
+  // Para POs novas: calcula dinamicamente
+  const custosTotais = isLegacyPo
+    ? totalValorReferencia + totalFreteCalculado + Number(po.despesasLiberacaoRemessa || 0) + Number(po.freteTermestreRemessa || 0) + Number(po.difalValor || 0) + Number(po.comissaoSilverio || 0)
+    : totalValorReferencia + totalFreteCalculado + despesasLiberacao + Number(freteTerrestreSP || 0) + Number(difalVal || 0) + Number(comSilverio || 0);
 
   // Remessa logic: 1ª = total - 2ª - 3ª
   const totalOrdemPagamento = totalValorReferencia;
@@ -2912,7 +2923,8 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
       freteTermestreRemessa: freteTerrestreSP || null,
       difalValor: difalVal || null,
       comissaoSilverio: comSilverio || null,
-      despesasLiberacaoRemessa: despesasLiberacao > 0 ? String(despesasLiberacao.toFixed(2)) : null,
+      // Para POs antigas (planilha), não sobrescrever despesasLiberacaoRemessa com valor recalculado
+      despesasLiberacaoRemessa: isLegacyPo ? (po.despesasLiberacaoRemessa || null) : (despesasLiberacao > 0 ? String(despesasLiberacao.toFixed(2)) : null),
     });
   };
 
@@ -3475,28 +3487,39 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
                 </div>
               </div>
               <div>
-                <label className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5">
-                  Despesas de Liberação - Valor Vilela (
-                  <input
-                    className="w-10 border border-amber-300 rounded px-1 py-0 text-[10px] font-mono text-center bg-amber-50 focus:outline-none focus:ring-1 focus:ring-amber-400"
-                    defaultValue={vilelaPercent}
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="1"
-                    onBlur={e => {
-                      const val = Number(e.target.value);
-                      if (val !== vilelaPercent && val >= 0 && val <= 100) {
-                        setVilelaPercent.mutate({ percent: val });
-                      }
-                    }}
-                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                  />
-                  % da CI)
-                </label>
-                <div className="w-full border border-amber-200 bg-amber-50 rounded px-3 py-2 text-sm font-mono font-bold text-amber-800">
-                  {currency === "USD" ? `$ ${despesasLiberacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(despesasLiberacao * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                </div>
+                {isLegacyPo ? (
+                  <>
+                    <label className="text-[10px] text-slate-500 font-medium">Despesas de Liberação (valor fixo da planilha)</label>
+                    <div className="w-full border border-amber-200 bg-amber-50 rounded px-3 py-2 text-sm font-mono font-bold text-amber-800">
+                      {`R$ ${Number(po.despesasLiberacaoRemessa || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <label className="text-[10px] text-slate-500 font-medium flex items-center gap-1.5">
+                      Despesas de Liberação - Valor Vilela (
+                      <input
+                        className="w-10 border border-amber-300 rounded px-1 py-0 text-[10px] font-mono text-center bg-amber-50 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                        defaultValue={vilelaPercent}
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        onBlur={e => {
+                          const val = Number(e.target.value);
+                          if (val !== vilelaPercent && val >= 0 && val <= 100) {
+                            setVilelaPercent.mutate({ percent: val });
+                          }
+                        }}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      />
+                      % da CI)
+                    </label>
+                    <div className="w-full border border-amber-200 bg-amber-50 rounded px-3 py-2 text-sm font-mono font-bold text-amber-800">
+                      {currency === "USD" ? `$ ${despesasLiberacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `R$ ${(despesasLiberacao * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </div>
+                  </>  
+                )}
               </div>
               <div>
                 <label className="text-[10px] text-slate-500 font-medium">Frete Terrestre SP/MG</label>

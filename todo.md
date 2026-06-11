@@ -4310,3 +4310,9 @@
 - [x] Adicionar colunas "Unid. Caixa" e "Preço Mil/Unid." na tabela de produtos das POs
 - [x] Coluna "Valor da Caixa" agora mostra valor exato do banco (planilha) quando disponível, com indicador "(planilha)"
 - [x] Teste vitest para verificar que getPoProducts retorna campos valorCaixaBrl, precoMilUnid e unidCaixa com precisão correta
+
+## Fix: POs antigas da planilha devem exibir valores fixos sem recalcular (11/06/2026)
+- [x] Para POs que já têm valorCaixaBrl preenchido (planilha), exibir valor direto do banco sem NENHUM cálculo
+- [x] Não aplicar % Vilela, não recalcular custos totais — tudo já está cravado na planilha
+- [x] Totalizadores das POs antigas devem usar os valores do banco (despesasLiberacaoRemessa já salvo)
+- [x] Cálculo dinâmico (% Vilela, custos totais) só se aplica a POs novas sem valorCaixaBrl
