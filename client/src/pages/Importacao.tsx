@@ -2355,7 +2355,7 @@ function SupplierPoList({ supplierId, currency, exchangeRate, setPdfViewerUrl, s
           </button>
           {expandedPo === po.id && (
             <div>
-              <PoProductsTable poId={po.id} po={po} valorFator={po.valorFator ? Number(po.valorFator) : null} currency={currency} exchangeRate={exchangeRate} />
+              <PoProductsTable poId={po.id} po={po} valorFator={po.valorFator ? Number(po.valorFator) : null} currency={currency} exchangeRate={exchangeRate} onCollapse={() => setExpandedPo(null)} />
             </div>
           )}
         </div>
@@ -2373,6 +2373,7 @@ function PoLogisticsPanel({ po, currency, exchangeRate }: { po: any; currency: "
     onSuccess: () => {
       utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId });
       toast.success('Custos atualizados!');
+      setIsOpen(false);
     },
     onError: () => toast.error('Erro ao salvar custos'),
   });
@@ -2709,7 +2710,7 @@ function TaxDetailCard({ prod, onClose }: { prod: any; onClose: () => void }) {
   );
 }
 
-function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate = 5.50 }: { poId: number; po: any; valorFator: number | null; currency?: "USD" | "BRL"; exchangeRate?: number }) {
+function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate = 5.50, onCollapse }: { poId: number; po: any; valorFator: number | null; currency?: "USD" | "BRL"; exchangeRate?: number; onCollapse?: () => void }) {
   const { data: products, isLoading } = trpc.import.getPoProducts.useQuery({ poId });
   const { data: ncmListForProducts } = trpc.import.getNcmTaxes.useQuery();
   const utils = trpc.useUtils();
@@ -2735,7 +2736,7 @@ function PoProductsTable({ poId, po, valorFator, currency = "USD", exchangeRate 
     },
   });
   const updateLogistics = trpc.import.updatePoLogistics.useMutation({
-    onSuccess: () => { utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId }); toast.success('Custos salvos!'); },
+    onSuccess: () => { utils.import.getPosBySupplier.invalidate({ supplierId: po.supplierId }); toast.success('Custos salvos!'); onCollapse?.(); },
   });
   const addProduct = trpc.import.addPoProduct.useMutation({
     onSuccess: () => { utils.import.getPoProducts.invalidate({ poId }); setShowAddProduct(false); setNewProductCode(''); setNewProductDesc(''); setNewProductNcm(''); setAddCodeSearch(''); toast.success('Produto adicionado!'); },
