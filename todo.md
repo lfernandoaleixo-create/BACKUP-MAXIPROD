@@ -4369,3 +4369,12 @@
 ## Rastreio de navio na view do vendedor (Gestão Comercial)
 - [x] Quando produto tiver PO com rastreio ativo (tracking_uuid/bl_number), mostrar botão de rastreio na coluna PO
 - [x] Ao clicar, abrir mapa do navio em tempo real (mesmo que aba Importação) - responsivo para tablet/celular
+
+## Inadimplência - Cards Fundo Perdido e Especial s/ Cobrança
+- [x] Remover os 3 cards de segmento (Madeira, Bambu, Sem Classificação) da Planilha de Cobrança
+- [x] Filtrar clientes com status "Fundo perdido" da lista principal de inadimplência
+- [x] Filtrar clientes com status "Especial s/ cobrança" da lista principal de inadimplência
+- [x] Criar card "Fundo Perdido" que ao clicar expande e mostra todos os títulos desses clientes
+- [x] Criar card "Especial s/ Cobrança" que ao clicar expande e mostra todos os títulos desses clientes
+- [x] Dentro do card, permitir alterar status - se mudar de "Fundo perdido" para outro (exceto "Especial s/ cobrança"), volta pra lista
+- [x] Dentro do card, permitir alterar status - se mudar de "Especial s/ cobrança" para outro (exceto "Fundo perdido"), volta pra lista

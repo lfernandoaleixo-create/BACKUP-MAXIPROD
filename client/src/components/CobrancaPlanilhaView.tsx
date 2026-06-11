@@ -269,6 +269,8 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const [pdfHistoryFilterMonth, setPdfHistoryFilterMonth] = useState("");
   const [pdfHistorySelectedIds, setPdfHistorySelectedIds] = useState<number[]>([]);
   const [segmentDetailOpen, setSegmentDetailOpen] = useState<string | null>(null);
+  const [showFundoPerdido, setShowFundoPerdido] = useState(false);
+  const [showEspecialSemCobranca, setShowEspecialSemCobranca] = useState(false);
   const [editingVendedorId, setEditingVendedorId] = useState<number | null>(null);
   const [editingVendedorValue, setEditingVendedorValue] = useState("");
 
@@ -298,7 +300,10 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
 
   const filteredItems = useMemo(() => {
     if (!items) return [];
-    let result = [...items];
+    // Exclude Fundo Perdido and Especial s/ cobrança from main list (unless specifically filtered)
+    let result = statusFilter === "Fundo Perdido" || statusFilter === "Especial s/ cobrança"
+      ? [...items]
+      : items.filter(item => item.status !== "Fundo Perdido" && item.status !== "Especial s/ cobrança");
 
     // Search
     if (search.trim()) {
@@ -353,22 +358,24 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   const totalValor = filteredItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
   const uniqueClients = useMemo(() => new Set(filteredItems.map(i => getClientKey(i.empresa))), [filteredItems]);
 
-  // Dados agrupados por segmento (centro de custos)
-  const segmentData = useMemo(() => {
+  // Dados agrupados por segmento (centro de custos) - REMOVED segment cards per user request
+
+  // Items de Fundo Perdido
+  const fundoPerdidoItems = useMemo(() => {
     if (!items) return [];
-    const map = new Map<string, { center: string; items: typeof items; totalValor: number; uniqueClients: Set<string> }>();
-    for (const item of items) {
-      const center = item.centroCustos || "SEM CLASSIFICAÇÃO";
-      if (!map.has(center)) {
-        map.set(center, { center, items: [], totalValor: 0, uniqueClients: new Set() });
-      }
-      const entry = map.get(center)!;
-      entry.items.push(item);
-      entry.totalValor += parseFloat(String(item.valor || 0));
-      entry.uniqueClients.add(getClientKey(item.empresa));
-    }
-    return Array.from(map.values()).sort((a, b) => b.totalValor - a.totalValor);
+    return items.filter(item => item.status === "Fundo Perdido");
   }, [items]);
+
+  // Items de Especial s/ Cobrança
+  const especialItems = useMemo(() => {
+    if (!items) return [];
+    return items.filter(item => item.status === "Especial s/ cobrança");
+  }, [items]);
+
+  const fundoPerdidoTotal = fundoPerdidoItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
+  const fundoPerdidoClients = useMemo(() => new Set(fundoPerdidoItems.map(i => getClientKey(i.empresa))), [fundoPerdidoItems]);
+  const especialTotal = especialItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
+  const especialClients = useMemo(() => new Set(especialItems.map(i => getClientKey(i.empresa))), [especialItems]);
 
   const SEGMENT_STYLES: Record<string, { icon: React.ReactNode; gradient: string; border: string; bg: string; text: string; accent: string }> = {
     "MADEIRA": { icon: <TreePine className="w-5 h-5 text-white" />, gradient: "from-amber-600 to-yellow-700", border: "border-amber-300", bg: "from-amber-50 via-yellow-50 to-orange-50", text: "text-amber-900", accent: "text-amber-700" },
@@ -383,7 +390,11 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
   }
 
   function handleExportSegmentPdf(center: string) {
-    const seg = segmentData.find(s => s.center === center);
+    // Build segment data on-the-fly from items
+    const segItems = (items || []).filter(item => (item.centroCustos || "SEM CLASSIFICAÇÃO") === center);
+    const segTotalValor = segItems.reduce((sum, item) => sum + parseFloat(String(item.valor || 0)), 0);
+    const segUniqueClients = new Set(segItems.map(i => getClientKey(i.empresa)));
+    const seg = segItems.length > 0 ? { center, items: segItems, totalValor: segTotalValor, uniqueClients: segUniqueClients } : null;
     if (!seg || seg.items.length === 0) {
       toast.error("Nenhum título para exportar");
       return;
@@ -1149,124 +1160,154 @@ export default function CobrancaPlanilhaView({ onClose }: CobrancaPlanilhaViewPr
         </div>
       )}
 
-      {/* Cards de Segmento (Centro de Custos) */}
-      {segmentData.length > 0 && (
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-            {segmentData.map(seg => {
-              const style = getSegmentStyle(seg.center);
-              const isOpen = segmentDetailOpen === seg.center;
-              const isFiltered = centerFilter === seg.center;
-              return (
-                <button
-                  key={seg.center}
-                  onClick={() => {
-                    setCenterFilter(isFiltered ? "todos" : seg.center);
-                    setSegmentDetailOpen(isOpen ? null : seg.center);
-                  }}
-                  className={`rounded-xl border-2 p-3 text-left transition-all hover:shadow-lg hover:scale-[1.02] ${style.border} bg-gradient-to-br ${style.bg} ${
-                    isFiltered ? "ring-2 ring-blue-500 shadow-lg scale-[1.02]" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${style.gradient} flex items-center justify-center shadow-sm`}>
-                      {style.icon}
-                    </div>
-                    <div className="min-w-0">
-                      <div className={`text-xs font-bold ${style.text} truncate`}>{seg.center}</div>
-                      <div className={`text-[10px] ${style.accent}`}>{seg.uniqueClients.size} cliente{seg.uniqueClients.size !== 1 ? "s" : ""}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-baseline justify-between">
-                    <span className={`text-lg font-bold ${style.text}`}>{seg.items.length}</span>
-                    <span className={`text-[10px] font-semibold ${style.accent}`}>{formatCurrency(seg.totalValor)}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className={`text-[9px] ${style.accent} opacity-70`}>títulos</span>
-                    <span className={`text-[9px] flex items-center gap-0.5 ${isOpen ? style.text : style.accent}`}>
-                      {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                      {isOpen ? "Fechar" : "Detalhes"}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Detalhe do segmento expandido */}
-          {segmentDetailOpen && (() => {
-            const seg = segmentData.find(s => s.center === segmentDetailOpen);
-            if (!seg) return null;
-            const style = getSegmentStyle(seg.center);
-            const segItems = seg.items.sort((a, b) => parseFloat(String(b.valor || 0)) - parseFloat(String(a.valor || 0)));
-            return (
-              <div className={`rounded-xl border-2 ${style.border} bg-gradient-to-r ${style.bg} overflow-hidden`}>
-                <div className="flex items-center justify-between p-4 border-b border-slate-200/50">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${style.gradient} flex items-center justify-center shadow-md`}>
-                      {style.icon}
-                    </div>
-                    <div>
-                      <h3 className={`font-bold text-sm ${style.text}`}>Inadimplência — {seg.center}</h3>
-                      <p className={`text-xs ${style.accent}`}>{seg.items.length} títulos • {seg.uniqueClients.size} clientes • {formatCurrency(seg.totalValor)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleExportSegmentPdf(seg.center); }}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r ${style.gradient} text-white text-xs font-semibold shadow-md hover:shadow-lg transition-all hover:scale-[1.02]`}
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Exportar PDF
-                    </button>
-                    <button
-                      onClick={() => setSegmentDetailOpen(null)}
-                      className="p-1.5 rounded-lg hover:bg-white/50 transition-colors"
-                    >
-                      <X className="w-4 h-4 text-slate-500" />
-                    </button>
-                  </div>
+      {/* Cards Fundo Perdido e Especial s/ Cobrança */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Card Fundo Perdido */}
+        <div className="rounded-xl border-2 border-stone-400 bg-gradient-to-br from-stone-50 via-stone-100 to-stone-50 overflow-hidden transition-all hover:shadow-lg">
+          <button
+            onClick={() => setShowFundoPerdido(!showFundoPerdido)}
+            className="w-full p-4 text-left"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-stone-600 to-stone-800 flex items-center justify-center shadow-md">
+                  <Flame className="w-5 h-5 text-white" />
                 </div>
-                <div className="divide-y divide-slate-200/50 max-h-[400px] overflow-y-auto">
-                  {segItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/40 transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${style.gradient} bg-opacity-20 flex items-center justify-center flex-shrink-0`}>
-                          <Building2 className={`w-4 h-4 ${style.accent}`} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{item.empresa}</p>
-                          {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600 truncate">({(item as any).apelido})</p>}
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                            {item.cnpjCpf && <span>{item.cnpjCpf}</span>}
-                            {item.vendedor && <span>• {item.vendedor}</span>}
-                            <span>• {item.status}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 flex-shrink-0">
-                        <div className="text-right">
-                          <p className={`text-sm font-bold ${style.text}`}>{formatCurrency(parseFloat(String(item.valor || 0)))}</p>
-                          <p className="text-[10px] text-slate-500">Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className={`inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
-                            (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
-                            "bg-blue-100 text-blue-700"
-                          }`}>
-                            {item.diasVencidos || 0}d
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <h3 className="font-bold text-sm text-stone-900">Fundo Perdido</h3>
+                  <p className="text-xs text-stone-600">{fundoPerdidoClients.size} cliente{fundoPerdidoClients.size !== 1 ? "s" : ""} • {fundoPerdidoItems.length} título{fundoPerdidoItems.length !== 1 ? "s" : ""}</p>
                 </div>
               </div>
-            );
-          })()}
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-stone-800">{formatCurrency(fundoPerdidoTotal)}</span>
+                {showFundoPerdido ? <ChevronUp className="w-5 h-5 text-stone-500" /> : <ChevronDown className="w-5 h-5 text-stone-500" />}
+              </div>
+            </div>
+          </button>
+          {showFundoPerdido && fundoPerdidoItems.length > 0 && (
+            <div className="border-t border-stone-300 divide-y divide-stone-200 max-h-[400px] overflow-y-auto">
+              {fundoPerdidoItems.map((item) => {
+                const cfg = getStatusConfig(item.status);
+                return (
+                  <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/60 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-1.5 h-10 rounded-full bg-stone-500 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{item.empresa}</p>
+                        {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600 truncate">({(item as any).apelido})</p>}
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          {item.descricao && <span className="truncate max-w-[200px]">{item.descricao}</span>}
+                          {item.vendedor && <span>• {item.vendedor}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-stone-800">{formatCurrency(parseFloat(String(item.valor || 0)))}</p>
+                        <p className="text-[10px] text-slate-500">Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
+                          (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
+                          "bg-blue-100 text-blue-700"
+                        }`}>
+                          {item.diasVencidos || 0}d
+                        </span>
+                      </div>
+                      {canEdit && (
+                        <select
+                          value={item.status}
+                          onChange={e => handleStatusChange(item.id, e.target.value)}
+                          onClick={e => e.stopPropagation()}
+                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-stone-50 text-stone-700 border-stone-400 cursor-pointer focus:ring-2 focus:ring-blue-400"
+                        >
+                          {ALL_STATUSES.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Card Especial s/ Cobrança */}
+        <div className="rounded-xl border-2 border-cyan-300 bg-gradient-to-br from-cyan-50 via-sky-50 to-cyan-50 overflow-hidden transition-all hover:shadow-lg">
+          <button
+            onClick={() => setShowEspecialSemCobranca(!showEspecialSemCobranca)}
+            className="w-full p-4 text-left"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-600 to-sky-700 flex items-center justify-center shadow-md">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-cyan-900">Especial s/ Cobrança</h3>
+                  <p className="text-xs text-cyan-600">{especialClients.size} cliente{especialClients.size !== 1 ? "s" : ""} • {especialItems.length} título{especialItems.length !== 1 ? "s" : ""}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-cyan-800">{formatCurrency(especialTotal)}</span>
+                {showEspecialSemCobranca ? <ChevronUp className="w-5 h-5 text-cyan-500" /> : <ChevronDown className="w-5 h-5 text-cyan-500" />}
+              </div>
+            </div>
+          </button>
+          {showEspecialSemCobranca && especialItems.length > 0 && (
+            <div className="border-t border-cyan-200 divide-y divide-cyan-100 max-h-[400px] overflow-y-auto">
+              {especialItems.map((item) => {
+                const cfg = getStatusConfig(item.status);
+                return (
+                  <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-white/60 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-1.5 h-10 rounded-full bg-cyan-500 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{item.empresa}</p>
+                        {(item as any).apelido && <p className="text-[10px] font-bold text-purple-600 truncate">({(item as any).apelido})</p>}
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          {item.descricao && <span className="truncate max-w-[200px]">{item.descricao}</span>}
+                          {item.vendedor && <span>• {item.vendedor}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-cyan-800">{formatCurrency(parseFloat(String(item.valor || 0)))}</p>
+                        <p className="text-[10px] text-slate-500">Venc: {item.vencimento ? formatDate(item.vencimento) : "-"}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`inline-flex items-center justify-center min-w-[28px] px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          (item.diasVencidos || 0) > 30 ? "bg-red-100 text-red-700" :
+                          (item.diasVencidos || 0) > 10 ? "bg-amber-100 text-amber-700" :
+                          "bg-blue-100 text-blue-700"
+                        }`}>
+                          {item.diasVencidos || 0}d
+                        </span>
+                      </div>
+                      {canEdit && (
+                        <select
+                          value={item.status}
+                          onChange={e => handleStatusChange(item.id, e.target.value)}
+                          onClick={e => e.stopPropagation()}
+                          className="text-[10px] font-semibold px-2 py-1 rounded-lg border bg-cyan-50 text-cyan-700 border-cyan-300 cursor-pointer focus:ring-2 focus:ring-blue-400"
+                        >
+                          {ALL_STATUSES.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Centro de Custos filter pills */}
       {summary && (
