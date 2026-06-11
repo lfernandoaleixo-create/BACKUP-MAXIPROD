@@ -4337,3 +4337,8 @@
 - [x] Card expandível mostrando detalhamento: X caixas da POy a R$ Z cada
 - [x] Apenas produtos de importação (grupo 20/21), madeira/industrializado não entra
 - [x] Testes automatizados (3 testes passando)
+
+## Conversor BRL/USD em tempo real fixo no topo (11/06/2026)
+- [x] Criar widget conversor Real/Dólar em tempo real
+- [x] Widget fica fixado (sticky) no topo ao fazer scroll vertical
+- [x] Usar câmbio em tempo real para conversão

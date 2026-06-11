@@ -1513,6 +1513,51 @@ function CustoMercadoria() {
             </div>
           </div>
         )}
+        {/* Currency Converter - always visible */}
+        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-[10px] sm:text-xs text-slate-500 whitespace-nowrap">Conversor:</span>
+            <div className="flex items-center gap-1 flex-1 max-w-xs">
+              <input
+                type="number"
+                placeholder="Valor"
+                className="w-24 sm:w-28 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                id="converter-input"
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || 0;
+                  const resultEl = document.getElementById('converter-result');
+                  const modeEl = document.getElementById('converter-mode') as HTMLSelectElement;
+                  if (resultEl && modeEl) {
+                    const mode = modeEl.value;
+                    const result = mode === 'usd-to-brl' ? val * exchangeRate : val / exchangeRate;
+                    resultEl.textContent = mode === 'usd-to-brl'
+                      ? `R$ ${result.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      : `$ ${result.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                  }
+                }}
+              />
+              <select
+                id="converter-mode"
+                className="px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                defaultValue="usd-to-brl"
+                onChange={() => {
+                  const inputEl = document.getElementById('converter-input') as HTMLInputElement;
+                  if (inputEl) inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+                }}
+              >
+                <option value="usd-to-brl">USD → BRL</option>
+                <option value="brl-to-usd">BRL → USD</option>
+              </select>
+              <span className="text-xs font-semibold text-slate-700">=</span>
+              <span id="converter-result" className="text-xs font-bold text-emerald-700 whitespace-nowrap">R$ 0,00</span>
+            </div>
+          </div>
+          {exchangeData && (
+            <span className="text-[10px] sm:text-xs text-slate-500 whitespace-nowrap">
+              Câmbio: <strong className="text-slate-700">1 USD = R$ {exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </span>
+          )}
+        </div>
       </div>
 
       {custoTab === "realtime" && <CustoTempoReal exchangeRate={exchangeRate} currency={currency} />}
